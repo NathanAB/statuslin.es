@@ -19,7 +19,7 @@ import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AdminReviewRouteImport } from './routes/admin/review'
 import { Route as DotwellKnownSecurityDottxtRouteImport } from './routes/[.]well-known.security[.]txt'
-import { Route as OgCSlugDotpngRouteImport } from './routes/og.c.$slug[.]png'
+import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TermsRoute = TermsRouteImport.update({
@@ -73,11 +73,12 @@ const DotwellKnownSecurityDottxtRoute =
     path: '/.well-known/security.txt',
     getParentRoute: () => rootRouteImport,
   } as any)
-const OgCSlugDotpngRoute = OgCSlugDotpngRouteImport.update({
-  id: '/og/c/$slug.png',
-  path: '/og/c/$slug.png',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const OgCChar123slugChar125DotpngRoute =
+  OgCChar123slugChar125DotpngRouteImport.update({
+    id: '/og/c/{$slug}.png',
+    path: '/og/c/{$slug}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -96,7 +97,7 @@ export interface FileRoutesByFullPath {
   '/og/home.png': typeof OgHomeDotpngRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/og/c/$slug.png': typeof OgCSlugDotpngRoute
+  '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,7 +111,7 @@ export interface FileRoutesByTo {
   '/og/home.png': typeof OgHomeDotpngRoute
   '/admin': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/og/c/$slug.png': typeof OgCSlugDotpngRoute
+  '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,7 +126,7 @@ export interface FileRoutesById {
   '/og/home.png': typeof OgHomeDotpngRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/og/c/$slug.png': typeof OgCSlugDotpngRoute
+  '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,7 +142,7 @@ export interface FileRouteTypes {
     | '/og/home.png'
     | '/admin/'
     | '/api/auth/$'
-    | '/og/c/$slug.png'
+    | '/og/c/{$slug}.png'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,7 +156,7 @@ export interface FileRouteTypes {
     | '/og/home.png'
     | '/admin'
     | '/api/auth/$'
-    | '/og/c/$slug.png'
+    | '/og/c/{$slug}.png'
   id:
     | '__root__'
     | '/'
@@ -169,7 +170,7 @@ export interface FileRouteTypes {
     | '/og/home.png'
     | '/admin/'
     | '/api/auth/$'
-    | '/og/c/$slug.png'
+    | '/og/c/{$slug}.png'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,7 +185,7 @@ export interface RootRouteChildren {
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  OgCSlugDotpngRoute: typeof OgCSlugDotpngRoute
+  OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -259,11 +260,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownSecurityDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/og/c/$slug.png': {
-      id: '/og/c/$slug.png'
-      path: '/og/c/$slug.png'
-      fullPath: '/og/c/$slug.png'
-      preLoaderRoute: typeof OgCSlugDotpngRouteImport
+    '/og/c/{$slug}.png': {
+      id: '/og/c/{$slug}.png'
+      path: '/og/c/{$slug}.png'
+      fullPath: '/og/c/{$slug}.png'
+      preLoaderRoute: typeof OgCChar123slugChar125DotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -288,7 +289,7 @@ const rootRouteChildren: RootRouteChildren = {
   OgHomeDotpngRoute: OgHomeDotpngRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  OgCSlugDotpngRoute: OgCSlugDotpngRoute,
+  OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

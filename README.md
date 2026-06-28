@@ -52,24 +52,46 @@ Copy `.env.example` to `.env.local`. Bun auto-loads it, and it's the only env fi
 reads. (`.env.staging` / `.env.production` are just the source you push to Fly secrets; see
 [`docs/deploy.md`](./docs/deploy.md).)
 
+`.env.example` already ships with working local defaults for `DATABASE_URL` and `BETTER_AUTH_URL`, so
+the only values you fill in are:
+
 ```sh
-DATABASE_URL=postgresql://postgres:postgres@localhost:5433/statuslines
-BETTER_AUTH_URL=http://localhost:3100
-BETTER_AUTH_SECRET=        # openssl rand -base64 32
-GITHUB_CLIENT_ID=          # your dev GitHub OAuth app (callback http://localhost:3100/api/auth/callback/github)
-GITHUB_CLIENT_SECRET=
-# E2B_API_KEY is optional locally; without it, submitted scripts render with the fake runner.
+BETTER_AUTH_SECRET=        # generate with: openssl rand -base64 32
+GITHUB_CLIENT_ID=          # from the GitHub OAuth app below
+GITHUB_CLIENT_SECRET=      # from the GitHub OAuth app below
 ```
+
+`E2B_API_KEY` is optional locally — without it, submitted scripts render with a built-in fake runner.
+The dev server's port is **derived from `BETTER_AUTH_URL`**, so the default `:3100` comes from that
+URL; change the URL and the port moves with it.
+
+#### Create a GitHub OAuth app
+
+Sign-in is GitHub-only, so local dev needs its own free OAuth app:
+
+1. Go to **GitHub → Settings → Developer settings → OAuth Apps → New OAuth App**
+   (<https://github.com/settings/developers>).
+2. Fill in:
+   - **Application name:** anything (e.g. `statuslines-dev`)
+   - **Homepage URL:** `http://localhost:3100`
+   - **Authorization callback URL:** `http://localhost:3100/api/auth/callback/github`
+3. Register it, copy the **Client ID** into `GITHUB_CLIENT_ID`, then **Generate a new client secret**
+   and copy it into `GITHUB_CLIENT_SECRET`.
 
 ### 3. Schema, run, seed
 
 ```sh
 bun run db:migrate     # create the schema in the local DB
-bun run dev            # http://localhost:3100
+bun run dev            # serves on the BETTER_AUTH_URL port (default http://localhost:3100)
 ```
 
 Sign in once with GitHub to create your user, then (optionally) `bun run seed:gallery` for sample
 configs. It needs an existing user to author them, so it must come after the first sign-in.
+
+Once you have a user, `bun run dev:login` mints a session and prints a cookie command so an automated
+browser can test signed-in pages without going through GitHub again — see
+[`docs/testing-signed-in.md`](./docs/testing-signed-in.md). (It needs an existing user, so it doesn't
+replace that first GitHub sign-in.)
 
 ### 4. The gate
 
@@ -80,6 +102,8 @@ bun run check          # typecheck + lint + test
 ```
 
 Tests use PGlite against the real committed migrations, so they don't need the container running.
+`git push` runs this same gate plus a quick `bun run smoke`, so a green `bun run check` means you're
+all but certain to pass the push hook too.
 
 ## Contributing
 
