@@ -8,6 +8,25 @@ Community gallery of Claude Code status lines — browse configs as rendered pre
 
 Bun (runtime + toolchain) · Vite · TanStack Start (React, SSR) · Better Auth (GitHub) · Drizzle + Postgres · E2B (untrusted-script sandbox). Dependencies are pinned **exact** — no `^` ranges (TanStack Start is RC, Nitro is beta). Upgrades are deliberate, smoke-tested events, never incidental.
 
+## Architecture
+
+The lifecycle of a config: **submit** (`src/submit`) → a render job is **queued** → the
+`worker` renders it in the E2B sandbox (`src/render`) → it lands in the **review queue**
+(`src/review`) → an admin publishes → it appears in the **gallery** (`src/gallery`),
+where visitors **upvote** (`src/votes`) and **copy it to use** (`src/adopt`).
+
+`src/` map (one responsibility each):
+- `routes/` — TanStack Start file-based routes: pages + API handlers
+- `submit/` — submission form + flow (slug, obfuscation checks, allowed network hosts)
+- `render/` — render pipeline: real E2B runner, fake runner (tests/no key), ANSI parsing, scenarios
+- `review/` — admin review queue and publish/reject decisions
+- `gallery/` — gallery list queries
+- `votes/` — upvoting · `adopt/` — copy/install a config
+- `og/` — Open Graph card images · `legal/` — terms page
+- `db/` — Drizzle schema + migration client · `lib/` — shared utils (`env.ts`)
+- `ui/` — closed design-system components · `styles/` — tokens (`app.css`)
+- `server/` — Nitro server plugins (error context, PostHog)
+
 ## The quality bar — non-negotiable
 
 1. **TDD.** Red → green → refactor for all new behavior. Write the failing test first and confirm it fails for the *right reason*. Deviations are allowed only for pure config, pure type definitions, or mechanical refactors covered by existing tests — and you must state the category out loud before deviating.
@@ -20,6 +39,7 @@ Bun (runtime + toolchain) · Vite · TanStack Start (React, SSR) · Better Auth 
 
 ## Conventions
 
+- **Run it:** `bun run dev` (the app) + `bun run worker` (renders queued jobs locally, or nothing reaches the review queue); full setup in `README.md`.
 - **Terminology — "status line" (two words):** Anthropic spells the Claude Code feature **status line** (two words), so all user-facing copy does too — "a status line", "status lines", "Status line not found". The single word "statusline" is wrong in prose. Exceptions that stay one word because they're not prose: the brand/domain **statuslin.es**, the JSON settings key `statusLine`, the docs URL path `.../statusline`, and code identifiers / filenames / analytics event names (`StatuslinePreview`, `statusline.sh`, `statusline_submitted`, …). When in doubt in anything a user reads, two words.
 - **Env:** never hardcode URLs/ports/secrets. Local dev reads `.env.local` (its Postgres is a dedicated Docker container `statuslines-postgres` on host port 5433 — full setup in `README.md`); `.env.staging` / `.env.production` are push-to-Fly only (a server never reads those files). All `.env*` are gitignored except `.env.example` (the committed template) — keep it in sync. Auth is same-origin — the client infers its origin, the server reads `BETTER_AUTH_URL`.
 - **Tests:** run via `bun --bun run test` (Vitest) — never bare `bun test` (it ignores the Vite config). DB tests use PGlite running the **real committed migrations**; always close clients in `afterAll`.
