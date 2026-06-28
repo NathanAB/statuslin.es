@@ -24,7 +24,9 @@ jobs:
     # Tests use PGlite and never connect via DATABASE_URL; the E2B suite is opt-in (RUN_E2B unset).
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
-      BETTER_AUTH_SECRET: ci-dummy-secret
+      # Must be >=32 chars and not a placeholder token: requireStrongSecret() (src/lib/env.ts)
+      # throws at import otherwise, which would fail the auth test suites.
+      BETTER_AUTH_SECRET: ci-only-dummy-secret-do-not-use-anywhere-1234
       BETTER_AUTH_URL: http://localhost:3100
       GITHUB_CLIENT_ID: ci-dummy
       GITHUB_CLIENT_SECRET: ci-dummy

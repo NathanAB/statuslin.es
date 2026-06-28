@@ -135,21 +135,27 @@ describe('handleWakeRequest', () => {
 })
 
 describe('startWakeServer', () => {
-  it('triggers onWake over a real socket and returns 202', async () => {
-    let woke = 0
-    const server = startWakeServer({
-      hostname: '127.0.0.1',
-      port: 0,
-      onWake: () => {
-        woke += 1
-      },
-    })
-    try {
-      const res = await fetch(`http://127.0.0.1:${server.port}${WAKE_PATH}`, { method: 'POST' })
-      expect(res.status).toBe(202)
-      expect(woke).toBe(1)
-    } finally {
-      server.stop()
-    }
-  })
+  // startWakeServer binds Bun.serve, so this only runs under the bun runtime. The coverage
+  // job (`test:cov`) runs under the Node v8 runner where `Bun` is undefined — skip there.
+  // The request-routing logic is covered runtime-agnostically by the handleWakeRequest tests.
+  it.skipIf(typeof Bun === 'undefined')(
+    'triggers onWake over a real socket and returns 202',
+    async () => {
+      let woke = 0
+      const server = startWakeServer({
+        hostname: '127.0.0.1',
+        port: 0,
+        onWake: () => {
+          woke += 1
+        },
+      })
+      try {
+        const res = await fetch(`http://127.0.0.1:${server.port}${WAKE_PATH}`, { method: 'POST' })
+        expect(res.status).toBe(202)
+        expect(woke).toBe(1)
+      } finally {
+        server.stop()
+      }
+    },
+  )
 })
