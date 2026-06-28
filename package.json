@@ -34,7 +34,7 @@
   },
   "simple-git-hooks": {
     "pre-commit": "bun run lint && bun run typecheck",
-    "pre-push": "bun run check:ci && bun run smoke"
+    "pre-push": "bun run check:ci"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.11",

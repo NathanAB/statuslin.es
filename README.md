@@ -102,8 +102,13 @@ bun run check          # typecheck + lint + test
 ```
 
 Tests use PGlite against the real committed migrations, so they don't need the container running.
-`git push` runs this same gate plus a quick `bun run smoke`, so a green `bun run check` means you're
-all but certain to pass the push hook too.
+`git push` runs this same gate (via the pre-push hook), so a green `bun run check` means your push
+will pass too.
+
+There's also a browser smoke test — `bun run smoke` drives a real browser against the running app to
+catch hydration/auth breakage the source gates can't see. It needs `agent-browser`, a migrated dev DB,
+and a signed-in user, so it's **not** part of the push hook — run it locally when you touch the
+client or auth.
 
 ## Contributing
 
