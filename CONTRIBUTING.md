@@ -4,7 +4,7 @@ Thanks for your interest in statuslin.es.
 
 Two different things get called "contributing" here, and they go to different places:
 
-- **Sharing a statusline config?** You don't need this repo. Submit it on
+- **Sharing a status line config?** You don't need this repo. Submit it on
   [statuslin.es](https://statuslin.es): sign in with GitHub, paste your script, and it gets rendered and
   reviewed. (A maintainer reviews every submission and may decline; see [On "no"](#on-no) below.)
 - **Changing the code?** That's what this guide covers. Bug fixes, features, and docs are all welcome.

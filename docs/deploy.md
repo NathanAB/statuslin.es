@@ -40,7 +40,8 @@ From `.env.example` (the committed contract):
 | `GITHUB_CLIENT_SECRET` | yes | the env's OAuth app |
 | `E2B_API_KEY` | no | one E2B account serves all envs |
 
-No R2 keys — preview data is stored in Postgres (`previews` table); R2/OG-images aren't built yet.
+No R2 keys — preview data is stored in Postgres (`previews` table), and OG card images are rendered on
+the fly by the app (`src/og`), not stored. R2 isn't used.
 
 ## One-time setup (per environment)
 
@@ -185,4 +186,3 @@ section if the project is ever rebuilt.
 ## Not yet (later)
 
 - GitHub Action: auto-deploy staging on merge to main, manual approval to promote to prod.
-- R2 + OG images (spec slice; not a launch dependency).

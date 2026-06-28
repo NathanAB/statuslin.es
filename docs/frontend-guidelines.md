@@ -22,7 +22,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Secondary text | `text-muted-foreground` |
 | Borders | `border-border` |
 | Destructive | `bg-destructive` / `text-destructive` |
-| Monospace (statusline output, code) | `font-mono` |
+| Monospace (status line output, code) | `font-mono` |
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
 

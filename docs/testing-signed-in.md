@@ -63,7 +63,7 @@ count will self-correct to the real number on the first real vote.
 `dev:login` leaves a session row per run (harmless, expires in 30 days). To clear them:
 
 ```bash
-docker exec statuslines-pg psql -U postgres -d postgres -c "DELETE FROM session WHERE user_agent IS NULL;"
+docker exec statuslines-postgres psql -U postgres -d statuslines -c "DELETE FROM session WHERE user_agent IS NULL;"
 ```
 
 (`dev:login` sessions have a null `user_agent`; real logins set one.)

@@ -1,6 +1,6 @@
 # statuslin.es
 
-A community gallery of [Claude Code](https://claude.com/claude-code) statuslines. Browse real configs as
+A community gallery of [Claude Code](https://claude.com/claude-code) status lines. Browse real configs as
 **rendered previews**, upvote the good ones, and copy one to your terminal. You see what each script
 actually renders to before you copy it, instead of guessing from the source.
 
@@ -8,13 +8,14 @@ Live at **[statuslin.es](https://statuslin.es)**.
 
 ## How it works (and why it's safe)
 
-A statusline is an arbitrary script Claude Code runs to draw the bottom strip of your terminal, so this
+A status line is an arbitrary script Claude Code runs to draw the bottom strip of your terminal, so this
 site hosts and runs strangers' shell scripts. The safety model is the whole point:
 
 - **Your code runs once, at submit time. Not on page views.** A submitted script runs a single time in a
-  fresh [E2B](https://e2b.dev) sandbox with **no network access**, a **hard 5-second timeout**, and only
-  `COLUMNS`/`LINES` passed in; then the sandbox is destroyed. Browsing the gallery is just cached HTML.
-  No submitted script runs when you visit.
+  fresh [E2B](https://e2b.dev) sandbox with **no network access by default**, a **hard 5-second timeout**,
+  and only `COLUMNS`/`LINES` passed in; then the sandbox is destroyed. (A script may declare network hosts
+  it needs; those submissions are held for human review and rendered behind an egress allowlist.) Browsing
+  the gallery serves pre-rendered HTML — no submitted script runs when you visit.
 - **A human reviews every config before it's published.** Rendered previews land in a review queue;
   nothing goes live automatically.
 - **Published versions are pinned to a content hash and immutable.** The exact reviewed bytes are what
@@ -22,7 +23,7 @@ site hosts and runs strangers' shell scripts. The safety model is the whole poin
 
 ## Stack
 
-Bun · Vite · TanStack Start (React SSR) · Better Auth (GitHub) · Drizzle + Postgres · Cloudflare R2 · E2B.
+Bun · Vite · TanStack Start (React SSR) · Better Auth (GitHub) · Drizzle + Postgres · E2B.
 
 This is an **agent-first** codebase: most changes are written by AI agents against mechanical gates
 (typecheck, lint, tests, git hooks). [`CLAUDE.md`](./CLAUDE.md) holds the conventions;
@@ -82,7 +83,7 @@ Tests use PGlite against the real committed migrations, so they don't need the c
 
 ## Contributing
 
-Code contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md). To share a statusline you
+Code contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md). To share a status line you
 don't need this repo: submit it on [statuslin.es](https://statuslin.es). Found a security issue? See
 [SECURITY.md](./SECURITY.md).
 

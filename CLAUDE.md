@@ -1,14 +1,12 @@
 # statuslin.es
 
-Community gallery of Claude Code statuslines — browse configs as rendered previews, upvote, and copy one to use.
+Community gallery of Claude Code status lines — browse configs as rendered previews, upvote, and copy one to use.
 
 > **This is an agent-first codebase.** Most changes are written by AI agents. The standards below are enforced mechanically (linter, typecheck, tests, git hooks, CI) **and** by every agent on itself. Do not bypass the gates — no `git commit --no-verify`, no skipping tests, no claiming "done" without showing green output in the same message.
 
-> **`TODO.md` (repo root) is the living task/idea list.** Read it at the start of work, keep it current as you go (mark items in progress / done, add new ideas), and consult it before proposing new work. It tracks intent — nothing there is authorized until the maintainer says so.
-
 ## Stack
 
-Bun (runtime + toolchain) · Vite · TanStack Start (React, SSR) · Better Auth (GitHub) · Drizzle + Postgres · Cloudflare R2 · E2B (untrusted-script sandbox). Dependencies are pinned **exact** — no `^` ranges (TanStack Start is RC, Nitro is beta). Upgrades are deliberate, smoke-tested events, never incidental.
+Bun (runtime + toolchain) · Vite · TanStack Start (React, SSR) · Better Auth (GitHub) · Drizzle + Postgres · E2B (untrusted-script sandbox). Dependencies are pinned **exact** — no `^` ranges (TanStack Start is RC, Nitro is beta). Upgrades are deliberate, smoke-tested events, never incidental.
 
 ## The quality bar — non-negotiable
 
@@ -18,7 +16,7 @@ Bun (runtime + toolchain) · Vite · TanStack Start (React, SSR) · Better Auth 
 4. **YAGNI.** Build only what the spec/plan specifies. No speculative features, flags, or abstractions.
 5. **Small, focused files.** One clear responsibility per file; split when a file starts doing too much.
 6. **Clear names.** Name things for what they do, not how they work.
-7. **Untrusted by default.** Submitted statusline scripts are hostile until proven otherwise — the E2B sandbox is the safety boundary; trust comes from the supply-chain controls (open-source + human review + hash-pinned immutable versions + re-review on every update). See the spec's security section.
+7. **Untrusted by default.** Submitted status line scripts are hostile until proven otherwise — the E2B sandbox is the safety boundary; trust comes from the supply-chain controls (open-source + human review + hash-pinned immutable versions + re-review on every update). See `SECURITY.md`.
 
 ## Conventions
 
@@ -28,8 +26,8 @@ Bun (runtime + toolchain) · Vite · TanStack Start (React, SSR) · Better Auth 
 - **Signed-in UX testing:** auth is GitHub-only, so to test signed-in pages in an automated browser, `bun run dev:login` mints a session + prints a cookie command for agent-browser. See `docs/testing-signed-in.md`. (Apply `bun run db:migrate` to the dev DB first — PGlite-backed tests hide unapplied migrations.)
 - **DB:** Drizzle; migrations via `drizzle-kit generate` → `migrate`, committed; never hand-edit generated SQL.
 - **Routes:** TanStack Start file-based routes; API endpoints via `createFileRoute({ server: { handlers } })`.
-- **Preview scenarios:** the stdin states a submitted statusline is rendered against live in `src/render/scenarios.ts` (one row per scenario; they must cover every field Claude Code sends — `test/render/scenarios.test.ts` enforces the coverage). After changing scenarios, run **`bun run rerender:previews`** to re-render the existing gallery configs against them (uses real E2B when `E2B_API_KEY` is set, else the fake runner) — new submissions render automatically, old ones don't.
-- **Front-end:** see `docs/frontend-guidelines.md` for the three rules: tokens define-once in `src/styles/app.css`; `src/ui` components are closed (no `className` prop — variants only); zero `className=` outside `src/ui` (only `Box UNSAFE_className` with a `// REASON:` comment). All 13 rules are gate-enforced at edit / Stop / commit / push.
+- **Preview scenarios:** the stdin states a submitted status line is rendered against live in `src/render/scenarios.ts` (one row per scenario; they must cover every field Claude Code sends — `test/render/scenarios.test.ts` enforces the coverage). After changing scenarios, run **`bun run rerender:previews`** to re-render the existing gallery configs against them (uses real E2B when `E2B_API_KEY` is set, else the fake runner) — new submissions render automatically, old ones don't.
+- **Front-end:** see `docs/frontend-guidelines.md` for the three rules: tokens define-once in `src/styles/app.css`; `src/ui` components are closed (no `className` prop — variants only); zero `className=` outside `src/ui` (only `Box UNSAFE_className` with a `// REASON:` comment). Every rule in that doc's enforcement table is gate-enforced at edit / Stop / commit / push.
 - **Commits:** Conventional Commits (`feat` / `fix` / `chore` / `docs` / `refactor`); small and focused; only on green gates.
 - **Deploy:** staging → production runbook in `docs/deploy.md`. Same image, three environments; deploy staging with `fly deploy --app statuslines-staging`, then promote the validated image to production by digest. Submitted scripts only reach the review queue after the always-on `worker` process renders them — if it isn't running, render jobs sit `queued` and nothing appears for review.
 - **Emergency takedown:** to pull a live config from the gallery, `scripts/remove-config.ts <slug>` flips its status `published → removed` (reversible: add `--restore`). Every read path filters `status='published'`, so it disappears from the gallery list, the page count, and its detail page at once — no migration. The `<slug>` is the last segment of `statuslin.es/c/<slug>`. Run against prod with `fly ssh console --app statuslines --command "bun run scripts/remove-config.ts <slug>"`. Full usage is in the script's header comment.
