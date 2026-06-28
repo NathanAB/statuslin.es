@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Share a statusline
+    url: https://statuslin.es
+    about: To add your statusline to the gallery, submit it on the site — you don't need this repo.
+  - name: Report a malicious or abusive config
+    url: mailto:hello@statuslin.es
+    about: Don't open a public issue. Email us and we'll review the config and take it down if needed.
+  - name: Report a security vulnerability
+    url: https://github.com/NathanAB/statuslin.es/security/policy
+    about: Please report privately, not in a public issue. See the security policy.

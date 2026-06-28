@@ -1,0 +1,105 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@font-face {
+  font-family: "StatuslineNerd";
+  src: url("/fonts/statusline-nerd.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Single source of color. This file is the ONLY place color literals are allowed.
+   The shadcn semantic names below ARE our design system; components use them
+   (bg-background, bg-card, bg-primary, text-foreground, text-muted-foreground,
+   border-border, bg-muted, …) plus our extras (bg-sunken, font-mono).
+   Values are the Anthropic "Restrained Claude Dark" palette. We render dark by
+   default: :root holds the dark values, so no .dark class is needed. */
+:root {
+  /* ── Palette: each color literal appears EXACTLY once in this repo ── */
+  --background: #141413; /* page */
+  --foreground: #faf9f5; /* the one off-white text color */
+  --card: #1c1b18; /* raised surface (cards, popovers) */
+  --muted: #262420; /* interactive surface (chips, hovers, secondary buttons) */
+  --muted-foreground: #b0aea5; /* dimmed text */
+  --border: #34322d; /* all hairlines, incl. form controls */
+  --primary: #c96442; /* Claude coral (Anthropic's rgb(201,100,66)) */
+  --destructive: #e5484d; /* danger — a deliberately distinct red (Radix dark-red 9),
+                             clearly not the coral; luminance tracks --primary so
+                             text-destructive stays readable, white-on-fill ≥ prior pairing. */
+  --sunken: #0c0b0a; /* near-black code/preview wells */
+  --field: #211f1b; /* form-control fill — a hair above --card for subtle contrast */
+
+  /* ── Relationships: by reference ONLY. Never restate a hex above. ── */
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary-foreground: var(--foreground); /* light-on-coral; the one pair that could
+                                              legitimately diverge if a light theme ever lands */
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  --accent: var(--muted);
+  --accent-foreground: var(--foreground);
+  --input: var(--border);
+  --ring: var(--primary); /* focus rings track the coral (drifted apart once already) */
+
+  --radius: 0.5rem;
+}
+
+@theme {
+  /* wipe Tailwind's default palette so only our colors generate utilities */
+  --color-*: initial;
+
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "StatuslineNerd", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@theme inline {
+  /* shadcn semantic colors -> the :root values above */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sunken: var(--sunken);
+  --color-field: var(--field);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  /* No rubber-band/overscroll glow past the top or bottom of the page. */
+  overscroll-behavior: none;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+/* Shiki source block (src/ui/highlighted-code.tsx): match the site's code wells. The highlighter
+   strips Shiki's inline background (see highlight.ts), so our --sunken applies; syntax colors stay. */
+.shiki {
+  @apply overflow-x-auto rounded-md p-4 font-mono text-sm;
+  background-color: var(--color-sunken);
+}

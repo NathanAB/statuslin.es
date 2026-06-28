@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  # `pull_request` (NOT `pull_request_target`) runs forked PRs in a restricted context
+  # with no access to repo secrets — safe for outside contributions. Don't switch this to
+  # `pull_request_target`: it would expose secrets to untrusted PR code.
+  pull_request:
+
+# Least privilege: the gate only reads the repo. Public repos default to broader token scopes.
+permissions:
+  contents: read
+
+# Cancel an in-flight run when a newer commit lands on the same ref (faster PR feedback).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    # Dummy values so modules that requireEnv() at import (e.g. src/db/index.ts) load.
+    # Tests use PGlite and never connect via DATABASE_URL; the E2B suite is opt-in (RUN_E2B unset).
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      BETTER_AUTH_SECRET: ci-dummy-secret
+      BETTER_AUTH_URL: http://localhost:3100
+      GITHUB_CLIENT_ID: ci-dummy
+      GITHUB_CLIENT_SECRET: ci-dummy
+      E2B_API_KEY: ci-dummy
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # Pinned exact (the repo pins every dep exact) so CI can't drift under a contributor.
+          # Bump deliberately alongside the local toolchain.
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      # The full quality gate: typecheck + Biome + design-system gate + import
+      # boundaries + tests. The E2B integration suite is opt-in (RUN_E2B) and not run here.
+      - run: bun run check:ci
+      # Coverage threshold (lines/statements) on the logic directories.
+      - run: bun run test:cov

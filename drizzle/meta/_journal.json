@@ -1,0 +1,104 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1780065235899,
+      "tag": "0000_smart_jasper_sitwell",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780312966887,
+      "tag": "0001_steady_supernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780331357938,
+      "tag": "0002_concerned_valeria_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780672197040,
+      "tag": "0003_dazzling_kid_colt",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780768230843,
+      "tag": "0004_fresh_jocasta",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780773161158,
+      "tag": "0005_thick_white_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1781223578295,
+      "tag": "0006_breezy_mephistopheles",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781224438044,
+      "tag": "0007_grey_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781263288079,
+      "tag": "0008_fixed_valeria_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1781305848753,
+      "tag": "0009_daffy_wallop",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1781556221068,
+      "tag": "0010_last_morgan_stark",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1781625444016,
+      "tag": "0011_material_marvel_boy",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1781708921263,
+      "tag": "0012_dark_karma",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1782398086212,
+      "tag": "0013_tidy_argent",
+      "breakpoints": true
+    }
+  ]
+}

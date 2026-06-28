@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "previews_sha_scenario_uq" ON "previews" USING btree ("script_sha","scenario_key");

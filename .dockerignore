@@ -1,0 +1,8 @@
+node_modules
+.output
+.git
+.env
+.env.*
+*.log
+Dockerfile*
+.superpowers

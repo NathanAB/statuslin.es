@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+bun.lockb.bak
+
+# Build output
+dist/
+.output/
+.vinxi/
+.tanstack/
+.nitro/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Brainstorm companion (local only)
+.superpowers/
+
+# Tooling
+.wrangler/
+*.log
+coverage/
+
+# Load-test run artifacts (keep the dir, ignore the per-run outputs)
+scripts/loadtest/results/*
+!scripts/loadtest/results/.gitkeep
+
+# Profiling run artifacts (keep the dir, ignore the per-run outputs)
+scripts/profiling/results/*
+!scripts/profiling/results/.gitkeep
+
+# Claude Code local (personal, machine-specific) settings
+.claude/settings.local.json
+
+# OS
+.DS_Store
+.env.local
+
+# Internal docs — never ship to the public repo (an agent could re-add a pentest map
+# or a per-slice build log carrying the maintainer's name / local paths)
+docs/audits/
+docs/superpowers/

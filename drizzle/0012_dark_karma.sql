@@ -1,0 +1,1 @@
+ALTER TABLE "config_versions" ADD COLUMN "source_html" text;

@@ -1,0 +1,1 @@
+ALTER TABLE "config_versions" ADD COLUMN "network_hosts" jsonb DEFAULT '[]'::jsonb NOT NULL;

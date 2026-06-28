@@ -1,0 +1,1 @@
+ALTER TABLE "configs" ADD COLUMN "copy_count" integer DEFAULT 0 NOT NULL;

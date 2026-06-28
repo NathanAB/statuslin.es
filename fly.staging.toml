@@ -1,0 +1,45 @@
+# STAGING config — app "statuslines-staging". Production lives in fly.toml.
+#
+# Deploy staging:
+#   fly deploy --config fly.staging.toml
+#
+# KEEP IN SYNC with fly.toml by hand — Fly can't include one file from another.
+# [build], [processes], [http_service] internal_port/force_https, and [deploy] must match.
+# What differs on purpose: staging runs one small [[vm]] for both processes and scales the web
+# process to zero (min_machines_running = 0); prod sizes web/worker separately and keeps web warm.
+app = "statuslines-staging"
+primary_region = "iad"
+
+[build]
+
+# Two process groups off one image: the public web server, and the always-on render worker.
+# The worker is woken on submit via a 6PN wake ping (no public port); it drains the render_jobs
+# queue through E2B, with a periodic safety drain as a fallback. It no longer polls the DB.
+[processes]
+  web = "bun run .output/server/index.mjs"
+  worker = "bun run scripts/worker.ts"
+
+[http_service]
+  # Must match the app's PORT/EXPOSE in the Dockerfile (the listen port).
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Scale the web process to zero when idle — no machine kept warm. A cold start on the
+  # first request is fine for staging. (The worker process is a separate background machine,
+  # not behind the proxy, so it keeps running; `fly scale count worker=0` to stop it too.)
+  min_machines_running = 0
+  processes = ["web"]
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 40
+    hard_limit = 80
+
+[deploy]
+  release_command = "bun run src/db/migrate.ts"
+
+# Staging stays small everywhere — one shared-cpu-1x covers both web and worker (no per-process
+# split needed). Keep 512mb: 256 risks not booting given the 446MB peak RSS seen under load.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -1,0 +1,3 @@
+ALTER TABLE "config_versions" ADD CONSTRAINT "config_versions_config_id_configs_id_fk" FOREIGN KEY ("config_id") REFERENCES "public"."configs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "render_jobs" ADD CONSTRAINT "render_jobs_config_version_id_config_versions_id_fk" FOREIGN KEY ("config_version_id") REFERENCES "public"."config_versions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "configs_author_created_idx" ON "configs" USING btree ("author_id","created_at");

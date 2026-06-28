@@ -1,0 +1,51 @@
+name: Bug report
+description: Something on the site or in the code is broken
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. This is for the website and the code in this repo — to share or
+        report a *statusline config*, use the links on the previous screen.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, and what you expected instead.
+      placeholder: When I … I expected … but instead …
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Page / URL
+      description: Where on statuslin.es did this happen?
+      placeholder: https://statuslin.es/…
+    validations:
+      required: false
+  - type: input
+    id: browser-os
+    attributes:
+      label: Browser & OS
+      placeholder: e.g. Chrome 126 on macOS 15
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or console output
+      description: Anything from the browser console or network tab helps.
+      render: shell
+    validations:
+      required: false

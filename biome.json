@@ -1,0 +1,135 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**", "!**/routeTree.gen.ts", "!src/db/auth-schema.ts", "!drizzle"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      },
+      "suspicious": {
+        "noConsole": "error",
+        "noDebugger": "error",
+        "noExplicitAny": "error"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "useNamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false
+          }
+        },
+        "useImportType": "error",
+        "noDefaultExport": "error"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "error",
+          "fix": "safe",
+          "options": {
+            "functions": ["cn", "cva", "tv"]
+          }
+        }
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "all"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["test/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off",
+            "useNamingConvention": "off"
+          },
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/*.config.*",
+        "vite.config.ts",
+        "drizzle.config.ts",
+        "src/routes/**",
+        "src/server/*-plugin.ts",
+        "scripts/loadtest/*.js"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off",
+            "useNamingConvention": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["scripts/**", "src/db/migrate.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/render/scenarios.ts",
+        "src/render/scenario-helpers.ts",
+        "src/render/ansi.ts",
+        "scripts/loadtest/capture.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useNamingConvention": "off"
+          }
+        }
+      }
+    }
+  ]
+}

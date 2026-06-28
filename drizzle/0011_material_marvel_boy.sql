@@ -1,0 +1,2 @@
+CREATE INDEX "configs_status_created_idx" ON "configs" USING btree ("status","created_at");--> statement-breakpoint
+CREATE INDEX "configs_status_upvotes_idx" ON "configs" USING btree ("status","upvote_count");

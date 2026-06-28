@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "opus",
+  "effortLevel": "high",
+  "alwaysThinkingEnabled": true,
+  "showThinkingSummaries": false,
+  "fallbackModel": ["claude-sonnet-4-6", "claude-haiku-4-5"],
+  "autoUpdatesChannel": "stable",
+  "editorMode": "vim",
+  "outputStyle": "default",
+  "spinnerTipsEnabled": true,
+  "autoScrollEnabled": true,
+  "language": "english",
+  "prefersReducedMotion": false,
+  "disableArtifact": false,
+  "disableBundledSkills": false,
+  "disableWorkflows": false,
+  "disableAllHooks": false,
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(bun run *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:npmjs.org)"
+    ],
+    "ask": ["Bash(rm -rf *)"],
+    "deny": ["Bash(sudo *)", "Read(.env)", "Read(.env.*)"],
+    "additionalDirectories": ["~/Documents/shared"]
+  },
+  "env": {
+    "NODE_ENV": "development",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "EDITOR": "nvim"
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/pre-submit.sh" }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/format-after-edit.sh" }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/hooks/post-stop.sh" }]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "padding": 0,
+    "refreshInterval": 2,
+    "hideVimModeIndicator": false
+  },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "~/.claude/subagent-statusline.sh"
+  },
+  "worktree": {
+    "baseRef": "main"
+  },
+  "skillListingBudgetFraction": 0.02,
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["context7"],
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true
+  },
+  "agentPushNotifEnabled": true,
+  "voice": {
+    "enabled": false,
+    "mode": "hold"
+  },
+  "includeCoAuthoredBy": true,
+  "cleanupPeriodDays": 30
+}
