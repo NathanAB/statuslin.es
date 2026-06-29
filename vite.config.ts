@@ -131,7 +131,21 @@ export default defineConfig(({ mode }) => ({
       ? []
       : [
           tailwindcss(),
-          tanstackStart({ srcDirectory: 'src' }),
+          tanstackStart({
+            srcDirectory: 'src',
+            // Guardrail: server-only DB code must NEVER reach the client bundle. The postgres
+            // driver references Node's `Buffer` at import time, so a leaked import throws
+            // `Buffer is not defined` in the browser and crashes hydration site-wide (every
+            // button goes dead). `behavior: 'error'` fails the build with an import trace the
+            // moment a client-reachable module pulls in the db layer, instead of shipping it.
+            importProtection: {
+              behavior: 'error',
+              client: {
+                specifiers: ['postgres', 'drizzle-orm/postgres-js'],
+                files: ['**/src/db/index.ts', '**/src/db/migrate.ts'],
+              },
+            },
+          }),
           viteReact(),
           nitro({
             preset: 'node-server',

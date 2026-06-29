@@ -1,4 +1,4 @@
-import { createServerFn } from '@tanstack/react-start'
+import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
 import { auth } from '@/lib/auth'
@@ -22,9 +22,15 @@ import {
  * routes call into `@/og/routes`. Keeps `createdAt` a real `Date` by avoiding the server-fn RPC
  * boundary that would serialize it to a string.
  */
-export async function sitemapResponseForRoute(): Promise<Response> {
-  return sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db))
-}
+// createServerOnlyFn keeps `db` (and the whole postgres driver) out of the CLIENT bundle: this
+// module is imported by client components for the server functions below, and a plain function
+// touching `db` here would drag the Node-only postgres driver into the browser, where it throws
+// `Buffer is not defined` and kills hydration. The server-only wrapper strips the body (and its
+// `db` reference) from the client build. It also avoids the server-fn RPC boundary, so the
+// sitemap's `createdAt` stays a real `Date` instead of being serialized to a string.
+export const sitemapResponseForRoute = createServerOnlyFn(
+  async (): Promise<Response> => sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db)),
+)
 
 export const getGallery = createServerFn({ method: 'GET' })
   .inputValidator((d: { sort?: GallerySort; page?: number }) => d)
