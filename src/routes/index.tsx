@@ -96,7 +96,7 @@ function Home() {
                       ⇧ {card.upvoteCount}
                     </Text>
                   </Row>
-                  <ConfigBadges interpreter={card.interpreter} usesNetwork={card.usesNetwork} />
+                  <ConfigBadges interpreter={card.interpreter} networkHosts={card.networkHosts} />
                 </Row>
               </CardHeader>
               <CardContent>

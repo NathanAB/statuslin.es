@@ -85,10 +85,7 @@ function ConfigDetail() {
                 signedIn={!!user}
               />
             </Row>
-            <ConfigBadges
-              interpreter={detail.interpreter}
-              usesNetwork={detail.networkHosts.length > 0}
-            />
+            <ConfigBadges interpreter={detail.interpreter} networkHosts={detail.networkHosts} />
           </Row>
 
           {(detail.author || detail.description) && (

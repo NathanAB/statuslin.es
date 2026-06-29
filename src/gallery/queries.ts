@@ -59,7 +59,7 @@ export interface GalleryCard {
   copyCount: number
   author: ConfigAuthor | null
   preview: AnsiSegment[] | null
-  usesNetwork: boolean
+  networkHosts: string[]
 }
 
 /** Total published configs — drives the gallery's page count. */
@@ -116,7 +116,7 @@ export async function getPublishedConfigs(
         }
       : null,
     preview: cardPreviews.get(r.version.contentSha256) ?? null,
-    usesNetwork: (r.version.networkHosts ?? []).length > 0,
+    networkHosts: r.version.networkHosts ?? [],
   }))
 }
 

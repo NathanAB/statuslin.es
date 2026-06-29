@@ -114,7 +114,7 @@ describe('getPublishedConfigs', () => {
     expect(cards.find((c) => c.slug === 'newer')?.preview?.[0]?.text).toBe('Newer')
   })
 
-  it('sets usesNetwork from the version networkHosts', async () => {
+  it('carries the version networkHosts onto the card', async () => {
     await seedPublished({
       slug: 'net-yes',
       title: 'NetYes',
@@ -124,8 +124,8 @@ describe('getPublishedConfigs', () => {
     await seedPublished({ slug: 'net-no', title: 'NetNo', sha: 'd'.repeat(64) })
 
     const cards = await getPublishedConfigs(db)
-    expect(cards.find((c) => c.slug === 'net-yes')?.usesNetwork).toBe(true)
-    expect(cards.find((c) => c.slug === 'net-no')?.usesNetwork).toBe(false)
+    expect(cards.find((c) => c.slug === 'net-yes')?.networkHosts).toEqual(['wttr.in'])
+    expect(cards.find((c) => c.slug === 'net-no')?.networkHosts).toEqual([])
   })
 })
 

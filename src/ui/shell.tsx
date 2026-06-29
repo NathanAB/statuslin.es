@@ -2,6 +2,7 @@ import type * as React from 'react'
 
 import { AppHeader, type AppHeaderUser } from '@/ui/app-header'
 import { SiteFooter } from '@/ui/site-footer'
+import { TooltipProvider } from '@/ui/tooltip'
 
 /**
  * The standard page frame: full-height background, shared header, and a centered
@@ -20,13 +21,15 @@ export function PageShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <AppHeader user={user} />
-      <main className={`mx-auto w-full flex-1 px-6 py-8 ${narrow ? 'max-w-lg' : 'max-w-5xl'}`}>
-        {children}
-      </main>
-      <SiteFooter />
-    </div>
+    <TooltipProvider>
+      <div className="flex min-h-screen flex-col bg-background">
+        <AppHeader user={user} />
+        <main className={`mx-auto w-full flex-1 px-6 py-8 ${narrow ? 'max-w-lg' : 'max-w-5xl'}`}>
+          {children}
+        </main>
+        <SiteFooter />
+      </div>
+    </TooltipProvider>
   )
 }
 
@@ -42,10 +45,14 @@ export function CenteredShell({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <AppHeader user={user} />
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">{children}</main>
-      <SiteFooter />
-    </div>
+    <TooltipProvider>
+      <div className="flex min-h-screen flex-col bg-background">
+        <AppHeader user={user} />
+        <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
+          {children}
+        </main>
+        <SiteFooter />
+      </div>
+    </TooltipProvider>
   )
 }
