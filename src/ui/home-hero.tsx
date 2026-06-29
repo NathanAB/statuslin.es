@@ -7,7 +7,7 @@ import { Wordmark } from '@/ui/wordmark'
  */
 export function HomeHero() {
   return (
-    <h1 className="text-center font-mono text-5xl text-foreground">
+    <h1 className="text-center font-mono text-[clamp(1.5rem,10vw,3rem)] text-foreground">
       <Wordmark size="hero" />▒
     </h1>
   )

@@ -28,7 +28,7 @@ export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
         href={`https://github.com/${author.username}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex min-w-0 items-center gap-1.5"
+        className="group flex min-w-0 shrink-0 items-center gap-1.5"
       >
         {avatar}
         <span className="truncate text-muted-foreground text-sm group-hover:text-foreground group-hover:underline">
@@ -39,7 +39,7 @@ export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
   }
 
   return (
-    <span className="flex min-w-0 items-center gap-1.5">
+    <span className="flex min-w-0 shrink-0 items-center gap-1.5">
       {avatar}
       <span className="truncate text-muted-foreground text-sm">{author.name}</span>
     </span>

@@ -60,7 +60,7 @@ function Home() {
           custom config for others, or find one you like and use it for yourself.
         </Text>
         <Stack gap={4}>
-          <Row gap={4} justify="between">
+          <Row gap={4} justify="between" wrap>
             <Row gap={1}>
               {SORT_TABS.map((tab) => (
                 <Button
@@ -109,7 +109,7 @@ function Home() {
                     </Text>
                   )}
                   <Row gap={3} justify="between">
-                    <Text muted size="sm">
+                    <Text muted size="sm" breakLong>
                       {card.description}
                     </Text>
                     <Row gap={1}>

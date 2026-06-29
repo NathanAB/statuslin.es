@@ -72,7 +72,7 @@ export function Row({
 }) {
   return (
     <div
-      className={`flex ${wrap ? 'flex-wrap' : ''} ${aboveOverlay ? 'relative z-10 shrink-0' : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
+      className={`flex ${wrap ? `flex-wrap ${GAP_CLASS_Y[gap]}` : ''} ${aboveOverlay ? 'relative z-10 shrink-0' : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
     >
       {children}
     </div>

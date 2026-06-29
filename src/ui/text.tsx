@@ -35,6 +35,7 @@ export function Text({
   inline = false,
   measure = false,
   center = false,
+  breakLong = false,
   children,
 }: {
   muted?: boolean
@@ -44,6 +45,10 @@ export function Text({
   measure?: boolean
   children: React.ReactNode
   center?: boolean
+  // Break long unbreakable tokens (e.g. URLs) so the text can shrink inside a flex
+  // row instead of forcing horizontal overflow. `min-w-0` lets it shrink past its
+  // intrinsic width; `wrap-anywhere` (overflow-wrap:anywhere) collapses min-content.
+  breakLong?: boolean
 }) {
   const className = cn(
     muted ? 'text-muted-foreground' : 'text-foreground',
@@ -52,6 +57,7 @@ export function Text({
     mono && 'font-mono',
     measure && 'max-w-2xl',
     center && 'self-center text-center',
+    breakLong && 'wrap-anywhere min-w-0',
   )
   return inline ? (
     <span className={className}>{children}</span>

@@ -5,7 +5,9 @@
  */
 const SIZE = {
   header: 'text-base',
-  hero: 'text-5xl',
+  // hero inherits its font-size from the parent (HomeHero's h1), which owns the one
+  // fluid hero size so the wordmark and the block cursor beside it always match.
+  hero: '',
 } as const
 
 export function Wordmark({ size = 'header' }: { size?: keyof typeof SIZE }) {
