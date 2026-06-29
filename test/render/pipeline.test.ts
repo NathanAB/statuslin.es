@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { FakeSandboxRunner } from '@/render/fake-runner'
 import { MAX_RENDER_STDOUT_BYTES, renderConfig } from '@/render/pipeline'
 import { SCENARIOS } from '@/render/scenarios'
+import type { RenderInput, SandboxRunner } from '@/render/types'
 
 describe('renderConfig', () => {
   it('renders every scenario into a preview with parsed segments', async () => {
@@ -63,6 +64,31 @@ describe('renderConfig', () => {
     expect(ng.exitCode).toBe(1)
     expect(ng.timedOut).toBe(true)
     expect(ng.trace.sensitiveReads).toContain('/root/.ssh/id_rsa')
+  })
+  it('attaches a per-scenario transcript (path + content) to each render input', async () => {
+    const seen: RenderInput[] = []
+    const runner: SandboxRunner = {
+      async render(input) {
+        seen.push(input)
+        return {
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          timedOut: false,
+          trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+        }
+      },
+    }
+    await renderConfig({ script: '', interpreter: 'bash' }, runner)
+
+    const near = seen.find((i) => i.scenario.key === 'near-full')!
+    const stdin = near.scenario.stdin as { transcript_path: string; model: { id: string } }
+    expect(near.transcript?.path).toBe(stdin.transcript_path)
+    // A used context → assistant turns → the transcript names the scenario model.
+    expect(near.transcript?.content).toContain(stdin.model.id)
+    // Even a just-started session gets a (minimal) transcript file written.
+    const fresh = seen.find((i) => i.scenario.key === 'fresh-session')!
+    expect(fresh.transcript?.content.length ?? 0).toBeGreaterThan(0)
   })
 })
 

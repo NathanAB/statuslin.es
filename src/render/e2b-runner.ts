@@ -1,7 +1,9 @@
 import { CommandExitError, type CommandResult, Sandbox, TimeoutError } from 'e2b'
 import { requireEnv } from '@/lib/env'
 import { E2B_TEMPLATE_NAME } from './e2b-template'
-import type { BehaviorTrace, Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
+import { scriptExtension } from './script-extension'
+import { parseStrace } from './strace'
+import type { Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
 
 /** Hard per-command wall-clock cap. Untrusted scripts get single-digit seconds. */
 const COMMAND_TIMEOUT_MS = 5000
@@ -22,21 +24,12 @@ const SAFE_DIR_PATTERN = /^\/home\/user\/[A-Za-z0-9._/-]+$/
 /** Scenario-derived git branch must look like this. */
 const SAFE_BRANCH_PATTERN = /^[A-Za-z0-9._/-]+$/
 
-/** Cap how many trace lines we parse, so a flood of syscalls can't exhaust CPU/memory. */
-const MAX_TRACE_LINES = 5000
-/** Cap how many entries we keep per trace category. */
-const MAX_TRACE_ENTRIES = 200
-
-/** Paths a hostile script might read to exfiltrate credentials; flagged in the trace. */
-const SENSITIVE_PATHS = ['/root/.ssh', '/home/user/.ssh', '.aws', '.gitconfig', '/etc/passwd']
-
 /**
  * Only these env vars are forwarded to the untrusted script per the spec. Scenarios will become
  * DB-backed/untrusted, so don't let one set PATH/LD_PRELOAD/NODE_OPTIONS for the script.
  */
 const ALLOWED_ENV = ['COLUMNS', 'LINES']
 
-const SCRIPT_EXT: Record<Interpreter, string> = { bash: 'sh', node: 'mjs', python: 'py' }
 const RUN_CMD: Record<Interpreter, string> = { bash: 'bash', node: 'node', python: 'python3' }
 
 const SCRIPT_DIR = '/home/user'
@@ -103,13 +96,18 @@ export class E2BSandboxRunner implements SandboxRunner {
       if (branch !== undefined && !SAFE_BRANCH_PATTERN.test(branch)) {
         throw new Error('unsafe scenario value: git.branch')
       }
-      const ext = SCRIPT_EXT[input.interpreter]
+      const ext = scriptExtension(input.interpreter, input.script)
       const scriptPath = `${SCRIPT_DIR}/statusline.${ext}`
 
-      await sandbox.files.write([
+      // Script + stdin JSON + (when present) the session transcript the scenario references.
+      // files.write creates parent dirs, so the nested transcript path is fine.
+      const files = [
         { path: scriptPath, data: input.script },
         { path: INPUT_PATH, data: JSON.stringify(input.scenario.stdin) },
-      ])
+      ]
+      if (input.transcript)
+        files.push({ path: input.transcript.path, data: input.transcript.content })
+      await sandbox.files.write(files)
 
       try {
         await sandbox.commands.run(setupScript(dir, input.scenario.git), {
@@ -215,35 +213,4 @@ function setupScript(dir: string, git: { branch: string; dirty: boolean } | null
     if (git.dirty) lines.push('echo change >> .seed', 'echo new > untracked.txt')
   }
   return lines.join(' && ')
-}
-
-/**
- * Parses the strace output into a behavior trace.
- *
- * BEST-EFFORT, NOT YET AUTHORITATIVE. Do not gate auto-reject or transparency-badge logic
- * on this trace as it stands today:
- * - The trace file lives in a world-writable path (`/tmp`) and strace runs in the traced
- *   process's own user context, so a hostile script can poison or truncate it.
- * - Spawn (execve) detection is incomplete and can be evaded.
- *
- * Slice 3/6 must run strace as root with a write-protected sink before anything trusts this.
- * Until then, treat an empty/clean trace as "needs human review," NEVER as "safe."
- */
-function parseStrace(log: string): BehaviorTrace {
-  const networkAttempts: string[] = []
-  const sensitiveReads: string[] = []
-  const spawnedProcesses: string[] = []
-  const push = (arr: string[], line: string): void => {
-    if (arr.length < MAX_TRACE_ENTRIES) arr.push(line.trim().slice(0, 200))
-  }
-  // Bound the read: a hostile script can emit millions of syscalls.
-  const lines = log.split('\n', MAX_TRACE_LINES)
-  for (const line of lines) {
-    if (/\bconnect\(/.test(line)) push(networkAttempts, line)
-    if (/\bopenat\(/.test(line) && SENSITIVE_PATHS.some((p) => line.includes(p))) {
-      push(sensitiveReads, line)
-    }
-    if (line.includes('execve(')) push(spawnedProcesses, line)
-  }
-  return { networkAttempts, sensitiveReads, spawnedProcesses }
 }

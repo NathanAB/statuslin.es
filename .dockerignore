@@ -1,8 +1,43 @@
+# Mirror .gitignore so the Docker build context can never ship more than git
+# tracks. `Dockerfile COPY . .` would otherwise copy local-only artifacts —
+# heap snapshots and cpuprofiles capture process memory (env secrets included),
+# so an un-ignored profiling run would bake credentials straight into an image layer.
+
+# Dependencies
 node_modules
+bun.lockb.bak
+
+# Build output
+dist
 .output
-.git
+.vinxi
+.tanstack
+.nitro
+
+# Env / secrets
 .env
 .env.*
+
+# Tooling
+.wrangler
 *.log
+coverage
+
+# Profiling / load-test run artifacts (capture process memory — never ship).
+# In .dockerignore an extension glob is NOT recursive, so use **/ to catch nested.
+scripts/loadtest/results
+scripts/profiling/results
+**/*.heapsnapshot
+**/*.cpuprofile
+
+# Local-only / not needed in the image
+.git
 Dockerfile*
 .superpowers
+.claude
+.github
+.vscode
+docs
+
+# OS
+.DS_Store

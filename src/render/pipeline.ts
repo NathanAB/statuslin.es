@@ -1,6 +1,7 @@
 import { parseAnsi } from './ansi'
 import { resolveResets } from './scenario-helpers'
 import { SCENARIOS } from './scenarios'
+import { buildTranscript } from './transcript'
 import type { Interpreter, RenderedPreview, SandboxRunner } from './types'
 
 /**
@@ -36,13 +37,15 @@ export async function renderConfig(
 ): Promise<RenderedPreview[]> {
   const previews: RenderedPreview[] = []
   // Rate-limit resets are authored as offsets-from-now; resolve them to live epochs at render time.
-  const nowSec = Math.floor(Date.now() / 1000)
+  const nowMs = Date.now()
+  const nowSec = Math.floor(nowMs / 1000)
   // Network configs render the same full scenario set as offline ones — the sandbox just has the
   // network on (config.networkHosts flows through to the runner below). Scenarios differ in the
   // visible output (cwd, model, git state), so a single preview would undersell the gallery card.
   for (const scenario of SCENARIOS) {
     const stdin = resolveResets(scenario.stdin, nowSec)
-    const result = await runner.render({ ...config, scenario: { ...scenario, stdin } })
+    const transcript = buildTranscript(scenario, nowMs)
+    const result = await runner.render({ ...config, scenario: { ...scenario, stdin }, transcript })
     // Single choke point: capping here bounds BOTH `rawStdout` and the derived `segments`, for
     // BOTH runners (real e2b + fake) — every render flows through this loop.
     const stdout = capStdout(result.stdout)

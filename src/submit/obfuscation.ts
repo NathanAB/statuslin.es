@@ -8,6 +8,34 @@
  *
  * Returns an array of human-readable reasons; empty array means clean.
  */
+/** Generators whose output a reviewer can read, so eval-ing them is not obfuscation. `jq` is the
+ *  standard "parse JSON stdin into shell vars" idiom (`jq … @sh`, often spanning several lines, so
+ *  we match `jq` on the eval line rather than requiring `@sh` on it); ssh-agent / direnv emit fixed,
+ *  well-known shell. A decode/fetch marker still forces a flag even on a jq line (see caller), so
+ *  `eval "$(curl … | jq …)"` is caught. */
+const SAFE_EVAL_GENERATOR = /\bjq\b|\bssh-agent\b|\bdirenv\s+hook\b/
+/** Decode/fetch markers that hide code; force a flag even on an otherwise-whitelisted line.
+ *  Case-insensitive so `base64 -D` (BSD) is caught alongside `base64 -d`. */
+const DECODE_OR_FETCH =
+  /base64\s+-{1,2}d|--decode|\batob\s*\(|\bxxd\b|\bopenssl\b|\bcurl\b|\bwget\b|\bgpg\b|\buudecode\b/i
+
+/**
+ * True when a single line runs eval/exec over dynamically-generated content that is NOT a
+ * whitelisted safe generator — i.e. the eval'd code is hidden from a reviewer (decoded, fetched,
+ * printf-hex, tr/rev, an interpreter `-c`/`-e`, etc.). Default-flag with a narrow allow-list, so an
+ * unrecognized generator fails safe. A decode/fetch marker forces a flag even on a "safe" line
+ * (e.g. `eval "$(curl … | jq @sh)"`). Pre-filter only — sandbox + human review are the real gate.
+ */
+function evalRunsHiddenCode(line: string): boolean {
+  // Drop comment lines and trailing ` #…` comments so a marker named in prose isn't matched. A `#`
+  // with no preceding whitespace (e.g. the `${_#}` no-op expansion) is NOT a comment and is kept,
+  // so that comment-trick can't hide a `$(curl …)` from the check.
+  const code = line.replace(/^\s*#.*$/, '').replace(/\s#.*$/, '')
+  const generated = /\$\(|`|\bbase64\b|\batob\s*\(/.test(code)
+  if (!generated) return false
+  return DECODE_OR_FETCH.test(code) || !SAFE_EVAL_GENERATOR.test(code)
+}
+
 export function detectObfuscation(source: string): string[] {
   const reasons: string[] = []
 
@@ -24,17 +52,12 @@ export function detectObfuscation(source: string): string[] {
     reasons.push('Long hex-like blob detected (200+ continuous hex chars)')
   }
 
-  // 2. Dynamic eval/exec — eval or exec followed (within the same expression)
-  //    by a command substitution, atob, or base64 decode call.
-  //    Matches patterns like:
-  //      eval "$(... | base64 -d)"
-  //      eval(atob('...'))
-  //      eval `...`
-  //    Anchored tightly enough to avoid flagging the word "eval" in a comment.
-  const dynamicEval =
-    /\beval\s*[\s("'`$]*(?:[^#\n]*?(?:base64\s+-d|\batob\s*\(|\$\(|`[^`]*`))|\bexec\s*[\s("'`$]*(?:[^#\n]*?(?:base64\s+-d|\batob\s*\(|\$\(|`[^`]*`))/
-  if (dynamicEval.test(source)) {
-    reasons.push('Dynamic eval/exec of decoded or substituted content detected')
+  // 2. Dynamic eval/exec of HIDDEN code. Default-flag any eval/exec of dynamically-generated
+  //    content, whitelisting only the few generators whose output a reviewer can plainly read
+  //    (jq @sh, ssh-agent, direnv). See evalRunsHiddenCode. Per-line so a long source stays linear.
+  const evalLines = source.match(/^.*\b(?:eval|exec)\b.*$/gm) ?? []
+  if (evalLines.some(evalRunsHiddenCode)) {
+    reasons.push('Dynamic eval/exec of decoded, fetched, or otherwise hidden content detected')
   }
 
   // 3. Very long single line — any line over 500 characters is suspicious.
