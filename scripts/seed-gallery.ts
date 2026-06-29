@@ -20,7 +20,7 @@ const SEED_CONFIGS = [
   {
     title: 'Minimal',
     description:
-      'Model, folder, and git branch — nothing else. Example statusline inspired by the Claude Code docs (code.claude.com/docs/en/statusline).',
+      'Model, folder, and git branch — nothing else. Example status line inspired by the Claude Code docs (code.claude.com/docs/en/statusline).',
     source: [
       '#!/usr/bin/env bash',
       'json=$(cat)',
@@ -34,7 +34,7 @@ const SEED_CONFIGS = [
   {
     title: 'Context Bar',
     description:
-      'Model plus a 10-block context-usage bar. Example statusline inspired by the Claude Code docs (code.claude.com/docs/en/statusline).',
+      'Model plus a 10-block context-usage bar. Example status line inspired by the Claude Code docs (code.claude.com/docs/en/statusline).',
     source: [
       '#!/usr/bin/env bash',
       'json=$(cat)',
@@ -51,7 +51,7 @@ const SEED_CONFIGS = [
   {
     title: 'Cost & Branch',
     description:
-      'Color-coded model, branch, context %, and session cost. Example statusline inspired by the Claude Code docs (code.claude.com/docs/en/statusline).',
+      'Color-coded model, branch, context %, and session cost. Example status line inspired by the Claude Code docs (code.claude.com/docs/en/statusline).',
     source: [
       '#!/usr/bin/env bash',
       'json=$(cat)',
