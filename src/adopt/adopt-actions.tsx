@@ -15,7 +15,7 @@ interface AdoptPromptProps {
   copyCount: number
 }
 
-/** Title-row adopt control: primary "Copy prompt" button + the displayed copy count. */
+/** Title-row adopt control: primary "Copy install prompt" button + the displayed copy count. */
 export function AdoptPrompt({ source, interpreter, title, configId, copyCount }: AdoptPromptProps) {
   const { copy } = useRecordedCopy(configId, copyCount)
   const [copied, setCopied] = useState(false)
@@ -32,9 +32,9 @@ export function AdoptPrompt({ source, interpreter, title, configId, copyCount }:
 
   return (
     <Row gap={3} wrap>
-      <Button size="lg" onClick={copyPrompt} aria-label={`Copy Prompt — ${title}`}>
+      <Button size="lg" onClick={copyPrompt} aria-label={`Copy Install Prompt — ${title}`}>
         {copied ? <Check /> : <Copy />}
-        {copied ? 'Copied!' : 'Copy Prompt'}
+        {copied ? 'Copied!' : 'Copy Install Prompt'}
       </Button>
     </Row>
   )

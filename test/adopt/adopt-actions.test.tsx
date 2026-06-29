@@ -27,8 +27,9 @@ const props = {
 }
 
 // The prompt button's accessible name is its (stable) aria-label, which keeps the
-// visible "Copy Prompt" text inside it (WCAG label-in-name).
-const promptButton = () => screen.getByRole('button', { name: 'Copy Prompt — My Statusline' })
+// visible "Copy Install Prompt" text inside it (WCAG label-in-name).
+const promptButton = () =>
+  screen.getByRole('button', { name: 'Copy Install Prompt — My Statusline' })
 
 beforeEach(() => {
   writeText.mockReset().mockResolvedValue(undefined)
@@ -46,9 +47,9 @@ afterEach(() => {
 })
 
 describe('AdoptPrompt', () => {
-  it('renders a coral lg "Copy Prompt" button', () => {
+  it('renders a coral lg "Copy Install Prompt" button', () => {
     render(<AdoptPrompt {...props} />)
-    expect(screen.getByText('Copy Prompt')).toBeTruthy()
+    expect(screen.getByText('Copy Install Prompt')).toBeTruthy()
     // Coral (default/primary variant) at the large size.
     expect(promptButton().className).toContain('bg-primary')
     expect(promptButton().getAttribute('data-size')).toBe('lg')
