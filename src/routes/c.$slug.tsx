@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { getConfigDetail } from '@/gallery/functions'
 import { getSession } from '@/lib/auth-functions'
+import { canonicalLink } from '@/lib/canonical'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { AuthorChip } from '@/ui/author-chip'
@@ -44,6 +45,9 @@ export const Route = createFileRoute('/c/$slug')({
             })
           : []),
       ],
+      // Only a real config gets a canonical URL; the notFound page (no detail) is a 404 and
+      // shouldn't point search engines at a canonical that doesn't exist.
+      ...(detail ? { links: [canonicalLink(`/c/${detail.slug}`)] } : {}),
     }
   },
   notFoundComponent: () => (

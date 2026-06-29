@@ -4,14 +4,27 @@ import { db } from '@/db'
 import { auth } from '@/lib/auth'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
+import { siteUrl } from '@/lib/site'
+import { sitemapResponse } from '@/lib/sitemap'
 import {
   coerceSort,
   type GallerySort,
   getConfigBySlug,
   getPublishedConfigs,
   getPublishedCount,
+  getPublishedSlugsForSitemap,
   PAGE_SIZE,
 } from './queries'
+
+/**
+ * The `/sitemap.xml` response. Lives here (not in the route file) because route files can't import
+ * the db client directly — they reach gallery data through this module, the same way the og image
+ * routes call into `@/og/routes`. Keeps `createdAt` a real `Date` by avoiding the server-fn RPC
+ * boundary that would serialize it to a string.
+ */
+export async function sitemapResponseForRoute(): Promise<Response> {
+  return sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db))
+}
 
 export const getGallery = createServerFn({ method: 'GET' })
   .inputValidator((d: { sort?: GallerySort; page?: number }) => d)

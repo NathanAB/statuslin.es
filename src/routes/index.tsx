@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { getGallery } from '@/gallery/functions'
 import { coercePage, coerceSort, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
+import { canonicalLink } from '@/lib/canonical'
 import { AuthorChip } from '@/ui/author-chip'
 import { Button } from '@/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
@@ -35,6 +36,7 @@ export const Route = createFileRoute('/')({
         content: 'The Claude Code status line catalogue',
       },
     ],
+    links: [canonicalLink('/')],
   }),
   component: Home,
 })

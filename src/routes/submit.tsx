@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getSession } from '@/lib/auth-functions'
+import { canonicalLink } from '@/lib/canonical'
 import { SubmitForm } from '@/submit/submit-form'
 import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
@@ -10,6 +11,7 @@ export const Route = createFileRoute('/submit')({
   loader: () => getSession(),
   head: () => ({
     meta: [{ title: 'Submit a status line — statuslin.es' }],
+    links: [canonicalLink('/submit')],
   }),
   component: Submit,
 })

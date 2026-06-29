@@ -71,6 +71,21 @@ export async function getPublishedCount(db: Db): Promise<number> {
   return row?.n ?? 0
 }
 
+/**
+ * Every published config's slug + createdAt, newest first — the minimal columns the sitemap
+ * needs. Deliberately unpaginated and join-free (the sitemap lists all configs, not a page),
+ * so it stays a single index-covered scan over `(status, created_at)`.
+ */
+export async function getPublishedSlugsForSitemap(
+  db: Db,
+): Promise<Array<{ slug: string; createdAt: Date }>> {
+  return db
+    .select({ slug: configs.slug, createdAt: configs.createdAt })
+    .from(configs)
+    .where(eq(configs.status, 'published'))
+    .orderBy(desc(configs.createdAt))
+}
+
 export async function getPublishedConfigs(
   db: Db,
   sort: GallerySort = 'new',
