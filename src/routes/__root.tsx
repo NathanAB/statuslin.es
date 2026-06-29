@@ -40,7 +40,9 @@ function PostHogIdentifier() {
       // key on the user id) — username can be null or change, so it's not a safe identifier.
       // (The root loader doesn't re-run on child navigation, so `user` is a stable ref; and PostHog
       // dedupes identical identify calls, so this fires effectively once per session.)
-      posthog.identify(user.id, { name: user.name, username: user.username })
+      // Send the GitHub username as `name` so PostHog shows it as the person's display name
+      // (falling back to the GitHub display name when the username is missing).
+      posthog.identify(user.id, { name: user.username ?? user.name, username: user.username })
     }
   }, [posthog, user])
 
@@ -76,6 +78,8 @@ function RootComponent() {
               ui_host: POSTHOG_UI_HOST,
               defaults: '2025-05-24',
               capture_exceptions: true,
+              // We only use product analytics, not session replay.
+              disable_session_recording: true,
               debug: import.meta.env.DEV,
             }}
           >
