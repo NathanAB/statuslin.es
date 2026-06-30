@@ -13,12 +13,12 @@ import { StretchedLink } from '@/ui/stretched-link'
 import { Switch } from '@/ui/switch'
 import { Text } from '@/ui/text'
 
-export type RenderStatus = DashboardRow['renderJob']['status']
+type RenderStatus = DashboardRow['renderJob']['status']
 export type BadgeVariant = 'secondary' | 'destructive' | 'outline' | 'primaryOutline'
 
 // Render status → badge look + label. Failed is loud (destructive); ready gets a coral *outline*
 // (not a coral fill — that reads as a clickable button) to draw the eye to the actionable row.
-export const RENDER_BADGE: Record<string, { variant: BadgeVariant; label: string }> = {
+const RENDER_BADGE: Record<string, { variant: BadgeVariant; label: string }> = {
   failed: { variant: 'destructive', label: 'failed' },
   running: { variant: 'secondary', label: 'rendering' },
   queued: { variant: 'outline', label: 'queued' },

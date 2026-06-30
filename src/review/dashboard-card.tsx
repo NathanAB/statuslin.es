@@ -13,8 +13,6 @@ import {
   titleFor,
 } from '@/review/dashboard-card-parts'
 
-export { StatusSummary } from '@/review/dashboard-card-parts'
-
 import {
   approveVersionFn,
   rejectVersionFn,
@@ -23,6 +21,9 @@ import {
   setReadsClaudeTokenFn,
 } from '@/review/decide'
 import type { DashboardRow } from '@/review/queue'
+
+export { StatusSummary } from '@/review/dashboard-card-parts'
+
 import { Badge } from '@/ui/badge'
 import { Row, Stack } from '@/ui/layout'
 import { MetaList } from '@/ui/meta-list'
