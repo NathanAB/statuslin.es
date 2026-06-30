@@ -53,25 +53,30 @@ resolves to the same place as before. **Caveat:** the *running* hooks come from 
 copy, so this fix only takes effect once it is merged to `main`. Until then, the BLOCKED messages on
 edits inside a worktree are expected noise — keep working and gate from the worktree root.
 
-## Known gap: the Stop self-gate checks the main repo, not the worktree
+## The Stop self-gate (agent-gate.sh) anchors on the payload `cwd`
 
 `agent-gate.sh` (the `Stop` hook that re-runs typecheck/lint/front-end when an agent finishes a turn
-with uncommitted `.ts`/`.tsx` changes) also `cd`s to `$CLAUDE_PROJECT_DIR` (main repo). In a
-worktree session this means the self-gate inspects the **main** checkout — which is usually clean —
-and passes trivially, so it never actually gates the worktree's changes. It is a missing safety net,
-not a wrong result: always run `bun run check` from the worktree root yourself before claiming green.
+with uncommitted `.ts`/`.tsx` changes) used to `cd "$CLAUDE_PROJECT_DIR"` — the **main** repo, even
+during a worktree session. That made the self-gate inspect the main checkout (usually clean) and
+pass trivially, never actually gating the worktree's changes.
 
-This one is left unchanged on purpose: unlike the per-edit hooks, the Stop hook has no edited-file
-path to anchor on, so the safe fix depends on what working directory Claude Code runs `Stop` hooks
-in. If that is the worktree (likely, since the session's cwd is the worktree), the fix is to anchor
-on the current directory's toplevel:
+Unlike the per-edit hooks, the Stop hook has no edited-file path to anchor on. Instead it reads the
+`cwd` field from the hook payload Claude Code sends on stdin — verified to be the worktree root in a
+worktree session — and gates that tree's git toplevel, falling back to `CLAUDE_PROJECT_DIR` only
+when `cwd` is absent or not a git repo:
 
 ```sh
-gate_root=$(git rev-parse --show-toplevel 2>/dev/null || printf '%s' "${CLAUDE_PROJECT_DIR:-.}")
+hook_cwd=$(printf '%s' "$input" | python3 -c 'import sys,json
+try:
+    print(json.load(sys.stdin).get("cwd",""))
+except Exception:
+    print("")' 2>/dev/null)
+gate_root=$(git -C "${hook_cwd:-.}" rev-parse --show-toplevel 2>/dev/null || printf '%s' "${CLAUDE_PROJECT_DIR:-.}")
 cd "$gate_root" || exit 0
 ```
 
-Verify the `Stop`-hook working directory before applying that.
+As with the per-edit hooks, this takes effect once merged to `main` (the live hooks load from the
+main checkout). Until then, still run `bun run check` from the worktree root yourself.
 
 ## Pushing from a worktree
 
