@@ -14,7 +14,18 @@ if printf '%s' "$input" | grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*tr
   exit 0
 fi
 
-cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
+# Gate the directory the agent is actually working in. Claude Code passes that directory in the
+# payload's `cwd`; in a git worktree it is the worktree root. CLAUDE_PROJECT_DIR points at the MAIN
+# repo even during a worktree session, so using it here would gate the wrong tree (missing the
+# worktree's uncommitted changes entirely). Fall back to CLAUDE_PROJECT_DIR only when cwd is absent
+# or not a git repo. See docs/worktrees.md.
+hook_cwd=$(printf '%s' "$input" | python3 -c 'import sys,json
+try:
+    print(json.load(sys.stdin).get("cwd",""))
+except Exception:
+    print("")' 2>/dev/null)
+gate_root=$(git -C "${hook_cwd:-.}" rev-parse --show-toplevel 2>/dev/null || printf '%s' "${CLAUDE_PROJECT_DIR:-.}")
+cd "$gate_root" || exit 0
 
 # Only gate when there are uncommitted .ts/.tsx changes (staged, unstaged, or new).
 if ! git status --porcelain 2>/dev/null | grep -qE '\.(ts|tsx)$'; then

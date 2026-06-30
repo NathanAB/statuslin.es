@@ -40,7 +40,12 @@ case "$path" in
   *routeTree.gen.ts | */src/db/auth-schema.ts | */drizzle/*) exit 0 ;;
 esac
 
-cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
+# Run Biome from the edited file's own repo root. In a git worktree (nested under
+# .claude/worktrees/), CLAUDE_PROJECT_DIR is the MAIN repo, and running Biome there makes it treat
+# the worktree's biome.json as a nested project root and abort. Anchoring on the file's git toplevel
+# uses the worktree's own config; in the main repo this resolves to the same dir as before.
+hook_root=$(git -C "${path%/*}" rev-parse --show-toplevel 2>/dev/null || printf '%s' "${CLAUDE_PROJECT_DIR:-.}")
+cd "$hook_root" || exit 0
 
 violations=""
 

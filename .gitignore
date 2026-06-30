@@ -33,6 +33,10 @@ scripts/profiling/results/*
 # Claude Code local (personal, machine-specific) settings
 .claude/settings.local.json
 
+# Git worktrees live here (nested copies of the repo). Ignore so the main repo's biome/tooling
+# never descends into a worktree and treats its biome.json as a nested project root. See docs/worktrees.md.
+.claude/worktrees/
+
 # OS
 .DS_Store
 .env.local

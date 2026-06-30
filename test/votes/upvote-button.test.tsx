@@ -8,8 +8,7 @@ vi.mock('@/lib/auth-client', () => ({
   authClient: { signIn: { social: (opts: unknown) => socialSignIn(opts) } },
 }))
 
-// The component reaches for posthog + router at render time; stub both so it renders in isolation.
-vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture: vi.fn() }) }))
+// The component reaches for the router at render time; stub it so it renders in isolation.
 vi.mock('@tanstack/react-router', () => ({
   useRouter: () => ({ invalidate: vi.fn() }),
   Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
