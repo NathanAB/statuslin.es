@@ -5,6 +5,7 @@ import { configs, configVersions, renderJobs } from '@/db/schema'
 import { tryHighlightSource } from '@/lib/highlight'
 import { HttpError } from '@/lib/http'
 import { INTERPRETERS, type Interpreter } from '@/render/types'
+import { detectForeignCredentialAccess, readsClaudeToken } from './credential-access'
 import { validateNetworkHosts } from './network-hosts'
 import { detectObfuscation } from './obfuscation'
 import { slugify } from './slug'
@@ -79,6 +80,14 @@ export async function submitConfig(db: Db, input: SubmitInput): Promise<SubmitRe
     )
   }
 
+  const foreignCredentials = detectForeignCredentialAccess(input.source)
+  if (foreignCredentials.length > 0) {
+    throw new HttpError(
+      400,
+      `Submission reads non-Claude credentials: ${foreignCredentials.join('; ')}`,
+    )
+  }
+
   const networkHosts = input.networkHosts ?? []
 
   const windowStart = new Date(Date.now() - RATE_WINDOW_MS).toISOString()
@@ -114,6 +123,7 @@ export async function submitConfig(db: Db, input: SubmitInput): Promise<SubmitRe
 
   const slug = `${slugify(input.title)}-${randomUUID().slice(0, 8)}`
   const contentSha256 = createHash('sha256').update(input.source).digest('hex')
+  const readsToken = readsClaudeToken(input.source)
   // Highlight once now (best-effort) so the detail page reads stored HTML instead of running Shiki
   // on every render. The source is immutable for this version, so the stored HTML never goes stale.
   const sourceHtml = await tryHighlightSource(input.source, input.interpreter)
@@ -142,6 +152,7 @@ export async function submitConfig(db: Db, input: SubmitInput): Promise<SubmitRe
         sourceHtml,
         status: 'pending',
         networkHosts,
+        readsClaudeToken: readsToken,
       })
       .returning()
     const ver = verRows[0]
