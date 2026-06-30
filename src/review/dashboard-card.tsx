@@ -1,6 +1,7 @@
 import { useRouter } from '@tanstack/react-router'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { toast } from 'sonner'
+import { useMounted } from '@/lib/use-mounted'
 import {
   CardActions,
   metaItems,
@@ -47,11 +48,19 @@ function waitedSince(date: Date): string {
   return `${hrs}h${mins % 60}m`
 }
 
+// "Waiting 5m to render" — but the elapsed time reads Date.now() at render, which ticks over between
+// the server render and the browser's hydration and throws a hydration error 418. So the duration is
+// after mount (browser-only); the server and first client render show the duration-free phrase.
+function QueuedHeadline({ since }: { since: Date }) {
+  const mounted = useMounted()
+  return <>{mounted ? `Waiting ${waitedSince(since)} to render` : 'Waiting to render'}</>
+}
+
 // One plain-language line next to the status badge, so the badge isn't the only signal.
-function statusHeadline(renderJob: DashboardRow['renderJob']): string {
+function statusHeadline(renderJob: DashboardRow['renderJob']): ReactNode {
   switch (renderJob.status) {
     case 'queued':
-      return `Waiting ${waitedSince(renderJob.createdAt)} to render`
+      return <QueuedHeadline since={renderJob.createdAt} />
     case 'running':
       return 'Rendering now…'
     case 'failed':
@@ -67,7 +76,7 @@ function statusHeadline(renderJob: DashboardRow['renderJob']): string {
   }
 }
 
-type CardView = { variant: BadgeVariant; label: string; headline: string }
+type CardView = { variant: BadgeVariant; label: string; headline: ReactNode }
 
 /** Author-facing status for /me: review outcome first; render state only while still pending,
  * so a stuck or failed render is still visible. Published/rejected never show "ready". */
@@ -94,7 +103,7 @@ function reviewView(
       return {
         variant: 'outline',
         label: 'queued',
-        headline: `Waiting ${waitedSince(renderJob.createdAt)} to render`,
+        headline: <QueuedHeadline since={renderJob.createdAt} />,
       }
     default:
       return { variant: 'secondary', label: 'in review', headline: 'Waiting for a reviewer' }

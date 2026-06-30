@@ -193,6 +193,26 @@ describe('SubmissionCard', () => {
     expect(html).not.toContain('Render output')
   })
 
+  it('server-renders the Submitted time as a fixed UTC label, not the host local zone', () => {
+    // createdAt is 2026-06-13T12:00:00Z. A bare toLocaleString() would format this in whatever zone
+    // the server runs in, diverging from the browser and throwing a #418. The SSR text must be the
+    // pinned UTC label so it matches the browser's first render.
+    const html = renderToStaticMarkup(
+      <SubmissionCard row={row({ status: 'done', withPreview: true })} />,
+    )
+    expect(html).toContain('Jun 13, 2026')
+    expect(html).toContain('UTC')
+  })
+
+  it('server-renders a queued row without a live elapsed time (hydration-stable)', () => {
+    // "Waiting 5m to render" is computed from Date.now() at render time — it ticks over between the
+    // server render and the browser's hydration, the same mismatch class as the timestamp. SSR must
+    // omit the live duration; the browser fills it in after mount.
+    const html = renderToStaticMarkup(<SubmissionCard row={row({ status: 'queued' })} />)
+    expect(html).toContain('Waiting to render')
+    expect(html).not.toMatch(/Waiting\s+\d/)
+  })
+
   it('shows declared hosts and a Run network preview button for a held network version', () => {
     const html = renderToStaticMarkup(
       <SubmissionCard row={row({ status: 'held', networkHosts: ['wttr.in', '*.espn.com'] })} />,

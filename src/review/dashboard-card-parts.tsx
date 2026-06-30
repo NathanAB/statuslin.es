@@ -6,6 +6,7 @@ import { Button } from '@/ui/button'
 import { CodeBlock } from '@/ui/code-block'
 import { Details } from '@/ui/details'
 import { Row, Stack } from '@/ui/layout'
+import { LocalTime } from '@/ui/local-time'
 import { ScenarioRow } from '@/ui/scenario-row'
 import { StretchedLink } from '@/ui/stretched-link'
 import { Text } from '@/ui/text'
@@ -34,7 +35,7 @@ export function metaItems(
     ...(statusMode === 'review' ? [] : [author]),
     { label: 'Interpreter', value: config.interpreter },
     { label: 'Version', value: `v${version.versionNumber}` },
-    { label: 'Submitted', value: new Date(version.createdAt).toLocaleString() },
+    { label: 'Submitted', value: <LocalTime value={version.createdAt} /> },
     { label: 'Slug', value: config.slug, mono: true },
     { label: 'SHA', value: version.contentSha256.slice(0, 12), mono: true },
   ]
