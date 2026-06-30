@@ -110,10 +110,25 @@ use the `drizzle-kit` CLI. So the only things the image must keep are `drizzle-o
 dependency, never pruned) and the `drizzle/` folder (copied in) — verify the `drizzle/` copy
 survives when editing the generated Dockerfile.
 
-Promote the validated image to production (no rebuild):
+Promote to production with the **gated** command — never promote by hand:
 ```sh
-fly deploy --app statuslines --image registry.fly.io/statuslines-staging:<digest-you-validated>
+bun run deploy:prod
 ```
+`scripts/deploy-prod.ts` does three things and **refuses to promote unless the middle one passes**:
+1. `fly deploy --config fly.staging.toml`
+2. a **real-browser smoke against staging** — `SMOKE_BASE_URL=https://staging.statuslin.es
+   SMOKE_SIGNED_OUT_ONLY=1 bun run smoke` — which loads the home + a `/c/<slug>` detail page in
+   `agent-browser` and fails if either doesn't hydrate or logs a console error.
+3. only on green, `fly deploy --app statuslines --image registry.fly.io/statuslines-staging@<digest>`
+   (the exact image it just validated, by digest — no rebuild).
+
+**Why this is mandatory, not optional:** every source gate (tsc/lint/vitest) passes while the client
+bundle is dead — a server-only import leaking into the browser throws `Buffer is not defined`,
+hydration fails, every button goes dead, and SSR still returns 200 so nothing alerts. That shipped
+to prod for ~2.5h on 2026-06-29. Staging runs the **exact same image** we promote, so smoking staging
+smokes the real production bundle. The smoke uses the signed-out checks only (the signed-in half mints
+a session against the local dev DB, which staging doesn't share). **Do not** run the two `fly deploy`
+commands by hand and skip the smoke — that's the hole that let the crash ship.
 
 ## DNS (Cloudflare, after the first Fly deploy)
 

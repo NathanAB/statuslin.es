@@ -21,6 +21,7 @@
     "check:boundaries": "depcruise src --config .dependency-cruiser.cjs",
     "check:frontend": "bun run scripts/check-frontend.ts",
     "smoke": "bun run scripts/smoke.ts",
+    "deploy:prod": "bun run scripts/deploy-prod.ts",
     "render": "bun run scripts/render.ts",
     "rerender:previews": "bun run scripts/rerender-previews.ts",
     "worker": "bun run scripts/worker.ts",

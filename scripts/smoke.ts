@@ -11,7 +11,14 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import { setTimeout as sleep } from 'node:timers/promises'
 
-const BASE = process.env.BETTER_AUTH_URL ?? 'http://localhost:3100'
+// SMOKE_BASE_URL points the smoke at an already-running, possibly remote app (e.g. deployed
+// staging — which runs the exact production image we promote). When it's set we DON'T boot or
+// kill a local dev server, and we run signed-out checks only: the signed-in half mints a session
+// via `dev:login` against the LOCAL dev DB, which a remote target doesn't share. Falls back to
+// BETTER_AUTH_URL (the local dev origin) for the normal local run.
+const BASE = process.env.SMOKE_BASE_URL ?? process.env.BETTER_AUTH_URL ?? 'http://localhost:3100'
+const REMOTE = !!process.env.SMOKE_BASE_URL
+const SIGNED_OUT_ONLY = REMOTE || process.env.SMOKE_SIGNED_OUT_ONLY === '1'
 const COOKIE = 'better-auth.session_token'
 
 const failures: string[] = []
@@ -104,6 +111,16 @@ function killServer(proc: ChildProcess | null): void {
   } catch {
     // already gone — nothing to do
   }
+}
+
+/** A remote target (e.g. staging, which scales to zero) can cold-start, so retry the reachability
+ *  probe before giving up — a slow first byte isn't a failure. */
+async function ensureRemoteUp(): Promise<void> {
+  for (let i = 0; i < 20; i++) {
+    if (await reachable(`${BASE}/`)) return
+    await sleep(1500)
+  }
+  throw new Error(`smoke target not reachable: ${BASE}`)
 }
 
 /** Boot a dev server if one isn't already on BASE. Returns the spawned process to kill, or null. */
@@ -259,10 +276,14 @@ async function checkSignedInAdmin() {
 }
 
 async function main() {
-  const booted = await ensureServer()
+  // Remote target (SMOKE_BASE_URL): don't manage a local server, just confirm it's up. Local:
+  // boot a dev server if one isn't already running.
+  const booted = REMOTE ? null : await ensureServer()
+  if (REMOTE) await ensureRemoteUp()
   try {
     await checkSignedOut()
-    await checkSignedInAdmin()
+    // Signed-in checks mint a session against the LOCAL dev DB — skip them for a remote target.
+    if (!SIGNED_OUT_ONLY) await checkSignedInAdmin()
   } finally {
     killServer(booted)
   }
