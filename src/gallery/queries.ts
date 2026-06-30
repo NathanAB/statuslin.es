@@ -60,6 +60,7 @@ export interface GalleryCard {
   author: ConfigAuthor | null
   preview: AnsiSegment[] | null
   networkHosts: string[]
+  readsClaudeToken: boolean
 }
 
 /** Total published configs — drives the gallery's page count. */
@@ -132,6 +133,7 @@ export async function getPublishedConfigs(
       : null,
     preview: cardPreviews.get(r.version.contentSha256) ?? null,
     networkHosts: r.version.networkHosts ?? [],
+    readsClaudeToken: r.version.readsClaudeToken ?? false,
   }))
 }
 
@@ -176,6 +178,7 @@ export interface ConfigDetail {
   sourceHtml: string | null
   contentSha256: string
   networkHosts: string[]
+  readsClaudeToken: boolean
   previews: RenderedPreview[]
 }
 
@@ -214,6 +217,7 @@ export async function getConfigBySlug(
     sourceHtml: row.version.sourceHtml,
     contentSha256: row.version.contentSha256,
     networkHosts: row.version.networkHosts ?? [],
+    readsClaudeToken: row.version.readsClaudeToken ?? false,
     previews,
   }
 }
