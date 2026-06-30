@@ -206,6 +206,7 @@ export function SubmissionCard({
         {showActions ? (
           <Stack gap={3}>
             <CredentialFlagToggle
+              htmlId={`reads-claude-token-${version.id}`}
               value={version.readsClaudeToken}
               pending={pending}
               onChange={setCredentialFlag}

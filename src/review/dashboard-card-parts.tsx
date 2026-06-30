@@ -146,23 +146,20 @@ export function NetworkHostList({ hosts }: { hosts: string[] }) {
 
 /** Admin-only toggle for the "reads the Claude Code auth token" disclosure flag. */
 export function CredentialFlagToggle({
+  htmlId,
   value,
   pending,
   onChange,
 }: {
+  htmlId: string
   value: boolean
   pending: boolean
   onChange: (next: boolean) => void
 }) {
   return (
     <Row gap={2} align="center">
-      <Switch
-        id="reads-claude-token"
-        checked={value}
-        disabled={pending}
-        onCheckedChange={onChange}
-      />
-      <Label htmlFor="reads-claude-token">Reads the Claude Code auth token</Label>
+      <Switch id={htmlId} checked={value} disabled={pending} onCheckedChange={onChange} />
+      <Label htmlFor={htmlId}>Reads the Claude Code auth token</Label>
     </Row>
   )
 }

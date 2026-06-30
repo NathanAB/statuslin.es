@@ -22,6 +22,7 @@ const { SubmissionCard, StatusSummary } = await import('@/review/dashboard-card'
 
 function row(over: {
   status: string
+  id?: string
   error?: string | null
   withPreview?: boolean
   versionStatus?: string
@@ -43,7 +44,7 @@ function row(over: {
       createdAt: new Date('2026-06-13T12:00:00Z'),
     },
     version: {
-      id: 'v1',
+      id: over.id ?? 'v1',
       versionNumber: 1,
       source: '#!/bin/bash\necho hi',
       contentSha256: 'abc123def456',
@@ -236,6 +237,20 @@ describe('SubmissionCard', () => {
       <SubmissionCard row={row({ status: 'done' })} showActions={false} statusMode="review" />,
     )
     expect(html).not.toContain('Reads the Claude Code auth token')
+  })
+
+  it('two cards with different version ids get distinct auth-token toggle ids', () => {
+    const cardA = renderToStaticMarkup(
+      <SubmissionCard row={row({ status: 'done', id: 'v-aaa' })} />,
+    )
+    const cardB = renderToStaticMarkup(
+      <SubmissionCard row={row({ status: 'done', id: 'v-bbb' })} />,
+    )
+    // Each card must use a version-scoped id, not the bare shared string.
+    expect(cardA).toContain('reads-claude-token-v-aaa')
+    expect(cardB).toContain('reads-claude-token-v-bbb')
+    expect(cardA).not.toContain('id="reads-claude-token"')
+    expect(cardB).not.toContain('id="reads-claude-token"')
   })
 
   it('review mode labels by review outcome, not render step', () => {

@@ -12,9 +12,10 @@ const INTERPRETER_ICON: Record<string, React.ComponentType> = {
   python: Braces,
 }
 
-/** The chip pair shown in the top-right of a gallery card and the detail page:
- *  the interpreter (always) and a `network` chip when the config declares hosts.
- *  Both chips share the one style; the network chip carries a tooltip listing the
+/** The chips shown in the top-right of a gallery card and the detail page:
+ *  the interpreter (always), a `network` chip when the config declares hosts,
+ *  and an `auth token` chip when the config reads the Claude Code auth token.
+ *  All chips share the one style; the network chip carries a tooltip listing the
  *  domains it may reach. Rendered once here so both surfaces stay identical. */
 export function ConfigBadges({
   interpreter,
