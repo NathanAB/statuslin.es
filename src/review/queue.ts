@@ -36,6 +36,7 @@ export interface DashboardRow {
     status: string
     createdAt: Date
     networkHosts: string[]
+    readsClaudeToken: boolean
   }
   renderJob: {
     status: string
@@ -91,6 +92,7 @@ async function mapRow(database: Db, r: RawRow): Promise<DashboardRow> {
       status: r.version.status,
       createdAt: r.version.createdAt,
       networkHosts: r.version.networkHosts ?? [],
+      readsClaudeToken: r.version.readsClaudeToken ?? false,
     },
     renderJob: {
       status: r.job.status,

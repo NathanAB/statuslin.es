@@ -26,6 +26,7 @@ function row(over: {
   withPreview?: boolean
   versionStatus?: string
   networkHosts?: string[]
+  readsClaudeToken?: boolean
 }): DashboardRow {
   return {
     config: {
@@ -49,6 +50,7 @@ function row(over: {
       status: over.versionStatus ?? 'pending',
       createdAt: new Date('2026-06-13T12:00:00Z'),
       networkHosts: over.networkHosts ?? [],
+      readsClaudeToken: over.readsClaudeToken ?? false,
     },
     renderJob: {
       status: over.status,
@@ -220,6 +222,20 @@ describe('SubmissionCard', () => {
     expect(html).toContain('wttr.in')
     expect(html).toContain('*.espn.com')
     expect(html).toMatch(/run network preview/i)
+  })
+
+  it('admin card shows the Claude-token toggle', () => {
+    const html = renderToStaticMarkup(
+      <SubmissionCard row={row({ status: 'done', readsClaudeToken: true })} />,
+    )
+    expect(html).toContain('Reads the Claude Code auth token')
+  })
+
+  it('read-only (/me) card hides the toggle', () => {
+    const html = renderToStaticMarkup(
+      <SubmissionCard row={row({ status: 'done' })} showActions={false} statusMode="review" />,
+    )
+    expect(html).not.toContain('Reads the Claude Code auth token')
   })
 
   it('review mode labels by review outcome, not render step', () => {
