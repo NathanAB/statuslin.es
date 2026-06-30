@@ -28,6 +28,20 @@ export function getPostHogClient(): PostHog | null {
   return posthogClient
 }
 
+/**
+ * A built server-side analytics event, ready to hand to {@link captureServerEvent}. Pure event
+ * builders (e.g. submittedEvent, voteEvent) return this so the mapping from a domain result to
+ * event name + attribution + properties is unit-testable without a live PostHog client.
+ */
+export interface ServerEvent {
+  /** Who the event is attributed to — the signed-in user's id (PostHog identifies on user.id). */
+  distinctId: string
+  /** PostHog event name, e.g. 'statusline_submitted'. */
+  event: string
+  /** Queryable custom properties for the event. */
+  properties: Record<string, unknown>
+}
+
 /** Context attached to a server-side error capture. Only safe, non-script metadata belongs here. */
 export type ServerErrorContext = {
   /** Defaults to the constant `'server'`; error tracking groups by fingerprint, not person. */

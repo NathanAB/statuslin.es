@@ -1,5 +1,4 @@
 import NumberFlow from '@number-flow/react'
-import { usePostHog } from '@posthog/react'
 import { useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { startGitHubSignIn } from '@/lib/sign-in'
@@ -19,7 +18,6 @@ export function UpvoteButton({
   initialVoted: boolean
   signedIn: boolean
 }) {
-  const posthog = usePostHog()
   const router = useRouter()
   const [voted, setVoted] = useState(initialVoted)
   const [count, setCount] = useState(initialCount)
@@ -37,11 +35,8 @@ export function UpvoteButton({
       const result = await toggleVoteFn({ data: { configId } })
       setVoted(result.voted)
       setCount(result.count)
-      posthog.capture(willVote ? 'statusline_upvoted' : 'statusline_unvoted', {
-        configId,
-        slug,
-        newCount: result.count,
-      })
+      // The statusline_upvoted / statusline_unvoted event fires server-side in toggleVoteFn now
+      // (ad blockers can't strip a server event), so the browser only reconciles state here.
       await router.invalidate()
     } catch {
       setVoted(prevVoted)

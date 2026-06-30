@@ -38,10 +38,11 @@ export function SubmitForm({ user: _user }: { user: AppHeaderUser }) {
     setError(null)
     try {
       const networkHosts = networkEnabled ? hosts.map((h) => h.trim()).filter(Boolean) : []
-      const result = await submitConfigFn({
+      await submitConfigFn({
         data: { title, description, interpreter, source, networkHosts },
       })
-      posthog.capture('statusline_submitted', { interpreter, slug: result.slug })
+      // The statusline_submitted event fires server-side in submitConfigFn now (ad blockers can't
+      // strip a server event), so the browser only handles the success UX here.
       toast.success('Success! Your submission has been queued for review.')
       setTitle('')
       setDescription('')
