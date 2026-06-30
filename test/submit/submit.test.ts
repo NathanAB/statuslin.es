@@ -170,6 +170,33 @@ describe('submitConfig', () => {
     expect(rows).toHaveLength(0)
   })
 
+  it('rejects a submission that reads a non-Claude credential', async () => {
+    await expect(submitConfig(db, { ...input, source: 'cat ~/.ssh/id_rsa' })).rejects.toThrow(
+      /non-Claude credentials/i,
+    )
+  })
+
+  it('stores readsClaudeToken=true when the script reads the Claude token', async () => {
+    const res = await submitConfig(db, {
+      ...input,
+      source: 'open(os.path.expanduser("~/.claude/credentials.json"))',
+    })
+    const [ver] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.id, res.versionId))
+    expect(ver?.readsClaudeToken).toBe(true)
+  })
+
+  it('stores readsClaudeToken=false for a plain statusline', async () => {
+    const res = await submitConfig(db, input) // base input is a plain `echo hi`
+    const [ver] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.id, res.versionId))
+    expect(ver?.readsClaudeToken).toBe(false)
+  })
+
   it('gives each submission a unique slug', async () => {
     const a = await submitConfig(db, input)
     const b = await submitConfig(db, input)

@@ -50,6 +50,21 @@ export async function rejectVersion(
   if (!row) throw new HttpError(409, 'version not in a reviewable (pending) state')
 }
 
+/** Admin disclosure override: set whether a version is flagged as reading the Claude token. */
+export async function setReadsClaudeToken(
+  database: Db,
+  versionId: string,
+  value: boolean,
+  reviewerId: string,
+): Promise<void> {
+  const [row] = await database
+    .update(configVersions)
+    .set({ readsClaudeToken: value, reviewedBy: reviewerId, reviewedAt: new Date() })
+    .where(eq(configVersions.id, versionId))
+    .returning()
+  if (!row) throw new HttpError(404, 'version not found')
+}
+
 /** Re-attempt a render: reset the version's render job to 'queued'. Only a FAILED job may be
  * re-queued — never a 'held' network job (that's runNetworkPreview's job alone), never a still
  * 'queued'/'running' one, and never a 'done' one (already rendered). Clears error + attempts. */
@@ -99,6 +114,15 @@ export const rejectVersionFn = createServerFn({ method: 'POST' })
         event: 'statusline_rejected',
         properties: { versionId: data.versionId },
       })
+    }),
+  )
+
+export const setReadsClaudeTokenFn = createServerFn({ method: 'POST' })
+  .inputValidator((d: { versionId: string; value: boolean }) => d)
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      const admin = await assertAdmin(getRequestHeaders())
+      await setReadsClaudeToken(db, data.versionId, data.value, admin.id)
     }),
   )
 

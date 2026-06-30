@@ -3,6 +3,7 @@ export * from './auth-schema'
 
 import { sql } from 'drizzle-orm'
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -78,6 +79,7 @@ export const configVersions = pgTable(
     // highlight failure fall back to live highlighting (resolveSourceHtml in src/lib/highlight.ts).
     sourceHtml: text('source_html'),
     networkHosts: jsonb('network_hosts').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    readsClaudeToken: boolean('reads_claude_token').notNull().default(false),
     status: text('status').notNull().default('pending'),
     reviewedBy: text('reviewed_by'),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),

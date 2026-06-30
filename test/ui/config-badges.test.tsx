@@ -7,10 +7,14 @@ import { TooltipProvider } from '@/ui/tooltip'
 
 // The network chip's tooltip relies on a TooltipProvider ancestor (mounted once in
 // shell.tsx for the real app); wrap renders the same way here.
-const renderBadges = (props: { interpreter: string; networkHosts: string[] }) =>
+const renderBadges = (props: {
+  interpreter: string
+  networkHosts: string[]
+  readsClaudeToken?: boolean
+}) =>
   render(
     <TooltipProvider>
-      <ConfigBadges {...props} />
+      <ConfigBadges readsClaudeToken={false} {...props} />
     </TooltipProvider>,
   )
 
@@ -36,5 +40,15 @@ describe('ConfigBadges', () => {
   it('omits the network chip when no hosts are declared', () => {
     renderBadges({ interpreter: 'bash', networkHosts: [] })
     expect(screen.queryByText('network')).toBeNull()
+  })
+
+  it('renders the auth-token chip when readsClaudeToken is true', () => {
+    renderBadges({ interpreter: 'python', networkHosts: [], readsClaudeToken: true })
+    expect(screen.getByText('auth token')).toBeTruthy()
+  })
+
+  it('omits the auth-token chip when readsClaudeToken is false', () => {
+    renderBadges({ interpreter: 'bash', networkHosts: [], readsClaudeToken: false })
+    expect(screen.queryByText('auth token')).toBeNull()
   })
 })

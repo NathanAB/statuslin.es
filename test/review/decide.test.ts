@@ -5,7 +5,13 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
-import { approveVersion, rejectVersion, requeueRenderJob, runNetworkPreview } from '@/review/decide'
+import {
+  approveVersion,
+  rejectVersion,
+  requeueRenderJob,
+  runNetworkPreview,
+  setReadsClaudeToken,
+} from '@/review/decide'
 import { submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
 
@@ -223,5 +229,18 @@ describe('requeueRenderJob held-job invariant', () => {
       .from(schema.renderJobs)
       .where(eq(schema.renderJobs.configVersionId, versionId))
     expect(job?.status).toBe('queued')
+  })
+})
+
+describe('setReadsClaudeToken', () => {
+  it('setReadsClaudeToken flips the stored flag', async () => {
+    const versionId = await seedVersionWithJob(db, { status: 'queued', networkHosts: [] })
+    await setReadsClaudeToken(db, versionId, true, 'u1')
+    const [ver] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.id, versionId))
+    expect(ver?.readsClaudeToken).toBe(true)
+    expect(ver?.reviewedBy).toBe('u1')
   })
 })

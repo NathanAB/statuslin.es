@@ -6,19 +6,21 @@ import { cn } from '@/lib/cn'
 interface SwitchProps {
   id?: string
   checked?: boolean
+  disabled?: boolean
   onCheckedChange?: (checked: boolean) => void
   'aria-label'?: string
 }
 
-function Switch({ id, checked, onCheckedChange, ...aria }: SwitchProps) {
+function Switch({ id, checked, disabled, onCheckedChange, ...aria }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       id={id}
       {...(checked !== undefined ? { checked } : {})}
+      disabled={disabled}
       onCheckedChange={(v) => onCheckedChange?.(v === true)}
       data-slot="switch"
       className={cn(
-        'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-4xl border border-transparent shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted',
+        'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-4xl border border-transparent shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted',
       )}
       {...aria}
     >

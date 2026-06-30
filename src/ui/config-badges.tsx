@@ -1,4 +1,4 @@
-import { Braces, Code, Globe, Hexagon, Terminal } from 'lucide-react'
+import { Braces, Code, Globe, Hexagon, KeyRound, Terminal } from 'lucide-react'
 import type * as React from 'react'
 import { Badge } from '@/ui/badge'
 import { Row, Stack } from '@/ui/layout'
@@ -12,16 +12,19 @@ const INTERPRETER_ICON: Record<string, React.ComponentType> = {
   python: Braces,
 }
 
-/** The chip pair shown in the top-right of a gallery card and the detail page:
- *  the interpreter (always) and a `network` chip when the config declares hosts.
- *  Both chips share the one style; the network chip carries a tooltip listing the
+/** The chips shown in the top-right of a gallery card and the detail page:
+ *  the interpreter (always), a `network` chip when the config declares hosts,
+ *  and an `auth token` chip when the config reads the Claude Code auth token.
+ *  All chips share the one style; the network chip carries a tooltip listing the
  *  domains it may reach. Rendered once here so both surfaces stay identical. */
 export function ConfigBadges({
   interpreter,
   networkHosts,
+  readsClaudeToken,
 }: {
   interpreter: string
   networkHosts: string[]
+  readsClaudeToken: boolean
 }): React.ReactElement {
   const InterpreterIcon = INTERPRETER_ICON[interpreter] ?? Code
   return (
@@ -53,6 +56,20 @@ export function ConfigBadges({
             <Badge variant="secondary">
               <Globe />
               network
+            </Badge>
+          </button>
+        </Tooltip>
+      ) : null}
+      {readsClaudeToken ? (
+        <Tooltip content={<Text size="xs">Reads your Claude Code auth token.</Text>}>
+          <button
+            type="button"
+            aria-label="Reads your Claude Code auth token"
+            className="relative z-10 inline-flex cursor-default rounded-4xl p-0 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <Badge variant="secondary">
+              <KeyRound />
+              auth token
             </Badge>
           </button>
         </Tooltip>

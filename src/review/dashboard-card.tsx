@@ -3,19 +3,27 @@ import { type ReactNode, useState } from 'react'
 import { toast } from 'sonner'
 import { useMounted } from '@/lib/use-mounted'
 import {
+  type BadgeVariant,
+  badgeFor,
   CardActions,
+  CredentialFlagToggle,
   metaItems,
   NetworkHostList,
   SubmissionDetails,
   titleFor,
 } from '@/review/dashboard-card-parts'
+
 import {
   approveVersionFn,
   rejectVersionFn,
   requeueRenderJobFn,
   runNetworkPreviewFn,
+  setReadsClaudeTokenFn,
 } from '@/review/decide'
 import type { DashboardRow } from '@/review/queue'
+
+export { StatusSummary } from '@/review/dashboard-card-parts'
+
 import { Badge } from '@/ui/badge'
 import { Row, Stack } from '@/ui/layout'
 import { MetaList } from '@/ui/meta-list'
@@ -23,23 +31,6 @@ import { Notice } from '@/ui/notice'
 import { SectionCard } from '@/ui/section-card'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Text } from '@/ui/text'
-
-type RenderStatus = DashboardRow['renderJob']['status']
-type BadgeVariant = 'secondary' | 'destructive' | 'outline' | 'primaryOutline'
-
-// Render status → badge look + label. Failed is loud (destructive); ready gets a coral *outline*
-// (not a coral fill — that reads as a clickable button) to draw the eye to the actionable row.
-const RENDER_BADGE: Record<string, { variant: BadgeVariant; label: string }> = {
-  failed: { variant: 'destructive', label: 'failed' },
-  running: { variant: 'secondary', label: 'rendering' },
-  queued: { variant: 'outline', label: 'queued' },
-  done: { variant: 'primaryOutline', label: 'ready' },
-  held: { variant: 'outline', label: 'needs network review' },
-}
-
-function badgeFor(status: RenderStatus): { variant: BadgeVariant; label: string } {
-  return RENDER_BADGE[status] ?? { variant: 'outline', label: status }
-}
 
 function waitedSince(date: Date): string {
   const mins = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 60000))
@@ -115,25 +106,6 @@ function cardView(row: DashboardRow, statusMode: 'render' | 'review'): CardView 
   return { ...badgeFor(row.renderJob.status), headline: statusHeadline(row.renderJob) }
 }
 
-export function StatusSummary({ rows }: { rows: DashboardRow[] }) {
-  const counts = rows.reduce<Record<string, number>>((acc, r) => {
-    acc[r.renderJob.status] = (acc[r.renderJob.status] ?? 0) + 1
-    return acc
-  }, {})
-  const order: RenderStatus[] = ['held', 'failed', 'running', 'queued', 'done']
-  return (
-    <Row gap={2}>
-      {order
-        .filter((s) => counts[s])
-        .map((s) => (
-          <Badge key={s} variant={badgeFor(s).variant}>
-            {counts[s]} {badgeFor(s).label}
-          </Badge>
-        ))}
-    </Row>
-  )
-}
-
 export function SubmissionCard({
   row,
   showActions = true,
@@ -196,6 +168,12 @@ export function SubmissionCard({
       "Network preview queued — it'll render with the declared hosts.",
       'Could not start the network preview.',
     )
+  const setCredentialFlag = (value: boolean) =>
+    run(
+      () => setReadsClaudeTokenFn({ data: { versionId: version.id, value } }),
+      value ? 'Flagged as reading the auth token.' : 'Cleared the auth-token flag.',
+      'Could not update the auth-token flag.',
+    )
 
   return (
     <SectionCard interactive={linked} title={titleFor(config, detailSlug)}>
@@ -226,15 +204,23 @@ export function SubmissionCard({
         />
 
         {showActions ? (
-          <CardActions
-            isHeld={isHeld}
-            isReady={isReady}
-            pending={pending}
-            onApprove={approve}
-            onReject={reject}
-            onRequeue={requeue}
-            onRunNetworkPreview={runNetworkPreview}
-          />
+          <Stack gap={3}>
+            <CredentialFlagToggle
+              htmlId={`reads-claude-token-${version.id}`}
+              value={version.readsClaudeToken}
+              pending={pending}
+              onChange={setCredentialFlag}
+            />
+            <CardActions
+              isHeld={isHeld}
+              isReady={isReady}
+              pending={pending}
+              onApprove={approve}
+              onReject={reject}
+              onRequeue={requeue}
+              onRunNetworkPreview={runNetworkPreview}
+            />
+          </Stack>
         ) : null}
       </Stack>
     </SectionCard>

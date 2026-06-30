@@ -1,0 +1,1 @@
+ALTER TABLE "config_versions" ADD COLUMN "reads_claude_token" boolean DEFAULT false NOT NULL;
