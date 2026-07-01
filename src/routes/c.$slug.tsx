@@ -5,6 +5,7 @@ import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { getConfigDetail } from '@/gallery/functions'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
+import { configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { AuthorChip } from '@/ui/author-chip'
@@ -30,7 +31,7 @@ export const Route = createFileRoute('/c/$slug')({
     const detail = loaderData?.detail
     return {
       meta: [
-        { title: detail ? `${detail.title} — statuslin.es` : 'Not found — statuslin.es' },
+        { title: detail ? configPageTitle(detail.title) : NOT_FOUND_TITLE },
         {
           name: 'description',
           content:
