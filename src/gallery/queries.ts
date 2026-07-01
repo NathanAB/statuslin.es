@@ -142,7 +142,10 @@ export async function getPublishedConfigs(
  * script hashes in a single query, returning a sha → segments map. Replaces the per-card lookup
  * that made the gallery an N+1; selects only `segments` since that's all the card renders.
  */
-async function selectCardPreviews(db: Db, shas: string[]): Promise<Map<string, AnsiSegment[]>> {
+export async function selectCardPreviews(
+  db: Db,
+  shas: string[],
+): Promise<Map<string, AnsiSegment[]>> {
   const bySha = new Map<string, AnsiSegment[]>()
   if (shas.length === 0) return bySha
   const rows = await db
@@ -221,3 +224,8 @@ export async function getConfigBySlug(
     previews,
   }
 }
+
+// Re-exported so @/gallery/queries stays the single import surface for gallery
+// queries (related.ts exists only to respect the 250-line file gate).
+export type { RelatedConfig } from './related'
+export { getRelatedConfigs, RELATED_LIMIT } from './related'

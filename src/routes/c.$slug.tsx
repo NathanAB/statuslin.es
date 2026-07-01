@@ -5,15 +5,21 @@ import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { getConfigDetail } from '@/gallery/functions'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
+import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
+import { configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
+import { siteUrl } from '@/lib/site'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { AuthorChip } from '@/ui/author-chip'
+import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { ConfigBadges } from '@/ui/config-badges'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { Row, Stack } from '@/ui/layout'
 import { ScenarioRow } from '@/ui/scenario-row'
 import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
+import { StatuslinePreview } from '@/ui/statusline-preview'
+import { StretchedLink } from '@/ui/stretched-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { UpvoteButton } from '@/votes/upvote-button'
 
@@ -30,7 +36,7 @@ export const Route = createFileRoute('/c/$slug')({
     const detail = loaderData?.detail
     return {
       meta: [
-        { title: detail ? `${detail.title} — statuslin.es` : 'Not found — statuslin.es' },
+        { title: detail ? configPageTitle(detail.title) : NOT_FOUND_TITLE },
         {
           name: 'description',
           content:
@@ -48,6 +54,15 @@ export const Route = createFileRoute('/c/$slug')({
       // Only a real config gets a canonical URL; the notFound page (no detail) is a 404 and
       // shouldn't point search engines at a canonical that doesn't exist.
       ...(detail ? { links: [canonicalLink(`/c/${detail.slug}`)] } : {}),
+      scripts: detail
+        ? configJsonLd(siteUrl(), {
+            slug: detail.slug,
+            title: detail.title,
+            description: detail.description,
+            interpreter: detail.interpreter,
+            authorName: detail.author?.name ?? null,
+          }).map(jsonLdScript)
+        : [],
     }
   },
   notFoundComponent: () => (
@@ -153,6 +168,39 @@ function ConfigDetail() {
         >
           <HighlightedCode html={detail.sourceHtml} />
         </SectionCard>
+
+        {/* Internal links: without these, every config page is a crawl dead end. */}
+        {detail.related.length > 0 && (
+          <SectionCard title="More status lines">
+            <Stack gap={3}>
+              {detail.related.map((r) => (
+                <Card key={r.slug} interactive>
+                  <CardHeader>
+                    <Row gap={2}>
+                      <CardTitle>
+                        <StretchedLink to="/c/$slug" params={{ slug: r.slug }}>
+                          {r.title}
+                        </StretchedLink>
+                      </CardTitle>
+                      <Text muted size="sm">
+                        ⇧ {r.upvoteCount}
+                      </Text>
+                    </Row>
+                  </CardHeader>
+                  <CardContent>
+                    {r.preview !== null ? (
+                      <StatuslinePreview segments={r.preview} />
+                    ) : (
+                      <Text muted size="sm">
+                        No preview.
+                      </Text>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          </SectionCard>
+        )}
       </Stack>
     </PageShell>
   )
