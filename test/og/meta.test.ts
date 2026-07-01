@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { configSocialMeta, rootSocialMeta } from '@/og/meta'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/render'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -25,5 +26,17 @@ describe('social meta', () => {
       content: 'https://statuslin.es/og/c/my-line.png',
     })
     expect(meta.find((m) => m.property === 'og:title')?.content).toBe('My Line — statuslin.es')
+  })
+  it('root declares the og:image dimensions from the render constants', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const meta = rootSocialMeta()
+    expect(meta).toContainEqual({ property: 'og:image:width', content: String(CARD_WIDTH) })
+    expect(meta).toContainEqual({ property: 'og:image:height', content: String(CARD_HEIGHT) })
+  })
+  it('config declares the og:image dimensions from the render constants', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const meta = configSocialMeta({ slug: 'my-line', title: 'My Line', description: 'hi' })
+    expect(meta).toContainEqual({ property: 'og:image:width', content: String(CARD_WIDTH) })
+    expect(meta).toContainEqual({ property: 'og:image:height', content: String(CARD_HEIGHT) })
   })
 })
