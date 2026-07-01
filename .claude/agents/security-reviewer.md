@@ -21,7 +21,8 @@ Any change touching: submission intake, the E2B sandbox (`getSandbox`/`exec`/`de
 **Q2 — safe for *others* to copy and run (supply chain):**
 - Script **output is treated as data, never HTML** — parsed (anser) and rendered as escaped spans. Flag any `dangerouslySetInnerHTML` / unescaped interpolation of script output (XSS).
 - Submissions are **open-source + readable**; obfuscated/minified scripts are rejected.
-- The **behavior-trace + static-lint gate** runs and auto-rejects network attempts, reads outside the project dir (`~/.ssh`, `~/.aws`, etc.), shell/binary spawns, and dynamic-exec sinks (`eval` of decoded/fetched data, `curl|sh`, `/dev/tcp`).
+- The **static-lint gate** runs at submit (`src/submit/submit.ts`) and auto-rejects obfuscated scripts (`detectObfuscation`) and non-Claude credential reads (`detectForeignCredentialAccess` — SSH keys, `~/.aws`, `.netrc`, `.npmrc`, gcloud, OS secret stores). Obfuscation heuristics also flag `eval` of decoded/fetched data (`curl|sh`, `base64 -d | sh`).
+- The **runtime behavior trace** (strace → `parseStrace`) is **captured but NOT authoritative**: strace isn't wired into the run command yet (`src/render/e2b-runner.ts:128-133`), so the stored `trace` is always empty, and `src/render/strace.ts` warns it can be poisoned by the traced process. Treat an empty/clean trace as "needs human review," **never** "safe." Flag any code that gates auto-reject or the transparency badge on `result.trace`.
 - Versions are **immutable + content-hashed**; the adopt path serves the exact reviewed bytes; **every update is re-reviewed** before being served (no auto-update to an unreviewed digest). This is the bait-and-switch defense — flag any path that serves an unreviewed version.
 - Per-listing **transparency badge** reflects the analysis; "listed" never silently means "safe".
 
