@@ -1,5 +1,5 @@
 import { siteUrl } from '@/lib/site'
-import { CARD_HEIGHT, CARD_WIDTH } from '@/og/render'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 export function rootSocialMeta(): Array<Record<string, string>> {
   const base = siteUrl()

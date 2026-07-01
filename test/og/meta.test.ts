@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { configSocialMeta, rootSocialMeta } from '@/og/meta'
-import { CARD_HEIGHT, CARD_WIDTH } from '@/og/render'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
