@@ -9,12 +9,15 @@ import { configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { AuthorChip } from '@/ui/author-chip'
+import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { ConfigBadges } from '@/ui/config-badges'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { Row, Stack } from '@/ui/layout'
 import { ScenarioRow } from '@/ui/scenario-row'
 import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
+import { StatuslinePreview } from '@/ui/statusline-preview'
+import { StretchedLink } from '@/ui/stretched-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { UpvoteButton } from '@/votes/upvote-button'
 
@@ -154,6 +157,35 @@ function ConfigDetail() {
         >
           <HighlightedCode html={detail.sourceHtml} />
         </SectionCard>
+
+        {/* Internal links: without these, every config page is a crawl dead end. */}
+        {detail.related.length > 0 && (
+          <SectionCard title="More status lines">
+            <Stack gap={3}>
+              {detail.related.map((r) => (
+                <Card key={r.slug} interactive>
+                  <CardHeader>
+                    <Row gap={2}>
+                      <CardTitle>
+                        <StretchedLink to="/c/$slug" params={{ slug: r.slug }}>
+                          {r.title}
+                        </StretchedLink>
+                      </CardTitle>
+                      <Text muted size="sm">
+                        ⇧ {r.upvoteCount}
+                      </Text>
+                    </Row>
+                  </CardHeader>
+                  {r.preview !== null && (
+                    <CardContent>
+                      <StatuslinePreview segments={r.preview} />
+                    </CardContent>
+                  )}
+                </Card>
+              ))}
+            </Stack>
+          </SectionCard>
+        )}
       </Stack>
     </PageShell>
   )

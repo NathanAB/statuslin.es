@@ -13,6 +13,7 @@ import {
   getPublishedConfigs,
   getPublishedCount,
   getPublishedSlugsForSitemap,
+  getRelatedConfigs,
   PAGE_SIZE,
 } from './queries'
 
@@ -57,9 +58,11 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
       // versions without it. Either way the browser gets escaped HTML, never Shiki itself.
       // resolveSourceHtml always returns a string, so this overrides the nullable ConfigDetail
       // .sourceHtml with a non-null value — the detail page can render it directly.
+      const related = await getRelatedConfigs(db, data.slug)
       return {
         ...detail,
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),
+        related,
       }
     }),
   )
