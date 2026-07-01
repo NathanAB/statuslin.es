@@ -15,6 +15,7 @@ import { StatuslinePreview } from '@/ui/statusline-preview'
 import { StretchedLink } from '@/ui/stretched-link'
 import { SubmitCta } from '@/ui/submit-cta'
 import { Text } from '@/ui/text'
+import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
   // sort + page are optional in the URL (defaults: 'new', page 1), so Links to "/" can omit them.
@@ -30,10 +31,11 @@ export const Route = createFileRoute('/')({
   }),
   head: () => ({
     meta: [
-      { title: 'statuslin.es' },
+      { title: 'Claude Code Status Lines — Community Gallery | statuslin.es' },
       {
         name: 'description',
-        content: 'The Claude Code status line catalogue',
+        content:
+          'Browse a community gallery of Claude Code status lines — see rendered previews, upvote your favorites, and copy one into your own terminal in a single paste.',
       },
     ],
     links: [canonicalLink('/')],
@@ -62,6 +64,7 @@ function Home() {
           custom config for others, or find one you like and use it for yourself.
         </Text>
         <Stack gap={4}>
+          <VisuallyHidden as="h2">Status lines</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
             <Row gap={1}>
               {SORT_TABS.map((tab) => (

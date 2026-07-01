@@ -1,10 +1,8 @@
 import { Resvg } from '@resvg/resvg-js'
 import type { ReactElement } from 'react'
 import satori from 'satori'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { loadEmojiAsset, loadOgFonts } from '@/og/font'
-
-const CARD_WIDTH = 1200
-const CARD_HEIGHT = 630
 
 /** satori(element) -> SVG, then resvg -> PNG. resvg needs no fonts: satori embeds text as vector
  * paths, so resvg only rasterizes finished shapes. */

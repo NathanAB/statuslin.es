@@ -1,4 +1,5 @@
 import { siteUrl } from '@/lib/site'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 export function rootSocialMeta(): Array<Record<string, string>> {
   const base = siteUrl()
@@ -13,6 +14,8 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     { property: 'og:title', content: 'statuslin.es' },
     { property: 'og:description', content: 'A community gallery of Claude Code status lines.' },
     { property: 'og:image', content: `${base}/og/home.png` },
+    { property: 'og:image:width', content: String(CARD_WIDTH) },
+    { property: 'og:image:height', content: String(CARD_HEIGHT) },
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:image', content: `${base}/og/home.png` },
   ]
@@ -32,6 +35,8 @@ export function configSocialMeta(input: {
       content: input.description || 'A reviewed Claude Code status line.',
     },
     { property: 'og:image', content: image },
+    { property: 'og:image:width', content: String(CARD_WIDTH) },
+    { property: 'og:image:height', content: String(CARD_HEIGHT) },
     { name: 'twitter:image', content: image },
   ]
 }
