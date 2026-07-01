@@ -5,6 +5,7 @@ import { coercePage, coerceSort, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
+import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { AuthorChip } from '@/ui/author-chip'
 import { Button } from '@/ui/button'
@@ -33,7 +34,7 @@ export const Route = createFileRoute('/')({
   }),
   head: ({ loaderData }) => ({
     meta: [
-      { title: 'Claude Code Status Lines — Community Gallery | statuslin.es' },
+      { title: `${HOME_TITLE_BASE} | statuslin.es` },
       {
         name: 'description',
         content:

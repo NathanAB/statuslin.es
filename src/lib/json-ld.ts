@@ -1,3 +1,4 @@
+import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
 /**
@@ -23,7 +24,7 @@ export function homeJsonLd(origin: string, items: Array<{ slug: string; title: s
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Claude Code Status Lines — Community Gallery',
+    name: HOME_TITLE_BASE,
     url: origin,
     mainEntity: {
       '@type': 'ItemList',

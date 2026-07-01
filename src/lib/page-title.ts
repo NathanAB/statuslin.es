@@ -8,3 +8,6 @@ export function configPageTitle(title: string): string {
 }
 
 export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
+
+/** The home page's title base — shared by the <title> tag and the home JSON-LD name. */
+export const HOME_TITLE_BASE = 'Claude Code Status Lines — Community Gallery'

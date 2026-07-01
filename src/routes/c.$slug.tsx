@@ -187,11 +187,15 @@ function ConfigDetail() {
                       </Text>
                     </Row>
                   </CardHeader>
-                  {r.preview !== null && (
-                    <CardContent>
+                  <CardContent>
+                    {r.preview !== null ? (
                       <StatuslinePreview segments={r.preview} />
-                    </CardContent>
-                  )}
+                    ) : (
+                      <Text muted size="sm">
+                        No preview.
+                      </Text>
+                    )}
+                  </CardContent>
                 </Card>
               ))}
             </Stack>

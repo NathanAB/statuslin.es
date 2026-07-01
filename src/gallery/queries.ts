@@ -225,6 +225,7 @@ export async function getConfigBySlug(
   }
 }
 
-// Re-export from related.ts for backward compatibility (queries and related routes both expect these here)
+// Re-exported so @/gallery/queries stays the single import surface for gallery
+// queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
 export { getRelatedConfigs, RELATED_LIMIT } from './related'
