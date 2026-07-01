@@ -45,3 +45,6 @@ scripts/profiling/results/*
 # or a per-slice build log carrying the maintainer's name / local paths)
 docs/audits/
 docs/superpowers/
+
+# Misc / scratch docs — personal notes, playbooks, drafts that shouldn't ship
+docs/local/
