@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseStagingDigest } from '../scripts/deploy-prod'
+import { assertDigestUnchanged, parseStagingDigest } from '../scripts/deploy-prod'
 
 // One machine entry as `fly image show --app X --json` emits it (extra fields trimmed).
 const entry = (digest: string, machineId: string) => ({
@@ -31,5 +31,16 @@ describe('parseStagingDigest', () => {
   it('throws on a malformed digest', () => {
     const json = JSON.stringify([entry('sha256:not-a-real-digest', 'm1')])
     expect(() => parseStagingDigest(json)).toThrow(/unexpected digest/i)
+  })
+})
+
+describe('assertDigestUnchanged', () => {
+  it('passes when staging still runs the digest that was smoked', () => {
+    expect(() => assertDigestUnchanged(SHA, SHA)).not.toThrow()
+  })
+
+  it('throws when staging was redeployed between smoke and promote', () => {
+    const other = `sha256:${'b'.repeat(64)}`
+    expect(() => assertDigestUnchanged(SHA, other)).toThrow(/changed during the smoke/i)
   })
 })

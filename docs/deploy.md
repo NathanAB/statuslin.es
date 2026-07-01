@@ -101,7 +101,7 @@ machine before the box is in trouble.
 
 Staging:
 ```sh
-fly deploy --config fly.staging.toml
+bun run deploy:staging   # fly deploy --config fly.staging.toml
 ```
 The `release_command` in the Fly config runs `bun run src/db/migrate.ts` against that env's DB before
 the new version goes live. That script applies migrations via `drizzle-orm`'s runtime migrator
@@ -115,12 +115,16 @@ Promote to production with the **gated** command — never promote by hand:
 bun run deploy:prod
 ```
 `scripts/deploy-prod.ts` does three things and **refuses to promote unless the middle one passes**:
-1. `fly deploy --config fly.staging.toml`
+1. reads the digest of the image staging is running **now** (deploy staging first with
+   `bun run deploy:staging` — the promote doesn't deploy staging itself, so a staging build you
+   already validated isn't rebuilt).
 2. a **real-browser smoke against staging** — `SMOKE_BASE_URL=https://staging.statuslin.es
    SMOKE_SIGNED_OUT_ONLY=1 bun run smoke` — which loads the home + a `/c/<slug>` detail page in
    `agent-browser` and fails if either doesn't hydrate or logs a console error.
-3. only on green, `fly deploy --app statuslines --image registry.fly.io/statuslines-staging@<digest>`
-   (the exact image it just validated, by digest — no rebuild).
+3. only on green, re-reads the staging digest and **refuses if it changed during the smoke**
+   (someone redeployed staging mid-run), then
+   `fly deploy --app statuslines --image registry.fly.io/statuslines-staging@<digest>`
+   (the exact image it validated, by digest — no rebuild).
 
 **Why this is mandatory, not optional:** every source gate (tsc/lint/vitest) passes while the client
 bundle is dead — a server-only import leaking into the browser throws `Buffer is not defined`,

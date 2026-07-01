@@ -1,5 +1,5 @@
 /**
- * Gated production deploy: staging → browser smoke → promote the validated image by digest.
+ * Gated production promote: smoke whatever staging runs → promote that exact image by digest.
  *
  * Why this exists: source gates (tsc/lint/vitest) all pass while the client bundle is dead —
  * a server-only import leaking into the browser throws `Buffer is not defined`, hydration
@@ -8,18 +8,19 @@
  * before prod can ever see the image. Staging runs the exact same Docker image we promote, so
  * smoking staging smokes the real production bundle.
  *
- * Steps:
- *   1. deploy staging        (fly deploy --config fly.staging.toml)
- *   2. smoke staging         (signed-out browser checks: pages hydrate, no console errors)
- *   3. promote on green only  (fly deploy --app statuslines --image …@<digest>)
+ * Deploy staging first with `bun run deploy:staging` (its own command, so a staging deploy
+ * that was already validated by hand isn't repeated here). Then this script:
+ *   1. reads the digest of the image staging is running now
+ *   2. smokes staging       (signed-out browser checks: pages hydrate, no console errors)
+ *   3. re-reads the digest and refuses if it changed mid-smoke (someone redeployed staging),
+ *      then promotes on green only (fly deploy --app statuslines --image …@<digest>)
  *
- * Run: `bun run deploy:prod`. Aborts before promoting if the smoke fails.
+ * Run: `bun run deploy:prod`. Aborts before promoting if the smoke fails or the digest moved.
  */
 import { spawn, spawnSync } from 'node:child_process'
 
 const STAGING_APP = 'statuslines-staging'
 const PROD_APP = 'statuslines'
-const STAGING_CONFIG = 'fly.staging.toml'
 const STAGING_URL = 'https://staging.statuslin.es'
 
 /**
@@ -40,6 +41,18 @@ export function parseStagingDigest(jsonOutput: string): string {
   if (!/^sha256:[0-9a-f]{64}$/.test(digest))
     throw new Error(`unexpected digest format from fly: ${digest}`)
   return digest
+}
+
+/**
+ * The digest smoked and the digest promoted must be the same image. If staging was redeployed
+ * while the smoke ran, the smoke's verdict says nothing about what a promote would ship — throw
+ * instead of promoting an unvalidated image.
+ */
+export function assertDigestUnchanged(smoked: string, current: string): void {
+  if (smoked !== current)
+    throw new Error(
+      `staging image changed during the smoke (smoked ${smoked}, staging now runs ${current}) — refusing to promote. Re-run bun run deploy:prod.`,
+    )
 }
 
 /** Run a command with the parent's stdio attached; resolve its exit code. */
@@ -63,23 +76,23 @@ function die(message: string): never {
   process.exit(1)
 }
 
-async function main(): Promise<void> {
-  console.log('▸ [1/3] deploying staging …')
-  if ((await run(['fly', 'deploy', '--config', STAGING_CONFIG])) !== 0) {
-    die('staging deploy failed — nothing promoted')
-  }
-
-  // Capture the digest of the image now on staging (the exact thing we'll promote).
+/** Read the digest staging is running right now (dies on error/ambiguity). */
+function readStagingDigest(): string {
   const shown = spawnSync('fly', ['image', 'show', '--app', STAGING_APP, '--json'], {
     encoding: 'utf8',
   })
   if (shown.status !== 0) die(`could not read staging image: ${shown.stderr || shown.stdout}`)
-  let digest: string
   try {
-    digest = parseStagingDigest(shown.stdout)
+    return parseStagingDigest(shown.stdout)
   } catch (err) {
     die(err instanceof Error ? err.message : String(err))
   }
+}
+
+async function main(): Promise<void> {
+  console.log('▸ [1/3] reading the image staging runs now …')
+  console.log(`  (deploy staging first with \`bun run deploy:staging\` if you haven't)`)
+  const digest = readStagingDigest()
   console.log(`  staging image digest: ${digest}`)
 
   console.log('\n▸ [2/3] smoking staging in a real browser (signed-out hydration) …')
@@ -94,6 +107,11 @@ async function main(): Promise<void> {
   }
 
   console.log('\n▸ [3/3] smoke green — promoting validated image to production …')
+  try {
+    assertDigestUnchanged(digest, readStagingDigest())
+  } catch (err) {
+    die(err instanceof Error ? err.message : String(err))
+  }
   const image = `registry.fly.io/${STAGING_APP}@${digest}`
   if ((await run(['fly', 'deploy', '--app', PROD_APP, '--image', image])) !== 0) {
     die('prod promote failed (staging is healthy; image is validated — safe to retry the promote)')
