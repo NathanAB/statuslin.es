@@ -4,6 +4,8 @@ import { getGallery } from '@/gallery/functions'
 import { coercePage, coerceSort, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
+import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
+import { siteUrl } from '@/lib/site'
 import { AuthorChip } from '@/ui/author-chip'
 import { Button } from '@/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
@@ -29,7 +31,7 @@ export const Route = createFileRoute('/')({
     user: await getSession(),
     gallery: await getGallery({ data: { sort: deps.sort ?? 'new', page: deps.page ?? 1 } }),
   }),
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: 'Claude Code Status Lines — Community Gallery | statuslin.es' },
       {
@@ -39,6 +41,7 @@ export const Route = createFileRoute('/')({
       },
     ],
     links: [canonicalLink('/')],
+    scripts: loaderData ? [jsonLdScript(homeJsonLd(siteUrl(), loaderData.gallery.cards))] : [],
   }),
   component: Home,
 })

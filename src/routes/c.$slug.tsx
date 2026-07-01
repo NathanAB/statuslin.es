@@ -5,7 +5,9 @@ import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { getConfigDetail } from '@/gallery/functions'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
+import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
+import { siteUrl } from '@/lib/site'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { AuthorChip } from '@/ui/author-chip'
@@ -52,6 +54,15 @@ export const Route = createFileRoute('/c/$slug')({
       // Only a real config gets a canonical URL; the notFound page (no detail) is a 404 and
       // shouldn't point search engines at a canonical that doesn't exist.
       ...(detail ? { links: [canonicalLink(`/c/${detail.slug}`)] } : {}),
+      scripts: detail
+        ? configJsonLd(siteUrl(), {
+            slug: detail.slug,
+            title: detail.title,
+            description: detail.description,
+            interpreter: detail.interpreter,
+            authorName: detail.author?.name ?? null,
+          }).map(jsonLdScript)
+        : [],
     }
   },
   notFoundComponent: () => (
