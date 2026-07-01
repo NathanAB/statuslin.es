@@ -49,11 +49,8 @@ the same tooling the maintainer uses — no setup needed:
   candidate and beta libraries where model memory is stale) and shadcn. Claude Code asks you to approve
   them when you open the project.
 
-Two optional local tools make the hooks fully effective:
+One optional local tool matters for the hooks:
 
-- **`agent-browser`** — the `browser-verify` hook drives a real browser to confirm UI changes actually
-  render. Without it installed, that hook skips with a warning (it won't block you). Install it (and run
-  `bun run db:migrate` on your dev DB) to enable it.
 - **`python3`** — the edit hooks use it to parse hook input; if it's missing they no-op silently.
 
 Personal Claude Code settings go in `.claude/settings.local.json` (gitignored) — don't commit machine-
