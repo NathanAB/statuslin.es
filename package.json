@@ -29,6 +29,7 @@
     "build:e2b-template": "bun run scripts/build-e2b-template.ts",
     "build:font": "bun run scripts/build-font-subset.ts",
     "seed:gallery": "bun run scripts/seed-gallery.ts",
+    "generate:content": "bun run scripts/generate-content.ts",
     "profile:bench": "bun run scripts/profiling/bench-phases.ts",
     "profile:server": "bun run scripts/profiling/profile-server.ts",
     "dev:login": "bun run scripts/dev-login.ts",
