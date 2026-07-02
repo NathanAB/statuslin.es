@@ -12,4 +12,10 @@ describe('BulletList', () => {
     expect(items[0]?.textContent).toBe('Current git branch')
     expect(items[1]?.textContent).toBe('Model name')
   })
+
+  it('renders duplicate items as separate list entries', () => {
+    const { container } = render(<BulletList items={['bash', 'bash']} />)
+    const items = container.querySelectorAll('ul > li')
+    expect(items).toHaveLength(2)
+  })
 })

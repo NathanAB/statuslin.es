@@ -1,3 +1,6 @@
+// Default import on purpose: under this repo's test runner (vitest via `bun --bun`), zod's
+// named `z` export resolves to undefined at runtime; the default export works everywhere.
+// Verified 2026-07-02 — don't "fix" this to `import { z } from 'zod'`.
 import z from 'zod'
 
 /**

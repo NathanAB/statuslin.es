@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
 import { and, asc, eq, isNull } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -77,9 +78,17 @@ export async function listPublishedSlugsMissingContent(db: Db): Promise<string[]
   return rows.map((r) => r.slug)
 }
 
-/** The real model call: local `claude` CLI, print mode, prompt on stdin. Deliberately untested. */
+/**
+ * The real model call: local `claude` CLI, print mode, prompt on stdin. Deliberately untested.
+ *
+ * The prompt embeds untrusted submission text (script source + its stdout), so this runs with
+ * `--tools ''` to disable all tool access — a prompt injection in a submission must not be able
+ * to trigger tool use on the operator's machine. It also runs with `cwd: tmpdir()`, outside the
+ * repo, so project-level agent settings (e.g. `.claude/settings.json`) don't apply to this call.
+ */
 const runClaude: RunPrompt = async (prompt) => {
-  const res = spawnSync('claude', ['-p'], {
+  const res = spawnSync('claude', ['-p', '--tools', ''], {
+    cwd: tmpdir(),
     input: prompt,
     encoding: 'utf8',
     maxBuffer: 16 * 1024 * 1024,
