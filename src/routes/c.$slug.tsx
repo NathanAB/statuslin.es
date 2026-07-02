@@ -3,6 +3,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { getConfigDetail } from '@/gallery/functions'
+import { GeneratedContentSections } from '@/gallery/generated-content'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
@@ -168,6 +169,9 @@ function ConfigDetail() {
         >
           <HighlightedCode html={detail.sourceHtml} />
         </SectionCard>
+
+        {/* Auto-generated copy — the SEO answer to "what does this status line do?" */}
+        {detail.generatedContent && <GeneratedContentSections content={detail.generatedContent} />}
 
         {/* Internal links: without these, every config page is a crawl dead end. */}
         {detail.related.length > 0 && (
