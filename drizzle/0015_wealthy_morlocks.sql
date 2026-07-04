@@ -1,0 +1,1 @@
+ALTER TABLE "config_versions" ADD COLUMN "generated_content" jsonb;

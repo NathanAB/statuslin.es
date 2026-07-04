@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
+import type { GeneratedContent } from '@/content/types'
 import { configs, configVersions, previews, user } from '@/db/schema'
 import { getVoteState } from '@/lib/vote-state'
 import { getPreviews } from '@/render/store'
@@ -182,6 +183,8 @@ export interface ConfigDetail {
   contentSha256: string
   networkHosts: string[]
   readsClaudeToken: boolean
+  /** Auto-generated page copy, or null when scripts/generate-content.ts hasn't run for this version. */
+  generatedContent: GeneratedContent | null
   previews: RenderedPreview[]
 }
 
@@ -221,6 +224,7 @@ export async function getConfigBySlug(
     contentSha256: row.version.contentSha256,
     networkHosts: row.version.networkHosts ?? [],
     readsClaudeToken: row.version.readsClaudeToken ?? false,
+    generatedContent: row.version.generatedContent ?? null,
     previews,
   }
 }

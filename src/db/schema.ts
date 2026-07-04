@@ -13,6 +13,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
+import type { GeneratedContent } from '../content/types'
 import { user } from './auth-schema'
 
 export const previews = pgTable(
@@ -80,6 +81,10 @@ export const configVersions = pgTable(
     sourceHtml: text('source_html'),
     networkHosts: jsonb('network_hosts').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     readsClaudeToken: boolean('reads_claude_token').notNull().default(false),
+    // Auto-generated page copy (what it shows / requirements / behavior notes), written by
+    // scripts/generate-content.ts via claude -p. Nullable: versions without it simply render
+    // no content sections. Describes THIS version's script — regenerate when the script changes.
+    generatedContent: jsonb('generated_content').$type<GeneratedContent>(),
     status: text('status').notNull().default('pending'),
     reviewedBy: text('reviewed_by'),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
