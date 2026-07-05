@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
-import { configSocialMeta, rootSocialMeta } from '@/og/meta'
+import { configSocialMeta, rootSocialMeta, staticPageSocialMeta } from '@/og/meta'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -38,5 +38,25 @@ describe('social meta', () => {
     const meta = configSocialMeta({ slug: 'my-line', title: 'My Line', description: 'hi' })
     expect(meta).toContainEqual({ property: 'og:image:width', content: String(CARD_WIDTH) })
     expect(meta).toContainEqual({ property: 'og:image:height', content: String(CARD_HEIGHT) })
+  })
+
+  it('static pages reuse the home og image with page-specific title/description/url', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const meta = staticPageSocialMeta({
+      path: '/resources',
+      title: 'Claude Code Status Line Tools & Resources',
+      description: 'A curated list.',
+    })
+    expect(meta).toContainEqual({
+      property: 'og:title',
+      content: 'Claude Code Status Line Tools & Resources',
+    })
+    expect(meta).toContainEqual({ property: 'og:description', content: 'A curated list.' })
+    expect(meta).toContainEqual({ property: 'og:url', content: 'https://statuslin.es/resources' })
+    expect(meta).toContainEqual({
+      property: 'og:image',
+      content: 'https://statuslin.es/og/home.png',
+    })
+    expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
   })
 })

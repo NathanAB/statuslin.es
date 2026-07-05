@@ -40,3 +40,27 @@ export function configSocialMeta(input: {
     { name: 'twitter:image', content: image },
   ]
 }
+
+/**
+ * Social meta for static editorial pages (/guide, /resources). Reuses the home OG
+ * card — these pages have no per-page image, and an on-brand card beats none when
+ * the page is shared (the resources page is the outreach link).
+ */
+export function staticPageSocialMeta(input: {
+  path: string
+  title: string
+  description: string
+}): Array<Record<string, string>> {
+  const base = siteUrl()
+  return [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: `${base}${input.path}` },
+    { property: 'og:title', content: input.title },
+    { property: 'og:description', content: input.description },
+    { property: 'og:image', content: `${base}/og/home.png` },
+    { property: 'og:image:width', content: String(CARD_WIDTH) },
+    { property: 'og:image:height', content: String(CARD_HEIGHT) },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:image', content: `${base}/og/home.png` },
+  ]
+}

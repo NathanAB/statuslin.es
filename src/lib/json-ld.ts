@@ -1,4 +1,4 @@
-import { HOME_TITLE_BASE } from '@/lib/page-title'
+import { GUIDE_TITLE_BASE, HOME_TITLE_BASE, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
 /**
@@ -70,4 +70,38 @@ export function configJsonLd(
       ],
     },
   ]
+}
+
+/** The /resources page as a CollectionPage listing the external tools/resources. */
+export function resourcesJsonLd(
+  origin: string,
+  items: Array<{ name: string; url: string }>,
+): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: RESOURCES_TITLE_BASE,
+    url: `${origin}/resources`,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: items.map((item, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: item.name,
+        url: item.url,
+      })),
+    },
+  }
+}
+
+/** The /guide page as a TechArticle. */
+export function guideJsonLd(origin: string): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: GUIDE_TITLE_BASE,
+    url: `${origin}/guide`,
+    description:
+      'How to set up a Claude Code status line: the statusLine setting, the JSON your script receives, and a tested example script.',
+  }
 }

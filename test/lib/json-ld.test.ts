@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configJsonLd, homeJsonLd, jsonLdScript } from '@/lib/json-ld'
+import { configJsonLd, guideJsonLd, homeJsonLd, jsonLdScript, resourcesJsonLd } from '@/lib/json-ld'
 
 describe('jsonLdScript', () => {
   it('serializes to an application/ld+json script descriptor', () => {
@@ -61,5 +61,36 @@ describe('configJsonLd', () => {
       authorName: null,
     }) as Array<Record<string, unknown>>
     expect(code).not.toHaveProperty('author')
+  })
+})
+
+describe('resourcesJsonLd', () => {
+  it('is a CollectionPage whose ItemList points at the external resources', () => {
+    const data = resourcesJsonLd('https://statuslin.es', [
+      { name: 'ccstatusline', url: 'https://github.com/sirmalloc/ccstatusline' },
+    ]) as {
+      '@type': string
+      url: string
+      mainEntity: { itemListElement: Array<{ name: string; url: string }> }
+    }
+    expect(data['@type']).toBe('CollectionPage')
+    expect(data.url).toBe('https://statuslin.es/resources')
+    expect(data.mainEntity.itemListElement[0]).toMatchObject({
+      name: 'ccstatusline',
+      url: 'https://github.com/sirmalloc/ccstatusline',
+    })
+  })
+})
+
+describe('guideJsonLd', () => {
+  it('is a TechArticle at /guide', () => {
+    const data = guideJsonLd('https://statuslin.es') as {
+      '@type': string
+      url: string
+      headline: string
+    }
+    expect(data['@type']).toBe('TechArticle')
+    expect(data.url).toBe('https://statuslin.es/guide')
+    expect(data.headline).toBe('How to Set Up a Claude Code Status Line')
   })
 })

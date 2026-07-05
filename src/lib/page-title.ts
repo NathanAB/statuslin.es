@@ -11,3 +11,9 @@ export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
 
 /** The home page's title base — shared by the <title> tag and the home JSON-LD name. */
 export const HOME_TITLE_BASE = 'Claude Code Status Lines — Community Gallery'
+
+/** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
+export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
+
+/** /resources title base — shared by the <title> tag and the resources JSON-LD name. */
+export const RESOURCES_TITLE_BASE = 'Claude Code Status Line Tools & Resources'
