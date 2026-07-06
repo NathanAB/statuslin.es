@@ -197,6 +197,29 @@ describe('submitConfig', () => {
     expect(ver?.readsClaudeToken).toBe(false)
   })
 
+  it('stores license and sourceUrl when provided, null otherwise', async () => {
+    const a = await submitConfig(db, {
+      ...input,
+      title: 'Licensed seed',
+      license: 'MIT',
+      sourceUrl: 'https://github.com/example/repo/blob/abc123/statusline.sh',
+    })
+    const [verA] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.configId, a.configId))
+    expect(verA?.license).toBe('MIT')
+    expect(verA?.sourceUrl).toBe('https://github.com/example/repo/blob/abc123/statusline.sh')
+
+    const b = await submitConfig(db, { ...input, title: 'Own work' })
+    const [verB] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.configId, b.configId))
+    expect(verB?.license).toBeNull()
+    expect(verB?.sourceUrl).toBeNull()
+  })
+
   it('gives each submission a unique slug', async () => {
     const a = await submitConfig(db, input)
     const b = await submitConfig(db, input)

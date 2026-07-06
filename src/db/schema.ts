@@ -81,6 +81,10 @@ export const configVersions = pgTable(
     sourceHtml: text('source_html'),
     networkHosts: jsonb('network_hosts').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     readsClaudeToken: boolean('reads_claude_token').notNull().default(false),
+    /** SPDX license of third-party (seeded) source, e.g. 'MIT'. Null = submitter's own work (CC0 per terms). */
+    license: text('license'),
+    /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
+    sourceUrl: text('source_url'),
     // Auto-generated page copy (what it shows / requirements / behavior notes), written by
     // scripts/generate-content.ts via claude -p. Nullable: versions without it simply render
     // no content sections. Describes THIS version's script — regenerate when the script changes.
