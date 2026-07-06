@@ -78,5 +78,8 @@ Hard rules:
 - State ONLY what you can observe in the script source or the rendered previews above. If you cannot point to the exact source line or output that proves a claim, leave the claim out. Never guess.
 - Each item is one short plain-English sentence or phrase, no markdown.
 - Write "status line" as two words in any prose.
-- If a section has nothing observable, return an empty array for it.`
+- If a section has nothing observable, return an empty array for it.
+- Write like a person, not a press release. No em dash (—) anywhere; use a comma, parentheses, or two sentences instead.
+- Never use these words: delve, leverage, robust, comprehensive, seamless, crucial, pivotal, foster, streamline, elevate, utilize, empower.
+- Vary how items start and how long they run; do not open several items with the same word or force everything into the same shape.`
 }
