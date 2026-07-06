@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { configJsonLd, guideJsonLd, homeJsonLd, jsonLdScript, resourcesJsonLd } from '@/lib/json-ld'
+import {
+  configJsonLd,
+  facetJsonLd,
+  guideJsonLd,
+  homeJsonLd,
+  jsonLdScript,
+  resourcesJsonLd,
+} from '@/lib/json-ld'
 
 describe('jsonLdScript', () => {
   it('serializes to an application/ld+json script descriptor', () => {
@@ -122,5 +129,26 @@ describe('guideJsonLd', () => {
     expect(data.url).toBe('https://statuslin.es/guide')
     expect(data.headline).toBe('How to Set Up a Claude Code Status Line')
     expect(data.description).toBe(description)
+  })
+})
+
+describe('facetJsonLd', () => {
+  const [page, crumbs] = facetJsonLd(
+    'https://example.test',
+    { slug: 'git', titleBase: 'Claude Code Status Lines That Show Git Status' },
+    [{ slug: 'a', title: 'A' }],
+  ) as [Record<string, unknown>, Record<string, unknown>]
+
+  it('is a CollectionPage listing the configs', () => {
+    expect(page['@type']).toBe('CollectionPage')
+    expect(page.url).toBe('https://example.test/status-lines/git')
+    const list = page.mainEntity as { itemListElement: Array<{ url: string }> }
+    expect(list.itemListElement[0]?.url).toBe('https://example.test/c/a')
+  })
+  it('carries a breadcrumb trail back to the gallery', () => {
+    expect(crumbs['@type']).toBe('BreadcrumbList')
+    const items = crumbs.itemListElement as Array<{ item: string }>
+    expect(items[0]?.item).toBe('https://example.test')
+    expect(items[1]?.item).toBe('https://example.test/status-lines/git')
   })
 })

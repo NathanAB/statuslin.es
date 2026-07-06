@@ -105,3 +105,37 @@ export function guideJsonLd(origin: string, description: string): object {
     description,
   }
 }
+
+/** A facet page as CollectionPage + its breadcrumb trail back to the gallery. */
+export function facetJsonLd(
+  origin: string,
+  facet: { slug: string; titleBase: string },
+  items: Array<{ slug: string; title: string }>,
+): object[] {
+  const url = `${origin}/status-lines/${facet.slug}`
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: facet.titleBase,
+      url,
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: items.map((item, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: item.title,
+          url: `${origin}/c/${item.slug}`,
+        })),
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
+        { '@type': 'ListItem', position: 2, name: facet.titleBase, item: url },
+      ],
+    },
+  ]
+}
