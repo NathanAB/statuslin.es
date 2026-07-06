@@ -95,13 +95,12 @@ export function resourcesJsonLd(
 }
 
 /** The /guide page as a TechArticle. */
-export function guideJsonLd(origin: string): object {
+export function guideJsonLd(origin: string, description: string): object {
   return {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: GUIDE_TITLE_BASE,
     url: `${origin}/guide`,
-    description:
-      'How to set up a Claude Code status line: the statusLine setting, the JSON your script receives, and a tested example script.',
+    description,
   }
 }

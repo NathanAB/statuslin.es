@@ -83,14 +83,18 @@ describe('resourcesJsonLd', () => {
 })
 
 describe('guideJsonLd', () => {
-  it('is a TechArticle at /guide', () => {
-    const data = guideJsonLd('https://statuslin.es') as {
+  it('is a TechArticle at /guide with the provided description', () => {
+    const description =
+      'How to set up a Claude Code status line: the statusLine setting, the JSON your script receives, and a tested example script you can copy.'
+    const data = guideJsonLd('https://statuslin.es', description) as {
       '@type': string
       url: string
       headline: string
+      description: string
     }
     expect(data['@type']).toBe('TechArticle')
     expect(data.url).toBe('https://statuslin.es/guide')
     expect(data.headline).toBe('How to Set Up a Claude Code Status Line')
+    expect(data.description).toBe(description)
   })
 })

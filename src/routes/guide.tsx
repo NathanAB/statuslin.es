@@ -25,7 +25,7 @@ export const Route = createFileRoute('/guide')({
       }),
     ],
     links: [canonicalLink('/guide')],
-    scripts: [jsonLdScript(guideJsonLd(siteUrl()))],
+    scripts: [jsonLdScript(guideJsonLd(siteUrl(), DESCRIPTION))],
   }),
   component: Guide,
 })
