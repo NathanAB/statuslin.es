@@ -6,7 +6,7 @@ import viteReact from '@vitejs/plugin-react'
 import { nitro } from 'nitro/vite'
 import type { Plugin } from 'vite'
 import { loadEnv } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import { POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST } from './src/lib/posthog-hosts'
 
 // Vite plugin: import binary files as Buffer via the `?arraybuffer` query suffix.
@@ -185,6 +185,9 @@ export default defineConfig(({ mode }) => ({
     env: loadEnv(mode, process.cwd(), ''),
     environment: 'node',
     globals: true,
+    // Git worktrees under .claude/worktrees are full repo copies — without this, a test run
+    // from the main checkout collects their test files too (and fails on their stale state).
+    exclude: [...configDefaults.exclude, '.claude/worktrees/**'],
     setupFiles: ['./test/setup.ts'],
     fileParallelism: false,
     coverage: {
