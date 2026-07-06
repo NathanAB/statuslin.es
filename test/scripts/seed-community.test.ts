@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import {
   account as accountTable,
@@ -15,6 +15,8 @@ import {
   type CommunityConfig,
   ensureSeededAuthor,
   fetchGithubUser,
+  publishRenderedSeeds,
+  releaseHeldSeeds,
   seedCommunity,
   seedCommunityConfig,
 } from '../../scripts/seed-community'
@@ -154,6 +156,8 @@ describe('seedCommunityConfig', () => {
     description: 'Model and branch only.',
     interpreter: 'bash',
     source: '#!/usr/bin/env bash\necho "hi"',
+    license: 'MIT',
+    sourceUrl: 'https://github.com/seedocto/dotfiles',
   }
 
   it('submits a draft + queued render job attributed to the seeded author (no publish)', async () => {
@@ -204,6 +208,69 @@ describe('seedCommunityConfig', () => {
     const second = await seedCommunityConfig(db, profile, e)
     expect(second.status).toBe('skipped')
   })
+
+  it('forwards networkHosts/license/sourceUrl through to the created version, held for network', async () => {
+    const profile = {
+      id: '4244',
+      login: 'networked',
+      name: 'Networked',
+      avatarUrl: 'https://x/n.png',
+    }
+    await ensureSeededAuthor(db, profile)
+    const e: CommunityConfig = {
+      ...entry,
+      githubLogin: 'networked',
+      githubId: '4244',
+      title: 'Networked Config',
+      networkHosts: ['api.anthropic.com'],
+    }
+
+    const outcome = await seedCommunityConfig(db, profile, e)
+    expect(outcome.status).toBe('submitted')
+
+    const [ver] = await db
+      .select()
+      .from(configVersionsTable)
+      .where(eq(configVersionsTable.configId, outcome.configId as string))
+    expect(ver?.networkHosts).toEqual(['api.anthropic.com'])
+    expect(ver?.license).toBe('MIT')
+    expect(ver?.sourceUrl).toBe('https://github.com/seedocto/dotfiles')
+    expect(ver?.readsClaudeToken).toBe(false)
+
+    const [job] = await db
+      .select()
+      .from(renderJobsTable)
+      .where(eq(renderJobsTable.configVersionId, ver?.id as string))
+    expect(job?.status).toBe('held')
+  })
+
+  it('a no-network entry gets a queued (not held) render job', async () => {
+    const profile = {
+      id: '4245',
+      login: 'nonetwork',
+      name: 'No Network',
+      avatarUrl: 'https://x/nn.png',
+    }
+    await ensureSeededAuthor(db, profile)
+    const e: CommunityConfig = {
+      ...entry,
+      githubLogin: 'nonetwork',
+      githubId: '4245',
+      title: 'No Network Config',
+    }
+
+    const outcome = await seedCommunityConfig(db, profile, e)
+
+    const [ver] = await db
+      .select()
+      .from(configVersionsTable)
+      .where(eq(configVersionsTable.configId, outcome.configId as string))
+    const [job] = await db
+      .select()
+      .from(renderJobsTable)
+      .where(eq(renderJobsTable.configVersionId, ver?.id as string))
+    expect(job?.status).toBe('queued')
+  })
 })
 
 describe('seedCommunity', () => {
@@ -230,6 +297,8 @@ describe('seedCommunity', () => {
         description: 'd',
         interpreter: 'bash',
         source: '#!/usr/bin/env bash\necho ok',
+        license: 'MIT',
+        sourceUrl: 'https://example.com/missing1',
       },
       {
         githubLogin: 'good1',
@@ -238,6 +307,8 @@ describe('seedCommunity', () => {
         description: 'd',
         interpreter: 'bash',
         source: '#!/usr/bin/env bash\necho ok',
+        license: 'MIT',
+        sourceUrl: 'https://example.com/good1',
       },
     ]
 
@@ -257,6 +328,8 @@ describe('seedCommunity', () => {
         description: 'd',
         interpreter: 'bash',
         source: '#!/usr/bin/env bash\necho ok',
+        license: 'MIT',
+        sourceUrl: 'https://example.com/recycled',
       },
     ]
 
@@ -270,5 +343,286 @@ describe('seedCommunity', () => {
       .from(accountTable)
       .where(and(eq(accountTable.providerId, 'github'), eq(accountTable.accountId, '6002')))
     expect(accs.length).toBe(0)
+  })
+})
+
+describe('releaseHeldSeeds', () => {
+  // Isolate from held/pending render jobs left behind by earlier describe blocks in this file
+  // (cascades to configVersions + renderJobs) so the count assertion below is exact.
+  beforeEach(async () => {
+    await db.delete(configsTable)
+  })
+
+  it('flips every held render job to queued and returns the count', async () => {
+    const profile = {
+      id: '7001',
+      login: 'heldauthor',
+      name: 'Held Author',
+      avatarUrl: 'https://x/held.png',
+    }
+    await ensureSeededAuthor(db, profile)
+    const heldEntry: CommunityConfig = {
+      githubLogin: 'heldauthor',
+      githubId: '7001',
+      title: 'Held Config One',
+      description: 'd',
+      interpreter: 'bash',
+      source: '#!/usr/bin/env bash\necho ok',
+      license: 'MIT',
+      sourceUrl: 'https://example.com/held-one',
+      networkHosts: ['api.anthropic.com'],
+    }
+    const heldEntry2: CommunityConfig = {
+      ...heldEntry,
+      title: 'Held Config Two',
+      networkHosts: ['api.anthropic.com'],
+    }
+    const outcome1 = await seedCommunityConfig(db, profile, heldEntry)
+    const outcome2 = await seedCommunityConfig(db, profile, heldEntry2)
+
+    // A held job from a NON-seed author (a real web submission using the network-preview gate)
+    // must be left alone — releaseHeldSeeds only releases seed-authored (email seed+*) jobs.
+    const now = new Date()
+    await db.insert(userTable).values({
+      id: 'real-web-user',
+      name: 'Real Web User',
+      email: 'realuser@example.com',
+      emailVerified: true,
+      role: 'user',
+      createdAt: now,
+      updatedAt: now,
+    })
+    const [realConfig] = await db
+      .insert(configsTable)
+      .values({
+        slug: 'real-user-held-config',
+        title: 'Real User Held Config',
+        description: 'd',
+        authorId: 'real-web-user',
+        interpreter: 'bash',
+        status: 'draft',
+      })
+      .returning()
+    const [realVersion] = await db
+      .insert(configVersionsTable)
+      .values({
+        configId: realConfig?.id as string,
+        versionNumber: 1,
+        source: '#!/usr/bin/env bash\necho ok',
+        interpreter: 'bash',
+        contentSha256: 'deadbeef',
+        networkHosts: ['api.anthropic.com'],
+        status: 'pending',
+      })
+      .returning()
+    await db.insert(renderJobsTable).values({
+      configVersionId: realVersion?.id as string,
+      status: 'held',
+    })
+
+    const count = await releaseHeldSeeds(db)
+    expect(count).toBe(2)
+
+    for (const configId of [outcome1.configId, outcome2.configId]) {
+      const [ver] = await db
+        .select()
+        .from(configVersionsTable)
+        .where(eq(configVersionsTable.configId, configId as string))
+      const [job] = await db
+        .select()
+        .from(renderJobsTable)
+        .where(eq(renderJobsTable.configVersionId, ver?.id as string))
+      expect(job?.status).toBe('queued')
+    }
+
+    const [realJob] = await db
+      .select()
+      .from(renderJobsTable)
+      .where(eq(renderJobsTable.configVersionId, realVersion?.id as string))
+    expect(realJob?.status).toBe('held')
+  })
+})
+
+describe('publishRenderedSeeds', () => {
+  // Isolate from pending versions left behind by earlier describe blocks in this file so the
+  // published/skipped counts below are exact.
+  beforeEach(async () => {
+    await db.delete(configsTable)
+  })
+
+  it('publishes every pending version whose render job is done, and counts the rest as skipped', async () => {
+    const profile = {
+      id: '8001',
+      login: 'publishauthor',
+      name: 'Publish Author',
+      avatarUrl: 'https://x/pub.png',
+    }
+    await ensureSeededAuthor(db, profile)
+
+    const doneEntry: CommunityConfig = {
+      githubLogin: 'publishauthor',
+      githubId: '8001',
+      title: 'Done Config',
+      description: 'd',
+      interpreter: 'bash',
+      source: '#!/usr/bin/env bash\necho ok',
+      license: 'MIT',
+      sourceUrl: 'https://example.com/done',
+    }
+    const notDoneEntry: CommunityConfig = { ...doneEntry, title: 'Not Done Config' }
+
+    const doneOutcome = await seedCommunityConfig(db, profile, doneEntry)
+    const notDoneOutcome = await seedCommunityConfig(db, profile, notDoneEntry)
+
+    const [doneVer] = await db
+      .select()
+      .from(configVersionsTable)
+      .where(eq(configVersionsTable.configId, doneOutcome.configId as string))
+    await db
+      .update(renderJobsTable)
+      .set({ status: 'done', finishedAt: new Date() })
+      .where(eq(renderJobsTable.configVersionId, doneVer?.id as string))
+
+    const result = await publishRenderedSeeds(db)
+    expect(result).toEqual({ published: 1, skipped: 1 })
+
+    const [doneCfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, doneOutcome.configId as string))
+    expect(doneCfg?.status).toBe('published')
+
+    const [notDoneCfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, notDoneOutcome.configId as string))
+    expect(notDoneCfg?.status).toBe('draft')
+  })
+
+  it("only approves seed-authored versions, never a real (non-seed) submitter's pending version", async () => {
+    const profile = {
+      id: '8101',
+      login: 'realauthor',
+      name: 'Real Author',
+      avatarUrl: 'https://x/real.png',
+    }
+    await ensureSeededAuthor(db, profile)
+    const seedEntry: CommunityConfig = {
+      githubLogin: 'realauthor',
+      githubId: '8101',
+      title: 'Seed Authored Config',
+      description: 'd',
+      interpreter: 'bash',
+      source: '#!/usr/bin/env bash\necho ok',
+      license: 'MIT',
+      sourceUrl: 'https://example.com/seed-authored',
+    }
+    const seedOutcome = await seedCommunityConfig(db, profile, seedEntry)
+    const [seedVer] = await db
+      .select()
+      .from(configVersionsTable)
+      .where(eq(configVersionsTable.configId, seedOutcome.configId as string))
+    await db
+      .update(renderJobsTable)
+      .set({ status: 'done', finishedAt: new Date() })
+      .where(eq(renderJobsTable.configVersionId, seedVer?.id as string))
+
+    // A real (non-seed) web submitter with a pending version + a done render job. This must NOT
+    // be auto-approved by the batch tool — it still needs the per-item human review-queue gate;
+    // only seed-authored (email seed+*) drafts are in scope for this batch action.
+    const now = new Date()
+    await db.insert(userTable).values({
+      id: 'real-publish-user',
+      name: 'Real Publish User',
+      email: 'realuser-publish@example.com',
+      emailVerified: true,
+      role: 'user',
+      createdAt: now,
+      updatedAt: now,
+    })
+    const [realConfig] = await db
+      .insert(configsTable)
+      .values({
+        slug: 'real-user-publish-config',
+        title: 'Real User Publish Config',
+        description: 'd',
+        authorId: 'real-publish-user',
+        interpreter: 'bash',
+        status: 'draft',
+      })
+      .returning()
+    const [realVersion] = await db
+      .insert(configVersionsTable)
+      .values({
+        configId: realConfig?.id as string,
+        versionNumber: 1,
+        source: '#!/usr/bin/env bash\necho ok',
+        interpreter: 'bash',
+        contentSha256: 'realdeadbeef',
+        status: 'pending',
+      })
+      .returning()
+    await db.insert(renderJobsTable).values({
+      configVersionId: realVersion?.id as string,
+      status: 'done',
+      finishedAt: now,
+    })
+
+    const result = await publishRenderedSeeds(db)
+    expect(result.published).toBe(1)
+
+    const [seedCfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, seedOutcome.configId as string))
+    expect(seedCfg?.status).toBe('published')
+
+    const [realCfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, realConfig?.id as string))
+    expect(realCfg?.status).toBe('draft')
+  })
+
+  it('never re-publishes a removed (taken-down) config even if it has a done render job', async () => {
+    const profile = {
+      id: '8301',
+      login: 'removedauthor',
+      name: 'Removed Author',
+      avatarUrl: 'https://x/removed.png',
+    }
+    await ensureSeededAuthor(db, profile)
+    const entry: CommunityConfig = {
+      githubLogin: 'removedauthor',
+      githubId: '8301',
+      title: 'Removed Config',
+      description: 'd',
+      interpreter: 'bash',
+      source: '#!/usr/bin/env bash\necho ok',
+      license: 'MIT',
+      sourceUrl: 'https://example.com/removed',
+    }
+    const outcome = await seedCommunityConfig(db, profile, entry)
+    // Simulate an admin takedown (emergency-removal script) before a re-render lands.
+    await db
+      .update(configsTable)
+      .set({ status: 'removed' })
+      .where(eq(configsTable.id, outcome.configId as string))
+    const [ver] = await db
+      .select()
+      .from(configVersionsTable)
+      .where(eq(configVersionsTable.configId, outcome.configId as string))
+    await db
+      .update(renderJobsTable)
+      .set({ status: 'done', finishedAt: new Date() })
+      .where(eq(renderJobsTable.configVersionId, ver?.id as string))
+
+    await publishRenderedSeeds(db)
+
+    const [cfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, outcome.configId as string))
+    expect(cfg?.status).toBe('removed')
   })
 })

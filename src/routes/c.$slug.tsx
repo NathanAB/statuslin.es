@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
+import { LicenseLine } from '@/gallery/license-line'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
@@ -62,6 +63,7 @@ export const Route = createFileRoute('/c/$slug')({
             description: detail.description,
             interpreter: detail.interpreter,
             authorName: detail.author?.name ?? null,
+            license: detail.license,
           }).map(jsonLdScript)
         : [],
     }
@@ -169,6 +171,7 @@ function ConfigDetail() {
         >
           <HighlightedCode html={detail.sourceHtml} />
         </SectionCard>
+        <LicenseLine license={detail.license} sourceUrl={detail.sourceUrl} />
 
         {/* Auto-generated copy — the SEO answer to "what does this status line do?" */}
         {detail.generatedContent && <GeneratedContentSections content={detail.generatedContent} />}

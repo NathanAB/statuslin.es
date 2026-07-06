@@ -22,4 +22,9 @@ describe('TermsContent', () => {
     render(<TermsContent />)
     expect(screen.getByText(/remove/i)).toBeTruthy()
   })
+
+  it('notes seeded configs keep their original license instead of CC0', () => {
+    render(<TermsContent />)
+    expect(screen.getByText(/original license/i)).toBeTruthy()
+  })
 })

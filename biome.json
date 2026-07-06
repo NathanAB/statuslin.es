@@ -7,7 +7,13 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!**/routeTree.gen.ts", "!src/db/auth-schema.ts", "!drizzle"]
+    "includes": [
+      "**",
+      "!**/routeTree.gen.ts",
+      "!src/db/auth-schema.ts",
+      "!drizzle",
+      "!scripts/seed-data/sources"
+    ]
   },
   "formatter": {
     "enabled": true,

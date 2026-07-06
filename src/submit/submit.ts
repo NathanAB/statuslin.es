@@ -64,6 +64,8 @@ export interface SubmitInput {
   interpreter: Interpreter
   source: string
   networkHosts?: string[]
+  license?: string | null
+  sourceUrl?: string | null
 }
 export interface SubmitResult {
   configId: string
@@ -153,6 +155,8 @@ export async function submitConfig(db: Db, input: SubmitInput): Promise<SubmitRe
         status: 'pending',
         networkHosts,
         readsClaudeToken: readsToken,
+        license: input.license ?? null,
+        sourceUrl: input.sourceUrl ?? null,
       })
       .returning()
     const ver = verRows[0]
