@@ -10,12 +10,15 @@ import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { getPreviews } from '@/render/store'
+import { suggestAndStoreTags } from './backfill-tags'
 
 /**
  * Generate the three content sections ("What it shows" / "Requirements" / "Behavior notes") for
  * config pages, from what the script observably does: its source, its submission metadata, and
  * its sandbox-rendered previews. Shells out to the local `claude` CLI in print mode — billed to
- * the signed-in Max plan; no ANTHROPIC_API_KEY is read or set anywhere.
+ * the signed-in Max plan; no ANTHROPIC_API_KEY is read or set anywhere. Also suggests facet tags
+ * for the same slug (scripts/backfill-tags.ts) right after content, so a freshly-generated config
+ * gets both in one pass.
  *
  * Run it manually per submission (after the worker has rendered previews) and as a backfill:
  *
@@ -24,9 +27,11 @@ import { getPreviews } from '@/render/store'
  *   DATABASE_URL=<env-url> bun run generate:content --all   # a specific env (staging, prod/Neon)
  *
  * <slug> mode accepts any status (draft/pending/published) so content can be generated while a
- * submission is still in the review queue. --all is idempotent: it skips versions that already
- * have content, so a failed run can simply be re-run. Read the printed JSON before publishing —
- * a human reviews generated copy, per the spec. Exit code 0 on success, 1 on any error.
+ * submission is still in the review queue. --all selects on missing *content* only (skips
+ * versions that already have it, so a failed run can simply be re-run) — a config that already
+ * has content but no tags is not picked up by --all; run `scripts/backfill-tags.ts` for that.
+ * Read the printed JSON before publishing — a human reviews generated copy, per the spec.
+ * Exit code 0 on success, 1 on any error.
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -86,7 +91,7 @@ export async function listPublishedSlugsMissingContent(db: Db): Promise<string[]
  * to trigger tool use on the operator's machine. It also runs with `cwd: tmpdir()`, outside the
  * repo, so project-level agent settings (e.g. `.claude/settings.json`) don't apply to this call.
  */
-const runClaude: RunPrompt = async (prompt) => {
+export const runClaude: RunPrompt = async (prompt) => {
   const res = spawnSync('claude', ['-p', '--tools', ''], {
     cwd: tmpdir(),
     input: prompt,
@@ -123,6 +128,8 @@ async function main(): Promise<void> {
       console.log(`[generate-content] ${s}: running claude -p …`)
       const content = await generateContentForConfig(db, s, runClaude)
       console.log(JSON.stringify(content, null, 2))
+      const tags = await suggestAndStoreTags(db, s, runClaude)
+      console.log(`[generate-content] ${s} tags → ${JSON.stringify(tags)}`)
     }
   } finally {
     await client.end()
