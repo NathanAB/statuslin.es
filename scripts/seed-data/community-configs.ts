@@ -26,7 +26,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '36623265',
     title: 'Everything Bar',
     description:
-      'Model, directory and branch with diff counts, context tokens, reasoning effort, and live five-hour and seven-day limits from the usage API. Checks for new versions of itself once a day.',
+      "Model, directory and branch with diff counts, context tokens, reasoning effort, and five-hour and seven-day limits from Claude Code's own rate-limit data, with the usage API as fallback. Checks for new versions of itself once a day.",
     interpreter: 'bash',
     source: src('01-everything-bar.sh'),
     networkHosts: ['api.anthropic.com', 'api.github.com'],
@@ -39,7 +39,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '4921183',
     title: 'Usage Dot Bars',
     description:
-      'Context, directory and branch up top; five-hour and weekly quota as dot bars with reset times underneath. Warns when --dangerously-skip-permissions is on. By Kamran Ahmed of roadmap.sh.',
+      'Model, context, directory and branch up top; five-hour and weekly quota as dot bars with reset times underneath. Flags --dangerously-skip-permissions with a lightning bolt. By Kamran Ahmed of roadmap.sh.',
     interpreter: 'bash',
     source: src('02-usage-dot-bars.sh'),
     networkHosts: ['api.anthropic.com'],
@@ -52,7 +52,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '41281835',
     title: 'Three-Line Cockpit',
     description:
-      'Model and context on the first line, a context bar with token counts on the second, session cost on the third. Everything comes from stdin; no network calls.',
+      'Model, context, lines changed and branch on the first line; a context bar with token counts on the second; session cost on the third. No network calls, just stdin and local git.',
     interpreter: 'bash',
     source: src('03-three-line-cockpit.sh'),
     networkHosts: [],
@@ -65,7 +65,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '3247643',
     title: 'Quota at a Glance',
     description:
-      'One line of Python: model, color-coded five-hour and seven-day usage from the usage API, and the current directory.',
+      'Everything on one line: model, color-coded five-hour and seven-day usage from the usage API, and the current directory. Written in Python.',
     interpreter: 'python',
     source: src('04-quota-at-a-glance.py'),
     networkHosts: ['api.anthropic.com'],
@@ -91,7 +91,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '6722315',
     title: 'Gradient Dashboard',
     description:
-      'Gradient progress bars for context and quotas, plus cost, duration and lines changed. Pure bash and jq, fully offline.',
+      'A gradient progress bar for context with quota percentages beside it, plus cost, duration and lines changed. Bash and jq, fully offline.',
     interpreter: 'bash',
     source: src('06-gradient-dashboard.sh'),
     networkHosts: [],
@@ -115,9 +115,9 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
   {
     githubLogin: 'Astro-Han',
     githubId: '255364436',
-    title: 'Pace Bars',
+    title: 'Pace Arrows',
     description:
-      'Are you burning quota faster than the clock? Five-hour and seven-day bars with over- and under-pace arrows, plus context and git diff stats. Reads rate limits from stdin only.',
+      'Are you burning quota faster than the clock? Five-hour and seven-day usage with over- and under-pace arrows, plus a context bar and git diff stats. Reads rate limits from stdin only.',
     interpreter: 'bash',
     source: src('08-pace-bars.sh'),
     networkHosts: [],
@@ -130,7 +130,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '46619650',
     title: 'Git Detective',
     description:
-      'Bucketed git status counts, ahead-behind arrows, prompt-cache stats with an expiry countdown, and a warning when CLAUDE.md changed mid-session. Dependency-free Node.',
+      'Bucketed git status counts, ahead-behind arrows, prompt-cache stats with an expiry countdown, and a heads-up when CLAUDE.md, AGENTS.md and GEMINI.md fall out of sync. Dependency-free Node.',
     interpreter: 'node',
     source: src('09-git-detective.js'),
     networkHosts: [],
@@ -156,7 +156,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '41576951',
     title: 'Width-Aware Monitor',
     description:
-      'Fits itself to your terminal by dropping the lowest-priority segments first. Model, project, context gauge with token counts, pace-aware quota bars, cost and duration.',
+      'Keeps itself inside a width budget (80 columns by default) by dropping the lowest-priority segments first. Model, project, context gauge with token counts, quota bars and duration; pace arrows and a cost readout are opt-in.',
     interpreter: 'python',
     source: src('11-width-aware-monitor.py'),
     networkHosts: ['api.anthropic.com'],
@@ -195,7 +195,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '109059318',
     title: 'Traffic-Light Context',
     description:
-      'A context bar that shifts green to orange to red at 40 and 60 percent, with rate-limit countdowns and the git branch. Stdin only.',
+      'A context bar that shifts green to orange to red at 40 and 60 percent, a five-hour reset countdown, the weekly reset day, and the git branch. Stdin only.',
     interpreter: 'bash',
     source: src('14-traffic-light-context.sh'),
     networkHosts: [],
@@ -208,7 +208,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '12295159',
     title: 'Cost Thresholds',
     description:
-      'Directory, Node version when a package.json is around, net lines changed, a token bar, and a session cost that changes color as it grows.',
+      'Directory, Node version when a package.json is around, added and removed lines with a net-direction arrow, a token bar, and a session cost that changes color as it grows.',
     interpreter: 'bash',
     source: src('15-cost-thresholds.sh'),
     networkHosts: [],
