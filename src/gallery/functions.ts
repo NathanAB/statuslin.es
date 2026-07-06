@@ -33,9 +33,13 @@ import {
 // `Buffer is not defined` and kills hydration. The server-only wrapper strips the body (and its
 // `db` reference) from the client build. It also avoids the server-fn RPC boundary, so the
 // sitemap's `createdAt` stays a real `Date` instead of being serialized to a string.
-export const sitemapResponseForRoute = createServerOnlyFn(
-  async (): Promise<Response> => sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db)),
-)
+export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
+  const stats = await getFacetStats(db)
+  const facets = FACETS.filter((f) => (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS).map(
+    (f) => ({ slug: f.slug, latest: stats.get(f.slug)?.latest ?? null }),
+  )
+  return sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db), facets)
+})
 
 export const getGallery = createServerFn({ method: 'GET' })
   .inputValidator((d: { sort?: GallerySort; page?: number }) => d)

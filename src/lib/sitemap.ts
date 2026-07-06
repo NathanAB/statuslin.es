@@ -14,6 +14,12 @@ export interface SitemapConfig {
   createdAt: Date
 }
 
+/** Live facet pages the sitemap should list (already filtered to >= MIN_FACET_CONFIGS). */
+export interface SitemapFacet {
+  slug: string
+  latest: Date | null
+}
+
 /** Always-present public pages, as paths relative to the origin. */
 const STATIC_PATHS = ['/', '/guide', '/resources', '/submit', '/terms']
 
@@ -32,12 +38,18 @@ function urlEntry(loc: string, lastmod?: string): string {
   return `  <url>\n    <loc>${xmlEscape(loc)}</loc>${tail}\n  </url>`
 }
 
-function buildSitemapXml(base: string, configs: SitemapConfig[]): string {
+function buildSitemapXml(base: string, configs: SitemapConfig[], facets: SitemapFacet[]): string {
   const staticEntries = STATIC_PATHS.map((path) => urlEntry(path === '/' ? base : `${base}${path}`))
+  const facetEntries = facets.map((f) =>
+    urlEntry(
+      `${base}/status-lines/${f.slug}`,
+      f.latest ? f.latest.toISOString().slice(0, 10) : undefined,
+    ),
+  )
   const configEntries = configs.map((c) =>
     urlEntry(`${base}/c/${c.slug}`, c.createdAt.toISOString().slice(0, 10)),
   )
-  const body = [...staticEntries, ...configEntries].join('\n')
+  const body = [...staticEntries, ...facetEntries, ...configEntries].join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
 }
 
@@ -45,8 +57,12 @@ function buildSitemapXml(base: string, configs: SitemapConfig[]): string {
  * The `/sitemap.xml` HTTP response. `Cache-Control: max-age=3600` matches the config OG cards: a
  * new submission shows up within the hour without re-rendering the sitemap on every crawl hit.
  */
-export function sitemapResponse(base: string, configs: SitemapConfig[]): Response {
-  return new Response(buildSitemapXml(base, configs), {
+export function sitemapResponse(
+  base: string,
+  configs: SitemapConfig[],
+  facets: SitemapFacet[],
+): Response {
+  return new Response(buildSitemapXml(base, configs, facets), {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
       'Cache-Control': 'max-age=3600',
