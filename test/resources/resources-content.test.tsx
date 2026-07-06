@@ -43,10 +43,11 @@ describe('ResourcesContent', () => {
     expect(screen.getAllByText('GitHub').length).toBeGreaterThanOrEqual(1)
   })
 
-  it('cross-links the gallery, and shows the submit button when signed out', () => {
-    // Task 5 extends this test with the '/guide' link once that route exists.
+  it('cross-links the guide and gallery, and shows the submit button when signed out', () => {
     const { container } = render(<ResourcesContent signedIn={false} />)
-    expect(container.querySelector('a[href="/"]')).not.toBeNull()
+    for (const href of ['/guide', '/', '/submit']) {
+      expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
+    }
     expect(screen.getByRole('heading', { level: 2, name: /get listed/i })).toBeTruthy()
     expect(screen.getByText('Submit a status line')).toBeTruthy()
   })

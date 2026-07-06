@@ -18,9 +18,11 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('</urlset>')
   })
 
-  it('includes the static home, submit, and terms pages', async () => {
+  it('includes the static home, guide, resources, submit, and terms pages', async () => {
     const xml = await sitemapResponse(BASE, []).text()
     expect(xml).toContain(`<loc>${BASE}</loc>`)
+    expect(xml).toContain(`<loc>${BASE}/guide</loc>`)
+    expect(xml).toContain(`<loc>${BASE}/resources</loc>`)
     expect(xml).toContain(`<loc>${BASE}/submit</loc>`)
     expect(xml).toContain(`<loc>${BASE}/terms</loc>`)
   })

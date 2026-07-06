@@ -15,7 +15,7 @@ export interface SitemapConfig {
 }
 
 /** Always-present public pages, as paths relative to the origin. */
-const STATIC_PATHS = ['/', '/submit', '/terms']
+const STATIC_PATHS = ['/', '/guide', '/resources', '/submit', '/terms']
 
 /** Escape the five XML entities so a slug with `&`/`<` can't break the document. */
 function xmlEscape(value: string): string {

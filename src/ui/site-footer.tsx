@@ -3,8 +3,9 @@ import { Row } from '@/ui/layout'
 import { TextLink } from '@/ui/text'
 
 /**
- * Shared bottom footer on every page: three centered text links — the GitHub source,
- * a mailto report (the abuse-report path), and the Terms page, separated by dots.
+ * Shared bottom footer on every page: the centered text links — the GitHub source,
+ * a mailto report (the abuse-report path), the Guide, Resources, and Terms pages,
+ * separated by dots.
  */
 export function SiteFooter() {
   return (
@@ -22,6 +23,14 @@ export function SiteFooter() {
         ·
         <TextLink href={`mailto:${CONTACT_EMAIL}`} aria-label="Report or contact" size="sm">
           Email
+        </TextLink>
+        ·
+        <TextLink to="/guide" size="sm">
+          Guide
+        </TextLink>
+        ·
+        <TextLink to="/resources" size="sm">
+          Resources
         </TextLink>
         ·
         <TextLink to="/terms" size="sm">
