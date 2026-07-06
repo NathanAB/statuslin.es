@@ -180,14 +180,22 @@ async function resolveAdminId(db: Db): Promise<string> {
   return admin.id
 }
 
-/** Promotes every 'held' render job (parked by seedCommunityConfig for a network-using seed) to
- *  'queued' so the always-on worker renders it — the same explicit admin action as the review
- *  queue's "run network preview" button, just batched across every seeded held job. */
+/** Promotes every 'held' render job belonging to a seed-authored submission (parked by
+ *  seedCommunityConfig for a network-using seed) to 'queued' so the always-on worker renders it —
+ *  the same explicit admin action as the review queue's "run network preview" button, just
+ *  batched across every seeded held job. Scoped to seed authors (shadow users created by
+ *  ensureSeededAuthor, whose email is `seed+<login>@statuslin.es`) via a join from renderJobs to
+ *  configVersions to configs to user: a held job from a real web submission must NOT be swept up
+ *  by this batch release — it still needs the per-item human network-preview gate a real
+ *  (non-seed) submitter's script goes through. */
 export async function releaseHeldSeeds(db: Db): Promise<number> {
   const held = await db
     .select({ configVersionId: renderJobs.configVersionId })
     .from(renderJobs)
-    .where(eq(renderJobs.status, 'held'))
+    .innerJoin(configVersions, eq(renderJobs.configVersionId, configVersions.id))
+    .innerJoin(configs, eq(configVersions.configId, configs.id))
+    .innerJoin(user, eq(configs.authorId, user.id))
+    .where(and(eq(renderJobs.status, 'held'), sql`${user.email} LIKE ${'seed+%'}`))
   for (const job of held) {
     await runNetworkPreview(db, job.configVersionId)
   }
@@ -220,34 +228,4 @@ export async function publishRenderedSeeds(
     }
   }
   return { published, skipped }
-}
-
-// CLI entry: submit every entry in the data file against the env-configured DB.
-// Run against STAGING first, then promote the same change to production:
-//   fly ssh console --app statuslines-staging --command "bun run scripts/seed-community.ts"
-//   fly ssh console --app statuslines          --command "bun run scripts/seed-community.ts"
-// Submit-only: the always-on worker renders each queued job, then an admin approves it in the
-// review queue. Nothing is auto-published — untrusted community scripts get the normal human
-// review gate. (Intentionally does NOT import refuse-in-production: it forges no sessions and
-// grants no admin, only normal role:'user' placeholders, and is meant to run in prod.)
-if (import.meta.main) {
-  const { db } = await import('@/db')
-  const { COMMUNITY_CONFIGS } = await import('./seed-data/community-configs')
-
-  if (COMMUNITY_CONFIGS.length === 0) {
-    console.log('No community configs to seed (scripts/seed-data/community-configs.ts is empty).')
-    process.exit(0)
-  }
-
-  const outcomes = await seedCommunity(db, COMMUNITY_CONFIGS)
-  for (const o of outcomes) {
-    const suffix = o.slug ? ` → /${o.slug}` : o.reason ? ` — ${o.reason}` : ''
-    console.log(`[${o.status}] @${o.login} — "${o.title}"${suffix}`)
-  }
-  const errored = outcomes.filter((o) => o.status === 'error')
-  console.log(
-    `\nSeed complete: ${outcomes.length} processed, ${errored.length} errored. ` +
-      'Submitted configs await render + admin review in the queue.',
-  )
-  process.exit(errored.length > 0 ? 1 : 0)
 }

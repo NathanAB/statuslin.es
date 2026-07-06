@@ -380,6 +380,46 @@ describe('releaseHeldSeeds', () => {
     const outcome1 = await seedCommunityConfig(db, profile, heldEntry)
     const outcome2 = await seedCommunityConfig(db, profile, heldEntry2)
 
+    // A held job from a NON-seed author (a real web submission using the network-preview gate)
+    // must be left alone — releaseHeldSeeds only releases seed-authored (email seed+*) jobs.
+    const now = new Date()
+    await db.insert(userTable).values({
+      id: 'real-web-user',
+      name: 'Real Web User',
+      email: 'realuser@example.com',
+      emailVerified: true,
+      role: 'user',
+      createdAt: now,
+      updatedAt: now,
+    })
+    const [realConfig] = await db
+      .insert(configsTable)
+      .values({
+        slug: 'real-user-held-config',
+        title: 'Real User Held Config',
+        description: 'd',
+        authorId: 'real-web-user',
+        interpreter: 'bash',
+        status: 'draft',
+      })
+      .returning()
+    const [realVersion] = await db
+      .insert(configVersionsTable)
+      .values({
+        configId: realConfig?.id as string,
+        versionNumber: 1,
+        source: '#!/usr/bin/env bash\necho ok',
+        interpreter: 'bash',
+        contentSha256: 'deadbeef',
+        networkHosts: ['api.anthropic.com'],
+        status: 'pending',
+      })
+      .returning()
+    await db.insert(renderJobsTable).values({
+      configVersionId: realVersion?.id as string,
+      status: 'held',
+    })
+
     const count = await releaseHeldSeeds(db)
     expect(count).toBe(2)
 
@@ -394,6 +434,12 @@ describe('releaseHeldSeeds', () => {
         .where(eq(renderJobsTable.configVersionId, ver?.id as string))
       expect(job?.status).toBe('queued')
     }
+
+    const [realJob] = await db
+      .select()
+      .from(renderJobsTable)
+      .where(eq(renderJobsTable.configVersionId, realVersion?.id as string))
+    expect(realJob?.status).toBe('held')
   })
 })
 
