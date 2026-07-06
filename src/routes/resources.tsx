@@ -41,7 +41,7 @@ function Resources() {
   const user = Route.useLoaderData()
   return (
     <PageShell user={user}>
-      <ResourcesContent />
+      <ResourcesContent signedIn={!!user} />
     </PageShell>
   )
 }

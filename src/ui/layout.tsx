@@ -79,6 +79,12 @@ export function Row({
   )
 }
 
+/** Responsive card grid: one column on small screens, two from `sm` up.
+ *  Section rhythm stays the parent Stack's job; Grid only spaces its cells. */
+export function Grid({ children }: { children: React.ReactNode }) {
+  return <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+}
+
 /**
  * THE escape hatch — a plain div that takes an arbitrary class string.
  * Every use is a design-system gap, not a convenience. Each call site MUST carry a

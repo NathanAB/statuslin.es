@@ -18,7 +18,7 @@ const ALL = RESOURCE_SECTIONS.flatMap((s) => s.resources)
 
 describe('ResourcesContent', () => {
   it('renders the h1 and every section heading', () => {
-    render(<ResourcesContent />)
+    render(<ResourcesContent signedIn={false} />)
     expect(
       screen.getByRole('heading', { level: 1, name: /claude code status line tools & resources/i }),
     ).toBeTruthy()
@@ -28,7 +28,7 @@ describe('ResourcesContent', () => {
   })
 
   it('renders every entry as an external link that opens in a new tab, plus its description', () => {
-    const { container } = render(<ResourcesContent />)
+    const { container } = render(<ResourcesContent signedIn={false} />)
     for (const r of ALL) {
       const link = container.querySelector(`a[href="${r.url}"]`) as HTMLAnchorElement
       expect(link).not.toBeNull()
@@ -38,12 +38,21 @@ describe('ResourcesContent', () => {
     }
   })
 
-  it('cross-links the gallery and submit flow', () => {
+  it('renders a destination badge for each resource card', () => {
+    render(<ResourcesContent signedIn={false} />)
+    expect(screen.getAllByText('GitHub').length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('cross-links the gallery, and shows the submit button when signed out', () => {
     // Task 5 extends this test with the '/guide' link once that route exists.
-    const { container } = render(<ResourcesContent />)
-    for (const href of ['/', '/submit']) {
-      expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
-    }
+    const { container } = render(<ResourcesContent signedIn={false} />)
+    expect(container.querySelector('a[href="/"]')).not.toBeNull()
     expect(screen.getByRole('heading', { level: 2, name: /get listed/i })).toBeTruthy()
+    expect(screen.getByText('Submit a status line')).toBeTruthy()
+  })
+
+  it('links to /submit when signed in', () => {
+    const { container } = render(<ResourcesContent signedIn={true} />)
+    expect(container.querySelector('a[href="/submit"]')).not.toBeNull()
   })
 })

@@ -49,6 +49,28 @@ describe('StretchedLink', () => {
   })
 })
 
+describe('StretchedLink external href', () => {
+  it('renders an anchor with the URL, opens in a new tab, and shares the overlay classes', () => {
+    const { container } = render(
+      <StretchedLink href="https://example.com/tool">Title</StretchedLink>,
+    )
+    const a = container.querySelector('a') as HTMLAnchorElement
+    expect(a).not.toBeNull()
+    expect(a.getAttribute('href')).toBe('https://example.com/tool')
+    expect(a.getAttribute('target')).toBe('_blank')
+    expect(a.getAttribute('rel')).toContain('noopener')
+    for (const cls of [
+      'after:absolute',
+      'after:inset-0',
+      'focus-visible:outline-none',
+      'focus-visible:ring-3',
+      'focus-visible:ring-ring/50',
+    ]) {
+      expect(a.className.split(/\s+/)).toContain(cls)
+    }
+  })
+})
+
 describe('TextLink', () => {
   it('renders the primary link styling and href', () => {
     const { container } = render(<TextLink to="/">Back to gallery</TextLink>)

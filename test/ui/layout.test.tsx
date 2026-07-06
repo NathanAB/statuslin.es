@@ -2,7 +2,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { Box, Row, Stack } from '@/ui/layout'
+import { Box, Grid, Row, Stack } from '@/ui/layout'
 
 describe('Stack', () => {
   it('is a flex-col container', () => {
@@ -94,6 +94,16 @@ describe('Row', () => {
     for (const cls of ['relative', 'z-10', 'shrink-0']) {
       expect(el.className.split(/\s+/)).toContain(cls)
     }
+  })
+})
+
+describe('Grid', () => {
+  it('is a responsive grid, one column on small screens and two from sm up', () => {
+    const { container } = render(<Grid>x</Grid>)
+    const el = container.firstChild as HTMLElement
+    expect(el.className).toContain('grid')
+    expect(el.className.split(/\s+/)).toContain('gap-3')
+    expect(el.className.split(/\s+/)).toContain('sm:grid-cols-2')
   })
 })
 
