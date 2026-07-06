@@ -43,6 +43,9 @@ export const configs = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     interpreter: text('interpreter').notNull(),
+    /** Curated facet tags from the fixed vocabulary in src/gallery/facets.ts (e.g. 'git',
+     * 'token-usage'). Suggested by generate-content / the backfill script, human-confirmed. */
+    tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     status: text('status').notNull().default('draft'),
     currentVersionId: uuid('current_version_id'),
     upvoteCount: integer('upvote_count').notNull().default(0),

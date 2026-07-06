@@ -1,0 +1,1 @@
+ALTER TABLE "configs" ADD COLUMN "tags" jsonb DEFAULT '[]'::jsonb NOT NULL;
