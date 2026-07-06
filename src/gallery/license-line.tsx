@@ -1,7 +1,7 @@
 import { Text, TextLink } from '@/ui/text'
 
 /**
- * The license note shown under the Source card for seeded third-party configs: the SPDX
+ * The license note shown under the description for seeded third-party configs: the SPDX
  * license and, when known, a link back to the pinned upstream source. Renders nothing for
  * submitter-authored configs (license is null — those are CC0 per the terms page).
  */

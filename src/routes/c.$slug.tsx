@@ -129,6 +129,7 @@ function ConfigDetail() {
                   {detail.description}
                 </Text>
               )}
+              <LicenseLine license={detail.license} sourceUrl={detail.sourceUrl} />
             </Stack>
           )}
         </Stack>
@@ -171,7 +172,6 @@ function ConfigDetail() {
         >
           <HighlightedCode html={detail.sourceHtml} />
         </SectionCard>
-        <LicenseLine license={detail.license} sourceUrl={detail.sourceUrl} />
 
         {/* Auto-generated copy — the SEO answer to "what does this status line do?" */}
         {detail.generatedContent && <GeneratedContentSections content={detail.generatedContent} />}
