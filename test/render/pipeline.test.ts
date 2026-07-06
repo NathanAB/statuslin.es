@@ -65,7 +65,7 @@ describe('renderConfig', () => {
     expect(ng.timedOut).toBe(true)
     expect(ng.trace.sensitiveReads).toContain('/root/.ssh/id_rsa')
   })
-  it('attaches a per-scenario transcript (path + content) to each render input', async () => {
+  it('attaches per-scenario fixtures (transcript + todos) to each render input', async () => {
     const seen: RenderInput[] = []
     const runner: SandboxRunner = {
       async render(input) {
@@ -82,13 +82,23 @@ describe('renderConfig', () => {
     await renderConfig({ script: '', interpreter: 'bash' }, runner)
 
     const near = seen.find((i) => i.scenario.key === 'near-full')!
-    const stdin = near.scenario.stdin as { transcript_path: string; model: { id: string } }
-    expect(near.transcript?.path).toBe(stdin.transcript_path)
-    // A used context → assistant turns → the transcript names the scenario model.
-    expect(near.transcript?.content).toContain(stdin.model.id)
-    // Even a just-started session gets a (minimal) transcript file written.
+    const stdin = near.scenario.stdin as {
+      transcript_path: string
+      session_id: string
+      model: { id: string }
+    }
+    const paths = (near.fixtures ?? []).map((f) => f.path)
+    expect(paths).toContain(stdin.transcript_path)
+    expect(paths).toContain(
+      `/home/user/.claude/todos/${stdin.session_id}-agent-${stdin.session_id}.json`,
+    )
+    const transcript = near.fixtures?.find((f) => f.path === stdin.transcript_path)
+    expect(transcript?.content).toContain(stdin.model.id)
+
+    // fresh-session: transcript only — a just-started session has no todo file yet.
     const fresh = seen.find((i) => i.scenario.key === 'fresh-session')!
-    expect(fresh.transcript?.content.length ?? 0).toBeGreaterThan(0)
+    expect(fresh.fixtures).toHaveLength(1)
+    expect(fresh.fixtures?.[0]?.content.length ?? 0).toBeGreaterThan(0)
   })
 })
 

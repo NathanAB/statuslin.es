@@ -24,6 +24,16 @@ const SAFE_DIR_PATTERN = /^\/home\/user\/[A-Za-z0-9._/-]+$/
 /** Scenario-derived git branch must look like this. */
 const SAFE_BRANCH_PATTERN = /^[A-Za-z0-9._/-]+$/
 
+/** Fixture paths are scenario-derived; validate them like every other scenario value (H1:
+ *  scenarios will become DB-backed/untrusted). Charset check + explicit '..' rejection. */
+export function assertSafeFixturePaths(fixtures: { path: string; content: string }[]): void {
+  for (const f of fixtures) {
+    if (!SAFE_DIR_PATTERN.test(f.path) || f.path.includes('..')) {
+      throw new Error(`unsafe fixture path: ${f.path}`)
+    }
+  }
+}
+
 /**
  * Only these env vars are forwarded to the untrusted script per the spec. Scenarios will become
  * DB-backed/untrusted, so don't let one set PATH/LD_PRELOAD/NODE_OPTIONS for the script.
@@ -81,6 +91,8 @@ export class E2BSandboxRunner implements SandboxRunner {
     const networkOption = buildNetworkOption(hosts)
     const commandTimeoutMs = hosts.length > 0 ? NETWORK_COMMAND_TIMEOUT_MS : COMMAND_TIMEOUT_MS
     const sandboxTimeoutMs = hosts.length > 0 ? NETWORK_SANDBOX_TIMEOUT_MS : SANDBOX_TIMEOUT_MS
+    const fixtures = input.fixtures ?? []
+    assertSafeFixturePaths(fixtures)
     // Custom template (built by `bun run build:e2b-template`) bakes in jq/bc/gawk/column so real
     // statuslines render faithfully — the base image lacks them and the sandbox has no network.
     const sandbox = await Sandbox.create(E2B_TEMPLATE_NAME, {
@@ -99,14 +111,13 @@ export class E2BSandboxRunner implements SandboxRunner {
       const ext = scriptExtension(input.interpreter, input.script)
       const scriptPath = `${SCRIPT_DIR}/statusline.${ext}`
 
-      // Script + stdin JSON + (when present) the session transcript the scenario references.
-      // files.write creates parent dirs, so the nested transcript path is fine.
+      // Script + stdin JSON + per-scenario fixture files (transcript, todos, …).
+      // files.write creates parent dirs, so nested fixture paths are fine.
       const files = [
         { path: scriptPath, data: input.script },
         { path: INPUT_PATH, data: JSON.stringify(input.scenario.stdin) },
+        ...fixtures.map((f) => ({ path: f.path, data: f.content })),
       ]
-      if (input.transcript)
-        files.push({ path: input.transcript.path, data: input.transcript.content })
       await sandbox.files.write(files)
 
       try {
