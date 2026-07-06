@@ -173,6 +173,12 @@ describe('buildTranscript', () => {
     expect(entries.some((e) => e.isSidechain === true)).toBe(false)
   })
 
+  it('keeps mid-session tool activity for post-compact (zero tokens, not a fresh session)', () => {
+    const entries = parse(buildTranscript(scenario('post-compact'), NOW).content)
+    expect(toolUses(entries).length).toBeGreaterThan(0)
+    expect(entries.some((e) => e.isSidechain === true)).toBe(true)
+  })
+
   it('pins usage byte-identical to the pre-enrichment builder (near-full regression)', () => {
     // near-full: duration 612000ms → 5 turns; totalInput = 182_000 (91% of 200k).
     // These arrays are the exact output of the pre-enrichment formula — do not "fix" them.

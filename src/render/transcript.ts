@@ -103,8 +103,11 @@ export function buildTranscript(
     return entry
   }
 
-  // Empty/just-started context (no tokens yet): a single user prompt, no assistant turn → ~0 cost.
-  if (totalInput <= 0) {
+  // fresh-session ONLY: a just-started session has no assistant turn yet → a single user prompt,
+  // no tool activity, ~0 cost. Deliberately not keyed off zero context tokens — post-compact also
+  // has zero tokens but models a mid-session state whose transcript (and tool activity) persists;
+  // /compact does not delete the transcript file.
+  if (scenario.key === 'fresh-session') {
     const user = base('user', nowMs)
     user.message = { role: 'user', content: 'Help me with this project.' }
     lines.push(JSON.stringify(user))
