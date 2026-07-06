@@ -498,4 +498,131 @@ describe('publishRenderedSeeds', () => {
       .where(eq(configsTable.id, notDoneOutcome.configId as string))
     expect(notDoneCfg?.status).toBe('draft')
   })
+
+  it("only approves seed-authored versions, never a real (non-seed) submitter's pending version", async () => {
+    const profile = {
+      id: '8101',
+      login: 'realauthor',
+      name: 'Real Author',
+      avatarUrl: 'https://x/real.png',
+    }
+    await ensureSeededAuthor(db, profile)
+    const seedEntry: CommunityConfig = {
+      githubLogin: 'realauthor',
+      githubId: '8101',
+      title: 'Seed Authored Config',
+      description: 'd',
+      interpreter: 'bash',
+      source: '#!/usr/bin/env bash\necho ok',
+      license: 'MIT',
+      sourceUrl: 'https://example.com/seed-authored',
+    }
+    const seedOutcome = await seedCommunityConfig(db, profile, seedEntry)
+    const [seedVer] = await db
+      .select()
+      .from(configVersionsTable)
+      .where(eq(configVersionsTable.configId, seedOutcome.configId as string))
+    await db
+      .update(renderJobsTable)
+      .set({ status: 'done', finishedAt: new Date() })
+      .where(eq(renderJobsTable.configVersionId, seedVer?.id as string))
+
+    // A real (non-seed) web submitter with a pending version + a done render job. This must NOT
+    // be auto-approved by the batch tool — it still needs the per-item human review-queue gate;
+    // only seed-authored (email seed+*) drafts are in scope for this batch action.
+    const now = new Date()
+    await db.insert(userTable).values({
+      id: 'real-publish-user',
+      name: 'Real Publish User',
+      email: 'realuser-publish@example.com',
+      emailVerified: true,
+      role: 'user',
+      createdAt: now,
+      updatedAt: now,
+    })
+    const [realConfig] = await db
+      .insert(configsTable)
+      .values({
+        slug: 'real-user-publish-config',
+        title: 'Real User Publish Config',
+        description: 'd',
+        authorId: 'real-publish-user',
+        interpreter: 'bash',
+        status: 'draft',
+      })
+      .returning()
+    const [realVersion] = await db
+      .insert(configVersionsTable)
+      .values({
+        configId: realConfig?.id as string,
+        versionNumber: 1,
+        source: '#!/usr/bin/env bash\necho ok',
+        interpreter: 'bash',
+        contentSha256: 'realdeadbeef',
+        status: 'pending',
+      })
+      .returning()
+    await db.insert(renderJobsTable).values({
+      configVersionId: realVersion?.id as string,
+      status: 'done',
+      finishedAt: now,
+    })
+
+    const result = await publishRenderedSeeds(db)
+    expect(result.published).toBe(1)
+
+    const [seedCfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, seedOutcome.configId as string))
+    expect(seedCfg?.status).toBe('published')
+
+    const [realCfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, realConfig?.id as string))
+    expect(realCfg?.status).toBe('draft')
+  })
+
+  it('never re-publishes a removed (taken-down) config even if it has a done render job', async () => {
+    const profile = {
+      id: '8301',
+      login: 'removedauthor',
+      name: 'Removed Author',
+      avatarUrl: 'https://x/removed.png',
+    }
+    await ensureSeededAuthor(db, profile)
+    const entry: CommunityConfig = {
+      githubLogin: 'removedauthor',
+      githubId: '8301',
+      title: 'Removed Config',
+      description: 'd',
+      interpreter: 'bash',
+      source: '#!/usr/bin/env bash\necho ok',
+      license: 'MIT',
+      sourceUrl: 'https://example.com/removed',
+    }
+    const outcome = await seedCommunityConfig(db, profile, entry)
+    // Simulate an admin takedown (emergency-removal script) before a re-render lands.
+    await db
+      .update(configsTable)
+      .set({ status: 'removed' })
+      .where(eq(configsTable.id, outcome.configId as string))
+    const [ver] = await db
+      .select()
+      .from(configVersionsTable)
+      .where(eq(configVersionsTable.configId, outcome.configId as string))
+    await db
+      .update(renderJobsTable)
+      .set({ status: 'done', finishedAt: new Date() })
+      .where(eq(renderJobsTable.configVersionId, ver?.id as string))
+
+    await publishRenderedSeeds(db)
+
+    const [cfg] = await db
+      .select()
+      .from(configsTable)
+      .where(eq(configsTable.id, outcome.configId as string))
+    expect(cfg?.status).toBe('removed')
+  })
 })

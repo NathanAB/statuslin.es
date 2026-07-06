@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { detectForeignCredentialAccess, readsClaudeToken } from '@/submit/credential-access'
+import { detectObfuscation } from '@/submit/obfuscation'
 import { validateSubmitInput } from '@/submit/submit'
 import { COMMUNITY_CONFIGS } from '../../scripts/seed-data/community-configs'
 
@@ -18,6 +20,16 @@ describe('community seed data', () => {
         }),
       ).not.toThrow()
     }
+  })
+  it('every entry passes the real seed-time rejection gates (obfuscation, foreign credentials)', () => {
+    for (const e of COMMUNITY_CONFIGS) {
+      expect(detectObfuscation(e.source)).toEqual([])
+      expect(detectForeignCredentialAccess(e.source)).toEqual([])
+    }
+  })
+  it('locks in the Claude-token disclosure badge count across the wave', () => {
+    const count = COMMUNITY_CONFIGS.filter((e) => readsClaudeToken(e.source)).length
+    expect(count).toBe(9)
   })
   it('every entry carries MIT license + a pinned source url + numeric github id', () => {
     for (const e of COMMUNITY_CONFIGS) {

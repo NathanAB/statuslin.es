@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { account, configs, configVersions, renderJobs, user } from '@/db/schema'
 import type { Interpreter } from '@/render/types'
@@ -202,10 +202,16 @@ export async function releaseHeldSeeds(db: Db): Promise<number> {
   return held.length
 }
 
-/** Approves (and thereby publishes) every seeded version whose render job finished successfully
- *  and whose config isn't published yet — the batched equivalent of clicking "approve" in the
- *  review queue for each seeded submission. Versions whose render isn't done are left alone and
- *  counted as skipped so a re-run of `publish-rendered` picks them up once the worker catches up. */
+/** Approves (and thereby publishes) every seed-authored version whose render job finished
+ *  successfully and whose config is still a draft — the batched equivalent of clicking "approve"
+ *  in the review queue for each seeded submission. Versions whose render isn't done are left
+ *  alone and counted as skipped so a re-run of `publish-rendered` picks them up once the worker
+ *  catches up. Scoped to seed authors (shadow users created by ensureSeededAuthor, whose email is
+ *  `seed+<login>@statuslin.es`) via the same innerJoin-to-user pattern as releaseHeldSeeds: a
+ *  pending version from a real web submission must NOT be swept up and auto-approved by this
+ *  batch tool — prod's human review gate must stay untouchable by it. Filters on
+ *  `configs.status = 'draft'` (not merely "not published") so a taken-down (`removed`) config can
+ *  never be re-published by a stray done render job. */
 export async function publishRenderedSeeds(
   db: Db,
 ): Promise<{ published: number; skipped: number }> {
@@ -215,7 +221,14 @@ export async function publishRenderedSeeds(
     .from(configVersions)
     .innerJoin(configs, eq(configVersions.configId, configs.id))
     .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
-    .where(and(eq(configVersions.status, 'pending'), ne(configs.status, 'published')))
+    .innerJoin(user, eq(configs.authorId, user.id))
+    .where(
+      and(
+        eq(configVersions.status, 'pending'),
+        eq(configs.status, 'draft'),
+        sql`${user.email} LIKE ${'seed+%'}`,
+      ),
+    )
 
   let published = 0
   let skipped = 0
