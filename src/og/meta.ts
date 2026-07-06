@@ -29,6 +29,8 @@ export function configSocialMeta(input: {
   const base = siteUrl()
   const image = `${base}/og/c/${input.slug}.png`
   return [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: `${base}/c/${input.slug}` },
     { property: 'og:title', content: `${input.title} — statuslin.es` },
     {
       property: 'og:description',

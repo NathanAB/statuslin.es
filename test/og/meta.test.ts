@@ -59,4 +59,12 @@ describe('social meta', () => {
     })
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
   })
+
+  it('carries og:type website and the config og:url', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const meta = configSocialMeta({ slug: 'my-config', title: 'My Config', description: 'd' })
+    const byProp = (p: string) => meta.find((m) => m.property === p)?.content
+    expect(byProp('og:type')).toBe('website')
+    expect(byProp('og:url')).toMatch(/\/c\/my-config$/)
+  })
 })
