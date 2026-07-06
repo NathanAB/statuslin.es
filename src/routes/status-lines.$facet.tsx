@@ -11,6 +11,7 @@ import { staticPageSocialMeta } from '@/og/meta'
 import { Row, Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
+import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/status-lines/$facet')({
   loader: async ({ params }) => {
@@ -69,6 +70,7 @@ function FacetPage() {
           ))}
         </Stack>
         <Stack gap={4}>
+          <VisuallyHidden as="h2">Status lines</VisuallyHidden>
           {page.cards.map((card) => (
             <GalleryConfigCard key={card.slug} card={card} />
           ))}

@@ -19,6 +19,8 @@ import { type RunPrompt, runClaude } from './generate-content'
  * Known limitation: "tags = []" means both "never suggested" and "suggested, none apply",
  * so configs the model legitimately gave no tags are re-prompted on every run. Fine at
  * ~23 configs; add a suggested-at timestamp if the gallery grows past caring.
+ * Note: --write re-prompts the model rather than replaying the dry run, so written tags
+ * can differ from a prior dry-run table; the --write output is the authoritative record.
  *
  *   bun run scripts/backfill-tags.ts            # dry run: print suggestions
  *   bun run scripts/backfill-tags.ts --write    # suggest AND store
