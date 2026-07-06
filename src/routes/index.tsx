@@ -3,7 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { getGallery } from '@/gallery/functions'
 import { coercePage, coerceSort, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
-import { canonicalLink } from '@/lib/canonical'
+import { canonicalLink, homeCanonicalPath } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/')({
           'Browse a community gallery of Claude Code status lines — see rendered previews, upvote your favorites, and copy one into your own terminal in a single paste.',
       },
     ],
-    links: [canonicalLink('/')],
+    links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1))],
     scripts: loaderData ? [jsonLdScript(homeJsonLd(siteUrl(), loaderData.gallery.cards))] : [],
   }),
   component: Home,
