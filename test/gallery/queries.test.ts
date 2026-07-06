@@ -105,7 +105,7 @@ describe('getPublishedConfigs', () => {
       status: 'draft',
     })
 
-    const cards = await getPublishedConfigs(db)
+    const cards = await getPublishedConfigs(db, 'new')
     const slugs = cards.map((c) => c.slug)
     expect(slugs).toContain('older')
     expect(slugs).toContain('newer')
@@ -242,6 +242,30 @@ describe('getPublishedConfigs sorting', () => {
     expect(order.indexOf('trend-copies')).toBeLessThan(order.indexOf('trend-votes'))
     // Recency still applies to the copy score.
     expect(order.indexOf('trend-new-fewcopies')).toBeLessThan(order.indexOf('trend-old-copies'))
+  })
+
+  it('trending: zero-copy ties break newest-first (the default view must be deterministic)', async () => {
+    await seedPublished({
+      slug: 'trend-tie-old',
+      title: 'TieOld',
+      sha: 'da'.repeat(32),
+      copyCount: 0,
+      createdAt: new Date(Date.now() - 3 * msPerHour),
+    })
+    await seedPublished({
+      slug: 'trend-tie-new',
+      title: 'TieNew',
+      sha: 'db'.repeat(32),
+      copyCount: 0,
+      createdAt: new Date(Date.now() - 1 * msPerHour),
+    })
+
+    const order = (await getPublishedConfigs(db, 'trending')).map((c) => c.slug)
+    // Both must be on page 1: indexOf returning -1 would make the comparison pass vacuously,
+    // which is exactly how a broken tiebreak would slip through.
+    expect(order).toContain('trend-tie-new')
+    expect(order).toContain('trend-tie-old')
+    expect(order.indexOf('trend-tie-new')).toBeLessThan(order.indexOf('trend-tie-old'))
   })
 
   it('upvoteCount is populated on GalleryCard', async () => {

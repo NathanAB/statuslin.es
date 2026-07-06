@@ -27,7 +27,7 @@ export function coerceSort(value: unknown): GallerySort {
   if (typeof value === 'string' && VALID_SORTS.has(value as GallerySort)) {
     return value as GallerySort
   }
-  return 'new'
+  return 'trending'
 }
 
 /** Narrows a URL `?page=` value to a 1-based page number; anything invalid falls back to 1. */
@@ -90,7 +90,7 @@ export async function getPublishedSlugsForSitemap(
 
 export async function getPublishedConfigs(
   db: Db,
-  sort: GallerySort = 'new',
+  sort: GallerySort = 'trending',
   page = 1,
 ): Promise<GalleryCard[]> {
   const orderBy =
@@ -106,7 +106,9 @@ export async function getPublishedConfigs(
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(user, eq(user.id, configs.authorId))
     .where(eq(configs.status, 'published'))
-    .orderBy(orderBy)
+    // createdAt tiebreak: zero-copy configs all score 0 on trending — without it, the default
+    // gallery order would be database-arbitrary.
+    .orderBy(orderBy, desc(configs.createdAt))
     .limit(PAGE_SIZE)
     .offset((page - 1) * PAGE_SIZE)
 

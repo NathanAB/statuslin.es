@@ -21,16 +21,16 @@ import { Text } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
-  // sort + page are optional in the URL (defaults: 'new', page 1), so Links to "/" can omit them.
+  // sort + page are optional in the URL (defaults: 'trending', page 1), so Links to "/" can omit them.
   validateSearch: (search: Record<string, unknown>): { sort?: GallerySort; page?: number } => {
     const sort = coerceSort(search.sort)
     const page = coercePage(search.page)
-    return { ...(sort === 'new' ? {} : { sort }), ...(page === 1 ? {} : { page }) }
+    return { ...(sort === 'trending' ? {} : { sort }), ...(page === 1 ? {} : { page }) }
   },
   loaderDeps: ({ search }) => ({ sort: search.sort, page: search.page }),
   loader: async ({ deps }) => ({
     user: await getSession(),
-    gallery: await getGallery({ data: { sort: deps.sort ?? 'new', page: deps.page ?? 1 } }),
+    gallery: await getGallery({ data: { sort: deps.sort ?? 'trending', page: deps.page ?? 1 } }),
   }),
   head: ({ loaderData }) => ({
     meta: [
@@ -48,16 +48,16 @@ export const Route = createFileRoute('/')({
 })
 
 const SORT_TABS: { label: string; value: GallerySort }[] = [
-  { label: 'New', value: 'new' },
-  { label: 'Top', value: 'top' },
   { label: 'Trending', value: 'trending' },
+  { label: 'Top', value: 'top' },
+  { label: 'New', value: 'new' },
 ]
 
 function Home() {
   const posthog = usePostHog()
   const { user, gallery } = Route.useLoaderData()
   const { cards, page, pageCount } = gallery
-  const sort = Route.useSearch().sort ?? 'new'
+  const sort = Route.useSearch().sort ?? 'trending'
 
   return (
     <PageShell user={user}>

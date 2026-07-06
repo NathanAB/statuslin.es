@@ -14,28 +14,28 @@ describe('coerceSort', () => {
     expect(coerceSort('trending')).toBe('trending')
   })
 
-  it('returns "new" for an unknown string', () => {
-    expect(coerceSort('hot')).toBe('new')
-    expect(coerceSort('latest')).toBe('new')
+  it('returns the default "trending" for an unknown string', () => {
+    expect(coerceSort('hot')).toBe('trending')
+    expect(coerceSort('latest')).toBe('trending')
   })
 
-  it('returns "new" for undefined', () => {
-    expect(coerceSort(undefined)).toBe('new')
+  it('returns the default "trending" for undefined', () => {
+    expect(coerceSort(undefined)).toBe('trending')
   })
 
-  it('returns "new" for null', () => {
-    expect(coerceSort(null)).toBe('new')
+  it('returns the default "trending" for null', () => {
+    expect(coerceSort(null)).toBe('trending')
   })
 
-  it('returns "new" for a number', () => {
-    expect(coerceSort(42)).toBe('new')
+  it('returns the default "trending" for a number', () => {
+    expect(coerceSort(42)).toBe('trending')
   })
 
-  it('returns "new" for an object', () => {
-    expect(coerceSort({ sort: 'top' })).toBe('new')
+  it('returns the default "trending" for an object', () => {
+    expect(coerceSort({ sort: 'top' })).toBe('trending')
   })
 
-  it('returns "new" for an empty string', () => {
-    expect(coerceSort('')).toBe('new')
+  it('returns the default "trending" for an empty string', () => {
+    expect(coerceSort('')).toBe('trending')
   })
 })
