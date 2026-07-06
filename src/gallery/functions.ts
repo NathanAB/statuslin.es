@@ -1,6 +1,7 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
+import { FACETS, MIN_FACET_CONFIGS } from '@/gallery/facets'
 import { auth } from '@/lib/auth'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
@@ -10,11 +11,14 @@ import {
   coerceSort,
   type GallerySort,
   getConfigBySlug,
+  getFacetCards,
+  getFacetStats,
   getPublishedConfigs,
   getPublishedCount,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,
   PAGE_SIZE,
+  resolveLiveFacet,
 } from './queries'
 
 /**
@@ -63,6 +67,30 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
         ...detail,
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),
         related,
+      }
+    }),
+  )
+
+export const getFacetPage = createServerFn({ method: 'GET' })
+  .inputValidator((d: { facet: string }) => d)
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      const stats = await getFacetStats(db)
+      const facet = resolveLiveFacet(data.facet, stats)
+      if (!facet) return null
+      const [cards, total] = await Promise.all([getFacetCards(db, facet), getPublishedCount(db)])
+      return {
+        slug: facet.slug,
+        cards,
+        total,
+        // Pre-formatted: a Date through the server-fn RPC boundary is the serialization
+        // gamble the sitemapResponseForRoute comment above warns about; the page only
+        // needs the display string anyway.
+        updated: stats.get(facet.slug)?.latest?.toISOString().slice(0, 10) ?? null,
+        // Other live facets, for the "more ways to browse" row (never link a 404).
+        otherFacets: FACETS.filter(
+          (f) => f.slug !== facet.slug && (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS,
+        ).map((f) => ({ slug: f.slug, chipLabel: f.chipLabel })),
       }
     }),
   )

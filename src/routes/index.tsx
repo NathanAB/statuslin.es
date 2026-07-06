@@ -1,5 +1,6 @@
 import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
 import { coercePage, coerceSort, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
@@ -7,15 +8,10 @@ import { canonicalLink, homeCanonicalPath } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
-import { AuthorChip } from '@/ui/author-chip'
 import { Button } from '@/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import { ConfigBadges } from '@/ui/config-badges'
 import { HomeHero } from '@/ui/home-hero'
 import { Row, Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
-import { StatuslinePreview } from '@/ui/statusline-preview'
-import { StretchedLink } from '@/ui/stretched-link'
 import { SubmitCta } from '@/ui/submit-cta'
 import { Text } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
@@ -92,46 +88,7 @@ function Home() {
             <SubmitCta signedIn={!!user} />
           </Row>
           {cards.map((card) => (
-            <Card key={card.slug} interactive>
-              <CardHeader>
-                <Row gap={2} align="start" justify="between">
-                  <Row gap={2}>
-                    <CardTitle>
-                      <StretchedLink to="/c/$slug" params={{ slug: card.slug }}>
-                        {card.title}
-                      </StretchedLink>
-                    </CardTitle>
-                    <Text muted size="sm">
-                      ⇧ {card.upvoteCount}
-                    </Text>
-                  </Row>
-                  <ConfigBadges
-                    interpreter={card.interpreter}
-                    networkHosts={card.networkHosts}
-                    readsClaudeToken={card.readsClaudeToken}
-                  />
-                </Row>
-              </CardHeader>
-              <CardContent>
-                <Stack gap={3}>
-                  {card.preview !== null ? (
-                    <StatuslinePreview segments={card.preview} />
-                  ) : (
-                    <Text muted size="sm">
-                      No preview.
-                    </Text>
-                  )}
-                  <Row gap={3} justify="between">
-                    <Text muted size="sm" breakLong>
-                      {card.description}
-                    </Text>
-                    <Row gap={1}>
-                      <AuthorChip author={card.author} />
-                    </Row>
-                  </Row>
-                </Stack>
-              </CardContent>
-            </Card>
+            <GalleryConfigCard key={card.slug} card={card} />
           ))}
         </Stack>
 

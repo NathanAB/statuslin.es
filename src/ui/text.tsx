@@ -75,6 +75,7 @@ type TextLinkProps =
   | {
       to: NonNullable<LinkProps['to']>
       search?: LinkProps['search']
+      params?: LinkProps['params']
       href?: never
       children: React.ReactNode
       target?: string
@@ -88,6 +89,7 @@ type TextLinkProps =
       href: string
       to?: never
       search?: never
+      params?: never
       children: React.ReactNode
       target?: string
       rel?: string
@@ -119,6 +121,7 @@ export function TextLink(props: TextLinkProps) {
     <Link
       to={props.to}
       {...(props.search !== undefined ? { search: props.search } : {})}
+      {...(props.params !== undefined ? { params: props.params } : {})}
       className={className}
     >
       {props.children}

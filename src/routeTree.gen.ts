@@ -18,6 +18,7 @@ import { Route as MeRouteImport } from './routes/me'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
@@ -69,6 +70,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusLinesFacetRoute = StatusLinesFacetRouteImport.update({
+  id: '/status-lines/$facet',
+  path: '/status-lines/$facet',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
+  '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
+  '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/admin': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
+  '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/og/home.png'
+    | '/status-lines/$facet'
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/og/home.png'
+    | '/status-lines/$facet'
     | '/admin'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/og/home.png'
+    | '/status-lines/$facet'
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   CSlugRoute: typeof CSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
+  StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
@@ -305,6 +318,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/status-lines/$facet': {
+      id: '/status-lines/$facet'
+      path: '/status-lines/$facet'
+      fullPath: '/status-lines/$facet'
+      preLoaderRoute: typeof StatusLinesFacetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/og/home.png': {
       id: '/og/home.png'
       path: '/og/home.png'
@@ -371,6 +391,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   CSlugRoute: CSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
+  StatusLinesFacetRoute: StatusLinesFacetRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,

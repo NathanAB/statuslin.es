@@ -2,7 +2,7 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, user } from '@/db/schema'
 import { mapCardRows } from './card-rows'
-import { FACETS, type Facet } from './facets'
+import { FACET_BY_SLUG, FACETS, type Facet, MIN_FACET_CONFIGS } from './facets'
 import { type GalleryCard, selectCardPreviews } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -65,4 +65,12 @@ export async function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]
     rows.map((r) => r.version.contentSha256),
   )
   return mapCardRows(rows, cardPreviews)
+}
+
+/** The facet for a URL slug, or null when unknown or under MIN_FACET_CONFIGS (route 404s). */
+export function resolveLiveFacet(slug: string, stats: Map<string, FacetStats>): Facet | null {
+  const facet = FACET_BY_SLUG.get(slug)
+  if (!facet) return null
+  const count = stats.get(facet.slug)?.count ?? 0
+  return count >= MIN_FACET_CONFIGS ? facet : null
 }

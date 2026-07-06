@@ -211,7 +211,7 @@ export async function getConfigBySlug(
 
 export { coerceInterpreter } from './card-rows'
 export type { FacetStats } from './facet-queries'
-export { getFacetCards, getFacetStats } from './facet-queries'
+export { getFacetCards, getFacetStats, resolveLiveFacet } from './facet-queries'
 // Re-exported so @/gallery/queries stays the single import surface for gallery
 // queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
