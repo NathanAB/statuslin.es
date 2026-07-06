@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { account, configs, user } from '@/db/schema'
+import { account, configs, configVersions, renderJobs, user } from '@/db/schema'
 import type { Interpreter } from '@/render/types'
+import { approveVersion, runNetworkPreview } from '@/review/decide'
 import { submitConfig, validateSubmitInput } from '@/submit/submit'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -85,6 +86,13 @@ export interface CommunityConfig {
   description: string
   interpreter: Interpreter
   source: string
+  /** Hosts this script needs network egress to (routed through the same validation + held-job
+   *  gate as a normal web submission — see validateSubmitInput/submitConfig). */
+  networkHosts?: string[]
+  /** SPDX license of the third-party source being seeded, e.g. 'MIT'. */
+  license: string
+  /** Upstream URL the source was seeded from (dotfiles repo, gist, etc.). */
+  sourceUrl: string
 }
 
 export type SeedStatus = 'submitted' | 'skipped' | 'error'
@@ -125,8 +133,16 @@ export async function seedCommunityConfig(
     description: entry.description,
     interpreter: entry.interpreter,
     source: entry.source,
+    ...(entry.networkHosts ? { networkHosts: entry.networkHosts } : {}),
   })
-  const { configId, slug } = await submitConfig(db, { ...validated, authorId })
+  // license/sourceUrl aren't submit-form fields (validateSubmitInput doesn't validate them) —
+  // pass them straight through to submitConfig, which stores them on the version.
+  const { configId, slug } = await submitConfig(db, {
+    ...validated,
+    authorId,
+    license: entry.license,
+    sourceUrl: entry.sourceUrl,
+  })
   return { login: entry.githubLogin, title: entry.title, status: 'submitted', slug, configId }
 }
 
@@ -153,6 +169,57 @@ export async function seedCommunity(db: Db, entries: CommunityConfig[]): Promise
     }
   }
   return outcomes
+}
+
+/** Site owner to attribute admin actions (release/publish) to on staging/prod runs: the first
+ *  admin, else the first user. Mirrors scripts/seed-gallery.ts's seedAuthorId(). */
+async function resolveAdminId(db: Db): Promise<string> {
+  const users = await db.select().from(user)
+  const admin = users.find((u) => u.role === 'admin') ?? users[0]
+  if (!admin) throw new Error('No user to act as reviewer — sign in once first.')
+  return admin.id
+}
+
+/** Promotes every 'held' render job (parked by seedCommunityConfig for a network-using seed) to
+ *  'queued' so the always-on worker renders it — the same explicit admin action as the review
+ *  queue's "run network preview" button, just batched across every seeded held job. */
+export async function releaseHeldSeeds(db: Db): Promise<number> {
+  const held = await db
+    .select({ configVersionId: renderJobs.configVersionId })
+    .from(renderJobs)
+    .where(eq(renderJobs.status, 'held'))
+  for (const job of held) {
+    await runNetworkPreview(db, job.configVersionId)
+  }
+  return held.length
+}
+
+/** Approves (and thereby publishes) every seeded version whose render job finished successfully
+ *  and whose config isn't published yet — the batched equivalent of clicking "approve" in the
+ *  review queue for each seeded submission. Versions whose render isn't done are left alone and
+ *  counted as skipped so a re-run of `publish-rendered` picks them up once the worker catches up. */
+export async function publishRenderedSeeds(
+  db: Db,
+): Promise<{ published: number; skipped: number }> {
+  const adminId = await resolveAdminId(db)
+  const rows = await db
+    .select({ versionId: configVersions.id, jobStatus: renderJobs.status })
+    .from(configVersions)
+    .innerJoin(configs, eq(configVersions.configId, configs.id))
+    .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
+    .where(and(eq(configVersions.status, 'pending'), ne(configs.status, 'published')))
+
+  let published = 0
+  let skipped = 0
+  for (const row of rows) {
+    if (row.jobStatus === 'done') {
+      await approveVersion(db, row.versionId, adminId)
+      published++
+    } else {
+      skipped++
+    }
+  }
+  return { published, skipped }
 }
 
 // CLI entry: submit every entry in the data file against the env-configured DB.
