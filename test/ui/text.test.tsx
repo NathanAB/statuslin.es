@@ -1,8 +1,18 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { Heading, Text, TextLink } from '@/ui/text'
+// TextLink's `to` variant renders TanStack Router's <Link>, which needs a router context;
+// stub it to a plain anchor (same convention as test/ui/stretched-link.test.tsx).
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
+  ),
+}))
+
+const { Heading, Text, TextLink } = await import('@/ui/text')
 
 describe('Heading', () => {
   it('renders the page-title style at level 1 (h1)', () => {
@@ -102,5 +112,47 @@ describe('TextLink (href / external)', () => {
     expect(a.getAttribute('href')).toBe('mailto:hello@statuslin.es')
     expect(a.getAttribute('target')).toBeNull()
     expect(a.getAttribute('rel')).toBeNull()
+  })
+})
+
+describe('TextLink size', () => {
+  it('inherits the surrounding text size by default (href variant): no text-size class', () => {
+    const { container } = render(<TextLink href="https://example.com">docs</TextLink>)
+    const a = container.querySelector('a') as HTMLAnchorElement
+    expect(a.className).not.toContain('text-sm')
+    expect(a.className).not.toContain('text-xs')
+    expect(a.className).not.toContain('text-base')
+    expect(a.className).toContain('text-primary')
+    expect(a.className).toContain('underline-offset-4')
+    expect(a.className).toContain('hover:underline')
+  })
+
+  it('inherits the surrounding text size by default (to variant): no text-size class', () => {
+    const { container } = render(<TextLink to="/">home</TextLink>)
+    const a = container.querySelector('a') as HTMLAnchorElement
+    expect(a.className).not.toContain('text-sm')
+    expect(a.className).not.toContain('text-xs')
+    expect(a.className).toContain('text-primary')
+  })
+
+  it('renders text-sm when size="sm" (href variant)', () => {
+    const { container } = render(
+      <TextLink href="https://example.com" size="sm">
+        docs
+      </TextLink>,
+    )
+    const a = container.querySelector('a') as HTMLAnchorElement
+    expect(a.className).toContain('text-sm')
+    expect(a.className).toContain('text-primary')
+  })
+
+  it('renders text-sm when size="sm" (to variant)', () => {
+    const { container } = render(
+      <TextLink to="/" size="sm">
+        home
+      </TextLink>,
+    )
+    const a = container.querySelector('a') as HTMLAnchorElement
+    expect(a.className).toContain('text-sm')
   })
 })

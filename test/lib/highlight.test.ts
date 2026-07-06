@@ -21,6 +21,12 @@ describe('highlightSource', () => {
     await expect(highlightSource('console.log(1)', 'node')).resolves.toContain('shiki')
   })
 
+  it('highlights JSON source (guide page payload/settings snippets)', async () => {
+    const html = await highlightSource('{"a": 1}', 'json')
+    expect(html).toContain('class="shiki')
+    expect(html).toMatch(/<span style="/)
+  })
+
   it('skips Shiki for oversized source and returns escaped plain HTML (DoS guard)', async () => {
     // Shiki's bash grammar is ~quadratic on pathological input; a 100KB run blocks the event
     // loop for seconds. Above the cap we render escaped plain text instead — instant and safe.

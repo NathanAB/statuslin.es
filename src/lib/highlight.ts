@@ -7,14 +7,16 @@ import type { Interpreter } from '@/render/types'
 
 const THEME = 'github-dark-default'
 
-// Our three interpreters → the Shiki grammar that fits each.
-const INTERPRETER_LANG: Record<Interpreter, string> = {
+// Our three interpreters (submitted scripts) plus 'json' (the /guide page's payload and
+// settings snippets) → the Shiki grammar that fits each.
+const INTERPRETER_LANG: Record<Interpreter | 'json', string> = {
   bash: 'bash',
   node: 'javascript',
   python: 'python',
+  json: 'json',
 }
 
-// Fine-grained bundle: only the three grammars + one theme + the JS regex engine (no wasm).
+// Fine-grained bundle: only the four grammars + one theme + the JS regex engine (no wasm).
 let highlighterPromise: Promise<HighlighterCore> | null = null
 function getHighlighter(): Promise<HighlighterCore> {
   if (!highlighterPromise) {
@@ -24,6 +26,7 @@ function getHighlighter(): Promise<HighlighterCore> {
         import('@shikijs/langs/bash'),
         import('@shikijs/langs/javascript'),
         import('@shikijs/langs/python'),
+        import('@shikijs/langs/json'),
       ],
       engine: createJavaScriptRegexEngine(),
     })
@@ -49,11 +52,11 @@ function plainPre(source: string): string {
 /** Render a submitted script to syntax-highlighted HTML. Shiki escapes the code text, so the
  *  output is safe to inject. Styling lives in the `.shiki` rule in src/styles/app.css.
  *  Oversized source (> HIGHLIGHT_MAX_BYTES) is returned as escaped plain text — see the constant. */
-export async function highlightSource(source: string, interpreter: Interpreter): Promise<string> {
+export async function highlightSource(source: string, lang: Interpreter | 'json'): Promise<string> {
   if (source.length > HIGHLIGHT_MAX_BYTES) return plainPre(source)
   const highlighter = await getHighlighter()
   return highlighter.codeToHtml(source, {
-    lang: INTERPRETER_LANG[interpreter],
+    lang: INTERPRETER_LANG[lang],
     theme: THEME,
     transformers: [
       {

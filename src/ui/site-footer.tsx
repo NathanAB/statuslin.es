@@ -15,14 +15,18 @@ export function SiteFooter() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Source on GitHub"
+          size="sm"
         >
           GitHub
         </TextLink>
         ·
-        <TextLink href={`mailto:${CONTACT_EMAIL}`} aria-label="Report or contact">
+        <TextLink href={`mailto:${CONTACT_EMAIL}`} aria-label="Report or contact" size="sm">
           Email
         </TextLink>
-        ·<TextLink to="/terms">Terms</TextLink>
+        ·
+        <TextLink to="/terms" size="sm">
+          Terms
+        </TextLink>
       </Row>
     </footer>
   )

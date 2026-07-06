@@ -13,12 +13,26 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }))
 
-const { MINIMAL_SCRIPT_OUTPUT } = await import('@/guide/examples')
+const { MINIMAL_SCRIPT, MINIMAL_SCRIPT_OUTPUT, SAMPLE_STDIN_JSON, SETTINGS_SNIPPET } = await import(
+  '@/guide/examples'
+)
 const { GuideContent } = await import('@/guide/guide-content')
+
+// Build the highlights fixture from the real example strings so the assertions below keep
+// testing real content, not a stand-in. `pre` mirrors the shape highlightSource() produces
+// (see src/lib/highlight.ts): a `.shiki` <pre><code>` wrapping escaped source.
+const esc = (s: string) =>
+  s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+const pre = (s: string) => `<pre class="shiki"><code>${esc(s)}</code></pre>`
+const highlights = {
+  payloadHtml: pre(SAMPLE_STDIN_JSON),
+  scriptHtml: pre(MINIMAL_SCRIPT),
+  settingsHtml: pre(SETTINGS_SNIPPET),
+}
 
 describe('GuideContent', () => {
   it('renders the h1 and all section headings', () => {
-    render(<GuideContent />)
+    render(<GuideContent highlights={highlights} />)
     expect(
       screen.getByRole('heading', { level: 1, name: /how to set up a claude code status line/i }),
     ).toBeTruthy()
@@ -35,7 +49,7 @@ describe('GuideContent', () => {
   })
 
   it('shows the real payload fields, the script, its output, and the settings snippet', () => {
-    const { container } = render(<GuideContent />)
+    const { container } = render(<GuideContent highlights={highlights} />)
     const page = container.textContent ?? ''
     // Payload comes from scenarios.ts — spot-check fields that must appear.
     for (const field of [
@@ -54,7 +68,7 @@ describe('GuideContent', () => {
   })
 
   it('links to the gallery, resources, submit, and the official docs', () => {
-    const { container } = render(<GuideContent />)
+    const { container } = render(<GuideContent highlights={highlights} />)
     for (const href of ['/', '/resources', '/submit']) {
       expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
     }

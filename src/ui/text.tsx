@@ -79,6 +79,9 @@ type TextLinkProps =
       children: React.ReactNode
       target?: string
       rel?: string
+      // 'inherit' (default) emits no text-size class, so the link matches the surrounding
+      // sentence; 'sm' keeps the old fixed-small look (e.g. the footer).
+      size?: 'inherit' | 'sm'
     }
   // External URL; opens in a new tab. Use instead of `to` for off-site links (e.g. docs).
   | {
@@ -88,10 +91,14 @@ type TextLinkProps =
       children: React.ReactNode
       target?: string
       rel?: string
+      size?: 'inherit' | 'sm'
     }
 
 export function TextLink(props: TextLinkProps) {
-  const className = 'text-primary text-sm underline-offset-4 hover:underline'
+  const className = cn(
+    'text-primary underline-offset-4 hover:underline',
+    props.size === 'sm' && 'text-sm',
+  )
   if (props.href !== undefined) {
     // Only http(s) links navigate to another page, so only they open in a new tab.
     // mailto:/tel: launch an external handler — a "new tab" is meaningless there.

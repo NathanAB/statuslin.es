@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { getGuideHighlights } from '@/guide/functions'
 import { GuideContent } from '@/guide/guide-content'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -12,7 +13,7 @@ const DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script receives, and a tested example script you can copy.'
 
 export const Route = createFileRoute('/guide')({
-  loader: () => getSession(),
+  loader: async () => ({ user: await getSession(), highlights: await getGuideHighlights() }),
   head: () => ({
     meta: [
       { title: `${GUIDE_TITLE_BASE} | statuslin.es` },
@@ -30,10 +31,10 @@ export const Route = createFileRoute('/guide')({
 })
 
 function Guide() {
-  const user = Route.useLoaderData()
+  const { user, highlights } = Route.useLoaderData()
   return (
     <PageShell user={user}>
-      <GuideContent />
+      <GuideContent highlights={highlights} />
     </PageShell>
   )
 }

@@ -1,10 +1,5 @@
-import {
-  MINIMAL_SCRIPT,
-  MINIMAL_SCRIPT_OUTPUT,
-  SAMPLE_STDIN_JSON,
-  SETTINGS_SNIPPET,
-} from '@/guide/examples'
-import { CodeBlock } from '@/ui/code-block'
+import { MINIMAL_SCRIPT_OUTPUT } from '@/guide/examples'
+import { HighlightedCode } from '@/ui/highlighted-code'
 import { Stack } from '@/ui/layout'
 import { Heading, Text, TextLink } from '@/ui/text'
 
@@ -13,9 +8,15 @@ const DOCS_URL = 'https://code.claude.com/docs/en/statusline'
 /**
  * The /guide page body. All example strings live in src/guide/examples.ts, where the
  * test suite derives the payload from the render scenarios and executes the script —
- * this file is prose and layout only.
+ * this file is prose and layout only. The three code blocks are pre-highlighted server-side
+ * (src/guide/functions.ts, the same Shiki pipeline the config detail page uses) and passed
+ * in as `highlights`.
  */
-export function GuideContent() {
+export function GuideContent({
+  highlights,
+}: {
+  highlights: { payloadHtml: string; scriptHtml: string; settingsHtml: string }
+}) {
   return (
     <Stack gap={6}>
       <Heading level={1}>How to set up a Claude Code status line</Heading>
@@ -69,7 +70,7 @@ export function GuideContent() {
           </Text>{' '}
           at it:
         </Text>
-        <CodeBlock>{SETTINGS_SNIPPET}</CodeBlock>
+        <HighlightedCode html={highlights.settingsHtml} />
         <Text muted measure>
           Settings reload on their own, and the status line shows up on your next interaction. Two
           optional fields:{' '}
@@ -91,7 +92,7 @@ export function GuideContent() {
           Your script gets one JSON object on stdin per update. This is a real payload, the same one
           this site renders every gallery preview against:
         </Text>
-        <CodeBlock>{SAMPLE_STDIN_JSON}</CodeBlock>
+        <HighlightedCode html={highlights.payloadHtml} />
         <Text muted measure>
           Most scripts only touch a few fields:{' '}
           <Text inline mono>
@@ -130,7 +131,7 @@ export function GuideContent() {
           </Text>{' '}
           call each:
         </Text>
-        <CodeBlock>{MINIMAL_SCRIPT}</CodeBlock>
+        <HighlightedCode html={highlights.scriptHtml} />
         <Text muted measure>
           For the payload above it prints{' '}
           <Text inline mono>
