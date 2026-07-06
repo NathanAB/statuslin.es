@@ -17,6 +17,7 @@ import {
   getPublishedCount,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,
+  liveFacetLinks,
   PAGE_SIZE,
   resolveLiveFacet,
 } from './queries'
@@ -50,7 +51,12 @@ export const getGallery = createServerFn({ method: 'GET' })
       const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
       // Clamp so a stale ?page= past the end still lands on the last real page.
       const page = Math.min(Math.max(1, data.page ?? 1), pageCount)
-      return { cards: await getPublishedConfigs(db, sort, page), page, pageCount }
+      return {
+        cards: await getPublishedConfigs(db, sort, page),
+        page,
+        pageCount,
+        liveFacets: liveFacetLinks(await getFacetStats(db)),
+      }
     }),
   )
 
@@ -98,9 +104,7 @@ export const getFacetPage = createServerFn({ method: 'GET' })
         // needs the display string anyway.
         updated: stats.get(facet.slug)?.latest?.toISOString().slice(0, 10) ?? null,
         // Other live facets, for the "more ways to browse" row (never link a 404).
-        otherFacets: FACETS.filter(
-          (f) => f.slug !== facet.slug && (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS,
-        ).map((f) => ({ slug: f.slug, chipLabel: f.chipLabel })),
+        otherFacets: liveFacetLinks(stats, facet.slug),
       }
     }),
   )

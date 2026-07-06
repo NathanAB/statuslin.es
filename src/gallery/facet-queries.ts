@@ -74,3 +74,13 @@ export function resolveLiveFacet(slug: string, stats: Map<string, FacetStats>): 
   const count = stats.get(facet.slug)?.count ?? 0
   return count >= MIN_FACET_CONFIGS ? facet : null
 }
+
+/** Links for every live facet (>= MIN_FACET_CONFIGS), optionally excluding the current one. */
+export function liveFacetLinks(
+  stats: Map<string, FacetStats>,
+  excludeSlug?: string,
+): Array<{ slug: string; chipLabel: string }> {
+  return FACETS.filter(
+    (f) => f.slug !== excludeSlug && (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS,
+  ).map((f) => ({ slug: f.slug, chipLabel: f.chipLabel }))
+}
