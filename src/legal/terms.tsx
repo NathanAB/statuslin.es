@@ -27,7 +27,9 @@ export function TermsContent() {
           Configs submitted to the gallery are released under{' '}
           <TextLink href={CONTENT_LICENSE.url}>{CONTENT_LICENSE.name}</TextLink> (public domain) —
           copy, change, and use them freely, no attribution required. By submitting, you confirm you
-          have the right to share the script and agree to release it this way.
+          have the right to share the script and agree to release it this way. A few gallery entries
+          are seeded from open-source projects; those keep their original license (shown on the
+          config page with a link to the source) instead of CC0.
         </Text>
       </Stack>
 

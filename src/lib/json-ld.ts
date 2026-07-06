@@ -47,6 +47,7 @@ export function configJsonLd(
     description: string
     interpreter: string
     authorName: string | null
+    license: string | null
   },
 ): object[] {
   const url = `${origin}/c/${config.slug}`
@@ -58,7 +59,7 @@ export function configJsonLd(
       description: config.description,
       url,
       programmingLanguage: config.interpreter,
-      license: CONTENT_LICENSE.url,
+      license: config.license ?? CONTENT_LICENSE.url,
       ...(config.authorName ? { author: { '@type': 'Person', name: config.authorName } } : {}),
     },
     {

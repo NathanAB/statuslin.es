@@ -216,4 +216,23 @@ describe('getConfigBySlug', () => {
     const detail = await getConfigBySlug(db, 'detail-nonetwork')
     expect(detail?.networkHosts).toEqual([])
   })
+
+  it('returns the stored license and sourceUrl when the version has them', async () => {
+    const cfg = await seed('published', 'detail-licensed', 'aabb'.repeat(16))
+    await db
+      .update(schema.configVersions)
+      .set({ license: 'MIT', sourceUrl: 'https://example.com/x' })
+      .where(eq(schema.configVersions.configId, cfg.id))
+
+    const detail = await getConfigBySlug(db, 'detail-licensed')
+    expect(detail?.license).toBe('MIT')
+    expect(detail?.sourceUrl).toBe('https://example.com/x')
+  })
+
+  it('license and sourceUrl are null when the version has neither', async () => {
+    await seed('published', 'detail-unlicensed', 'ccdd'.repeat(16))
+    const detail = await getConfigBySlug(db, 'detail-unlicensed')
+    expect(detail?.license).toBeNull()
+    expect(detail?.sourceUrl).toBeNull()
+  })
 })

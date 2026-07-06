@@ -40,6 +40,7 @@ describe('configJsonLd', () => {
       description: 'A Powerline-style status line.',
       interpreter: 'bash',
       authorName: 'LindseyB',
+      license: null,
     }) as Array<Record<string, unknown>>
     expect(code).toMatchObject({
       '@type': 'SoftwareSourceCode',
@@ -59,8 +60,33 @@ describe('configJsonLd', () => {
       description: 'd',
       interpreter: 'bash',
       authorName: null,
+      license: null,
     }) as Array<Record<string, unknown>>
     expect(code).not.toHaveProperty('author')
+  })
+
+  it('emits the per-config license when present', () => {
+    const [code] = configJsonLd('https://statuslin.es', {
+      slug: 's',
+      title: 'T',
+      description: 'd',
+      interpreter: 'bash',
+      authorName: null,
+      license: 'MIT',
+    }) as Array<Record<string, unknown>>
+    expect(code!.license).toBe('MIT')
+  })
+
+  it('falls back to the CC0 url when license is null', () => {
+    const [code] = configJsonLd('https://statuslin.es', {
+      slug: 's',
+      title: 'T',
+      description: 'd',
+      interpreter: 'bash',
+      authorName: null,
+      license: null,
+    }) as Array<Record<string, unknown>>
+    expect(code!.license).toContain('creativecommons.org')
   })
 })
 

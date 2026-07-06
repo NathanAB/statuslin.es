@@ -186,6 +186,10 @@ export interface ConfigDetail {
   /** Auto-generated page copy, or null when scripts/generate-content.ts hasn't run for this version. */
   generatedContent: GeneratedContent | null
   previews: RenderedPreview[]
+  /** SPDX license of third-party (seeded) source, e.g. 'MIT'. Null = submitter's own work (CC0 per terms). */
+  license: string | null
+  /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
+  sourceUrl: string | null
 }
 
 export async function getConfigBySlug(
@@ -226,6 +230,8 @@ export async function getConfigBySlug(
     readsClaudeToken: row.version.readsClaudeToken ?? false,
     generatedContent: row.version.generatedContent ?? null,
     previews,
+    license: row.version.license ?? null,
+    sourceUrl: row.version.sourceUrl ?? null,
   }
 }
 
