@@ -11,12 +11,27 @@ function scenario(key: string): Scenario {
   return s
 }
 
+type ContentBlock = {
+  type: string
+  id?: string
+  name?: string
+  input?: Record<string, unknown>
+  tool_use_id?: string
+  text?: string
+}
+
 type Entry = {
   type: string
   timestamp: string
   sessionId?: string
   gitBranch?: string
-  message?: { role?: string; model?: string; usage?: Record<string, number> }
+  isSidechain?: boolean
+  message?: {
+    role?: string
+    model?: string
+    usage?: Record<string, number>
+    content?: string | ContentBlock[]
+  }
 }
 
 function parse(content: string): Entry[] {
@@ -30,6 +45,19 @@ const sumUsage = (entries: Entry[], field: string): number =>
   entries
     .filter((e) => e.type === 'assistant')
     .reduce((acc, e) => acc + (e.message?.usage?.[field] ?? 0), 0)
+
+const blocks = (e: Entry): ContentBlock[] =>
+  Array.isArray(e.message?.content) ? e.message.content : []
+
+const toolUses = (entries: Entry[]): ContentBlock[] =>
+  entries
+    .filter((e) => e.type === 'assistant')
+    .flatMap((e) => blocks(e).filter((b) => b.type === 'tool_use'))
+
+const toolResults = (entries: Entry[]): ContentBlock[] =>
+  entries
+    .filter((e) => e.type === 'user')
+    .flatMap((e) => blocks(e).filter((b) => b.type === 'tool_result'))
 
 describe('buildTranscript', () => {
   it('writes to the scenario transcript_path', () => {
@@ -102,5 +130,91 @@ describe('buildTranscript', () => {
     const a = buildTranscript(scenario('worktree'), NOW).content
     const b = buildTranscript(scenario('worktree'), NOW).content
     expect(a).toBe(b)
+  })
+
+  it('adds a tool_use to every assistant turn, with realistic names and inputs', () => {
+    const entries = parse(buildTranscript(scenario('near-full'), NOW).content)
+    const uses = toolUses(entries).filter((b) => b.name !== 'Agent')
+    const assistants = entries.filter((e) => e.type === 'assistant')
+    expect(uses.length).toBe(assistants.length)
+    for (const u of uses) {
+      expect(u.id).toBeTruthy()
+      expect(['Read', 'Bash', 'Edit', 'Grep']).toContain(u.name)
+    }
+  })
+
+  it('resolves every tool_use except the final turn (running-tool state)', () => {
+    const entries = parse(buildTranscript(scenario('near-full'), NOW).content)
+    const useIds = toolUses(entries).map((b) => b.id)
+    const resultIds = new Set(toolResults(entries).map((b) => b.tool_use_id))
+    const unresolved = useIds.filter((id) => !resultIds.has(id))
+    // exactly two unresolved: the final turn's tool and the running Agent
+    expect(unresolved).toHaveLength(2)
+  })
+
+  it('includes exactly one running Agent tool_use with description and subagent_type', () => {
+    const entries = parse(buildTranscript(scenario('near-full'), NOW).content)
+    const agents = toolUses(entries).filter((b) => b.name === 'Agent')
+    expect(agents).toHaveLength(1)
+    expect(typeof agents[0]?.input?.description).toBe('string')
+    expect(typeof agents[0]?.input?.subagent_type).toBe('string')
+    const resultIds = new Set(toolResults(entries).map((b) => b.tool_use_id))
+    expect(resultIds.has(agents[0]?.id ?? '')).toBe(false)
+  })
+
+  it('includes at least one isSidechain entry for the agent', () => {
+    const entries = parse(buildTranscript(scenario('near-full'), NOW).content)
+    expect(entries.some((e) => e.isSidechain === true)).toBe(true)
+  })
+
+  it('keeps the empty-context branch tool-free', () => {
+    const entries = parse(buildTranscript(scenario('fresh-session'), NOW).content)
+    expect(toolUses(entries)).toHaveLength(0)
+    expect(entries.some((e) => e.isSidechain === true)).toBe(false)
+  })
+
+  it('keeps mid-session tool activity for post-compact (zero tokens, not a fresh session)', () => {
+    const entries = parse(buildTranscript(scenario('post-compact'), NOW).content)
+    expect(toolUses(entries).length).toBeGreaterThan(0)
+    expect(entries.some((e) => e.isSidechain === true)).toBe(true)
+  })
+
+  it('pins usage byte-identical to the pre-enrichment builder (near-full regression)', () => {
+    // near-full: duration 612000ms → 5 turns; totalInput = 182_000 (91% of 200k).
+    // These arrays are the exact output of the pre-enrichment formula — do not "fix" them.
+    const entries = parse(buildTranscript(scenario('near-full'), NOW).content)
+    const usages = entries.filter((e) => e.type === 'assistant').map((e) => e.message?.usage)
+    expect(usages).toEqual([
+      {
+        input_tokens: 1800,
+        output_tokens: 250,
+        cache_creation_input_tokens: 36400,
+        cache_read_input_tokens: 36400,
+      },
+      {
+        input_tokens: 1800,
+        output_tokens: 310,
+        cache_creation_input_tokens: 36400,
+        cache_read_input_tokens: 72800,
+      },
+      {
+        input_tokens: 1800,
+        output_tokens: 370,
+        cache_creation_input_tokens: 36400,
+        cache_read_input_tokens: 109200,
+      },
+      {
+        input_tokens: 1800,
+        output_tokens: 430,
+        cache_creation_input_tokens: 36400,
+        cache_read_input_tokens: 145600,
+      },
+      {
+        input_tokens: 1800,
+        output_tokens: 490,
+        cache_creation_input_tokens: 36400,
+        cache_read_input_tokens: 182000,
+      },
+    ])
   })
 })

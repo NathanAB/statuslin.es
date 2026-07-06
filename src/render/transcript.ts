@@ -52,6 +52,21 @@ function usageForTurn(turnIndex: number, turns: number, totalInput: number): Tur
   }
 }
 
+/** Deterministic tool call per turn. Names/inputs mirror real Claude Code tools so
+ *  transcript-reading status lines (running/completed tool activity) render faithfully.
+ *  TodoWrite/TaskCreate/TaskUpdate are deliberately absent: activity parsers ignore them. */
+const TOOL_CYCLE: { name: string; input: (cwd: string) => Record<string, unknown> }[] = [
+  { name: 'Read', input: (cwd) => ({ file_path: `${cwd}/src/index.ts` }) },
+  { name: 'Bash', input: () => ({ command: 'bun test', description: 'Run the test suite' }) },
+  { name: 'Edit', input: (cwd) => ({ file_path: `${cwd}/src/app.ts` }) },
+  { name: 'Grep', input: () => ({ pattern: 'TODO', output_mode: 'files_with_matches' }) },
+]
+
+/** Stable tool_use ids in a namespace (9000+) that can never collide with entry uuids. */
+function toolId(sessionId: string, n: number): string {
+  return `toolu_${seqId(sessionId, 9000 + n)}`
+}
+
 export function buildTranscript(
   scenario: Scenario,
   nowMs: number,
@@ -88,8 +103,11 @@ export function buildTranscript(
     return entry
   }
 
-  // Empty/just-started context (no tokens yet): a single user prompt, no assistant turn → ~0 cost.
-  if (totalInput <= 0) {
+  // fresh-session ONLY: a just-started session has no assistant turn yet → a single user prompt,
+  // no tool activity, ~0 cost. Deliberately not keyed off zero context tokens — post-compact also
+  // has zero tokens but models a mid-session state whose transcript (and tool activity) persists;
+  // /compact does not delete the transcript file.
+  if (scenario.key === 'fresh-session') {
     const user = base('user', nowMs)
     user.message = { role: 'user', content: 'Help me with this project.' }
     lines.push(JSON.stringify(user))
@@ -98,13 +116,48 @@ export function buildTranscript(
 
   const turns = turnCount(durationMs)
   const start = nowMs - durationMs
+  let pendingToolId: string | null = null
   for (let i = 0; i < turns; i++) {
     const userAt = start + (durationMs * i) / turns
     const asstAt = start + (durationMs * (i + 0.5)) / turns
 
+    // The previous turn's tool result arrives as its own user entry, like real transcripts.
+    // The final turn's tool never resolves, so "running tool" states render.
+    if (pendingToolId !== null) {
+      const res = base('user', userAt)
+      res.message = {
+        role: 'user',
+        content: [
+          { type: 'tool_result', tool_use_id: pendingToolId, is_error: false, content: 'ok' },
+        ],
+      }
+      lines.push(JSON.stringify(res))
+    }
+
     const user = base('user', userAt)
     user.message = { role: 'user', content: `Step ${i + 1}: continue the task.` }
     lines.push(JSON.stringify(user))
+
+    const tool = TOOL_CYCLE[i % TOOL_CYCLE.length] as (typeof TOOL_CYCLE)[number]
+    const useId = toolId(sessionId, i)
+    const content: Record<string, unknown>[] = [
+      { type: 'text', text: `Working on step ${i + 1}.` },
+      { type: 'tool_use', id: useId, name: tool.name, input: tool.input(cwd) },
+    ]
+    // One running subagent on the final turn. Named `Agent` (the current Claude Code subagent
+    // tool); activity parsers key on exactly that name for their agents line.
+    if (i === turns - 1) {
+      content.push({
+        type: 'tool_use',
+        id: toolId(sessionId, 9_00),
+        name: 'Agent',
+        input: {
+          description: 'Review the change for regressions',
+          prompt: 'Review the working-tree diff for regressions and report findings.',
+          subagent_type: 'code-reviewer',
+        },
+      })
+    }
 
     const asst = base('assistant', asstAt)
     asst.requestId = `req_${seqId(sessionId, seq)}`
@@ -113,13 +166,24 @@ export function buildTranscript(
       type: 'message',
       role: 'assistant',
       model,
-      content: [{ type: 'text', text: `Working on step ${i + 1}.` }],
+      content,
       stop_reason: 'end_turn',
       stop_sequence: null,
       usage: usageForTurn(i, turns, totalInput),
     }
     lines.push(JSON.stringify(asst))
+    pendingToolId = useId
   }
+
+  // The running agent's sidechain opener (real subagent turns carry isSidechain: true).
+  // Parsers that ignore sidechains skip it; it exists for shape fidelity.
+  const side = base('user', nowMs)
+  side.isSidechain = true
+  side.message = {
+    role: 'user',
+    content: 'Review the working-tree diff for regressions and report findings.',
+  }
+  lines.push(JSON.stringify(side))
 
   return { path: stdin.transcript_path, content: lines.join('\n') }
 }

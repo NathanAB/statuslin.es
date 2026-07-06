@@ -21,9 +21,10 @@ export interface RenderInput {
   scenario: Scenario
   /** Allowlisted hostnames for this render. Empty/undefined = network off. */
   networkHosts?: string[]
-  /** A session transcript file to drop in the sandbox at `path`, so transcript-reading status
-   *  lines (cost, session duration) render faithfully. Built per-scenario at render time. */
-  transcript?: { path: string; content: string }
+  /** Fixture files dropped into the sandbox before the script runs (session transcript, todo
+   *  list, …), so status lines that read them render faithfully. Built per-scenario at render
+   *  time; paths are absolute sandbox paths validated by the runner. */
+  fixtures?: { path: string; content: string }[]
 }
 
 export interface BehaviorTrace {
