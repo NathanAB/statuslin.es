@@ -10,7 +10,14 @@ import { Heading, Text } from '@/ui/text'
 export const Route = createFileRoute('/submit')({
   loader: () => getSession(),
   head: () => ({
-    meta: [{ title: 'Submit a status line — statuslin.es' }],
+    meta: [
+      { title: 'Submit a status line — statuslin.es' },
+      {
+        name: 'description',
+        content:
+          'Submit your Claude Code status line to the community gallery. We render it in a sandbox across example sessions, review it, and publish it for others to copy.',
+      },
+    ],
     links: [canonicalLink('/submit')],
   }),
   component: Submit,

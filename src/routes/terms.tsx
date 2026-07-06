@@ -7,7 +7,14 @@ import { PageShell } from '@/ui/shell'
 export const Route = createFileRoute('/terms')({
   loader: () => getSession(),
   head: () => ({
-    meta: [{ title: 'Terms — statuslin.es' }],
+    meta: [
+      { title: 'Terms — statuslin.es' },
+      {
+        name: 'description',
+        content:
+          'The terms for using statuslin.es and submitting status lines: licensing, acceptable use, and how takedowns work.',
+      },
+    ],
     links: [canonicalLink('/terms')],
   }),
   component: Terms,
