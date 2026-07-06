@@ -4,12 +4,8 @@ import type { GeneratedContent } from '@/content/types'
 import { configs, configVersions, previews, user } from '@/db/schema'
 import { getVoteState } from '@/lib/vote-state'
 import { getPreviews } from '@/render/store'
-import {
-  type AnsiSegment,
-  INTERPRETERS,
-  type Interpreter,
-  type RenderedPreview,
-} from '@/render/types'
+import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
+import { coerceInterpreter, mapCardRows } from './card-rows'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -36,13 +32,6 @@ export function coercePage(value: unknown): number {
     typeof value === 'string' ? Number(value) : typeof value === 'number' ? value : Number.NaN
   if (!Number.isFinite(n) || n < 1) return 1
   return Math.floor(n)
-}
-
-const VALID_INTERPRETERS = new Set<Interpreter>(INTERPRETERS)
-
-/** Narrows the free-form DB `interpreter` column to the Interpreter union; falls back to 'bash'. */
-export function coerceInterpreter(value: string): Interpreter {
-  return VALID_INTERPRETERS.has(value as Interpreter) ? (value as Interpreter) : 'bash'
 }
 
 export interface ConfigAuthor {
@@ -120,24 +109,7 @@ export async function getPublishedConfigs(
     rows.map((r) => r.version.contentSha256),
   )
 
-  return rows.map((r) => ({
-    slug: r.config.slug,
-    title: r.config.title,
-    description: r.config.description,
-    interpreter: coerceInterpreter(r.config.interpreter),
-    upvoteCount: r.config.upvoteCount,
-    copyCount: r.config.copyCount,
-    author: r.author
-      ? {
-          name: r.author.name,
-          username: r.author.username ?? null,
-          image: r.author.image ?? null,
-        }
-      : null,
-    preview: cardPreviews.get(r.version.contentSha256) ?? null,
-    networkHosts: r.version.networkHosts ?? [],
-    readsClaudeToken: r.version.readsClaudeToken ?? false,
-  }))
+  return mapCardRows(rows, cardPreviews)
 }
 
 /**
@@ -237,6 +209,9 @@ export async function getConfigBySlug(
   }
 }
 
+export { coerceInterpreter } from './card-rows'
+export type { FacetStats } from './facet-queries'
+export { getFacetCards, getFacetStats } from './facet-queries'
 // Re-exported so @/gallery/queries stays the single import surface for gallery
 // queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
