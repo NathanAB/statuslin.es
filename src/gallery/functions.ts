@@ -67,10 +67,16 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
       // resolveSourceHtml always returns a string, so this overrides the nullable ConfigDetail
       // .sourceHtml with a non-null value — the detail page can render it directly.
       const related = await getRelatedConfigs(db, data.slug)
+      const stats = await getFacetStats(db)
+      const facetLinks = detail.tags
+        .map((tag) => resolveLiveFacet(tag, stats))
+        .filter((f): f is NonNullable<typeof f> => f !== null)
+        .map((f) => ({ slug: f.slug, chipLabel: f.chipLabel }))
       return {
         ...detail,
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),
         related,
+        facetLinks,
       }
     }),
   )

@@ -132,6 +132,24 @@ function ConfigDetail() {
               <LicenseLine license={detail.license} sourceUrl={detail.sourceUrl} />
             </Stack>
           )}
+
+          {detail.facetLinks.length > 0 && (
+            <Row gap={2} wrap>
+              <Text muted size="sm" inline>
+                Shows:
+              </Text>
+              {detail.facetLinks.map((f) => (
+                <TextLink
+                  key={f.slug}
+                  to="/status-lines/$facet"
+                  params={{ facet: f.slug }}
+                  size="sm"
+                >
+                  {f.chipLabel}
+                </TextLink>
+              ))}
+            </Row>
+          )}
         </Stack>
 
         <AdoptPrompt

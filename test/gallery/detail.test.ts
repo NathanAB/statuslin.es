@@ -55,7 +55,7 @@ afterAll(async () => {
 const SHA = 'c'.repeat(64)
 const SOURCE = '#!/usr/bin/env bash\necho detail'
 
-async function seed(status: string, slug = 'detail-one', sha = SHA) {
+async function seed(status: string, slug = 'detail-one', sha = SHA, tags: string[] = []) {
   // Insert the config first so the version's config_id FK is satisfiable, then
   // back-patch the config's current_version_id (which has no FK constraint).
   const cfgRows = await db
@@ -67,6 +67,7 @@ async function seed(status: string, slug = 'detail-one', sha = SHA) {
       authorId: 'u1',
       interpreter: 'bash',
       status,
+      tags,
     })
     .returning()
   const cfg = cfgRows[0]!
@@ -234,5 +235,11 @@ describe('getConfigBySlug', () => {
     const detail = await getConfigBySlug(db, 'detail-unlicensed')
     expect(detail?.license).toBeNull()
     expect(detail?.sourceUrl).toBeNull()
+  })
+
+  it('returns the config tags', async () => {
+    await seed('published', 'tagged-config', 'ddee'.repeat(16), ['git'])
+    const detail = await getConfigBySlug(db, 'tagged-config')
+    expect(detail?.tags).toEqual(['git'])
   })
 })

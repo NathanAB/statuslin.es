@@ -147,6 +147,7 @@ export interface ConfigDetail {
   title: string
   description: string
   interpreter: Interpreter
+  tags: string[]
   upvoteCount: number
   copyCount: number
   author: ConfigAuthor | null
@@ -187,6 +188,7 @@ export async function getConfigBySlug(
     title: row.config.title,
     description: row.config.description,
     interpreter: coerceInterpreter(row.config.interpreter),
+    tags: row.config.tags ?? [],
     upvoteCount: row.config.upvoteCount,
     copyCount: row.config.copyCount,
     author: row.author
