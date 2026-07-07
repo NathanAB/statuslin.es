@@ -189,5 +189,22 @@ export const FACETS: Facet[] = [
 
 export const FACET_BY_SLUG = new Map(FACETS.map((f) => [f.slug, f]))
 
+/**
+ * The line under a facet page's h1. States the real count only when the facet is a
+ * genuine subset — "23 of the gallery's 23" is true but reads awkward, so an
+ * all-configs facet shows just the updated date until the gallery diversifies.
+ */
+export function facetIntroLine(
+  count: number,
+  total: number,
+  countPhrase: string,
+  updated: string | null,
+): string {
+  const countSentence =
+    count < total ? `${count} of the gallery's ${total} status lines ${countPhrase}.` : ''
+  const updatedSentence = updated ? `Updated ${updated}.` : ''
+  return [countSentence, updatedSentence].filter(Boolean).join(' ')
+}
+
 /** Valid values for configs.tags: exactly the tag-facet slugs. */
 export const TAG_VOCABULARY = FACETS.filter((f) => f.kind === 'tag').map((f) => f.slug)
