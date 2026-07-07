@@ -46,6 +46,10 @@ export const configs = pgTable(
     /** Curated facet tags from the fixed vocabulary in src/gallery/facets.ts (e.g. 'git',
      * 'token-usage'). Suggested by generate-content / the backfill script, human-confirmed. */
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    /** The full filterable/badge tag list: curated `tags` ∪ tags derived from the current
+     * version (interpreter, network-access, reads-token). Materialized so the gallery filter
+     * is one GIN-indexed `@>`. Recomputed on publish and after the tag classifier writes. */
+    allTags: jsonb('all_tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     status: text('status').notNull().default('draft'),
     currentVersionId: uuid('current_version_id'),
     upvoteCount: integer('upvote_count').notNull().default(0),
@@ -65,6 +69,8 @@ export const configs = pgTable(
     // that no btree can cover, so it intentionally has no index.
     index('configs_status_created_idx').on(t.status, t.createdAt),
     index('configs_status_upvotes_idx').on(t.status, t.upvoteCount),
+    // Supports the gallery tag filter's `all_tags @> '[...]'` containment check.
+    index('configs_all_tags_gin').using('gin', t.allTags),
   ],
 )
 

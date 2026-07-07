@@ -127,6 +127,13 @@
       "when": 1783376474235,
       "tag": "0017_stale_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1783467632978,
+      "tag": "0018_redundant_naoko",
+      "breakpoints": true
     }
   ]
 }
