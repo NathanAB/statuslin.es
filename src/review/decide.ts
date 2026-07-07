@@ -4,6 +4,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
 import { configs, configVersions, renderJobs } from '@/db/schema'
+import { computeAllTags } from '@/gallery/derived-tags'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
@@ -30,9 +31,19 @@ export async function approveVersion(
       .where(and(eq(configVersions.id, versionId), eq(configVersions.status, 'pending')))
       .returning()
     if (!ver) throw new HttpError(409, 'version not in a reviewable (pending) state')
+    const [cfg] = await tx
+      .select({ tags: configs.tags })
+      .from(configs)
+      .where(eq(configs.id, ver.configId))
+    const allTags = computeAllTags({
+      curatedTags: cfg?.tags ?? [],
+      interpreter: ver.interpreter,
+      networkHosts: ver.networkHosts ?? [],
+      readsClaudeToken: ver.readsClaudeToken ?? false,
+    })
     await tx
       .update(configs)
-      .set({ status: 'published', currentVersionId: ver.id })
+      .set({ status: 'published', currentVersionId: ver.id, allTags })
       .where(eq(configs.id, ver.configId))
   })
 }
