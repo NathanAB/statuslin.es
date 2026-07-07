@@ -1,4 +1,4 @@
-import { GUIDE_TITLE_BASE, HOME_TITLE_BASE, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { HOME_TITLE_BASE, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
 /**
@@ -92,17 +92,6 @@ export function resourcesJsonLd(
         url: item.url,
       })),
     },
-  }
-}
-
-/** The /guide page as a TechArticle. */
-export function guideJsonLd(origin: string, description: string): object {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'TechArticle',
-    headline: GUIDE_TITLE_BASE,
-    url: `${origin}/guide`,
-    description,
   }
 }
 

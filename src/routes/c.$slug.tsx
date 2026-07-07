@@ -226,11 +226,6 @@ function ConfigDetail() {
             </Stack>
           </SectionCard>
         )}
-
-        {/* Editorial cross-link: config pages feed the guide, the guide feeds the gallery. */}
-        <Text muted size="sm">
-          New to Claude Code status lines? <TextLink to="/guide">Read the setup guide</TextLink>.
-        </Text>
       </Stack>
     </PageShell>
   )

@@ -62,17 +62,15 @@ describe('AppHeader', () => {
     expect(screen.queryByText('Log out')).toBeNull()
   })
 
-  it('links to the guide and resources pages when signed out', () => {
+  it('links to the resources page when signed out', () => {
     const { container } = render(<AppHeader user={null} />)
-    expect(container.querySelector('a[href="/guide"]')).not.toBeNull()
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
-  it('links to the guide and resources pages when signed in', () => {
+  it('links to the resources page when signed in', () => {
     const { container } = render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,
     )
-    expect(container.querySelector('a[href="/guide"]')).not.toBeNull()
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 

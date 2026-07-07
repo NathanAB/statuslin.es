@@ -4,7 +4,7 @@ import { TextLink } from '@/ui/text'
 
 /**
  * Shared bottom footer on every page: the centered text links — the GitHub source,
- * a mailto report (the abuse-report path), the Guide, Resources, and Terms pages,
+ * a mailto report (the abuse-report path), the Resources and Terms pages,
  * separated by dots.
  */
 export function SiteFooter() {
@@ -23,10 +23,6 @@ export function SiteFooter() {
         ·
         <TextLink href={`mailto:${CONTACT_EMAIL}`} aria-label="Report or contact" size="sm">
           Email
-        </TextLink>
-        ·
-        <TextLink to="/guide" size="sm">
-          Guide
         </TextLink>
         ·
         <TextLink to="/resources" size="sm">

@@ -88,9 +88,6 @@ function FacetPage() {
             ))}
           </Row>
         ) : null}
-        <Text muted size="sm">
-          New to Claude Code status lines? <TextLink to="/guide">Read the setup guide</TextLink>.
-        </Text>
       </Stack>
     </PageShell>
   )

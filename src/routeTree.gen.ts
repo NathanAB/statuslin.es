@@ -15,7 +15,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as MeRouteImport } from './routes/me'
-import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
@@ -55,11 +54,6 @@ const ResourcesRoute = ResourcesRouteImport.update({
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GuideRoute = GuideRouteImport.update({
-  id: '/guide',
-  path: '/guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -117,7 +111,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -136,7 +129,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -156,7 +148,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/guide': typeof GuideRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -177,7 +168,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/guide'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -196,7 +186,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/guide'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -215,7 +204,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/guide'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -235,7 +223,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  GuideRoute: typeof GuideRoute
   MeRoute: typeof MeRoute
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -295,13 +282,6 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof MeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/guide': {
-      id: '/guide'
-      path: '/guide'
-      fullPath: '/guide'
-      preLoaderRoute: typeof GuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -379,7 +359,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  GuideRoute: GuideRoute,
   MeRoute: MeRoute,
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,

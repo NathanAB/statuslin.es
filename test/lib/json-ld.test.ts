@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  configJsonLd,
-  facetJsonLd,
-  guideJsonLd,
-  homeJsonLd,
-  jsonLdScript,
-  resourcesJsonLd,
-} from '@/lib/json-ld'
+import { configJsonLd, facetJsonLd, homeJsonLd, jsonLdScript, resourcesJsonLd } from '@/lib/json-ld'
 
 describe('jsonLdScript', () => {
   it('serializes to an application/ld+json script descriptor', () => {
@@ -112,23 +105,6 @@ describe('resourcesJsonLd', () => {
       name: 'ccstatusline',
       url: 'https://github.com/sirmalloc/ccstatusline',
     })
-  })
-})
-
-describe('guideJsonLd', () => {
-  it('is a TechArticle at /guide with the provided description', () => {
-    const description =
-      'How to set up a Claude Code status line: the statusLine setting, the JSON your script receives, and a tested example script you can copy.'
-    const data = guideJsonLd('https://statuslin.es', description) as {
-      '@type': string
-      url: string
-      headline: string
-      description: string
-    }
-    expect(data['@type']).toBe('TechArticle')
-    expect(data.url).toBe('https://statuslin.es/guide')
-    expect(data.headline).toBe('How to Set Up a Claude Code Status Line')
-    expect(data.description).toBe(description)
   })
 })
 

@@ -43,9 +43,9 @@ describe('ResourcesContent', () => {
     expect(screen.getAllByText('GitHub').length).toBeGreaterThanOrEqual(1)
   })
 
-  it('cross-links the guide and gallery, and shows the submit button when signed out', () => {
+  it('cross-links the gallery, and shows the submit button when signed out', () => {
     const { container } = render(<ResourcesContent signedIn={false} />)
-    for (const href of ['/guide', '/', '/submit']) {
+    for (const href of ['/', '/submit']) {
       expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
     }
     expect(screen.getByRole('heading', { level: 2, name: /get listed/i })).toBeTruthy()

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   configPageTitle,
-  GUIDE_TITLE_BASE,
   HOME_TITLE_BASE,
   NOT_FOUND_TITLE,
   RESOURCES_TITLE_BASE,
@@ -25,7 +24,6 @@ describe('configPageTitle', () => {
 
 describe('static page titles', () => {
   it('state the target keyword', () => {
-    expect(GUIDE_TITLE_BASE).toBe('How to Set Up a Claude Code Status Line')
     expect(RESOURCES_TITLE_BASE).toBe('Claude Code Status Line Tools & Resources')
   })
 })

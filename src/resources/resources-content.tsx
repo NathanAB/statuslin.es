@@ -21,10 +21,9 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
 
         <Text muted measure>
           A short, opinionated list of the status line tools and reading we'd point a friend at. The
-          descriptions are ours, not the projects' own marketing. New to status lines?{' '}
-          <TextLink to="/guide">The setup guide</TextLink> walks through the basics. If you want a
-          good status line without installing anything, <TextLink to="/">the gallery</TextLink> is
-          full of ready-to-copy examples.
+          descriptions are ours, not the projects' own marketing. If you want a good status line
+          without installing anything, <TextLink to="/">the gallery</TextLink> is full of
+          ready-to-copy examples.
         </Text>
       </Stack>
 
