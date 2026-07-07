@@ -145,6 +145,8 @@ export function facetJsonLd(
   origin: string,
   facet: { slug: string; titleBase: string },
   items: Array<{ slug: string; title: string }>,
+  /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
+  updated: string | null,
 ): object[] {
   const url = `${origin}/status-lines/${facet.slug}`
   return [
@@ -153,6 +155,7 @@ export function facetJsonLd(
       '@type': 'CollectionPage',
       name: facet.titleBase,
       url,
+      ...(updated ? { dateModified: updated } : {}),
       mainEntity: {
         '@type': 'ItemList',
         itemListElement: items.map((item, i) => ({

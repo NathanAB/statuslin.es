@@ -38,6 +38,7 @@ export const Route = createFileRoute('/status-lines/$facet')({
         siteUrl(),
         facet,
         loaderData.page.cards.map((c) => ({ slug: c.slug, title: c.title })),
+        loaderData.page.updated,
       ).map(jsonLdScript),
     }
   },

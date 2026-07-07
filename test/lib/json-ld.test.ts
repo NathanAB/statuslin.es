@@ -186,10 +186,12 @@ describe('resourcesJsonLd', () => {
 })
 
 describe('facetJsonLd', () => {
+  const facet = { slug: 'git', titleBase: 'Claude Code Status Lines That Show Git Status' }
   const [page, crumbs] = facetJsonLd(
     'https://example.test',
-    { slug: 'git', titleBase: 'Claude Code Status Lines That Show Git Status' },
+    facet,
     [{ slug: 'a', title: 'A' }],
+    '2026-07-06',
   ) as [Record<string, unknown>, Record<string, unknown>]
 
   it('is a CollectionPage listing the configs', () => {
@@ -203,5 +205,14 @@ describe('facetJsonLd', () => {
     const items = crumbs.itemListElement as Array<{ item: string }>
     expect(items[0]?.item).toBe('https://example.test')
     expect(items[1]?.item).toBe('https://example.test/status-lines/git')
+  })
+  it('carries dateModified when an updated date is given (freshness signal)', () => {
+    expect(page.dateModified).toBe('2026-07-06')
+  })
+  it('omits dateModified when there is no updated date', () => {
+    const [p] = facetJsonLd('https://example.test', facet, [{ slug: 'a', title: 'A' }], null) as [
+      Record<string, unknown>,
+    ]
+    expect(p).not.toHaveProperty('dateModified')
   })
 })
