@@ -43,7 +43,7 @@ export function SubmitForm({ user: _user }: { user: AppHeaderUser }) {
       })
       // The statusline_submitted event fires server-side in submitConfigFn now (ad blockers can't
       // strip a server event), so the browser only handles the success UX here.
-      toast.success('Success! Your submission has been queued for review.')
+      toast.success("Queued for review — we'll take a look shortly.")
       setTitle('')
       setDescription('')
       setInterpreter('bash')

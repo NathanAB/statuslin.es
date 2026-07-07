@@ -35,7 +35,7 @@ function Submit() {
       <Stack gap={4}>
         <Heading level={1}>Submit a status line</Heading>
         <Text muted size="sm" measure>
-          Paste your script below. We'll run it in a sandbox across a bunch of example sessions,
+          Paste your script below. We'll run it in a sandbox across a range of example sessions,
           review it, and add it to the gallery.
         </Text>
         <SubmitForm user={user} />

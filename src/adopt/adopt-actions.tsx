@@ -32,9 +32,9 @@ export function AdoptPrompt({ source, interpreter, title, configId, copyCount }:
 
   return (
     <Row gap={3} wrap>
-      <Button size="lg" onClick={copyPrompt} aria-label={`Copy Install Prompt — ${title}`}>
+      <Button size="lg" onClick={copyPrompt} aria-label={`Copy install prompt — ${title}`}>
         {copied ? <Check /> : <Copy />}
-        {copied ? 'Copied!' : 'Copy Install Prompt'}
+        {copied ? 'Copied!' : 'Copy install prompt'}
       </Button>
     </Row>
   )

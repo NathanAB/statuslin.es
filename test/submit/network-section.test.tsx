@@ -22,7 +22,7 @@ describe('NetworkSection', () => {
   it('always shows the network callout title and explanation', () => {
     setup()
     expect(screen.getByText('Network access')).toBeTruthy()
-    expect(screen.getByText(/no internet by default/i)).toBeTruthy()
+    expect(screen.getByText(/no network access by default/i)).toBeTruthy()
   })
 
   it('hides the host editor when the toggle is off', () => {

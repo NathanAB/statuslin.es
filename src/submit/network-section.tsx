@@ -39,7 +39,7 @@ export function NetworkSection({
     <Callout
       title="Network access"
       icon={<Globe />}
-      description="Status lines run with no internet by default. If yours fetches data, turn this on and declare the hosts it calls."
+      description="Status lines run with no network access by default. If yours fetches data, turn this on and declare the hosts it calls."
     >
       <Stack gap={3}>
         <Row gap={2} align="center">
