@@ -5,8 +5,8 @@ import { validateSubmitInput } from '@/submit/submit'
 import { COMMUNITY_CONFIGS } from '../../scripts/seed-data/community-configs'
 
 describe('community seed data', () => {
-  it('has 15 entries, each passing submit validation', () => {
-    expect(COMMUNITY_CONFIGS.length).toBe(15)
+  it('has 16 entries, each passing submit validation', () => {
+    expect(COMMUNITY_CONFIGS.length).toBe(16)
     for (const e of COMMUNITY_CONFIGS) {
       expect(() =>
         validateSubmitInput({

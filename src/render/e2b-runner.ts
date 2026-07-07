@@ -4,6 +4,7 @@ import { E2B_TEMPLATE_NAME } from './e2b-template'
 import { scriptExtension } from './script-extension'
 import { parseStrace } from './strace'
 import type { Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
+import { WARMUP_PASSES, warmThenCapture } from './warm-up'
 
 /** Hard per-command wall-clock cap. Untrusted scripts get single-digit seconds. */
 const COMMAND_TIMEOUT_MS = 5000
@@ -12,7 +13,11 @@ const SANDBOX_TIMEOUT_MS = 30_000
 /** Longer caps for network renders (both constants): a live fetch needs more than the 5s/30s
  * offline budget. The `finally` kill still bounds a stuck network sandbox. */
 const NETWORK_COMMAND_TIMEOUT_MS = 15_000 // per-command cap when hosts are declared
-const NETWORK_SANDBOX_TIMEOUT_MS = 45_000 // sandbox lifetime cap when hosts are declared
+// Lifetime must exceed the sum of every command we run in the sandbox: setup + the warm-up passes +
+// the capture. Derived (not a bare 45_000) so a warm-up script that holds each command to its cap
+// can't expire the sandbox mid-capture — and so bumping WARMUP_PASSES adjusts the ceiling too.
+// Commands = setup(1) + WARMUP_PASSES + capture(1); +15s buffer covers sandbox create / RPC overhead.
+const NETWORK_SANDBOX_TIMEOUT_MS = NETWORK_COMMAND_TIMEOUT_MS * (WARMUP_PASSES + 2) + 15_000
 
 /** Exit code we report when the script is killed by the timeout. */
 const TIMEOUT_EXIT_CODE = 124
@@ -143,28 +148,42 @@ export class E2BSandboxRunner implements SandboxRunner {
       // already-non-authoritative) trace.
       const runCmd = `${RUN_CMD[input.interpreter]} ${scriptPath} < ${INPUT_PATH}`
 
-      let timedOut = false
-      const result = await sandbox.commands
-        .run(runCmd, {
-          cwd: dir,
-          envs: filterEnv(input.scenario.env),
-          timeoutMs: commandTimeoutMs,
-          user: SANDBOX_USER,
-        })
-        .catch((error: unknown): CommandResult => {
-          // A non-zero exit from the script is a legitimate result, not a failure of ours.
-          if (error instanceof CommandExitError) {
-            return { exitCode: error.exitCode, stdout: error.stdout, stderr: error.stderr }
-          }
-          // The hard timeout fired: the script ran too long.
-          if (error instanceof TimeoutError) {
-            timedOut = true
-            return { exitCode: TIMEOUT_EXIT_CODE, stdout: '', stderr: error.message }
-          }
-          // Anything else (RPC failure, sandbox infra, etc.) is OUR failure, not a timeout.
-          // Distinct sentinel exit code; leave timedOut false so we don't mislabel infra as slow scripts.
-          return { exitCode: INFRA_ERROR_EXIT_CODE, stdout: '', stderr: String(error) }
-        })
+      // One run of the status line, with our error classification. Never throws: a non-zero
+      // script exit, a timeout, or an infra failure all resolve to a labelled CommandResult.
+      const runOnce = async (): Promise<{ result: CommandResult; timedOut: boolean }> => {
+        let timedOut = false
+        const result = await sandbox.commands
+          .run(runCmd, {
+            cwd: dir,
+            envs: filterEnv(input.scenario.env),
+            timeoutMs: commandTimeoutMs,
+            user: SANDBOX_USER,
+          })
+          .catch((error: unknown): CommandResult => {
+            // A non-zero exit from the script is a legitimate result, not a failure of ours.
+            if (error instanceof CommandExitError) {
+              return { exitCode: error.exitCode, stdout: error.stdout, stderr: error.stderr }
+            }
+            // The hard timeout fired: the script ran too long.
+            if (error instanceof TimeoutError) {
+              timedOut = true
+              return { exitCode: TIMEOUT_EXIT_CODE, stdout: '', stderr: error.message }
+            }
+            // Anything else (RPC failure, sandbox infra, etc.) is OUR failure, not a timeout.
+            // Distinct sentinel exit code; leave timedOut false so we don't mislabel infra as slow scripts.
+            return { exitCode: INFRA_ERROR_EXIT_CODE, stdout: '', stderr: String(error) }
+          })
+        return { result, timedOut }
+      }
+
+      // Network status lines commonly fetch on first run and only render the fetched values from an
+      // on-disk cache on a LATER run (see the weather/Bitcoin configs). A one-shot sandbox has an
+      // empty cache, so a single run always shows placeholders. Warm the script's own cache with a
+      // throwaway run first, then capture — the preview then shows the live values a real user sees
+      // from their second prompt on. Offline configs (no hosts) have nothing to fetch, so they skip
+      // the warm-up and pay no extra sandbox time.
+      const warmupPasses = hosts.length > 0 ? WARMUP_PASSES : 0
+      const { result, timedOut } = await warmThenCapture(runOnce, warmupPasses)
 
       const traceLog = await sandbox.files.read(TRACE_PATH).catch(() => '')
 

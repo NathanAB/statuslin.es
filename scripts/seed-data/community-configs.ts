@@ -215,4 +215,17 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     license: 'MIT',
     sourceUrl: 'https://gist.github.com/Mohamed3on/70780575570a07985916e5f50e290382',
   },
+  {
+    githubLogin: 'aaronvstory',
+    githubId: '183355548',
+    title: 'Weather & Bitcoin Bar',
+    description:
+      'A three-line bar that mixes coding metrics with ambient real-world data: model, context and git on top; date, time, live weather from wttr.in and the Bitcoin price from Coinbase in the middle; a context bar with real token counts, session cost and Claude Code version below.',
+    interpreter: 'node',
+    source: src('16-weather-bitcoin-bar.js'),
+    networkHosts: ['wttr.in', 'api.coinbase.com', 'claude.ai'],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/aaronvstory/claude-code-enhanced-statusline/blob/3d9f8d889bb5a3c875f7eb4ae04405fbb50c227b/enhanced-statusline.js',
+  },
 ]
