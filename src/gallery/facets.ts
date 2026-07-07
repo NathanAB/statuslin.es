@@ -8,20 +8,24 @@ import type { Interpreter } from '@/render/types'
  */
 export interface Facet {
   slug: string
-  kind: 'tag' | 'interpreter'
-  /** kind 'interpreter' only: the configs.interpreter value this facet selects. */
+  group: 'interpreter' | 'capability' | 'feature'
+  /** Whether the tag gets a standalone /status-lines/<slug> page + sitemap entry.
+   * false = badge + filter only (its badge links to the filtered home instead). */
+  page: boolean
+  /** group 'interpreter' only: the configs.interpreter value this facet selects. */
   interpreter?: Interpreter
-  /** <title> base; rendered as `${titleBase} | statuslin.es`. */
-  titleBase: string
-  /** The h1, sentence case. */
-  heading: string
-  /** Short label for tag chips on config pages and the home browse row. */
+  /** Short label for tag chips / the filter dropdown. Required for every tag. */
   chipLabel: string
-  metaDescription: string
+  // SEO copy — required only when page: true.
+  /** <title> base; rendered as `${titleBase} | statuslin.es`. */
+  titleBase?: string
+  /** The h1, sentence case. */
+  heading?: string
+  metaDescription?: string
   /** Completes the live count line: "N of the gallery's M status lines <countPhrase>." */
-  countPhrase: string
+  countPhrase?: string
   /** Intro paragraphs. Site voice: plain, no em dashes, opinions allowed. */
-  intro: string[]
+  intro?: string[]
 }
 
 /** A facet renders (and enters the sitemap) only with at least this many published matches. */
@@ -30,7 +34,8 @@ export const MIN_FACET_CONFIGS = 3
 export const FACETS: Facet[] = [
   {
     slug: 'git',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Claude Code Status Lines That Show Git Status',
     heading: 'Claude Code status lines that show git status',
     chipLabel: 'git',
@@ -44,7 +49,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'token-usage',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Claude Code Status Lines That Show Token Usage',
     heading: 'Claude Code status lines that show token usage',
     chipLabel: 'tokens',
@@ -58,7 +64,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'cost',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Claude Code Status Lines That Track Cost',
     heading: 'Claude Code status lines that track cost',
     chipLabel: 'cost',
@@ -72,7 +79,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'quota',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Claude Code Status Lines That Track Usage Limits',
     heading: 'Claude Code status lines that track usage limits',
     chipLabel: 'limits',
@@ -86,7 +94,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'minimal',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Minimal Claude Code Status Lines',
     heading: 'Minimal Claude Code status lines',
     chipLabel: 'minimal',
@@ -100,7 +109,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'multi-line',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Multi-Line Claude Code Status Lines',
     heading: 'Multi-line Claude Code status lines',
     chipLabel: 'multi-line',
@@ -114,7 +124,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'powerline',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Powerline-Style Claude Code Status Lines',
     heading: 'Powerline-style Claude Code status lines',
     chipLabel: 'powerline',
@@ -128,7 +139,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'themed',
-    kind: 'tag',
+    group: 'feature',
+    page: true,
     titleBase: 'Themed Claude Code Status Lines',
     heading: 'Themed Claude Code status lines',
     chipLabel: 'themed',
@@ -142,7 +154,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'bash',
-    kind: 'interpreter',
+    group: 'interpreter',
+    page: true,
     interpreter: 'bash',
     titleBase: 'Claude Code Status Lines Written in Bash',
     heading: 'Claude Code status lines written in bash',
@@ -157,7 +170,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'python',
-    kind: 'interpreter',
+    group: 'interpreter',
+    page: true,
     interpreter: 'python',
     titleBase: 'Claude Code Status Lines Written in Python',
     heading: 'Claude Code status lines written in Python',
@@ -172,7 +186,8 @@ export const FACETS: Facet[] = [
   },
   {
     slug: 'node',
-    kind: 'interpreter',
+    group: 'interpreter',
+    page: true,
     interpreter: 'node',
     titleBase: 'Claude Code Status Lines Written in Node.js',
     heading: 'Claude Code status lines written in Node.js',
@@ -185,6 +200,8 @@ export const FACETS: Facet[] = [
       'If you installed Claude Code through npm you already have the runtime, so trying one of these costs nothing.',
     ],
   },
+  { slug: 'network-access', group: 'capability', page: false, chipLabel: 'network access' },
+  { slug: 'reads-token', group: 'capability', page: false, chipLabel: 'reads token' },
 ]
 
 export const FACET_BY_SLUG = new Map(FACETS.map((f) => [f.slug, f]))
@@ -206,5 +223,20 @@ export function facetIntroLine(
   return [countSentence, updatedSentence].filter(Boolean).join(' ')
 }
 
-/** Valid values for configs.tags: exactly the tag-facet slugs. */
-export const TAG_VOCABULARY = FACETS.filter((f) => f.kind === 'tag').map((f) => f.slug)
+/** Valid values for configs.tags (the classifier's curated column): the feature-group slugs. */
+export const TAG_VOCABULARY = FACETS.filter((f) => f.group === 'feature').map((f) => f.slug)
+
+/** Every registry slug in display order — the union order for merged tags + the filter list. */
+export const ALL_TAG_SLUGS = FACETS.map((f) => f.slug)
+
+/** Where a tag's badge links: its page when it has one, else the tag-filtered home. */
+export function tagHref(
+  slug: string,
+):
+  | { to: '/status-lines/$facet'; params: { facet: string } }
+  | { to: '/'; search: { tags: string } } {
+  const facet = FACET_BY_SLUG.get(slug)
+  return facet?.page
+    ? { to: '/status-lines/$facet', params: { facet: slug } }
+    : { to: '/', search: { tags: slug } }
+}

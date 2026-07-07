@@ -20,7 +20,7 @@ interface StatsRow {
 }
 
 function facetMatches(row: StatsRow, facet: Facet): boolean {
-  if (facet.kind === 'interpreter') return row.interpreter === facet.interpreter
+  if (facet.group === 'interpreter') return row.interpreter === facet.interpreter
   return (row.tags ?? []).includes(facet.slug)
 }
 
@@ -50,7 +50,7 @@ export async function getFacetStats(db: Db): Promise<Map<string, FacetStats>> {
 /** A facet page's cards: published matches, most-upvoted first, newest as the tiebreak. */
 export async function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]> {
   const facetFilter =
-    facet.kind === 'interpreter'
+    facet.group === 'interpreter'
       ? eq(configs.interpreter, facet.interpreter as string)
       : sql`${configs.tags} @> ${JSON.stringify([facet.slug])}::jsonb`
   const rows = await db

@@ -51,7 +51,7 @@ export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Resp
 export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
   const stats = await getFacetStats(db)
   const facets = FACETS.filter((f) => (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS).map(
-    (f) => ({ slug: f.slug, label: f.heading }),
+    (f) => ({ slug: f.slug, label: f.heading ?? f.chipLabel }),
   )
   return llmsResponse(siteUrl(), facets)
 })

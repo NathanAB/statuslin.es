@@ -23,20 +23,22 @@ export const Route = createFileRoute('/status-lines/$facet')({
     const facet = loaderData ? FACET_BY_SLUG.get(loaderData.page.slug) : undefined
     if (!facet || !loaderData) return { meta: [{ title: NOT_FOUND_TITLE }] }
     const path = `/status-lines/${facet.slug}`
+    const titleBase = facet.titleBase ?? ''
+    const metaDescription = facet.metaDescription ?? ''
     return {
       meta: [
-        { title: `${facet.titleBase} | statuslin.es` },
-        { name: 'description', content: facet.metaDescription },
+        { title: `${titleBase} | statuslin.es` },
+        { name: 'description', content: metaDescription },
         ...staticPageSocialMeta({
           path,
-          title: facet.titleBase,
-          description: facet.metaDescription,
+          title: titleBase,
+          description: metaDescription,
         }),
       ],
       links: [canonicalLink(path)],
       scripts: facetJsonLd(
         siteUrl(),
-        facet,
+        { slug: facet.slug, titleBase },
         loaderData.page.cards.map((c) => ({ slug: c.slug, title: c.title })),
         loaderData.page.updated,
       ).map(jsonLdScript),
@@ -60,12 +62,12 @@ function FacetPage() {
       <Stack gap={6}>
         <Stack gap={3}>
           <Heading level={1}>{facet.heading}</Heading>
-          {facetIntroLine(page.cards.length, page.total, facet.countPhrase, page.updated) ? (
+          {facetIntroLine(page.cards.length, page.total, facet.countPhrase ?? '', page.updated) ? (
             <Text muted size="sm" measure>
-              {facetIntroLine(page.cards.length, page.total, facet.countPhrase, page.updated)}
+              {facetIntroLine(page.cards.length, page.total, facet.countPhrase ?? '', page.updated)}
             </Text>
           ) : null}
-          {facet.intro.map((paragraph) => (
+          {(facet.intro ?? []).map((paragraph) => (
             <Text key={paragraph.slice(0, 24)} muted size="sm" measure>
               {paragraph}
             </Text>
