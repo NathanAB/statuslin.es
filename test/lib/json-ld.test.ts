@@ -33,14 +33,32 @@ describe('homeJsonLd', () => {
 })
 
 describe('configJsonLd', () => {
+  // A fully-populated config input; individual tests override the fields they exercise.
+  const base = {
+    slug: 'powerline-dracula-6936b97c',
+    title: 'Powerline Dracula',
+    description: 'A Powerline-style status line.',
+    interpreter: 'bash',
+    authorName: 'LindseyB',
+    license: null as string | null,
+    upvoteCount: 12,
+    keywords: ['Git', 'Token usage'],
+    updatedAt: '2026-07-06',
+    generatedContent: {
+      whatItShows: ['The git branch.', 'A context progress bar.'],
+      requirements: ['Bash 4+.', 'A nerd font.'],
+      behaviorNotes: ['Colors fade as context fills.'],
+    } as {
+      whatItShows: string[]
+      requirements: string[]
+      behaviorNotes: string[]
+    } | null,
+  }
+
   it('builds SoftwareSourceCode + BreadcrumbList for a config', () => {
     const [code, crumbs] = configJsonLd('https://statuslin.es', {
-      slug: 'powerline-dracula-6936b97c',
-      title: 'Powerline Dracula',
-      description: 'A Powerline-style status line.',
-      interpreter: 'bash',
+      ...base,
       authorName: 'LindseyB',
-      license: null,
     }) as Array<Record<string, unknown>>
     expect(code).toMatchObject({
       '@type': 'SoftwareSourceCode',
@@ -55,23 +73,15 @@ describe('configJsonLd', () => {
 
   it('omits author when there is none', () => {
     const [code] = configJsonLd('https://statuslin.es', {
-      slug: 's',
-      title: 'T',
-      description: 'd',
-      interpreter: 'bash',
+      ...base,
       authorName: null,
-      license: null,
     }) as Array<Record<string, unknown>>
     expect(code).not.toHaveProperty('author')
   })
 
   it('emits the per-config license when present', () => {
     const [code] = configJsonLd('https://statuslin.es', {
-      slug: 's',
-      title: 'T',
-      description: 'd',
-      interpreter: 'bash',
-      authorName: null,
+      ...base,
       license: 'MIT',
     }) as Array<Record<string, unknown>>
     expect(code!.license).toBe('MIT')
@@ -79,14 +89,81 @@ describe('configJsonLd', () => {
 
   it('falls back to the CC0 url when license is null', () => {
     const [code] = configJsonLd('https://statuslin.es', {
-      slug: 's',
-      title: 'T',
-      description: 'd',
-      interpreter: 'bash',
-      authorName: null,
+      ...base,
       license: null,
     }) as Array<Record<string, unknown>>
     expect(code!.license).toContain('creativecommons.org')
+  })
+
+  // --- GEO enrichment: freshness, statistics, entity clarity, extractable Q&A ---
+
+  it('enriches SoftwareSourceCode with freshness, upvote stat, platform, and keywords', () => {
+    const [code] = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
+    expect(code).toMatchObject({
+      dateModified: '2026-07-06',
+      runtimePlatform: 'Claude Code',
+      interactionStatistic: {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/LikeAction',
+        userInteractionCount: 12,
+      },
+    })
+    // keywords carry the facet labels (schema.org accepts a comma-separated string)
+    expect(code!.keywords).toBe('Git, Token usage')
+  })
+
+  it('omits dateModified and keywords when absent', () => {
+    const [code] = configJsonLd('https://statuslin.es', {
+      ...base,
+      updatedAt: null,
+      keywords: [],
+    }) as Array<Record<string, unknown>>
+    expect(code).not.toHaveProperty('dateModified')
+    expect(code).not.toHaveProperty('keywords')
+  })
+
+  it('appends a FAQPage built from the generated content', () => {
+    const nodes = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
+    const faq = nodes.find((n) => n['@type'] === 'FAQPage')
+    expect(faq).toBeDefined()
+    const questions = faq!.mainEntity as Array<{
+      '@type': string
+      name: string
+      acceptedAnswer: { text: string }
+    }>
+    expect(questions).toHaveLength(3)
+    expect(questions[0]).toMatchObject({
+      '@type': 'Question',
+      name: 'What does Powerline Dracula show?',
+      acceptedAnswer: { '@type': 'Answer', text: 'The git branch. A context progress bar.' },
+    })
+    expect(questions[1]!.name).toBe('What does Powerline Dracula require?')
+    expect(questions[2]!.name).toBe('How does Powerline Dracula behave?')
+  })
+
+  it('omits the FAQPage when there is no generated content', () => {
+    const nodes = configJsonLd('https://statuslin.es', {
+      ...base,
+      generatedContent: null,
+    }) as Array<Record<string, unknown>>
+    expect(nodes.some((n) => n['@type'] === 'FAQPage')).toBe(false)
+    // still emits SoftwareSourceCode + BreadcrumbList
+    expect(nodes).toHaveLength(2)
+  })
+
+  it('drops FAQ questions whose section is empty', () => {
+    const nodes = configJsonLd('https://statuslin.es', {
+      ...base,
+      generatedContent: {
+        whatItShows: ['The git branch.'],
+        requirements: [],
+        behaviorNotes: [],
+      },
+    }) as Array<Record<string, unknown>>
+    const faq = nodes.find((n) => n['@type'] === 'FAQPage')
+    const questions = faq!.mainEntity as Array<{ name: string }>
+    expect(questions).toHaveLength(1)
+    expect(questions[0]!.name).toBe('What does Powerline Dracula show?')
   })
 })
 

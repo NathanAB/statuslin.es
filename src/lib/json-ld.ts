@@ -1,3 +1,4 @@
+import type { GeneratedContent } from '@/content/types'
 import { HOME_TITLE_BASE, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
@@ -38,7 +39,12 @@ export function homeJsonLd(origin: string, items: Array<{ slug: string; title: s
   }
 }
 
-/** A config page as SoftwareSourceCode plus its breadcrumb trail back to the gallery. */
+/**
+ * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the
+ * generated copy when present. The SoftwareSourceCode carries the GEO signals AI answer
+ * engines weight: `dateModified` (freshness), an upvote `interactionStatistic` (a real
+ * stat), `runtimePlatform`, and facet `keywords`.
+ */
 export function configJsonLd(
   origin: string,
   config: {
@@ -48,10 +54,14 @@ export function configJsonLd(
     interpreter: string
     authorName: string | null
     license: string | null
+    upvoteCount: number
+    keywords: string[]
+    updatedAt: string | null
+    generatedContent: GeneratedContent | null
   },
 ): object[] {
   const url = `${origin}/c/${config.slug}`
-  return [
+  const nodes: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'SoftwareSourceCode',
@@ -59,7 +69,15 @@ export function configJsonLd(
       description: config.description,
       url,
       programmingLanguage: config.interpreter,
+      runtimePlatform: 'Claude Code',
       license: config.license ?? CONTENT_LICENSE.url,
+      ...(config.updatedAt ? { dateModified: config.updatedAt } : {}),
+      ...(config.keywords.length > 0 ? { keywords: config.keywords.join(', ') } : {}),
+      interactionStatistic: {
+        '@type': 'InteractionCounter',
+        interactionType: 'https://schema.org/LikeAction',
+        userInteractionCount: config.upvoteCount,
+      },
       ...(config.authorName ? { author: { '@type': 'Person', name: config.authorName } } : {}),
     },
     {
@@ -71,6 +89,33 @@ export function configJsonLd(
       ],
     },
   ]
+
+  const faq = configFaqJsonLd(config.title, config.generatedContent)
+  if (faq) nodes.push(faq)
+  return nodes
+}
+
+/**
+ * Turn the generated "what it shows / requirements / behavior notes" copy into a FAQPage —
+ * the extractable Q&A shape ChatGPT/Perplexity/Claude reward. Skips empty sections, and
+ * returns null when there is nothing to say.
+ */
+function configFaqJsonLd(title: string, content: GeneratedContent | null): object | null {
+  if (!content) return null
+  const sections = [
+    { q: `What does ${title} show?`, lines: content.whatItShows },
+    { q: `What does ${title} require?`, lines: content.requirements },
+    { q: `How does ${title} behave?`, lines: content.behaviorNotes },
+  ]
+  const mainEntity = sections
+    .filter((s) => s.lines.length > 0)
+    .map((s) => ({
+      '@type': 'Question',
+      name: s.q,
+      acceptedAnswer: { '@type': 'Answer', text: s.lines.join(' ') },
+    }))
+  if (mainEntity.length === 0) return null
+  return { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity }
 }
 
 /** The /resources page as a CollectionPage listing the external tools/resources. */

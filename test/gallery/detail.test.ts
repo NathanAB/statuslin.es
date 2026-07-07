@@ -242,4 +242,20 @@ describe('getConfigBySlug', () => {
     const detail = await getConfigBySlug(db, 'tagged-config')
     expect(detail?.tags).toEqual(['git'])
   })
+
+  it('updatedAt is the version reviewedAt as a YYYY-MM-DD date', async () => {
+    const cfg = await seed('published', 'detail-updated', '2222'.repeat(16))
+    await db
+      .update(schema.configVersions)
+      .set({ reviewedAt: new Date('2026-07-06T12:00:00Z') })
+      .where(eq(schema.configVersions.configId, cfg.id))
+    const detail = await getConfigBySlug(db, 'detail-updated')
+    expect(detail?.updatedAt).toBe('2026-07-06')
+  })
+
+  it('updatedAt falls back to the config createdAt date when reviewedAt is null', async () => {
+    await seed('published', 'detail-noreview', '3333'.repeat(16))
+    const detail = await getConfigBySlug(db, 'detail-noreview')
+    expect(detail?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
 })

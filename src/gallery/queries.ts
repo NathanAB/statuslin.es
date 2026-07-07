@@ -165,6 +165,12 @@ export interface ConfigDetail {
   license: string | null
   /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
   sourceUrl: string | null
+  /**
+   * ISO date (YYYY-MM-DD) this version was published — the version's `reviewedAt`, falling back
+   * to the config's `createdAt`. A freshness signal for search/AI; pre-formatted to a string to
+   * dodge the Date-through-server-fn serialization gamble.
+   */
+  updatedAt: string
 }
 
 export async function getConfigBySlug(
@@ -208,6 +214,7 @@ export async function getConfigBySlug(
     previews,
     license: row.version.license ?? null,
     sourceUrl: row.version.sourceUrl ?? null,
+    updatedAt: (row.version.reviewedAt ?? row.config.createdAt).toISOString().slice(0, 10),
   }
 }
 

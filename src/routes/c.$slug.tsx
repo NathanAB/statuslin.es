@@ -64,6 +64,10 @@ export const Route = createFileRoute('/c/$slug')({
             interpreter: detail.interpreter,
             authorName: detail.author?.name ?? null,
             license: detail.license,
+            upvoteCount: detail.upvoteCount,
+            keywords: detail.facetLinks.map((f) => f.chipLabel),
+            updatedAt: detail.updatedAt,
+            generatedContent: detail.generatedContent,
           }).map(jsonLdScript)
         : [],
     }
@@ -132,6 +136,10 @@ function ConfigDetail() {
               <LicenseLine license={detail.license} sourceUrl={detail.sourceUrl} />
             </Stack>
           )}
+
+          <Text muted size="sm">
+            Updated {detail.updatedAt}
+          </Text>
 
           {detail.facetLinks.length > 0 && (
             <Row gap={2} wrap>
