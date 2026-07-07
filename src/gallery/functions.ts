@@ -5,6 +5,7 @@ import { FACETS, MIN_FACET_CONFIGS } from '@/gallery/facets'
 import { auth } from '@/lib/auth'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
+import { llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
 import { sitemapResponse } from '@/lib/sitemap'
 import {
@@ -40,6 +41,19 @@ export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Resp
     (f) => ({ slug: f.slug, latest: stats.get(f.slug)?.latest ?? null }),
   )
   return sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db), facets)
+})
+
+/**
+ * The `/llms.txt` response. Server-only for the same reason as the sitemap: it reads live facet
+ * counts from `db`, which route files can't import. Lists only facets past `MIN_FACET_CONFIGS`
+ * so the map never points AI engines at a facet page that would 404.
+ */
+export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
+  const stats = await getFacetStats(db)
+  const facets = FACETS.filter((f) => (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS).map(
+    (f) => ({ slug: f.slug, label: f.heading }),
+  )
+  return llmsResponse(siteUrl(), facets)
 })
 
 export const getGallery = createServerFn({ method: 'GET' })
