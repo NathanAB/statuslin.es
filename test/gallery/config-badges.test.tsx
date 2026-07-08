@@ -68,10 +68,22 @@ describe('ConfigBadges', () => {
     expect(a.getAttribute('href')).toBe('/status-lines/bash')
   })
 
-  it('links a capability tag with no page to the tag-filtered home', () => {
+  it('does not link a capability tag (no page) — it is an info signal, not a browse link', () => {
     const { container } = renderBadges({ tags: ['network-access'], networkHosts: [] })
-    const a = container.querySelector('a') as HTMLAnchorElement
-    expect(a.getAttribute('href')).toBe('/?tags=network-access')
+    expect(container.querySelector('a')).toBeNull()
+    expect(screen.getByText('network access')).toBeTruthy()
+  })
+
+  it('does not link the reads-token capability tag', () => {
+    const { container } = renderBadges({ tags: ['reads-token'], networkHosts: [] })
+    expect(container.querySelector('a')).toBeNull()
+    expect(screen.getByText('reads token')).toBeTruthy()
+  })
+
+  it('links only the page tags when a config mixes page and capability tags', () => {
+    const { container } = renderBadges({ tags: ['bash', 'reads-token'], networkHosts: [] })
+    const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'))
+    expect(hrefs).toEqual(['/status-lines/bash'])
   })
 
   it('stacks the badge row above a card overlay so links stay clickable', () => {

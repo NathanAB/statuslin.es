@@ -1,6 +1,7 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
+import { getAvailableTags } from '@/gallery/facet-queries'
 import { FACET_BY_SLUG, FACETS, tagHref } from '@/gallery/facets'
 import { auth } from '@/lib/auth'
 import { resolveSourceHtml } from '@/lib/highlight'
@@ -65,11 +66,17 @@ export const getGallery = createServerFn({ method: 'GET' })
     withHttpStatus(async () => {
       const sort = coerceSort(data.sort)
       const tags = coerceTags(data.tags)
-      const total = await getPublishedCount(db)
+      const total = await getPublishedCount(db, tags)
       const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
       // Clamp so a stale ?page= past the end still lands on the last real page.
       const page = Math.min(Math.max(1, data.page ?? 1), pageCount)
-      return { cards: await getPublishedConfigs(db, sort, page, tags), page, pageCount }
+      const availableTags = await getAvailableTags(db)
+      return {
+        cards: await getPublishedConfigs(db, sort, page, tags),
+        page,
+        pageCount,
+        availableTags,
+      }
     }),
   )
 
@@ -86,9 +93,12 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
       // resolveSourceHtml always returns a string, so this overrides the nullable ConfigDetail
       // .sourceHtml with a non-null value — the detail page can render it directly.
       const related = await getRelatedConfigs(db, data.slug)
+      // Only tags with a facet page are linkable; capability tags (reads-token, network-access)
+      // are plain info signals — a `?tags=` link for them just re-shows the whole gallery.
       const facetLinks = detail.tags.map((slug) => ({
         slug,
         chipLabel: FACET_BY_SLUG.get(slug)?.chipLabel ?? slug,
+        page: FACET_BY_SLUG.get(slug)?.page ?? false,
         href: tagHref(slug),
       }))
       return {

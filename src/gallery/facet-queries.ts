@@ -2,7 +2,7 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, user } from '@/db/schema'
 import { mapCardRows } from './card-rows'
-import { FACET_BY_SLUG, FACETS, type Facet } from './facets'
+import { ALL_TAG_SLUGS, FACET_BY_SLUG, FACETS, type Facet } from './facets'
 import { type GalleryCard, selectCardPreviews } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -43,6 +43,13 @@ export async function getFacetStats(db: Db): Promise<Map<string, FacetStats>> {
     }
   }
   return stats
+}
+
+/** The tag slugs at least one published config carries, in registry (display) order.
+ * Drives the home filter dropdown so it never offers a tag that would match nothing. */
+export async function getAvailableTags(db: Db): Promise<string[]> {
+  const stats = await getFacetStats(db)
+  return ALL_TAG_SLUGS.filter((slug) => (stats.get(slug)?.count ?? 0) >= 1)
 }
 
 /** A facet page's cards: published matches, most-upvoted first, newest as the tiebreak. */

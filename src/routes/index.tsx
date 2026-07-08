@@ -73,7 +73,11 @@ function Home() {
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
-            <GalleryControls sort={sort} tags={tags ? tags.split(',') : []} />
+            <GalleryControls
+              sort={sort}
+              tags={tags ? tags.split(',') : []}
+              available={gallery.availableTags}
+            />
             <SubmitCta signedIn={!!user} />
           </Row>
           {cards.map((card) => (

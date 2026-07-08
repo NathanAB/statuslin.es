@@ -142,11 +142,17 @@ function ConfigDetail() {
               <Text muted size="sm" inline>
                 Shows:
               </Text>
-              {detail.facetLinks.map((f) => (
-                <TextLink key={f.slug} {...f.href} size="sm">
-                  {f.chipLabel}
-                </TextLink>
-              ))}
+              {detail.facetLinks.map((f) =>
+                f.page ? (
+                  <TextLink key={f.slug} {...f.href} size="sm">
+                    {f.chipLabel}
+                  </TextLink>
+                ) : (
+                  <Text key={f.slug} muted size="sm" inline>
+                    {f.chipLabel}
+                  </Text>
+                ),
+              )}
             </Row>
           )}
         </Stack>

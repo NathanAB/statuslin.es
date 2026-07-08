@@ -23,7 +23,7 @@ export function GalleryConfigCard({ card }: { card: GalleryCard }) {
               ⇧ {card.upvoteCount}
             </Text>
           </Row>
-          <ConfigBadges tags={card.tags} networkHosts={card.networkHosts} />
+          <ConfigBadges tags={card.tags} networkHosts={card.networkHosts} align="end" />
         </Row>
       </CardHeader>
       <CardContent>

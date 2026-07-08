@@ -64,12 +64,15 @@ export interface GalleryCard {
   tags: string[]
 }
 
-/** Total published configs — drives the gallery's page count. */
-export async function getPublishedCount(db: Db): Promise<number> {
+/** Total published configs matching the active tag filter — drives the gallery's page count.
+ * Applies the same `allTags @>` filter as getPublishedConfigs so the count and the cards agree. */
+export async function getPublishedCount(db: Db, tags: string[] = []): Promise<number> {
+  const tagFilter =
+    tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(configs)
-    .where(eq(configs.status, 'published'))
+    .where(and(eq(configs.status, 'published'), tagFilter))
   return row?.n ?? 0
 }
 

@@ -4,7 +4,8 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getPublishedConfigs } from '@/gallery/queries'
+import { getAvailableTags } from '@/gallery/facet-queries'
+import { getPublishedConfigs, getPublishedCount } from '@/gallery/queries'
 import { storePreviews } from '@/render/store'
 
 let client: PGlite
@@ -95,5 +96,25 @@ describe('getPublishedConfigs tag filter (flat AND)', () => {
   })
   it('contradictory tags return empty', async () => {
     expect(await getPublishedConfigs(db, 'new', 1, ['node', 'python'])).toEqual([])
+  })
+})
+
+describe('getPublishedCount tag filter (drives page count)', () => {
+  it('no tags → counts all published', async () => {
+    expect(await getPublishedCount(db)).toBe(3)
+  })
+  it('filters the count by the same tags as the cards', async () => {
+    expect(await getPublishedCount(db, ['node'])).toBe(2)
+    expect(await getPublishedCount(db, ['node', 'quota'])).toBe(1)
+  })
+  it('a tag no config carries counts zero', async () => {
+    expect(await getPublishedCount(db, ['themed'])).toBe(0)
+  })
+})
+
+describe('getAvailableTags (drives the filter dropdown)', () => {
+  it('returns only slugs a published config carries, in registry order', async () => {
+    // seed carries node, quota, python; registry order puts quota before python before node.
+    expect(await getAvailableTags(db)).toEqual(['quota', 'python', 'node'])
   })
 })

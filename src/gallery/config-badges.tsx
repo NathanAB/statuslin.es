@@ -33,27 +33,35 @@ export function iconFor(slug: string): LucideIcon {
  *  each linking to its facet page (or the tag-filtered home for tags with no page).
  *  `network-access` additionally carries a tooltip listing the hosts the config declares.
  *  `aboveOverlay` lifts the whole row above the card's stretched-link overlay so every
- *  badge link stays clickable. Rendered once here so the card and detail page match. */
-export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHosts: string[] }) {
+ *  badge link stays clickable. Rendered once here so the card and detail page match.
+ *  `align="end"` (gallery card) lets the row take the leftover width beside the title and
+ *  wrap right-aligned to more rows; `align="start"` (detail page) packs them left. */
+export function ConfigBadges({
+  tags,
+  networkHosts,
+  align = 'start',
+}: {
+  tags: string[]
+  networkHosts: string[]
+  align?: 'start' | 'end'
+}) {
   return (
-    <Row gap={2} wrap aboveOverlay>
+    <Row gap={2} wrap grow={align === 'end'} justify={align} aboveOverlay>
       {tags.map((slug) => {
         const Icon = iconFor(slug)
         const label = FACET_BY_SLUG.get(slug)?.chipLabel ?? slug
+        const hasPage = FACET_BY_SLUG.get(slug)?.page ?? false
         const isNetworkWithHosts = slug === 'network-access' && networkHosts.length > 0
-        const linked = (
-          <Link
-            {...tagHref(slug)}
-            {...(isNetworkWithHosts
-              ? { 'aria-label': `Uses network: ${networkHosts.join(', ')}` }
-              : {})}
-          >
-            <Badge variant="secondary">
-              <Icon />
-              {label}
-            </Badge>
-          </Link>
+        const badge = (
+          <Badge variant="secondary">
+            <Icon />
+            {label}
+          </Badge>
         )
+        // Feature/interpreter tags link to their facet page. Capability tags (no page) are
+        // security/info signals, not browse dimensions, so they render as plain, non-clickable
+        // badges — a `?tags=` link for them just re-showed the whole gallery and felt broken.
+        const content = hasPage ? <Link {...tagHref(slug)}>{badge}</Link> : badge
         if (isNetworkWithHosts) {
           return (
             <Tooltip
@@ -69,11 +77,13 @@ export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHo
                 </Stack>
               }
             >
-              {linked}
+              <span role="img" aria-label={`Uses network: ${networkHosts.join(', ')}`}>
+                {content}
+              </span>
             </Tooltip>
           )
         }
-        return <span key={slug}>{linked}</span>
+        return <span key={slug}>{content}</span>
       })}
     </Row>
   )

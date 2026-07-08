@@ -4,27 +4,22 @@ import type { Interpreter } from '@/render/types'
  * The facet registry: the single source of truth for the /status-lines/<facet> pages and the
  * tag vocabulary. A facet page can only exist for an entry here; a tag can only be stored on a
  * config if it is a tag-facet slug (TAG_VOCABULARY). Titles use modified keywords on purpose;
- * the bare head term belongs to the home page.
- */
+ * the bare head term belongs to the home page. titleBase/heading/metaDescription/countPhrase/intro
+ * are SEO copy, required only when page: true. */
 export interface Facet {
   slug: string
   group: 'interpreter' | 'capability' | 'feature'
-  /** Whether the tag gets a standalone /status-lines/<slug> page + sitemap entry.
-   * false = badge + filter only (its badge links to the filtered home instead). */
+  /** true = standalone /status-lines/<slug> page + sitemap entry; false = badge + filter only. */
   page: boolean
   /** group 'interpreter' only: the configs.interpreter value this facet selects. */
   interpreter?: Interpreter
   /** Short label for tag chips / the filter dropdown. Required for every tag. */
   chipLabel: string
-  // SEO copy — required only when page: true.
-  /** <title> base; rendered as `${titleBase} | statuslin.es`. */
   titleBase?: string
-  /** The h1, sentence case. */
   heading?: string
   metaDescription?: string
   /** Completes the live count line: "N of the gallery's M status lines <countPhrase>." */
   countPhrase?: string
-  /** Intro paragraphs. Site voice: plain, no em dashes, opinions allowed. */
   intro?: string[]
 }
 
@@ -87,6 +82,21 @@ export const FACETS: Facet[] = [
     intro: [
       'Claude plans meter usage in five-hour and weekly windows, and Claude Code hands both to your status line as rate limit data. These status lines show how much of each window is gone and when it resets.',
       'They differ mostly in urgency: some show a quiet percentage, others switch color or warn outright as you approach the cap.',
+    ],
+  },
+  {
+    slug: 'burn-rate',
+    group: 'feature',
+    page: true,
+    titleBase: 'Claude Code Status Lines That Show Burn Rate',
+    heading: 'Claude Code status lines that show burn rate',
+    chipLabel: 'burn rate',
+    metaDescription:
+      'Status lines that show how fast a Claude Code session is burning tokens, cost, or quota: hourly burn rates and over/under-pace arrows. Rendered previews, one-paste install.',
+    countPhrase: 'show usage pace or burn rate',
+    intro: [
+      'Knowing you are at 60 percent of your weekly limit is less useful than knowing whether you are on track to blow through it. These status lines show the rate, not just the total: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window.',
+      'They pair naturally with the usage-limit configs, and several show both a static percentage and a pace signal side by side, so you can see where you stand and where you are heading at once.',
     ],
   },
   {

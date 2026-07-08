@@ -13,6 +13,8 @@ const TAG_CRITERIA: Record<string, string> = {
   'token-usage': 'shows context window usage: token counts, percentages, bars, or countdowns',
   cost: 'shows the session cost in dollars (or a burn rate derived from it)',
   quota: 'shows rate limit or quota state: 5-hour or weekly window percentages or reset times',
+  'burn-rate':
+    'shows the rate of consumption, not just the total: tokens or dollars per hour, or an over/under-pace arrow for a usage window',
   minimal: 'prints a single line with only a few fields; quiet by design',
   'multi-line': 'prints two or more lines',
   powerline: 'uses powerline-style segments (angled separator glyphs, usually a Nerd Font)',

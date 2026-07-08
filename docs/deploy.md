@@ -122,6 +122,16 @@ DATABASE_URL='<env pooled url>' bun run scripts/backfill-tags.ts --all-tags
 Run it on **staging first, then production**, same as the other backfill scripts. New submissions get
 `all_tags` automatically on publish — this pass is only for rows that existed before the migration.
 
+**One-time backfill for the `burn-rate` tag:** the `burn-rate` facet was added after its configs were
+already classified, and the model classifier only (re)tags configs whose tags are still empty — so the
+five existing burn-rate configs need a targeted pass. After deploying, run (dry run first, then `--write`):
+```sh
+DATABASE_URL='<env pooled url>' bun run scripts/tag-burn-rate.ts          # preview
+DATABASE_URL='<env pooled url>' bun run scripts/tag-burn-rate.ts --write  # persist + recompute all_tags
+```
+Idempotent and matches by title, so it's safe to re-run. **Staging first, then production.** New
+submissions get `burn-rate` from the classifier, which now knows the criterion.
+
 Promote to production with the **gated** command — never promote by hand:
 ```sh
 bun run deploy:prod

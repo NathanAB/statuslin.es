@@ -91,9 +91,30 @@ describe('Row', () => {
       </Row>,
     )
     const el = container.firstChild as HTMLElement
-    for (const cls of ['relative', 'z-10', 'shrink-0']) {
+    for (const cls of ['relative', 'z-10']) {
       expect(el.className.split(/\s+/)).toContain(cls)
     }
+  })
+
+  it('takes leftover width and can shrink below content when grow is set', () => {
+    const { container } = render(
+      <Row gap={2} grow>
+        x
+      </Row>,
+    )
+    const classes = (container.firstChild as HTMLElement).className.split(/\s+/)
+    for (const cls of ['min-w-0', 'flex-1']) {
+      expect(classes).toContain(cls)
+    }
+  })
+
+  it('right-aligns its children when justify is end', () => {
+    const { container } = render(
+      <Row gap={2} justify="end">
+        x
+      </Row>,
+    )
+    expect((container.firstChild as HTMLElement).className.split(/\s+/)).toContain('justify-end')
   })
 })
 

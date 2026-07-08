@@ -1,7 +1,9 @@
 import { usePostHog } from '@posthog/react'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { X } from 'lucide-react'
 import { ALL_TAG_SLUGS, FACETS } from '@/gallery/facets'
 import type { GallerySort } from '@/gallery/queries'
+import { Button } from '@/ui/button'
 import {
   DropdownMenu,
   DropdownMenuButtonTrigger,
@@ -11,7 +13,6 @@ import {
   DropdownMenuRadioItem,
 } from '@/ui/dropdown-menu'
 import { Row } from '@/ui/layout'
-import { TextLink } from '@/ui/text'
 
 const SORT_OPTIONS: { label: string; value: GallerySort }[] = [
   { label: 'Trending', value: 'trending' },
@@ -28,10 +29,21 @@ export function buildTagsCsv(selected: Set<string>): string | undefined {
 
 /** Sort single-select + tag multiselect controls for the home gallery. Both navigate on
  * change, preserving the other's current search param and resetting `page`. */
-export function GalleryControls({ sort, tags }: { sort: GallerySort; tags: string[] }) {
+export function GalleryControls({
+  sort,
+  tags,
+  available,
+}: {
+  sort: GallerySort
+  tags: string[]
+  available: string[]
+}) {
   const navigate = useNavigate()
   const posthog = usePostHog()
   const selected = new Set(tags)
+  // Only offer tags at least one published config carries, so the filter never matches nothing.
+  const availableSet = new Set(available)
+  const facets = FACETS.filter((f) => availableSet.has(f.slug))
 
   const setSort = (value: GallerySort) => {
     posthog.capture('gallery_sort_changed', { sort: value })
@@ -77,11 +89,11 @@ export function GalleryControls({ sort, tags }: { sort: GallerySort; tags: strin
 
       <DropdownMenu>
         <DropdownMenuButtonTrigger
-          label={selected.size > 0 ? `Tags · ${selected.size}` : 'Tags'}
+          label={selected.size > 0 ? `Filter · ${selected.size}` : 'Filter'}
           active={selected.size > 0}
         />
         <DropdownMenuContent>
-          {FACETS.map((f) => (
+          {facets.map((f) => (
             <DropdownMenuCheckboxItem
               key={f.slug}
               checked={selected.has(f.slug)}
@@ -94,19 +106,22 @@ export function GalleryControls({ sort, tags }: { sort: GallerySort; tags: strin
               {f.chipLabel}
             </DropdownMenuCheckboxItem>
           ))}
-          {selected.size > 0 ? (
-            <TextLink
-              to="/"
-              search={(prev) => {
-                const { page: _page, tags: _tags, ...rest } = prev
-                return rest
-              }}
-            >
-              Clear tags
-            </TextLink>
-          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {selected.size > 0 ? (
+        <Button asChild variant="outline" size="icon-lg" aria-label="Clear filters">
+          <Link
+            to="/"
+            search={(prev) => {
+              const { page: _page, tags: _tags, ...rest } = prev
+              return rest
+            }}
+          >
+            <X />
+          </Link>
+        </Button>
+      ) : null}
     </Row>
   )
 }
