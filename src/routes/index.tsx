@@ -2,7 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
-import { coercePage, coerceSort, type GallerySort } from '@/gallery/queries'
+import { coercePage, coerceSort, coerceTags, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink, homeCanonicalPath } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
@@ -17,16 +17,29 @@ import { Text } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
-  // sort + page are optional in the URL (defaults: 'trending', page 1), so Links to "/" can omit them.
-  validateSearch: (search: Record<string, unknown>): { sort?: GallerySort; page?: number } => {
+  // sort + page + tags are optional in the URL (defaults: 'trending', page 1, no filter), so Links to "/" can omit them.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { sort?: GallerySort; page?: number; tags?: string } => {
     const sort = coerceSort(search.sort)
     const page = coercePage(search.page)
-    return { ...(sort === 'trending' ? {} : { sort }), ...(page === 1 ? {} : { page }) }
+    const tags = coerceTags(search.tags).join(',')
+    return {
+      ...(sort === 'trending' ? {} : { sort }),
+      ...(page === 1 ? {} : { page }),
+      ...(tags === '' ? {} : { tags }),
+    }
   },
-  loaderDeps: ({ search }) => ({ sort: search.sort, page: search.page }),
+  loaderDeps: ({ search }) => ({ sort: search.sort, page: search.page, tags: search.tags }),
   loader: async ({ deps }) => ({
     user: await getSession(),
-    gallery: await getGallery({ data: { sort: deps.sort ?? 'trending', page: deps.page ?? 1 } }),
+    gallery: await getGallery({
+      data: {
+        sort: deps.sort ?? 'trending',
+        page: deps.page ?? 1,
+        ...(deps.tags ? { tags: deps.tags } : {}),
+      },
+    }),
   }),
   head: ({ loaderData }) => ({
     meta: [
@@ -53,7 +66,8 @@ function Home() {
   const posthog = usePostHog()
   const { user, gallery } = Route.useLoaderData()
   const { cards, page, pageCount } = gallery
-  const sort = Route.useSearch().sort ?? 'trending'
+  const { sort: rawSort, tags } = Route.useSearch()
+  const sort = rawSort ?? 'trending'
 
   return (
     <PageShell user={user}>
@@ -65,6 +79,7 @@ function Home() {
         </Text>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
+          {/* TODO(task-10): replace this SORT_TABS row with <GalleryControls>. */}
           <Row gap={4} justify="between" wrap>
             <Row gap={1}>
               {SORT_TABS.map((tab) => (
@@ -96,7 +111,7 @@ function Home() {
           <Row gap={4} align="center" justify="center">
             {page > 1 ? (
               <Button asChild variant="ghost" size="sm">
-                <Link to="/" search={{ sort, page: page - 1 }}>
+                <Link to="/" search={{ sort, page: page - 1, ...(tags ? { tags } : {}) }}>
                   ← Previous
                 </Link>
               </Button>
@@ -106,7 +121,7 @@ function Home() {
             </Text>
             {page < pageCount ? (
               <Button asChild variant="ghost" size="sm">
-                <Link to="/" search={{ sort, page: page + 1 }}>
+                <Link to="/" search={{ sort, page: page + 1, ...(tags ? { tags } : {}) }}>
                   Next →
                 </Link>
               </Button>
