@@ -4,9 +4,9 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { computeAllTags } from '@/gallery/derived-tags'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getFacetCards, getFacetStats, resolveLiveFacet } from '@/gallery/queries'
+import { computeAllTags } from '@/lib/derived-tags'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>

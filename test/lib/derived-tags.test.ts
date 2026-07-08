@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeAllTags, deriveCapabilityTags, mergeTags } from '@/gallery/derived-tags'
+import { computeAllTags, deriveCapabilityTags, mergeTags } from '@/lib/derived-tags'
 
 describe('deriveCapabilityTags', () => {
   it('maps interpreter to its slug', () => {
