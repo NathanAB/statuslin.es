@@ -14,7 +14,7 @@ export interface SitemapConfig {
   createdAt: Date
 }
 
-/** Live facet pages the sitemap should list (already filtered to >= MIN_FACET_CONFIGS). */
+/** Live facet pages the sitemap should list (already filtered to page facets with a match). */
 export interface SitemapFacet {
   slug: string
   latest: Date | null

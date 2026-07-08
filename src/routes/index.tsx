@@ -13,7 +13,7 @@ import { HomeHero } from '@/ui/home-hero'
 import { Row, Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { SubmitCta } from '@/ui/submit-cta'
-import { Text, TextLink } from '@/ui/text'
+import { Text } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
@@ -52,7 +52,7 @@ const SORT_TABS: { label: string; value: GallerySort }[] = [
 function Home() {
   const posthog = usePostHog()
   const { user, gallery } = Route.useLoaderData()
-  const { cards, page, pageCount, liveFacets } = gallery
+  const { cards, page, pageCount } = gallery
   const sort = Route.useSearch().sort ?? 'trending'
 
   return (
@@ -111,19 +111,6 @@ function Home() {
                 </Link>
               </Button>
             ) : null}
-          </Row>
-        ) : null}
-
-        {liveFacets.length > 0 ? (
-          <Row gap={2} justify="center" wrap>
-            <Text muted size="sm" inline>
-              Browse by feature:
-            </Text>
-            {liveFacets.map((f) => (
-              <TextLink key={f.slug} to="/status-lines/$facet" params={{ facet: f.slug }} size="sm">
-                {f.chipLabel}
-              </TextLink>
-            ))}
           </Row>
         ) : null}
       </Stack>

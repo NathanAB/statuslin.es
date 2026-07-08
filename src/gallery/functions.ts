@@ -1,7 +1,7 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
-import { FACETS, MIN_FACET_CONFIGS } from '@/gallery/facets'
+import { FACET_BY_SLUG, FACETS, tagHref } from '@/gallery/facets'
 import { auth } from '@/lib/auth'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
@@ -10,6 +10,7 @@ import { siteUrl } from '@/lib/site'
 import { sitemapResponse } from '@/lib/sitemap'
 import {
   coerceSort,
+  coerceTags,
   type GallerySort,
   getConfigBySlug,
   getFacetCards,
@@ -37,40 +38,38 @@ import {
 // sitemap's `createdAt` stays a real `Date` instead of being serialized to a string.
 export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
   const stats = await getFacetStats(db)
-  const facets = FACETS.filter((f) => (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS).map(
-    (f) => ({ slug: f.slug, latest: stats.get(f.slug)?.latest ?? null }),
-  )
+  const facets = FACETS.filter((f) => f.page && (stats.get(f.slug)?.count ?? 0) >= 1).map((f) => ({
+    slug: f.slug,
+    latest: stats.get(f.slug)?.latest ?? null,
+  }))
   return sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db), facets)
 })
 
 /**
  * The `/llms.txt` response. Server-only for the same reason as the sitemap: it reads live facet
- * counts from `db`, which route files can't import. Lists only facets past `MIN_FACET_CONFIGS`
- * so the map never points AI engines at a facet page that would 404.
+ * counts from `db`, which route files can't import. Lists only page facets with at least one
+ * published match, so the map never points AI engines at a facet page that would 404.
  */
 export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
   const stats = await getFacetStats(db)
-  const facets = FACETS.filter((f) => (stats.get(f.slug)?.count ?? 0) >= MIN_FACET_CONFIGS).map(
-    (f) => ({ slug: f.slug, label: f.heading ?? f.chipLabel }),
-  )
+  const facets = FACETS.filter((f) => f.page && (stats.get(f.slug)?.count ?? 0) >= 1).map((f) => ({
+    slug: f.slug,
+    label: f.heading ?? f.chipLabel,
+  }))
   return llmsResponse(siteUrl(), facets)
 })
 
 export const getGallery = createServerFn({ method: 'GET' })
-  .inputValidator((d: { sort?: GallerySort; page?: number }) => d)
+  .inputValidator((d: { sort?: GallerySort; page?: number; tags?: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const sort = coerceSort(data.sort)
+      const tags = coerceTags(data.tags)
       const total = await getPublishedCount(db)
       const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
       // Clamp so a stale ?page= past the end still lands on the last real page.
       const page = Math.min(Math.max(1, data.page ?? 1), pageCount)
-      return {
-        cards: await getPublishedConfigs(db, sort, page),
-        page,
-        pageCount,
-        liveFacets: liveFacetLinks(await getFacetStats(db)),
-      }
+      return { cards: await getPublishedConfigs(db, sort, page, tags), page, pageCount }
     }),
   )
 
@@ -87,11 +86,11 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
       // resolveSourceHtml always returns a string, so this overrides the nullable ConfigDetail
       // .sourceHtml with a non-null value — the detail page can render it directly.
       const related = await getRelatedConfigs(db, data.slug)
-      const stats = await getFacetStats(db)
-      const facetLinks = detail.tags
-        .map((tag) => resolveLiveFacet(tag, stats))
-        .filter((f): f is NonNullable<typeof f> => f !== null)
-        .map((f) => ({ slug: f.slug, chipLabel: f.chipLabel }))
+      const facetLinks = detail.tags.map((slug) => ({
+        slug,
+        chipLabel: FACET_BY_SLUG.get(slug)?.chipLabel ?? slug,
+        href: tagHref(slug),
+      }))
       return {
         ...detail,
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),

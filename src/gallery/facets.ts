@@ -28,9 +28,6 @@ export interface Facet {
   intro?: string[]
 }
 
-/** A facet renders (and enters the sitemap) only with at least this many published matches. */
-export const MIN_FACET_CONFIGS = 3
-
 export const FACETS: Facet[] = [
   {
     slug: 'git',

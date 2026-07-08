@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  FACET_BY_SLUG,
-  FACETS,
-  facetIntroLine,
-  MIN_FACET_CONFIGS,
-  TAG_VOCABULARY,
-} from '@/gallery/facets'
+import { FACET_BY_SLUG, FACETS, facetIntroLine, TAG_VOCABULARY } from '@/gallery/facets'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { INTERPRETERS } from '@/render/types'
 
@@ -39,7 +33,6 @@ describe('facet registry', () => {
   })
   it('indexes every facet by slug', () => {
     expect(FACET_BY_SLUG.size).toBe(FACETS.length)
-    expect(MIN_FACET_CONFIGS).toBe(3)
   })
 })
 
