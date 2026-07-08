@@ -1,7 +1,9 @@
+import { Check, ChevronDown } from 'lucide-react'
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
 import type * as React from 'react'
 
 import { cn } from '@/lib/cn'
+import { Button } from '@/ui/button'
 
 // Closed props (docs/frontend-guidelines.md): no `className`, no blanket spread.
 // These are Radix wrappers — each names exactly the props the app passes and
@@ -13,6 +15,9 @@ type RootProps = React.ComponentProps<typeof DropdownMenuPrimitive.Root>
 type TriggerProps = React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>
 type ContentProps = React.ComponentProps<typeof DropdownMenuPrimitive.Content>
 type ItemProps = React.ComponentProps<typeof DropdownMenuPrimitive.Item>
+type CheckboxItemProps = React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>
+type RadioGroupProps = React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>
+type RadioItemProps = React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>
 
 function DropdownMenu({ children }: Pick<RootProps, 'children'>) {
   return (
@@ -61,4 +66,71 @@ function DropdownMenuItem({
   )
 }
 
-export { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger }
+function DropdownMenuCheckboxItem({
+  children,
+  ...props
+}: Pick<CheckboxItemProps, 'checked' | 'onSelect' | 'children'>) {
+  return (
+    <DropdownMenuPrimitive.CheckboxItem
+      data-slot="dropdown-menu-checkbox-item"
+      className={cn(
+        'relative flex cursor-pointer select-none items-center gap-2 rounded-md py-2 pr-2.5 pl-7 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+      )}
+      {...props}
+    >
+      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Check />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.CheckboxItem>
+  )
+}
+
+function DropdownMenuRadioGroup(
+  props: Pick<RadioGroupProps, 'value' | 'onValueChange' | 'children'>,
+) {
+  return <DropdownMenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />
+}
+
+function DropdownMenuRadioItem({ value, children }: Pick<RadioItemProps, 'value' | 'children'>) {
+  return (
+    <DropdownMenuPrimitive.RadioItem
+      data-slot="dropdown-menu-radio-item"
+      value={value}
+      className={cn(
+        'relative flex cursor-pointer select-none items-center gap-2 rounded-md py-2 pr-2.5 pl-7 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50',
+      )}
+    >
+      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Check />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.RadioItem>
+  )
+}
+
+function DropdownMenuButtonTrigger({ label, active }: { label: string; active?: boolean }) {
+  return (
+    <DropdownMenuPrimitive.Trigger asChild>
+      <Button variant="outline" size="lg" active={active}>
+        {label}
+        <ChevronDown />
+      </Button>
+    </DropdownMenuPrimitive.Trigger>
+  )
+}
+
+export {
+  DropdownMenu,
+  DropdownMenuButtonTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+}
