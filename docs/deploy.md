@@ -132,6 +132,16 @@ DATABASE_URL='<env pooled url>' bun run scripts/tag-burn-rate.ts --write  # pers
 Idempotent and matches by title, so it's safe to re-run. **Staging first, then production.** New
 submissions get `burn-rate` from the classifier, which now knows the criterion.
 
+**One-time backfill for the `weather` + `markets` tags:** same story — these feature facets were added
+after their configs were classified, so the existing ones need a targeted pass. After deploying, run
+(dry run first, then `--write`):
+```sh
+DATABASE_URL='<env pooled url>' bun run scripts/tag-weather-markets.ts          # preview
+DATABASE_URL='<env pooled url>' bun run scripts/tag-weather-markets.ts --write  # persist + recompute all_tags
+```
+Idempotent, matches by title. **Staging first, then production.** New submissions get the tags from
+the classifier, which now knows both criteria.
+
 Promote to production with the **gated** command — never promote by hand:
 ```sh
 bun run deploy:prod

@@ -117,11 +117,10 @@ export const getFacetPage = createServerFn({ method: 'GET' })
       const stats = await getFacetStats(db)
       const facet = resolveLiveFacet(data.facet, stats)
       if (!facet) return null
-      const [cards, total] = await Promise.all([getFacetCards(db, facet), getPublishedCount(db)])
+      const cards = await getFacetCards(db, facet)
       return {
         slug: facet.slug,
         cards,
-        total,
         // Pre-formatted: a Date through the server-fn RPC boundary is the serialization
         // gamble the sitemapResponseForRoute comment above warns about; the page only
         // needs the display string anyway.

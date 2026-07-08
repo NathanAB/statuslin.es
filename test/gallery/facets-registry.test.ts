@@ -9,6 +9,14 @@ describe('tag registry', () => {
       expect(f?.page).toBe(false)
     }
   })
+  it('exposes weather and markets as browsable feature facets with pages', () => {
+    for (const slug of ['weather', 'markets']) {
+      const f = FACETS.find((x) => x.slug === slug)
+      expect(f?.group).toBe('feature')
+      expect(f?.page).toBe(true)
+      expect(TAG_VOCABULARY).toContain(slug)
+    }
+  })
   it('every page:true facet has SEO copy', () => {
     for (const f of FACETS.filter((x) => x.page)) {
       expect(f.titleBase).toBeTruthy()

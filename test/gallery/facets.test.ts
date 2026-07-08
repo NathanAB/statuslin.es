@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FACET_BY_SLUG, FACETS, facetIntroLine, TAG_VOCABULARY } from '@/gallery/facets'
+import { FACET_BY_SLUG, FACETS, TAG_VOCABULARY } from '@/gallery/facets'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { INTERPRETERS } from '@/render/types'
 
@@ -13,7 +13,6 @@ describe('facet registry', () => {
       expect(f.titleBase?.length).toBeGreaterThan(0)
       expect(f.heading?.length).toBeGreaterThan(0)
       expect(f.metaDescription?.length).toBeGreaterThan(0)
-      expect(f.countPhrase?.length).toBeGreaterThan(0)
       expect(f.intro?.length).toBeGreaterThan(0)
       for (const p of f.intro ?? []) expect(p.length).toBeGreaterThan(0)
     }
@@ -33,24 +32,5 @@ describe('facet registry', () => {
   })
   it('indexes every facet by slug', () => {
     expect(FACET_BY_SLUG.size).toBe(FACETS.length)
-  })
-})
-
-describe('facetIntroLine', () => {
-  it('states the count when the facet is a real subset', () => {
-    expect(facetIntroLine(13, 23, 'show session cost', '2026-07-06')).toBe(
-      "13 of the gallery's 23 status lines show session cost. Updated 2026-07-06.",
-    )
-  })
-  it('drops the count sentence when every config matches (23 of 23 reads awkward)', () => {
-    expect(facetIntroLine(23, 23, 'track context window usage', '2026-07-06')).toBe(
-      'Updated 2026-07-06.',
-    )
-  })
-  it('handles a missing updated date', () => {
-    expect(facetIntroLine(13, 23, 'show session cost', null)).toBe(
-      "13 of the gallery's 23 status lines show session cost.",
-    )
-    expect(facetIntroLine(23, 23, 'track context window usage', null)).toBe('')
   })
 })

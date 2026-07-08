@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
-import { FACET_BY_SLUG, facetIntroLine } from '@/gallery/facets'
+import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getFacetPage } from '@/gallery/functions'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -62,11 +62,6 @@ function FacetPage() {
       <Stack gap={6}>
         <Stack gap={3}>
           <Heading level={1}>{facet.heading}</Heading>
-          {facetIntroLine(page.cards.length, page.total, facet.countPhrase ?? '', page.updated) ? (
-            <Text muted size="sm" measure>
-              {facetIntroLine(page.cards.length, page.total, facet.countPhrase ?? '', page.updated)}
-            </Text>
-          ) : null}
           {(facet.intro ?? []).map((paragraph) => (
             <Text key={paragraph.slice(0, 24)} muted size="sm" measure>
               {paragraph}

@@ -15,6 +15,10 @@ const TAG_CRITERIA: Record<string, string> = {
   quota: 'shows rate limit or quota state: 5-hour or weekly window percentages or reset times',
   'burn-rate':
     'shows the rate of consumption, not just the total: tokens or dollars per hour, or an over/under-pace arrow for a usage window',
+  weather:
+    'shows live weather data (temperature, conditions, forecast) fetched from a weather service',
+  markets:
+    'shows live financial market data: cryptocurrency prices, stock quotes, or currency exchange rates',
   minimal: 'prints a single line with only a few fields; quiet by design',
   'multi-line': 'prints two or more lines',
   powerline: 'uses powerline-style segments (angled separator glyphs, usually a Nerd Font)',
