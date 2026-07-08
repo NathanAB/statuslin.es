@@ -6,17 +6,21 @@ import { liveFacetLinks, resolveLiveFacet } from '@/gallery/queries'
 
 const stats = new Map([
   ['git', { count: 3, latest: new Date(2026, 5, 2) }],
-  ['cost', { count: 2, latest: new Date(2026, 5, 1) }],
+  ['cost', { count: 1, latest: new Date(2026, 5, 1) }],
   ['python', { count: 0, latest: null }],
+  ['reads-token', { count: 5, latest: new Date(2026, 5, 1) }],
 ])
 
 describe('resolveLiveFacet', () => {
-  it('returns the facet when it clears the threshold', () => {
+  it('returns the facet with just 1 match (no floor)', () => {
     expect(resolveLiveFacet('git', stats)).toBe(FACET_BY_SLUG.get('git'))
+    expect(resolveLiveFacet('cost', stats)).toBe(FACET_BY_SLUG.get('cost'))
   })
-  it('returns null under the threshold (page must 404, not render thin)', () => {
-    expect(resolveLiveFacet('cost', stats)).toBeNull()
+  it('returns null for a page facet with zero matches (page must 404, not render thin)', () => {
     expect(resolveLiveFacet('python', stats)).toBeNull()
+  })
+  it('returns null for a page:false capability tag even with matches', () => {
+    expect(resolveLiveFacet('reads-token', stats)).toBeNull()
   })
   it('returns null for unknown slugs', () => {
     expect(resolveLiveFacet('nope', stats)).toBeNull()
@@ -24,10 +28,16 @@ describe('resolveLiveFacet', () => {
 })
 
 describe('liveFacetLinks', () => {
-  it('lists only facets at or over the threshold', () => {
-    expect(liveFacetLinks(stats)).toEqual([{ slug: 'git', chipLabel: 'git' }])
+  it('lists every page facet with at least 1 match', () => {
+    expect(liveFacetLinks(stats)).toEqual([
+      { slug: 'git', chipLabel: 'git' },
+      { slug: 'cost', chipLabel: 'cost' },
+    ])
+  })
+  it('excludes page:false capability tags even with matches', () => {
+    expect(liveFacetLinks(stats).map((f) => f.slug)).not.toContain('reads-token')
   })
   it('can exclude the current facet', () => {
-    expect(liveFacetLinks(stats, 'git')).toEqual([])
+    expect(liveFacetLinks(stats, 'git')).toEqual([{ slug: 'cost', chipLabel: 'cost' }])
   })
 })

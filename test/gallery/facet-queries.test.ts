@@ -4,8 +4,9 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { computeAllTags } from '@/gallery/derived-tags'
 import { FACET_BY_SLUG } from '@/gallery/facets'
-import { getFacetCards, getFacetStats } from '@/gallery/queries'
+import { getFacetCards, getFacetStats, resolveLiveFacet } from '@/gallery/queries'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -37,6 +38,7 @@ async function seed(
     createdAt?: Date
   } = {},
 ) {
+  const interpreter = opts.interpreter ?? 'bash'
   const [cfg] = await db
     .insert(schema.configs)
     .values({
@@ -44,9 +46,15 @@ async function seed(
       title: slug,
       description: 'desc',
       authorId: 'u1',
-      interpreter: opts.interpreter ?? 'bash',
+      interpreter,
       status: opts.status ?? 'published',
       tags: opts.tags ?? [],
+      allTags: computeAllTags({
+        curatedTags: opts.tags ?? [],
+        interpreter,
+        networkHosts: [],
+        readsClaudeToken: false,
+      }),
       upvoteCount: opts.upvoteCount ?? 0,
       createdAt: opts.createdAt ?? new Date(2026, 0, 1),
     })
@@ -57,7 +65,7 @@ async function seed(
       configId: cfg!.id,
       versionNumber: 1,
       source: 'echo hi',
-      interpreter: opts.interpreter ?? 'bash',
+      interpreter,
       contentSha256: slug.padEnd(64, '0'),
       status: 'approved',
     })
@@ -99,5 +107,15 @@ describe('facet queries', () => {
   it('returns interpreter-facet cards from the interpreter column', async () => {
     const cards = await getFacetCards(db, FACET_BY_SLUG.get('python')!)
     expect(cards.map((c) => c.slug)).toEqual(['py-a'])
+  })
+
+  it('a page tag with only 1 config is live (no floor)', async () => {
+    const stats = await getFacetStats(db)
+    expect(resolveLiveFacet('cost', stats)?.slug).toBe('cost')
+  })
+
+  it('a page:false capability tag never resolves to a page', async () => {
+    const stats = await getFacetStats(db)
+    expect(resolveLiveFacet('reads-token', stats)).toBeNull()
   })
 })
