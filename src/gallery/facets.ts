@@ -186,6 +186,13 @@ export const FACETS: Facet[] = [
 
 export const FACET_BY_SLUG = new Map(FACETS.map((f) => [f.slug, f]))
 
+/** Display form of a tag's chipLabel: each word capitalized, so the chips and filter menu read
+ * as proper labels. Data (chipLabel, slugs, SEO keywords) stays lowercase — this is presentation
+ * only. Word boundaries include hyphens, so `multi-line` → `Multi-Line`. */
+export function tagLabel(chipLabel: string): string {
+  return chipLabel.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 /** Valid values for configs.tags (the classifier's curated column): the feature-group slugs. */
 export const TAG_VOCABULARY = FACETS.filter((f) => f.group === 'feature').map((f) => f.slug)
 

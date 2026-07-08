@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FACET_BY_SLUG, FACETS, TAG_VOCABULARY } from '@/gallery/facets'
+import { FACET_BY_SLUG, FACETS, TAG_VOCABULARY, tagLabel } from '@/gallery/facets'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { INTERPRETERS } from '@/render/types'
 
@@ -32,5 +32,11 @@ describe('facet registry', () => {
   })
   it('indexes every facet by slug', () => {
     expect(FACET_BY_SLUG.size).toBe(FACETS.length)
+  })
+  it('capitalizes each word of a chip label for display', () => {
+    expect(tagLabel('git')).toBe('Git')
+    expect(tagLabel('burn rate')).toBe('Burn Rate')
+    expect(tagLabel('network access')).toBe('Network Access')
+    expect(tagLabel('multi-line')).toBe('Multi-Line')
   })
 })

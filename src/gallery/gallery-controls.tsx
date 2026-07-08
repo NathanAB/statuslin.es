@@ -1,7 +1,7 @@
 import { usePostHog } from '@posthog/react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { X } from 'lucide-react'
-import { ALL_TAG_SLUGS, FACETS } from '@/gallery/facets'
+import { ALL_TAG_SLUGS, FACETS, tagLabel } from '@/gallery/facets'
 import type { GallerySort } from '@/gallery/queries'
 import { Button } from '@/ui/button'
 import {
@@ -103,7 +103,7 @@ export function GalleryControls({
                 toggleTag(f.slug)
               }}
             >
-              {f.chipLabel}
+              {tagLabel(f.chipLabel)}
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>

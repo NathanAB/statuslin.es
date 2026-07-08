@@ -9,7 +9,7 @@ import {
   Tag,
   Terminal,
 } from 'lucide-react'
-import { FACET_BY_SLUG, tagHref } from '@/gallery/facets'
+import { FACET_BY_SLUG, tagHref, tagLabel } from '@/gallery/facets'
 import { Badge } from '@/ui/badge'
 import { Row, Stack } from '@/ui/layout'
 import { Text } from '@/ui/text'
@@ -49,7 +49,7 @@ export function ConfigBadges({
     <Row gap={2} wrap grow={align === 'end'} justify={align} aboveOverlay>
       {tags.map((slug) => {
         const Icon = iconFor(slug)
-        const label = FACET_BY_SLUG.get(slug)?.chipLabel ?? slug
+        const label = tagLabel(FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)
         const hasPage = FACET_BY_SLUG.get(slug)?.page ?? false
         const isNetworkWithHosts = slug === 'network-access' && networkHosts.length > 0
         const badge = (

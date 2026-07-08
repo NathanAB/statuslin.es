@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
-import { FACET_BY_SLUG } from '@/gallery/facets'
+import { FACET_BY_SLUG, tagLabel } from '@/gallery/facets'
 import { getFacetPage } from '@/gallery/functions'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -81,7 +81,7 @@ function FacetPage() {
             </Text>
             {page.otherFacets.map((f) => (
               <TextLink key={f.slug} to="/status-lines/$facet" params={{ facet: f.slug }} size="sm">
-                {f.chipLabel}
+                {tagLabel(f.chipLabel)}
               </TextLink>
             ))}
           </Row>

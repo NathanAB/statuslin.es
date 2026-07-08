@@ -58,8 +58,8 @@ describe('iconFor', () => {
 describe('ConfigBadges', () => {
   it('renders one badge per tag', () => {
     renderBadges({ tags: ['bash', 'git'], networkHosts: [] })
-    expect(screen.getByText('bash')).toBeTruthy()
-    expect(screen.getByText('git')).toBeTruthy()
+    expect(screen.getByText('Bash')).toBeTruthy()
+    expect(screen.getByText('Git')).toBeTruthy()
   })
 
   it('links a page tag (feature/interpreter) to its facet page', () => {
@@ -71,13 +71,13 @@ describe('ConfigBadges', () => {
   it('does not link a capability tag (no page) — it is an info signal, not a browse link', () => {
     const { container } = renderBadges({ tags: ['network-access'], networkHosts: [] })
     expect(container.querySelector('a')).toBeNull()
-    expect(screen.getByText('network access')).toBeTruthy()
+    expect(screen.getByText('Network Access')).toBeTruthy()
   })
 
   it('does not link the reads-token capability tag', () => {
     const { container } = renderBadges({ tags: ['reads-token'], networkHosts: [] })
     expect(container.querySelector('a')).toBeNull()
-    expect(screen.getByText('reads token')).toBeTruthy()
+    expect(screen.getByText('Reads Token')).toBeTruthy()
   })
 
   it('links only the page tags when a config mixes page and capability tags', () => {
@@ -102,7 +102,7 @@ describe('ConfigBadges', () => {
   it('omits the accessible label when network-access has no declared hosts', () => {
     renderBadges({ tags: ['network-access'], networkHosts: [] })
     // Still renders the badge/link, just without the hosts label (no tooltip needed).
-    expect(screen.getByText('network access')).toBeTruthy()
+    expect(screen.getByText('Network Access')).toBeTruthy()
     expect(screen.queryByLabelText(/Uses network/)).toBeNull()
   })
 })

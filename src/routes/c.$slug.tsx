@@ -3,6 +3,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { ConfigBadges } from '@/gallery/config-badges'
+import { tagLabel } from '@/gallery/facets'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
 import { LicenseLine } from '@/gallery/license-line'
@@ -145,11 +146,11 @@ function ConfigDetail() {
               {detail.facetLinks.map((f) =>
                 f.page ? (
                   <TextLink key={f.slug} {...f.href} size="sm">
-                    {f.chipLabel}
+                    {tagLabel(f.chipLabel)}
                   </TextLink>
                 ) : (
                   <Text key={f.slug} muted size="sm" inline>
-                    {f.chipLabel}
+                    {tagLabel(f.chipLabel)}
                   </Text>
                 ),
               )}

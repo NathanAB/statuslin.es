@@ -74,13 +74,13 @@ function DropdownMenuCheckboxItem({
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
-        'relative flex cursor-pointer select-none items-center gap-2 rounded-md py-2 pr-2.5 pl-7 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+        'group/checkbox relative flex cursor-pointer select-none items-center gap-2 rounded-md py-2 pr-2.5 pl-8 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
       )}
       {...props}
     >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+      <span className="pointer-events-none absolute left-2 flex size-4 items-center justify-center rounded-[4px] border border-foreground/25 group-data-[state=checked]/checkbox:border-primary group-data-[state=checked]/checkbox:bg-primary">
         <DropdownMenuPrimitive.ItemIndicator>
-          <Check />
+          <Check className="size-3! text-primary-foreground" />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
