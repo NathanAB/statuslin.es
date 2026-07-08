@@ -68,6 +68,7 @@ async function seed(status: string, slug = 'detail-one', sha = SHA, tags: string
       interpreter: 'bash',
       status,
       tags,
+      allTags: tags,
     })
     .returning()
   const cfg = cfgRows[0]!

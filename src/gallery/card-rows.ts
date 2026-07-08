@@ -35,5 +35,6 @@ export function mapCardRows(
     preview: cardPreviews.get(r.version.contentSha256) ?? null,
     networkHosts: r.version.networkHosts ?? [],
     readsClaudeToken: r.version.readsClaudeToken ?? false,
+    tags: r.config.allTags ?? [],
   }))
 }

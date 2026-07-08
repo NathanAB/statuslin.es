@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import type { GeneratedContent } from '@/content/types'
 import { configs, configVersions, previews, user } from '@/db/schema'
+import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { getVoteState } from '@/lib/vote-state'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
@@ -24,6 +25,14 @@ export function coerceSort(value: unknown): GallerySort {
     return value as GallerySort
   }
   return 'trending'
+}
+
+/** Narrow a URL `?tags=` CSV to known registry slugs, de-duped, in registry (display) order —
+ * so the canonical `?tags=` string is stable regardless of the order they were typed/clicked. */
+export function coerceTags(value: unknown): string[] {
+  if (typeof value !== 'string') return []
+  const present = new Set(value.split(',').map((s) => s.trim()))
+  return ALL_TAG_SLUGS.filter((slug) => present.has(slug))
 }
 
 /** Narrows a URL `?page=` value to a 1-based page number; anything invalid falls back to 1. */
@@ -51,6 +60,8 @@ export interface GalleryCard {
   preview: AnsiSegment[] | null
   networkHosts: string[]
   readsClaudeToken: boolean
+  /** The config's full tag list (allTags) — drives the card badges. */
+  tags: string[]
 }
 
 /** Total published configs — drives the gallery's page count. */
@@ -81,6 +92,7 @@ export async function getPublishedConfigs(
   db: Db,
   sort: GallerySort = 'trending',
   page = 1,
+  tags: string[] = [],
 ): Promise<GalleryCard[]> {
   const orderBy =
     sort === 'top'
@@ -89,12 +101,15 @@ export async function getPublishedConfigs(
         ? sql`${configs.copyCount} / power(extract(epoch from (now() - ${configs.createdAt})) / 3600 + 2, 1.5) desc`
         : desc(configs.createdAt)
 
+  const tagFilter =
+    tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
+
   const rows = await db
     .select({ config: configs, version: configVersions, author: user })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(user, eq(user.id, configs.authorId))
-    .where(eq(configs.status, 'published'))
+    .where(and(eq(configs.status, 'published'), tagFilter))
     // createdAt tiebreak: zero-copy configs all score 0 on trending — without it, the default
     // gallery order would be database-arbitrary.
     .orderBy(orderBy, desc(configs.createdAt))
@@ -194,7 +209,7 @@ export async function getConfigBySlug(
     title: row.config.title,
     description: row.config.description,
     interpreter: coerceInterpreter(row.config.interpreter),
-    tags: row.config.tags ?? [],
+    tags: row.config.allTags ?? [],
     upvoteCount: row.config.upvoteCount,
     copyCount: row.config.copyCount,
     author: row.author
