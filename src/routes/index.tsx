@@ -1,7 +1,7 @@
-import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
+import { GalleryControls } from '@/gallery/gallery-controls'
 import { coercePage, coerceSort, coerceTags, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink, homeCanonicalPath } from '@/lib/canonical'
@@ -56,14 +56,7 @@ export const Route = createFileRoute('/')({
   component: Home,
 })
 
-const SORT_TABS: { label: string; value: GallerySort }[] = [
-  { label: 'Trending', value: 'trending' },
-  { label: 'Top', value: 'top' },
-  { label: 'New', value: 'new' },
-]
-
 function Home() {
-  const posthog = usePostHog()
   const { user, gallery } = Route.useLoaderData()
   const { cards, page, pageCount } = gallery
   const { sort: rawSort, tags } = Route.useSearch()
@@ -79,27 +72,8 @@ function Home() {
         </Text>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
-          {/* TODO(task-10): replace this SORT_TABS row with <GalleryControls>. */}
           <Row gap={4} justify="between" wrap>
-            <Row gap={1}>
-              {SORT_TABS.map((tab) => (
-                <Button
-                  key={tab.value}
-                  asChild
-                  variant={sort === tab.value ? 'outline' : 'ghost'}
-                  size="lg"
-                  active={sort === tab.value}
-                >
-                  <Link
-                    to="/"
-                    search={{ sort: tab.value }}
-                    onClick={() => posthog.capture('gallery_sort_changed', { sort: tab.value })}
-                  >
-                    {tab.label}
-                  </Link>
-                </Button>
-              ))}
-            </Row>
+            <GalleryControls sort={sort} tags={tags ? tags.split(',') : []} />
             <SubmitCta signedIn={!!user} />
           </Row>
           {cards.map((card) => (
