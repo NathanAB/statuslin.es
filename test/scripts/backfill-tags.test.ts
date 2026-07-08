@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import {
+  backfillAllTags,
   listPublishedSlugsMissingTags,
   suggestAndStoreTags,
   suggestTags,
@@ -13,14 +14,18 @@ import {
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 
-async function seed(slug: string, opts: { status?: string; tags?: string[] } = {}): Promise<void> {
+async function seed(
+  slug: string,
+  opts: { status?: string; tags?: string[]; interpreter?: string } = {},
+): Promise<void> {
+  const interpreter = opts.interpreter ?? 'bash'
   const [config] = await db
     .insert(schema.configs)
     .values({
       slug,
       title: `Config ${slug}`,
       authorId: 'u1',
-      interpreter: 'bash',
+      interpreter,
       status: opts.status ?? 'published',
       ...(opts.tags ? { tags: opts.tags } : {}),
     })
@@ -32,7 +37,7 @@ async function seed(slug: string, opts: { status?: string; tags?: string[] } = {
       configId: config.id,
       versionNumber: 1,
       source: 'echo "$(git branch --show-current)"',
-      interpreter: 'bash',
+      interpreter,
       contentSha256: `sha-${slug}`,
       status: 'approved',
     })
@@ -59,6 +64,7 @@ beforeAll(async () => {
   await seed('untagged', {})
   await seed('tagged', { tags: ['git'] })
   await seed('draft-untagged', { status: 'draft' })
+  await seed('stale-all-tags', { tags: ['quota'], interpreter: 'node' })
 })
 
 afterAll(async () => {
@@ -94,9 +100,22 @@ describe('suggestAndStoreTags', () => {
     const tags = await suggestAndStoreTags(db, 'untagged', async () => '["git","nonsense"]')
     expect(tags).toEqual(['git'])
     const [row] = await db
-      .select({ tags: schema.configs.tags })
+      .select({ tags: schema.configs.tags, allTags: schema.configs.allTags })
       .from(schema.configs)
       .where(eq(schema.configs.slug, 'untagged'))
     expect(row?.tags).toEqual(['git'])
+    expect(row?.allTags).toEqual(['git', 'bash'])
+  })
+})
+
+describe('backfillAllTags', () => {
+  it('recomputes allTags for every published config from curated tags + version capabilities', async () => {
+    const count = await backfillAllTags(db)
+    expect(count).toBeGreaterThan(0)
+    const [row] = await db
+      .select({ allTags: schema.configs.allTags })
+      .from(schema.configs)
+      .where(eq(schema.configs.slug, 'stale-all-tags'))
+    expect(row?.allTags).toEqual(['quota', 'node'])
   })
 })

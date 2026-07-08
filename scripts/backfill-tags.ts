@@ -5,6 +5,7 @@ import postgres from 'postgres'
 import { buildTagsPrompt, parseSuggestedTags } from '@/content/tags'
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
+import { computeAllTags } from '@/lib/derived-tags'
 import { requireEnv } from '@/lib/env'
 import { getPreviews } from '@/render/store'
 import { type RunPrompt, runClaude } from './generate-content'
@@ -24,6 +25,7 @@ import { type RunPrompt, runClaude } from './generate-content'
  *
  *   bun run scripts/backfill-tags.ts            # dry run: print suggestions
  *   bun run scripts/backfill-tags.ts --write    # suggest AND store
+ *   bun run scripts/backfill-tags.ts --all-tags # recompute allTags for every published config (no model call)
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -57,23 +59,62 @@ export async function suggestTags(db: Db, slug: string, runPrompt: RunPrompt): P
   return parseSuggestedTags(await runPrompt(prompt))
 }
 
-/** suggestTags, then persist to configs.tags. */
+/** suggestTags, then persist to configs.tags and recompute configs.allTags to match. */
 export async function suggestAndStoreTags(
   db: Db,
   slug: string,
   runPrompt: RunPrompt,
 ): Promise<string[]> {
   const tags = await suggestTags(db, slug, runPrompt)
-  await db.update(schema.configs).set({ tags }).where(eq(schema.configs.slug, slug))
+  const [row] = await db
+    .select({ id: schema.configs.id, version: schema.configVersions })
+    .from(schema.configs)
+    .innerJoin(schema.configVersions, eq(schema.configVersions.id, schema.configs.currentVersionId))
+    .where(eq(schema.configs.slug, slug))
+  const allTags = row
+    ? computeAllTags({
+        curatedTags: tags,
+        interpreter: row.version.interpreter,
+        networkHosts: row.version.networkHosts ?? [],
+        readsClaudeToken: row.version.readsClaudeToken ?? false,
+      })
+    : tags
+  await db.update(schema.configs).set({ tags, allTags }).where(eq(schema.configs.slug, slug))
   return tags
+}
+
+/** Recompute allTags for every published config from its current version + existing curated tags.
+ * No model call — pure derivation. Run once after deploying the allTags column. */
+export async function backfillAllTags(db: Db): Promise<number> {
+  const rows = await db
+    .select({ id: schema.configs.id, tags: schema.configs.tags, version: schema.configVersions })
+    .from(schema.configs)
+    .innerJoin(schema.configVersions, eq(schema.configVersions.id, schema.configs.currentVersionId))
+    .where(eq(schema.configs.status, 'published'))
+  for (const row of rows) {
+    const allTags = computeAllTags({
+      curatedTags: row.tags ?? [],
+      interpreter: row.version.interpreter,
+      networkHosts: row.version.networkHosts ?? [],
+      readsClaudeToken: row.version.readsClaudeToken ?? false,
+    })
+    await db.update(schema.configs).set({ allTags }).where(eq(schema.configs.id, row.id))
+  }
+  return rows.length
 }
 
 async function main(): Promise<void> {
   const write = process.argv.includes('--write')
+  const allTags = process.argv.includes('--all-tags')
   const url = requireEnv('DATABASE_URL')
   const client = postgres(url, isPooledUrl(url) ? { prepare: false } : {})
   const db = drizzle({ client, schema }) as unknown as Db
   try {
+    if (allTags) {
+      const count = await backfillAllTags(db)
+      console.log(`[backfill-tags] recomputed allTags for ${count} published config(s)`)
+      return
+    }
     const slugs = await listPublishedSlugsMissingTags(db)
     if (slugs.length === 0) {
       console.log('[backfill-tags] nothing to do — every published config has tags')
