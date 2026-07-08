@@ -110,6 +110,18 @@ use the `drizzle-kit` CLI. So the only things the image must keep are `drizzle-o
 dependency, never pruned) and the `drizzle/` folder (copied in) — verify the `drizzle/` copy
 survives when editing the generated Dockerfile.
 
+**One-time backfill for the `configs.all_tags` release (migration `0018`):** the migration adds the
+column with a `'[]'` default, so **existing** published configs start with an empty `all_tags` until
+it's populated. Every read path (facet pages, the home tag filter, the sitemap/llms facet list) now
+derives from `all_tags`, so until the backfill runs the live facet pages 404 and the tag filter
+matches nothing. Immediately after the migrate (before considering the env live), run the pure
+re-derivation pass (no model call) against that env's DB:
+```sh
+DATABASE_URL='<env pooled url>' bun run scripts/backfill-tags.ts --all-tags
+```
+Run it on **staging first, then production**, same as the other backfill scripts. New submissions get
+`all_tags` automatically on publish — this pass is only for rows that existed before the migration.
+
 Promote to production with the **gated** command — never promote by hand:
 ```sh
 bun run deploy:prod

@@ -61,7 +61,11 @@ export async function rejectVersion(
   if (!row) throw new HttpError(409, 'version not in a reviewable (pending) state')
 }
 
-/** Admin disclosure override: set whether a version is flagged as reading the Claude token. */
+/** Admin disclosure override: set whether a version is flagged as reading the Claude token.
+ * INVARIANT: this is only ever invoked from the review queue, which shows pending (unpublished)
+ * versions — so a config's materialized `configs.allTags` is (re)computed later at `approveVersion`
+ * from the final flag. If a caller is ever added that toggles a *published* config's current version,
+ * it MUST also recompute `configs.allTags` here, or the reads-token badge/filter will drift stale. */
 export async function setReadsClaudeToken(
   database: Db,
   versionId: string,
