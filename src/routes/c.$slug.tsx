@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
+import { ConfigBadges } from '@/gallery/config-badges'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
 import { LicenseLine } from '@/gallery/license-line'
@@ -14,7 +15,6 @@ import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { AuthorChip } from '@/ui/author-chip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import { ConfigBadges } from '@/ui/config-badges'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { Row, Stack } from '@/ui/layout'
 import { ScenarioRow } from '@/ui/scenario-row'
@@ -111,11 +111,7 @@ function ConfigDetail() {
                 signedIn={!!user}
               />
             </Row>
-            <ConfigBadges
-              interpreter={detail.interpreter}
-              networkHosts={detail.networkHosts}
-              readsClaudeToken={detail.readsClaudeToken}
-            />
+            <ConfigBadges tags={detail.tags} networkHosts={detail.networkHosts} />
           </Row>
 
           {(detail.author || detail.description) && (
@@ -147,12 +143,7 @@ function ConfigDetail() {
                 Shows:
               </Text>
               {detail.facetLinks.map((f) => (
-                <TextLink
-                  key={f.slug}
-                  to="/status-lines/$facet"
-                  params={{ facet: f.slug }}
-                  size="sm"
-                >
+                <TextLink key={f.slug} {...f.href} size="sm">
                   {f.chipLabel}
                 </TextLink>
               ))}

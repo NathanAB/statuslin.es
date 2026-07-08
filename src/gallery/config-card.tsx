@@ -1,6 +1,6 @@
+import { ConfigBadges } from '@/gallery/config-badges'
 import { AuthorChip } from '@/ui/author-chip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import { ConfigBadges } from '@/ui/config-badges'
 import { Row, Stack } from '@/ui/layout'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { StretchedLink } from '@/ui/stretched-link'
@@ -23,11 +23,7 @@ export function GalleryConfigCard({ card }: { card: GalleryCard }) {
               ⇧ {card.upvoteCount}
             </Text>
           </Row>
-          <ConfigBadges
-            interpreter={card.interpreter}
-            networkHosts={card.networkHosts}
-            readsClaudeToken={card.readsClaudeToken}
-          />
+          <ConfigBadges tags={card.tags} networkHosts={card.networkHosts} />
         </Row>
       </CardHeader>
       <CardContent>
