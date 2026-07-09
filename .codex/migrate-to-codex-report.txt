@@ -1,0 +1,19 @@
+Migration inventory:
+  active: instruction files - 1 found
+    - CLAUDE.md
+  inactive: skills - none found
+  inactive: command sources - none found
+  active: subagents - 2 found
+    - frontend-reviewer
+    - security-reviewer
+Migration surfaces:
+  active: AGENTS.md - 1 instruction file(s) found.
+  inactive: skills - No skills found.
+  active: MCP config - 2 MCP server(s) converted into config.toml.
+  active: subagents - 2 subagent(s) converted.
+Migration report:
+  manual_fix_required: AGENTS.md - Generated copy contains Claude-only instruction semantics.
+  rewritten: .codex/hooks.json - Rewritten for Codex hooks; review behavior before relying on it. Codex hooks require `[features].codex_hooks = true`, only execute `command` handlers, skip `async` / `prompt` / `agent` handlers, ignore `matcher` for `UserPromptSubmit` and `Stop`, and `PreToolUse` / `PostToolUse` currently run for shell commands only.
+  rewritten: .codex/config.toml - Converted 2 MCP server entries.
+  manual_fix_required: .codex/agents/frontend-reviewer.toml - Manual review required for Claude subagent fields: `tools`.
+  manual_fix_required: .codex/agents/security-reviewer.toml - Manual review required for Claude subagent fields: `tools`.

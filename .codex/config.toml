@@ -1,0 +1,15 @@
+personality = "friendly"
+
+[mcp_servers]
+
+[mcp_servers.shadcn]
+enabled = false
+command = "bunx"
+args = ["shadcn@4.12.0", "mcp"]
+
+[mcp_servers.context7]
+command = "bunx"
+args = ["-y", "@upstash/context7-mcp@3.2.2"]
+
+[features]
+codex_hooks = true
