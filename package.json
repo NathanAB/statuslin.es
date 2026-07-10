@@ -49,7 +49,7 @@
     "@tanstack/react-router": "1.170.9",
     "@tanstack/react-start": "1.168.16",
     "anser": "2.3.5",
-    "better-auth": "1.6.11",
+    "better-auth": "1.6.13",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "drizzle-orm": "0.45.2",
