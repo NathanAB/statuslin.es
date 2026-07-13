@@ -10,7 +10,7 @@ import { LicenseLine } from '@/gallery/license-line'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
+import { configMetaDescription, configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
@@ -42,9 +42,7 @@ export const Route = createFileRoute('/c/$slug')({
         { title: detail ? configPageTitle(detail.title) : NOT_FOUND_TITLE },
         {
           name: 'description',
-          content:
-            detail?.description ||
-            'A reviewed Claude Code status line — rendered preview, source, and one-paste install.',
+          content: configMetaDescription(detail?.description),
         },
         ...(detail
           ? configSocialMeta({
