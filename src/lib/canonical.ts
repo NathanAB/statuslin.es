@@ -11,11 +11,19 @@ export function canonicalLink(path: string): { rel: string; href: string } {
   return { rel: 'canonical', href: path === '/' ? base : `${base}${path}` }
 }
 
+/** Search state after the home route's validator has removed default values. */
+export interface HomeCanonicalSearch {
+  sort?: string
+  tags?: string
+}
+
 /**
- * Canonical path for the gallery home. Page 1 is the bare origin; deeper pages self-canonical
- * so their configs stay discoverable (canonicaling page 2+ to page 1 told Google they were
- * duplicates). `sort` is deliberately excluded: it reorders the same content, page changes it.
+ * Canonical path for the gallery home. Sort and tag filters are browsing controls, not separate
+ * SEO pages, so every filtered/sorted URL points at the bare gallery. Unfiltered deeper pages
+ * self-canonical so their configs stay discoverable (canonicaling page 2+ to page 1 told Google
+ * they were duplicates).
  */
-export function homeCanonicalPath(page: number): string {
+export function homeCanonicalPath(page: number, search: HomeCanonicalSearch = {}): string {
+  if (search.sort !== undefined || search.tags !== undefined) return '/'
   return page > 1 ? `/?page=${page}` : '/'
 }

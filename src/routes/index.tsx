@@ -41,7 +41,7 @@ export const Route = createFileRoute('/')({
       },
     }),
   }),
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, match }) => ({
     meta: [
       { title: `${HOME_TITLE_BASE} | statuslin.es` },
       {
@@ -50,7 +50,7 @@ export const Route = createFileRoute('/')({
           'Browse a community gallery of Claude Code status lines — see rendered previews, upvote your favorites, and copy one into your own terminal in a single paste.',
       },
     ],
-    links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1))],
+    links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1, match.search))],
     scripts: loaderData ? [jsonLdScript(homeJsonLd(siteUrl(), loaderData.gallery.cards))] : [],
   }),
   component: Home,
