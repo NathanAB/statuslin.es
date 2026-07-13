@@ -9,10 +9,10 @@ describe('buildRobotsTxt', () => {
     expect(txt).toMatch(/^Allow: \/$/m)
   })
 
-  it('disallows the admin, api, and account routes', () => {
-    expect(txt).toMatch(/^Disallow: \/admin$/m)
+  it('disallows the API but lets private pages expose their noindex tags', () => {
     expect(txt).toMatch(/^Disallow: \/api$/m)
-    expect(txt).toMatch(/^Disallow: \/me$/m)
+    expect(txt).not.toMatch(/^Disallow: \/admin$/m)
+    expect(txt).not.toMatch(/^Disallow: \/me$/m)
   })
 
   it('points at the absolute sitemap URL', () => {

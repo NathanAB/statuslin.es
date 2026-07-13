@@ -30,7 +30,7 @@ export const Route = createFileRoute('/admin/')({
   head: () => ({
     meta: [
       { title: 'Admin dashboard — statuslin.es' },
-      { name: 'robots', content: 'noindex, nofollow' },
+      { name: 'robots', content: 'noindex, follow' },
     ],
   }),
   component: AdminDashboard,

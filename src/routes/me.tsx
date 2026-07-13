@@ -19,7 +19,7 @@ export const Route = createFileRoute('/me')({
   head: () => ({
     meta: [
       { title: 'My submissions — statuslin.es' },
-      { name: 'robots', content: 'noindex, nofollow' },
+      { name: 'robots', content: 'noindex, follow' },
     ],
   }),
   component: MyPage,
