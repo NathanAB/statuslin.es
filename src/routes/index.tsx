@@ -4,7 +4,7 @@ import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
 import { coercePage, coerceSort, coerceTags, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
-import { canonicalLink, homeCanonicalPath } from '@/lib/canonical'
+import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
@@ -49,6 +49,9 @@ export const Route = createFileRoute('/')({
         content:
           'Browse a community gallery of Claude Code status lines — see rendered previews, upvote your favorites, and copy one into your own terminal in a single paste.',
       },
+      ...(isFilteredHomeSearch(match.search)
+        ? [{ name: 'robots', content: 'noindex, follow' }]
+        : []),
     ],
     links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1, match.search))],
     scripts: loaderData ? [jsonLdScript(homeJsonLd(siteUrl(), loaderData.gallery.cards))] : [],

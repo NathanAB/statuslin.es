@@ -29,11 +29,9 @@ describe('homeCanonicalPath', () => {
     expect(homeCanonicalPath(2)).toBe('/?page=2')
     expect(homeCanonicalPath(3)).toBe('/?page=3')
   })
-  it('canonicalizes sorted pages to the unfiltered gallery', () => {
-    expect(homeCanonicalPath(2, { sort: 'new' })).toBe('/')
-    expect(homeCanonicalPath(2, { sort: 'top' })).toBe('/')
-  })
-  it('canonicalizes filtered pages to the unfiltered gallery', () => {
-    expect(homeCanonicalPath(2, { tags: 'git' })).toBe('/')
+  it('keeps sorted and filtered state in paginated canonicals', () => {
+    expect(homeCanonicalPath(1, { sort: 'new' })).toBe('/?sort=new')
+    expect(homeCanonicalPath(2, { sort: 'top' })).toBe('/?sort=top&page=2')
+    expect(homeCanonicalPath(2, { tags: 'git' })).toBe('/?tags=git&page=2')
   })
 })

@@ -17,13 +17,20 @@ export interface HomeCanonicalSearch {
   tags?: string
 }
 
+export function isFilteredHomeSearch(search: HomeCanonicalSearch): boolean {
+  return search.sort !== undefined || search.tags !== undefined
+}
+
 /**
- * Canonical path for the gallery home. Sort and tag filters are browsing controls, not separate
- * SEO pages, so every filtered/sorted URL points at the bare gallery. Unfiltered deeper pages
- * self-canonical so their configs stay discoverable (canonicaling page 2+ to page 1 told Google
- * they were duplicates).
+ * Canonical path for the gallery home. Preserve sort, tag, and page state so a paginated URL never
+ * canonicalizes to different content. Filtered and sorted views get noindex metadata at the route
+ * level; their canonical still describes the exact page whose links crawlers should follow.
  */
 export function homeCanonicalPath(page: number, search: HomeCanonicalSearch = {}): string {
-  if (search.sort !== undefined || search.tags !== undefined) return '/'
-  return page > 1 ? `/?page=${page}` : '/'
+  const params = new URLSearchParams()
+  if (search.sort !== undefined) params.set('sort', search.sort)
+  if (search.tags !== undefined) params.set('tags', search.tags)
+  if (page > 1) params.set('page', String(page))
+  const query = params.toString()
+  return query ? `/?${query}` : '/'
 }
