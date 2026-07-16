@@ -40,8 +40,12 @@ export function configMetaDescription(description: string | null | undefined): s
 
 export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
 
-/** The home page's title base — shared by the <title> tag and the home JSON-LD name. */
-export const HOME_TITLE_BASE = 'Claude Code Status Lines — Community Gallery'
+/**
+ * The home page's title base — shared by the <title> tag and the home JSON-LD name. Targets
+ * "claude code status line examples", a phrase visitors actually search, rather than
+ * "community gallery", which nobody does.
+ */
+export const HOME_TITLE_BASE = 'Claude Code Status Line Examples'
 
 /** /resources title base — shared by the <title> tag and the resources JSON-LD name. */
 export const RESOURCES_TITLE_BASE = 'Claude Code Status Line Tools & Resources'

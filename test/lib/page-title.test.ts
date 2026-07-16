@@ -29,7 +29,11 @@ describe('configPageTitle', () => {
   })
 
   it('exposes the home title base for the title tag and JSON-LD to share', () => {
-    expect(HOME_TITLE_BASE).toBe('Claude Code Status Lines — Community Gallery')
+    expect(HOME_TITLE_BASE).toBe('Claude Code Status Line Examples')
+  })
+
+  it('keeps the rendered home title inside the length Google shows', () => {
+    expect(`${HOME_TITLE_BASE} | statuslin.es`.length).toBeLessThanOrEqual(60)
   })
 })
 

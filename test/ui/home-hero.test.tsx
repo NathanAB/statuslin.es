@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { HomeHero } from '@/ui/home-hero'
 
@@ -12,19 +12,24 @@ describe('HomeHero', () => {
     expect(dot?.className).toContain('text-primary')
   })
 
-  it('renders an h1 that still shows the wordmark and adds the keyword for crawlers', () => {
+  it('renders one h1 that separates the wordmark from the keyword phrase', () => {
     const { container } = render(<HomeHero />)
-    const h1 = container.querySelector('h1')
-    expect(h1).not.toBeNull()
-    // Visible wordmark is preserved...
-    expect(h1?.textContent).toContain('statuslin.es')
-    // ...and the keyword phrase is present in the heading's text.
-    expect(h1?.textContent).toContain('Claude Code status lines')
+    const h1s = container.querySelectorAll('h1')
+    expect(h1s).toHaveLength(1)
+    // Exact text, not toContain: JSX drops whitespace between sibling elements, so without an
+    // explicit separator this reads "statuslin.esClaude Code status lines" to anything that
+    // walks text nodes — a screen reader announcing the heading, or a crawler.
+    expect(h1s[0]?.textContent).toBe('statuslin.es Claude Code status lines')
   })
 
-  it('keeps the keyword phrase in an sr-only element', () => {
+  it('shows the keyword phrase to sighted readers instead of hiding it', () => {
     const { container } = render(<HomeHero />)
-    const srOnly = container.querySelector('.sr-only')
-    expect(srOnly?.textContent).toBe('Claude Code status lines')
+    // The phrase used to live in an sr-only span, which rendered at 1x1px: real text for
+    // crawlers, invisible to readers. It is the visible hero subtitle now, so nothing in
+    // the hero may be screen-reader-only.
+    expect(container.querySelector('.sr-only')).toBeNull()
+    const subtitle = screen.getByText('Claude Code status lines')
+    expect(subtitle.className).not.toContain('sr-only')
+    expect(subtitle.className).toContain('text-muted-foreground')
   })
 })

@@ -70,8 +70,8 @@ function Home() {
       <Stack gap={9}>
         <HomeHero />
         <Text muted size="sm" measure center>
-          The status line is the bar at the bottom of your Claude Code terminal. Browse what other
-          people run, copy one you like, or submit your own.
+          The status line is the bar at the bottom of your Claude Code terminal. Every one here is
+          rendered from the real script, so you can see it before you copy it.
         </Text>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
