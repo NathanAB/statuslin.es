@@ -24,18 +24,57 @@ function drawWordmark(fontSize: number): ReactElement {
   )
 }
 
-// A status line: colored inline spans. fg is an ANSI 'rgb(...)' string or null (use foreground).
+/** Split a segment list into visual lines on `\n` boundaries. A segment's text may contain newlines
+ * anywhere (start, middle, end) — including `"\n\n"` for a deliberate blank line — because Anser
+ * preserves them in the segment text. satori does NOT turn a `\n` inside a flex row into a line
+ * break, so a multi-line status line would otherwise flatten onto one row and overflow the card.
+ * Each `\n` ends the current line and starts the next; per-segment color/bold is preserved on both
+ * sides of a split. Leading/trailing blank lines (the stray newlines terminals wrap output in) are
+ * dropped so they don't open a gap at the top/bottom of the card; interior blank lines are kept as
+ * intentional spacers. */
+export function splitSegmentsIntoLines(segments: AnsiSegment[]): AnsiSegment[][] {
+  const lines: AnsiSegment[][] = [[]]
+  for (const s of segments) {
+    const parts = s.text.split('\n')
+    parts.forEach((part, i) => {
+      if (i > 0) lines.push([])
+      const current = lines[lines.length - 1]
+      if (current && part !== '') current.push({ ...s, text: part })
+    })
+  }
+  while (lines.length > 0 && lines[0]?.length === 0) lines.shift()
+  while (lines.length > 0 && lines[lines.length - 1]?.length === 0) lines.pop()
+  return lines
+}
+
+// A status line: colored spans, stacked into one row per visual line (satori won't break on `\n`
+// inside a flex row). fg is an ANSI 'rgb(...)' string or null (use foreground).
 function drawStatusLine(segments: AnsiSegment[], fontSize: number): ReactElement {
+  const lines = splitSegmentsIntoLines(segments)
   return (
-    <div style={{ display: 'flex', fontFamily: FONT, fontSize, whiteSpace: 'pre' }}>
-      {segments.map((s, i) => (
-        <span
+    <div style={{ display: 'flex', flexDirection: 'column', fontFamily: FONT, fontSize }}>
+      {lines.map((line, li) => (
+        <div
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed ordered render, no identity beyond position.
-          key={i}
-          style={{ color: s.fg ?? OG_PALETTE.foreground, fontWeight: s.bold ? 700 : 400 }}
+          key={li}
+          style={{ display: 'flex', whiteSpace: 'pre' }}
         >
-          {s.text}
-        </span>
+          {line.length === 0 ? (
+            // An interior blank line: a single space gives the row its natural line height so the
+            // spacer is preserved without any element (satori collapses a truly empty row to 0px).
+            <span> </span>
+          ) : (
+            line.map((s, i) => (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: fixed ordered render, no identity beyond position.
+                key={i}
+                style={{ color: s.fg ?? OG_PALETTE.foreground, fontWeight: s.bold ? 700 : 400 }}
+              >
+                {s.text}
+              </span>
+            ))
+          )}
+        </div>
       ))}
     </div>
   )
