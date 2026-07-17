@@ -1,3 +1,4 @@
+import { usePostHog } from '@posthog/react'
 import { Link } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { startGitHubSignIn } from '@/lib/sign-in'
@@ -11,6 +12,8 @@ import { Button } from '@/ui/button'
  * afterward — no intermediate "Sign in to submit" page.
  */
 export function SubmitCta({ signedIn }: { signedIn: boolean }) {
+  const posthog = usePostHog()
+
   if (signedIn) {
     return (
       <Button asChild size="lg">
@@ -23,7 +26,7 @@ export function SubmitCta({ signedIn }: { signedIn: boolean }) {
   }
 
   return (
-    <Button type="button" size="lg" onClick={() => startGitHubSignIn('/submit')}>
+    <Button type="button" size="lg" onClick={() => startGitHubSignIn('/submit', 'submit', posthog)}>
       <Plus />
       Submit a status line
     </Button>

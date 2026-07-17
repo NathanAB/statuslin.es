@@ -4,8 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Spy on the Better Auth social sign-in so we can assert the signed-out one-click redirect.
 const socialSignIn = vi.fn().mockResolvedValue(undefined)
+const capture = vi.fn()
 vi.mock('@/lib/auth-client', () => ({
   authClient: { signIn: { social: (opts: unknown) => socialSignIn(opts) } },
+}))
+vi.mock('@posthog/react', () => ({
+  usePostHog: () => ({ capture }),
 }))
 
 // The component reaches for the router at render time; stub it so it renders in isolation.
@@ -24,7 +28,10 @@ vi.mock('@/votes/functions', () => ({ toggleVoteFn: vi.fn() }))
 
 const { UpvoteButton } = await import('@/votes/upvote-button')
 
-afterEach(() => socialSignIn.mockClear())
+afterEach(() => {
+  socialSignIn.mockClear()
+  capture.mockClear()
+})
 
 describe('UpvoteButton (signed out)', () => {
   it('starts GitHub sign-in returning to the config page, not a link to /login', () => {
@@ -42,5 +49,11 @@ describe('UpvoteButton (signed out)', () => {
     expect(screen.queryByRole('link', { name: /sign in to vote/i })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /sign in to vote/i }))
     expect(socialSignIn).toHaveBeenCalledWith({ provider: 'github', callbackURL: '/c/cool-line' })
+    expect(capture).toHaveBeenCalledWith('auth_started', {
+      provider: 'github',
+      entryPoint: 'upvote',
+      returnPath: '/c/cool-line',
+      $current_url: '/c/cool-line',
+    })
   })
 })

@@ -19,6 +19,7 @@ export function mapCardRows(
   cardPreviews: Map<string, AnsiSegment[]>,
 ): GalleryCard[] {
   return rows.map((r) => ({
+    configId: r.config.id,
     slug: r.config.slug,
     title: r.config.title,
     description: r.config.description,

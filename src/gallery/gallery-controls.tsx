@@ -46,7 +46,11 @@ export function GalleryControls({
   const facets = FACETS.filter((f) => availableSet.has(f.slug))
 
   const setSort = (value: GallerySort) => {
-    posthog.capture('gallery_sort_changed', { sort: value })
+    posthog.capture('gallery_sort_changed', {
+      sort: value,
+      selectedTags: tags,
+      page: 1,
+    })
     navigate({
       to: '/',
       search: (prev) => {
@@ -63,6 +67,13 @@ export function GalleryControls({
       next.add(slug)
     }
     const csv = buildTagsCsv(next)
+    posthog.capture('gallery_filter_changed', {
+      action: next.has(slug) ? 'add' : 'remove',
+      tag: slug,
+      selectedTags: csv ? csv.split(',') : [],
+      sort,
+      page: 1,
+    })
     navigate({
       to: '/',
       search: (prev) => {
@@ -113,6 +124,14 @@ export function GalleryControls({
         <Button asChild variant="outline" size="icon-lg" aria-label="Clear filters">
           <Link
             to="/"
+            onClick={() => {
+              posthog.capture('gallery_filter_changed', {
+                action: 'clear',
+                selectedTags: [],
+                sort,
+                page: 1,
+              })
+            }}
             search={(prev) => {
               const { page: _page, tags: _tags, ...rest } = prev
               return rest

@@ -37,6 +37,16 @@ where visitors **upvote** (`src/votes`) and **copy it to use** (`src/adopt`).
 6. **Clear names.** Name things for what they do, not how they work.
 7. **Untrusted by default.** Submitted status line scripts are hostile until proven otherwise — the E2B sandbox is the safety boundary; trust comes from the supply-chain controls (open-source + human review + hash-pinned immutable versions + re-review on every update). See `SECURITY.md`.
 
+## Scope control
+
+- **Make the smallest correct change.** Implement only the requested behavior; do not address hypothetical edge cases or expand the feature without approval.
+- **Ask before adding infrastructure.** Get explicit approval before introducing providers, queues, compatibility layers, broad abstractions, new frameworks, or other cross-cutting machinery.
+- **Keep the diff focused.** If the work needs more than five production files or starts touching unrelated areas, stop and explain why before continuing.
+- **Bound the feedback loop.** Run focused tests once after implementation, then run `bun run check` once. If either fails, make the minimal fix and rerun only what the fix invalidated. Do not repeatedly rerun green checks.
+- **Use one review pass.** Treat review findings outside the acceptance criteria as follow-ups, not blockers. Stop and ask before acting on feedback that materially expands scope.
+- **Stop after two blocked attempts.** Explain the blocker and options instead of continuing to add complexity.
+- **Summarize before the gate.** Show what changed, which files were touched, and why the diff is still within scope before starting final verification.
+
 ## Conventions
 
 - **Run it:** `bun run dev` (the app) + `bun run worker` (renders queued jobs locally, or nothing reaches the review queue); full setup in `README.md`.
