@@ -1,10 +1,10 @@
 import '@/styles/app.css'
-import { PostHogProvider, usePostHog } from '@posthog/react'
+import { PostHogProvider } from '@posthog/react'
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
-import { useEffect } from 'react'
 import { getAnalyticsToken } from '@/lib/analytics-config'
 import { getSession } from '@/lib/auth-functions'
 import { POSTHOG_INGEST_HOST, POSTHOG_UI_HOST } from '@/lib/posthog-hosts'
+import { identifyPostHogUser } from '@/lib/posthog-identity'
 import { rootSocialMeta } from '@/og/meta'
 import { Toaster } from '@/ui/sonner'
 
@@ -30,27 +30,8 @@ export const Route = createRootRoute({
   component: RootComponent,
 })
 
-function PostHogIdentifier() {
-  const posthog = usePostHog()
-  const { user } = Route.useLoaderData()
-
-  useEffect(() => {
-    if (user) {
-      // Identify by the stable user id so client events line up with server events (which also
-      // key on the user id) — username can be null or change, so it's not a safe identifier.
-      // (The root loader doesn't re-run on child navigation, so `user` is a stable ref; and PostHog
-      // dedupes identical identify calls, so this fires effectively once per session.)
-      // Send the GitHub username as `name` so PostHog shows it as the person's display name
-      // (falling back to the GitHub display name when the username is missing).
-      posthog.identify(user.id, { name: user.username ?? user.name, username: user.username })
-    }
-  }, [posthog, user])
-
-  return null
-}
-
 function RootComponent() {
-  const { posthogToken } = Route.useLoaderData()
+  const { posthogToken, user } = Route.useLoaderData()
   const body = (
     <>
       <Outlet />
@@ -81,9 +62,11 @@ function RootComponent() {
               // We only use product analytics, not session replay.
               disable_session_recording: true,
               debug: import.meta.env.DEV,
+              loaded: (posthog) => {
+                if (user) identifyPostHogUser(posthog, user)
+              },
             }}
           >
-            <PostHogIdentifier />
             {body}
           </PostHogProvider>
         ) : (

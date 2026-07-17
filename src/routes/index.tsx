@@ -1,3 +1,4 @@
+import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
@@ -64,6 +65,16 @@ function Home() {
   const { cards, page, pageCount } = gallery
   const { sort: rawSort, tags } = Route.useSearch()
   const sort = rawSort ?? 'trending'
+  const selectedTags = tags ? tags.split(',') : []
+  const posthog = usePostHog()
+
+  const trackPageChange = (nextPage: number) => {
+    posthog.capture('gallery_page_changed', {
+      page: nextPage,
+      sort,
+      selectedTags,
+    })
+  }
 
   return (
     <PageShell user={user}>
@@ -83,8 +94,18 @@ function Home() {
             />
             <SubmitCta signedIn={!!user} />
           </Row>
-          {cards.map((card) => (
-            <GalleryConfigCard key={card.slug} card={card} />
+          {cards.map((card, index) => (
+            <GalleryConfigCard
+              key={card.slug}
+              card={card}
+              analytics={{
+                surface: 'home',
+                position: index + 1,
+                page,
+                sort,
+                selectedTags,
+              }}
+            />
           ))}
         </Stack>
 
@@ -92,7 +113,11 @@ function Home() {
           <Row gap={4} align="center" justify="center">
             {page > 1 ? (
               <Button asChild variant="ghost" size="sm">
-                <Link to="/" search={{ sort, page: page - 1, ...(tags ? { tags } : {}) }}>
+                <Link
+                  to="/"
+                  onClick={() => trackPageChange(page - 1)}
+                  search={{ sort, page: page - 1, ...(tags ? { tags } : {}) }}
+                >
                   ← Previous
                 </Link>
               </Button>
@@ -102,7 +127,11 @@ function Home() {
             </Text>
             {page < pageCount ? (
               <Button asChild variant="ghost" size="sm">
-                <Link to="/" search={{ sort, page: page + 1, ...(tags ? { tags } : {}) }}>
+                <Link
+                  to="/"
+                  onClick={() => trackPageChange(page + 1)}
+                  search={{ sort, page: page + 1, ...(tags ? { tags } : {}) }}
+                >
                   Next →
                 </Link>
               </Button>

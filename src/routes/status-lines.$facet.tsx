@@ -70,8 +70,12 @@ function FacetPage() {
         </Stack>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
-          {page.cards.map((card) => (
-            <GalleryConfigCard key={card.slug} card={card} />
+          {page.cards.map((card, index) => (
+            <GalleryConfigCard
+              key={card.slug}
+              card={card}
+              analytics={{ surface: 'facet', facet: page.slug, position: index + 1 }}
+            />
           ))}
         </Stack>
         {page.otherFacets.length > 0 ? (

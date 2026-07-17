@@ -202,12 +202,23 @@ function ConfigDetail() {
         {detail.related.length > 0 && (
           <SectionCard title="More status lines">
             <Stack gap={3}>
-              {detail.related.map((r) => (
+              {detail.related.map((r, index) => (
                 <Card key={r.slug} interactive>
                   <CardHeader>
                     <Row gap={2}>
                       <CardTitle>
-                        <StretchedLink to="/c/$slug" params={{ slug: r.slug }}>
+                        <StretchedLink
+                          to="/c/$slug"
+                          params={{ slug: r.slug }}
+                          onClick={() =>
+                            posthog.capture('statusline_card_clicked', {
+                              configId: r.configId,
+                              slug: r.slug,
+                              surface: 'related',
+                              position: index + 1,
+                            })
+                          }
+                        >
                           {r.title}
                         </StretchedLink>
                       </CardTitle>
