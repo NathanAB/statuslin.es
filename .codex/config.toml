@@ -1,11 +1,12 @@
 personality = "friendly"
 
-[mcp_servers]
-
 [mcp_servers.shadcn]
 enabled = false
 command = "bunx"
-args = ["shadcn@4.12.0", "mcp"]
+args = [
+    "shadcn@4.12.0",
+    "mcp",
+]
 
 [features]
 codex_hooks = true
