@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { canonicalLink, homeCanonicalPath } from '@/lib/canonical'
+import { canonicalLink, homeCanonicalPath, homePaginationSearch } from '@/lib/canonical'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -33,5 +33,18 @@ describe('homeCanonicalPath', () => {
     expect(homeCanonicalPath(1, { sort: 'new' })).toBe('/?sort=new')
     expect(homeCanonicalPath(2, { sort: 'top' })).toBe('/?sort=top&page=2')
     expect(homeCanonicalPath(2, { tags: 'git' })).toBe('/?tags=git&page=2')
+  })
+})
+
+describe('homePaginationSearch', () => {
+  it('omits the default sort so unfiltered pages stay indexable', () => {
+    expect(homePaginationSearch(2)).toEqual({ page: 2 })
+    expect(homePaginationSearch(2, { sort: 'trending' })).toEqual({ page: 2 })
+    expect(homePaginationSearch(1, { sort: 'trending' })).toEqual({})
+  })
+
+  it('preserves explicit sorts and tag filters', () => {
+    expect(homePaginationSearch(2, { sort: 'top' })).toEqual({ sort: 'top', page: 2 })
+    expect(homePaginationSearch(2, { tags: 'git' })).toEqual({ page: 2, tags: 'git' })
   })
 })

@@ -11,11 +11,13 @@ import { Row } from '@/ui/layout'
 export function SectionCard({
   title,
   action,
+  headingLevel = 3,
   interactive = false,
   children,
 }: {
   title: React.ReactNode
   action?: React.ReactNode
+  headingLevel?: 2 | 3
   /** Adds the gallery hover/lift treatment so a stretched-link title makes the whole card clickable. */
   interactive?: boolean
   children: React.ReactNode
@@ -24,7 +26,7 @@ export function SectionCard({
     <Card interactive={interactive}>
       <CardHeader>
         <Row gap={3} justify="between">
-          <CardTitle>{title}</CardTitle>
+          <CardTitle level={headingLevel}>{title}</CardTitle>
           {action}
         </Row>
       </CardHeader>

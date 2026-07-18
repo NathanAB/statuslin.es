@@ -12,8 +12,17 @@ describe('SectionCard', () => {
         <p>body</p>
       </SectionCard>,
     )
-    expect(screen.getByText('Preview')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 3, name: 'Preview' })).toBeTruthy()
     expect(screen.getByText('body')).toBeTruthy()
+  })
+
+  it('renders a level-two heading when the page hierarchy requires it', () => {
+    render(
+      <SectionCard headingLevel={2} title="Source">
+        <p>body</p>
+      </SectionCard>,
+    )
+    expect(screen.getByRole('heading', { level: 2, name: 'Source' })).toBeTruthy()
   })
 
   it('renders an action next to the title when provided', () => {

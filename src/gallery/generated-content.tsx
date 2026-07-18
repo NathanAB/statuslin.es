@@ -19,7 +19,7 @@ export function GeneratedContentSections({ content }: { content: GeneratedConten
   return (
     <>
       {sections.map((s) => (
-        <SectionCard key={s.key} title={s.title}>
+        <SectionCard key={s.key} title={s.title} headingLevel={2}>
           <BulletList items={content[s.key]} />
         </SectionCard>
       ))}
