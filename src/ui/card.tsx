@@ -47,10 +47,10 @@ function CardHeader({ children }: { children?: React.ReactNode }) {
   )
 }
 
-// The card / section-card title. Renders through Heading (level 3) so card titles are
-// real <h3>s and their look lives with every other heading, not as ad-hoc classes here.
-function CardTitle({ children }: { children?: React.ReactNode }) {
-  return <Heading level={3}>{children}</Heading>
+// The card / section-card title. Card titles default to h3; top-level page sections can opt into
+// h2 without bypassing this closed component or restating heading styles.
+function CardTitle({ level = 3, children }: { level?: 2 | 3; children?: React.ReactNode }) {
+  return <Heading level={level}>{children}</Heading>
 }
 
 // data-slot stays on the wrapper because CardHeader's grid selects it; the text itself

@@ -5,7 +5,12 @@ import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
 import { coercePage, coerceSort, coerceTags, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
-import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
+import {
+  canonicalLink,
+  homeCanonicalPath,
+  homePaginationSearch,
+  isFilteredHomeSearch,
+} from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
@@ -116,7 +121,10 @@ function Home() {
                 <Link
                   to="/"
                   onClick={() => trackPageChange(page - 1)}
-                  search={{ sort, page: page - 1, ...(tags ? { tags } : {}) }}
+                  search={homePaginationSearch(page - 1, {
+                    sort,
+                    ...(tags ? { tags } : {}),
+                  })}
                 >
                   ← Previous
                 </Link>
@@ -130,7 +138,10 @@ function Home() {
                 <Link
                   to="/"
                   onClick={() => trackPageChange(page + 1)}
-                  search={{ sort, page: page + 1, ...(tags ? { tags } : {}) }}
+                  search={homePaginationSearch(page + 1, {
+                    sort,
+                    ...(tags ? { tags } : {}),
+                  })}
                 >
                   Next →
                 </Link>

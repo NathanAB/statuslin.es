@@ -165,7 +165,7 @@ function ConfigDetail() {
         />
 
         {/* All scenarios, stacked */}
-        <SectionCard title="Preview">
+        <SectionCard title="Preview" headingLevel={2}>
           {orderedPreviews.length > 0 ? (
             <Stack gap={3}>
               {orderedPreviews.map((p) => {
@@ -190,6 +190,7 @@ function ConfigDetail() {
         {/* Source */}
         <SectionCard
           title="Source"
+          headingLevel={2}
           action={<CopyScriptButton source={detail.source} configId={detail.id} />}
         >
           <HighlightedCode html={detail.sourceHtml} />
@@ -200,7 +201,7 @@ function ConfigDetail() {
 
         {/* Internal links: without these, every config page is a crawl dead end. */}
         {detail.related.length > 0 && (
-          <SectionCard title="More status lines">
+          <SectionCard title="More status lines" headingLevel={2}>
             <Stack gap={3}>
               {detail.related.map((r, index) => (
                 <Card key={r.slug} interactive>

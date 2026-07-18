@@ -21,6 +21,19 @@ export function isFilteredHomeSearch(search: HomeCanonicalSearch): boolean {
   return search.sort !== undefined || search.tags !== undefined
 }
 
+/** Search params for gallery pagination links. The default trending sort is implicit, so keeping
+ * it out of the URL prevents an unfiltered page from being mistaken for a noindex sorted view. */
+export function homePaginationSearch<TSort extends string>(
+  page: number,
+  search: { sort?: TSort; tags?: string } = {},
+): { page?: number; sort?: TSort; tags?: string } {
+  return {
+    ...(search.sort && search.sort !== 'trending' ? { sort: search.sort } : {}),
+    ...(page > 1 ? { page } : {}),
+    ...(search.tags ? { tags: search.tags } : {}),
+  }
+}
+
 /**
  * Canonical path for the gallery home. Preserve sort, tag, and page state so a paginated URL never
  * canonicalizes to different content. Filtered and sorted views get noindex metadata at the route
