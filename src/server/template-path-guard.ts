@@ -1,18 +1,27 @@
 import { createMiddleware } from '@tanstack/react-start'
 
+const UNEXPANDED_TEMPLATE_PATTERN = /\$\{[^}]+\}/
+
+function decodePercentTokens(pathname: string): string {
+  const decoded = pathname.replace(/%([0-9a-f]{2})/gi, (_, hex: string) =>
+    String.fromCharCode(Number.parseInt(hex, 16)),
+  )
+
+  return Array.from(decoded, (character) => {
+    const code = character.charCodeAt(0)
+    return code <= 31 || code === 127 ? '' : character
+  }).join('')
+}
+
 /** Detect an unexpanded shell/template marker in a request pathname. Query values and request
  * bodies are intentionally out of scope: only malformed paths can trigger the router loop. */
 export function hasUnexpandedTemplatePath(url: string): boolean {
   const rawPath = url.split(/[?#]/, 1)[0] ?? ''
-  if (/\$\{[^}]+\}/.test(rawPath)) return true
+  if (UNEXPANDED_TEMPLATE_PATTERN.test(rawPath)) return true
 
   try {
     const pathname = new URL(url, 'http://localhost').pathname
-    try {
-      return /\$\{[^}]+\}/.test(decodeURIComponent(pathname))
-    } catch {
-      return false
-    }
+    return UNEXPANDED_TEMPLATE_PATTERN.test(decodePercentTokens(pathname))
   } catch {
     return false
   }

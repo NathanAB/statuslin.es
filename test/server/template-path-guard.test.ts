@@ -17,6 +17,14 @@ describe('hasUnexpandedTemplatePath', () => {
     expect(hasUnexpandedTemplatePath(`/tmp/cache-${TEMPLATE_MARKER}.json/%ZZ`)).toBe(true)
   })
 
+  it('detects an encoded marker even when another segment has malformed encoding', () => {
+    expect(hasUnexpandedTemplatePath('/tmp/cache-%24%7Bname%7D.json/%ZZ')).toBe(true)
+  })
+
+  it('detects a marker separated by an encoded control character', () => {
+    expect(hasUnexpandedTemplatePath('/tmp/cache-$%0D%7Bname%7D.json')).toBe(true)
+  })
+
   it('allows ordinary dollar signs and template markers outside the pathname', () => {
     expect(hasUnexpandedTemplatePath('/price/$5')).toBe(false)
     expect(hasUnexpandedTemplatePath(`/c/activity-feed?value=${TEMPLATE_MARKER}`)).toBe(false)
