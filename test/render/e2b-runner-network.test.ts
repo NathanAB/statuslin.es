@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildNetworkOption } from '@/render/e2b-runner'
+import { ANTHROPIC_USAGE_HOST, externalNetworkHosts } from '@/render/anthropic-usage-mock'
+import { buildNetworkOption } from '@/render/e2b-network'
 
 describe('buildNetworkOption', () => {
   it('keeps network fully off when there are no hosts', () => {
@@ -18,11 +19,20 @@ describe('buildNetworkOption', () => {
       '172.16.0.0/12',
       '192.168.0.0/16',
       '127.0.0.0/8',
+      '2000::/3',
       '::1/128',
       'fc00::/7',
       'fe80::/10',
     ]) {
       expect(opt.network.denyOut).toContain(cidr)
     }
+  })
+
+  it('keeps other approved hosts while excluding mocked Anthropic from public egress', () => {
+    const hosts = externalNetworkHosts([ANTHROPIC_USAGE_HOST, 'api.github.com'], true)
+    const opt = buildNetworkOption(hosts)
+    if (!('network' in opt)) throw new Error('expected a network policy')
+    expect(opt.network.allowOut).toEqual(['api.github.com'])
+    expect(opt.network.allowOut).not.toContain(ANTHROPIC_USAGE_HOST)
   })
 })

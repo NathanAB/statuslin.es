@@ -13,7 +13,7 @@
     "format:unsafe": "biome check --write --unsafe .",
     "test": "vitest run",
     "test:cov": "vitest run --coverage",
-    "test:e2b": "RUN_E2B=1 bun --bun vitest run test/render/e2b.integration.test.ts",
+    "test:e2b": "RUN_E2B=1 bun --bun vitest run test/render/e2b.integration.test.ts test/render/e2b-network.integration.test.ts",
     "check": "bun run format && bun run check:ci",
     "check:ci": "bun run typecheck && bun run lint && bun run check:frontend && bun run check:boundaries && bun --bun run test",
     "db:generate": "bunx drizzle-kit generate",

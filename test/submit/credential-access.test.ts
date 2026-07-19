@@ -37,6 +37,68 @@ describe('detectForeignCredentialAccess', () => {
       detectForeignCredentialAccess('security find-generic-password -s "GitHub"'),
     ).toHaveLength(1)
   })
+
+  it('rejects a foreign secret-store read mixed with an allowed Claude token read', () => {
+    const mixed = [KEYBLADE_SNIPPET, 'security find-generic-password -s "GitHub" -w'].join('\n')
+
+    expect(detectForeignCredentialAccess(mixed)).toHaveLength(1)
+  })
+
+  it('rejects a foreign Keychain target even when Claude appears in the same statement', () => {
+    const disguised = 'security find-generic-password -s "GitHub" -w # Claude Code-credentials'
+
+    expect(detectForeignCredentialAccess(disguised)).toHaveLength(1)
+  })
+
+  it('rejects an ambiguous Keychain read with duplicate service arguments', () => {
+    const duplicate = 'security find-generic-password -s "Claude Code-credentials" -s "GitHub" -w'
+
+    expect(detectForeignCredentialAccess(duplicate)).toHaveLength(1)
+  })
+
+  it('rejects a service variable reassigned through a shell declaration prefix', () => {
+    const reassigned = [
+      'SVC="Claude Code-credentials"',
+      'export SVC="GitHub"',
+      'security find-generic-password -s "$SVC" -w',
+    ].join('\n')
+
+    expect(detectForeignCredentialAccess(reassigned)).toHaveLength(1)
+  })
+
+  it('allows an exact Claude service held in a Python constant', () => {
+    const pythonConstant = [
+      'KEYCHAIN_SERVICE = "Claude Code-credentials"',
+      'subprocess.run(["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"])',
+    ].join('\n')
+
+    expect(detectForeignCredentialAccess(pythonConstant)).toEqual([])
+  })
+
+  it('rejects a Python service constant with any unsafe reassignment', () => {
+    const reassigned = [
+      'KEYCHAIN_SERVICE = "Claude Code-credentials"',
+      'KEYCHAIN_SERVICE: str = "GitHub"',
+      'subprocess.run(["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"])',
+    ].join('\n')
+
+    expect(detectForeignCredentialAccess(reassigned)).toHaveLength(1)
+  })
+
+  it.each([
+    'KEYCHAIN_SERVICE += "-GitHub"',
+    'if ready: KEYCHAIN_SERVICE = "GitHub"',
+    'KEYCHAIN_SERVICE, other = "GitHub", "x"',
+    'def read(KEYCHAIN_SERVICE): pass',
+  ])('rejects an unaccounted Python service-variable occurrence: %s', (mutation) => {
+    const source = [
+      'KEYCHAIN_SERVICE = "Claude Code-credentials"',
+      mutation,
+      'subprocess.run(["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"])',
+    ].join('\n')
+
+    expect(detectForeignCredentialAccess(source)).toHaveLength(1)
+  })
 })
 
 describe('readsClaudeToken', () => {
@@ -48,5 +110,12 @@ describe('readsClaudeToken', () => {
   })
   it('is false for a plain bash+jq statusline', () => {
     expect(readsClaudeToken("jq -r '.model.display_name'")).toBe(false)
+  })
+
+  it.each([
+    'os.environ["CLAUDE_CODE_OAUTH_TOKEN"]',
+    'open(os.path.expanduser("~/.claude/.credentials.json"))',
+  ])('recognizes the supported token read %s', (source) => {
+    expect(readsClaudeToken(source)).toBe(true)
   })
 })
