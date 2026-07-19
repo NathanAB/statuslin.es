@@ -188,6 +188,19 @@ describe('submitConfig', () => {
     expect(ver?.readsClaudeToken).toBe(true)
   })
 
+  it.each([
+    'os.environ["CLAUDE_CODE_OAUTH_TOKEN"]',
+    'open(os.path.expanduser("~/.claude/.credentials.json"))',
+  ])('stores readsClaudeToken=true for supported token read %s', async (source) => {
+    const res = await submitConfig(db, { ...input, source })
+    const [ver] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.id, res.versionId))
+
+    expect(ver?.readsClaudeToken).toBe(true)
+  })
+
   it('stores readsClaudeToken=false for a plain statusline', async () => {
     const res = await submitConfig(db, input) // base input is a plain `echo hi`
     const [ver] = await db

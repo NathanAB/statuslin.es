@@ -38,6 +38,7 @@ export async function processNextRenderJob(db: Db, runner: SandboxRunner): Promi
         script: ver.source,
         interpreter: ver.interpreter as Interpreter,
         networkHosts: ver.networkHosts ?? [],
+        readsClaudeToken: ver.readsClaudeToken ?? false,
       },
       runner,
     )
