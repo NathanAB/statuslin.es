@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 // TanStack Router's <Link> needs a router context; stub it to a plain anchor that
@@ -46,6 +46,19 @@ describe('StretchedLink', () => {
     ]) {
       expect(a.className.split(/\s+/)).toContain(cls)
     }
+  })
+
+  it('forwards an internal-link click handler', () => {
+    const onClick = vi.fn()
+    const { container } = render(
+      <StretchedLink to="/c/$slug" params={{ slug: 'abc' }} onClick={onClick}>
+        Title
+      </StretchedLink>,
+    )
+
+    fireEvent.click(container.querySelector('a') as HTMLAnchorElement)
+
+    expect(onClick).toHaveBeenCalledTimes(1)
   })
 })
 

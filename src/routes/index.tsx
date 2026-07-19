@@ -1,10 +1,16 @@
+import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
 import { coercePage, coerceSort, coerceTags, type GallerySort } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
-import { canonicalLink, homeCanonicalPath } from '@/lib/canonical'
+import {
+  canonicalLink,
+  homeCanonicalPath,
+  homePaginationSearch,
+  isFilteredHomeSearch,
+} from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
@@ -41,7 +47,7 @@ export const Route = createFileRoute('/')({
       },
     }),
   }),
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, match }) => ({
     meta: [
       { title: `${HOME_TITLE_BASE} | statuslin.es` },
       {
@@ -49,8 +55,11 @@ export const Route = createFileRoute('/')({
         content:
           'Browse a community gallery of Claude Code status lines — see rendered previews, upvote your favorites, and copy one into your own terminal in a single paste.',
       },
+      ...(isFilteredHomeSearch(match.search)
+        ? [{ name: 'robots', content: 'noindex, follow' }]
+        : []),
     ],
-    links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1))],
+    links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1, match.search))],
     scripts: loaderData ? [jsonLdScript(homeJsonLd(siteUrl(), loaderData.gallery.cards))] : [],
   }),
   component: Home,
@@ -61,14 +70,24 @@ function Home() {
   const { cards, page, pageCount } = gallery
   const { sort: rawSort, tags } = Route.useSearch()
   const sort = rawSort ?? 'trending'
+  const selectedTags = tags ? tags.split(',') : []
+  const posthog = usePostHog()
+
+  const trackPageChange = (nextPage: number) => {
+    posthog.capture('gallery_page_changed', {
+      page: nextPage,
+      sort,
+      selectedTags,
+    })
+  }
 
   return (
     <PageShell user={user}>
       <Stack gap={9}>
         <HomeHero />
         <Text muted size="sm" measure center>
-          The status line is the bar at the bottom of your Claude Code terminal. Browse what other
-          people run, copy one you like, or submit your own.
+          The status line is the bar at the bottom of your Claude Code terminal. Every one here is
+          rendered from the real script, so you can see it before you copy it.
         </Text>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
@@ -80,8 +99,18 @@ function Home() {
             />
             <SubmitCta signedIn={!!user} />
           </Row>
-          {cards.map((card) => (
-            <GalleryConfigCard key={card.slug} card={card} />
+          {cards.map((card, index) => (
+            <GalleryConfigCard
+              key={card.slug}
+              card={card}
+              analytics={{
+                surface: 'home',
+                position: index + 1,
+                page,
+                sort,
+                selectedTags,
+              }}
+            />
           ))}
         </Stack>
 
@@ -89,7 +118,14 @@ function Home() {
           <Row gap={4} align="center" justify="center">
             {page > 1 ? (
               <Button asChild variant="ghost" size="sm">
-                <Link to="/" search={{ sort, page: page - 1, ...(tags ? { tags } : {}) }}>
+                <Link
+                  to="/"
+                  onClick={() => trackPageChange(page - 1)}
+                  search={homePaginationSearch(page - 1, {
+                    sort,
+                    ...(tags ? { tags } : {}),
+                  })}
+                >
                   ← Previous
                 </Link>
               </Button>
@@ -99,7 +135,14 @@ function Home() {
             </Text>
             {page < pageCount ? (
               <Button asChild variant="ghost" size="sm">
-                <Link to="/" search={{ sort, page: page + 1, ...(tags ? { tags } : {}) }}>
+                <Link
+                  to="/"
+                  onClick={() => trackPageChange(page + 1)}
+                  search={homePaginationSearch(page + 1, {
+                    sort,
+                    ...(tags ? { tags } : {}),
+                  })}
+                >
                   Next →
                 </Link>
               </Button>

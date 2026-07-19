@@ -1,4 +1,5 @@
 import NumberFlow from '@number-flow/react'
+import { usePostHog } from '@posthog/react'
 import { useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import { startGitHubSignIn } from '@/lib/sign-in'
@@ -18,6 +19,7 @@ export function UpvoteButton({
   initialVoted: boolean
   signedIn: boolean
 }) {
+  const posthog = usePostHog()
   const router = useRouter()
   const [voted, setVoted] = useState(initialVoted)
   const [count, setCount] = useState(initialCount)
@@ -68,7 +70,7 @@ export function UpvoteButton({
       variant="outline"
       size="lg"
       title="Sign in to vote"
-      onClick={() => startGitHubSignIn(`/c/${slug}`)}
+      onClick={() => startGitHubSignIn(`/c/${slug}`, 'upvote', posthog)}
       aria-label={`Upvote (sign in to vote) — ${count} upvotes`}
     >
       ⇧ <NumberFlow value={count} />

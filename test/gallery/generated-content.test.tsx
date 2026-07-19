@@ -14,9 +14,9 @@ const CONTENT: GeneratedContent = {
 describe('GeneratedContentSections', () => {
   it('renders the three section titles and their items', () => {
     render(<GeneratedContentSections content={CONTENT} />)
-    expect(screen.getByText('What it shows')).toBeTruthy()
-    expect(screen.getByText('Requirements')).toBeTruthy()
-    expect(screen.getByText('Behavior notes')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'What it shows' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'Requirements' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'Behavior notes' })).toBeTruthy()
     expect(screen.getByText('jq on PATH')).toBeTruthy()
   })
 

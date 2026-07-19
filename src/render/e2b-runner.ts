@@ -1,6 +1,13 @@
 import { CommandExitError, type CommandResult, Sandbox, TimeoutError } from 'e2b'
 import { requireEnv } from '@/lib/env'
-import { E2B_TEMPLATE_NAME } from './e2b-template'
+import { externalNetworkHosts, shouldMockAnthropicUsage } from './anthropic-usage-mock'
+import {
+  anthropicUsageMockFiles,
+  anthropicUsageSetupScript,
+  withAnthropicUsageEnv,
+} from './anthropic-usage-sandbox'
+import { buildNetworkOption } from './e2b-network'
+import { E2B_TEMPLATE_ID } from './e2b-template'
 import { scriptExtension } from './script-extension'
 import { parseStrace } from './strace'
 import type { Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
@@ -47,30 +54,14 @@ const INPUT_PATH = `${SCRIPT_DIR}/input.json`
 const TRACE_PATH = '/tmp/trace.log'
 const SANDBOX_USER = 'user'
 
-/** E2B REJECTS `::/0` as a deny CIDR (400 error), so IPv6 deny-all is omitted. The deny-all-IPv4
- * + allowlist model already blocks non-declared hosts (verified against live E2B). Internal ranges
- * are belt-and-suspenders — E2B denies them by default. `denyOut` takes CIDRs/IPs only, not domains. */
-const NETWORK_DENY_OUT = [
-  '0.0.0.0/0',
-  '169.254.0.0/16',
-  '10.0.0.0/8',
-  '172.16.0.0/12',
-  '192.168.0.0/16',
-  '127.0.0.0/8',
-  '::1/128', // IPv6 loopback
-  'fc00::/7', // IPv6 unique-local
-  'fe80::/10', // IPv6 link-local
-]
-
-type NetworkOption =
-  | { allowInternetAccess: false }
-  | { network: { denyOut: string[]; allowOut: string[] } }
-
-/** Build the E2B egress option. No hosts → network off. Hosts → deny-all + internal denies, then
- * allow the declared hosts (allow beats deny for the listed names only). */
-export function buildNetworkOption(networkHosts: string[]): NetworkOption {
-  if (networkHosts.length === 0) return { allowInternetAccess: false }
-  return { network: { denyOut: [...NETWORK_DENY_OUT], allowOut: [...networkHosts] } }
+/** Fixed renderer-owned env is merged after scenario filtering, so scenarios cannot override it. */
+export function buildRunEnv(
+  scenarioEnv: Record<string, string>,
+  mockAnthropicUsage: boolean,
+): Record<string, string> {
+  const env = filterEnv(scenarioEnv)
+  if (!mockAnthropicUsage) return env
+  return withAnthropicUsageEnv(env)
 }
 
 /**
@@ -87,15 +78,17 @@ export function buildNetworkOption(networkHosts: string[]): NetworkOption {
 export class E2BSandboxRunner implements SandboxRunner {
   async render(input: RenderInput): Promise<RenderResult> {
     const apiKey = requireEnv('E2B_API_KEY')
-    const hosts = input.networkHosts ?? []
+    const declaredHosts = input.networkHosts ?? []
+    const mockAnthropicUsage = shouldMockAnthropicUsage(input)
+    const hosts = externalNetworkHosts(declaredHosts, mockAnthropicUsage)
     const networkOption = buildNetworkOption(hosts)
-    const commandTimeoutMs = hosts.length > 0 ? NETWORK_COMMAND_TIMEOUT_MS : COMMAND_TIMEOUT_MS
-    const sandboxTimeoutMs = hosts.length > 0 ? NETWORK_SANDBOX_TIMEOUT_MS : SANDBOX_TIMEOUT_MS
+    const commandTimeoutMs =
+      declaredHosts.length > 0 ? NETWORK_COMMAND_TIMEOUT_MS : COMMAND_TIMEOUT_MS
+    const sandboxTimeoutMs =
+      declaredHosts.length > 0 ? NETWORK_SANDBOX_TIMEOUT_MS : SANDBOX_TIMEOUT_MS
     const fixtures = input.fixtures ?? []
     assertSafeFixturePaths(fixtures)
-    // Custom template (built by `bun run build:e2b-template`) bakes in jq/bc/gawk/column so real
-    // statuslines render faithfully — the base image lacks them and the sandbox has no network.
-    const sandbox = await Sandbox.create(E2B_TEMPLATE_NAME, {
+    const sandbox = await Sandbox.create(E2B_TEMPLATE_ID, {
       apiKey,
       ...networkOption,
       timeoutMs: sandboxTimeoutMs,
@@ -111,14 +104,28 @@ export class E2BSandboxRunner implements SandboxRunner {
       const ext = scriptExtension(input.interpreter, input.script)
       const scriptPath = `${SCRIPT_DIR}/statusline.${ext}`
 
-      // Script + stdin JSON + per-scenario fixture files (transcript, todos, …).
-      // files.write creates parent dirs, so nested fixture paths are fine.
       const files = [
         { path: scriptPath, data: input.script },
         { path: INPUT_PATH, data: JSON.stringify(input.scenario.stdin) },
         ...fixtures.map((f) => ({ path: f.path, data: f.content })),
       ]
-      await sandbox.files.write(files)
+
+      if (mockAnthropicUsage) {
+        try {
+          files.push(...anthropicUsageMockFiles(input.scenario.stdin))
+          await sandbox.files.write(files)
+          await sandbox.commands.run(anthropicUsageSetupScript(), {
+            timeoutMs: commandTimeoutMs,
+            user: 'root',
+          })
+        } catch (error: unknown) {
+          return infrastructureError(
+            `Anthropic usage mock setup failed: ${commandErrorDetails(error)}`,
+          )
+        }
+      } else {
+        await sandbox.files.write(files)
+      }
 
       try {
         await sandbox.commands.run(setupScript(dir, input.scenario.git), {
@@ -136,18 +143,13 @@ export class E2BSandboxRunner implements SandboxRunner {
         }
       }
 
-      // strace is now baked into the custom template, but it's NOT yet wired into the run
-      // command. Slice 6 must run strace as root with a write-protected sink before the trace
-      // is authoritative — see parseStrace's note. Until that wiring lands we run the script
-      // directly; the trace file never appears, so parseStrace yields an empty (and
-      // already-non-authoritative) trace.
       const runCmd = `${RUN_CMD[input.interpreter]} ${scriptPath} < ${INPUT_PATH}`
 
       let timedOut = false
       const result = await sandbox.commands
         .run(runCmd, {
           cwd: dir,
-          envs: filterEnv(input.scenario.env),
+          envs: buildRunEnv(input.scenario.env, mockAnthropicUsage),
           timeoutMs: commandTimeoutMs,
           user: SANDBOX_USER,
         })
@@ -179,6 +181,23 @@ export class E2BSandboxRunner implements SandboxRunner {
       // Teardown is best-effort: a kill RPC failure must not mask the real result or error.
       await sandbox.kill().catch(() => {})
     }
+  }
+}
+
+function commandErrorDetails(error: unknown): string {
+  if (error instanceof CommandExitError) {
+    return `${String(error)}\nstdout: ${error.stdout}\nstderr: ${error.stderr}`
+  }
+  return String(error)
+}
+
+function infrastructureError(stderr: string): RenderResult {
+  return {
+    exitCode: INFRA_ERROR_EXIT_CODE,
+    stderr,
+    stdout: '',
+    timedOut: false,
+    trace: parseStrace(''),
   }
 }
 

@@ -27,7 +27,12 @@ export const Route = createFileRoute('/admin/')({
       throw err
     }
   },
-  head: () => ({ meta: [{ title: 'Admin dashboard — statuslin.es' }] }),
+  head: () => ({
+    meta: [
+      { title: 'Admin dashboard — statuslin.es' },
+      { name: 'robots', content: 'noindex, follow' },
+    ],
+  }),
   component: AdminDashboard,
 })
 

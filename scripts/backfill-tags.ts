@@ -8,7 +8,7 @@ import * as schema from '@/db/schema'
 import { computeAllTags } from '@/lib/derived-tags'
 import { requireEnv } from '@/lib/env'
 import { getPreviews } from '@/render/store'
-import { type RunPrompt, runClaude } from './generate-content'
+import { type RunPrompt, runClaude } from './claude-prompt'
 
 /**
  * Suggest facet tags for published configs that have none, via the local `claude` CLI

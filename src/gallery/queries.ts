@@ -50,6 +50,7 @@ export interface ConfigAuthor {
 }
 
 export interface GalleryCard {
+  configId: string
   slug: string
   title: string
   description: string

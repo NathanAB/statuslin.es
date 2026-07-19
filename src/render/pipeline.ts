@@ -33,7 +33,12 @@ function capStdout(stdout: string): string {
 }
 
 export async function renderConfig(
-  config: { script: string; interpreter: Interpreter; networkHosts?: string[] },
+  config: {
+    script: string
+    interpreter: Interpreter
+    networkHosts?: string[]
+    readsClaudeToken?: boolean
+  },
   runner: SandboxRunner,
 ): Promise<RenderedPreview[]> {
   const previews: RenderedPreview[] = []

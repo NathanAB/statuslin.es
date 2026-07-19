@@ -16,7 +16,12 @@ export const Route = createFileRoute('/me')({
       throw err
     }
   },
-  head: () => ({ meta: [{ title: 'My submissions — statuslin.es' }] }),
+  head: () => ({
+    meta: [
+      { title: 'My submissions — statuslin.es' },
+      { name: 'robots', content: 'noindex, follow' },
+    ],
+  }),
   component: MyPage,
 })
 

@@ -1,15 +1,29 @@
+import { usePostHog } from '@posthog/react'
 import { startGitHubSignIn } from '@/lib/sign-in'
 import { Button } from './button'
 
 /** One-click GitHub sign-in — starts the OAuth redirect directly, no intermediate page. */
 export function SignInButton() {
+  const posthog = usePostHog()
+
   return (
     <Button
       type="button"
       variant="outline"
       size="lg"
       // Return the user to wherever they clicked sign-in from.
-      onClick={() => startGitHubSignIn(window.location.pathname + window.location.search)}
+      onClick={() => {
+        const path = window.location.pathname
+        const entryPoint =
+          path === '/submit'
+            ? 'submit'
+            : path === '/me'
+              ? 'account'
+              : path.startsWith('/admin')
+                ? 'admin'
+                : 'header'
+        startGitHubSignIn(path + window.location.search, entryPoint, posthog)
+      }}
     >
       <GitHubMark />
       Sign in with GitHub

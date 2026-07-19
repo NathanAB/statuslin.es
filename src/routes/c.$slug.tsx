@@ -10,7 +10,7 @@ import { LicenseLine } from '@/gallery/license-line'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
+import { configMetaDescription, configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
@@ -42,9 +42,7 @@ export const Route = createFileRoute('/c/$slug')({
         { title: detail ? configPageTitle(detail.title) : NOT_FOUND_TITLE },
         {
           name: 'description',
-          content:
-            detail?.description ||
-            'A reviewed Claude Code status line — rendered preview, source, and one-paste install.',
+          content: configMetaDescription(detail?.description),
         },
         ...(detail
           ? configSocialMeta({
@@ -167,7 +165,7 @@ function ConfigDetail() {
         />
 
         {/* All scenarios, stacked */}
-        <SectionCard title="Preview">
+        <SectionCard title="Preview" headingLevel={2}>
           {orderedPreviews.length > 0 ? (
             <Stack gap={3}>
               {orderedPreviews.map((p) => {
@@ -192,6 +190,7 @@ function ConfigDetail() {
         {/* Source */}
         <SectionCard
           title="Source"
+          headingLevel={2}
           action={<CopyScriptButton source={detail.source} configId={detail.id} />}
         >
           <HighlightedCode html={detail.sourceHtml} />
@@ -202,14 +201,25 @@ function ConfigDetail() {
 
         {/* Internal links: without these, every config page is a crawl dead end. */}
         {detail.related.length > 0 && (
-          <SectionCard title="More status lines">
+          <SectionCard title="More status lines" headingLevel={2}>
             <Stack gap={3}>
-              {detail.related.map((r) => (
+              {detail.related.map((r, index) => (
                 <Card key={r.slug} interactive>
                   <CardHeader>
                     <Row gap={2}>
                       <CardTitle>
-                        <StretchedLink to="/c/$slug" params={{ slug: r.slug }}>
+                        <StretchedLink
+                          to="/c/$slug"
+                          params={{ slug: r.slug }}
+                          onClick={() =>
+                            posthog.capture('statusline_card_clicked', {
+                              configId: r.configId,
+                              slug: r.slug,
+                              surface: 'related',
+                              position: index + 1,
+                            })
+                          }
+                        >
                           {r.title}
                         </StretchedLink>
                       </CardTitle>

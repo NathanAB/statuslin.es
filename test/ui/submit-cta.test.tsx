@@ -4,8 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Spy on the Better Auth social sign-in so we can assert the one-click redirect when signed out.
 const socialSignIn = vi.fn().mockResolvedValue(undefined)
+const capture = vi.fn()
 vi.mock('@/lib/auth-client', () => ({
   authClient: { signIn: { social: (opts: unknown) => socialSignIn(opts) } },
+}))
+vi.mock('@posthog/react', () => ({
+  usePostHog: () => ({ capture }),
 }))
 
 // TanStack Router's <Link> needs a router context; stub it to a plain anchor so the
@@ -20,7 +24,10 @@ vi.mock('@tanstack/react-router', () => ({
 
 const { SubmitCta } = await import('@/ui/submit-cta')
 
-afterEach(() => socialSignIn.mockClear())
+afterEach(() => {
+  socialSignIn.mockClear()
+  capture.mockClear()
+})
 
 describe('SubmitCta', () => {
   it('links to the submit form when signed in', () => {
@@ -37,5 +44,11 @@ describe('SubmitCta', () => {
     expect(screen.queryByRole('link', { name: /submit a status line/i })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /submit a status line/i }))
     expect(socialSignIn).toHaveBeenCalledWith({ provider: 'github', callbackURL: '/submit' })
+    expect(capture).toHaveBeenCalledWith('auth_started', {
+      provider: 'github',
+      entryPoint: 'submit',
+      returnPath: '/submit',
+      $current_url: '/submit',
+    })
   })
 })

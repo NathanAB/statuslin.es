@@ -1,7 +1,7 @@
 import { Sandbox } from 'e2b'
 import { describe, expect, it } from 'vitest'
 import { requireEnv } from '@/lib/env'
-import { E2B_TEMPLATE_NAME } from '@/render/e2b-template'
+import { E2B_TEMPLATE_ID } from '@/render/e2b-template'
 
 // Real-sandbox integration: hits live E2B (creates sandboxes, costs credits), so it's
 // OPT-IN — only runs under `RUN_E2B=1`. The routine `bun run check` and git hooks stay
@@ -32,7 +32,7 @@ const INTERNAL_DENY = [
 run('E2B network allowlist (integration, needs E2B_API_KEY)', () => {
   it('confines egress to the allowlist: a declared host is reachable, others are blocked', async () => {
     const apiKey = requireEnv('E2B_API_KEY')
-    const sandbox = await Sandbox.create(E2B_TEMPLATE_NAME, {
+    const sandbox = await Sandbox.create(E2B_TEMPLATE_ID, {
       apiKey,
       network: { denyOut: [...INTERNAL_DENY], allowOut: ['wttr.in'] },
       timeoutMs: 45_000,
@@ -57,7 +57,7 @@ run('E2B network allowlist (integration, needs E2B_API_KEY)', () => {
 
   it('the metadata IP is harmless Firecracker MMDS — no cloud credentials reachable', async () => {
     const apiKey = requireEnv('E2B_API_KEY')
-    const sandbox = await Sandbox.create(E2B_TEMPLATE_NAME, {
+    const sandbox = await Sandbox.create(E2B_TEMPLATE_ID, {
       apiKey,
       network: { denyOut: ['0.0.0.0/0', '169.254.0.0/16'], allowOut: ['wttr.in'] },
       timeoutMs: 45_000,

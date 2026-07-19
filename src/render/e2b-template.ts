@@ -1,12 +1,13 @@
 /**
- * Name of the custom E2B sandbox template used to render untrusted statusline scripts.
+ * E2B build alias used only to produce a reviewed immutable snapshot.
  *
- * Single source of truth: the build script (`scripts/build-e2b-template.ts`) builds under this
- * name, and `E2BSandboxRunner` creates sandboxes from it. The template bakes in the tools real
- * statuslines need (jq, bc, gawk, column) plus strace, since the render sandbox has no network
- * and can't install anything at runtime.
+ * The mutable alias is never used by the renderer. The build script snapshots a completed build,
+ * then the reviewed snapshot identity below is committed with the application deployment.
  */
-export const E2B_TEMPLATE_NAME = 'statuslines-render'
+export const E2B_TEMPLATE_BUILD_NAME = 'statuslines-render-build'
+
+/** Immutable E2B snapshot selected by every render. Updated only after a reviewed template build. */
+export const E2B_TEMPLATE_ID = 'vyu32r2hpq6q92smes7j:default'
 
 /**
  * Repo-relative path to the fixture copied into the render sandbox as the user's
@@ -21,3 +22,10 @@ export const SANDBOX_CLAUDE_SETTINGS_SRC = 'src/render/sandbox-claude-settings.j
 
 /** Where the settings fixture lands in the sandbox image — the path statuslines read config from. */
 export const SANDBOX_CLAUDE_SETTINGS_DEST = '/home/user/.claude/settings.json'
+
+/** Repo asset and immutable root-owned paths for the sandbox-local Anthropic usage HTTPS server. */
+export const SANDBOX_ANTHROPIC_USAGE_SERVER_SRC = 'src/render/sandbox-anthropic-usage-server.py'
+export const SANDBOX_ANTHROPIC_USAGE_DIR = '/opt/statuslines/anthropic-usage'
+export const SANDBOX_ANTHROPIC_USAGE_SERVER_DEST = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.py`
+export const SANDBOX_ANTHROPIC_USAGE_CERT_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.crt`
+export const SANDBOX_ANTHROPIC_USAGE_KEY_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.key`

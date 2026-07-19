@@ -6,6 +6,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
 import { getPreviews } from '@/render/store'
+import type { RenderInput, RenderResult, SandboxRunner } from '@/render/types'
+import { runNetworkPreview } from '@/review/decide'
 import { submitConfig } from '@/submit/submit'
 import { drainRenderJobs, processNextRenderJob, requeueStaleJobs } from '@/submit/worker'
 
@@ -152,6 +154,38 @@ describe('processNextRenderJob', () => {
     if (!failedJob) throw new Error('render job row not found')
     expect(failedJob.status).toBe('failed')
     expect(failedJob.error).toContain('sandbox down')
+  })
+
+  it('forwards a network version token disclosure to every render scenario', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Token usage',
+      description: '',
+      interpreter: 'bash',
+      source:
+        '#!/bin/bash\ntoken=$(jq -r .claudeAiOauth.accessToken ~/.claude/.credentials.json)\ncurl -H "Authorization: Bearer $token" https://api.anthropic.com/api/oauth/usage',
+      networkHosts: ['api.anthropic.com'],
+    })
+    await runNetworkPreview(db, versionId)
+    const seen: RenderInput[] = []
+    const runner: SandboxRunner = {
+      async render(input): Promise<RenderResult> {
+        seen.push(input)
+        return {
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          timedOut: false,
+          trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+        }
+      },
+    }
+
+    await processNextRenderJob(db, runner)
+
+    expect(seen).toHaveLength(8)
+    expect(seen.every((input) => input.networkHosts?.[0] === 'api.anthropic.com')).toBe(true)
+    expect(seen.every((input) => input.readsClaudeToken === true)).toBe(true)
   })
 })
 

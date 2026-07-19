@@ -1,17 +1,16 @@
 /**
  * The `/robots.txt` body. A single `User-agent: *` group allows every crawler — including the
  * AI/answer-engine bots (GPTBot, ClaudeBot, Google-Extended, PerplexityBot) we *want* citing the
- * gallery — and blocks only the routes with no search value: the admin queue, the JSON API, and
- * the signed-in account page. The absolute `Sitemap:` line is how crawlers discover every config
- * page; `base` comes from the one origin source so it's correct per environment.
+ * gallery — and blocks only the JSON API, which has no HTML search value. Private HTML pages use
+ * their own `noindex` tags so crawlers must be able to fetch them. The absolute `Sitemap:` line is
+ * how crawlers discover every config page; `base` comes from the one origin source so it's correct
+ * per environment.
  */
 export function buildRobotsTxt(base: string): string {
   return [
     'User-agent: *',
     'Allow: /',
-    'Disallow: /admin',
     'Disallow: /api',
-    'Disallow: /me',
     '',
     `Sitemap: ${base}/sitemap.xml`,
     '',

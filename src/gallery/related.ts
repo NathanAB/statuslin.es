@@ -8,6 +8,7 @@ import { coerceInterpreter, selectCardPreviews } from './queries'
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface RelatedConfig {
+  configId: string
   slug: string
   title: string
   interpreter: Interpreter
@@ -42,6 +43,7 @@ export async function getRelatedConfigs(
   )
 
   return rows.map((r) => ({
+    configId: r.config.id,
     slug: r.config.slug,
     title: r.config.title,
     interpreter: coerceInterpreter(r.config.interpreter),

@@ -131,6 +131,27 @@ describe('renderConfig network mode', () => {
     expect(seen.every((h) => h?.length === 1 && h[0] === 'wttr.in')).toBe(true)
   })
 
+  it('forwards readsClaudeToken to the runner on every scenario', async () => {
+    const seen: RenderInput[] = []
+    const runner: SandboxRunner = {
+      async render(input) {
+        seen.push(input)
+        return {
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          timedOut: false,
+          trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+        }
+      },
+    }
+
+    await renderConfig({ script: '', interpreter: 'bash', readsClaudeToken: true }, runner)
+
+    expect(seen).toHaveLength(SCENARIOS.length)
+    expect(seen.every((input) => input.readsClaudeToken === true)).toBe(true)
+  })
+
   it('renders all scenarios when there are no networkHosts (offline, unchanged)', async () => {
     const previews = await renderConfig(
       { script: '', interpreter: 'bash' },
