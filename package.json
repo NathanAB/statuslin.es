@@ -41,7 +41,7 @@
     "pre-push": "bun run check:ci"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "1.6.11",
+    "@better-auth/drizzle-adapter": "1.6.13",
     "@number-flow/react": "0.6.0",
     "@posthog/react": "1.10.2",
     "@resvg/resvg-js": "2.6.2",
