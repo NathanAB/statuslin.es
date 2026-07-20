@@ -60,7 +60,7 @@ export const Route = createFileRoute('/')({
         : []),
     ],
     links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1, match.search))],
-    scripts: loaderData ? [jsonLdScript(homeJsonLd(siteUrl(), loaderData.gallery.cards))] : [],
+    scripts: loaderData ? homeJsonLd(siteUrl(), loaderData.gallery.cards).map(jsonLdScript) : [],
   }),
   component: Home,
 })

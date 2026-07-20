@@ -20,23 +20,34 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
   }
 }
 
-/** The gallery home as a CollectionPage whose main entity lists the visible configs. */
-export function homeJsonLd(origin: string, items: Array<{ slug: string; title: string }>): object {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'CollectionPage',
-    name: HOME_TITLE_BASE,
-    url: origin,
-    mainEntity: {
-      '@type': 'ItemList',
-      itemListElement: items.map((item, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        name: item.title,
-        url: `${origin}/c/${item.slug}`,
-      })),
+/** The site identity plus gallery CollectionPage and its visible configs. */
+export function homeJsonLd(
+  origin: string,
+  items: Array<{ slug: string; title: string }>,
+): object[] {
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'statuslin.es',
+      url: origin,
     },
-  }
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: HOME_TITLE_BASE,
+      url: origin,
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: items.map((item, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: item.title,
+          url: `${origin}/c/${item.slug}`,
+        })),
+      },
+    },
+  ]
 }
 
 /**

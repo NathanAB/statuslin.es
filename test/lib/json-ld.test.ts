@@ -16,18 +16,40 @@ describe('jsonLdScript', () => {
 })
 
 describe('homeJsonLd', () => {
-  it('builds a CollectionPage with an ItemList of config URLs', () => {
-    const data = homeJsonLd('https://statuslin.es', [
+  it('builds WebSite identity plus a CollectionPage of config URLs', () => {
+    const nodes = homeJsonLd('https://statuslin.es', [
       { slug: 'a-1', title: 'Alpha' },
       { slug: 'b-2', title: 'Beta' },
-    ]) as Record<string, unknown>
-    expect(data['@type']).toBe('CollectionPage')
-    const list = data.mainEntity as { itemListElement: Array<Record<string, unknown>> }
-    expect(list.itemListElement).toHaveLength(2)
-    expect(list.itemListElement[0]).toMatchObject({
-      position: 1,
-      name: 'Alpha',
-      url: 'https://statuslin.es/c/a-1',
+    ]) as Array<Record<string, unknown>>
+    expect(nodes).toHaveLength(2)
+    expect(nodes[0]).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'statuslin.es',
+      url: 'https://statuslin.es',
+    })
+    expect(nodes[1]).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Claude Code Status Line Examples',
+      url: 'https://statuslin.es',
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Alpha',
+            url: 'https://statuslin.es/c/a-1',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Beta',
+            url: 'https://statuslin.es/c/b-2',
+          },
+        ],
+      },
     })
   })
 })
