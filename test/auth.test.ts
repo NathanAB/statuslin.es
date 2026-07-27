@@ -140,6 +140,34 @@ describe('Better Auth session logic', () => {
 // every re-login would reset the user back to the default role -- this guard
 // fails loudly before that ships. See src/lib/auth.ts.
 describe('GitHub provider config (production auth)', () => {
+  it('keeps the GitHub username field eligible for OAuth profile mapping', () => {
+    const usernameField = (
+      prodAuth.options as unknown as {
+        user?: { additionalFields?: { username?: { input?: boolean } } }
+      }
+    ).user?.additionalFields?.username
+
+    expect(usernameField?.input).toBe(true)
+  })
+
+  it('rejects direct username input before an auth endpoint processes it', async () => {
+    const beforeHook = (
+      prodAuth.options as unknown as {
+        hooks?: {
+          before?: (context: { body?: Record<string, unknown>; path: string }) => Promise<unknown>
+        }
+      }
+    ).hooks?.before
+
+    expect(beforeHook).toBeTypeOf('function')
+    await expect(
+      beforeHook?.({
+        body: { username: 'impersonated-login' },
+        path: '/update-user',
+      }),
+    ).rejects.toMatchObject({ status: 'BAD_REQUEST' })
+  })
+
   it('mapProfileToUser never returns a role field', async () => {
     const github = (
       prodAuth.options as unknown as {
