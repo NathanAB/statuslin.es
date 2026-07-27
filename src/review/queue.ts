@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
-import { desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
 import { configs, configVersions, renderJobs, user } from '@/db/schema'
@@ -37,6 +37,9 @@ export interface DashboardRow {
     createdAt: Date
     networkHosts: string[]
     readsClaudeToken: boolean
+    rejectionReason: string | null
+    rejectionEmailStatus?: string | null
+    approvalEmailStatus?: string | null
   }
   renderJob: {
     status: string
@@ -63,7 +66,26 @@ type RawRow = {
 }
 
 /** Shape a joined config/version/job/author row into a DashboardRow (+ fetch its previews). */
-async function mapRow(database: Db, r: RawRow): Promise<DashboardRow> {
+async function mapRow(
+  database: Db,
+  r: RawRow,
+  includeDeliveryState: boolean,
+): Promise<DashboardRow> {
+  const version: DashboardRow['version'] = {
+    id: r.version.id,
+    versionNumber: r.version.versionNumber,
+    source: r.version.source,
+    contentSha256: r.version.contentSha256,
+    status: r.version.status,
+    createdAt: r.version.createdAt,
+    networkHosts: r.version.networkHosts ?? [],
+    readsClaudeToken: r.version.readsClaudeToken ?? false,
+    rejectionReason: r.version.rejectionReason,
+  }
+  if (includeDeliveryState) {
+    version.rejectionEmailStatus = r.version.rejectionEmailStatus
+    version.approvalEmailStatus = r.version.approvalEmailStatus
+  }
   return {
     config: {
       id: r.config.id,
@@ -84,16 +106,7 @@ async function mapRow(database: Db, r: RawRow): Promise<DashboardRow> {
       copyCount: r.config.copyCount,
       createdAt: r.config.createdAt,
     },
-    version: {
-      id: r.version.id,
-      versionNumber: r.version.versionNumber,
-      source: r.version.source,
-      contentSha256: r.version.contentSha256,
-      status: r.version.status,
-      createdAt: r.version.createdAt,
-      networkHosts: r.version.networkHosts ?? [],
-      readsClaudeToken: r.version.readsClaudeToken ?? false,
-    },
+    version,
     renderJob: {
       status: r.job.status,
       attempts: r.job.attempts,
@@ -106,7 +119,7 @@ async function mapRow(database: Db, r: RawRow): Promise<DashboardRow> {
 }
 
 export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
-  const rows = await database
+  const pendingRows = await database
     .select({ config: configs, version: configVersions, job: renderJobs, author: user })
     .from(configVersions)
     .innerJoin(configs, eq(configs.id, configVersions.configId))
@@ -115,15 +128,35 @@ export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
     .where(eq(configVersions.status, 'pending'))
     .orderBy(RENDER_STATUS_ORDER, desc(configVersions.createdAt))
     .limit(50)
+  const contactRows = await database
+    .select({ config: configs, version: configVersions, job: renderJobs, author: user })
+    .from(configVersions)
+    .innerJoin(configs, eq(configs.id, configVersions.configId))
+    .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
+    .leftJoin(user, eq(user.id, configs.authorId))
+    .where(
+      or(
+        and(
+          eq(configVersions.status, 'rejected'),
+          inArray(configVersions.rejectionEmailStatus, ['pending', 'failed', 'unavailable']),
+        ),
+        and(
+          eq(configVersions.status, 'approved'),
+          inArray(configVersions.approvalEmailStatus, ['pending', 'failed', 'unavailable']),
+        ),
+      ),
+    )
+    .orderBy(desc(configVersions.createdAt))
+    .limit(50)
   const out: DashboardRow[] = []
   const seen = new Set<string>()
-  for (const r of rows) {
+  for (const r of [...pendingRows, ...contactRows]) {
     // One row per version. There's no DB uniqueness on render_jobs.config_version_id, so a stray
     // second job row would otherwise duplicate the version. The ordering puts the highest-priority
     // job first, so keep that one.
     if (seen.has(r.version.id)) continue
     seen.add(r.version.id)
-    out.push(await mapRow(database, r))
+    out.push(await mapRow(database, r, true))
   }
   return out
 }
@@ -147,7 +180,7 @@ export async function getMySubmissionRows(database: Db, userId: string): Promise
   // Re-sort for display: newest config first (DISTINCT ON forced the configId-led order above).
   rows.sort((a, b) => b.config.createdAt.getTime() - a.config.createdAt.getTime())
   const out: DashboardRow[] = []
-  for (const r of rows) out.push(await mapRow(database, r))
+  for (const r of rows) out.push(await mapRow(database, r, false))
   return out
 }
 

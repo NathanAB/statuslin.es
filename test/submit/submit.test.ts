@@ -18,13 +18,25 @@ async function seedConfigs(
   createdAt: Date,
 ) {
   for (let i = 0; i < count; i++) {
-    await db.insert(schema.configs).values({
-      slug: `seed-${authorId}-${i}-${Date.now()}-${Math.random()}`,
-      title: `Seeded Config ${i}`,
-      description: 'seeded',
-      authorId,
+    const [config] = await db
+      .insert(schema.configs)
+      .values({
+        slug: `seed-${authorId}-${i}-${Date.now()}-${Math.random()}`,
+        title: `Seeded Config ${i}`,
+        description: 'seeded',
+        authorId,
+        interpreter: 'bash',
+        status: 'draft',
+        createdAt,
+      })
+      .returning()
+    await db.insert(schema.configVersions).values({
+      configId: config!.id,
+      versionNumber: 1,
+      source: 'echo seeded',
       interpreter: 'bash',
-      status: 'draft',
+      contentSha256: `seed-${authorId}-${i}`,
+      status: 'pending',
       createdAt,
     })
   }

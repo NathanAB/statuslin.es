@@ -10,12 +10,18 @@ vi.mock('@tanstack/react-router', async (orig) => ({
   Link: ({
     to,
     params,
+    search,
     children,
   }: {
     to: string
     params?: Record<string, string>
+    search?: Record<string, string>
     children: React.ReactNode
-  }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
+  }) => {
+    const path = params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to
+    const query = search ? `?${new URLSearchParams(search).toString()}` : ''
+    return <a href={`${path}${query}`}>{children}</a>
+  },
 }))
 
 const { SubmissionCard, StatusSummary } = await import('@/review/dashboard-card')
@@ -52,6 +58,8 @@ function row(over: {
       createdAt: new Date('2026-06-13T12:00:00Z'),
       networkHosts: over.networkHosts ?? [],
       readsClaudeToken: over.readsClaudeToken ?? false,
+      rejectionReason: null,
+      rejectionEmailStatus: null,
     },
     renderJob: {
       status: over.status,
@@ -285,6 +293,23 @@ describe('SubmissionCard', () => {
     )
     expect(inReview).toContain('in review')
     expect(inReview).not.toContain('ready to review')
+  })
+
+  it('shows the stored rejection reason to the author', () => {
+    const rejectedRow = row({ status: 'done', versionStatus: 'rejected' })
+    Object.assign(rejectedRow.version, {
+      rejectionReason: 'Remove the network updater.',
+      rejectionEmailStatus: 'sent',
+    })
+
+    const html = renderToStaticMarkup(
+      <SubmissionCard row={rejectedRow} statusMode="review" showActions={false} />,
+    )
+
+    expect(html).toContain('Remove the network updater.')
+    expect(html).toContain('ph-no-capture')
+    expect(html).toContain('Fix and resubmit')
+    expect(html).toContain('href="/submit?resubmit=my-line"')
   })
 })
 

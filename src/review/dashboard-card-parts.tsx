@@ -164,21 +164,15 @@ export function CredentialFlagToggle({
   )
 }
 
-/** Approve / Reject / Re-queue / Run-network-preview action row for the admin queue card. */
+/** Re-queue / Run-network-preview action row for a render that is not ready for review. */
 export function CardActions({
   isHeld,
-  isReady,
   pending,
-  onApprove,
-  onReject,
   onRequeue,
   onRunNetworkPreview,
 }: {
   isHeld: boolean
-  isReady: boolean
   pending: boolean
-  onApprove: () => void
-  onReject: () => void
   onRequeue: () => void
   onRunNetworkPreview: () => void
 }) {
@@ -187,18 +181,6 @@ export function CardActions({
       <Row gap={2}>
         <Button type="button" onClick={onRunNetworkPreview} disabled={pending}>
           {pending ? 'Starting…' : 'Run network preview'}
-        </Button>
-      </Row>
-    )
-  }
-  if (isReady) {
-    return (
-      <Row gap={2}>
-        <Button type="button" onClick={onApprove} disabled={pending}>
-          Approve
-        </Button>
-        <Button type="button" variant="destructive" onClick={onReject} disabled={pending}>
-          Reject
         </Button>
       </Row>
     )

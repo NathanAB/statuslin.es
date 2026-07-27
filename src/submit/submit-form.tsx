@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { HttpError } from '@/lib/http'
 import { CONTENT_LICENSE } from '@/lib/site'
 import { NetworkSection } from '@/submit/network-section'
+import type { ResubmissionDraft } from '@/submit/submit'
 import { submitConfigFn } from '@/submit/submit-fn'
 import type { AppHeaderUser } from '@/ui/app-header'
 import { Button } from '@/ui/button'
@@ -21,16 +22,34 @@ const INTERPRETER_OPTIONS = [
   { value: 'python', label: 'python' },
 ]
 
-export function SubmitForm({ user: _user }: { user: AppHeaderUser }) {
+export function SubmitForm({
+  user,
+  initial,
+}: {
+  user: AppHeaderUser
+  initial?: ResubmissionDraft | null
+}) {
+  return <SubmitFormFields key={initial?.versionId ?? 'new'} user={user} initial={initial} />
+}
+
+function SubmitFormFields({
+  user: _user,
+  initial,
+}: {
+  user: AppHeaderUser
+  initial: ResubmissionDraft | null | undefined
+}) {
   const posthog = usePostHog()
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [interpreter, setInterpreter] = useState<'bash' | 'node' | 'python'>('bash')
-  const [source, setSource] = useState('')
+  const [title, setTitle] = useState(initial?.title ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [interpreter, setInterpreter] = useState<'bash' | 'node' | 'python'>(
+    (initial?.interpreter as 'bash' | 'node' | 'python' | undefined) ?? 'bash',
+  )
+  const [source, setSource] = useState(initial?.source ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [networkEnabled, setNetworkEnabled] = useState(false)
-  const [hosts, setHosts] = useState<string[]>([])
+  const [networkEnabled, setNetworkEnabled] = useState((initial?.networkHosts.length ?? 0) > 0)
+  const [hosts, setHosts] = useState<string[]>(initial?.networkHosts ?? [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,7 +58,14 @@ export function SubmitForm({ user: _user }: { user: AppHeaderUser }) {
     try {
       const networkHosts = networkEnabled ? hosts.map((h) => h.trim()).filter(Boolean) : []
       await submitConfigFn({
-        data: { title, description, interpreter, source, networkHosts },
+        data: {
+          title,
+          description,
+          interpreter,
+          source,
+          networkHosts,
+          ...(initial ? { rejectedVersionId: initial.versionId } : {}),
+        },
       })
       // The statusline_submitted event fires server-side in submitConfigFn now (ad blockers can't
       // strip a server event), so the browser only handles the success UX here.
@@ -124,7 +150,7 @@ export function SubmitForm({ user: _user }: { user: AppHeaderUser }) {
           </Text>
           <div>
             <Button type="submit" disabled={submitting} size={'lg'}>
-              {submitting ? 'Submitting…' : 'Submit'}
+              {submitting ? 'Submitting…' : initial ? 'Resubmit' : 'Submit'}
             </Button>
           </div>
         </Stack>

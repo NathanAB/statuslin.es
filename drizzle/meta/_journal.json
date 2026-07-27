@@ -134,6 +134,20 @@
       "when": 1783467632978,
       "tag": "0018_redundant_naoko",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785152342360,
+      "tag": "0019_far_warpath",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785158424885,
+      "tag": "0020_supreme_whizzer",
+      "breakpoints": true
     }
   ]
 }

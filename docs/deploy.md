@@ -27,7 +27,7 @@ Two process groups off one image (declared in `fly.toml` for prod and `fly.stagi
 - **web** — `bun run .output/server/index.mjs` — public, serves site + auth + API.
 - **worker** — `bun run scripts/worker.ts` — always-on poller; renders submitted scripts via E2B. No public port.
 
-## The six environment variables
+## The seven required environment variables
 
 From `.env.example` (the committed contract):
 
@@ -39,6 +39,7 @@ From `.env.example` (the committed contract):
 | `GITHUB_CLIENT_ID` | yes | the env's OAuth app |
 | `GITHUB_CLIENT_SECRET` | yes | the env's OAuth app |
 | `E2B_API_KEY` | no | one E2B account serves all envs |
+| `RESEND_API_KEY` | yes | server-only key used to email submission review decisions |
 
 No R2 keys — preview data is stored in Postgres (`previews` table), and OG card images are rendered on
 the fly by the app (`src/og`), not stored. R2 isn't used.
@@ -62,6 +63,13 @@ For each new one:
 1. Sign up at e2b.dev, put the API key in your local `.env.local`.
 2. Build the custom sandbox template: `bun run build:e2b-template` (bakes in jq/bc/gawk/column/strace).
    Serves every environment since they share the E2B account.
+
+### Resend (once, account-wide)
+1. Add and verify the `statuslin.es` sending domain in Resend, including its DNS records.
+2. Create separate API keys for staging and production, then set each environment's
+   `RESEND_API_KEY`.
+3. Approval and rejection emails are sent from `statuslin.es reviews <reviews@statuslin.es>` with replies going to
+   `hello@statuslin.es`.
 
 ### Fly apps
 ```sh

@@ -15,6 +15,15 @@ const toastSuccess = vi.hoisted(() => vi.fn())
 vi.mock('sonner', () => ({ toast: { success: toastSuccess } }))
 
 const USER = { name: 'Test User', username: 'test' }
+const RESUBMISSION = {
+  versionId: 'version-1',
+  slug: 'my-status-line',
+  title: 'My Statusline',
+  description: 'Shows useful context',
+  interpreter: 'node' as const,
+  source: 'console.log("corrected")',
+  networkHosts: ['api.github.com'],
+}
 
 function fillRequiredFields() {
   fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'My Statusline' } })
@@ -85,6 +94,63 @@ describe('SubmitForm', () => {
       expect(submitConfigFn).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ networkHosts: [] }) }),
       ),
+    )
+  })
+
+  it('prefills every editable field for a rejected version', () => {
+    render(<SubmitForm user={USER} initial={RESUBMISSION} />)
+
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe(RESUBMISSION.title)
+    expect((screen.getByLabelText('Description') as HTMLTextAreaElement).value).toBe(
+      RESUBMISSION.description,
+    )
+    expect((screen.getByLabelText('Interpreter') as HTMLSelectElement).value).toBe('node')
+    expect((screen.getByLabelText('Source code') as HTMLTextAreaElement).value).toBe(
+      RESUBMISSION.source,
+    )
+    expect(screen.getByText('api.github.com')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Resubmit' })).toBeTruthy()
+  })
+
+  it('posts the rejected version id when resubmitting', async () => {
+    render(<SubmitForm user={USER} initial={RESUBMISSION} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Resubmit' }))
+
+    await waitFor(() =>
+      expect(submitConfigFn).toHaveBeenCalledWith({
+        data: {
+          title: RESUBMISSION.title,
+          description: RESUBMISSION.description,
+          interpreter: RESUBMISSION.interpreter,
+          source: RESUBMISSION.source,
+          networkHosts: RESUBMISSION.networkHosts,
+          rejectedVersionId: RESUBMISSION.versionId,
+        },
+      }),
+    )
+  })
+
+  it('switches the displayed content and target together when the resubmission changes', async () => {
+    const second = {
+      ...RESUBMISSION,
+      versionId: 'version-2',
+      slug: 'second-line',
+      title: 'Second line',
+      source: 'console.log("second")',
+      networkHosts: [],
+    }
+    const { rerender } = render(<SubmitForm user={USER} initial={RESUBMISSION} />)
+
+    rerender(<SubmitForm user={USER} initial={second} />)
+
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe(second.title)
+    expect((screen.getByLabelText('Source code') as HTMLTextAreaElement).value).toBe(second.source)
+    fireEvent.click(screen.getByRole('button', { name: 'Resubmit' }))
+    await waitFor(() =>
+      expect(submitConfigFn).toHaveBeenCalledWith({
+        data: expect.objectContaining({ rejectedVersionId: second.versionId }),
+      }),
     )
   })
 })

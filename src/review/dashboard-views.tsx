@@ -26,6 +26,8 @@ export function DashboardView({ data }: { data: DashboardData }) {
   }
 
   const { rows, user } = data
+  const reviewRows = rows.filter((row) => row.version.status === 'pending')
+  const contactRows = rows.filter((row) => row.version.status !== 'pending')
   return (
     <PageShell user={user}>
       <Stack gap={6}>
@@ -36,12 +38,29 @@ export function DashboardView({ data }: { data: DashboardData }) {
           </Text>
         ) : (
           <>
-            <StatusSummary rows={rows} />
-            <Stack gap={4}>
-              {rows.map((row) => (
-                <SubmissionCard key={row.version.id} row={row} />
-              ))}
-            </Stack>
+            {reviewRows.length > 0 ? (
+              <>
+                <StatusSummary rows={reviewRows} />
+                <Stack gap={4}>
+                  {reviewRows.map((row) => (
+                    <SubmissionCard key={row.version.id} row={row} />
+                  ))}
+                </Stack>
+              </>
+            ) : null}
+            {contactRows.length > 0 ? (
+              <Stack gap={4}>
+                <Stack gap={1}>
+                  <Heading level={2}>Contact needed</Heading>
+                  <Text muted size="sm">
+                    Approved or rejected submissions whose author email has not been delivered.
+                  </Text>
+                </Stack>
+                {contactRows.map((row) => (
+                  <SubmissionCard key={row.version.id} row={row} />
+                ))}
+              </Stack>
+            ) : null}
           </>
         )}
       </Stack>

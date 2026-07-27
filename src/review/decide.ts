@@ -3,63 +3,31 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs } from '@/db/schema'
-import { computeAllTags } from '@/lib/derived-tags'
+import { configVersions, renderJobs } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { pingWorkerWake, workerWakeUrl } from '@/lib/wake'
 import { assertAdmin } from './admin'
+import { approveAndEmailVersion, retryApprovalEmail } from './approval-delivery'
+import { rejectAndEmailVersion, retryRejectionEmail } from './rejection-delivery'
+
+export {
+  type ApprovalEmailStatus,
+  approveAndEmailVersion,
+  approveVersion,
+  retryApprovalEmail,
+} from './approval-delivery'
+export {
+  REJECTION_REASON_MAX,
+  type RejectionEmailStatus,
+  rejectAndEmailVersion,
+  rejectVersion,
+  retryRejectionEmail,
+} from './rejection-delivery'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
-
-export async function approveVersion(
-  database: Db,
-  versionId: string,
-  reviewerId: string,
-): Promise<void> {
-  await database.transaction(async (tx) => {
-    const [job] = await tx
-      .select()
-      .from(renderJobs)
-      .where(eq(renderJobs.configVersionId, versionId))
-    if (job?.status !== 'done') throw new HttpError(409, 'version not rendered')
-    const [ver] = await tx
-      .update(configVersions)
-      .set({ status: 'approved', reviewedBy: reviewerId, reviewedAt: new Date() })
-      .where(and(eq(configVersions.id, versionId), eq(configVersions.status, 'pending')))
-      .returning()
-    if (!ver) throw new HttpError(409, 'version not in a reviewable (pending) state')
-    const [cfg] = await tx
-      .select({ tags: configs.tags })
-      .from(configs)
-      .where(eq(configs.id, ver.configId))
-    const allTags = computeAllTags({
-      curatedTags: cfg?.tags ?? [],
-      interpreter: ver.interpreter,
-      networkHosts: ver.networkHosts ?? [],
-      readsClaudeToken: ver.readsClaudeToken ?? false,
-    })
-    await tx
-      .update(configs)
-      .set({ status: 'published', currentVersionId: ver.id, allTags })
-      .where(eq(configs.id, ver.configId))
-  })
-}
-
-export async function rejectVersion(
-  database: Db,
-  versionId: string,
-  reviewerId: string,
-): Promise<void> {
-  const [row] = await database
-    .update(configVersions)
-    .set({ status: 'rejected', reviewedBy: reviewerId, reviewedAt: new Date() })
-    .where(and(eq(configVersions.id, versionId), eq(configVersions.status, 'pending')))
-    .returning()
-  if (!row) throw new HttpError(409, 'version not in a reviewable (pending) state')
-}
 
 /** Admin disclosure override: set whether a version is flagged as reading the Claude token.
  * INVARIANT: this is only ever invoked from the review queue, which shows pending (unpublished)
@@ -109,26 +77,46 @@ export const approveVersionFn = createServerFn({ method: 'POST' })
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
-      await approveVersion(db, data.versionId, admin.id)
+      const result = await approveAndEmailVersion(db, data.versionId, admin.id)
       getPostHogClient()?.capture({
         distinctId: admin.id,
         event: 'statusline_approved',
         properties: { versionId: data.versionId },
       })
+      return result
     }),
   )
 
 export const rejectVersionFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string }) => d)
+  .inputValidator((d: { versionId: string; reason?: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
-      await rejectVersion(db, data.versionId, admin.id)
+      const result = await rejectAndEmailVersion(db, data.versionId, admin.id, data.reason ?? '')
       getPostHogClient()?.capture({
         distinctId: admin.id,
         event: 'statusline_rejected',
         properties: { versionId: data.versionId },
       })
+      return result
+    }),
+  )
+
+export const retryRejectionEmailFn = createServerFn({ method: 'POST' })
+  .inputValidator((d: { versionId: string }) => d)
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      await assertAdmin(getRequestHeaders())
+      return retryRejectionEmail(db, data.versionId)
+    }),
+  )
+
+export const retryApprovalEmailFn = createServerFn({ method: 'POST' })
+  .inputValidator((d: { versionId: string }) => d)
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      await assertAdmin(getRequestHeaders())
+      return retryApprovalEmail(db, data.versionId)
     }),
   )
 
