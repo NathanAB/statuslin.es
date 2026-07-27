@@ -202,6 +202,40 @@ describe('getDashboardRows', () => {
     expect(findByVersion(await getDashboardRows(db), versionId)).toBeUndefined()
   })
 
+  it('keeps ambiguous decision deliveries visible for manual reconciliation', async () => {
+    await db.delete(schema.configs)
+    const rejection = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Ambiguous rejection',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({
+        status: 'rejected',
+        rejectionReason: 'Change it.',
+        rejectionEmailStatus: 'ambiguous',
+      })
+      .where(eq(schema.configVersions.id, rejection.versionId))
+    const approval = await submitConfig(db, {
+      authorId: 'u2',
+      title: 'Ambiguous approval',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({ status: 'approved', approvalEmailStatus: 'ambiguous' })
+      .where(eq(schema.configVersions.id, approval.versionId))
+
+    const rows = await getDashboardRows(db)
+    expect(findByVersion(rows, rejection.versionId)?.version.rejectionEmailStatus).toBe('ambiguous')
+    expect(findByVersion(rows, approval.versionId)?.version.approvalEmailStatus).toBe('ambiguous')
+  })
+
   it('returns one row per version even if a second render job exists', async () => {
     const { versionId } = await submitConfig(db, {
       authorId: 'u2',

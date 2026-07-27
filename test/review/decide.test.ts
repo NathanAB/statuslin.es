@@ -156,7 +156,7 @@ describe('approval email delivery', () => {
     expect(config?.currentVersionId).toBe(versionId)
   })
 
-  it('keeps the version published and stores a safe failure when delivery throws', async () => {
+  it('keeps the version published and marks an unconfirmed transport outcome ambiguous', async () => {
     await db.update(schema.user).set({ emailVerified: true }).where(eq(schema.user.id, 'u1'))
     const { configId, versionId } = await submitConfig(db, {
       authorId: 'u1',
@@ -174,15 +174,15 @@ describe('approval email delivery', () => {
       vi.fn().mockRejectedValue(new Error('provider leaked author1@test.com')),
     )
 
-    expect(result).toEqual({ delivery: 'failed' })
+    expect(result).toEqual({ delivery: 'ambiguous' })
     const [version] = await db
       .select()
       .from(schema.configVersions)
       .where(eq(schema.configVersions.id, versionId))
     expect(version).toMatchObject({
       status: 'approved',
-      approvalEmailStatus: 'failed',
-      approvalEmailError: 'Email delivery failed',
+      approvalEmailStatus: 'ambiguous',
+      approvalEmailError: 'Email delivery could not be confirmed',
     })
     const [config] = await db.select().from(schema.configs).where(eq(schema.configs.id, configId))
     expect(config?.status).toBe('published')
@@ -223,6 +223,10 @@ describe('approval email delivery', () => {
       'admin1',
       vi.fn().mockRejectedValue(new Error('offline')),
     )
+    await db
+      .update(schema.configVersions)
+      .set({ approvalEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, versionId))
     const send = vi.fn().mockResolvedValue({ id: 'email_retry_approved' })
 
     const result = await retryApprovalEmail(db, versionId, send)
@@ -262,7 +266,7 @@ describe('approval email delivery', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
-  it('does not let a late concurrent failure overwrite sent delivery', async () => {
+  it('claims approval delivery before sending so a concurrent retry cannot dispatch', async () => {
     await db.update(schema.user).set({ emailVerified: true }).where(eq(schema.user.id, 'u1'))
     const { versionId } = await submitConfig(db, {
       authorId: 'u1',
@@ -272,43 +276,33 @@ describe('approval email delivery', () => {
       source: 'x',
     })
     await processNextRenderJob(db, new FakeSandboxRunner())
-    await approveAndEmailVersion(
-      db,
-      versionId,
-      'admin1',
-      vi.fn().mockRejectedValue(new Error('offline')),
-    )
+    await approveVersion(db, versionId, 'admin1')
+    await db
+      .update(schema.configVersions)
+      .set({ approvalEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, versionId))
 
     let resolveSuccess!: (value: { id: string }) => void
-    let rejectFailure!: (reason: Error) => void
     let markSuccessStarted!: () => void
-    let markFailureStarted!: () => void
     const successResult = new Promise<{ id: string }>((resolve) => {
       resolveSuccess = resolve
     })
-    const failureResult = new Promise<{ id: string }>((_resolve, reject) => {
-      rejectFailure = reject
-    })
     const successStarted = new Promise<void>((resolve) => {
       markSuccessStarted = resolve
-    })
-    const failureStarted = new Promise<void>((resolve) => {
-      markFailureStarted = resolve
     })
 
     const successfulRetry = retryApprovalEmail(db, versionId, () => {
       markSuccessStarted()
       return successResult
     })
-    const failingRetry = retryApprovalEmail(db, versionId, () => {
-      markFailureStarted()
-      return failureResult
+    await successStarted
+    const concurrentSend = vi.fn()
+    await expect(retryApprovalEmail(db, versionId, concurrentSend)).rejects.toMatchObject({
+      status: 409,
     })
-    await Promise.all([successStarted, failureStarted])
+    expect(concurrentSend).not.toHaveBeenCalled()
     resolveSuccess({ id: 'email_approval_won' })
     await successfulRetry
-    rejectFailure(new Error('late failure'))
-    await failingRetry
 
     const [version] = await db
       .select()
@@ -437,7 +431,7 @@ describe('rejection email delivery', () => {
     expect(version?.rejectionEmailSentAt).toBeInstanceOf(Date)
   })
 
-  it('keeps the rejection and stores a safe failure when delivery throws', async () => {
+  it('keeps the rejection and marks an unconfirmed transport outcome ambiguous', async () => {
     await db.update(schema.user).set({ emailVerified: true }).where(eq(schema.user.id, 'u1'))
     const { versionId } = await submitConfig(db, {
       authorId: 'u1',
@@ -450,7 +444,7 @@ describe('rejection email delivery', () => {
 
     const result = await rejectAndEmailVersion(db, versionId, 'admin1', 'Fix it.', send)
 
-    expect(result).toEqual({ delivery: 'failed' })
+    expect(result).toEqual({ delivery: 'ambiguous' })
     const [version] = await db
       .select()
       .from(schema.configVersions)
@@ -458,8 +452,8 @@ describe('rejection email delivery', () => {
     expect(version).toMatchObject({
       status: 'rejected',
       rejectionReason: 'Fix it.',
-      rejectionEmailStatus: 'failed',
-      rejectionEmailError: 'Email delivery failed',
+      rejectionEmailStatus: 'ambiguous',
+      rejectionEmailError: 'Email delivery could not be confirmed',
     })
   })
 
@@ -496,6 +490,10 @@ describe('rejection email delivery', () => {
       'Use a pinned source.',
       vi.fn().mockRejectedValue(new Error('offline')),
     )
+    await db
+      .update(schema.configVersions)
+      .set({ rejectionEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, versionId))
     const send = vi.fn().mockResolvedValue({ id: 'email_retry' })
 
     const result = await retryRejectionEmail(db, versionId, send)
@@ -506,7 +504,7 @@ describe('rejection email delivery', () => {
     )
   })
 
-  it('does not let a late concurrent failure overwrite sent delivery', async () => {
+  it('claims rejection delivery before sending so a concurrent retry cannot dispatch', async () => {
     await db.update(schema.user).set({ emailVerified: true }).where(eq(schema.user.id, 'u1'))
     const { versionId } = await submitConfig(db, {
       authorId: 'u1',
@@ -515,44 +513,33 @@ describe('rejection email delivery', () => {
       interpreter: 'bash',
       source: 'x',
     })
-    await rejectAndEmailVersion(
-      db,
-      versionId,
-      'admin1',
-      'Use a pinned source.',
-      vi.fn().mockRejectedValue(new Error('offline')),
-    )
+    await rejectVersion(db, versionId, 'admin1', 'Use a pinned source.')
+    await db
+      .update(schema.configVersions)
+      .set({ rejectionEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, versionId))
 
     let resolveSuccess!: (value: { id: string }) => void
-    let rejectFailure!: (reason: Error) => void
     let markSuccessStarted!: () => void
-    let markFailureStarted!: () => void
     const successResult = new Promise<{ id: string }>((resolve) => {
       resolveSuccess = resolve
     })
-    const failureResult = new Promise<{ id: string }>((_resolve, reject) => {
-      rejectFailure = reject
-    })
     const successStarted = new Promise<void>((resolve) => {
       markSuccessStarted = resolve
-    })
-    const failureStarted = new Promise<void>((resolve) => {
-      markFailureStarted = resolve
     })
 
     const successfulRetry = retryRejectionEmail(db, versionId, () => {
       markSuccessStarted()
       return successResult
     })
-    const failingRetry = retryRejectionEmail(db, versionId, () => {
-      markFailureStarted()
-      return failureResult
+    await successStarted
+    const concurrentSend = vi.fn()
+    await expect(retryRejectionEmail(db, versionId, concurrentSend)).rejects.toMatchObject({
+      status: 409,
     })
-    await Promise.all([successStarted, failureStarted])
+    expect(concurrentSend).not.toHaveBeenCalled()
     resolveSuccess({ id: 'email_won' })
     await successfulRetry
-    rejectFailure(new Error('late failure'))
-    await failingRetry
 
     const [version] = await db
       .select()
@@ -563,6 +550,87 @@ describe('rejection email delivery', () => {
       rejectionEmailId: 'email_won',
       rejectionEmailError: null,
     })
+  })
+
+  it('blocks resubmission while rejection delivery is in flight', async () => {
+    await db.update(schema.user).set({ emailVerified: true }).where(eq(schema.user.id, 'u1'))
+    const rejected = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'In-flight rejection',
+      description: '',
+      interpreter: 'bash',
+      source: 'echo original',
+    })
+    await rejectVersion(db, rejected.versionId, 'admin1', 'Change the script.')
+
+    let finishSend!: (value: { id: string }) => void
+    let markSendStarted!: () => void
+    const sendResult = new Promise<{ id: string }>((resolve) => {
+      finishSend = resolve
+    })
+    const sendStarted = new Promise<void>((resolve) => {
+      markSendStarted = resolve
+    })
+    const delivery = retryRejectionEmail(db, rejected.versionId, () => {
+      markSendStarted()
+      return sendResult
+    })
+    await sendStarted
+
+    await expect(
+      submitConfig(
+        db,
+        {
+          authorId: 'u1',
+          title: 'Corrected title',
+          description: '',
+          interpreter: 'bash',
+          source: 'echo corrected',
+        },
+        { rejectedVersionId: rejected.versionId },
+      ),
+    ).rejects.toMatchObject({ status: 409 })
+    const versions = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.configId, rejected.configId))
+    expect(versions).toHaveLength(1)
+
+    finishSend({ id: 'email_in_flight' })
+    await expect(delivery).resolves.toEqual({ delivery: 'sent' })
+  })
+
+  it('rejects a stale rejection retry after a corrected version exists', async () => {
+    await db.update(schema.user).set({ emailVerified: true }).where(eq(schema.user.id, 'u1'))
+    const rejected = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Original title',
+      description: '',
+      interpreter: 'bash',
+      source: 'echo original',
+    })
+    await rejectVersion(db, rejected.versionId, 'admin1', 'Change the script.')
+    await db
+      .update(schema.configVersions)
+      .set({ rejectionEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, rejected.versionId))
+    await submitConfig(
+      db,
+      {
+        authorId: 'u1',
+        title: 'Renamed correction',
+        description: '',
+        interpreter: 'bash',
+        source: 'echo corrected',
+      },
+      { rejectedVersionId: rejected.versionId },
+    )
+    const send = vi.fn()
+
+    await expect(retryRejectionEmail(db, rejected.versionId, send)).rejects.toMatchObject({
+      status: 409,
+    })
+    expect(send).not.toHaveBeenCalled()
   })
 })
 

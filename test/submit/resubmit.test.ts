@@ -128,6 +128,26 @@ describe('linked resubmission', () => {
     expect(job?.status).toBe('queued')
   })
 
+  it('supersedes an unsent rejection email when the corrected version is created', async () => {
+    const rejected = await rejectedSubmission()
+    await db
+      .update(schema.configVersions)
+      .set({ rejectionEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, rejected.versionId))
+
+    await submitConfig(
+      db,
+      { ...original, source: 'echo corrected' },
+      { rejectedVersionId: rejected.versionId },
+    )
+
+    const [version] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.id, rejected.versionId))
+    expect(version?.rejectionEmailStatus).toBe('superseded')
+  })
+
   it('rejects another owner and a target that is no longer latest', async () => {
     const rejected = await rejectedSubmission()
     await expect(

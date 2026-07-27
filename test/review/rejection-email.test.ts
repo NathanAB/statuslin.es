@@ -67,6 +67,9 @@ describe('sendRejectionEmail', () => {
         },
         send,
       ),
-    ).rejects.toThrow('Resend validation_error (422)')
+    ).rejects.toMatchObject({
+      name: 'ReviewEmailProviderError',
+      message: 'Resend validation_error (422)',
+    })
   })
 })

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, user } from '@/db/schema'
 import { HttpError } from '@/lib/http'
@@ -7,12 +7,20 @@ import {
   type SendRejectionEmail,
   sendRejectionEmail,
 } from './rejection-email'
+import { ReviewEmailProviderError } from './review-email'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export const REJECTION_REASON_MAX = 2000
-export type RejectionEmailStatus = 'pending' | 'sent' | 'failed' | 'unavailable'
+export type RejectionEmailStatus =
+  | 'pending'
+  | 'sending'
+  | 'sent'
+  | 'failed'
+  | 'unavailable'
+  | 'ambiguous'
+  | 'superseded'
 const UNSENT_REJECTION_EMAIL_STATUSES = ['pending', 'failed', 'unavailable'] as const
 
 export async function rejectVersion(
@@ -45,6 +53,28 @@ export async function rejectVersion(
   if (!row) throw new HttpError(409, 'version not in a reviewable (pending) state')
 }
 
+async function isCurrentRejectedDraft(
+  database: Db,
+  configId: string,
+  versionId: string,
+  configStatus: string,
+  currentVersionId: string | null,
+): Promise<boolean> {
+  const [latest] = await database
+    .select({ id: configVersions.id })
+    .from(configVersions)
+    .where(eq(configVersions.configId, configId))
+    .orderBy(desc(configVersions.versionNumber))
+    .limit(1)
+  return configStatus === 'draft' && currentVersionId === null && latest?.id === versionId
+}
+
+function assertRetryableRejectionEmailStatus(status: string | null): void {
+  if (UNSENT_REJECTION_EMAIL_STATUSES.some((candidate) => candidate === status)) return
+  if (status === 'sent') throw new HttpError(409, 'rejection email already sent')
+  throw new HttpError(409, 'rejection email is not pending delivery')
+}
+
 async function deliverRejectionEmail(
   database: Db,
   versionId: string,
@@ -52,6 +82,9 @@ async function deliverRejectionEmail(
 ): Promise<RejectionEmailStatus> {
   const [row] = await database
     .select({
+      configId: configs.id,
+      configStatus: configs.status,
+      currentVersionId: configs.currentVersionId,
       versionStatus: configVersions.status,
       emailStatus: configVersions.rejectionEmailStatus,
       reason: configVersions.rejectionReason,
@@ -68,9 +101,18 @@ async function deliverRejectionEmail(
   if (row?.versionStatus !== 'rejected' || !row.reason) {
     throw new HttpError(409, 'version is not an email-ready rejection')
   }
-  if (row.emailStatus === 'sent') {
-    throw new HttpError(409, 'rejection email already sent')
+  if (
+    !(await isCurrentRejectedDraft(
+      database,
+      row.configId,
+      versionId,
+      row.configStatus,
+      row.currentVersionId,
+    ))
+  ) {
+    throw new HttpError(409, 'rejection email was superseded by a newer submission state')
   }
+  assertRetryableRejectionEmailStatus(row.emailStatus)
   if (!row.emailVerified) {
     const [updated] = await database
       .update(configVersions)
@@ -85,6 +127,19 @@ async function deliverRejectionEmail(
       .returning({ id: configVersions.id })
     return updated ? 'unavailable' : 'sent'
   }
+
+  const [claimed] = await database
+    .update(configVersions)
+    .set({ rejectionEmailStatus: 'sending', rejectionEmailError: null })
+    .where(
+      and(
+        eq(configVersions.id, versionId),
+        eq(configVersions.status, 'rejected'),
+        inArray(configVersions.rejectionEmailStatus, UNSENT_REJECTION_EMAIL_STATUSES),
+      ),
+    )
+    .returning({ id: configVersions.id })
+  if (!claimed) throw new HttpError(409, 'rejection email delivery is already in progress')
 
   const input: RejectionEmailInput = {
     versionId,
@@ -108,27 +163,29 @@ async function deliverRejectionEmail(
         and(
           eq(configVersions.id, versionId),
           eq(configVersions.status, 'rejected'),
-          inArray(configVersions.rejectionEmailStatus, UNSENT_REJECTION_EMAIL_STATUSES),
+          eq(configVersions.rejectionEmailStatus, 'sending'),
         ),
       )
     return 'sent'
-  } catch {
+  } catch (error) {
+    const delivery = error instanceof ReviewEmailProviderError ? 'failed' : 'ambiguous'
     const [updated] = await database
       .update(configVersions)
       .set({
-        rejectionEmailStatus: 'failed',
-        rejectionEmailError: 'Email delivery failed',
+        rejectionEmailStatus: delivery,
+        rejectionEmailError:
+          delivery === 'failed' ? 'Email delivery failed' : 'Email delivery could not be confirmed',
         rejectionEmailSentAt: null,
       })
       .where(
         and(
           eq(configVersions.id, versionId),
           eq(configVersions.status, 'rejected'),
-          inArray(configVersions.rejectionEmailStatus, UNSENT_REJECTION_EMAIL_STATUSES),
+          eq(configVersions.rejectionEmailStatus, 'sending'),
         ),
       )
       .returning({ id: configVersions.id })
-    return updated ? 'failed' : 'sent'
+    return updated ? delivery : 'sent'
   }
 }
 

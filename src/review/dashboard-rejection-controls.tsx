@@ -18,6 +18,9 @@ import { Textarea } from '@/ui/textarea'
 function deliveryMessage(delivery: RejectionEmailStatus, retry: boolean): string {
   if (delivery === 'sent') return retry ? 'Email sent.' : 'Rejected and emailed the author.'
   if (delivery === 'unavailable') return 'Rejected. The author has no verified email.'
+  if (delivery === 'ambiguous' || delivery === 'sending') {
+    return 'Rejected. Email delivery is unconfirmed; check Resend.'
+  }
   return 'Rejected. Email delivery failed; retry is available.'
 }
 
@@ -33,6 +36,9 @@ function approvalDeliveryMessage(delivery: ApprovalEmailStatus, retry: boolean):
   }
   if (delivery === 'unavailable') {
     return 'Approved and published. The author has no verified email.'
+  }
+  if (delivery === 'ambiguous' || delivery === 'sending') {
+    return 'Approved and published. Email delivery is unconfirmed; check Resend.'
   }
   return 'Approved and published. Email delivery failed; retry is available.'
 }

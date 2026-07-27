@@ -94,6 +94,31 @@ describe('SubmissionCard rejection actions', () => {
     )
   })
 
+  it('directs ambiguous decision delivery to Resend reconciliation instead of retry', async () => {
+    approveVersionFn.mockResolvedValueOnce({ delivery: 'ambiguous' })
+    const { unmount } = render(<SubmissionCard row={row()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        'Approved and published. Email delivery is unconfirmed; check Resend.',
+      ),
+    )
+    unmount()
+
+    rejectVersionFn.mockResolvedValueOnce({ delivery: 'ambiguous' })
+    render(<SubmissionCard row={row()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Reject' }))
+    fireEvent.change(screen.getByLabelText('Reason for rejection'), {
+      target: { value: 'Change it.' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Reject and email author' }))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        'Rejected. Email delivery is unconfirmed; check Resend.',
+      ),
+    )
+  })
+
   it('requires a reason before rejecting and emails the author on confirmation', async () => {
     render(<SubmissionCard row={row()} />)
 
@@ -160,5 +185,29 @@ describe('SubmissionCard rejection actions', () => {
     await waitFor(() =>
       expect(retryApprovalEmailFn).toHaveBeenCalledWith({ data: { versionId: 'v1' } }),
     )
+  })
+
+  it.each([
+    'sending',
+    'ambiguous',
+  ])('shows %s rejection delivery for reconciliation without a retry action', (deliveryStatus) => {
+    render(<SubmissionCard row={row('rejected', deliveryStatus)} />)
+
+    expect(
+      screen.getByText('Email delivery is unconfirmed. Check Resend before taking action.'),
+    ).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Retry email' })).toBeNull()
+  })
+
+  it.each([
+    'sending',
+    'ambiguous',
+  ])('shows %s approval delivery for reconciliation without a retry action', (deliveryStatus) => {
+    render(<SubmissionCard row={row('approved', null, deliveryStatus)} />)
+
+    expect(
+      screen.getByText('Email delivery is unconfirmed. Check Resend before taking action.'),
+    ).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Retry email' })).toBeNull()
   })
 })

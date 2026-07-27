@@ -138,11 +138,23 @@ export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
       or(
         and(
           eq(configVersions.status, 'rejected'),
-          inArray(configVersions.rejectionEmailStatus, ['pending', 'failed', 'unavailable']),
+          inArray(configVersions.rejectionEmailStatus, [
+            'pending',
+            'sending',
+            'failed',
+            'unavailable',
+            'ambiguous',
+          ]),
         ),
         and(
           eq(configVersions.status, 'approved'),
-          inArray(configVersions.approvalEmailStatus, ['pending', 'failed', 'unavailable']),
+          inArray(configVersions.approvalEmailStatus, [
+            'pending',
+            'sending',
+            'failed',
+            'unavailable',
+            'ambiguous',
+          ]),
         ),
       ),
     )

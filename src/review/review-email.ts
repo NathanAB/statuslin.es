@@ -13,6 +13,12 @@ export type ReviewEmailSend = (
   options?: CreateEmailRequestOptions,
 ) => Promise<CreateEmailResponse>
 
+/** A definitive Resend API rejection. Transport exceptions remain ambiguous because the request
+ * may have reached Resend even when the response never reached this process. */
+export class ReviewEmailProviderError extends Error {
+  override name = 'ReviewEmailProviderError'
+}
+
 function sendWithResend(
   payload: CreateEmailOptions,
   options?: CreateEmailRequestOptions,
@@ -26,10 +32,9 @@ export async function sendReviewEmail(
   send: ReviewEmailSend = sendWithResend,
 ): Promise<{ id: string }> {
   const { data, error } = await send(payload, { idempotencyKey })
-  if (error || !data) {
-    const name = error?.name ?? 'unknown_error'
-    const status = error?.statusCode ?? 'unknown'
-    throw new Error(`Resend ${name} (${status})`)
+  if (error) {
+    throw new ReviewEmailProviderError(`Resend ${error.name} (${error.statusCode ?? 'unknown'})`)
   }
+  if (!data) throw new Error('Resend returned no delivery result')
   return { id: data.id }
 }

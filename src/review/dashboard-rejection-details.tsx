@@ -18,6 +18,7 @@ export function RejectionDetails({
   const needsContact = ['pending', 'failed', 'unavailable'].includes(
     version.rejectionEmailStatus ?? '',
   )
+  const needsReconciliation = ['sending', 'ambiguous'].includes(version.rejectionEmailStatus ?? '')
   return (
     <>
       {version.rejectionReason ? (
@@ -37,6 +38,11 @@ export function RejectionDetails({
         <Row gap={2}>
           <RetryRejectionEmailButton versionId={version.id} />
         </Row>
+      ) : null}
+      {showActions && needsReconciliation ? (
+        <Notice tone="error">
+          Email delivery is unconfirmed. Check Resend before taking action.
+        </Notice>
       ) : null}
     </>
   )

@@ -8,11 +8,18 @@ import {
   type SendApprovalEmail,
   sendApprovalEmail,
 } from './approval-email'
+import { ReviewEmailProviderError } from './review-email'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
-export type ApprovalEmailStatus = 'pending' | 'sent' | 'failed' | 'unavailable'
+export type ApprovalEmailStatus =
+  | 'pending'
+  | 'sending'
+  | 'sent'
+  | 'failed'
+  | 'unavailable'
+  | 'ambiguous'
 const UNSENT_APPROVAL_EMAIL_STATUSES = ['pending', 'failed', 'unavailable'] as const
 
 export async function approveVersion(
@@ -100,6 +107,19 @@ async function deliverApprovalEmail(
     return updated ? 'unavailable' : 'sent'
   }
 
+  const [claimed] = await database
+    .update(configVersions)
+    .set({ approvalEmailStatus: 'sending', approvalEmailError: null })
+    .where(
+      and(
+        eq(configVersions.id, versionId),
+        eq(configVersions.status, 'approved'),
+        inArray(configVersions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
+      ),
+    )
+    .returning({ id: configVersions.id })
+  if (!claimed) throw new HttpError(409, 'approval email delivery is already in progress')
+
   const input: ApprovalEmailInput = {
     versionId,
     authorName: row.authorName,
@@ -121,27 +141,29 @@ async function deliverApprovalEmail(
         and(
           eq(configVersions.id, versionId),
           eq(configVersions.status, 'approved'),
-          inArray(configVersions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
+          eq(configVersions.approvalEmailStatus, 'sending'),
         ),
       )
     return 'sent'
-  } catch {
+  } catch (error) {
+    const delivery = error instanceof ReviewEmailProviderError ? 'failed' : 'ambiguous'
     const [updated] = await database
       .update(configVersions)
       .set({
-        approvalEmailStatus: 'failed',
-        approvalEmailError: 'Email delivery failed',
+        approvalEmailStatus: delivery,
+        approvalEmailError:
+          delivery === 'failed' ? 'Email delivery failed' : 'Email delivery could not be confirmed',
         approvalEmailSentAt: null,
       })
       .where(
         and(
           eq(configVersions.id, versionId),
           eq(configVersions.status, 'approved'),
-          inArray(configVersions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
+          eq(configVersions.approvalEmailStatus, 'sending'),
         ),
       )
       .returning({ id: configVersions.id })
-    return updated ? 'failed' : 'sent'
+    return updated ? delivery : 'sent'
   }
 }
 
