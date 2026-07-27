@@ -1,5 +1,6 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { betterAuth } from 'better-auth'
+import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { db } from '@/db'
 import { requireEnv, requireStrongSecret } from '@/lib/env'
@@ -35,8 +36,15 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: { type: 'string', defaultValue: 'user', input: false },
-      username: { type: 'string', input: false },
+      username: { type: 'string', input: true },
     },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (context) => {
+      if (context.body && Object.hasOwn(context.body, 'username')) {
+        throw new APIError('BAD_REQUEST', { message: 'Username is managed by GitHub' })
+      }
+    }),
   },
   plugins: [tanstackStartCookies()], // MUST be last
 })
