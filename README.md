@@ -1,7 +1,7 @@
 # statuslin.es
 
 A community gallery of [Claude Code](https://claude.com/claude-code) status lines. Browse real configs as
-**rendered previews**, upvote the good ones, and copy one to your terminal. You see what each script
+**rendered previews**, see which ones people copy, and copy one to your terminal. You see what each script
 actually renders to before you copy it, instead of guessing from the source.
 
 Live at **[statuslin.es](https://statuslin.es)**.

@@ -1,6 +1,6 @@
 # statuslin.es
 
-Community gallery of Claude Code status lines — browse configs as rendered previews, upvote, and copy one to use.
+Community gallery of Claude Code status lines — browse configs as rendered previews and copy one to use.
 
 > **This is an agent-first codebase.** Most changes are written by AI agents. The standards below are enforced mechanically (linter, typecheck, tests, git hooks, CI) **and** by every agent on itself. Do not bypass the gates — no `git commit --no-verify`, no skipping tests, no claiming "done" without showing green output in the same message.
 
@@ -13,7 +13,7 @@ Bun (runtime + toolchain) · Vite · TanStack Start (React, SSR) · Better Auth 
 The lifecycle of a config: **submit** (`src/submit`) → a render job is **queued** → the
 `worker` renders it in the E2B sandbox (`src/render`) → it lands in the **review queue**
 (`src/review`) → an admin publishes → it appears in the **gallery** (`src/gallery`),
-where visitors **upvote** (`src/votes`) and **copy it to use** (`src/adopt`).
+where visitors **copy it to use** (`src/adopt`).
 
 `src/` map (one responsibility each):
 - `routes/` — TanStack Start file-based routes: pages + API handlers
@@ -21,7 +21,7 @@ where visitors **upvote** (`src/votes`) and **copy it to use** (`src/adopt`).
 - `render/` — render pipeline: real E2B runner, fake runner (tests/no key), ANSI parsing, scenarios
 - `review/` — admin review queue and publish/reject decisions
 - `gallery/` — gallery list queries
-- `votes/` — upvoting · `adopt/` — copy/install a config
+- `votes/` — retained legacy voting code · `adopt/` — copy/install a config
 - `og/` — Open Graph card images · `legal/` — terms page
 - `db/` — Drizzle schema + migration client · `lib/` — shared utils (`env.ts`)
 - `ui/` — closed design-system components · `styles/` — tokens (`app.css`)

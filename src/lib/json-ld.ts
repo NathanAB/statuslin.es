@@ -53,7 +53,7 @@ export function homeJsonLd(
 /**
  * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the
  * generated copy when present. The SoftwareSourceCode carries the GEO signals AI answer
- * engines weight: `dateModified` (freshness), an upvote `interactionStatistic` (a real
+ * engines weight: `dateModified` (freshness), a copy `interactionStatistic` (a real
  * stat), `runtimePlatform`, and facet `keywords`.
  */
 export function configJsonLd(
@@ -65,7 +65,7 @@ export function configJsonLd(
     interpreter: string
     authorName: string | null
     license: string | null
-    upvoteCount: number
+    copyCount: number
     keywords: string[]
     updatedAt: string | null
     generatedContent: GeneratedContent | null
@@ -86,8 +86,8 @@ export function configJsonLd(
       ...(config.keywords.length > 0 ? { keywords: config.keywords.join(', ') } : {}),
       interactionStatistic: {
         '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/LikeAction',
-        userInteractionCount: config.upvoteCount,
+        interactionType: 'https://schema.org/InstallAction',
+        userInteractionCount: config.copyCount,
       },
       ...(config.authorName ? { author: { '@type': 'Person', name: config.authorName } } : {}),
     },

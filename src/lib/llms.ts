@@ -8,8 +8,8 @@
 export function buildLlmsTxt(base: string, facets: Array<{ slug: string; label: string }>): string {
   const blocks = [
     '# statuslin.es',
-    '> Community gallery of Claude Code status lines: browse real, sandbox-rendered previews, upvote the best, and copy one into your own setup.',
-    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. Every submission is a shell script; the site runs it in a sandbox and shows the actual rendered terminal output, plus community upvotes and a one-command copy to adopt it. It is a curation-first gallery, not documentation.",
+    '> Community gallery of Claude Code status lines: browse real, sandbox-rendered previews and copy one into your own setup.',
+    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. Every submission is a shell script; the site runs it in a sandbox and shows the actual rendered terminal output, plus its copy count and a one-command copy to adopt it. It is a curation-first gallery, not documentation.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -20,7 +20,7 @@ export function buildLlmsTxt(base: string, facets: Array<{ slug: string; label: 
 
 function corePageLinks(base: string): string[] {
   return [
-    `- [Gallery](${base}/): every published status line, sorted by newest and most upvoted`,
+    `- [Gallery](${base}/): every published status line, sorted by trending, newest, or most copied`,
     `- [Submit a status line](${base}/submit): add your own`,
     `- [Resources](${base}/resources): related Claude Code status line tools`,
   ]

@@ -1,10 +1,11 @@
 import { PGlite } from '@electric-sql/pglite'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getPublishedConfigs } from '@/gallery/queries'
+import { trendingScore } from '@/gallery/trending'
 import { storePreviews } from '@/render/store'
 
 let client: PGlite
@@ -135,26 +136,29 @@ describe('getPublishedConfigs sorting', () => {
   const msPerHour = 60 * 60 * 1000
   const msPerDay = 24 * msPerHour
 
-  it('top: returns cards ordered by upvoteCount descending', async () => {
+  it('top: returns cards ordered by copyCount descending', async () => {
     await seedPublished({
       slug: 'sort-top-5',
       title: 'Top5',
       sha: '1'.repeat(64),
-      upvoteCount: 5,
+      upvoteCount: 1,
+      copyCount: 5,
       createdAt: new Date(BASE.getTime() - msPerDay),
     })
     await seedPublished({
       slug: 'sort-top-1',
       title: 'Top1',
       sha: '2'.repeat(64),
-      upvoteCount: 1,
+      upvoteCount: 9,
+      copyCount: 1,
       createdAt: new Date(BASE.getTime() - 2 * msPerDay),
     })
     await seedPublished({
       slug: 'sort-top-3',
       title: 'Top3',
       sha: '3'.repeat(64),
-      upvoteCount: 3,
+      upvoteCount: 4,
+      copyCount: 3,
       createdAt: new Date(BASE.getTime() - 3 * msPerDay),
     })
 
@@ -163,7 +167,7 @@ describe('getPublishedConfigs sorting', () => {
     const relevant = cards.filter((c) =>
       ['sort-top-5', 'sort-top-1', 'sort-top-3'].includes(c.slug),
     )
-    const counts = relevant.map((c) => c.upvoteCount)
+    const counts = relevant.map((c) => c.copyCount)
     expect(counts[0]).toBe(5)
     expect(counts[1]).toBe(3)
     expect(counts[2]).toBe(1)
@@ -201,74 +205,73 @@ describe('getPublishedConfigs sorting', () => {
     expect(slugs.indexOf('sort-new-mid')).toBeLessThan(slugs.indexOf('sort-new-oldest'))
   })
 
-  it('trending: ranks by copies over time, not upvotes', async () => {
-    // SQL now() reflects the real wall clock, so anchor relative to actual Date.now().
-    // Same age, so age cancels out: the more-copied config wins despite fewer upvotes.
-    const sameAge = new Date(Date.now() - 1 * msPerHour)
-    await seedPublished({
-      slug: 'trend-copies',
-      title: 'Copies',
+  it('trending: uses copy-event age and ignores submission age and lifetime counts', async () => {
+    const oldSubmission = await seedPublished({
+      slug: 'trend-old-submission',
+      title: 'OldSubmission',
       sha: '7'.repeat(64),
-      copyCount: 100,
-      upvoteCount: 1,
-      createdAt: sameAge,
-    })
-    await seedPublished({
-      slug: 'trend-votes',
-      title: 'Votes',
-      sha: '8'.repeat(64),
       copyCount: 1,
-      upvoteCount: 100,
-      createdAt: sameAge,
+      createdAt: new Date(Date.now() - 365 * msPerDay),
     })
-    // Recency still applies to the copy score: a recent low-copy config beats an old high-copy one.
-    await seedPublished({
-      slug: 'trend-old-copies',
-      title: 'OldCopies',
-      sha: '9'.repeat(64),
+    const newSubmission = await seedPublished({
+      slug: 'trend-new-submission',
+      title: 'NewSubmission',
+      sha: '8'.repeat(64),
       copyCount: 100,
-      createdAt: new Date(Date.now() - 30 * msPerDay),
+      createdAt: new Date(),
     })
-    await seedPublished({
-      slug: 'trend-new-fewcopies',
-      title: 'NewFewCopies',
+    await db.insert(schema.copyEvents).values([
+      {
+        configId: oldSubmission.id,
+        ipHash: 'recent-copy',
+        createdAt: new Date(Date.now() - msPerHour),
+      },
+      {
+        configId: newSubmission.id,
+        ipHash: 'old-copy',
+        createdAt: new Date(Date.now() - 14 * msPerDay),
+      },
+    ])
+
+    const order = (await getPublishedConfigs(db, 'trending')).map((c) => c.slug)
+    expect(order).toContain('trend-old-submission')
+    expect(order).toContain('trend-new-submission')
+    expect(order.indexOf('trend-old-submission')).toBeLessThan(
+      order.indexOf('trend-new-submission'),
+    )
+  })
+
+  it('trending: gives a seven-day-old copy half the weight of a new copy', async () => {
+    const recent = await seedPublished({
+      slug: 'trend-half-life-recent',
+      title: 'HalfLifeRecent',
+      sha: '9'.repeat(64),
+    })
+    const weekOld = await seedPublished({
+      slug: 'trend-half-life-week-old',
+      title: 'HalfLifeWeekOld',
       sha: 'cc'.repeat(32),
-      copyCount: 5,
-      createdAt: new Date(Date.now() - 1 * msPerHour),
     })
+    const now = Date.now()
+    await db.insert(schema.copyEvents).values([
+      { configId: recent.id, ipHash: 'half-life-recent', createdAt: new Date(now) },
+      {
+        configId: weekOld.id,
+        ipHash: 'half-life-week-old',
+        createdAt: new Date(now - 7 * msPerDay),
+      },
+    ])
 
-    const order = (await getPublishedConfigs(db, 'trending')).map((c) => c.slug)
-    // Copies beat upvotes at equal age.
-    expect(order.indexOf('trend-copies')).toBeLessThan(order.indexOf('trend-votes'))
-    // Recency still applies to the copy score.
-    expect(order.indexOf('trend-new-fewcopies')).toBeLessThan(order.indexOf('trend-old-copies'))
+    const scores = await db
+      .select({ id: schema.configs.id, score: trendingScore(schema.configs.id) })
+      .from(schema.configs)
+      .where(inArray(schema.configs.id, [recent.id, weekOld.id]))
+    const scoreById = new Map(scores.map((row) => [row.id, Number(row.score)]))
+
+    expect(scoreById.get(weekOld.id)! / scoreById.get(recent.id)!).toBeCloseTo(0.5, 2)
   })
 
-  it('trending: zero-copy ties break newest-first (the default view must be deterministic)', async () => {
-    await seedPublished({
-      slug: 'trend-tie-old',
-      title: 'TieOld',
-      sha: 'da'.repeat(32),
-      copyCount: 0,
-      createdAt: new Date(Date.now() - 3 * msPerHour),
-    })
-    await seedPublished({
-      slug: 'trend-tie-new',
-      title: 'TieNew',
-      sha: 'db'.repeat(32),
-      copyCount: 0,
-      createdAt: new Date(Date.now() - 1 * msPerHour),
-    })
-
-    const order = (await getPublishedConfigs(db, 'trending')).map((c) => c.slug)
-    // Both must be on page 1: indexOf returning -1 would make the comparison pass vacuously,
-    // which is exactly how a broken tiebreak would slip through.
-    expect(order).toContain('trend-tie-new')
-    expect(order).toContain('trend-tie-old')
-    expect(order.indexOf('trend-tie-new')).toBeLessThan(order.indexOf('trend-tie-old'))
-  })
-
-  it('upvoteCount is populated on GalleryCard', async () => {
+  it('does not expose upvoteCount on GalleryCard', async () => {
     await seedPublished({
       slug: 'count-check',
       title: 'CountCheck',
@@ -276,12 +279,13 @@ describe('getPublishedConfigs sorting', () => {
       // (this was '9'.repeat(64), shared with trend-old-copies) silently wipes its preview.
       sha: 'f'.repeat(64),
       upvoteCount: 7,
+      copyCount: 1000,
     })
 
     const cards = await getPublishedConfigs(db, 'top')
     const card = cards.find((c) => c.slug === 'count-check')
     expect(card).toBeDefined()
-    expect(card?.upvoteCount).toBe(7)
+    expect(card).not.toHaveProperty('upvoteCount')
   })
 
   it('author and copyCount are populated on GalleryCard', async () => {

@@ -12,11 +12,14 @@ describe('buildLlmsTxt', () => {
     const lines = txt.split('\n')
     expect(lines[0]).toBe('# statuslin.es')
     expect(txt).toMatch(/\n> .+/) // a blockquote summary line
+    expect(txt).toMatch(/cop(?:y|ied|ies)/i)
+    expect(txt).not.toMatch(/upvote/i)
   })
 
   it('links the core pages with absolute per-environment URLs', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     expect(txt).toContain('(https://statuslin.es/)') // gallery home
+    expect(txt).toMatch(/sorted by trending, newest, or most copied/i)
     expect(txt).toContain('(https://statuslin.es/submit)')
     expect(txt).toContain('(https://statuslin.es/resources)')
   })

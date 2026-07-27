@@ -6,7 +6,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigBySlug } from '@/gallery/queries'
 import { storePreviews } from '@/render/store'
-import { toggleVote } from '@/votes/vote'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -14,38 +13,19 @@ beforeAll(async () => {
   client = new PGlite()
   db = drizzle({ client, schema })
   await migrate(db, { migrationsFolder: './drizzle' })
-  // Seed users required by the votes FK (user_id → user.id) and the
-  // configs author FK (author_id → user.id, the 'u1' author below).
+  // Seed the user required by the configs author FK.
   await db
     .insert(schema.user)
-    .values([
-      {
-        id: 'u1',
-        name: 'Author One',
-        username: 'authorone',
-        email: 'author1@test.com',
-        image: 'https://example.com/avatar.png',
-        emailVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'user-voted',
-        name: 'User Voted',
-        email: 'uservoted@test.com',
-        emailVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'user-who-voted',
-        name: 'User Who Voted',
-        email: 'userwhovoted@test.com',
-        emailVerified: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ])
+    .values({
+      id: 'u1',
+      name: 'Author One',
+      username: 'authorone',
+      email: 'author1@test.com',
+      image: 'https://example.com/avatar.png',
+      emailVerified: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
     .onConflictDoNothing()
 })
 afterAll(async () => {
@@ -133,14 +113,18 @@ describe('getConfigBySlug', () => {
     expect(detail).toBeNull()
   })
 
-  it('returns upvoteCount on ConfigDetail', async () => {
+  it('returns copyCount without public vote state on ConfigDetail', async () => {
     const cfg = await seed('published', 'detail-counts', 'e'.repeat(64))
-    // Cast upvoteCount to 4 directly.
-    await db.update(schema.configs).set({ upvoteCount: 4 }).where(eq(schema.configs.id, cfg.id))
+    await db
+      .update(schema.configs)
+      .set({ upvoteCount: 4, copyCount: 6 })
+      .where(eq(schema.configs.id, cfg.id))
 
     const detail = await getConfigBySlug(db, 'detail-counts')
     expect(detail).not.toBeNull()
-    expect(detail?.upvoteCount).toBe(4)
+    expect(detail?.copyCount).toBe(6)
+    expect(detail).not.toHaveProperty('upvoteCount')
+    expect(detail).not.toHaveProperty('hasVoted')
   })
 
   it('returns author and copyCount on ConfigDetail', async () => {
@@ -155,35 +139,6 @@ describe('getConfigBySlug', () => {
       username: 'authorone',
       image: 'https://example.com/avatar.png',
     })
-  })
-
-  it('hasVoted is false when no userId is provided', async () => {
-    await seed('published', 'detail-hasvoted-no-user', 'f'.repeat(64))
-    const detail = await getConfigBySlug(db, 'detail-hasvoted-no-user')
-    expect(detail?.hasVoted).toBe(false)
-  })
-
-  it('hasVoted is false for a userId that has not voted', async () => {
-    await seed('published', 'detail-novote', '0'.repeat(64))
-    const detail = await getConfigBySlug(db, 'detail-novote', 'user-no-vote')
-    expect(detail?.hasVoted).toBe(false)
-  })
-
-  it('hasVoted is true for a userId that has voted', async () => {
-    const cfg = await seed('published', 'detail-voted', 'a1'.repeat(32))
-    await toggleVote(db, 'user-voted', cfg.id)
-
-    const detail = await getConfigBySlug(db, 'detail-voted', 'user-voted')
-    expect(detail?.hasVoted).toBe(true)
-  })
-
-  it('hasVoted is false for a different userId that has not voted', async () => {
-    const cfg = await seed('published', 'detail-voted-other', 'b2'.repeat(32))
-    await toggleVote(db, 'user-who-voted', cfg.id)
-
-    // A different user should see hasVoted = false.
-    const detail = await getConfigBySlug(db, 'detail-voted-other', 'user-who-did-not-vote')
-    expect(detail?.hasVoted).toBe(false)
   })
 
   it('returns the stored sourceHtml when the version has it', async () => {

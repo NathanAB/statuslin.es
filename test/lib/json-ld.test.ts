@@ -63,7 +63,7 @@ describe('configJsonLd', () => {
     interpreter: 'bash',
     authorName: 'LindseyB',
     license: null as string | null,
-    upvoteCount: 12,
+    copyCount: 12,
     keywords: ['Git', 'Token usage'],
     updatedAt: '2026-07-06',
     generatedContent: {
@@ -119,14 +119,14 @@ describe('configJsonLd', () => {
 
   // --- GEO enrichment: freshness, statistics, entity clarity, extractable Q&A ---
 
-  it('enriches SoftwareSourceCode with freshness, upvote stat, platform, and keywords', () => {
+  it('enriches SoftwareSourceCode with freshness, install stat, platform, and keywords', () => {
     const [code] = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
     expect(code).toMatchObject({
       dateModified: '2026-07-06',
       runtimePlatform: 'Claude Code',
       interactionStatistic: {
         '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/LikeAction',
+        interactionType: 'https://schema.org/InstallAction',
         userInteractionCount: 12,
       },
     })

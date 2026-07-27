@@ -52,7 +52,7 @@ export async function getAvailableTags(db: Db): Promise<string[]> {
   return ALL_TAG_SLUGS.filter((slug) => (stats.get(slug)?.count ?? 0) >= 1)
 }
 
-/** A facet page's cards: published matches, most-upvoted first, newest as the tiebreak. */
+/** A facet page's cards: published matches, most-copied first, newest as the tiebreak. */
 export async function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]> {
   const rows = await db
     .select({ config: configs, version: configVersions, author: user })
@@ -65,7 +65,7 @@ export async function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]
         sql`${configs.allTags} @> ${JSON.stringify([facet.slug])}::jsonb`,
       ),
     )
-    .orderBy(desc(configs.upvoteCount), desc(configs.createdAt))
+    .orderBy(desc(configs.copyCount), desc(configs.createdAt))
   const cardPreviews = await selectCardPreviews(
     db,
     rows.map((r) => r.version.contentSha256),

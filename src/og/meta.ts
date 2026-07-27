@@ -7,12 +7,15 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     {
       name: 'description',
       content:
-        'A community gallery of Claude Code status lines — browse rendered previews, upvote, and copy one to use.',
+        'A community gallery of Claude Code status lines — browse rendered previews and copy one to use.',
     },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: base },
     { property: 'og:title', content: 'statuslin.es' },
-    { property: 'og:description', content: 'A community gallery of Claude Code status lines.' },
+    {
+      property: 'og:description',
+      content: 'Browse rendered Claude Code status lines and copy one to use.',
+    },
     { property: 'og:image', content: `${base}/og/home.png` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },

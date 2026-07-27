@@ -3,6 +3,7 @@ import { ConfigBadges } from '@/gallery/config-badges'
 import type { GalleryCard, GallerySort } from '@/gallery/queries'
 import { AuthorChip } from '@/ui/author-chip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
+import { CopyCount } from '@/ui/copy-count'
 import { Row, Stack } from '@/ui/layout'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { StretchedLink } from '@/ui/stretched-link'
@@ -53,9 +54,7 @@ export function GalleryConfigCard({
                 {card.title}
               </StretchedLink>
             </CardTitle>
-            <Text muted size="sm">
-              ⇧ {card.upvoteCount}
-            </Text>
+            <CopyCount count={card.copyCount} />
           </Row>
           <ConfigBadges tags={card.tags} networkHosts={card.networkHosts} align="end" />
         </Row>

@@ -39,6 +39,7 @@ async function seedPublished(opts: {
   title: string
   sha: string
   upvoteCount?: number
+  copyCount?: number
 }) {
   const cfgRows = await db
     .insert(schema.configs)
@@ -50,6 +51,7 @@ async function seedPublished(opts: {
       interpreter: 'bash',
       status: 'published',
       upvoteCount: opts.upvoteCount ?? 0,
+      copyCount: opts.copyCount ?? 0,
     })
     .returning()
   const cfg = cfgRows[0]!
@@ -85,10 +87,22 @@ async function seedPublished(opts: {
 }
 
 describe('getRelatedConfigs', () => {
-  it('returns other published configs top-voted first, excluding the viewed slug', async () => {
+  it('returns other published configs by lifetime copies, excluding the viewed slug', async () => {
     await seedPublished({ slug: 'viewed', title: 'Viewed', sha: 'a'.repeat(64), upvoteCount: 99 })
-    await seedPublished({ slug: 'popular', title: 'Popular', sha: 'b'.repeat(64), upvoteCount: 5 })
-    await seedPublished({ slug: 'quiet', title: 'Quiet', sha: 'c'.repeat(64), upvoteCount: 1 })
+    await seedPublished({
+      slug: 'popular',
+      title: 'Popular',
+      sha: 'b'.repeat(64),
+      upvoteCount: 1,
+      copyCount: 5,
+    })
+    await seedPublished({
+      slug: 'quiet',
+      title: 'Quiet',
+      sha: 'c'.repeat(64),
+      upvoteCount: 9,
+      copyCount: 1,
+    })
     await db.insert(schema.configs).values({
       slug: 'draft-one',
       title: 'Draft',
@@ -104,6 +118,8 @@ describe('getRelatedConfigs', () => {
     expect(slugs).not.toContain('draft-one')
     expect(slugs.indexOf('popular')).toBeLessThan(slugs.indexOf('quiet'))
     expect(related[0]?.preview?.[0]?.text).toBe('Popular')
+    expect(related[0]?.copyCount).toBe(5)
+    expect(related[0]).not.toHaveProperty('upvoteCount')
   })
 
   it('caps results at the limit', async () => {

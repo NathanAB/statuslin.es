@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
 import { buildClaudePrompt } from '@/adopt/install'
+import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 
 const recordCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/adopt/functions', () => ({ recordCopyFn }))
@@ -31,6 +32,38 @@ const props = {
 const promptButton = () =>
   screen.getByRole('button', { name: 'Copy install prompt — My Statusline' })
 
+function SharedCopyActions() {
+  const controller = useRecordedCopy(props.configId, props.copyCount)
+  return (
+    <>
+      <AdoptPrompt
+        source={props.source}
+        interpreter={props.interpreter}
+        title={props.title}
+        controller={controller}
+      />
+      <CopyScriptButton source={props.source} controller={controller} />
+    </>
+  )
+}
+
+function PromptHarness() {
+  const controller = useRecordedCopy(props.configId, props.copyCount)
+  return (
+    <AdoptPrompt
+      source={props.source}
+      interpreter={props.interpreter}
+      title={props.title}
+      controller={controller}
+    />
+  )
+}
+
+function ScriptHarness() {
+  const controller = useRecordedCopy(props.configId, props.copyCount)
+  return <CopyScriptButton source={props.source} controller={controller} />
+}
+
 beforeEach(() => {
   writeText.mockReset().mockResolvedValue(undefined)
   recordCopyFn.mockReset().mockResolvedValue(6)
@@ -47,8 +80,27 @@ afterEach(() => {
 })
 
 describe('AdoptPrompt', () => {
+  it('shares one reconciled count across both copy actions', async () => {
+    let resolveScriptCopy!: (count: number) => void
+    const scriptCopy = new Promise<number>((resolve) => {
+      resolveScriptCopy = resolve
+    })
+    recordCopyFn.mockResolvedValueOnce(6).mockReturnValueOnce(scriptCopy)
+    render(<SharedCopyActions />)
+
+    fireEvent.click(promptButton())
+    await waitFor(() => expect(screen.getByText('6 copies')).toBeTruthy())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
+    await waitFor(() => expect(recordCopyFn).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.getByText('7 copies')).toBeTruthy())
+
+    resolveScriptCopy(6)
+    await waitFor(() => expect(screen.getByText('6 copies')).toBeTruthy())
+  })
+
   it('renders a coral lg "Copy install prompt" button', () => {
-    render(<AdoptPrompt {...props} />)
+    render(<PromptHarness />)
     expect(screen.getByText('Copy install prompt')).toBeTruthy()
     // Coral (default/primary variant) at the large size.
     expect(promptButton().className).toContain('bg-primary')
@@ -56,7 +108,7 @@ describe('AdoptPrompt', () => {
   })
 
   it('copies the built Claude prompt and records the copy', async () => {
-    render(<AdoptPrompt {...props} />)
+    render(<PromptHarness />)
 
     fireEvent.click(promptButton())
 
@@ -68,7 +120,7 @@ describe('AdoptPrompt', () => {
 
   it('does not show "Copied!" or record when the clipboard rejects', async () => {
     writeText.mockRejectedValue(new Error('denied'))
-    render(<AdoptPrompt {...props} />)
+    render(<PromptHarness />)
 
     fireEvent.click(promptButton())
 
@@ -79,7 +131,7 @@ describe('AdoptPrompt', () => {
   })
 
   it('fires a success toast on prompt copy', async () => {
-    render(<AdoptPrompt {...props} />)
+    render(<PromptHarness />)
 
     fireEvent.click(promptButton())
 
@@ -92,7 +144,7 @@ describe('AdoptPrompt', () => {
 
   it('does NOT toast when the clipboard rejects', async () => {
     writeText.mockRejectedValue(new Error('denied'))
-    render(<AdoptPrompt {...props} />)
+    render(<PromptHarness />)
 
     fireEvent.click(promptButton())
 
@@ -103,7 +155,7 @@ describe('AdoptPrompt', () => {
 
 describe('CopyScriptButton', () => {
   it('copies the raw source and records the copy', async () => {
-    render(<CopyScriptButton source={props.source} configId={props.configId} />)
+    render(<ScriptHarness />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
 
@@ -118,7 +170,7 @@ describe('CopyScriptButton', () => {
   })
 
   it('stays the outline variant during the "Copied!" swap (no variant flash)', async () => {
-    render(<CopyScriptButton source={props.source} configId={props.configId} />)
+    render(<ScriptHarness />)
     const button = screen.getByRole('button')
     // Outline at rest: background-only, no coral fill.
     expect(button.className).toContain('bg-background')
@@ -134,7 +186,7 @@ describe('CopyScriptButton', () => {
 
   it('does not show "Copied!" or record when the clipboard rejects', async () => {
     writeText.mockRejectedValue(new Error('denied'))
-    render(<CopyScriptButton source={props.source} configId={props.configId} />)
+    render(<ScriptHarness />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
 

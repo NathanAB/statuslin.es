@@ -61,12 +61,9 @@ export const configs = pgTable(
     // delete-user cascade and the submit rate-limit query (WHERE author_id ...
     // created_at) use an index instead of a seq scan.
     index('configs_author_created_idx').on(t.authorId, t.createdAt),
-    // The gallery's hot query is `WHERE status='published' ORDER BY <sort> LIMIT 10`. These two
-    // composites let Postgres satisfy the filter + sort + limit from the index instead of
-    // scanning and sorting every published row: `new` uses (status, created_at); `top` uses
-    // (status, upvote_count) for its leading sort key, with a top-N sort on the created_at
-    // tiebreak the query appends. The `trending` sort ranks by a now()-based decay expression
-    // that no btree can cover, so it intentionally has no index.
+    // The gallery's `new` sort uses (status, created_at). Top now orders by copy_count and
+    // Trending aggregates time-decayed copy events; the gallery is small enough that neither
+    // needs a new index yet. Keep the historical upvote index alongside the retained vote data.
     index('configs_status_created_idx').on(t.status, t.createdAt),
     index('configs_status_upvotes_idx').on(t.status, t.upvoteCount),
     // Supports the gallery tag filter's `all_tags @> '[...]'` containment check.
