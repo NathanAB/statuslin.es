@@ -7,8 +7,21 @@ import { useMounted } from '@/lib/use-mounted'
 // local time in an effect (which runs only in the browser, after hydration has already matched).
 const UTC_FORMAT: Intl.DateTimeFormatOptions = {
   timeZone: 'UTC',
-  dateStyle: 'medium',
-  timeStyle: 'short',
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+}
+
+function utcLabel(date: Date): string {
+  const values = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', UTC_FORMAT)
+      .formatToParts(date)
+      .map((part) => [part.type, part.value]),
+  )
+  return `${values.month} ${values.day}, ${values.year}, ${values.hour}:${values.minute} ${values.dayPeriod} UTC`
 }
 
 /** A timestamp that's safe to server-render: a pinned `… UTC` string until mounted, the viewer's
@@ -16,6 +29,6 @@ const UTC_FORMAT: Intl.DateTimeFormatOptions = {
 export function LocalTime({ value }: { value: Date | string }) {
   const mounted = useMounted()
   const date = value instanceof Date ? value : new Date(value)
-  const text = mounted ? date.toLocaleString() : `${date.toLocaleString('en-US', UTC_FORMAT)} UTC`
+  const text = mounted ? date.toLocaleString() : utcLabel(date)
   return <time dateTime={date.toISOString()}>{text}</time>
 }

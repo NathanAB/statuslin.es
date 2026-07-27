@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs } from '@/db/schema'
 import { tryHighlightSource } from '@/lib/highlight'
@@ -8,7 +8,10 @@ import { INTERPRETERS, type Interpreter } from '@/render/types'
 import { detectForeignCredentialAccess, readsClaudeToken } from './credential-access'
 import { validateNetworkHosts } from './network-hosts'
 import { detectObfuscation } from './obfuscation'
+import { createResubmissionVersion, type PreparedResubmission } from './resubmit'
 import { slugify } from './slug'
+
+export { getResubmissionDraft, type ResubmissionDraft } from './resubmit'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -73,7 +76,11 @@ export interface SubmitResult {
   slug: string
 }
 
-export async function submitConfig(db: Db, input: SubmitInput): Promise<SubmitResult> {
+export async function submitConfig(
+  db: Db,
+  input: SubmitInput,
+  options: { rejectedVersionId?: string } = {},
+): Promise<SubmitResult> {
   const obfuscationReasons = detectObfuscation(input.source)
   if (obfuscationReasons.length > 0) {
     throw new HttpError(
@@ -95,8 +102,11 @@ export async function submitConfig(db: Db, input: SubmitInput): Promise<SubmitRe
   const windowStart = new Date(Date.now() - RATE_WINDOW_MS).toISOString()
   const countResult = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(configs)
-    .where(sql`${configs.authorId} = ${input.authorId} AND ${configs.createdAt} > ${windowStart}`)
+    .from(configVersions)
+    .innerJoin(configs, eq(configs.id, configVersions.configId))
+    .where(
+      sql`${configs.authorId} = ${input.authorId} AND ${configVersions.createdAt} > ${windowStart}`,
+    )
   const recentCount = countResult[0]?.count ?? 0
   if (recentCount >= SUBMISSION_RATE_LIMIT) {
     throw new HttpError(429, 'Rate limit: too many submissions, try again later')
@@ -129,6 +139,18 @@ export async function submitConfig(db: Db, input: SubmitInput): Promise<SubmitRe
   // Highlight once now (best-effort) so the detail page reads stored HTML instead of running Shiki
   // on every render. The source is immutable for this version, so the stored HTML never goes stale.
   const sourceHtml = await tryHighlightSource(input.source, input.interpreter)
+  if (options.rejectedVersionId) {
+    const prepared: PreparedResubmission = {
+      ...input,
+      networkHosts,
+      contentSha256,
+      sourceHtml,
+      readsClaudeToken: readsToken,
+      license: input.license ?? null,
+      sourceUrl: input.sourceUrl ?? null,
+    }
+    return createResubmissionVersion(db, options.rejectedVersionId, prepared)
+  }
   return db.transaction(async (tx) => {
     const cfgRows = await tx
       .insert(configs)

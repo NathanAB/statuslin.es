@@ -12,9 +12,8 @@ const ISO = '2026-06-30T01:06:30.934Z'
 describe('LocalTime', () => {
   it('server-renders a fixed UTC string so SSR and client hydration agree', () => {
     const html = renderToString(<LocalTime value={ISO} />)
-    expect(html).toContain('Jun 30, 2026')
-    expect(html).toContain('1:06')
-    expect(html).toContain('UTC')
+    expect(html).toContain('Jun 30, 2026, 1:06 AM UTC')
+    expect(html).not.toContain(' at ')
   })
 
   it('shows the same fixed UTC string for a Date and its ISO string (no ambient-clock input)', () => {

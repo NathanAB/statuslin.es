@@ -108,6 +108,134 @@ describe('getDashboardRows', () => {
     expect(findByVersion(await getDashboardRows(db), versionId)).toBeUndefined()
   })
 
+  it('includes rejected versions whose author still needs contact, but not sent ones', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u2',
+      title: 'Contact needed',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({
+        status: 'rejected',
+        rejectionReason: 'Remove the updater.',
+        rejectionEmailStatus: 'failed',
+      })
+      .where(eq(schema.configVersions.id, versionId))
+
+    const row = findByVersion(await getDashboardRows(db), versionId)
+    expect(row?.version).toMatchObject({
+      status: 'rejected',
+      rejectionReason: 'Remove the updater.',
+      rejectionEmailStatus: 'failed',
+    })
+
+    const backlogConfigs = await db
+      .insert(schema.configs)
+      .values(
+        Array.from({ length: 51 }, (_, index) => ({
+          slug: `backlog-${versionId}-${index}`,
+          title: `Backlog ${index}`,
+          description: '',
+          authorId: 'u1',
+          interpreter: 'bash',
+          status: 'draft',
+        })),
+      )
+      .returning()
+    for (const [index, config] of backlogConfigs.entries()) {
+      const [version] = await db
+        .insert(schema.configVersions)
+        .values({
+          configId: config.id,
+          versionNumber: 1,
+          source: 'echo pending',
+          interpreter: 'bash',
+          contentSha256: `backlog-${versionId}-${index}`,
+          status: 'pending',
+        })
+        .returning()
+      await db.insert(schema.renderJobs).values({ configVersionId: version!.id, status: 'queued' })
+    }
+    expect(findByVersion(await getDashboardRows(db), versionId)).toBeDefined()
+
+    await db
+      .update(schema.configVersions)
+      .set({ rejectionEmailStatus: 'sent' })
+      .where(eq(schema.configVersions.id, versionId))
+    expect(findByVersion(await getDashboardRows(db), versionId)).toBeUndefined()
+  })
+
+  it('includes approved versions whose author still needs contact, but not sent ones', async () => {
+    await db.insert(schema.user).values({
+      id: 'approval-contact-author',
+      name: 'Approval contact author',
+      email: 'approval-contact@test.com',
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    const { versionId } = await submitConfig(db, {
+      authorId: 'approval-contact-author',
+      title: 'Approval contact needed',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({ status: 'approved', approvalEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, versionId))
+
+    const row = findByVersion(await getDashboardRows(db), versionId)
+    expect(row?.version).toMatchObject({
+      status: 'approved',
+      approvalEmailStatus: 'failed',
+    })
+
+    await db
+      .update(schema.configVersions)
+      .set({ approvalEmailStatus: 'sent' })
+      .where(eq(schema.configVersions.id, versionId))
+    expect(findByVersion(await getDashboardRows(db), versionId)).toBeUndefined()
+  })
+
+  it('keeps ambiguous decision deliveries visible for manual reconciliation', async () => {
+    await db.delete(schema.configs)
+    const rejection = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Ambiguous rejection',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({
+        status: 'rejected',
+        rejectionReason: 'Change it.',
+        rejectionEmailStatus: 'ambiguous',
+      })
+      .where(eq(schema.configVersions.id, rejection.versionId))
+    const approval = await submitConfig(db, {
+      authorId: 'u2',
+      title: 'Ambiguous approval',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({ status: 'approved', approvalEmailStatus: 'ambiguous' })
+      .where(eq(schema.configVersions.id, approval.versionId))
+
+    const rows = await getDashboardRows(db)
+    expect(findByVersion(rows, rejection.versionId)?.version.rejectionEmailStatus).toBe('ambiguous')
+    expect(findByVersion(rows, approval.versionId)?.version.approvalEmailStatus).toBe('ambiguous')
+  })
+
   it('returns one row per version even if a second render job exists', async () => {
     const { versionId } = await submitConfig(db, {
       authorId: 'u2',
@@ -192,5 +320,66 @@ describe('getMySubmissionRows', () => {
     const row = (await getMySubmissionRows(db, 'me1')).find((r) => r.config.id === configId)
     expect(row?.version.versionNumber).toBe(2)
     expect(row?.version.source).toBe('v2')
+  })
+
+  it('returns the rejection reason without serializing admin-only delivery state', async () => {
+    await db.insert(schema.user).values({
+      id: 'me-rejected',
+      name: 'Rejected author',
+      email: 'me-rejected@test.com',
+      emailVerified: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    const { versionId } = await submitConfig(db, {
+      authorId: 'me-rejected',
+      title: 'Private delivery state',
+      description: '',
+      interpreter: 'bash',
+      source: 'echo rejected',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({
+        status: 'rejected',
+        rejectionReason: 'Remove the updater.',
+        rejectionEmailStatus: 'failed',
+      })
+      .where(eq(schema.configVersions.id, versionId))
+
+    const row = (await getMySubmissionRows(db, 'me-rejected')).find(
+      (candidate) => candidate.version.id === versionId,
+    )
+    expect(row?.version.rejectionReason).toBe('Remove the updater.')
+    expect(row?.version).not.toHaveProperty('rejectionEmailStatus')
+    expect(row?.version).not.toHaveProperty('approvalEmailStatus')
+  })
+
+  it('does not serialize approval delivery state to the author', async () => {
+    await db.insert(schema.user).values({
+      id: 'me-approved',
+      name: 'Approved author',
+      email: 'me-approved@test.com',
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    const { versionId } = await submitConfig(db, {
+      authorId: 'me-approved',
+      title: 'Private approval delivery',
+      description: '',
+      interpreter: 'bash',
+      source: 'echo approved',
+    })
+    await db
+      .update(schema.configVersions)
+      .set({ status: 'approved', approvalEmailStatus: 'failed' })
+      .where(eq(schema.configVersions.id, versionId))
+
+    const row = (await getMySubmissionRows(db, 'me-approved')).find(
+      (candidate) => candidate.version.id === versionId,
+    )
+    expect(row?.version.status).toBe('approved')
+    expect(row?.version).not.toHaveProperty('approvalEmailStatus')
   })
 })

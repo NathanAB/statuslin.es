@@ -53,6 +53,7 @@ const buttonVariants = cva(
 // no blanket `...rest` onto the DOM — see docs/frontend-guidelines.md (closed src/ui).
 // `asChild` lets Button wrap a Link; Slot merges the child's own props/children.
 interface ButtonProps extends VariantProps<typeof buttonVariants> {
+  id?: string
   type?: 'button' | 'submit' | 'reset'
   onClick?: React.MouseEventHandler<HTMLButtonElement>
   disabled?: boolean

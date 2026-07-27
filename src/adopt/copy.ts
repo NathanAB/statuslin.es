@@ -1,11 +1,10 @@
 import { and, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, copyEvents } from '@/db/schema'
+import { isUuid } from '@/lib/uuid'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Count a copy of a published config, deduped per client: copyCount goes up at most once per
@@ -16,7 +15,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * was no trustworthy client IP: return the current count without counting or recording anything.
  */
 export async function recordCopy(db: Db, configId: string, ipHash: string | null): Promise<number> {
-  if (!UUID_RE.test(configId)) return 0
+  if (!isUuid(configId)) return 0
   return db.transaction(async (tx) => {
     // Must exist and be published before we count or record anything.
     const [cfg] = await tx

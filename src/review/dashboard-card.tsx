@@ -2,6 +2,7 @@ import { useRouter } from '@tanstack/react-router'
 import { type ReactNode, useState } from 'react'
 import { toast } from 'sonner'
 import { useMounted } from '@/lib/use-mounted'
+import { ApprovalDetails } from '@/review/dashboard-approval-details'
 import {
   type BadgeVariant,
   badgeFor,
@@ -12,18 +13,14 @@ import {
   SubmissionDetails,
   titleFor,
 } from '@/review/dashboard-card-parts'
-
-import {
-  approveVersionFn,
-  rejectVersionFn,
-  requeueRenderJobFn,
-  runNetworkPreviewFn,
-  setReadsClaudeTokenFn,
-} from '@/review/decide'
+import { ReviewDecisionControls } from '@/review/dashboard-rejection-controls'
+import { RejectionDetails } from '@/review/dashboard-rejection-details'
+import { requeueRenderJobFn, runNetworkPreviewFn, setReadsClaudeTokenFn } from '@/review/decide'
 import type { DashboardRow } from '@/review/queue'
 
 export { StatusSummary } from '@/review/dashboard-card-parts'
 
+import { AnalyticsPrivate } from '@/ui/analytics-private'
 import { Badge } from '@/ui/badge'
 import { Row, Stack } from '@/ui/layout'
 import { MetaList } from '@/ui/meta-list'
@@ -102,7 +99,9 @@ function reviewView(
 }
 
 function cardView(row: DashboardRow, statusMode: 'render' | 'review'): CardView {
-  if (statusMode === 'review') return reviewView(row.version, row.renderJob)
+  if (statusMode === 'review' || row.version.status !== 'pending') {
+    return reviewView(row.version, row.renderJob)
+  }
   return { ...badgeFor(row.renderJob.status), headline: statusHeadline(row.renderJob) }
 }
 
@@ -129,6 +128,7 @@ export function SubmissionCard({
   const isReady = renderJob.status === 'done'
   const isHeld = renderJob.status === 'held'
   const [pending, setPending] = useState(false)
+  const isPendingReview = version.status === 'pending'
 
   async function run(action: () => Promise<unknown>, success: string, failure: string) {
     if (pending) return
@@ -144,18 +144,6 @@ export function SubmissionCard({
     }
   }
 
-  const approve = () =>
-    run(
-      () => approveVersionFn({ data: { versionId: version.id } }),
-      'Approved and published.',
-      'Could not approve.',
-    )
-  const reject = () =>
-    run(
-      () => rejectVersionFn({ data: { versionId: version.id } }),
-      'Rejected.',
-      'Could not reject.',
-    )
   const requeue = () =>
     run(
       () => requeueRenderJobFn({ data: { versionId: version.id } }),
@@ -193,6 +181,9 @@ export function SubmissionCard({
           <Notice tone="error">{renderJob.error}</Notice>
         ) : null}
 
+        <RejectionDetails version={version} slug={config.slug} showActions={showActions} />
+        <ApprovalDetails version={version} showActions={showActions} />
+
         <NetworkHostList hosts={version.networkHosts} />
 
         <MetaList items={metaItems(config, version, statusMode)} />
@@ -203,7 +194,7 @@ export function SubmissionCard({
           source={version.source}
         />
 
-        {showActions ? (
+        {showActions && isPendingReview ? (
           <Stack gap={3}>
             <CredentialFlagToggle
               htmlId={`reads-claude-token-${version.id}`}
@@ -211,15 +202,18 @@ export function SubmissionCard({
               pending={pending}
               onChange={setCredentialFlag}
             />
-            <CardActions
-              isHeld={isHeld}
-              isReady={isReady}
-              pending={pending}
-              onApprove={approve}
-              onReject={reject}
-              onRequeue={requeue}
-              onRunNetworkPreview={runNetworkPreview}
-            />
+            {isReady ? (
+              <AnalyticsPrivate>
+                <ReviewDecisionControls versionId={version.id} />
+              </AnalyticsPrivate>
+            ) : (
+              <CardActions
+                isHeld={isHeld}
+                pending={pending}
+                onRequeue={requeue}
+                onRunNetworkPreview={runNetworkPreview}
+              />
+            )}
           </Stack>
         ) : null}
       </Stack>

@@ -69,6 +69,8 @@ function row(over: {
       createdAt: new Date('2026-06-13T12:00:00Z'),
       networkHosts: over.networkHosts ?? [],
       readsClaudeToken: over.readsClaudeToken ?? false,
+      rejectionReason: null,
+      rejectionEmailStatus: null,
     },
     renderJob: {
       status: over.status,
