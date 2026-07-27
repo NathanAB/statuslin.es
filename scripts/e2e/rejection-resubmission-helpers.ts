@@ -100,6 +100,9 @@ export function describeBrowserCommand(session: string, args: string[]): string 
   if (command === 'cookies') {
     return [prefix, first].filter(Boolean).join(' ')
   }
+  if (command === 'get') {
+    return [prefix, second].filter(Boolean).join(' ')
+  }
   if (['click', 'fill', 'select', 'type'].includes(command ?? '')) {
     return [prefix, first].filter(Boolean).join(' ')
   }

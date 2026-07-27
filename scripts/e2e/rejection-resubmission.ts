@@ -222,7 +222,7 @@ async function main() {
     'eval',
     'document.querySelector(\'a[href^="/submit?resubmit="]\')?.click()',
   )
-  await browser(AUTHOR_SESSION, 'wait', '500')
+  await browser(AUTHOR_SESSION, 'wait', '#source')
   if ((await browser(AUTHOR_SESSION, 'get', 'value', '#source')).trim() !== originalSource) {
     throw new Error('resubmission source was not prefilled')
   }

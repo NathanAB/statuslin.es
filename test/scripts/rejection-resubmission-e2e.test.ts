@@ -50,6 +50,9 @@ better-auth.session_token=token.signature==
     expect(describeBrowserCommand('author', ['fill', '#source', 'secret script source'])).toBe(
       'author browser: fill #source',
     )
+    expect(describeBrowserCommand('author', ['get', 'value', '#source'])).toBe(
+      'author browser: get #source',
+    )
     expect(
       describeBrowserCommand('author', [
         'cookies',
