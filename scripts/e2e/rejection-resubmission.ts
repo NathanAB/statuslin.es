@@ -7,14 +7,24 @@ import { configs, configVersions, renderJobs } from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
 import { processNextRenderJob } from '@/submit/worker'
 import {
+  assertAllowedE2ETarget,
+  assertDisposableUserCleanup,
   assertLinkedHistory,
-  assertPublishedAfterApprovalFailure,
+  assertPublishedAfterApprovalDelivery,
   browserConsoleErrors,
+  browserCookieCommand,
+  commandFailureMessage,
+  describeBrowserCommand,
+  isTerminalDecisionEmailStatus,
   parseSessionCookie,
+  renderStrategy,
+  runDisposableUserCleanup,
   type VersionHistoryRow,
 } from './rejection-resubmission-helpers'
 
 const BASE = process.env.BETTER_AUTH_URL ?? 'http://localhost:3100'
+assertAllowedE2ETarget(BASE)
+const RENDER_STRATEGY = renderStrategy(BASE)
 const AUTHOR_ID = 'e2e-rejection-author'
 const ADMIN_ID = 'e2e-rejection-admin'
 const AUTHOR_EMAIL = 'e2e-rejection-author@test.invalid'
@@ -26,7 +36,11 @@ const originalSource = '#!/bin/bash\necho original-e2e'
 const correctedSource = 'console.log("corrected-e2e")'
 const reason = `Remove the updater. ${marker}`
 
-async function run(command: string[], sensitive = false): Promise<string> {
+async function run(
+  command: string[],
+  sensitive = false,
+  label: string = command[0] ?? 'command',
+): Promise<string> {
   const proc = Bun.spawn(command, { stdout: 'pipe', stderr: 'pipe' })
   const [stdout, stderr, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -34,24 +48,33 @@ async function run(command: string[], sensitive = false): Promise<string> {
     proc.exited,
   ])
   if (exitCode !== 0) {
-    throw new Error(`${command[0]} failed${sensitive ? '' : `: ${stderr || stdout}`}`)
+    throw new Error(commandFailureMessage(label, stderr || stdout, !sensitive))
   }
   return stdout
 }
 
 async function browser(session: string, ...args: string[]): Promise<string> {
-  return run(['agent-browser', '--session', session, ...args], args[0] === 'cookies')
+  return run(
+    ['agent-browser', '--session', session, ...args],
+    true,
+    describeBrowserCommand(session, args),
+  )
 }
 
 async function mintCookie(email: string): Promise<string> {
   return parseSessionCookie(await run(['bun', 'run', 'dev:login', email], true))
 }
 
-async function waitFor<T>(label: string, query: () => Promise<T | undefined>): Promise<T> {
-  for (let attempt = 0; attempt < 50; attempt++) {
+async function waitFor<T>(
+  label: string,
+  query: () => Promise<T | undefined>,
+  attempts = 50,
+  intervalMs = 200,
+): Promise<T> {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     const result = await query()
     if (result !== undefined) return result
-    await sleep(200)
+    await sleep(intervalMs)
   }
   throw new Error(`timed out waiting for ${label}`)
 }
@@ -87,7 +110,25 @@ async function openReady(session: string, path: string, readySelector: string) {
   if (failures.length > 0) throw new Error(`${path} browser errors: ${failures.join(' | ')}`)
 }
 
-async function renderNext() {
+async function renderVersion(versionId: string) {
+  if (RENDER_STRATEGY === 'external') {
+    await waitFor(
+      `render job ${versionId}`,
+      async () => {
+        const [job] = await db
+          .select({ status: renderJobs.status })
+          .from(renderJobs)
+          .where(eq(renderJobs.configVersionId, versionId))
+        if (job?.status === 'failed') {
+          throw new Error(`render job ${versionId} failed`)
+        }
+        return job?.status === 'done' ? job : undefined
+      },
+      120,
+      1000,
+    )
+    return
+  }
   const processed = await processNextRenderJob(
     db,
     new FakeSandboxRunner({ 'clean-main': { stdout: 'e2e-preview' } }),
@@ -139,26 +180,8 @@ async function main() {
     mintCookie(AUTHOR_EMAIL),
     mintCookie(ADMIN_EMAIL),
   ])
-  await browser(
-    AUTHOR_SESSION,
-    'cookies',
-    'set',
-    'better-auth.session_token',
-    authorCookie,
-    '--url',
-    BASE,
-    '--httpOnly',
-  )
-  await browser(
-    ADMIN_SESSION,
-    'cookies',
-    'set',
-    'better-auth.session_token',
-    adminCookie,
-    '--url',
-    BASE,
-    '--httpOnly',
-  )
+  await browser(AUTHOR_SESSION, ...browserCookieCommand(BASE, authorCookie))
+  await browser(ADMIN_SESSION, ...browserCookieCommand(BASE, adminCookie))
 
   await openReady(AUTHOR_SESSION, '/submit', '#title')
   await browser(AUTHOR_SESSION, 'fill', '#title', marker)
@@ -169,24 +192,24 @@ async function main() {
     const [row] = await db.select().from(configs).where(eq(configs.title, marker))
     return row
   })
-  await renderNext()
 
   const [v1] = await db
     .select()
     .from(configVersions)
     .where(eq(configVersions.configId, submitted.id))
   if (!v1) throw new Error('submitted version not found')
+  await renderVersion(v1.id)
 
   await openReady(ADMIN_SESSION, '/admin', 'main')
   await clickButtonInCard(ADMIN_SESSION, marker, 'Reject')
   await browser(ADMIN_SESSION, 'fill', `#rejection-reason-${v1.id}`, reason)
   await clickButtonInCard(ADMIN_SESSION, marker, 'Reject and email author')
-  await waitFor('failed rejection email', async () => {
+  await waitFor('terminal rejection email delivery', async () => {
     const [row] = await db
-      .select()
+      .select({ emailStatus: configVersions.rejectionEmailStatus })
       .from(configVersions)
-      .where(and(eq(configVersions.id, v1.id), eq(configVersions.rejectionEmailStatus, 'failed')))
-    return row
+      .where(eq(configVersions.id, v1.id))
+    return isTerminalDecisionEmailStatus(row?.emailStatus) ? row : undefined
   })
 
   await openReady(AUTHOR_SESSION, '/me', 'main')
@@ -240,11 +263,11 @@ async function main() {
 
   await openReady(ADMIN_SESSION, '/admin', 'main')
   await clickButtonInCard(ADMIN_SESSION, `${marker} corrected`, 'Run network preview')
-  await renderNext()
+  await renderVersion(v2Record.id)
   await browser(ADMIN_SESSION, 'reload')
   await browser(ADMIN_SESSION, 'wait', '500')
   await clickButtonInCard(ADMIN_SESSION, `${marker} corrected`, 'Approve')
-  const approvalOutcome = await waitFor('published v2 with failed approval email', async () => {
+  const approvalOutcome = await waitFor('published v2 with terminal approval email', async () => {
     const [row] = await db
       .select({
         configStatus: configs.status,
@@ -255,9 +278,9 @@ async function main() {
       .from(configVersions)
       .innerJoin(configs, eq(configs.id, configVersions.configId))
       .where(and(eq(configs.id, submitted.id), eq(configVersions.id, v2Record.id)))
-    return row?.approvalEmailStatus === 'failed' ? row : undefined
+    return isTerminalDecisionEmailStatus(row?.approvalEmailStatus) ? row : undefined
   })
-  assertPublishedAfterApprovalFailure(approvalOutcome, v2Record.id)
+  assertPublishedAfterApprovalDelivery(approvalOutcome, v2Record.id)
 
   await openReady(AUTHOR_SESSION, `/c/${submitted.slug}`, 'main')
   const detail = await browser(AUTHOR_SESSION, 'snapshot')
@@ -266,13 +289,25 @@ async function main() {
   console.log(`E2E PASSED: ${submitted.slug}`)
 }
 
+let mainFailure: unknown
 try {
   await main()
-} finally {
-  await Promise.allSettled([
-    browser(AUTHOR_SESSION, 'close'),
-    browser(ADMIN_SESSION, 'close'),
-    db.delete(user).where(inArray(user.id, [AUTHOR_ID, ADMIN_ID])),
-  ])
+} catch (error) {
+  mainFailure = error
 }
+const browserCleanup = Promise.allSettled([
+  browser(AUTHOR_SESSION, 'close'),
+  browser(ADMIN_SESSION, 'close'),
+])
+const databaseCleanup = await runDisposableUserCleanup(() =>
+  db.delete(user).where(inArray(user.id, [AUTHOR_ID, ADMIN_ID])),
+)
+await browserCleanup
+try {
+  assertDisposableUserCleanup(databaseCleanup)
+} catch (cleanupError) {
+  if (mainFailure === undefined) mainFailure = cleanupError
+  else console.error('failed to remove disposable E2E users after an earlier failure')
+}
+if (mainFailure !== undefined) throw mainFailure
 process.exit(0)
