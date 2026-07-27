@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { eq, like } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, user } from '@/db/schema'
+import { configs, configVersions, copyEvents, user } from '@/db/schema'
 import { assertNotProduction } from '@/lib/env'
 import { highlightSource } from '@/lib/highlight'
 import { SCENARIOS } from '@/render/scenarios'
@@ -13,7 +13,8 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /**
  * Volume seeder for load testing. Creates N *published* configs (slugs `loadtest-0001…`) with
- * varied upvote/copy/created-at so all three gallery sorts produce realistic orderings, and a
+ * varied copy-event/copy-count/created-at data so all three gallery sorts produce realistic
+ * orderings, and a
  * full set of previews (all 8 scenarios) per config so both the gallery card and the detail page
  * render. Inserts directly — it deliberately does NOT go through `submitConfig`, whose 10/hour
  * per-author rate limit (src/submit/submit.ts) would block volume seeding, nor through the E2B
@@ -141,8 +142,9 @@ export async function seedLoadConfigs(db: Db, opts: { count: number }): Promise<
     if (!author) throw new Error('no load-test author available')
     const source = buildSource(i)
     const contentSha256 = createHash('sha256').update(source).digest('hex')
-    // Spread created-at back in time and vary the counters so new/top/trending all differ.
+    // Spread submission and copy-event times independently so new/top/trending all differ.
     const createdAt = new Date(base - i * MS_PER_HOUR)
+    const eventCount = ((i * 5) % 11) + 1
 
     const [cfg] = await db
       .insert(configs)
@@ -154,11 +156,19 @@ export async function seedLoadConfigs(db: Db, opts: { count: number }): Promise<
         interpreter: 'bash',
         status: 'published',
         upvoteCount: (i * 37) % 300,
-        copyCount: (i * 53) % 500,
+        copyCount: eventCount,
         createdAt,
       })
       .returning()
     if (!cfg) throw new Error(`insert configs returned no row for ${slug}`)
+
+    await db.insert(copyEvents).values(
+      Array.from({ length: eventCount }, (_, j) => ({
+        configId: cfg.id,
+        ipHash: `loadtest:${i}:${j}`,
+        createdAt: new Date(base - ((i * 3 + j * 11) % 336) * MS_PER_HOUR),
+      })),
+    )
 
     const [ver] = await db
       .insert(configVersions)

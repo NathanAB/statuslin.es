@@ -35,6 +35,7 @@ async function seed(
     interpreter?: string
     status?: string
     upvoteCount?: number
+    copyCount?: number
     createdAt?: Date
   } = {},
 ) {
@@ -56,6 +57,7 @@ async function seed(
         readsClaudeToken: false,
       }),
       upvoteCount: opts.upvoteCount ?? 0,
+      copyCount: opts.copyCount ?? 0,
       createdAt: opts.createdAt ?? new Date(2026, 0, 1),
     })
     .returning()
@@ -78,8 +80,18 @@ async function seed(
 
 describe('facet queries', () => {
   beforeAll(async () => {
-    await seed('git-a', { tags: ['git'], upvoteCount: 5, createdAt: new Date(2026, 5, 1) })
-    await seed('git-b', { tags: ['git', 'cost'], upvoteCount: 9, createdAt: new Date(2026, 5, 2) })
+    await seed('git-a', {
+      tags: ['git'],
+      upvoteCount: 9,
+      copyCount: 5,
+      createdAt: new Date(2026, 5, 1),
+    })
+    await seed('git-b', {
+      tags: ['git', 'cost'],
+      upvoteCount: 1,
+      copyCount: 9,
+      createdAt: new Date(2026, 5, 2),
+    })
     await seed('git-draft', { tags: ['git'], status: 'draft' })
     await seed('py-a', { interpreter: 'python', createdAt: new Date(2026, 5, 3) })
     await seed('plain', {})
@@ -99,7 +111,7 @@ describe('facet queries', () => {
     expect(cards.map((c) => c.slug)).not.toContain('git-draft')
   })
 
-  it('returns tag-facet cards by upvotes then newest', async () => {
+  it('returns tag-facet cards by lifetime copies', async () => {
     const cards = await getFacetCards(db, FACET_BY_SLUG.get('git')!)
     expect(cards.map((c) => c.slug)).toEqual(['git-b', 'git-a'])
   })

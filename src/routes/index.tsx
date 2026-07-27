@@ -53,7 +53,7 @@ export const Route = createFileRoute('/')({
       {
         name: 'description',
         content:
-          'Browse a community gallery of Claude Code status lines — see rendered previews, upvote your favorites, and copy one into your own terminal in a single paste.',
+          'Browse a community gallery of Claude Code status lines — see rendered previews and copy one into your own terminal in a single paste.',
       },
       ...(isFilteredHomeSearch(match.search)
         ? [{ name: 'robots', content: 'noindex, follow' }]

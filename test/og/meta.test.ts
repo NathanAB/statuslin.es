@@ -17,6 +17,9 @@ describe('social meta', () => {
     })
     expect(meta).toContainEqual({ property: 'og:url', content: 'https://statuslin.es' })
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
+    const description = meta.find((entry) => entry.property === 'og:description')?.content
+    expect(description).toMatch(/cop(?:y|ied|ies)/i)
+    expect(description).not.toMatch(/upvote/i)
   })
   it('config emits a per-slug og:image', () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'

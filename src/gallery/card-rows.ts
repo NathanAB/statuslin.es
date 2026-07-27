@@ -24,7 +24,6 @@ export function mapCardRows(
     title: r.config.title,
     description: r.config.description,
     interpreter: coerceInterpreter(r.config.interpreter),
-    upvoteCount: r.config.upvoteCount,
     copyCount: r.config.copyCount,
     author: r.author
       ? {

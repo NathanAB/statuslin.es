@@ -12,7 +12,7 @@ export interface RelatedConfig {
   slug: string
   title: string
   interpreter: Interpreter
-  upvoteCount: number
+  copyCount: number
   preview: AnsiSegment[] | null
 }
 
@@ -21,7 +21,7 @@ export const RELATED_LIMIT = 6
 
 /**
  * Other published configs for the "More status lines" section on a config page —
- * top-voted first (ties broken by newest), excluding the config being viewed.
+ * most-copied first (ties broken by newest), excluding the config being viewed.
  * Exists for internal linking: without it every config page is a crawl dead end.
  */
 export async function getRelatedConfigs(
@@ -34,7 +34,7 @@ export async function getRelatedConfigs(
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .where(and(eq(configs.status, 'published'), ne(configs.slug, slug)))
-    .orderBy(desc(configs.upvoteCount), desc(configs.createdAt))
+    .orderBy(desc(configs.copyCount), desc(configs.createdAt))
     .limit(limit)
 
   const cardPreviews = await selectCardPreviews(
@@ -47,7 +47,7 @@ export async function getRelatedConfigs(
     slug: r.config.slug,
     title: r.config.title,
     interpreter: coerceInterpreter(r.config.interpreter),
-    upvoteCount: r.config.upvoteCount,
+    copyCount: r.config.copyCount,
     preview: cardPreviews.get(r.version.contentSha256) ?? null,
   }))
 }

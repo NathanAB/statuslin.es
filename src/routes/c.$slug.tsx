@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
+import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { tagLabel } from '@/gallery/facets'
 import { getConfigDetail } from '@/gallery/functions'
@@ -16,6 +17,7 @@ import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { AuthorChip } from '@/ui/author-chip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
+import { CopyCount } from '@/ui/copy-count'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { Row, Stack } from '@/ui/layout'
 import { ScenarioRow } from '@/ui/scenario-row'
@@ -24,7 +26,6 @@ import { PageShell } from '@/ui/shell'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { StretchedLink } from '@/ui/stretched-link'
 import { Heading, Text, TextLink } from '@/ui/text'
-import { UpvoteButton } from '@/votes/upvote-button'
 
 export const Route = createFileRoute('/c/$slug')({
   loader: async ({ params }) => {
@@ -63,7 +64,7 @@ export const Route = createFileRoute('/c/$slug')({
             interpreter: detail.interpreter,
             authorName: detail.author?.name ?? null,
             license: detail.license,
-            upvoteCount: detail.upvoteCount,
+            copyCount: detail.copyCount,
             keywords: detail.facetLinks.map((f) => f.chipLabel),
             updatedAt: detail.updatedAt,
             generatedContent: detail.generatedContent,
@@ -83,6 +84,7 @@ export const Route = createFileRoute('/c/$slug')({
 function ConfigDetail() {
   const posthog = usePostHog()
   const { detail, user } = Route.useLoaderData()
+  const copyController = useRecordedCopy(detail.id, detail.copyCount)
 
   useEffect(() => {
     posthog.capture('statusline_detail_viewed', {
@@ -100,16 +102,7 @@ function ConfigDetail() {
       <Stack gap={6}>
         <Stack gap={3}>
           <Row gap={3} wrap justify="between">
-            <Row gap={3}>
-              <Heading level={1}>{detail.title}</Heading>
-              <UpvoteButton
-                configId={detail.id}
-                slug={detail.slug}
-                initialCount={detail.upvoteCount}
-                initialVoted={detail.hasVoted}
-                signedIn={!!user}
-              />
-            </Row>
+            <Heading level={1}>{detail.title}</Heading>
             <ConfigBadges tags={detail.tags} networkHosts={detail.networkHosts} />
           </Row>
 
@@ -160,8 +153,7 @@ function ConfigDetail() {
           source={detail.source}
           interpreter={detail.interpreter}
           title={detail.title}
-          configId={detail.id}
-          copyCount={detail.copyCount}
+          controller={copyController}
         />
 
         {/* All scenarios, stacked */}
@@ -191,7 +183,7 @@ function ConfigDetail() {
         <SectionCard
           title="Source"
           headingLevel={2}
-          action={<CopyScriptButton source={detail.source} configId={detail.id} />}
+          action={<CopyScriptButton source={detail.source} controller={copyController} />}
         >
           <HighlightedCode html={detail.sourceHtml} />
         </SectionCard>
@@ -223,9 +215,7 @@ function ConfigDetail() {
                           {r.title}
                         </StretchedLink>
                       </CardTitle>
-                      <Text muted size="sm">
-                        ⇧ {r.upvoteCount}
-                      </Text>
+                      <CopyCount count={r.copyCount} />
                     </Row>
                   </CardHeader>
                   <CardContent>

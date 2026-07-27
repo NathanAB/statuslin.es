@@ -13,13 +13,22 @@ vi.mock('@tanstack/react-router', () => ({
     to,
     params,
     children,
+    onClick,
     ...props
   }: {
     to: string
     params?: Record<string, string>
     children: React.ReactNode
+    onClick?: React.MouseEventHandler<HTMLAnchorElement>
   }) => (
-    <a href={params ? to.replace('$slug', params.slug ?? '') : to} {...props}>
+    <a
+      href={params ? to.replace('$slug', params.slug ?? '') : to}
+      onClick={(event) => {
+        event.preventDefault()
+        onClick?.(event)
+      }}
+      {...props}
+    >
       {children}
     </a>
   ),
@@ -39,7 +48,6 @@ describe('GalleryConfigCard analytics', () => {
           title: 'Example',
           description: 'An example status line.',
           interpreter: 'bash',
-          upvoteCount: 3,
           copyCount: 2,
           author: null,
           preview: null,
@@ -58,6 +66,8 @@ describe('GalleryConfigCard analytics', () => {
     )
 
     fireEvent.click(screen.getByRole('link', { name: 'Example' }))
+    expect(screen.getByText('2 copies')).toBeTruthy()
+    expect(screen.queryByText(/⇧|upvote/i)).toBeNull()
 
     expect(capture).toHaveBeenCalledWith('statusline_card_clicked', {
       configId: 'config-1',

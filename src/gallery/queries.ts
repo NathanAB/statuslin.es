@@ -3,10 +3,10 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import type { GeneratedContent } from '@/content/types'
 import { configs, configVersions, previews, user } from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
-import { getVoteState } from '@/lib/vote-state'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
 import { coerceInterpreter, mapCardRows } from './card-rows'
+import { trendingScore } from './trending'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -55,7 +55,6 @@ export interface GalleryCard {
   title: string
   description: string
   interpreter: Interpreter
-  upvoteCount: number
   copyCount: number
   author: ConfigAuthor | null
   preview: AnsiSegment[] | null
@@ -100,10 +99,10 @@ export async function getPublishedConfigs(
 ): Promise<GalleryCard[]> {
   const orderBy =
     sort === 'top'
-      ? desc(configs.upvoteCount)
+      ? [desc(configs.copyCount)]
       : sort === 'trending'
-        ? sql`${configs.copyCount} / power(extract(epoch from (now() - ${configs.createdAt})) / 3600 + 2, 1.5) desc`
-        : desc(configs.createdAt)
+        ? [desc(trendingScore(configs.id))]
+        : [desc(configs.createdAt)]
 
   const tagFilter =
     tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
@@ -114,9 +113,7 @@ export async function getPublishedConfigs(
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(user, eq(user.id, configs.authorId))
     .where(and(eq(configs.status, 'published'), tagFilter))
-    // createdAt tiebreak: zero-copy configs all score 0 on trending — without it, the default
-    // gallery order would be database-arbitrary.
-    .orderBy(orderBy, desc(configs.createdAt))
+    .orderBy(...orderBy)
     .limit(PAGE_SIZE)
     .offset((page - 1) * PAGE_SIZE)
 
@@ -167,10 +164,8 @@ export interface ConfigDetail {
   description: string
   interpreter: Interpreter
   tags: string[]
-  upvoteCount: number
   copyCount: number
   author: ConfigAuthor | null
-  hasVoted: boolean
   source: string
   /** Pre-highlighted HTML of `source`, or null when not yet computed (read path highlights live). */
   sourceHtml: string | null
@@ -192,11 +187,7 @@ export interface ConfigDetail {
   updatedAt: string
 }
 
-export async function getConfigBySlug(
-  db: Db,
-  slug: string,
-  userId?: string,
-): Promise<ConfigDetail | null> {
+export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetail | null> {
   const [row] = await db
     .select({ config: configs, version: configVersions, author: user })
     .from(configs)
@@ -206,7 +197,6 @@ export async function getConfigBySlug(
     .limit(1)
   if (!row) return null
   const previews = await getPreviews(db, row.version.contentSha256)
-  const hasVoted = userId ? await getVoteState(db, userId, row.config.id) : false
   return {
     id: row.config.id,
     slug: row.config.slug,
@@ -214,7 +204,6 @@ export async function getConfigBySlug(
     description: row.config.description,
     interpreter: coerceInterpreter(row.config.interpreter),
     tags: row.config.allTags ?? [],
-    upvoteCount: row.config.upvoteCount,
     copyCount: row.config.copyCount,
     author: row.author
       ? {
@@ -223,7 +212,6 @@ export async function getConfigBySlug(
           image: row.author.image ?? null,
         }
       : null,
-    hasVoted,
     source: row.version.source,
     sourceHtml: row.version.sourceHtml,
     contentSha256: row.version.contentSha256,

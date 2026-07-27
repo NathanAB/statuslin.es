@@ -1,9 +1,7 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
-import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
 import { getAvailableTags } from '@/gallery/facet-queries'
 import { FACET_BY_SLUG, FACETS, tagHref } from '@/gallery/facets'
-import { auth } from '@/lib/auth'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
@@ -84,9 +82,7 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
   .inputValidator((d: { slug: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
-      const session = await auth.api.getSession({ headers: getRequestHeaders() })
-      const userId = session?.user?.id
-      const detail = await getConfigBySlug(db, data.slug, userId)
+      const detail = await getConfigBySlug(db, data.slug)
       if (!detail) return null
       // Use the HTML highlighted at submit time when present; only fall back to live Shiki for
       // versions without it. Either way the browser gets escaped HTML, never Shiki itself.
