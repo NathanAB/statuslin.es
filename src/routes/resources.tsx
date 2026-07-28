@@ -10,7 +10,7 @@ import { ResourcesContent } from '@/resources/resources-content'
 import { PageShell } from '@/ui/shell'
 
 const DESCRIPTION =
-  'The Claude Code status line tools, generators, and guides worth knowing about, picked by hand. Plus a gallery of rendered status lines you can copy.'
+  'Explore hand-picked Claude Code status line tools, generators, guides, and resources for building and customizing your setup.'
 
 export const Route = createFileRoute('/resources')({
   loader: () => getSession(),

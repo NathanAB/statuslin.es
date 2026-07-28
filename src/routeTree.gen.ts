@@ -16,6 +16,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
@@ -60,6 +61,11 @@ const MeRoute = MeRouteImport.update({
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
   path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -117,6 +123,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/guide'
     | '/llms.txt'
     | '/me'
     | '/resources'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/guide'
     | '/llms.txt'
     | '/me'
     | '/resources'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/guide'
     | '/llms.txt'
     | '/me'
     | '/resources'
@@ -235,6 +247,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GuideRoute: typeof GuideRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   MeRoute: typeof MeRoute
   ResourcesRoute: typeof ResourcesRoute
@@ -302,6 +315,13 @@ declare module '@tanstack/react-router' {
       path: '/llms.txt'
       fullPath: '/llms.txt'
       preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -379,6 +399,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GuideRoute: GuideRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   MeRoute: MeRoute,
   ResourcesRoute: ResourcesRoute,

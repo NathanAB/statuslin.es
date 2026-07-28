@@ -1,5 +1,5 @@
 import type { GeneratedContent } from '@/content/types'
-import { HOME_TITLE_BASE, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
 /**
@@ -24,24 +24,29 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
 export function homeJsonLd(
   origin: string,
   items: Array<{ slug: string; title: string }>,
+  options: { page: number; pageSize: number; includeCollectionPage?: boolean },
 ): object[] {
+  const website = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'statuslin.es',
+    url: origin,
+  }
+  if (options.includeCollectionPage === false) return [website]
+
+  const positionOffset = (options.page - 1) * options.pageSize
   return [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: 'statuslin.es',
-      url: origin,
-    },
+    website,
     {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: HOME_TITLE_BASE,
-      url: origin,
+      name: homePageName(options.page),
+      url: options.page > 1 ? `${origin}/?page=${options.page}` : origin,
       mainEntity: {
         '@type': 'ItemList',
         itemListElement: items.map((item, i) => ({
           '@type': 'ListItem',
-          position: i + 1,
+          position: positionOffset + i + 1,
           name: item.title,
           url: `${origin}/c/${item.slug}`,
         })),
@@ -52,9 +57,8 @@ export function homeJsonLd(
 
 /**
  * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the
- * generated copy when present. The SoftwareSourceCode carries the GEO signals AI answer
- * engines weight: `dateModified` (freshness), a copy `interactionStatistic` (a real
- * stat), `runtimePlatform`, and facet `keywords`.
+ * generated copy when present. The SoftwareSourceCode carries `dateModified` (freshness),
+ * `runtimePlatform`, and facet `keywords`.
  */
 export function configJsonLd(
   origin: string,
@@ -65,7 +69,6 @@ export function configJsonLd(
     interpreter: string
     authorName: string | null
     license: string | null
-    copyCount: number
     keywords: string[]
     updatedAt: string | null
     generatedContent: GeneratedContent | null
@@ -84,11 +87,6 @@ export function configJsonLd(
       license: config.license ?? CONTENT_LICENSE.url,
       ...(config.updatedAt ? { dateModified: config.updatedAt } : {}),
       ...(config.keywords.length > 0 ? { keywords: config.keywords.join(', ') } : {}),
-      interactionStatistic: {
-        '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/InstallAction',
-        userInteractionCount: config.copyCount,
-      },
       ...(config.authorName ? { author: { '@type': 'Person', name: config.authorName } } : {}),
     },
     {
@@ -158,32 +156,32 @@ export function facetJsonLd(
   items: Array<{ slug: string; title: string }>,
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
   updated: string | null,
+  options: { includeCollectionPage?: boolean } = {},
 ): object[] {
   const url = `${origin}/status-lines/${facet.slug}`
-  return [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: facet.titleBase,
-      url,
-      ...(updated ? { dateModified: updated } : {}),
-      mainEntity: {
-        '@type': 'ItemList',
-        itemListElement: items.map((item, i) => ({
-          '@type': 'ListItem',
-          position: i + 1,
-          name: item.title,
-          url: `${origin}/c/${item.slug}`,
-        })),
-      },
+  const collectionPage = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: facet.titleBase,
+    url,
+    ...(updated ? { dateModified: updated } : {}),
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: items.map((item, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: item.title,
+        url: `${origin}/c/${item.slug}`,
+      })),
     },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
-        { '@type': 'ListItem', position: 2, name: facet.titleBase, item: url },
-      ],
-    },
-  ]
+  }
+  const breadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
+      { '@type': 'ListItem', position: 2, name: facet.titleBase, item: url },
+    ],
+  }
+  return options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]
 }

@@ -152,6 +152,16 @@ export default defineConfig(({ mode }) => ({
             // Server-side error capture: this plugin registers a Nitro `error` hook that forwards SSR
             // crashes / uncaught exceptions / unhandled rejections to PostHog (src/lib/posthog-server).
             plugins: ['./src/server/posthog-error-plugin.ts'],
+            // Nitro's generated static-asset manifest contains only this build's files. Its static
+            // middleware runs first and falls through on a miss; this route then serves retained
+            // generations before the catch-all TanStack renderer. Keep it method-agnostic so the
+            // handler itself returns 405 for methods other than GET/HEAD.
+            handlers: [
+              {
+                route: '/assets/**',
+                handler: './src/server/retained-asset.ts',
+              },
+            ],
             routeRules: {
               // Prod equivalent of the dev `server.proxy` above. Vite's server.proxy is DEV-ONLY, so
               // without these the browser's events (which POST to api_host '/ingest') would hit the

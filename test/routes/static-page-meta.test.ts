@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { Route as ResourcesRoute } from '@/routes/resources'
 import { Route as SubmitRoute } from '@/routes/submit'
 import { Route as TermsRoute } from '@/routes/terms'
 
@@ -8,6 +9,18 @@ afterEach(() => {
 })
 
 describe('static page social metadata', () => {
+  it('keeps /resources focused on tools and learning resources instead of the gallery', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await ResourcesRoute.options.head?.({} as never)
+    const description = head?.meta?.find((entry) => entry?.name === 'description')?.content ?? ''
+
+    expect(description).toMatch(/tools/i)
+    expect(description).toMatch(/generators/i)
+    expect(description).toMatch(/guides/i)
+    expect(description).toMatch(/resources/i)
+    expect(description).not.toMatch(/gallery/i)
+  })
+
   it('gives /submit its own share metadata', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await SubmitRoute.options.head?.({} as never)

@@ -2,19 +2,18 @@
  * The `/sitemap.xml` builder. Lists the static public pages plus one `<url>` per published config
  * so crawlers discover the long-tail config pages without relying on link-following alone.
  *
- * `<lastmod>` uses each config's `createdAt` (the configs table tracks no update time) formatted
- * as a W3C date — Google only trusts `lastmod` when it's verifiably accurate, and a config's page
- * doesn't change after creation. `<priority>`/`<changefreq>` are omitted on purpose: Google
- * ignores them.
+ * `<lastmod>` uses the current version's review date, falling back to config creation, formatted
+ * as a W3C date. Facets and the homepage inherit the newest matching/published config date.
+ * `<priority>`/`<changefreq>` are omitted on purpose: Google ignores them.
  */
 
 /** Published config rows the sitemap needs — just enough to build each `<url>`. */
 export interface SitemapConfig {
   slug: string
-  createdAt: Date
+  updatedAt: Date
 }
 
-/** Live facet pages the sitemap should list (already filtered to page facets with a match). */
+/** Indexable facet pages the sitemap should list (already filtered to the shared threshold). */
 export interface SitemapFacet {
   slug: string
   latest: Date | null
@@ -39,7 +38,15 @@ function urlEntry(loc: string, lastmod?: string): string {
 }
 
 function buildSitemapXml(base: string, configs: SitemapConfig[], facets: SitemapFacet[]): string {
-  const staticEntries = STATIC_PATHS.map((path) => urlEntry(path === '/' ? base : `${base}${path}`))
+  const homepageUpdatedAt = configs.reduce<Date | null>(
+    (latest, config) => (latest === null || config.updatedAt > latest ? config.updatedAt : latest),
+    null,
+  )
+  const staticEntries = STATIC_PATHS.map((path) =>
+    path === '/'
+      ? urlEntry(base, homepageUpdatedAt?.toISOString().slice(0, 10))
+      : urlEntry(`${base}${path}`),
+  )
   const facetEntries = facets.map((f) =>
     urlEntry(
       `${base}/status-lines/${f.slug}`,
@@ -47,7 +54,7 @@ function buildSitemapXml(base: string, configs: SitemapConfig[], facets: Sitemap
     ),
   )
   const configEntries = configs.map((c) =>
-    urlEntry(`${base}/c/${c.slug}`, c.createdAt.toISOString().slice(0, 10)),
+    urlEntry(`${base}/c/${c.slug}`, c.updatedAt.toISOString().slice(0, 10)),
   )
   const body = [...staticEntries, ...facetEntries, ...configEntries].join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`

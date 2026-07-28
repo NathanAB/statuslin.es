@@ -21,6 +21,26 @@ filled differs per environment:
 **Staging and production run the same Docker image.** You validate an image on staging, then
 deploy that exact image (by digest) to production — never a separate rebuild.
 
+## Fingerprinted asset retention
+
+Each candidate image is self-contained with the current plus nineteen prior distinct
+`/assets/**` generations. The Docker build mounts the previous production image's `.output`
+read-only, builds the current generation, then `scripts/retain-build-assets.ts` copies the selected
+historical files and writes `.output/public/assets/.asset-generations.json`. Identical generations
+and identical files are stored once; malformed manifests, missing files, unsafe paths, symlinks,
+and same-name files with different contents fail the build.
+
+Nitro's generated static manifest knows only about the current build. Current assets are served by
+Nitro's normal static middleware; on a miss, the explicit method-agnostic `/assets/**` handler runs
+before the catch-all renderer and serves retained `GET`/`HEAD` files with immutable caching. Other
+methods return 405. Do not add a non-fallthrough `publicAssets` base for this directory: it would
+intercept retained paths before the fallback can inspect them safely.
+
+`PREVIOUS_IMAGE` defaults to the Dockerfile's empty `asset-retention-bootstrap` stage so the first
+build has a valid `/app/.output/public/assets` mount. Normal staging deploys must override it with
+the exact currently running production image; production still promotes the tested staging digest
+without rebuilding.
+
 ## What runs in each Fly app
 
 Two process groups off one image (declared in `fly.toml` for prod and `fly.staging.toml` for staging):
@@ -109,8 +129,14 @@ machine before the box is in trouble.
 
 Staging:
 ```sh
-bun run deploy:staging   # fly deploy --config fly.staging.toml
+bun run deploy:staging
 ```
+This command reads every production machine's full image reference and requires unanimous agreement
+on the registry, repository, and digest. It then passes that exact reference to the staging build as
+`PREVIOUS_IMAGE`. Missing, malformed, or mixed production images abort before `fly deploy`; do not
+replace this command with a direct staging deploy, because doing so drops the previous generation
+that the Docker build uses to retain hashed assets.
+
 The `release_command` in the Fly config runs `bun run src/db/migrate.ts` against that env's DB before
 the new version goes live. That script applies migrations via `drizzle-orm`'s runtime migrator
 (`drizzle-orm/postgres-js/migrator`) reading the committed `drizzle/` SQL folder — it does **not**
@@ -154,17 +180,22 @@ Promote to production with the **gated** command — never promote by hand:
 ```sh
 bun run deploy:prod
 ```
-`scripts/deploy-prod.ts` does three things and **refuses to promote unless the middle one passes**:
-1. reads the digest of the image staging is running **now** (deploy staging first with
-   `bun run deploy:staging` — the promote doesn't deploy staging itself, so a staging build you
-   already validated isn't rebuilt).
-2. a **real-browser smoke against staging** — `SMOKE_BASE_URL=https://staging.statuslin.es
-   SMOKE_SIGNED_OUT_ONLY=1 bun run smoke` — which loads the home + a `/c/<slug>` detail page in
-   `agent-browser` and fails if either doesn't hydrate or logs a console error.
-3. only on green, re-reads the staging digest and **refuses if it changed during the smoke**
-   (someone redeployed staging mid-run), then
-   `fly deploy --app statuslines --image registry.fly.io/statuslines-staging@<digest>`
-   (the exact image it validated, by digest — no rebuild).
+`scripts/deploy-prod.ts` gates the promotion as one operation:
+
+1. It saves the current production asset URLs referenced by `/`, `/resources`, `/terms`, and one
+   linked `/c/<slug>` detail page.
+2. It runs a real-browser smoke against staging. The browser requires the expected homepage title,
+   exact root canonical, H1, and non-error body; it also fetches every same-origin initial script,
+   stylesheet, and modulepreload and requires at least one and success for all.
+3. It requests every saved production asset from staging and requires status 200, a file-extension
+   appropriate non-HTML content type/body, and one-year immutable caching without contradictory
+   `no-cache` or `no-store` directives. Every required production page must reference at least one
+   qualifying same-origin asset.
+4. Immediately before promotion it re-reads both production and staging image references. Either
+   changing during validation aborts. The exact staging image is promoted by digest, without a
+   rebuild.
+5. After promotion, every saved asset must pass the same status, type/body, and caching checks on
+   production.
 
 **Why this is mandatory, not optional:** every source gate (tsc/lint/vitest) passes while the client
 bundle is dead — a server-only import leaking into the browser throws `Buffer is not defined`,

@@ -1,7 +1,7 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { db } from '@/db'
 import { getAvailableTags } from '@/gallery/facet-queries'
-import { FACET_BY_SLUG, FACETS, tagHref } from '@/gallery/facets'
+import { FACET_BY_SLUG, tagHref } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
@@ -18,6 +18,7 @@ import {
   getPublishedCount,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,
+  isIndexableFacet,
   liveFacetLinks,
   PAGE_SIZE,
   resolveLiveFacet,
@@ -26,7 +27,7 @@ import {
 /**
  * The `/sitemap.xml` response. Lives here (not in the route file) because route files can't import
  * the db client directly — they reach gallery data through this module, the same way the og image
- * routes call into `@/og/routes`. Keeps `createdAt` a real `Date` by avoiding the server-fn RPC
+ * routes call into `@/og/routes`. Keeps `updatedAt` a real `Date` by avoiding the server-fn RPC
  * boundary that would serialize it to a string.
  */
 // createServerOnlyFn keeps `db` (and the whole postgres driver) out of the CLIENT bundle: this
@@ -34,27 +35,30 @@ import {
 // touching `db` here would drag the Node-only postgres driver into the browser, where it throws
 // `Buffer is not defined` and kills hydration. The server-only wrapper strips the body (and its
 // `db` reference) from the client build. It also avoids the server-fn RPC boundary, so the
-// sitemap's `createdAt` stays a real `Date` instead of being serialized to a string.
+// sitemap's `updatedAt` stays a real `Date` instead of being serialized to a string.
 export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
   const stats = await getFacetStats(db)
-  const facets = FACETS.filter((f) => f.page && (stats.get(f.slug)?.count ?? 0) >= 1).map((f) => ({
-    slug: f.slug,
-    latest: stats.get(f.slug)?.latest ?? null,
+  const facets = liveFacetLinks(stats).map((facet) => ({
+    slug: facet.slug,
+    latest: stats.get(facet.slug)?.latest ?? null,
   }))
   return sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db), facets)
 })
 
 /**
  * The `/llms.txt` response. Server-only for the same reason as the sitemap: it reads live facet
- * counts from `db`, which route files can't import. Lists only page facets with at least one
- * published match, so the map never points AI engines at a facet page that would 404.
+ * counts from `db`, which route files can't import. Lists only indexable page facets that meet the
+ * shared inventory threshold.
  */
 export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
   const stats = await getFacetStats(db)
-  const facets = FACETS.filter((f) => f.page && (stats.get(f.slug)?.count ?? 0) >= 1).map((f) => ({
-    slug: f.slug,
-    label: f.heading ?? f.chipLabel,
-  }))
+  const facets = liveFacetLinks(stats).map((link) => {
+    const facet = FACET_BY_SLUG.get(link.slug)
+    return {
+      slug: link.slug,
+      label: facet?.heading ?? link.chipLabel,
+    }
+  })
   return llmsResponse(siteUrl(), facets)
 })
 
@@ -117,11 +121,12 @@ export const getFacetPage = createServerFn({ method: 'GET' })
       return {
         slug: facet.slug,
         cards,
+        indexable: isIndexableFacet(facet.slug, stats),
         // Pre-formatted: a Date through the server-fn RPC boundary is the serialization
         // gamble the sitemapResponseForRoute comment above warns about; the page only
         // needs the display string anyway.
         updated: stats.get(facet.slug)?.latest?.toISOString().slice(0, 10) ?? null,
-        // Other live facets, for the "more ways to browse" row (never link a 404).
+        // Other indexable facets that meet the shared threshold, for "more ways to browse".
         otherFacets: liveFacetLinks(stats, facet.slug),
       }
     }),

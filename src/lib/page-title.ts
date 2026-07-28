@@ -46,6 +46,29 @@ export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
  * "community gallery", which nobody does.
  */
 export const HOME_TITLE_BASE = 'Claude Code Status Line Examples'
+export const HOME_HEADING_BASE = 'Claude Code status line examples'
+export const HOME_DESCRIPTION_BASE =
+  'Browse a gallery of Claude Code status line examples and ready-to-copy templates. See real rendered previews and copy one in a single paste.'
+
+function homePageSuffix(page: number): string {
+  return page > 1 ? ` — Page ${page}` : ''
+}
+
+export function homePageName(page: number): string {
+  return `${HOME_TITLE_BASE}${homePageSuffix(page)}`
+}
+
+export function homePageTitle(page: number): string {
+  return `${homePageName(page)} | statuslin.es`
+}
+
+export function homePageHeading(page: number): string {
+  return `${HOME_HEADING_BASE}${homePageSuffix(page)}`
+}
+
+export function homeMetaDescription(page: number, pageCount: number): string {
+  return `${HOME_DESCRIPTION_BASE}${page > 1 ? ` Page ${page} of ${pageCount}.` : ''}`
+}
 
 /** /resources title base — shared by the <title> tag and the resources JSON-LD name. */
 export const RESOURCES_TITLE_BASE = 'Claude Code Status Line Tools & Resources'

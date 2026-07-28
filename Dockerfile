@@ -1,4 +1,11 @@
 # syntax=docker/dockerfile:1
+ARG PREVIOUS_IMAGE=asset-retention-bootstrap
+
+FROM oven/bun:1 AS asset-retention-bootstrap
+RUN mkdir -p /app/.output/public/assets
+
+FROM ${PREVIOUS_IMAGE} AS previous
+
 FROM oven/bun:1 AS base
 WORKDIR /app
 
@@ -7,7 +14,9 @@ ENV NODE_ENV=production
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 COPY . .
-RUN bun run build
+RUN --mount=type=bind,from=previous,source=/app/.output,target=/previous-output,readonly \
+    bun run build && \
+    bun run scripts/retain-build-assets.ts /app/.output/public/assets /previous-output/public/assets
 
 FROM base AS runtime
 ENV NODE_ENV=production

@@ -3,7 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
-import { coercePage, coerceSort, coerceTags, type GallerySort } from '@/gallery/queries'
+import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import {
   canonicalLink,
@@ -12,7 +12,7 @@ import {
   isFilteredHomeSearch,
 } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { HOME_TITLE_BASE } from '@/lib/page-title'
+import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { Button } from '@/ui/button'
 import { HomeHero } from '@/ui/home-hero'
@@ -47,21 +47,26 @@ export const Route = createFileRoute('/')({
       },
     }),
   }),
-  head: ({ loaderData, match }) => ({
-    meta: [
-      { title: `${HOME_TITLE_BASE} | statuslin.es` },
-      {
-        name: 'description',
-        content:
-          'Browse a community gallery of Claude Code status lines — see rendered previews and copy one into your own terminal in a single paste.',
-      },
-      ...(isFilteredHomeSearch(match.search)
-        ? [{ name: 'robots', content: 'noindex, follow' }]
-        : []),
-    ],
-    links: [canonicalLink(homeCanonicalPath(loaderData?.gallery.page ?? 1, match.search))],
-    scripts: loaderData ? homeJsonLd(siteUrl(), loaderData.gallery.cards).map(jsonLdScript) : [],
-  }),
+  head: ({ loaderData, match }) => {
+    const page = loaderData?.gallery.page ?? 1
+    const pageCount = loaderData?.gallery.pageCount ?? 1
+    const isFiltered = isFilteredHomeSearch(match.search)
+    return {
+      meta: [
+        { title: homePageTitle(page) },
+        { name: 'description', content: homeMetaDescription(page, pageCount) },
+        ...(isFiltered ? [{ name: 'robots', content: 'noindex, follow' }] : []),
+      ],
+      links: [canonicalLink(homeCanonicalPath(page, match.search))],
+      scripts: loaderData
+        ? homeJsonLd(siteUrl(), loaderData.gallery.cards, {
+            page,
+            pageSize: PAGE_SIZE,
+            includeCollectionPage: !isFiltered,
+          }).map(jsonLdScript)
+        : [],
+    }
+  },
   component: Home,
 })
 
@@ -84,10 +89,11 @@ function Home() {
   return (
     <PageShell user={user}>
       <Stack gap={9}>
-        <HomeHero />
+        <HomeHero page={page} />
         <Text muted size="sm" measure center>
-          The status line is the bar at the bottom of your Claude Code terminal. Every one here is
-          rendered from the real script, so you can see it before you copy it.
+          Explore a community gallery of Claude Code status line examples and ready-to-copy
+          templates. Every card shows previews rendered from the real script, so you can see it
+          before you copy it.
         </Text>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>

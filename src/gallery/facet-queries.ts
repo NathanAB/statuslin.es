@@ -8,6 +8,9 @@ import { type GalleryCard, selectCardPreviews } from './queries'
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
+/** Minimum published inventory before a facet is surfaced to crawlers and cross-facet discovery. */
+export const MIN_INDEXABLE_FACET_CONFIGS = 3
+
 export interface FacetStats {
   count: number
   latest: Date | null
@@ -16,6 +19,7 @@ export interface FacetStats {
 interface StatsRow {
   allTags: string[] | null
   createdAt: Date
+  reviewedAt: Date | null
 }
 
 function facetMatches(row: StatsRow, facet: Facet): boolean {
@@ -23,14 +27,20 @@ function facetMatches(row: StatsRow, facet: Facet): boolean {
 }
 
 /**
- * Match counts + newest createdAt for every registry facet, from ONE scan of published configs.
- * The gallery is small (tens of rows); a per-facet SQL query apiece would be slower and noisier
- * than counting in JS. Drives each facet page's live/404 decision, the sitemap, and count line.
+ * Match counts + newest effective update date for every registry facet, from ONE scan of
+ * published configs joined to their current versions. The gallery is small (tens of rows); a
+ * per-facet SQL query apiece would be slower and noisier than counting in JS. Drives each facet
+ * page's live/404 decision, the sitemap, and count line.
  */
 export async function getFacetStats(db: Db): Promise<Map<string, FacetStats>> {
   const rows = await db
-    .select({ allTags: configs.allTags, createdAt: configs.createdAt })
+    .select({
+      allTags: configs.allTags,
+      createdAt: configs.createdAt,
+      reviewedAt: configVersions.reviewedAt,
+    })
     .from(configs)
+    .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .where(eq(configs.status, 'published'))
   const stats = new Map<string, FacetStats>(FACETS.map((f) => [f.slug, { count: 0, latest: null }]))
   for (const row of rows) {
@@ -39,7 +49,8 @@ export async function getFacetStats(db: Db): Promise<Map<string, FacetStats>> {
       const s = stats.get(facet.slug)
       if (!s) continue
       s.count += 1
-      if (!s.latest || row.createdAt > s.latest) s.latest = row.createdAt
+      const updatedAt = row.reviewedAt ?? row.createdAt
+      if (!s.latest || updatedAt > s.latest) s.latest = updatedAt
     }
   }
   return stats
@@ -80,12 +91,17 @@ export function resolveLiveFacet(slug: string, stats: Map<string, FacetStats>): 
   return (stats.get(facet.slug)?.count ?? 0) >= 1 ? facet : null
 }
 
-/** Links for every live facet (a page facet with >= 1 match), optionally excluding the current one. */
+/** Whether a known facet has enough published inventory to be indexed and promoted. */
+export function isIndexableFacet(slug: string, stats: Map<string, FacetStats>): boolean {
+  return (stats.get(slug)?.count ?? 0) >= MIN_INDEXABLE_FACET_CONFIGS
+}
+
+/** Links for every indexable facet, optionally excluding the current one. */
 export function liveFacetLinks(
   stats: Map<string, FacetStats>,
   excludeSlug?: string,
 ): Array<{ slug: string; chipLabel: string }> {
   return FACETS.filter(
-    (f) => f.page && f.slug !== excludeSlug && (stats.get(f.slug)?.count ?? 0) >= 1,
+    (f) => f.page && f.slug !== excludeSlug && isIndexableFacet(f.slug, stats),
   ).map((f) => ({ slug: f.slug, chipLabel: f.chipLabel }))
 }

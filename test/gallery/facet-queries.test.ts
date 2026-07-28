@@ -37,6 +37,7 @@ async function seed(
     upvoteCount?: number
     copyCount?: number
     createdAt?: Date
+    reviewedAt?: Date | null
   } = {},
 ) {
   const interpreter = opts.interpreter ?? 'bash'
@@ -70,21 +71,33 @@ async function seed(
       interpreter,
       contentSha256: slug.padEnd(64, '0'),
       status: 'approved',
+      reviewedAt: opts.reviewedAt,
     })
     .returning()
   await db
     .update(schema.configs)
     .set({ currentVersionId: ver!.id })
     .where(eq(schema.configs.id, cfg!.id))
+  return { config: cfg!, version: ver! }
 }
 
 describe('facet queries', () => {
   beforeAll(async () => {
-    await seed('git-a', {
+    const gitA = await seed('git-a', {
       tags: ['git'],
       upvoteCount: 9,
       copyCount: 5,
       createdAt: new Date(2026, 5, 1),
+      reviewedAt: new Date(2026, 6, 5),
+    })
+    await db.insert(schema.configVersions).values({
+      configId: gitA.config.id,
+      versionNumber: 2,
+      source: 'echo newer but not current',
+      interpreter: 'bash',
+      contentSha256: 'git-a-not-current'.padEnd(64, '0'),
+      status: 'approved',
+      reviewedAt: new Date(2026, 11, 31),
     })
     await seed('git-b', {
       tags: ['git', 'cost'],
@@ -93,15 +106,36 @@ describe('facet queries', () => {
       createdAt: new Date(2026, 5, 2),
     })
     await seed('git-draft', { tags: ['git'], status: 'draft' })
-    await seed('py-a', { interpreter: 'python', createdAt: new Date(2026, 5, 3) })
+    await seed('py-a', {
+      interpreter: 'python',
+      createdAt: new Date(2026, 5, 3),
+      reviewedAt: new Date(2026, 6, 7),
+    })
     await seed('plain', {})
+    await db.insert(schema.configs).values({
+      slug: 'git-orphan',
+      title: 'git-orphan',
+      description: 'desc',
+      authorId: 'u1',
+      interpreter: 'bash',
+      status: 'published',
+      tags: ['git'],
+      allTags: computeAllTags({
+        curatedTags: ['git'],
+        interpreter: 'bash',
+        networkHosts: [],
+        readsClaudeToken: false,
+      }),
+      createdAt: new Date(2026, 11, 1),
+    })
   })
 
-  it('counts published matches per facet with the newest createdAt', async () => {
+  it('counts current-version published matches with the newest effective update date', async () => {
     const stats = await getFacetStats(db)
-    expect(stats.get('git')).toEqual({ count: 2, latest: new Date(2026, 5, 2) })
+    expect(stats.get('git')).toEqual({ count: 2, latest: new Date(2026, 6, 5) })
     expect(stats.get('cost')?.count).toBe(1)
-    expect(stats.get('python')).toEqual({ count: 1, latest: new Date(2026, 5, 3) })
+    expect(stats.get('cost')?.latest).toEqual(new Date(2026, 5, 2))
+    expect(stats.get('python')).toEqual({ count: 1, latest: new Date(2026, 6, 7) })
     // every registry facet is present, even with zero matches
     expect(stats.get('powerline')).toEqual({ count: 0, latest: null })
   })
