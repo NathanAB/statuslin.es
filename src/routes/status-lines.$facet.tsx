@@ -29,6 +29,9 @@ export const Route = createFileRoute('/status-lines/$facet')({
       meta: [
         { title: `${titleBase} | statuslin.es` },
         { name: 'description', content: metaDescription },
+        ...(!loaderData.page.indexable
+          ? [{ name: 'robots', content: 'noindex, follow' } as const]
+          : []),
         ...staticPageSocialMeta({
           path,
           title: titleBase,
@@ -41,6 +44,7 @@ export const Route = createFileRoute('/status-lines/$facet')({
         { slug: facet.slug, titleBase },
         loaderData.page.cards.map((c) => ({ slug: c.slug, title: c.title })),
         loaderData.page.updated,
+        { includeCollectionPage: loaderData.page.indexable },
       ).map(jsonLdScript),
     }
   },

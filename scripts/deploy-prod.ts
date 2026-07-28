@@ -1,126 +1,178 @@
-/**
- * Gated production promote: smoke whatever staging runs → promote that exact image by digest.
- *
- * Why this exists: source gates (tsc/lint/vitest) all pass while the client bundle is dead —
- * a server-only import leaking into the browser throws `Buffer is not defined`, hydration
- * fails, every button goes dead, and SSR still returns 200 so nothing alerts. On 2026-06-29
- * that shipped to prod for ~2.5h. The fix is to make a REAL browser confirm staging hydrates
- * before prod can ever see the image. Staging runs the exact same Docker image we promote, so
- * smoking staging smokes the real production bundle.
- *
- * Deploy staging first with `bun run deploy:staging` (its own command, so a staging deploy
- * that was already validated by hand isn't repeated here). Then this script:
- *   1. reads the digest of the image staging is running now
- *   2. smokes staging       (signed-out browser checks: pages hydrate, no console errors)
- *   3. re-reads the digest and refuses if it changed mid-smoke (someone redeployed staging),
- *      then promotes on green only (fly deploy --app statuslines --image …@<digest>)
- *
- * Run: `bun run deploy:prod`. Aborts before promoting if the smoke fails or the digest moved.
- */
 import { spawn, spawnSync } from 'node:child_process'
+import { parseFlyImageReference } from './deploy-staging'
 
+const PRODUCTION_APP = 'statuslines'
 const STAGING_APP = 'statuslines-staging'
-const PROD_APP = 'statuslines'
+const PRODUCTION_URL = 'https://statuslin.es'
 const STAGING_URL = 'https://staging.statuslin.es'
 
-/**
- * Pull the single image digest from `fly image show --app <app> --json` output. Every machine in
- * the app runs the same image, so all `Digest` fields must agree — if they don't, the deploy
- * hasn't settled and promoting would ship an ambiguous image, so we throw instead of guessing.
- */
-export function parseStagingDigest(jsonOutput: string): string {
-  // fly emits PascalCase keys (Digest, Repository, …); read via an index type so we don't declare
-  // a non-camelCase property name (which the linter rejects).
-  const entries = JSON.parse(jsonOutput) as Array<Record<string, string>>
-  const [digest, ...rest] = [...new Set(entries.map((e) => e.Digest).filter((d) => !!d))]
-  if (!digest) throw new Error('no image digest found in `fly image show` output')
-  if (rest.length > 0)
-    throw new Error(
-      `staging is running mixed images (${[digest, ...rest].join(', ')}) — deploy not settled, refusing to promote`,
-    )
-  if (!/^sha256:[0-9a-f]{64}$/.test(digest))
-    throw new Error(`unexpected digest format from fly: ${digest}`)
-  return digest
+type ImageCheckpoint = {
+  productionBefore: string
+  productionNow: string
+  stagingBefore: string
+  stagingNow: string
 }
 
-/**
- * The digest smoked and the digest promoted must be the same image. If staging was redeployed
- * while the smoke ran, the smoke's verdict says nothing about what a promote would ship — throw
- * instead of promoting an unvalidated image.
- */
-export function assertDigestUnchanged(smoked: string, current: string): void {
-  if (smoked !== current)
+/** Promotion is valid only while both checked deployments remain unchanged. */
+export function assertImageReferencesUnchanged(checkpoint: ImageCheckpoint): void {
+  if (checkpoint.productionBefore !== checkpoint.productionNow)
     throw new Error(
-      `staging image changed during the smoke (smoked ${smoked}, staging now runs ${current}) — refusing to promote. Re-run bun run deploy:prod.`,
+      `production image changed during validation (${checkpoint.productionBefore} → ${checkpoint.productionNow})`,
+    )
+  if (checkpoint.stagingBefore !== checkpoint.stagingNow)
+    throw new Error(
+      `staging image changed during validation (${checkpoint.stagingBefore} → ${checkpoint.stagingNow})`,
     )
 }
 
-/** Run a command with the parent's stdio attached; resolve its exit code. */
-function run(cmd: string[], env: NodeJS.ProcessEnv = process.env): Promise<number> {
-  return new Promise((resolve) => {
-    const [bin, ...args] = cmd
-    if (!bin) throw new Error('run: empty command')
-    const child = spawn(bin, args, { stdio: 'inherit', env })
-    // A spawn failure (e.g. `fly` not on PATH) emits 'error' and may never emit 'close' — resolve
-    // non-zero so the gate fails closed instead of hanging forever.
-    child.on('error', (err) => {
-      console.error(`failed to run \`${bin}\`: ${err.message}`)
-      resolve(1)
-    })
-    child.on('close', (code: number | null) => resolve(code ?? 1))
-  })
+function attributeValues(html: string, pattern: RegExp): string[] {
+  return [...html.matchAll(pattern)].flatMap((match) => (match[1] ? [match[1]] : []))
 }
 
-function die(message: string): never {
-  console.error(`\n✗ ${message}`)
-  process.exit(1)
+function assetsFromHtml(html: string, pageUrl: string): string[] {
+  const origin = new URL(pageUrl).origin
+  const sources = [
+    ...attributeValues(html, /<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi),
+    ...attributeValues(
+      html,
+      /<link\b(?=[^>]*\brel=["'][^"']*\b(?:stylesheet|modulepreload)\b[^"']*["'])[^>]*\bhref=["']([^"']+)["'][^>]*>/gi,
+    ),
+  ]
+  return sources
+    .map((source) => new URL(source, pageUrl))
+    .filter((url) => url.origin === origin)
+    .map((url) => url.href)
 }
 
-/** Read the digest staging is running right now (dies on error/ambiguity). */
-function readStagingDigest(): string {
-  const shown = spawnSync('fly', ['image', 'show', '--app', STAGING_APP, '--json'], {
-    encoding: 'utf8',
-  })
-  if (shown.status !== 0) die(`could not read staging image: ${shown.stderr || shown.stdout}`)
-  try {
-    return parseStagingDigest(shown.stdout)
-  } catch (err) {
-    die(err instanceof Error ? err.message : String(err))
+/**
+ * Save the current production generation's assets from the three stable pages and one real detail
+ * page. The caller supplies page loading so this remains unit-testable without network access.
+ */
+export async function collectProductionAssetUrls(
+  origin: string,
+  fetchPage: (url: string) => Promise<string>,
+): Promise<string[]> {
+  const base = origin.replace(/\/$/, '')
+  const homeUrl = `${base}/`
+  const home = await fetchPage(homeUrl)
+  const detailHref = attributeValues(home, /<a\b[^>]*\bhref=["'](\/c\/[^"'?#]+)["'][^>]*>/gi)[0]
+  if (!detailHref) throw new Error('production homepage has no linked detail page')
+
+  const pageUrls = [homeUrl, `${base}/resources`, `${base}/terms`, new URL(detailHref, base).href]
+  const pages = await Promise.all(
+    pageUrls.map(async (pageUrl) => ({ html: await fetchPage(pageUrl), pageUrl })),
+  )
+  const pageAssets = pages.map(({ html, pageUrl }) => ({
+    assets: assetsFromHtml(html, pageUrl),
+    pageUrl,
+  }))
+  for (const { assets, pageUrl } of pageAssets) {
+    if (assets.length === 0)
+      throw new Error(`${new URL(pageUrl).pathname} has no qualifying same-origin asset`)
+  }
+  return [...new Set(pageAssets.flatMap(({ assets }) => assets))].sort()
+}
+
+const CONTENT_TYPES: Record<string, RegExp> = {
+  '.css': /^text\/css\b/i,
+  '.gif': /^image\/gif\b/i,
+  '.jpeg': /^image\/jpeg\b/i,
+  '.jpg': /^image\/jpeg\b/i,
+  '.js': /^(?:text|application)\/javascript\b/i,
+  '.mjs': /^(?:text|application)\/javascript\b/i,
+  '.png': /^image\/png\b/i,
+  '.svg': /^image\/svg\+xml\b/i,
+  '.webp': /^image\/webp\b/i,
+  '.woff': /^font\/woff\b/i,
+  '.woff2': /^font\/woff2\b/i,
+}
+
+/** Validate one retained asset response, including the common HTML fallback failure mode. */
+export async function assertAssetResponse(url: string, response: Response): Promise<void> {
+  if (response.status !== 200) throw new Error(`${url} returned status ${response.status}`)
+  const pathname = new URL(url).pathname.toLowerCase()
+  const extension = Object.keys(CONTENT_TYPES).find((candidate) => pathname.endsWith(candidate))
+  const contentType = response.headers.get('content-type') ?? ''
+  const expectedType = extension ? CONTENT_TYPES[extension] : undefined
+  if (!expectedType?.test(contentType))
+    throw new Error(`${url} has unexpected content-type ${contentType || '(missing)'}`)
+  const cacheControl = response.headers.get('cache-control') ?? ''
+  const contradictory = cacheControl.match(/(?:^|,)\s*(no-store|no-cache)\b/i)?.[1]
+  if (contradictory) throw new Error(`${url} has contradictory ${contradictory} caching`)
+  if (!/\bimmutable\b/i.test(cacheControl)) throw new Error(`${url} is missing immutable caching`)
+  const maxAge = Number(cacheControl.match(/(?:^|,)\s*max-age=(\d+)\b/i)?.[1] ?? 0)
+  if (maxAge < 31_536_000) throw new Error(`${url} has insufficient max-age caching`)
+
+  const beginning = new TextDecoder().decode((await response.arrayBuffer()).slice(0, 256))
+  const withoutLeadingComments = beginning.replace(/^\s*(?:<!--[\s\S]*?-->\s*)*/, '')
+  if (/^\s*<(?:!doctype\s+html|html|head|body)\b/i.test(withoutLeadingComments))
+    throw new Error(`${url} returned an HTML body instead of an asset`)
+}
+
+async function fetchPage(url: string): Promise<string> {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`${url} returned status ${response.status}`)
+  return response.text()
+}
+
+async function verifyAssets(assetUrls: string[], targetOrigin: string): Promise<void> {
+  const target = new URL(targetOrigin)
+  for (const productionAssetUrl of assetUrls) {
+    const source = new URL(productionAssetUrl)
+    const url = new URL(`${source.pathname}${source.search}`, target).href
+    await assertAssetResponse(url, await fetch(url))
   }
 }
 
-async function main(): Promise<void> {
-  console.log('▸ [1/3] reading the image staging runs now …')
-  console.log(`  (deploy staging first with \`bun run deploy:staging\` if you haven't)`)
-  const digest = readStagingDigest()
-  console.log(`  staging image digest: ${digest}`)
+function readImage(app: string, label: string): string {
+  const shown = spawnSync('fly', ['image', 'show', '--app', app, '--json'], {
+    encoding: 'utf8',
+  })
+  if (shown.status !== 0) throw new Error(`could not read ${label} image`)
+  return parseFlyImageReference(shown.stdout, label)
+}
 
-  console.log('\n▸ [2/3] smoking staging in a real browser (signed-out hydration) …')
-  // Member-assign the env vars (not an object literal) so their SCREAMING_SNAKE names don't trip
-  // the camelCase property-name lint.
+function run(command: string[], env: NodeJS.ProcessEnv = process.env): Promise<number> {
+  const [bin, ...args] = command
+  if (!bin) throw new Error('cannot run an empty command')
+  return new Promise((resolve) => {
+    const child = spawn(bin, args, { env, stdio: 'inherit' })
+    child.on('error', () => resolve(1))
+    child.on('close', (code) => resolve(code ?? 1))
+  })
+}
+
+export async function main(): Promise<void> {
+  const productionBefore = readImage(PRODUCTION_APP, 'production')
+  const stagingBefore = readImage(STAGING_APP, 'staging')
+  const assetUrls = await collectProductionAssetUrls(PRODUCTION_URL, fetchPage)
+
   const smokeEnv = { ...process.env }
   smokeEnv.SMOKE_BASE_URL = STAGING_URL
   smokeEnv.SMOKE_SIGNED_OUT_ONLY = '1'
-  const smokeCode = await run(['bun', 'run', 'smoke'], smokeEnv)
-  if (smokeCode !== 0) {
-    die(`staging smoke FAILED — refusing to promote ${digest} to ${PROD_APP}. Fix staging first.`)
-  }
+  if ((await run(['bun', 'run', 'smoke'], smokeEnv)) !== 0)
+    throw new Error('staging browser smoke failed')
 
-  console.log('\n▸ [3/3] smoke green — promoting validated image to production …')
-  try {
-    assertDigestUnchanged(digest, readStagingDigest())
-  } catch (err) {
-    die(err instanceof Error ? err.message : String(err))
-  }
-  const image = `registry.fly.io/${STAGING_APP}@${digest}`
-  if ((await run(['fly', 'deploy', '--app', PROD_APP, '--image', image])) !== 0) {
-    die('prod promote failed (staging is healthy; image is validated — safe to retry the promote)')
-  }
-  console.log(`\n✓ production now running validated image ${image}`)
+  await verifyAssets(assetUrls, STAGING_URL)
+  assertImageReferencesUnchanged({
+    productionBefore,
+    productionNow: readImage(PRODUCTION_APP, 'production'),
+    stagingBefore,
+    stagingNow: readImage(STAGING_APP, 'staging'),
+  })
+
+  if ((await run(['fly', 'deploy', '--app', PRODUCTION_APP, '--image', stagingBefore])) !== 0)
+    throw new Error('production promotion failed')
+
+  await verifyAssets(assetUrls, PRODUCTION_URL)
+  console.log(`production is running validated image ${stagingBefore}`)
 }
 
-// Only run the deploy when invoked directly (`bun run scripts/deploy-prod.ts`); importing this
-// file (e.g. from the test) must NOT trigger a deploy.
 if (import.meta.main) {
-  await main()
+  try {
+    await main()
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exit(1)
+  }
 }

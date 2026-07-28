@@ -10,6 +10,98 @@
  */
 import { type ChildProcess, spawn } from 'node:child_process'
 import { setTimeout as sleep } from 'node:timers/promises'
+import { HOME_HEADING_BASE, HOME_TITLE_BASE } from '../src/lib/page-title'
+
+export const EXPECTED_HOME = {
+  h1: `statuslin.es ${HOME_HEADING_BASE}`,
+  title: `${HOME_TITLE_BASE} | statuslin.es`,
+} as const
+
+type HomeDocument = {
+  bodyText: string
+  canonical: string | null
+  h1: string | null
+  title: string
+}
+
+type BrowserResourceKind = 'modulepreload' | 'script' | 'stylesheet'
+
+type BrowserResource = {
+  kind: BrowserResourceKind
+  status: number
+  url: string
+}
+
+function normalizedText(value: string | null): string {
+  return (value ?? '').trim().replace(/\s+/g, ' ')
+}
+
+function normalizedRoot(url: string): string | undefined {
+  const parsed = new URL(url)
+  if (parsed.pathname !== '/' || parsed.search || parsed.hash) return undefined
+  return parsed.origin
+}
+
+/** Assert the browser-facing homepage metadata and rendered shell. */
+export function assertHomeDocument(document: HomeDocument, baseUrl: string): void {
+  if (document.title !== EXPECTED_HOME.title)
+    throw new Error(`unexpected homepage title: ${document.title}`)
+  const expectedCanonical = normalizedRoot(baseUrl)
+  if (
+    !document.canonical ||
+    !expectedCanonical ||
+    normalizedRoot(document.canonical) !== expectedCanonical
+  )
+    throw new Error(`unexpected homepage canonical: ${document.canonical ?? '(missing)'}`)
+  if (normalizedText(document.h1) !== EXPECTED_HOME.h1)
+    throw new Error(`unexpected homepage H1: ${normalizedText(document.h1) || '(missing)'}`)
+  if (!normalizedText(document.bodyText)) throw new Error('homepage rendered an empty body')
+  if (
+    /(?:application|internal server|rendering)\s+error|something went wrong/i.test(
+      document.bodyText,
+    )
+  )
+    throw new Error('homepage rendered an error shell')
+}
+
+/** Assert every browser-requested same-origin script and stylesheet loaded successfully. */
+export function assertFirstPartyResources(resources: BrowserResource[], baseUrl: string): void {
+  const origin = new URL(baseUrl).origin
+  const firstParty = resources.filter((resource) => new URL(resource.url).origin === origin)
+  if (firstParty.length === 0) throw new Error('no same-origin initial browser resource found')
+  for (const resource of firstParty) {
+    if (resource.status < 200 || resource.status >= 400)
+      throw new Error(`${resource.url} returned status ${resource.status}`)
+  }
+}
+
+export const INITIAL_BROWSER_RESOURCE_SELECTOR =
+  'script[src],link[rel="stylesheet"][href],link[rel="modulepreload"][href]'
+
+/** Collect the initial same-origin browser resources selected by the live smoke probe. */
+export function collectInitialBrowserResources(
+  root: ParentNode,
+  baseUrl: string,
+): Array<Omit<BrowserResource, 'status'>> {
+  const origin = new URL(baseUrl).origin
+  return [
+    ...root.querySelectorAll<HTMLScriptElement | HTMLLinkElement>(
+      INITIAL_BROWSER_RESOURCE_SELECTOR,
+    ),
+  ].flatMap((element) => {
+    const source = element.getAttribute(element instanceof HTMLScriptElement ? 'src' : 'href')
+    if (!source) return []
+    const url = new URL(source, baseUrl).href
+    if (new URL(url).origin !== origin) return []
+    const kind: BrowserResourceKind =
+      element instanceof HTMLScriptElement
+        ? 'script'
+        : element.rel === 'modulepreload'
+          ? 'modulepreload'
+          : 'stylesheet'
+    return [{ kind, url }]
+  })
+}
 
 // SMOKE_BASE_URL points the smoke at an already-running, possibly remote app (e.g. deployed
 // staging — which runs the exact production image we promote). When it's set we DON'T boot or
@@ -31,7 +123,16 @@ function check(ok: boolean, label: string, detail = '') {
   }
 }
 
-/** Run an agent-browser subcommand, return trimmed stdout (stderr folded in). */
+/** Normalize an agent-browser subprocess result for the smoke runner. */
+export function browserCommandOutput(stdout: string, stderr: string, exitCode: number): string {
+  if (exitCode !== 0) {
+    const detail = stderr.trim() || stdout.trim()
+    throw new Error(`agent-browser exited with code ${exitCode}${detail ? `: ${detail}` : ''}`)
+  }
+  return stdout.trim()
+}
+
+/** Run an agent-browser subcommand and return its trimmed stdout. */
 async function ab(...args: string[]): Promise<string> {
   // Own session so the smoke never shares cookies/state with manual agent-browser usage.
   const proc = Bun.spawn(['agent-browser', '--session-name', 'statuslines-smoke', ...args], {
@@ -42,8 +143,33 @@ async function ab(...args: string[]): Promise<string> {
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
   ])
-  await proc.exited
-  return `${out}${err}`.trim()
+  const exitCode = await proc.exited
+  return browserCommandOutput(out, err, exitCode)
+}
+
+function parseBrowserJson<T>(raw: string): T {
+  let parsed: unknown = JSON.parse(raw)
+  if (typeof parsed === 'string') parsed = JSON.parse(parsed)
+  return parsed as T
+}
+
+async function checkBrowserFacingHome(): Promise<void> {
+  const document = parseBrowserJson<HomeDocument>(
+    await ab(
+      'eval',
+      `JSON.stringify({title:document.title,canonical:document.querySelector('link[rel="canonical"]')?.href||null,h1:document.querySelector('h1')?.textContent||null,bodyText:document.body.innerText})`,
+    ),
+  )
+  assertHomeDocument(document, BASE)
+
+  const resources = parseBrowserJson<BrowserResource[]>(
+    await ab(
+      'eval',
+      `(async()=>{const elements=[...document.querySelectorAll(${JSON.stringify(INITIAL_BROWSER_RESOURCE_SELECTOR)})];const firstParty=elements.filter(element=>new URL(element.src||element.href).origin===location.origin);return JSON.stringify(await Promise.all(firstParty.map(async element=>{const url=element.src||element.href;const response=await fetch(url,{cache:'no-cache'});const kind=element.tagName==='SCRIPT'?'script':element.rel==='modulepreload'?'modulepreload':'stylesheet';return {kind,status:response.status,url}})))})()`,
+    ),
+  )
+  assertFirstPartyResources(resources, BASE)
+  check(true, 'home title, canonical, H1, body, and initial resources are valid')
 }
 
 async function reachable(url: string): Promise<boolean> {
@@ -159,6 +285,7 @@ async function checkSignedOut() {
   await ensureSignedOut()
 
   await pageConsoleClean('home', '/')
+  await checkBrowserFacingHome()
   check(/Trending/i.test(await ab('snapshot', '-i')), 'home gallery renders')
 
   const detail = (
@@ -296,15 +423,16 @@ async function main() {
   console.log('\nSMOKE PASSED')
 }
 
-try {
-  await main()
-} catch (err) {
-  // Harness/env failure (no agent-browser, server won't boot, no admin user). Still non-zero so
-  // the gate doesn't silently "pass" — fix the environment, don't skip the browser check.
-  console.error(`\nSMOKE ERROR: ${err instanceof Error ? err.message : String(err)}`)
-  process.exit(1)
+if (import.meta.main) {
+  try {
+    await main()
+  } catch (err) {
+    // Harness/env failure (no agent-browser, server won't boot, no admin user). Still non-zero so
+    // the gate doesn't silently "pass" — fix the environment, don't skip the browser check.
+    console.error(`\nSMOKE ERROR: ${err instanceof Error ? err.message : String(err)}`)
+    process.exit(1)
+  }
+  // Force exit: agent-browser leaves a detached headless-Chrome daemon and other spawned children
+  // can hold open handles that otherwise keep this process alive forever.
+  process.exit(failures.length > 0 ? 1 : 0)
 }
-// Force exit: agent-browser leaves a detached headless-Chrome daemon and other spawned children can
-// hold open handles that otherwise keep this process alive forever — which hangs the pre-push hook.
-// main() already logged the result and killed the dev server; this just guarantees we actually exit.
-process.exit(failures.length > 0 ? 1 : 0)

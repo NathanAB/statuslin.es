@@ -22,7 +22,7 @@
     "check:frontend": "bun run scripts/check-frontend.ts",
     "smoke": "bun run scripts/smoke.ts",
     "e2e:rejection-resubmission": "bun run scripts/e2e/rejection-resubmission.ts",
-    "deploy:staging": "fly deploy --config fly.staging.toml",
+    "deploy:staging": "bun run scripts/deploy-staging.ts",
     "deploy:prod": "bun run scripts/deploy-prod.ts",
     "render": "bun run scripts/render.ts",
     "rerender:previews": "bun run scripts/rerender-previews.ts",

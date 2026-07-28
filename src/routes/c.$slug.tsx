@@ -64,7 +64,6 @@ export const Route = createFileRoute('/c/$slug')({
             interpreter: detail.interpreter,
             authorName: detail.author?.name ?? null,
             license: detail.license,
-            copyCount: detail.copyCount,
             keywords: detail.facetLinks.map((f) => f.chipLabel),
             updatedAt: detail.updatedAt,
             generatedContent: detail.generatedContent,

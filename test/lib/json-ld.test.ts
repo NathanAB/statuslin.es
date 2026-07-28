@@ -17,10 +17,14 @@ describe('jsonLdScript', () => {
 
 describe('homeJsonLd', () => {
   it('builds WebSite identity plus a CollectionPage of config URLs', () => {
-    const nodes = homeJsonLd('https://statuslin.es', [
-      { slug: 'a-1', title: 'Alpha' },
-      { slug: 'b-2', title: 'Beta' },
-    ]) as Array<Record<string, unknown>>
+    const nodes = homeJsonLd(
+      'https://statuslin.es',
+      [
+        { slug: 'a-1', title: 'Alpha' },
+        { slug: 'b-2', title: 'Beta' },
+      ],
+      { page: 1, pageSize: 10 },
+    ) as Array<Record<string, unknown>>
     expect(nodes).toHaveLength(2)
     expect(nodes[0]).toEqual({
       '@context': 'https://schema.org',
@@ -52,6 +56,30 @@ describe('homeJsonLd', () => {
       },
     })
   })
+
+  it('gives page 2 its own URL, name, and gallery-wide item positions', () => {
+    const nodes = homeJsonLd(
+      'https://statuslin.es',
+      [
+        { slug: 'a-1', title: 'Alpha' },
+        { slug: 'b-2', title: 'Beta' },
+      ],
+      { page: 2, pageSize: 10 },
+    ) as Array<Record<string, unknown>>
+
+    expect(nodes[0]).toMatchObject({
+      '@type': 'WebSite',
+      url: 'https://statuslin.es',
+    })
+    expect(nodes[1]).toMatchObject({
+      '@type': 'CollectionPage',
+      name: 'Claude Code Status Line Examples — Page 2',
+      url: 'https://statuslin.es/?page=2',
+      mainEntity: {
+        itemListElement: [{ position: 11 }, { position: 12 }],
+      },
+    })
+  })
 })
 
 describe('configJsonLd', () => {
@@ -63,7 +91,6 @@ describe('configJsonLd', () => {
     interpreter: 'bash',
     authorName: 'LindseyB',
     license: null as string | null,
-    copyCount: 12,
     keywords: ['Git', 'Token usage'],
     updatedAt: '2026-07-06',
     generatedContent: {
@@ -117,19 +144,15 @@ describe('configJsonLd', () => {
     expect(code!.license).toContain('creativecommons.org')
   })
 
-  // --- GEO enrichment: freshness, statistics, entity clarity, extractable Q&A ---
+  // --- GEO enrichment: freshness, entity clarity, extractable Q&A ---
 
-  it('enriches SoftwareSourceCode with freshness, install stat, platform, and keywords', () => {
+  it('enriches SoftwareSourceCode without presenting copies as install interactions', () => {
     const [code] = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
     expect(code).toMatchObject({
       dateModified: '2026-07-06',
       runtimePlatform: 'Claude Code',
-      interactionStatistic: {
-        '@type': 'InteractionCounter',
-        interactionType: 'https://schema.org/InstallAction',
-        userInteractionCount: 12,
-      },
     })
+    expect(code).not.toHaveProperty('interactionStatistic')
     // keywords carry the facet labels (schema.org accepts a comma-separated string)
     expect(code!.keywords).toBe('Git, Token usage')
   })

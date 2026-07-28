@@ -76,19 +76,25 @@ export async function getPublishedCount(db: Db, tags: string[] = []): Promise<nu
   return row?.n ?? 0
 }
 
-/**
- * Every published config's slug + createdAt, newest first — the minimal columns the sitemap
- * needs. Deliberately unpaginated and join-free (the sitemap lists all configs, not a page),
- * so it stays a single index-covered scan over `(status, created_at)`.
- */
+/** Published sitemap rows joined to their current version, newest reviewed/created date first. */
 export async function getPublishedSlugsForSitemap(
   db: Db,
-): Promise<Array<{ slug: string; createdAt: Date }>> {
-  return db
-    .select({ slug: configs.slug, createdAt: configs.createdAt })
+): Promise<Array<{ slug: string; updatedAt: Date }>> {
+  const effectiveUpdatedAt = sql`coalesce(${configVersions.reviewedAt}, ${configs.createdAt})`
+  const rows = await db
+    .select({
+      slug: configs.slug,
+      createdAt: configs.createdAt,
+      reviewedAt: configVersions.reviewedAt,
+    })
     .from(configs)
+    .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .where(eq(configs.status, 'published'))
-    .orderBy(desc(configs.createdAt))
+    .orderBy(desc(effectiveUpdatedAt))
+  return rows.map((row) => ({
+    slug: row.slug,
+    updatedAt: row.reviewedAt ?? row.createdAt,
+  }))
 }
 
 export async function getPublishedConfigs(
@@ -227,7 +233,14 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
 
 export { coerceInterpreter } from './card-rows'
 export type { FacetStats } from './facet-queries'
-export { getFacetCards, getFacetStats, liveFacetLinks, resolveLiveFacet } from './facet-queries'
+export {
+  getFacetCards,
+  getFacetStats,
+  isIndexableFacet,
+  liveFacetLinks,
+  MIN_INDEXABLE_FACET_CONFIGS,
+  resolveLiveFacet,
+} from './facet-queries'
 // Re-exported so @/gallery/queries stays the single import surface for gallery
 // queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
