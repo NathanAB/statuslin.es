@@ -10,6 +10,7 @@ import {
   SANDBOX_ANTHROPIC_USAGE_KEY_PATH,
   SANDBOX_ANTHROPIC_USAGE_SERVER_DEST,
 } from './e2b-template'
+import type { Scenario } from './types'
 
 const RESPONSE_STAGING_PATH = '/tmp/statuslines-usage-response.json'
 const RESPONSE_PATH = '/run/statuslines/anthropic-usage-response.json'
@@ -29,13 +30,15 @@ export function withAnthropicUsageEnv(env: Record<string, string>): Record<strin
 
 /** Trusted files written before submitted code starts. Neither value contains a real credential. */
 export function anthropicUsageMockFiles(
-  stdin: Record<string, unknown>,
+  scenario: Pick<Scenario, 'stdin' | 'anthropicUsage'>,
   nowMs = Date.now(),
 ): { path: string; data: string }[] {
   return [
     {
       path: RESPONSE_STAGING_PATH,
-      data: JSON.stringify(buildAnthropicUsageResponse(stdin, nowMs)),
+      data: JSON.stringify(
+        buildAnthropicUsageResponse(scenario.stdin, nowMs, scenario.anthropicUsage),
+      ),
     },
     {
       path: CREDENTIALS_PATH,

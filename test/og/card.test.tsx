@@ -36,6 +36,29 @@ describe('og cards render to PNG', () => {
     expect(png.length).toBeGreaterThan(2000)
   })
 
+  it('configCard renders checker-board fill as a real glyph instead of tofu', async () => {
+    const renderGlyph = (glyph: string) =>
+      toElementPng(
+        configCard({
+          title: 'Weekly Quota Pacer',
+          author: 'Andrew Boyd',
+          previews: [
+            {
+              scenarioKey: 'big-context',
+              segments: [seg(`F 80% █████${glyph.repeat(8)}`, 'rgb(187,187,0)')],
+            },
+          ],
+        }),
+      )
+
+    const [checker, knownMissing] = await Promise.all([
+      renderGlyph('🮕'),
+      renderGlyph(String.fromCodePoint(0x10ffff)),
+    ])
+
+    expect(Buffer.from(checker).equals(Buffer.from(knownMissing))).toBe(false)
+  })
+
   it('configCard tolerates an empty previews list and a null author', async () => {
     const png = await toElementPng(configCard({ title: 'No previews', author: null, previews: [] }))
     expect(Array.from(png.slice(0, 8))).toEqual(PNG_MAGIC)

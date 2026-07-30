@@ -87,6 +87,30 @@ describe('SCENARIOS — exhaustive coverage of the statusline stdin schema', () 
     ) // partial
   })
 
+  it('models all-model and Fable weekly usage both behind and ahead of even reset pace', () => {
+    const weekSeconds = 7 * 24 * 60 * 60
+    const paceState = (key: string) => {
+      const scenario = SCENARIOS.find((candidate) => candidate.key === key)
+      if (!scenario) throw new Error(`${key} missing`)
+      const weekly = get(scenario.stdin.rate_limits, 'seven_day') as Obj
+      const resetOffset = get(weekly, 'resets_at') as number
+      const elapsedPercent = ((weekSeconds - resetOffset) / weekSeconds) * 100
+      return {
+        allModelsAhead: (get(weekly, 'used_percentage') as number) > elapsedPercent,
+        fableAhead: (scenario.anthropicUsage?.fableWeeklyPercent ?? 0) > elapsedPercent,
+      }
+    }
+
+    expect(paceState('clean-main')).toEqual({ allModelsAhead: false, fableAhead: false })
+    expect(paceState('big-context')).toEqual({ allModelsAhead: true, fableAhead: true })
+    expect(SCENARIOS.find((scenario) => scenario.key === 'clean-main')?.anthropicUsage).toEqual({
+      fableWeeklyPercent: 15,
+    })
+    expect(SCENARIOS.find((scenario) => scenario.key === 'big-context')?.anthropicUsage).toEqual({
+      fableWeeklyPercent: 80,
+    })
+  })
+
   it('covers context states: null usage, near-full, and exceeds_200k', () => {
     const nullUsage = stdins().filter(
       (s) => (get(s.context_window, 'current_usage') ?? null) === null,

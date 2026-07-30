@@ -1,6 +1,11 @@
 export const INTERPRETERS = ['bash', 'node', 'python'] as const
 export type Interpreter = (typeof INTERPRETERS)[number]
 
+/** Renderer-owned Anthropic usage API values that are not part of Claude Code's status line stdin. */
+export interface AnthropicUsageFixture {
+  fableWeeklyPercent: number
+}
+
 /** A session state we render the statusline against. */
 export interface Scenario {
   key: string
@@ -13,6 +18,8 @@ export interface Scenario {
   git: { branch: string; dirty: boolean } | null
   /** Extra env vars Claude Code would set (e.g. COLUMNS/LINES). */
   env: Record<string, string>
+  /** Optional values served by the local Anthropic usage API mock for token-reading status lines. */
+  anthropicUsage?: AnthropicUsageFixture
 }
 
 export interface RenderInput {

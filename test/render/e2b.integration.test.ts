@@ -102,8 +102,8 @@ run('E2BSandboxRunner (integration, needs E2B_API_KEY)', () => {
 
   const usageScenario = SCENARIOS.find((scenario) => scenario.key === 'fresh-session')
   if (!usageScenario) throw new Error('fresh-session scenario missing')
-  const populatedUsageScenario = SCENARIOS.find((scenario) => scenario.key === 'near-full')
-  if (!populatedUsageScenario) throw new Error('near-full scenario missing')
+  const fableUsageScenario = SCENARIOS.find((scenario) => scenario.key === 'big-context')
+  if (!fableUsageScenario) throw new Error('big-context scenario missing')
 
   it.each([
     {
@@ -119,8 +119,8 @@ run('E2BSandboxRunner (integration, needs E2B_API_KEY)', () => {
     },
     {
       interpreter: 'python' as const,
-      scenario: populatedUsageScenario,
-      expected: '88/61/15',
+      scenario: fableUsageScenario,
+      expected: '33/80/80',
       script: [
         'import json, os, sys, urllib.request',
         'json.load(sys.stdin)',

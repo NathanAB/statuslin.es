@@ -22,6 +22,15 @@ function tagAt(dv: DataView, off: number): string {
   )
 }
 
+function tableOffset(dv: DataView, tag: string): number {
+  const numTables = dv.getUint16(4)
+  for (let i = 0; i < numTables; i++) {
+    const rec = 12 + i * 16
+    if (tagAt(dv, rec) === tag) return dv.getUint32(rec + 8)
+  }
+  throw new Error(`font table ${tag} not found`)
+}
+
 function readFormat4(dv: DataView, off: number, out: Set<number>): void {
   const segCount = dv.getUint16(off + 6) / 2
   const endOff = off + 14
@@ -90,4 +99,68 @@ export function fontCmapCodepoints(data: ArrayBuffer | Uint8Array): Set<number> 
 /** True if at least one of the fonts covers `cp`. */
 export function anyFontCovers(fontSets: Set<number>[], cp: number): boolean {
   return fontSets.some((s) => s.has(cp))
+}
+
+function glyphIdFromFormat4(dv: DataView, off: number, cp: number): number {
+  if (cp > 0xffff) return 0
+  const segCount = dv.getUint16(off + 6) / 2
+  const endOff = off + 14
+  const startOff = endOff + segCount * 2 + 2
+  const deltaOff = startOff + segCount * 2
+  const rangeOff = deltaOff + segCount * 2
+  for (let s = 0; s < segCount; s++) {
+    const end = dv.getUint16(endOff + s * 2)
+    const start = dv.getUint16(startOff + s * 2)
+    if (cp < start || cp > end) continue
+    const delta = dv.getInt16(deltaOff + s * 2)
+    const rangeOffset = dv.getUint16(rangeOff + s * 2)
+    if (rangeOffset === 0) return (cp + delta) & 0xffff
+    const glyphOff = rangeOff + s * 2 + rangeOffset + (cp - start) * 2
+    const glyph = dv.getUint16(glyphOff)
+    return glyph === 0 ? 0 : (glyph + delta) & 0xffff
+  }
+  return 0
+}
+
+function glyphIdFromFormat12(dv: DataView, off: number, cp: number): number {
+  const nGroups = dv.getUint32(off + 12)
+  for (let i = 0; i < nGroups; i++) {
+    const group = off + 16 + i * 12
+    const start = dv.getUint32(group)
+    const end = dv.getUint32(group + 4)
+    if (cp >= start && cp <= end) return dv.getUint32(group + 8) + cp - start
+  }
+  return 0
+}
+
+function fontGlyphId(dv: DataView, cp: number): number {
+  const cmapOff = tableOffset(dv, 'cmap')
+  const numSubtables = dv.getUint16(cmapOff + 2)
+  let bmpGlyph = 0
+  for (let i = 0; i < numSubtables; i++) {
+    const record = cmapOff + 4 + i * 8
+    const platformId = dv.getUint16(record)
+    if (platformId !== 0 && platformId !== 3) continue
+    const subtable = cmapOff + dv.getUint32(record + 4)
+    const format = dv.getUint16(subtable)
+    if (format === 12) {
+      const glyph = glyphIdFromFormat12(dv, subtable, cp)
+      if (glyph !== 0) return glyph
+    } else if (format === 4 && bmpGlyph === 0) {
+      bmpGlyph = glyphIdFromFormat4(dv, subtable, cp)
+    }
+  }
+  return bmpGlyph
+}
+
+/** The glyph's horizontal advance as a fraction of one em. */
+export function fontGlyphAdvanceEm(data: ArrayBuffer | Uint8Array, cp: number): number {
+  const dv = toDataView(data)
+  const glyphId = fontGlyphId(dv, cp)
+  if (glyphId === 0) throw new Error(`font does not cover U+${cp.toString(16).toUpperCase()}`)
+  const unitsPerEm = dv.getUint16(tableOffset(dv, 'head') + 18)
+  const numberOfHMetrics = dv.getUint16(tableOffset(dv, 'hhea') + 34)
+  const metricIndex = Math.min(glyphId, numberOfHMetrics - 1)
+  const advanceWidth = dv.getUint16(tableOffset(dv, 'hmtx') + metricIndex * 4)
+  return advanceWidth / unitsPerEm
 }

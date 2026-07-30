@@ -5,6 +5,7 @@
 import type { Font as FontOptions } from 'satori'
 import fallbackData from './fonts/dejavu-sans-mono.ttf?arraybuffer'
 import cjkData from './fonts/noto-sans-mono-cjk-jp.otf?arraybuffer'
+import legacySymbolsData from './fonts/statusline-legacy-symbols.ttf?arraybuffer'
 import fontData from './fonts/statusline-nerd-full.ttf?arraybuffer'
 import unifontData from './fonts/unifont.otf?arraybuffer'
 
@@ -18,11 +19,13 @@ let cached: SatoriFont[] | null = null
  * tofu box for any glyph missing from every font here — and it falls back per-glyph down this list.
  *  1. The full Nerd Font: Latin, box-drawing, blocks, powerline, the whole Nerd icon range, and most
  *     arrows. But JetBrains Mono omits several common status-line symbols — ↻ (U+21BB), ⇡, ⇣, ✔, ✘.
- *  2. DejaVu Sans Mono: carries exactly those omitted symbols, so a status line using ↻ renders the
+ *  2. StatuslineLegacySymbols: a pinned, renamed JuliaMono subset containing U+1FB95 CHECKER BOARD
+ *     FILL. Its 0.6em advance exactly matches the Nerd Font's terminal cell.
+ *  3. DejaVu Sans Mono: carries exactly those omitted symbols, so a status line using ↻ renders the
  *     arrow instead of a box.
- *  3. Noto Sans Mono CJK JP: the Japanese slice of Noto's pan-CJK family (kanji, kana, and CJK
+ *  4. Noto Sans Mono CJK JP: the Japanese slice of Noto's pan-CJK family (kanji, kana, and CJK
  *     punctuation like 「」). Sits above Unifont so CJK renders as proper outlines, not pixel blocks.
- *  4. GNU Unifont: covers the entire Basic Multilingual Plane by design, so it catches every remaining
+ *  5. GNU Unifont: covers the entire Basic Multilingual Plane by design, so it catches every remaining
  *     symbol (⎇ U+2387, ⟳ U+27F3, …) and any CJK char the JP slice lacks. It's the never-tofu backstop
  *     — a future submission with a rare BMP glyph degrades to blocky-but-readable instead of a box.
  * (The private-use area — e.g. U+E7D5 Powerline icons — has no standard glyphs, so nothing here
@@ -32,6 +35,12 @@ export function loadOgFonts(): SatoriFont[] {
   if (cached) return cached
   cached = [
     { name: 'StatuslineNerd', data: fontData, weight: 400, style: 'normal' },
+    {
+      name: 'StatuslineLegacySymbols',
+      data: legacySymbolsData,
+      weight: 400,
+      style: 'normal',
+    },
     { name: 'OgFallback', data: fallbackData, weight: 400, style: 'normal' },
     { name: 'NotoSansMonoCJKjp', data: cjkData, weight: 400, style: 'normal' },
     { name: 'Unifont', data: unifontData, weight: 400, style: 'normal' },
