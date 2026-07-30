@@ -59,7 +59,7 @@ const isTest = !!process.env.VITEST
 // `document.currentScript.remove()`) and React inline `style` attributes (the ANSI preview colors
 // in src/ui/statusline-preview.tsx). A blocking policy would need a per-request nonce on every
 // inline <script>/<style>; that nonce wiring is a deferred follow-up. The source list mirrors
-// what the app actually loads: self, GitHub avatars (`user.image`), self-hosted woff2 fonts, and
+// what the app actually loads: self, GitHub avatars (`user.image`), self-hosted fonts, and
 // data: images.
 const CSP_REPORT_ONLY = [
   "default-src 'self'",

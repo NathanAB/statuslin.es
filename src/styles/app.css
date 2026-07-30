@@ -9,6 +9,15 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "StatuslineLegacySymbols";
+  src: url("../og/fonts/statusline-legacy-symbols.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+1FB95;
+}
+
 /* Single source of color. This file is the ONLY place color literals are allowed.
    The shadcn semantic names below ARE our design system; components use them
    (bg-background, bg-card, bg-primary, text-foreground, text-muted-foreground,
@@ -51,7 +60,8 @@
   --color-*: initial;
 
   --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "StatuslineNerd", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono:
+    "StatuslineNerd", "StatuslineLegacySymbols", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 @theme inline {

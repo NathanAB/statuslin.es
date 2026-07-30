@@ -23,6 +23,7 @@ const GAP_CODEPOINTS: Record<string, number> = {
   '」 U+300D': 0x300d,
   '⎇ U+2387': 0x2387,
   '⟳ U+27F3': 0x27f3,
+  '🮕 U+1FB95': 0x1fb95,
 }
 
 describe('OG font coverage', () => {

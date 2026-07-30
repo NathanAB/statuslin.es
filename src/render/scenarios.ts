@@ -41,6 +41,7 @@ const RAW: Scenario[] = [
     },
     git: { branch: 'main', dirty: false },
     env: ENV,
+    anthropicUsage: { fableWeeklyPercent: 15 },
   },
   {
     key: 'fresh-session',
@@ -123,12 +124,13 @@ const RAW: Scenario[] = [
       cost: COST,
       context_window: usage(64, 1_000_000),
       exceeds_200k_tokens: true,
-      rate_limits: { five_hour: win(33, hm(3, 30)), seven_day: win(12, hm(120, 0)) },
+      rate_limits: { five_hour: win(33, hm(3, 30)), seven_day: win(80, hm(120, 0)) },
       output_style: { name: 'default' },
       pr: { number: 1290, url: 'https://github.com/acme/app/pull/1290', review_state: 'approved' },
     },
     git: { branch: 'main', dirty: false },
     env: ENV,
+    anthropicUsage: { fableWeeklyPercent: 80 },
   },
   {
     key: 'post-compact',

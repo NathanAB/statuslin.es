@@ -112,7 +112,7 @@ export class E2BSandboxRunner implements SandboxRunner {
 
       if (mockAnthropicUsage) {
         try {
-          files.push(...anthropicUsageMockFiles(input.scenario.stdin))
+          files.push(...anthropicUsageMockFiles(input.scenario))
           await sandbox.files.write(files)
           await sandbox.commands.run(anthropicUsageSetupScript(), {
             timeoutMs: commandTimeoutMs,

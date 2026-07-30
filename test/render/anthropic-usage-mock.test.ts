@@ -116,6 +116,13 @@ describe('buildAnthropicUsageResponse', () => {
     })
   })
 
+  it('uses the scenario-specific Fable weekly percentage in both API shapes', () => {
+    const response = buildAnthropicUsageResponse({}, nowMs, { fableWeeklyPercent: 80 })
+
+    expect(response.limits.find((limit) => limit.kind === 'weekly_scoped')?.percent).toBe(80)
+    expect(response.seven_day_fable.utilization).toBe(80)
+  })
+
   it('rejects a present but malformed trusted rate-limit window', () => {
     expect(() =>
       buildAnthropicUsageResponse(

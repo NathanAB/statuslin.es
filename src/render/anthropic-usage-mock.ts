@@ -1,4 +1,6 @@
 // biome-ignore-all lint/style/useNamingConvention: keys mirror Anthropic's external JSON contract.
+import type { AnthropicUsageFixture } from './types'
+
 export const ANTHROPIC_USAGE_HOST = 'api.anthropic.com'
 export const ANTHROPIC_USAGE_URL = `https://${ANTHROPIC_USAGE_HOST}/api/oauth/usage`
 export const ANTHROPIC_USAGE_PREVIEW_TOKEN = 'statuslines-preview-oauth-token'
@@ -52,6 +54,7 @@ export function externalNetworkHosts(networkHosts: string[], mockEnabled: boolea
 export function buildAnthropicUsageResponse(
   stdin: Record<string, unknown>,
   nowMs = Date.now(),
+  fixture?: AnthropicUsageFixture,
 ): AnthropicUsageResponse {
   const session = readWindow(
     stdin,
@@ -65,6 +68,7 @@ export function buildAnthropicUsageResponse(
     DEFAULT_WEEKLY_PERCENT,
     nowMs + DEFAULT_WEEKLY_RESET_MS,
   )
+  const fableWeeklyPercent = readFableWeeklyPercent(fixture)
 
   return {
     limits: [
@@ -89,7 +93,7 @@ export function buildAnthropicUsageResponse(
       {
         kind: 'weekly_scoped',
         group: 'weekly',
-        percent: SCOPED_PERCENT,
+        percent: fableWeeklyPercent,
         severity: 'normal',
         resets_at: weekly.resetsAt,
         scope: { model: { id: null, display_name: 'Fable' }, surface: null },
@@ -99,7 +103,7 @@ export function buildAnthropicUsageResponse(
     spend: { enabled: false, percent: 0, severity: 'normal' },
     five_hour: { utilization: session.percent, resets_at: session.resetsAt },
     seven_day: { utilization: weekly.percent, resets_at: weekly.resetsAt },
-    seven_day_fable: { utilization: SCOPED_PERCENT, resets_at: weekly.resetsAt },
+    seven_day_fable: { utilization: fableWeeklyPercent, resets_at: weekly.resetsAt },
     extra_usage: {
       is_enabled: false,
       utilization: 0,
@@ -107,6 +111,14 @@ export function buildAnthropicUsageResponse(
       monthly_limit: 0,
     },
   }
+}
+
+function readFableWeeklyPercent(fixture?: AnthropicUsageFixture): number {
+  const percent = fixture?.fableWeeklyPercent ?? SCOPED_PERCENT
+  if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+    throw new Error('invalid anthropicUsage.fableWeeklyPercent')
+  }
+  return percent
 }
 
 function readWindow(

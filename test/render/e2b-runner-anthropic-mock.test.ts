@@ -37,7 +37,10 @@ describe('E2B Anthropic usage mock setup', () => {
 
   it('builds only a dummy credential and scenario-derived response fixture', () => {
     const nowMs = Date.UTC(2026, 6, 18, 20, 0, 0)
-    const files = anthropicUsageMockFiles({}, nowMs)
+    const files = anthropicUsageMockFiles(
+      { stdin: {}, anthropicUsage: { fableWeeklyPercent: 80 } },
+      nowMs,
+    )
 
     expect(files).toHaveLength(2)
     const credentials = files.find((file) => file.path.endsWith('/.credentials.json'))
@@ -46,6 +49,7 @@ describe('E2B Anthropic usage mock setup', () => {
     })
     const response = files.find((file) => file.path.includes('usage-response'))
     expect(JSON.parse(response?.data ?? '').five_hour.utilization).toBe(18)
+    expect(JSON.parse(response?.data ?? '').seven_day_fable.utilization).toBe(80)
     expect(files.map((file) => file.data).join('\n')).not.toMatch(/sk-ant|oauth_[a-z0-9]{10}/i)
   })
 

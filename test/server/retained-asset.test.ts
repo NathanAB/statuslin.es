@@ -38,6 +38,7 @@ describe('retained asset handler', () => {
   test.each([
     ['app.js', 'text/javascript'],
     ['app.css', 'text/css'],
+    ['font.ttf', 'font/ttf'],
     ['font.woff2', 'font/woff2'],
   ])('serves %s with its MIME type and immutable caching', async (filename: string, contentType: string) => {
     const { assetsDir } = await fixture()
