@@ -27,9 +27,10 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('</urlset>')
   })
 
-  it('includes the static home, resources, submit, and terms pages', async () => {
+  it('includes the static home, guide, resources, submit, and terms pages', async () => {
     const xml = await sitemapResponse(BASE, [], []).text()
     expect(xml).toContain(`<loc>${BASE}</loc>`)
+    expect(xml).toContain(`<loc>${BASE}/guide</loc>`)
     expect(xml).toContain(`<loc>${BASE}/resources</loc>`)
     expect(xml).toContain(`<loc>${BASE}/submit</loc>`)
     expect(xml).toContain(`<loc>${BASE}/terms</loc>`)
@@ -59,7 +60,7 @@ describe('sitemapResponse', () => {
     const xml = await sitemapResponse(BASE, configs, []).text()
 
     expect(entryFor(xml, BASE)).toContain('<lastmod>2026-05-06</lastmod>')
-    for (const path of ['/resources', '/submit', '/terms']) {
+    for (const path of ['/guide', '/resources', '/submit', '/terms']) {
       expect(entryFor(xml, `${BASE}${path}`)).not.toContain('<lastmod>')
     }
   })

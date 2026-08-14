@@ -96,7 +96,8 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | File | What it does |
 | --- | --- | --- |
-| `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display |
+| `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control; `Copyable` overlays it on a code well |
+| `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display; pass `text` to copy |
 | `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | Section with header + optional action slot |
 | `<ScenarioRow>` | `src/ui/scenario-row.tsx` | Labeled row for scenario-level content |
 | `<Notice tone="info\|error">` | `src/ui/notice.tsx` | Inline status / error notice |

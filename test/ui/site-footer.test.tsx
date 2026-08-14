@@ -51,4 +51,11 @@ describe('SiteFooter', () => {
     expect(resources).not.toBeNull()
     expect(resources.textContent).toMatch(/resources/i)
   })
+
+  it('links to the guide page', () => {
+    const { container } = render(<SiteFooter />)
+    const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement
+    expect(guide).not.toBeNull()
+    expect(guide.textContent).toMatch(/guide/i)
+  })
 })

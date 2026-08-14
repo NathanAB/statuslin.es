@@ -5,13 +5,14 @@ import { recordCopyFn } from '@/adopt/functions'
 
 export interface RecordedCopyController {
   count: number
-  copy: (text: string, kind: CopyKind, onCopied: () => void) => void
+  record: (kind: CopyKind) => void
 }
 
 /**
- * Shared copy-and-record logic for adopt controls: clipboard write → optimistic
- * count bump → server reconcile (only a positive total is adopted, so an
- * unpublished/missing config returning 0 doesn't regress the display).
+ * Shared record-and-reconcile logic for adopt controls: optimistic count bump →
+ * server reconcile (only a positive total is adopted, so an unpublished/missing
+ * config returning 0 doesn't regress the display). Callers write the clipboard
+ * themselves (CopyButton) and invoke `record` only after a successful write.
  *
  * The PostHog copy event fires server-side (in recordCopyFn), not here — ad blockers can't strip a
  * server event, and copies are the North Star metric. We pass the browser's distinct + session ids
@@ -68,18 +69,5 @@ export function useRecordedCopy(configId: string, copyCount: number): RecordedCo
     }
   }
 
-  /** Writes `text` to the clipboard; on success calls `onCopied` and records the copy. */
-  function copy(text: string, kind: CopyKind, onCopied: () => void) {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        onCopied()
-        void record(kind)
-      })
-      .catch(() => {
-        // Clipboard denied/unavailable — don't claim "Copied!" or bump the count.
-      })
-  }
-
-  return { count, copy }
+  return { count, record }
 }

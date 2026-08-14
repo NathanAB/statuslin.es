@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { configJsonLd, facetJsonLd, homeJsonLd, jsonLdScript, resourcesJsonLd } from '@/lib/json-ld'
+import {
+  configJsonLd,
+  facetJsonLd,
+  guideJsonLd,
+  homeJsonLd,
+  jsonLdScript,
+  resourcesJsonLd,
+} from '@/lib/json-ld'
+import { GUIDE_DESCRIPTION, GUIDE_TITLE_BASE } from '@/lib/page-title'
 
 describe('jsonLdScript', () => {
   it('serializes to an application/ld+json script descriptor', () => {
@@ -35,7 +43,7 @@ describe('homeJsonLd', () => {
     expect(nodes[1]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Claude Code Status Line Examples',
+      name: 'Claude Code Status Lines',
       url: 'https://statuslin.es',
       mainEntity: {
         '@type': 'ItemList',
@@ -73,7 +81,7 @@ describe('homeJsonLd', () => {
     })
     expect(nodes[1]).toMatchObject({
       '@type': 'CollectionPage',
-      name: 'Claude Code Status Line Examples — Page 2',
+      name: 'Claude Code Status Lines — Page 2',
       url: 'https://statuslin.es/?page=2',
       mainEntity: {
         itemListElement: [{ position: 11 }, { position: 12 }],
@@ -209,6 +217,35 @@ describe('configJsonLd', () => {
     const questions = faq!.mainEntity as Array<{ name: string }>
     expect(questions).toHaveLength(1)
     expect(questions[0]!.name).toBe('What does Powerline Dracula show?')
+  })
+})
+
+describe('guideJsonLd', () => {
+  it('emits TechArticle plus a breadcrumb trail, never HowTo', () => {
+    const nodes = guideJsonLd('https://statuslin.es', GUIDE_DESCRIPTION) as Array<
+      Record<string, unknown>
+    >
+    expect(nodes.some((node) => node['@type'] === 'HowTo')).toBe(false)
+    expect(nodes[0]).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'TechArticle',
+      headline: GUIDE_TITLE_BASE,
+      url: 'https://statuslin.es/guide',
+      description: GUIDE_DESCRIPTION,
+    })
+    expect(nodes[1]).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Status lines', item: 'https://statuslin.es' },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: GUIDE_TITLE_BASE,
+          item: 'https://statuslin.es/guide',
+        },
+      ],
+    })
   })
 })
 

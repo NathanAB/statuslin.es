@@ -18,7 +18,7 @@ describe('HomeHero', () => {
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
     // Exact text, not toContain: JSX drops whitespace between sibling elements, so without an
-    // explicit separator this reads "statuslin.esClaude Code status line examples" to anything that
+    // explicit separator this reads "statuslin.esClaude Code status lines" to anything that
     // walks text nodes — a screen reader announcing the heading, or a crawler.
     expect(h1s[0]?.textContent).toBe(`statuslin.es ${HOME_HEADING_BASE}`)
   })
@@ -40,7 +40,7 @@ describe('HomeHero', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'statuslin.es Claude Code status line examples — Page 2',
+        name: 'statuslin.es Claude Code status lines — Page 2',
       }),
     ).toBeTruthy()
   })

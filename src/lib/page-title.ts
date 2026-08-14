@@ -41,14 +41,14 @@ export function configMetaDescription(description: string | null | undefined): s
 export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
 
 /**
- * The home page's title base — shared by the <title> tag and the home JSON-LD name. Targets
- * "claude code status line examples", a phrase visitors actually search, rather than
- * "community gallery", which nobody does.
+ * The home page's title base — shared by the <title> tag and the home JSON-LD name. These are
+ * community-submitted configs, not samples, so the title says "status lines" rather than
+ * "examples" or "templates".
  */
-export const HOME_TITLE_BASE = 'Claude Code Status Line Examples'
-export const HOME_HEADING_BASE = 'Claude Code status line examples'
+export const HOME_TITLE_BASE = 'Claude Code Status Lines'
+export const HOME_HEADING_BASE = 'Claude Code status lines'
 export const HOME_DESCRIPTION_BASE =
-  'Browse a gallery of Claude Code status line examples and ready-to-copy templates. See real rendered previews and copy one in a single paste.'
+  'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.'
 
 function homePageSuffix(page: number): string {
   return page > 1 ? ` — Page ${page}` : ''
@@ -69,6 +69,13 @@ export function homePageHeading(page: number): string {
 export function homeMetaDescription(page: number, pageCount: number): string {
   return `${HOME_DESCRIPTION_BASE}${page > 1 ? ` Page ${page} of ${pageCount}.` : ''}`
 }
+
+/** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
+export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
+
+/** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
+export const GUIDE_DESCRIPTION =
+  'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'
 
 /** /resources title base — shared by the <title> tag and the resources JSON-LD name. */
 export const RESOURCES_TITLE_BASE = 'Claude Code Status Line Tools & Resources'

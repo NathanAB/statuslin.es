@@ -21,11 +21,11 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Status Line Examples | statuslin.es' },
+        { title: 'Claude Code Status Lines | statuslin.es' },
         {
           name: 'description',
           content:
-            'Browse a gallery of Claude Code status line examples and ready-to-copy templates. See real rendered previews and copy one in a single paste.',
+            'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.',
         },
       ]),
     )
@@ -46,11 +46,11 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Status Line Examples — Page 2 | statuslin.es' },
+        { title: 'Claude Code Status Lines — Page 2 | statuslin.es' },
         {
           name: 'description',
           content:
-            'Browse a gallery of Claude Code status line examples and ready-to-copy templates. See real rendered previews and copy one in a single paste. Page 2 of 3.',
+            'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste. Page 2 of 3.',
         },
       ]),
     )
@@ -64,7 +64,7 @@ describe('home search indexing metadata', () => {
       .map((script) => JSON.parse(script.children) as Record<string, unknown>)
       .find((node) => node['@type'] === 'CollectionPage')
     expect(collectionPage).toMatchObject({
-      name: 'Claude Code Status Line Examples — Page 2',
+      name: 'Claude Code Status Lines — Page 2',
       url: 'https://statuslin.es/?page=2',
     })
   })

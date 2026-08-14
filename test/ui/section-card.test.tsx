@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { CodeBlock } from '@/ui/code-block'
 import { SectionCard } from '@/ui/section-card'
@@ -52,5 +52,17 @@ describe('CodeBlock', () => {
     const pre = container.querySelector('pre') as HTMLElement
     expect(pre.className).toContain('p-3')
     expect(pre.className).toContain('mt-2')
+  })
+
+  it('copies the source when text is provided', async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+      writable: true,
+    })
+    render(<CodeBlock text="echo hi">echo hi</CodeBlock>)
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('echo hi'))
   })
 })

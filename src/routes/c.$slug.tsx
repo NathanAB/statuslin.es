@@ -1,7 +1,7 @@
 import { usePostHog } from '@posthog/react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
+import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { tagLabel } from '@/gallery/facets'
@@ -179,12 +179,13 @@ function ConfigDetail() {
         </SectionCard>
 
         {/* Source */}
-        <SectionCard
-          title="Source"
-          headingLevel={2}
-          action={<CopyScriptButton source={detail.source} controller={copyController} />}
-        >
-          <HighlightedCode html={detail.sourceHtml} />
+        <SectionCard title="Source" headingLevel={2}>
+          <HighlightedCode
+            html={detail.sourceHtml}
+            text={detail.source}
+            copyLabel="Copy script"
+            onCopied={() => copyController.record('script')}
+          />
         </SectionCard>
 
         {/* Auto-generated copy — the SEO answer to "what does this status line do?" */}

@@ -1,14 +1,31 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { RESOURCES_TITLE_BASE } from '@/lib/page-title'
 
-// ResourcesContent's internal links use TanStack Router's <Link>; stub it to a plain anchor.
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
+  Link: ({
+    to,
+    params,
+    children,
+    ...props
+  }: {
+    to: string
+    params?: Record<string, string>
+    children: React.ReactNode
+  }) => {
+    let href = to
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        href = href.replace(`$${key}`, value)
+      }
+    }
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    )
+  },
 }))
 
 const { RESOURCE_SECTIONS } = await import('@/resources/data')
@@ -22,6 +39,7 @@ describe('ResourcesContent', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: /claude code status line tools & resources/i }),
     ).toBeTruthy()
+    expect(RESOURCES_TITLE_BASE).toBe('Claude Code Status Line Tools & Resources')
     for (const section of RESOURCE_SECTIONS) {
       expect(screen.getByRole('heading', { level: 2, name: section.title })).toBeTruthy()
     }
@@ -43,13 +61,29 @@ describe('ResourcesContent', () => {
     expect(screen.getAllByText('GitHub').length).toBeGreaterThanOrEqual(1)
   })
 
-  it('cross-links the gallery, and shows the submit button when signed out', () => {
+  it('cross-links the gallery, guide, and submit, and shows the submit button when signed out', () => {
     const { container } = render(<ResourcesContent signedIn={false} />)
-    for (const href of ['/', '/submit']) {
+    for (const href of ['/', '/guide', '/submit']) {
       expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
     }
     expect(screen.getByRole('heading', { level: 2, name: /get listed/i })).toBeTruthy()
     expect(screen.getByText('Submit a status line')).toBeTruthy()
+  })
+
+  it('compares four setup paths without FAQPage schema', () => {
+    const { container } = render(<ResourcesContent signedIn={false} />)
+    expect(
+      screen.getByRole('heading', { level: 2, name: /four ways to get a status line/i }),
+    ).toBeTruthy()
+    expect(container.innerHTML).not.toMatch(/FAQPage/)
+  })
+
+  it('links only indexable gallery targets, not the thin powerline facet', () => {
+    const { container } = render(<ResourcesContent signedIn={false} />)
+    expect(container.querySelector('a[href="/c/powerline-dracula-6936b97c"]')).not.toBeNull()
+    expect(container.querySelector('a[href="/status-lines/token-usage"]')).not.toBeNull()
+    expect(container.querySelector('a[href="/c/quota-fallback-2a730aa6"]')).not.toBeNull()
+    expect(container.querySelector('a[href="/status-lines/powerline"]')).toBeNull()
   })
 
   it('links to /submit when signed in', () => {

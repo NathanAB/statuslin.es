@@ -22,6 +22,7 @@ function corePageLinks(base: string): string[] {
   return [
     `- [Gallery](${base}/): every published status line, sorted by trending, newest, or most copied`,
     `- [Submit a status line](${base}/submit): add your own`,
+    `- [Guide](${base}/guide): how to wire a Claude Code status line by hand, with a tested example`,
     `- [Resources](${base}/resources): related Claude Code status line tools`,
   ]
 }

@@ -19,11 +19,11 @@ describe('browserCommandOutput', () => {
   it('keeps successful structured stdout separate from informational stderr', () => {
     expect(
       browserCommandOutput(
-        '"{\\"title\\":\\"Claude Code Status Line Examples | statuslin.es\\"}"\n',
+        '"{\\"title\\":\\"Claude Code Status Lines | statuslin.es\\"}"\n',
         '[agent-browser] restore: loaded; save: saved\n',
         0,
       ),
-    ).toBe('"{\\"title\\":\\"Claude Code Status Line Examples | statuslin.es\\"}"')
+    ).toBe('"{\\"title\\":\\"Claude Code Status Lines | statuslin.es\\"}"')
   })
 
   it('reports stderr when agent-browser exits unsuccessfully', () => {

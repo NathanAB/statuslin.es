@@ -19,11 +19,48 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
       <Stack gap={3}>
         <Heading level={1}>Claude Code status line tools & resources</Heading>
 
-        <Text muted measure>
-          A short, opinionated list of the status line tools and reading we'd point a friend at. The
-          descriptions are ours, not the projects' own marketing. If you want a good status line
-          without installing anything, <TextLink to="/">the gallery</TextLink> is full of
-          ready-to-copy examples.
+        <Text muted>
+          A short, opinionated list of status line tools and reading we'd point a friend at. The
+          descriptions are ours, not the projects' own marketing. Want a rendered status line you
+          can copy? <TextLink to="/">Browse the gallery</TextLink>. Wiring a script by hand? See the{' '}
+          <TextLink to="/guide">setup guide</TextLink>.
+        </Text>
+      </Stack>
+
+      <Stack gap={3}>
+        <Heading level={2}>Four ways to get a status line</Heading>
+        <Text muted>
+          The built-in{' '}
+          <Text inline mono>
+            /statusline
+          </Text>{' '}
+          command is the fastest start: describe what you want inside Claude Code, and it writes the
+          script and settings for you. Use it if you don't have a status line yet.
+        </Text>
+        <Text muted>
+          Install a tool from the list below if you want a terminal UI, themes, or widgets without
+          maintaining a script. Start with ccstatusline or claude-powerline.
+        </Text>
+        <Text muted>
+          Copy a reviewed script from <TextLink to="/">the gallery</TextLink> if you want a rendered
+          preview and a one-paste install — no extra runtime. Powerline look:{' '}
+          <TextLink to="/c/$slug" params={{ slug: 'powerline-dracula-6936b97c' }}>
+            Powerline Dracula
+          </TextLink>
+          . Token counters:{' '}
+          <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
+            status lines that show token usage
+          </TextLink>
+          . Looking for ohugonnot/claude-code-statusline?{' '}
+          <TextLink to="/c/$slug" params={{ slug: 'quota-fallback-2a730aa6' }}>
+            Quota Fallback
+          </TextLink>{' '}
+          is the reviewed gallery copy.
+        </Text>
+        <Text muted>
+          Write a script by hand when you want to own every field. The{' '}
+          <TextLink to="/guide">setup guide</TextLink> uses the same JSON this site uses for gallery
+          previews, and a script the tests execute on every commit.
         </Text>
       </Stack>
 
@@ -56,7 +93,7 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
         <CardContent>
           <Stack gap={3}>
             <Heading level={2}>Get listed</Heading>
-            <Text muted measure>
+            <Text muted>
               If you've made a status line you like,{' '}
               <TextLink to="/submit">submit it to the gallery</TextLink> and it gets its own preview
               page. Built a tool that belongs on this list? Email{' '}

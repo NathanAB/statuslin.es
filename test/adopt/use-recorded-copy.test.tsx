@@ -11,8 +11,6 @@ vi.mock('@posthog/react', () => ({
   usePostHog: () => ({ get_distinct_id: () => 'did-test', get_session_id: () => 'sid-test' }),
 }))
 
-const writeText = vi.fn<(text: string) => Promise<void>>()
-
 function deferred<T>() {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((resolvePromise) => {
@@ -22,22 +20,16 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
-  writeText.mockReset().mockResolvedValue(undefined)
   recordCopyFn.mockReset().mockResolvedValue(6)
-  Object.defineProperty(navigator, 'clipboard', {
-    value: { writeText },
-    configurable: true,
-    writable: true,
-  })
 })
 
 describe('useRecordedCopy', () => {
-  it('optimistically bumps the count on copy', async () => {
+  it('optimistically bumps the count on record', async () => {
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
     expect(result.current.count).toBe(5)
 
     await act(async () => {
-      result.current.copy('text', 'prompt', () => {})
+      await result.current.record('prompt')
     })
 
     await waitFor(() => expect(result.current.count).toBe(6))
@@ -48,7 +40,7 @@ describe('useRecordedCopy', () => {
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
 
     await act(async () => {
-      result.current.copy('text', 'prompt', () => {})
+      await result.current.record('prompt')
     })
 
     await waitFor(() => expect(result.current.count).toBe(42))
@@ -59,7 +51,7 @@ describe('useRecordedCopy', () => {
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
 
     await act(async () => {
-      result.current.copy('text', 'prompt', () => {})
+      await result.current.record('prompt')
     })
 
     // Optimistic count (5 -> 6) must hold; a 0 from the server is ignored.
@@ -67,17 +59,15 @@ describe('useRecordedCopy', () => {
     await waitFor(() => expect(result.current.count).toBe(6))
   })
 
-  it('keeps clipboard success and the optimistic count when recording rejects', async () => {
+  it('keeps the optimistic count when recording rejects', async () => {
     recordCopyFn.mockRejectedValue(new Error('offline'))
-    const onCopied = vi.fn()
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
 
     await act(async () => {
-      result.current.copy('text', 'prompt', onCopied)
+      await result.current.record('prompt')
     })
 
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalled())
-    expect(onCopied).toHaveBeenCalledOnce()
     expect(result.current.count).toBe(6)
   })
 
@@ -88,8 +78,8 @@ describe('useRecordedCopy', () => {
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
 
     act(() => {
-      result.current.copy('prompt', 'prompt', () => {})
-      result.current.copy('script', 'script', () => {})
+      void result.current.record('prompt')
+      void result.current.record('script')
     })
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalledTimes(2))
     await waitFor(() => expect(result.current.count).toBe(7))
@@ -108,8 +98,8 @@ describe('useRecordedCopy', () => {
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
 
     act(() => {
-      result.current.copy('prompt', 'prompt', () => {})
-      result.current.copy('script', 'script', () => {})
+      void result.current.record('prompt')
+      void result.current.record('script')
     })
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalledTimes(2))
 
@@ -125,7 +115,9 @@ describe('useRecordedCopy', () => {
     recordCopyFn.mockReturnValueOnce(response.promise)
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
 
-    act(() => result.current.copy('text', 'prompt', () => {}))
+    act(() => {
+      void result.current.record('prompt')
+    })
     await waitFor(() => expect(result.current.count).toBe(6))
 
     await act(async () => response.resolve(5))
@@ -140,7 +132,9 @@ describe('useRecordedCopy', () => {
       { initialProps: { configId: 'cfg-1', count: 5 } },
     )
 
-    act(() => result.current.copy('text', 'prompt', () => {}))
+    act(() => {
+      void result.current.record('prompt')
+    })
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalledOnce())
 
     rerender({ configId: 'cfg-2', count: 2 })
@@ -148,18 +142,5 @@ describe('useRecordedCopy', () => {
 
     await act(async () => oldResponse.resolve(10))
     expect(result.current.count).toBe(2)
-  })
-
-  it('does not bump the count when the clipboard rejects', async () => {
-    writeText.mockRejectedValue(new Error('denied'))
-    const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
-
-    await act(async () => {
-      result.current.copy('text', 'prompt', () => {})
-    })
-
-    await waitFor(() => expect(writeText).toHaveBeenCalled())
-    expect(recordCopyFn).not.toHaveBeenCalled()
-    expect(result.current.count).toBe(5)
   })
 })
