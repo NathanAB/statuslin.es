@@ -2,9 +2,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { AdoptPrompt, CopyScriptButton } from '@/adopt/adopt-actions'
+import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { buildClaudePrompt } from '@/adopt/install'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
+import { HighlightedCode } from '@/ui/highlighted-code'
 
 const recordCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/adopt/functions', () => ({ recordCopyFn }))
@@ -27,6 +28,8 @@ const props = {
   copyCount: 5,
 }
 
+const SOURCE_HTML = '<pre class="shiki"><code>echo hi</code></pre>'
+
 // The prompt button's accessible name is its (stable) aria-label, which keeps the
 // visible "Copy install prompt" text inside it (WCAG label-in-name).
 const promptButton = () =>
@@ -42,7 +45,12 @@ function SharedCopyActions() {
         title={props.title}
         controller={controller}
       />
-      <CopyScriptButton source={props.source} controller={controller} />
+      <HighlightedCode
+        html={SOURCE_HTML}
+        text={props.source}
+        copyLabel="Copy script"
+        onCopied={() => controller.record('script')}
+      />
     </>
   )
 }
@@ -57,11 +65,6 @@ function PromptHarness() {
       controller={controller}
     />
   )
-}
-
-function ScriptHarness() {
-  const controller = useRecordedCopy(props.configId, props.copyCount)
-  return <CopyScriptButton source={props.source} controller={controller} />
 }
 
 beforeEach(() => {
@@ -80,7 +83,7 @@ afterEach(() => {
 })
 
 describe('AdoptPrompt', () => {
-  it('shares one reconciled count across both copy actions', async () => {
+  it('shares one reconciled count across prompt and source-overlay copy', async () => {
     let resolveScriptCopy!: (count: number) => void
     const scriptCopy = new Promise<number>((resolve) => {
       resolveScriptCopy = resolve
@@ -153,9 +156,9 @@ describe('AdoptPrompt', () => {
   })
 })
 
-describe('CopyScriptButton', () => {
-  it('copies the raw source and records the copy', async () => {
-    render(<ScriptHarness />)
+describe('config source overlay', () => {
+  it('copies the raw source and records kind script, without a prompt toast', async () => {
+    render(<SharedCopyActions />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
 
@@ -165,33 +168,6 @@ describe('CopyScriptButton', () => {
         data: { configId: 'cfg-1', kind: 'script', distinctId: 'did-test', sessionId: 'sid-test' },
       }),
     )
-    // Must NOT fire a prompt toast.
     expect(toast).not.toHaveBeenCalled()
-  })
-
-  it('stays the outline variant during the "Copied!" swap (no variant flash)', async () => {
-    render(<ScriptHarness />)
-    const button = screen.getByRole('button')
-    // Outline at rest: background-only, no coral fill.
-    expect(button.className).toContain('bg-background')
-    expect(button.className).not.toContain('bg-primary')
-
-    fireEvent.click(button)
-
-    await waitFor(() => expect(screen.getByText('Copied!')).toBeTruthy())
-    // Still outline while "Copied!" shows — same element, no variant flash.
-    expect(button.className).toContain('bg-background')
-    expect(button.className).not.toContain('bg-primary')
-  })
-
-  it('does not show "Copied!" or record when the clipboard rejects', async () => {
-    writeText.mockRejectedValue(new Error('denied'))
-    render(<ScriptHarness />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
-
-    await waitFor(() => expect(writeText).toHaveBeenCalled())
-    expect(screen.queryByText('Copied!')).toBeNull()
-    expect(recordCopyFn).not.toHaveBeenCalled()
   })
 })

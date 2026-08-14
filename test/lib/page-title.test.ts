@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   configMetaDescription,
   configPageTitle,
+  GUIDE_DESCRIPTION,
+  GUIDE_TITLE_BASE,
   HOME_TITLE_BASE,
   NOT_FOUND_TITLE,
   RESOURCES_TITLE_BASE,
@@ -29,7 +31,7 @@ describe('configPageTitle', () => {
   })
 
   it('exposes the home title base for the title tag and JSON-LD to share', () => {
-    expect(HOME_TITLE_BASE).toBe('Claude Code Status Line Examples')
+    expect(HOME_TITLE_BASE).toBe('Claude Code Status Lines')
   })
 
   it('keeps the rendered home title inside the length Google shows', () => {
@@ -40,6 +42,8 @@ describe('configPageTitle', () => {
 describe('static page titles', () => {
   it('state the target keyword', () => {
     expect(RESOURCES_TITLE_BASE).toBe('Claude Code Status Line Tools & Resources')
+    expect(GUIDE_TITLE_BASE).toBe('How to Set Up a Claude Code Status Line')
+    expect(GUIDE_DESCRIPTION).toMatch(/tested example you can copy/)
   })
 })
 

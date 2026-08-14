@@ -19,7 +19,7 @@ import { HomeHero } from '@/ui/home-hero'
 import { Row, Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { SubmitCta } from '@/ui/submit-cta'
-import { Text } from '@/ui/text'
+import { Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
@@ -91,9 +91,9 @@ function Home() {
       <Stack gap={9}>
         <HomeHero page={page} />
         <Text muted size="sm" measure center>
-          Explore a community gallery of Claude Code status line examples and ready-to-copy
-          templates. Every card shows previews rendered from the real script, so you can see it
-          before you copy it.
+          Explore a community gallery of Claude Code status lines. Every card shows previews
+          rendered from the real script, so you can see it before you copy it. To wire one up
+          yourself, read the <TextLink to="/guide">setup guide</TextLink>.
         </Text>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>

@@ -3,9 +3,18 @@ import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@posthog/react', () => ({
-  usePostHog: () => ({ capture: vi.fn() }),
-}))
+vi.mock('@tanstack/react-router', async () => {
+  const actual =
+    await vi.importActual<typeof import('@tanstack/react-router')>('@tanstack/react-router')
+  return {
+    ...actual,
+    Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
+      <a href={to} {...props}>
+        {children}
+      </a>
+    ),
+  }
+})
 vi.mock('@/ui/shell', () => ({
   PageShell: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
@@ -19,7 +28,7 @@ vi.mock('@/ui/submit-cta', () => ({
 const { Route: HomeRoute } = await import('@/routes/index')
 
 describe('home content', () => {
-  it('explains the community gallery and its real-script ready-to-copy examples', () => {
+  it('explains the community gallery of real submitted status lines', () => {
     vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
       user: null,
       gallery: {
@@ -35,8 +44,10 @@ describe('home content', () => {
     render(Home ? <Home /> : null)
 
     const intro = screen.getByText(/community gallery/i)
-    expect(intro.textContent).toMatch(/Claude Code status line examples/)
-    expect(intro.textContent).toMatch(/ready-to-copy templates/)
+    expect(intro.textContent).toMatch(/Claude Code status lines/)
+    expect(intro.textContent).not.toMatch(/examples/)
+    expect(intro.textContent).not.toMatch(/templates/)
     expect(intro.textContent).toMatch(/previews rendered from the real script/)
+    expect(intro.querySelector('a[href="/guide"]')).not.toBeNull()
   })
 })

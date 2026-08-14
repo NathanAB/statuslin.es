@@ -121,7 +121,9 @@ export function SubmissionDetails({
         </Details>
       ) : null}
       <Details summary="Source">
-        <CodeBlock compact>{source}</CodeBlock>
+        <CodeBlock compact text={source}>
+          {source}
+        </CodeBlock>
       </Details>
     </>
   )

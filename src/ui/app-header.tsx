@@ -48,6 +48,9 @@ export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
         </Link>
         <nav className="flex items-center gap-2">
           <Button asChild variant="ghost" size="lg">
+            <Link to="/guide">Guide</Link>
+          </Button>
+          <Button asChild variant="ghost" size="lg">
             <Link to="/resources">Resources</Link>
           </Button>
           {user ? <UserMenu user={user} /> : <SignInButton />}

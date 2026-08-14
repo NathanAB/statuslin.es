@@ -67,6 +67,13 @@ describe('AppHeader', () => {
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
+  it('links to the guide page when signed out', () => {
+    const { container } = render(<AppHeader user={null} />)
+    const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement
+    expect(guide).not.toBeNull()
+    expect(guide.textContent).toMatch(/guide/i)
+  })
+
   it('links to the resources page when signed in', () => {
     const { container } = render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,

@@ -21,6 +21,7 @@ describe('buildLlmsTxt', () => {
     expect(txt).toContain('(https://statuslin.es/)') // gallery home
     expect(txt).toMatch(/sorted by trending, newest, or most copied/i)
     expect(txt).toContain('(https://statuslin.es/submit)')
+    expect(txt).toContain('(https://statuslin.es/guide)')
     expect(txt).toContain('(https://statuslin.es/resources)')
   })
 

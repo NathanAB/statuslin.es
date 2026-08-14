@@ -1,5 +1,5 @@
 import type { GeneratedContent } from '@/content/types'
-import { homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
 /**
@@ -125,6 +125,28 @@ function configFaqJsonLd(title: string, content: GeneratedContent | null): objec
     }))
   if (mainEntity.length === 0) return null
   return { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity }
+}
+
+/** The /guide page as a TechArticle plus a breadcrumb trail back to the gallery. */
+export function guideJsonLd(origin: string, description: string): object[] {
+  const url = `${origin}/guide`
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'TechArticle',
+      headline: GUIDE_TITLE_BASE,
+      url,
+      description,
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
+        { '@type': 'ListItem', position: 2, name: GUIDE_TITLE_BASE, item: url },
+      ],
+    },
+  ]
 }
 
 /** The /resources page as a CollectionPage listing the external tools/resources. */
