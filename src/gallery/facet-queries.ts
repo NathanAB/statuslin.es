@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, user } from '@/db/schema'
-import { mapCardRows } from './card-rows'
+import { galleryCardSelection, mapCardRows } from './card-rows'
 import { ALL_TAG_SLUGS, FACET_BY_SLUG, FACETS, type Facet } from './facets'
 import { type GalleryCard, selectCardPreviews } from './queries'
 
@@ -66,7 +66,7 @@ export async function getAvailableTags(db: Db): Promise<string[]> {
 /** A facet page's cards: published matches, most-copied first, newest as the tiebreak. */
 export async function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]> {
   const rows = await db
-    .select({ config: configs, version: configVersions, author: user })
+    .select(galleryCardSelection)
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(user, eq(user.id, configs.authorId))

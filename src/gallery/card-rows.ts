@@ -1,8 +1,42 @@
-import type { configs, configVersions, user } from '@/db/schema'
+import { configs, configVersions, user } from '@/db/schema'
 import { type AnsiSegment, INTERPRETERS, type Interpreter } from '@/render/types'
 import type { GalleryCard } from './queries'
 
 const VALID_INTERPRETERS = new Set<Interpreter>(INTERPRETERS)
+
+export const galleryCardSelection = {
+  config: {
+    id: configs.id,
+    slug: configs.slug,
+    title: configs.title,
+    description: configs.description,
+    interpreter: configs.interpreter,
+    copyCount: configs.copyCount,
+    allTags: configs.allTags,
+  },
+  version: {
+    contentSha256: configVersions.contentSha256,
+    networkHosts: configVersions.networkHosts,
+    readsClaudeToken: configVersions.readsClaudeToken,
+  },
+  author: {
+    name: user.name,
+    username: user.username,
+    image: user.image,
+  },
+}
+
+type GalleryCardRow = {
+  config: Pick<
+    typeof configs.$inferSelect,
+    'allTags' | 'copyCount' | 'description' | 'id' | 'interpreter' | 'slug' | 'title'
+  >
+  version: Pick<
+    typeof configVersions.$inferSelect,
+    'contentSha256' | 'networkHosts' | 'readsClaudeToken'
+  >
+  author: Pick<typeof user.$inferSelect, 'image' | 'name' | 'username'> | null
+}
 
 /** Narrows the free-form DB `interpreter` column to the Interpreter union; falls back to 'bash'. */
 export function coerceInterpreter(value: string): Interpreter {
@@ -11,11 +45,7 @@ export function coerceInterpreter(value: string): Interpreter {
 
 /** Shared row → GalleryCard mapping for the home gallery and facet pages. */
 export function mapCardRows(
-  rows: Array<{
-    config: typeof configs.$inferSelect
-    version: typeof configVersions.$inferSelect
-    author: typeof user.$inferSelect | null
-  }>,
+  rows: GalleryCardRow[],
   cardPreviews: Map<string, AnsiSegment[]>,
 ): GalleryCard[] {
   return rows.map((r) => ({
