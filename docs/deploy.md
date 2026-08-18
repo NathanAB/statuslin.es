@@ -108,7 +108,7 @@ push from*, never read by the servers.
 
 Staging and prod use **separate Fly config files** so each sizes its machines independently:
 
-- **`fly.toml`** — production (`app = "statuslines"`): web `shared-cpu-2x` / 1GB, worker
+- **`fly.toml`** — production (`app = "statuslines"`): web `shared-cpu-2x` / 2GB, worker
   `shared-cpu-1x` / 512MB (separate `[[vm]]` blocks — only web needs to absorb a launch spike),
   `min_machines_running = 1`. Add web headroom with `fly scale count web=N`.
 - **`fly.staging.toml`** — staging (`app = "statuslines-staging"`): `shared-cpu-1x` / 512MB,
@@ -122,8 +122,9 @@ Fly can't include one file from another, so `[build]`, `[processes]`, `[http_ser
 **Why two files instead of `fly scale vm`:** a `fly scale vm` / `fly scale memory` change is **reset
 on the next deploy** whenever a `[[vm]]` block is in the config. Prod ships by promoting the staging
 image, so that promote would shrink prod back every time — the size has to live in the config file.
-The sizing rationale: memory clears a measured OOM cliff; the lower `soft_limit` makes Fly add a
-machine before the box is in trouble.
+The sizing rationale: local repeated-wave profiling reproduced large transient SSR peaks before
+delayed collection. The 2GB allocation provides operational headroom; the lower `soft_limit` makes
+Fly add a machine before the box is in trouble.
 
 ## Deploying
 

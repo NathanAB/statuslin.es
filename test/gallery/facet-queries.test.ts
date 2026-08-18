@@ -155,6 +155,25 @@ describe('facet queries', () => {
     expect(cards.map((c) => c.slug)).toEqual(['py-a'])
   })
 
+  it('does not fetch heavyweight version content for facet cards', async () => {
+    const loggedQueries: string[] = []
+    const loggedDb = drizzle({
+      client,
+      schema,
+      logger: {
+        logQuery: (query) => {
+          loggedQueries.push(query)
+        },
+      },
+    })
+
+    await getFacetCards(loggedDb, FACET_BY_SLUG.get('git')!)
+
+    expect(loggedQueries[0]).not.toMatch(
+      /"config_versions"\."(?:source|source_html|generated_content)"/,
+    )
+  })
+
   it('a page tag with only 1 config is live (no floor)', async () => {
     const stats = await getFacetStats(db)
     expect(resolveLiveFacet('cost', stats)?.slug).toBe('cost')

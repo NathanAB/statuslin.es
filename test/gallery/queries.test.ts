@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getPublishedConfigs } from '@/gallery/queries'
+import { getPublishedConfigs, selectCardPreviews } from '@/gallery/queries'
 import { trendingScore } from '@/gallery/trending'
 import { storePreviews } from '@/render/store'
 
@@ -127,6 +127,37 @@ describe('getPublishedConfigs', () => {
     const cards = await getPublishedConfigs(db)
     expect(cards.find((c) => c.slug === 'net-yes')?.networkHosts).toEqual(['wttr.in'])
     expect(cards.find((c) => c.slug === 'net-no')?.networkHosts).toEqual([])
+  })
+})
+
+describe('selectCardPreviews', () => {
+  it('prefers clean-main and falls back deterministically when it is missing', async () => {
+    const preferredSha = 'preferred-preview'.padEnd(64, '0')
+    const fallbackSha = 'fallback-preview'.padEnd(64, '0')
+    const preview = (scriptSha: string, scenarioKey: string, text: string) => ({
+      scriptSha,
+      scenarioKey,
+      segments: [{ text, fg: null, bg: null, bold: false, italic: false, underline: false }],
+      rawStdout: text,
+      exitCode: 0,
+      timedOut: 0,
+      trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+    })
+    await db
+      .insert(schema.previews)
+      .values([
+        preview(preferredSha, 'a-first', 'not preferred'),
+        preview(preferredSha, 'clean-main', 'preferred'),
+        preview(fallbackSha, 'z-last', 'later fallback'),
+        preview(fallbackSha, 'a-first', 'first fallback'),
+      ])
+
+    const selected = await selectCardPreviews(db, [preferredSha, fallbackSha])
+
+    expect({
+      preferred: selected.get(preferredSha)?.[0]?.text,
+      fallback: selected.get(fallbackSha)?.[0]?.text,
+    }).toEqual({ preferred: 'preferred', fallback: 'first fallback' })
   })
 })
 
@@ -311,6 +342,42 @@ describe('getPublishedConfigs sorting', () => {
 // Placed last on purpose: this seeds extra configs, and the tests above share one accumulating
 // PGlite db, so seeding earlier would push their fixtures off page 1.
 describe('getPublishedConfigs query count', () => {
+  it('does not fetch heavyweight version content for gallery cards', async () => {
+    const loggedQueries: string[] = []
+    const loggedDb = drizzle({
+      client,
+      schema,
+      logger: {
+        logQuery: (query) => {
+          loggedQueries.push(query)
+        },
+      },
+    })
+
+    await getPublishedConfigs(loggedDb)
+
+    expect(loggedQueries[0]).not.toMatch(
+      /"config_versions"\."(?:source|source_html|generated_content)"/,
+    )
+  })
+
+  it('fetches at most one preview row per gallery card', async () => {
+    const loggedQueries: string[] = []
+    const loggedDb = drizzle({
+      client,
+      schema,
+      logger: {
+        logQuery: (query) => {
+          loggedQueries.push(query)
+        },
+      },
+    })
+
+    await getPublishedConfigs(loggedDb)
+
+    expect(loggedQueries[1]).toMatch(/^select distinct on \("previews"\."script_sha"\)/)
+  })
+
   it('issues a constant number of queries regardless of card count (no N+1)', async () => {
     // A page of N cards must not fan out into 1 + N queries (one preview lookup per card).
     // Build a second Drizzle over the SAME PGlite client with a counting logger, so only the

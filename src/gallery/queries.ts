@@ -5,7 +5,7 @@ import { configs, configVersions, previews, user } from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
-import { coerceInterpreter, mapCardRows } from './card-rows'
+import { coerceInterpreter, galleryCardSelection, mapCardRows } from './card-rows'
 import { trendingScore } from './trending'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -114,7 +114,7 @@ export async function getPublishedConfigs(
     tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
 
   const rows = await db
-    .select({ config: configs, version: configVersions, author: user })
+    .select(galleryCardSelection)
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(user, eq(user.id, configs.authorId))
@@ -145,20 +145,21 @@ export async function selectCardPreviews(
 ): Promise<Map<string, AnsiSegment[]>> {
   const bySha = new Map<string, AnsiSegment[]>()
   if (shas.length === 0) return bySha
+  // Choose one row in Postgres; fetching every scenario returned about 7× unused preview data.
   const rows = await db
-    .select({
+    .selectDistinctOn([previews.scriptSha], {
       scriptSha: previews.scriptSha,
-      scenarioKey: previews.scenarioKey,
       segments: previews.segments,
     })
     .from(previews)
     .where(inArray(previews.scriptSha, shas))
+    .orderBy(
+      previews.scriptSha,
+      desc(sql`${previews.scenarioKey} = ${CARD_SCENARIO}`),
+      previews.scenarioKey,
+    )
   for (const row of rows) {
-    const segments = row.segments as AnsiSegment[]
-    // clean-main always wins; otherwise keep the first scenario seen for this sha.
-    if (row.scenarioKey === CARD_SCENARIO || !bySha.has(row.scriptSha)) {
-      bySha.set(row.scriptSha, segments)
-    }
+    bySha.set(row.scriptSha, row.segments as AnsiSegment[])
   }
   return bySha
 }

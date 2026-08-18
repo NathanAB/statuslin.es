@@ -39,14 +39,13 @@ primary_region = "iad"
 [deploy]
   release_command = "bun run src/db/migrate.ts"
 
-# Per-process machine sizing. Only the public web server needs to absorb a launch spike, so
-# it gets shared-cpu-2x (≈2× the throughput of the 1x that collapsed at ~50 visits/s) and 1GB
-# (clears the measured OOM cliff: peak RSS 446MB of 512 under load). Add horizontal headroom
-# with `fly scale count web=N`. Numbers are starting points — tune against live metrics.
+# Per-process machine sizing. Repeated-wave profiling reproduced transient gallery SSR peaks with
+# delayed collection, so shared-cpu-2x and 2GB give the public web process operational headroom
+# while that allocation pressure is reduced. Add horizontal headroom with `fly scale count web=N`.
 [[vm]]
   processes = ["web"]
   size = "shared-cpu-2x"
-  memory = "1gb"
+  memory = "2gb"
 
 # The render worker just orchestrates E2B sandboxes (the heavy lifting runs in E2B, not here)
 # and submissions are rate-limited, so it stays at the small, already-proven size.

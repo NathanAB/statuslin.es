@@ -33,6 +33,7 @@
     "seed:community": "bun run scripts/run-seed-community.ts",
     "generate:content": "bun run scripts/generate-content.ts",
     "profile:bench": "bun run scripts/profiling/bench-phases.ts",
+    "profile:memory": "PROFILE_MEMORY_HOST=127.0.0.1 bun run scripts/profiling/memory-loop.ts",
     "profile:server": "bun run scripts/profiling/profile-server.ts",
     "dev:login": "bun run scripts/dev-login.ts",
     "prepare": "simple-git-hooks"
