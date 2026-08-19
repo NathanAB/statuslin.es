@@ -45,7 +45,7 @@
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.22",
     "@number-flow/react": "0.6.0",
-    "@posthog/react": "1.10.2",
+    "@posthog/react": "1.10.3",
     "@resvg/resvg-js": "2.6.2",
     "@tailwindcss/vite": "4.3.0",
     "@tanstack/react-router": "1.170.9",
@@ -58,7 +58,8 @@
     "e2b": "2.27.0",
     "lucide-react": "1.17.0",
     "postgres": "3.4.9",
-    "posthog-node": "5.38.0",
+    "posthog-js": "1.418.4",
+    "posthog-node": "5.49.1",
     "radix-ui": "1.4.3",
     "react": "19.2.6",
     "react-dom": "19.2.6",
