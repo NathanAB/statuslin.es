@@ -28,6 +28,8 @@ async function handleSignOut(posthog: PostHog) {
   posthog.reset()
   try {
     await authClient.signOut()
+  } catch {
+    // Sign-out fetch can fail during page teardown; still send them home.
   } finally {
     // Even if the sign-out call fails, reload home — the fresh page reflects the real session.
     window.location.assign('/')

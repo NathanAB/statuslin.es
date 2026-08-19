@@ -53,4 +53,17 @@ describe('startGitHubSignIn', () => {
       $current_url: '/',
     })
   })
+
+  it('does not leak an unhandled rejection when GitHub OAuth fetch fails', async () => {
+    const onUnhandled = vi.fn()
+    process.on('unhandledRejection', onUnhandled)
+    socialSignIn.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+    startGitHubSignIn('/')
+    await Promise.resolve()
+    await Promise.resolve()
+
+    process.off('unhandledRejection', onUnhandled)
+    expect(onUnhandled).not.toHaveBeenCalled()
+  })
 })
