@@ -5,6 +5,7 @@ import { FACET_BY_SLUG, tagHref } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
+import { captureServerException } from '@/lib/posthog-server'
 import { siteUrl } from '@/lib/site'
 import { sitemapResponse } from '@/lib/sitemap'
 import {
@@ -62,22 +63,33 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Resp
   return llmsResponse(siteUrl(), facets)
 })
 
+/** Degraded gallery served when a database read fails — an empty page keeps the site's main route
+ * up during a transient DB blip instead of returning a 500. */
+const EMPTY_GALLERY = { cards: [], page: 1, pageCount: 1, availableTags: [] as string[] }
+
 export const getGallery = createServerFn({ method: 'GET' })
   .inputValidator((d: { sort?: GallerySort; page?: number; tags?: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const sort = coerceSort(data.sort)
       const tags = coerceTags(data.tags)
-      const total = await getPublishedCount(db, tags)
-      const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
-      // Clamp so a stale ?page= past the end still lands on the last real page.
-      const page = Math.min(Math.max(1, data.page ?? 1), pageCount)
-      const availableTags = await getAvailableTags(db)
-      return {
-        cards: await getPublishedConfigs(db, sort, page, tags),
-        page,
-        pageCount,
-        availableTags,
+      try {
+        const total = await getPublishedCount(db, tags)
+        const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
+        // Clamp so a stale ?page= past the end still lands on the last real page.
+        const page = Math.min(Math.max(1, data.page ?? 1), pageCount)
+        const availableTags = await getAvailableTags(db)
+        return {
+          cards: await getPublishedConfigs(db, sort, page, tags),
+          page,
+          pageCount,
+          availableTags,
+        }
+      } catch (error) {
+        // A transient DB failure (e.g. a Neon pooler connect timeout) must degrade the gallery,
+        // not 500 the homepage. Still report it so a real outage stays visible in error tracking.
+        captureServerException(error, { source: 'server-fn', properties: { fn: 'getGallery' } })
+        return EMPTY_GALLERY
       }
     }),
   )
