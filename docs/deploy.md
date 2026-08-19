@@ -53,7 +53,7 @@ From `.env.example` (the committed contract):
 
 | var | differs per env? | notes |
 |---|---|---|
-| `DATABASE_URL` | yes | the env's Neon branch; use the **pooled** connection string |
+| `DATABASE_URL` | yes | the env's Neon branch; use the **pooled** connection string, and add **`sslmode=require`** (or verify-ca / verify-full) so the connection is encrypted — staging and prod refuse to boot without it (`src/db/assert-tls.ts`), and `deploy:prod` rejects a prod secret that lacks it before promoting |
 | `BETTER_AUTH_SECRET` | yes | a distinct random secret per env (`openssl rand -base64 32`) |
 | `BETTER_AUTH_URL` | yes | the env's public origin; everything else (dev port, auth origins) derives from this |
 | `GITHUB_CLIENT_ID` | yes | the env's OAuth app |
@@ -183,19 +183,22 @@ bun run deploy:prod
 ```
 `scripts/deploy-prod.ts` gates the promotion as one operation:
 
-1. It saves the current production asset URLs referenced by `/`, `/resources`, `/terms`, and one
+1. It reads the live production `DATABASE_URL` secret (`fly ssh console --command 'printenv
+   DATABASE_URL'`) and aborts unless it forces TLS with an encrypting `sslmode` — so a plaintext DB
+   connection is rejected before the image goes live, not after.
+2. It saves the current production asset URLs referenced by `/`, `/resources`, `/terms`, and one
    linked `/c/<slug>` detail page.
-2. It runs a real-browser smoke against staging. The browser requires the expected homepage title,
+3. It runs a real-browser smoke against staging. The browser requires the expected homepage title,
    exact root canonical, H1, and non-error body; it also fetches every same-origin initial script,
    stylesheet, and modulepreload and requires at least one and success for all.
-3. It requests every saved production asset from staging and requires status 200, a file-extension
+4. It requests every saved production asset from staging and requires status 200, a file-extension
    appropriate non-HTML content type/body, and one-year immutable caching without contradictory
    `no-cache` or `no-store` directives. Every required production page must reference at least one
    qualifying same-origin asset.
-4. Immediately before promotion it re-reads both production and staging image references. Either
+5. Immediately before promotion it re-reads both production and staging image references. Either
    changing during validation aborts. The exact staging image is promoted by digest, without a
    rebuild.
-5. After promotion, every saved asset must pass the same status, type/body, and caching checks on
+6. After promotion, every saved asset must pass the same status, type/body, and caching checks on
    production.
 
 **Why this is mandatory, not optional:** every source gate (tsc/lint/vitest) passes while the client

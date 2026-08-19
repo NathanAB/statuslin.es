@@ -4,22 +4,40 @@
 const ENCRYPTING_SSLMODES = new Set(['require', 'verify-ca', 'verify-full'])
 
 /**
- * Refuse to boot in production with a DATABASE_URL that doesn't force TLS.
+ * True when `url` carries an `sslmode` that forces an encrypted connection. postgres-js connects in
+ * plaintext unless TLS is requested, so a URL without an encrypting `sslmode` sends every credential
+ * and row over the wire unencrypted.
+ */
+export function hasEncryptingSslmode(url: string): boolean {
+  const sslmode = new URL(url).searchParams.get('sslmode')
+  return !!sslmode && ENCRYPTING_SSLMODES.has(sslmode)
+}
+
+/**
+ * Throw when `url` does not force TLS. Shared by the runtime guard and the deploy-time secret check;
+ * `label` names the source in the error so the two callers stay distinguishable.
+ */
+export function assertEncryptingDatabaseUrl(url: string, label: string): void {
+  if (hasEncryptingSslmode(url)) return
+  const sslmode = new URL(url).searchParams.get('sslmode')
+  throw new Error(
+    `${label} must enforce TLS: add \`sslmode=require\` (or verify-ca / verify-full). ` +
+      `Got ${sslmode ? `sslmode=${sslmode}` : 'no sslmode'}.`,
+  )
+}
+
+/**
+ * Guard a production DATABASE_URL against a plaintext connection, and no-op outside production
+ * (local dev and the PGlite-backed tests use a localhost Postgres with no TLS, and `@/db` is
+ * imported on some of those paths).
  *
- * postgres-js connects in plaintext unless TLS is requested, so a prod URL without an encrypting
- * `sslmode` sends every credential and row over the wire unencrypted. This throws at startup in
- * production if `sslmode` is absent or set to a non-encrypting mode.
- *
- * Intentionally a no-op outside production: local dev and the PGlite-backed tests use a localhost
- * Postgres with no TLS, and `@/db` is imported on some of those paths — gating to production keeps
- * `bun run dev`, `bun run check`, and the test suite working.
+ * This throws only where it runs — it does NOT enforce at startup on its own. Call it from a true
+ * startup point: the Nitro plugin (`src/server/db-tls-plugin.ts`) for the web process, the static
+ * `@/db` import for the worker, and the migrate entrypoint (`src/db/migrate.ts`). The SSR bundle
+ * imports `@/db` lazily, so the module-scope call in `src/db/index.ts` alone runs per request, not
+ * at boot — which is why the web process needs the plugin.
  */
 export function assertProductionDbTls(url: string, nodeEnv: string | undefined): void {
   if (nodeEnv !== 'production') return
-  const sslmode = new URL(url).searchParams.get('sslmode')
-  if (sslmode && ENCRYPTING_SSLMODES.has(sslmode)) return
-  throw new Error(
-    'DATABASE_URL must enforce TLS in production: add `sslmode=require` (or verify-ca / verify-full). ' +
-      `Got ${sslmode ? `sslmode=${sslmode}` : 'no sslmode'}.`,
-  )
+  assertEncryptingDatabaseUrl(url, 'DATABASE_URL')
 }

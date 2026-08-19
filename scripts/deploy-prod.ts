@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process'
+import { assertEncryptingDatabaseUrl } from '@/db/assert-tls'
 import { parseFlyImageReference } from './deploy-staging'
 
 const PRODUCTION_APP = 'statuslines'
@@ -132,6 +133,21 @@ function readImage(app: string, label: string): string {
   return parseFlyImageReference(shown.stdout, label)
 }
 
+/** Read a Fly app's live DATABASE_URL secret. Fly never exposes secret values through the API, so
+ * the only way to inspect the running value is to print it from a machine (prod keeps one running). */
+function readDatabaseUrl(app: string, label: string): string {
+  const shown = spawnSync(
+    'fly',
+    ['ssh', 'console', '--app', app, '--command', 'printenv DATABASE_URL'],
+    { encoding: 'utf8' },
+  )
+  if (shown.status !== 0)
+    throw new Error(`could not read ${label} DATABASE_URL: ${shown.stderr || shown.stdout}`)
+  const url = shown.stdout.trim()
+  if (!url) throw new Error(`${label} has no DATABASE_URL secret`)
+  return url
+}
+
 function run(command: string[], env: NodeJS.ProcessEnv = process.env): Promise<number> {
   const [bin, ...args] = command
   if (!bin) throw new Error('cannot run an empty command')
@@ -143,6 +159,14 @@ function run(command: string[], env: NodeJS.ProcessEnv = process.env): Promise<n
 }
 
 export async function main(): Promise<void> {
+  // Reject a plaintext production DB connection before the image goes live, not after. A
+  // DATABASE_URL without an encrypting `sslmode` sends every credential and row over the wire in
+  // plaintext; catch it here rather than let the promoted image serve errors.
+  assertEncryptingDatabaseUrl(
+    readDatabaseUrl(PRODUCTION_APP, 'production'),
+    'production DATABASE_URL',
+  )
+
   const productionBefore = readImage(PRODUCTION_APP, 'production')
   const stagingBefore = readImage(STAGING_APP, 'staging')
   const assetUrls = await collectProductionAssetUrls(PRODUCTION_URL, fetchPage)
