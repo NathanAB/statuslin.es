@@ -4,6 +4,7 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-r
 import { getAnalyticsToken } from '@/lib/analytics-config'
 import { getSession } from '@/lib/auth-functions'
 import { connectPostHogClientErrors } from '@/lib/posthog-client-errors'
+import { dropExtensionExceptions } from '@/lib/posthog-exception-filter'
 import { POSTHOG_INGEST_HOST, POSTHOG_UI_HOST } from '@/lib/posthog-hosts'
 import { identifyPostHogUser } from '@/lib/posthog-identity'
 import { rootSocialMeta } from '@/og/meta'
@@ -70,6 +71,9 @@ function RootComponent() {
             ui_host: POSTHOG_UI_HOST,
             defaults: '2025-05-24',
             capture_exceptions: true,
+            // Drop exceptions thrown by visitors' browser extensions, which capture_exceptions
+            // reports from the page too. Our own errors still report (see posthog-exception-filter).
+            before_send: dropExtensionExceptions,
             // We only use product analytics, not session replay.
             disable_session_recording: true,
             debug: import.meta.env.DEV,
