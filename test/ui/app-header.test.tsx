@@ -119,6 +119,24 @@ describe('AppHeader', () => {
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/'))
   })
 
+  it('reloads home when sign-out fetch fails without an unhandled rejection', async () => {
+    const onUnhandled = vi.fn()
+    process.on('unhandledRejection', onUnhandled)
+    signOut.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+    render(
+      <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,
+    )
+    openMenu(screen.getByText('@ada'))
+    fireEvent.click(await screen.findByText('Log out'))
+
+    await waitFor(() => expect(assign).toHaveBeenCalledWith('/'))
+    await Promise.resolve()
+    await Promise.resolve()
+    process.off('unhandledRejection', onUnhandled)
+    expect(onUnhandled).not.toHaveBeenCalled()
+  })
+
   it('includes a Review menu item only for admins', async () => {
     render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' }} />,

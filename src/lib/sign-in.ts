@@ -49,7 +49,9 @@ export function startGitHubSignIn(
     returnPath: trackedReturnPath,
     [CURRENT_URL_PROPERTY]: trackedReturnPath,
   })
-  void authClient.signIn.social({ provider: 'github', callbackURL: returnPath })
+  void authClient.signIn.social({ provider: 'github', callbackURL: returnPath }).catch(() => {
+    // Aborted or failed OAuth fetch: the user can click Sign in again.
+  })
 }
 
 /** Consume the short-lived OAuth intent after the callback returns to the app. */
