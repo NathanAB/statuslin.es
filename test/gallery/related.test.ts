@@ -40,6 +40,7 @@ async function seedPublished(opts: {
   sha: string
   upvoteCount?: number
   copyCount?: number
+  allTags?: string[]
 }) {
   const cfgRows = await db
     .insert(schema.configs)
@@ -52,6 +53,7 @@ async function seedPublished(opts: {
       status: 'published',
       upvoteCount: opts.upvoteCount ?? 0,
       copyCount: opts.copyCount ?? 0,
+      ...(opts.allTags !== undefined ? { allTags: opts.allTags } : {}),
     })
     .returning()
   const cfg = cfgRows[0]!
@@ -120,6 +122,42 @@ describe('getRelatedConfigs', () => {
     expect(related[0]?.preview?.[0]?.text).toBe('Popular')
     expect(related[0]?.copyCount).toBe(5)
     expect(related[0]).not.toHaveProperty('upvoteCount')
+  })
+
+  it('ranks shared tags ahead of copy count', async () => {
+    await seedPublished({
+      slug: 'tagged-view',
+      title: 'Viewed tagged',
+      sha: 'e'.repeat(64),
+      allTags: ['git', 'quota'],
+    })
+    await seedPublished({
+      slug: 'both-tags',
+      title: 'Both',
+      sha: 'f'.repeat(64),
+      copyCount: 1,
+      allTags: ['git', 'quota'],
+    })
+    await seedPublished({
+      slug: 'one-tag',
+      title: 'One',
+      sha: '1'.repeat(64),
+      copyCount: 50,
+      allTags: ['git'],
+    })
+    await seedPublished({
+      slug: 'popular-unrelated',
+      title: 'Popular unrelated',
+      sha: '2'.repeat(64),
+      copyCount: 99,
+      allTags: ['weather'],
+    })
+
+    const related = await getRelatedConfigs(db, 'tagged-view')
+    const slugs = related.map((r) => r.slug)
+    expect(slugs.indexOf('both-tags')).toBeGreaterThanOrEqual(0)
+    expect(slugs.indexOf('both-tags')).toBeLessThan(slugs.indexOf('one-tag'))
+    expect(slugs.indexOf('one-tag')).toBeLessThan(slugs.indexOf('popular-unrelated'))
   })
 
   it('caps results at the limit', async () => {

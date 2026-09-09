@@ -43,3 +43,65 @@ export const SETTINGS_SNIPPET = `{
     "command": "~/.claude/statusline.sh"
   }
 }`
+
+/** Top-level stdin fields from this site's clean-main scenario, not a docs clone. */
+export const STDIN_FIELD_GUIDE: Array<{ label: string; value: string }> = [
+  {
+    label: 'session_id',
+    value: 'UUID for this Claude Code session. Always present in gallery renders.',
+  },
+  {
+    label: 'transcript_path',
+    value: 'Path to the session transcript. This site fixtures it when a script reads the file.',
+  },
+  {
+    label: 'cwd',
+    value: 'Mirrors workspace.current_dir. Always present.',
+  },
+  {
+    label: 'model',
+    value: 'id and display_name. Gallery previews cover Opus, Sonnet, Haiku, and Fable.',
+  },
+  {
+    label: 'effort',
+    value: 'Reasoning effort. Absent on some models, including Haiku in these fixtures.',
+  },
+  {
+    label: 'thinking',
+    value: 'Whether extended thinking is on. Gallery scenarios cover both.',
+  },
+  {
+    label: 'workspace',
+    value: 'current_dir, project_dir, optional repo, git_worktree, and added_dirs.',
+  },
+  {
+    label: 'version',
+    value: 'Claude Code version string this site renders against.',
+  },
+  {
+    label: 'cost',
+    value:
+      'Running session cost, duration, and line counts. total_cost_usd is the usual display field.',
+  },
+  {
+    label: 'context_window',
+    value: 'Token usage. used_percentage is null at the start of a fresh session.',
+  },
+  {
+    label: 'exceeds_200k_tokens',
+    value: 'Boolean for the 200k token threshold.',
+  },
+  {
+    label: 'rate_limits',
+    value:
+      'five_hour and seven_day windows with used_percentage and resets_at. May be absent or partial.',
+  },
+  {
+    label: 'output_style',
+    value: 'Named output style, usually default.',
+  },
+  {
+    label: 'pr',
+    value: 'Optional PR number, url, and review_state. Git itself is not in the payload.',
+  },
+]

@@ -1,3 +1,4 @@
+import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
@@ -11,7 +12,7 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: base },
-    { property: 'og:title', content: 'statuslin.es' },
+    { property: 'og:title', content: HOME_TITLE_BASE },
     {
       property: 'og:description',
       content: 'Browse rendered Claude Code status lines and copy one to use.',

@@ -211,7 +211,6 @@ const FONT_FAMILY_ALLOW = [
   'src/ui/statusline-preview.tsx', // ANSI preview (monospace)
   'src/ui/textarea.tsx', // the monospace source-code input
   'src/ui/wordmark.tsx', // the statuslin.es wordmark (monospace)
-  'src/ui/home-hero.tsx', // the home-page hero wordmark (bigger monospace + block cursor)
 ]
 // Tailwind `font-<weight>` utilities — these are weights, not families, so they're fine.
 const FONT_WEIGHTS = new Set([

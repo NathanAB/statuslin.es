@@ -7,6 +7,7 @@ import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
 import { sitemapResponse } from '@/lib/sitemap'
+import { getPublishedInventory } from './inventory'
 import {
   coerceSort,
   coerceTags,
@@ -42,7 +43,9 @@ export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Resp
     slug: facet.slug,
     latest: stats.get(facet.slug)?.latest ?? null,
   }))
-  return sitemapResponse(siteUrl(), await getPublishedSlugsForSitemap(db), facets)
+  const configs = await getPublishedSlugsForSitemap(db)
+  const pageCount = Math.max(1, Math.ceil(configs.length / PAGE_SIZE))
+  return sitemapResponse(siteUrl(), configs, facets, pageCount)
 })
 
 /**
@@ -59,7 +62,12 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Resp
       label: facet?.heading ?? link.chipLabel,
     }
   })
-  return llmsResponse(siteUrl(), facets)
+  const top = await getPublishedConfigs(db, 'top', 1)
+  return llmsResponse(
+    siteUrl(),
+    facets,
+    top.map((config) => ({ slug: config.slug, title: config.title })),
+  )
 })
 
 export const getGallery = createServerFn({ method: 'GET' })
@@ -68,7 +76,11 @@ export const getGallery = createServerFn({ method: 'GET' })
     withHttpStatus(async () => {
       const sort = coerceSort(data.sort)
       const tags = coerceTags(data.tags)
-      const total = await getPublishedCount(db, tags)
+      const [total, inventory, stats] = await Promise.all([
+        getPublishedCount(db, tags),
+        getPublishedInventory(db),
+        getFacetStats(db),
+      ])
       const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
       // Clamp so a stale ?page= past the end still lands on the last real page.
       const page = Math.min(Math.max(1, data.page ?? 1), pageCount)
@@ -78,6 +90,10 @@ export const getGallery = createServerFn({ method: 'GET' })
         page,
         pageCount,
         availableTags,
+        publishedCount: inventory.count,
+        copyCount: inventory.copyCount,
+        asOf: new Date().toISOString().slice(0, 10),
+        facets: liveFacetLinks(stats),
       }
     }),
   )

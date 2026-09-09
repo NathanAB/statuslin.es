@@ -4,11 +4,12 @@ import {
   SAMPLE_STDIN_JSON,
   SETTINGS_SNIPPET,
 } from '@/guide/examples'
+import { GuideFaq } from '@/guide/guide-faq'
+import { GuideStdinFields } from '@/guide/guide-stdin-fields'
 import type { AnsiSegment } from '@/render/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { Grid, Stack } from '@/ui/layout'
-import { Notice } from '@/ui/notice'
 import { SectionCard } from '@/ui/section-card'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Heading, Text, TextLink } from '@/ui/text'
@@ -161,6 +162,7 @@ export function GuideContent({
               </Text>{' '}
               unix timestamp.
             </Text>
+            <GuideStdinFields />
           </Stack>
 
           <Stack gap={3}>
@@ -192,30 +194,7 @@ export function GuideContent({
         </Stack>
       </SectionCard>
 
-      <Stack gap={3}>
-        <Heading level={2}>Two pitfalls</Heading>
-        <Notice tone="info">
-          Git status isn't in the payload. Scripts that show a branch run{' '}
-          <Text inline mono>
-            git
-          </Text>{' '}
-          themselves against{' '}
-          <Text inline mono>
-            workspace.current_dir
-          </Text>
-          . That's how gallery configs do it, even though Claude Code never sends a branch.
-        </Notice>
-        <Notice tone="info">
-          <Text inline mono>
-            context_window.used_percentage
-          </Text>{' '}
-          is null at the start of a fresh session. Guard it (
-          <Text inline mono>
-            {'// 0'}
-          </Text>{' '}
-          in jq) or the bar reads "null" until the first response.
-        </Notice>
-      </Stack>
+      <GuideFaq />
 
       <Stack gap={3}>
         <Heading level={2}>Going further</Heading>

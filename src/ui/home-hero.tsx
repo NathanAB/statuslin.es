@@ -1,20 +1,25 @@
-import { homePageHeading } from '@/lib/page-title'
+import type { ReactNode } from 'react'
 import { Wordmark } from '@/ui/wordmark'
 
 /**
- * Home-page hero: the statuslin.es wordmark at hero size with the target keyword as a visible
- * subtitle beneath it, both inside the one h1. The keyword used to sit in an sr-only span, which
- * spent the page's most important heading on a brand nobody searches for and left the phrase
- * invisible to readers. The subtitle inherits the h1's mono font, so it reads as a terminal label.
+ * Left column of the homepage masthead: the coral-dot wordmark. The search phrase lives in the
+ * document title and the intro sentence, so it is not repeated as a subtitle under the brand.
  */
 export function HomeHero({ page = 1 }: { page?: number }) {
   return (
-    <h1 className="text-center font-mono text-[clamp(1.5rem,10vw,3rem)] text-foreground">
+    <h1 className="text-foreground">
       <Wordmark size="hero" />
-      {/* Explicit separator: JSX drops the whitespace between sibling elements, so without it the
-          heading reads "statuslin.esClaude Code status lines" to a screen reader. The subtitle is
-          `block`, so the space collapses and nothing moves on screen. */}{' '}
-      <span className="mt-3 block text-lg text-muted-foreground">{homePageHeading(page)}</span>
+      {page > 1 ? (
+        <>
+          {' '}
+          <span className="mt-3 block font-medium text-sm">Page {page}</span>
+        </>
+      ) : null}
     </h1>
   )
+}
+
+/** Two-column masthead: title | identity copy, stacking to one column below `sm`. */
+export function HomeMasthead({ children }: { children: ReactNode }) {
+  return <div className="grid items-start gap-x-9 gap-y-4 sm:grid-cols-2">{children}</div>
 }

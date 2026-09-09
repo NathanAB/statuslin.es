@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
+import { HomeFeatureDirectory, HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import {
@@ -15,11 +16,11 @@ import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { Button } from '@/ui/button'
-import { HomeHero } from '@/ui/home-hero'
+import { HomeHero, HomeMasthead } from '@/ui/home-hero'
 import { Row, Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { SubmitCta } from '@/ui/submit-cta'
-import { Text, TextLink } from '@/ui/text'
+import { Text } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
@@ -72,7 +73,7 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   const { user, gallery } = Route.useLoaderData()
-  const { cards, page, pageCount } = gallery
+  const { cards, page, pageCount, publishedCount, copyCount, asOf, facets } = gallery
   const { sort: rawSort, tags } = Route.useSearch()
   const sort = rawSort ?? 'trending'
   const selectedTags = tags ? tags.split(',') : []
@@ -89,12 +90,13 @@ function Home() {
   return (
     <PageShell user={user}>
       <Stack gap={9}>
-        <HomeHero page={page} />
-        <Text muted size="sm" measure center>
-          Explore a community gallery of Claude Code status lines. Every card shows previews
-          rendered from the real script, so you can see it before you copy it. To wire one up
-          yourself, read the <TextLink to="/guide">setup guide</TextLink>.
-        </Text>
+        <Stack gap={4}>
+          <HomeMasthead>
+            <HomeHero page={page} />
+            <HomeGalleryIntro />
+          </HomeMasthead>
+          <HomeFeatureDirectory facets={facets} />
+        </Stack>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
@@ -155,6 +157,7 @@ function Home() {
             ) : null}
           </Row>
         ) : null}
+        <HomeIndexNote publishedCount={publishedCount} copyCount={copyCount} asOf={asOf} />
       </Stack>
     </PageShell>
   )

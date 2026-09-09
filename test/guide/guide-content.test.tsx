@@ -33,15 +33,26 @@ describe('GuideContent', () => {
     for (const heading of [
       /the fast paths/i,
       /wire up a script by hand/i,
-      /two pitfalls/i,
+      /common questions/i,
       /going further/i,
     ]) {
       expect(screen.getByRole('heading', { level: 2, name: heading })).toBeTruthy()
     }
-    for (const heading of [/the json your script receives/i, /a minimal working script/i]) {
+    expect(screen.queryByRole('heading', { name: /two pitfalls/i })).toBeNull()
+    for (const heading of [
+      /the json your script receives/i,
+      /a minimal working script/i,
+      /why isn.t git in the json/i,
+      /why is used_percentage null/i,
+      /how does this site know what a script prints/i,
+    ]) {
       expect(screen.getByRole('heading', { level: 3, name: heading })).toBeTruthy()
     }
     expect(screen.queryByRole('heading', { level: 2, name: /the json/i })).toBeNull()
+    expect(
+      screen.getByRole('heading', { name: /why is used_percentage null/i }).nextElementSibling
+        ?.textContent,
+    ).toMatch(/\/\/ 0/)
   })
 
   it('shows the example output once, next to the script, not in the intro', () => {
@@ -100,6 +111,16 @@ describe('GuideContent', () => {
     const heading = screen.getByRole('heading', { name: /copy from the gallery/i })
     expect(heading.querySelector('a')).toBeNull()
     expect(screen.getByRole('link', { name: /browse the gallery/i })).toBeTruthy()
+  })
+
+  it('lists the stdin fields this site actually sends to scripts', () => {
+    const { container } = render(<GuideContent highlights={highlights} />)
+    const page = container.textContent ?? ''
+    expect(page).toMatch(/session_id/)
+    expect(page).toMatch(/transcript_path/)
+    expect(page).toMatch(/context_window/)
+    expect(page).toMatch(/rate_limits/)
+    expect(page).toMatch(/not in the payload/)
   })
 
   it('links to the gallery, resources, submit, and the official docs', () => {

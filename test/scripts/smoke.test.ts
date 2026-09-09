@@ -34,6 +34,10 @@ describe('browserCommandOutput', () => {
 })
 
 describe('assertHomeDocument', () => {
+  it('expects the brand wordmark as the h1', () => {
+    expect(EXPECTED_HOME.h1).toBe('statuslin.es')
+  })
+
   it('accepts the expected production homepage shell', () => {
     expect(() => assertHomeDocument(validHome, 'https://statuslin.es')).not.toThrow()
   })

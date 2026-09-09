@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { configSocialMeta, rootSocialMeta, staticPageSocialMeta } from '@/og/meta'
 
@@ -16,6 +17,7 @@ describe('social meta', () => {
       content: 'https://statuslin.es/og/home.png',
     })
     expect(meta).toContainEqual({ property: 'og:url', content: 'https://statuslin.es' })
+    expect(meta).toContainEqual({ property: 'og:title', content: HOME_TITLE_BASE })
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
     const description = meta.find((entry) => entry.property === 'og:description')?.content
     expect(description).toMatch(/cop(?:y|ied|ies)/i)

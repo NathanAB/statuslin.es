@@ -7,10 +7,12 @@ export const FACET_INTRO = {
   git: [
     'Claude Code tells you the model and the directory, but not what git is doing. These status lines add the branch, and some layer on dirty-file counts or ahead and behind markers, so you can see where a session is about to commit before it happens.',
     'Every preview below is rendered from the real script against the same example sessions, including one in a directory with no git repo, so you can check how each one degrades.',
+    'Pick a one-liner if you only need the branch. Pick dirty-file counts if you commit from the session. Pick ahead and behind markers if you track remotes.',
   ],
   'token-usage': [
     'Running out of context mid-task is the worst way to find out how big your session got. These status lines read the context window numbers Claude Code pipes to every status line script and turn them into a count or a burn bar.',
     'The previews are rendered from real sessions at different fill levels, so you can see what each one looks like when the window is nearly empty and nearly full.',
+    'Pick a number if you glance. Pick a burn bar if you work near the cap and want to see fill at a distance.',
   ],
   cost: [
     'Claude Code reports the running cost of a session in the JSON it sends your status line. These configs surface it in the terminal, some as a plain number, some as thresholds that change color when a session gets expensive.',
@@ -19,6 +21,7 @@ export const FACET_INTRO = {
   quota: [
     'Claude plans meter usage in five-hour and weekly windows, and Claude Code hands both to your status line as rate limit data. These status lines show how much of each window is gone and when it resets.',
     'They differ mostly in urgency: some show a quiet percentage, others switch color or warn outright as you approach the cap.',
+    'Pick the five-hour window if you hit limits during a workday. Pick a config that shows both windows if you care about the week.',
   ],
   'burn-rate': [
     'Knowing you are at 60 percent of your weekly limit is less useful than knowing whether you are on track to blow through it. These status lines show the rate, not just the total: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window.',

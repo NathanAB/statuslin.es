@@ -5,7 +5,7 @@ import { HOME_HEADING_BASE } from '@/lib/page-title'
 import { HomeHero } from '@/ui/home-hero'
 
 describe('HomeHero', () => {
-  it('renders the shared wordmark with a coral dot', () => {
+  it('renders the brand wordmark with a coral dot', () => {
     const { container } = render(<HomeHero />)
     expect(container.textContent).toContain('statuslin.es')
     const dot = container.querySelector('[data-wordmark-dot]')
@@ -13,25 +13,18 @@ describe('HomeHero', () => {
     expect(dot?.className).toContain('text-primary')
   })
 
-  it('renders one h1 that separates the wordmark from the keyword phrase', () => {
+  it('renders one h1 that is the wordmark, without repeating the search phrase', () => {
     const { container } = render(<HomeHero />)
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    // Exact text, not toContain: JSX drops whitespace between sibling elements, so without an
-    // explicit separator this reads "statuslin.esClaude Code status lines" to anything that
-    // walks text nodes — a screen reader announcing the heading, or a crawler.
-    expect(h1s[0]?.textContent).toBe(`statuslin.es ${HOME_HEADING_BASE}`)
+    expect(h1s[0]?.textContent).toBe('statuslin.es')
+    expect(h1s[0]?.textContent).not.toContain(HOME_HEADING_BASE)
   })
 
-  it('shows the keyword phrase to sighted readers instead of hiding it', () => {
+  it('left-aligns the title so it can sit beside the gallery intro', () => {
     const { container } = render(<HomeHero />)
-    // The phrase used to live in an sr-only span, which rendered at 1x1px: real text for
-    // crawlers, invisible to readers. It is the visible hero subtitle now, so nothing in
-    // the hero may be screen-reader-only.
-    expect(container.querySelector('.sr-only')).toBeNull()
-    const subtitle = screen.getByText(HOME_HEADING_BASE)
-    expect(subtitle.className).not.toContain('sr-only')
-    expect(subtitle.className).toContain('text-muted-foreground')
+    const h1 = container.querySelector('h1')
+    expect(h1?.className).not.toContain('text-center')
   })
 
   it('adds the loader-clamped page number to the page 2 heading', () => {
@@ -40,7 +33,7 @@ describe('HomeHero', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'statuslin.es Claude Code status lines — Page 2',
+        name: 'statuslin.es Page 2',
       }),
     ).toBeTruthy()
   })
