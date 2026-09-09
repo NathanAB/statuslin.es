@@ -33,6 +33,7 @@ export const Route = createFileRoute('/submit')({
     meta: [
       { title: `${TITLE} — statuslin.es` },
       { name: 'description', content: DESCRIPTION },
+      { name: 'robots', content: 'noindex, follow' },
       ...staticPageSocialMeta({ path: '/submit', title: TITLE, description: DESCRIPTION }),
     ],
     links: [canonicalLink('/submit')],

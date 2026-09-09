@@ -5,7 +5,11 @@
  * citation audience do. `base` comes from the one origin source so every link is correct per
  * environment. Facets are the *live* ones only (never link a facet page that would 404).
  */
-export function buildLlmsTxt(base: string, facets: Array<{ slug: string; label: string }>): string {
+export function buildLlmsTxt(
+  base: string,
+  facets: Array<{ slug: string; label: string }>,
+  configs: Array<{ slug: string; title: string }> = [],
+): string {
   const blocks = [
     '# statuslin.es',
     '> Community gallery of Claude Code status lines: browse real, sandbox-rendered previews and copy one into your own setup.',
@@ -14,6 +18,9 @@ export function buildLlmsTxt(base: string, facets: Array<{ slug: string; label: 
   ]
   if (facets.length > 0) {
     blocks.push(['## Browse by feature', '', ...facets.map((f) => facetLink(base, f))].join('\n'))
+  }
+  if (configs.length > 0) {
+    blocks.push(['## Top status lines', '', ...configs.map((c) => configLink(base, c))].join('\n'))
   }
   return `${blocks.join('\n\n')}\n`
 }
@@ -31,15 +38,16 @@ function facetLink(base: string, facet: { slug: string; label: string }): string
   return `- [${facet.label}](${base}/status-lines/${facet.slug})`
 }
 
-/**
- * The `/llms.txt` HTTP response. `Cache-Control: max-age=86400` lets a CDN hold it a day — the
- * facet set changes rarely, and a day-stale map is harmless.
- */
+function configLink(base: string, config: { slug: string; title: string }): string {
+  return `- [${config.title}](${base}/c/${config.slug})`
+}
+
 export function llmsResponse(
   base: string,
   facets: Array<{ slug: string; label: string }>,
+  configs: Array<{ slug: string; title: string }> = [],
 ): Response {
-  return new Response(buildLlmsTxt(base, facets), {
+  return new Response(buildLlmsTxt(base, facets, configs), {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'max-age=86400',

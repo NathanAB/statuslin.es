@@ -62,10 +62,6 @@ export function homePageTitle(page: number): string {
   return `${homePageName(page)} | statuslin.es`
 }
 
-export function homePageHeading(page: number): string {
-  return `${HOME_HEADING_BASE}${homePageSuffix(page)}`
-}
-
 export function homeMetaDescription(page: number, pageCount: number): string {
   return `${HOME_DESCRIPTION_BASE}${page > 1 ? ` Page ${page} of ${pageCount}.` : ''}`
 }

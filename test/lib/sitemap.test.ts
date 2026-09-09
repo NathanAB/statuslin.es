@@ -27,13 +27,25 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('</urlset>')
   })
 
-  it('includes the static home, guide, resources, submit, and terms pages', async () => {
+  it('includes the static home, guide, resources, and terms pages, not submit', async () => {
     const xml = await sitemapResponse(BASE, [], []).text()
     expect(xml).toContain(`<loc>${BASE}</loc>`)
     expect(xml).toContain(`<loc>${BASE}/guide</loc>`)
     expect(xml).toContain(`<loc>${BASE}/resources</loc>`)
-    expect(xml).toContain(`<loc>${BASE}/submit</loc>`)
     expect(xml).toContain(`<loc>${BASE}/terms</loc>`)
+    expect(xml).not.toContain(`<loc>${BASE}/submit</loc>`)
+  })
+
+  it('lists unfiltered gallery pages after page 1', async () => {
+    const configs = Array.from({ length: 21 }, (_, i) => ({
+      slug: `line-${i}`,
+      updatedAt: new Date('2026-04-05T00:00:00Z'),
+    }))
+    const xml = await sitemapResponse(BASE, configs, [], 3).text()
+    expect(xml).toContain(`<loc>${BASE}/?page=2</loc>`)
+    expect(xml).toContain(`<loc>${BASE}/?page=3</loc>`)
+    expect(xml).not.toContain(`<loc>${BASE}/?page=1</loc>`)
+    expect(xml).not.toContain(`<loc>${BASE}/?page=4</loc>`)
   })
 
   it('emits a config url with a date-only lastmod from updatedAt', async () => {
@@ -60,7 +72,7 @@ describe('sitemapResponse', () => {
     const xml = await sitemapResponse(BASE, configs, []).text()
 
     expect(entryFor(xml, BASE)).toContain('<lastmod>2026-05-06</lastmod>')
-    for (const path of ['/guide', '/resources', '/submit', '/terms']) {
+    for (const path of ['/guide', '/resources', '/terms']) {
       expect(entryFor(xml, `${BASE}${path}`)).not.toContain('<lastmod>')
     }
   })

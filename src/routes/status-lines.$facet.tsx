@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { ConfigBadges } from '@/gallery/config-badges'
 import { GalleryConfigCard } from '@/gallery/config-card'
-import { FACET_BY_SLUG, tagLabel } from '@/gallery/facets'
+import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getFacetPage } from '@/gallery/functions'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -8,7 +9,7 @@ import { facetJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
-import { Row, Stack } from '@/ui/layout'
+import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
@@ -71,6 +72,10 @@ function FacetPage() {
               {paragraph}
             </Text>
           ))}
+          <Text muted size="sm" measure>
+            {page.cards.length} published {page.cards.length === 1 ? 'status line' : 'status lines'}
+            .
+          </Text>
         </Stack>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
@@ -83,16 +88,12 @@ function FacetPage() {
           ))}
         </Stack>
         {page.otherFacets.length > 0 ? (
-          <Row gap={2} wrap>
-            <Text muted size="sm" inline>
+          <Stack gap={2}>
+            <Text muted size="sm">
               More ways to browse:
             </Text>
-            {page.otherFacets.map((f) => (
-              <TextLink key={f.slug} to="/status-lines/$facet" params={{ facet: f.slug }} size="sm">
-                {tagLabel(f.chipLabel)}
-              </TextLink>
-            ))}
-          </Row>
+            <ConfigBadges tags={page.otherFacets.map((f) => f.slug)} networkHosts={[]} />
+          </Stack>
         ) : null}
       </Stack>
     </PageShell>

@@ -49,4 +49,19 @@ describe('buildLlmsTxt', () => {
     // core pages still present
     expect(txt).toContain('(https://statuslin.es/submit)')
   })
+
+  it('lists top configs for non-Google engines', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets, [
+      { slug: 'everything-bar', title: 'Everything Bar' },
+      { slug: 'usage-dot-bars', title: 'Usage Dot Bars' },
+    ])
+    expect(txt).toMatch(/^## Top status lines/m)
+    expect(txt).toContain('[Everything Bar](https://statuslin.es/c/everything-bar)')
+    expect(txt).toContain('[Usage Dot Bars](https://statuslin.es/c/usage-dot-bars)')
+  })
+
+  it('omits the top-configs section when none are passed', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    expect(txt).not.toMatch(/Top status lines/)
+  })
 })

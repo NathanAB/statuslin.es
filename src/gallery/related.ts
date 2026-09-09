@@ -1,4 +1,4 @@
-import { and, desc, eq, ne } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions } from '@/db/schema'
 import type { AnsiSegment, Interpreter } from '@/render/types'
@@ -19,30 +19,44 @@ export interface RelatedConfig {
 /** How many other configs a config page links to in "More status lines". */
 export const RELATED_LIMIT = 6
 
-/**
- * Other published configs for the "More status lines" section on a config page —
- * most-copied first (ties broken by newest), excluding the config being viewed.
- * Exists for internal linking: without it every config page is a crawl dead end.
- */
+function tagOverlap(left: string[], right: Set<string>): number {
+  return left.reduce((count, tag) => count + (right.has(tag) ? 1 : 0), 0)
+}
+
 export async function getRelatedConfigs(
   db: Db,
   slug: string,
   limit = RELATED_LIMIT,
 ): Promise<RelatedConfig[]> {
+  const [viewed] = await db
+    .select({ allTags: configs.allTags })
+    .from(configs)
+    .where(eq(configs.slug, slug))
+  const viewedTags = new Set(viewed?.allTags ?? [])
+
   const rows = await db
     .select({ config: configs, version: configVersions })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .where(and(eq(configs.status, 'published'), ne(configs.slug, slug)))
-    .orderBy(desc(configs.copyCount), desc(configs.createdAt))
-    .limit(limit)
+
+  const ranked = [...rows]
+    .sort((a, b) => {
+      const overlapDelta =
+        tagOverlap(b.config.allTags ?? [], viewedTags) -
+        tagOverlap(a.config.allTags ?? [], viewedTags)
+      if (overlapDelta !== 0) return overlapDelta
+      if (b.config.copyCount !== a.config.copyCount) return b.config.copyCount - a.config.copyCount
+      return b.config.createdAt.getTime() - a.config.createdAt.getTime()
+    })
+    .slice(0, limit)
 
   const cardPreviews = await selectCardPreviews(
     db,
-    rows.map((r) => r.version.contentSha256),
+    ranked.map((r) => r.version.contentSha256),
   )
 
-  return rows.map((r) => ({
+  return ranked.map((r) => ({
     configId: r.config.id,
     slug: r.config.slug,
     title: r.config.title,
