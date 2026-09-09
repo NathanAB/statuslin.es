@@ -7,7 +7,6 @@ export interface HomeFacetLink {
   chipLabel: string
 }
 
-/** Right column of the homepage masthead: what the gallery is. */
 export function HomeGalleryIntro() {
   return (
     <Stack gap={3}>
@@ -42,10 +41,6 @@ function utcDateLabel(isoDate: string): string {
   }).format(date)
 }
 
-/**
- * Dated inventory + disambiguation for crawlers. Lives under the gallery so the masthead
- * can stay a product sentence, the way skills.sh keeps counts in the leaderboard not the hero.
- */
 export function HomeIndexNote({
   publishedCount,
   copyCount,

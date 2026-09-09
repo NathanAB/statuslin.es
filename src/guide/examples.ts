@@ -44,7 +44,6 @@ export const SETTINGS_SNIPPET = `{
   }
 }`
 
-/** Top-level stdin fields from this site's clean-main scenario, not a docs clone. */
 export const STDIN_FIELD_GUIDE: Array<{ label: string; value: string }> = [
   {
     label: 'session_id',

@@ -23,11 +23,6 @@ function tagOverlap(left: string[], right: Set<string>): number {
   return left.reduce((count, tag) => count + (right.has(tag) ? 1 : 0), 0)
 }
 
-/**
- * Other published configs for the "More status lines" section on a config page.
- * Shared tags first, then most-copied, then newest. Exists for internal linking:
- * without it every config page is a crawl dead end.
- */
 export async function getRelatedConfigs(
   db: Db,
   slug: string,

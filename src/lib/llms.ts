@@ -42,10 +42,6 @@ function configLink(base: string, config: { slug: string; title: string }): stri
   return `- [${config.title}](${base}/c/${config.slug})`
 }
 
-/**
- * The `/llms.txt` HTTP response. `Cache-Control: max-age=86400` lets a CDN hold it a day — the
- * facet set changes rarely, and a day-stale map is harmless.
- */
 export function llmsResponse(
   base: string,
   facets: Array<{ slug: string; label: string }>,

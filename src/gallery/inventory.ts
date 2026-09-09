@@ -5,7 +5,6 @@ import { configs } from '@/db/schema'
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
-/** Unfiltered published inventory for homepage stats. Ignores `?tags=` so the dated counts stay site-wide. */
 export interface PublishedInventory {
   count: number
   copyCount: number

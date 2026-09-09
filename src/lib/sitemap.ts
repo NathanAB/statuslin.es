@@ -19,7 +19,7 @@ export interface SitemapFacet {
   latest: Date | null
 }
 
-/** Always-present public pages, as paths relative to the origin. /submit is noindex. */
+/** Always-present public pages, as paths relative to the origin. */
 const STATIC_PATHS = ['/', '/guide', '/resources', '/terms']
 
 /** Escape the five XML entities so a slug with `&`/`<` can't break the document. */
