@@ -159,4 +159,57 @@ describe('renderConfig network mode', () => {
     )
     expect(previews).toHaveLength(SCENARIOS.length)
   })
+
+  it('drops a Tasqr cache snapshot into every scenario when api.tasqr.ai is declared', async () => {
+    const seen: RenderInput[] = []
+    const runner: SandboxRunner = {
+      async render(input) {
+        seen.push(input)
+        return {
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          timedOut: false,
+          trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+        }
+      },
+    }
+    await renderConfig(
+      { script: '', interpreter: 'python', networkHosts: ['api.tasqr.ai'] },
+      runner,
+    )
+    expect(seen).toHaveLength(SCENARIOS.length)
+    for (const input of seen) {
+      const cache = input.fixtures?.find(
+        (f) => f.path === '/home/user/.cache/tasqr-statusline/cache.json',
+      )
+      expect(cache).toBeDefined()
+      expect(JSON.parse(cache?.content ?? '{}').active[0].title).toBe('Fix lease reclaim')
+    }
+  })
+
+  it('does not drop a Tasqr cache for other network hosts', async () => {
+    const seen: RenderInput[] = []
+    const runner: SandboxRunner = {
+      async render(input) {
+        seen.push(input)
+        return {
+          stdout: '',
+          stderr: '',
+          exitCode: 0,
+          timedOut: false,
+          trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+        }
+      },
+    }
+    await renderConfig({ script: '', interpreter: 'bash', networkHosts: ['wttr.in'] }, runner)
+    expect(
+      seen.every(
+        (input) =>
+          input.fixtures?.some(
+            (f) => f.path === '/home/user/.cache/tasqr-statusline/cache.json',
+          ) !== true,
+      ),
+    ).toBe(true)
+  })
 })

@@ -1,6 +1,7 @@
 import { parseAnsi } from './ansi'
 import { resolveResets } from './scenario-helpers'
 import { SCENARIOS } from './scenarios'
+import { buildTasqrCacheFixture } from './tasqr-cache'
 import { buildTodosFile } from './todos'
 import { buildTranscript } from './transcript'
 import type { Interpreter, RenderedPreview, SandboxRunner } from './types'
@@ -50,9 +51,11 @@ export async function renderConfig(
   // visible output (cwd, model, git state), so a single preview would undersell the gallery card.
   for (const scenario of SCENARIOS) {
     const stdin = resolveResets(scenario.stdin, nowSec)
-    const fixtures = [buildTranscript(scenario, nowMs), buildTodosFile(scenario)].filter(
-      (f): f is { path: string; content: string } => f !== null,
-    )
+    const fixtures = [
+      buildTranscript(scenario, nowMs),
+      buildTodosFile(scenario),
+      buildTasqrCacheFixture(config.networkHosts ?? [], nowMs),
+    ].filter((f): f is { path: string; content: string } => f !== null)
     const result = await runner.render({ ...config, scenario: { ...scenario, stdin }, fixtures })
     // Single choke point: capping here bounds BOTH `rawStdout` and the derived `segments`, for
     // BOTH runners (real e2b + fake) — every render flows through this loop.
