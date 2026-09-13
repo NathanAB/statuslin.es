@@ -40,6 +40,7 @@ interface SeedOpts {
   upvoteCount?: number
   copyCount?: number
   createdAt?: Date
+  reviewedAt?: Date
   networkHosts?: string[]
 }
 
@@ -71,6 +72,7 @@ async function seedPublished(opts: SeedOpts) {
       contentSha256: opts.sha,
       status: 'approved',
       ...(opts.networkHosts !== undefined ? { networkHosts: opts.networkHosts } : {}),
+      ...(opts.reviewedAt !== undefined ? { reviewedAt: opts.reviewedAt } : {}),
     })
     .returning()
   const ver = verRows[0]!
@@ -204,36 +206,27 @@ describe('getPublishedConfigs sorting', () => {
     expect(counts[2]).toBe(1)
   })
 
-  it('new: returns cards ordered by createdAt descending', async () => {
-    const t1 = new Date('2025-03-01T00:00:00Z')
-    const t2 = new Date('2025-06-01T00:00:00Z')
-    const t3 = new Date('2025-09-01T00:00:00Z')
+  it('new: returns cards ordered by published date, not first-submit date', async () => {
     await seedPublished({
-      slug: 'sort-new-oldest',
-      title: 'NewOldest',
+      slug: 'sort-new-submitted-early',
+      title: 'SubmittedEarly',
       sha: '4'.repeat(64),
-      createdAt: t1,
+      createdAt: new Date('2026-08-29T00:00:00Z'),
+      reviewedAt: new Date('2026-09-13T17:00:00Z'),
     })
     await seedPublished({
-      slug: 'sort-new-mid',
-      title: 'NewMid',
+      slug: 'sort-new-submitted-late',
+      title: 'SubmittedLate',
       sha: '5'.repeat(64),
-      createdAt: t2,
-    })
-    await seedPublished({
-      slug: 'sort-new-newest',
-      title: 'NewNewest',
-      sha: '6'.repeat(64),
-      createdAt: t3,
+      createdAt: new Date('2026-09-09T00:00:00Z'),
+      reviewedAt: new Date('2026-09-09T16:00:00Z'),
     })
 
     const cards = await getPublishedConfigs(db, 'new')
-    const relevant = cards.filter((c) =>
-      ['sort-new-oldest', 'sort-new-mid', 'sort-new-newest'].includes(c.slug),
-    )
-    const slugs = relevant.map((c) => c.slug)
-    expect(slugs.indexOf('sort-new-newest')).toBeLessThan(slugs.indexOf('sort-new-mid'))
-    expect(slugs.indexOf('sort-new-mid')).toBeLessThan(slugs.indexOf('sort-new-oldest'))
+    const slugs = cards
+      .map((c) => c.slug)
+      .filter((slug) => ['sort-new-submitted-early', 'sort-new-submitted-late'].includes(slug))
+    expect(slugs).toEqual(['sort-new-submitted-early', 'sort-new-submitted-late'])
   })
 
   it('trending: uses copy-event age and ignores submission age and lifetime counts', async () => {
