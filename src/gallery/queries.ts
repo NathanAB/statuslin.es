@@ -6,6 +6,7 @@ import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
 import { coerceInterpreter, galleryCardSelection, mapCardRows } from './card-rows'
+import { publishedAt } from './published-at'
 import { trendingScore } from './trending'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -76,27 +77,6 @@ export async function getPublishedCount(db: Db, tags: string[] = []): Promise<nu
   return row?.n ?? 0
 }
 
-/** Published sitemap rows joined to their current version, newest reviewed/created date first. */
-export async function getPublishedSlugsForSitemap(
-  db: Db,
-): Promise<Array<{ slug: string; updatedAt: Date }>> {
-  const effectiveUpdatedAt = sql`coalesce(${configVersions.reviewedAt}, ${configs.createdAt})`
-  const rows = await db
-    .select({
-      slug: configs.slug,
-      createdAt: configs.createdAt,
-      reviewedAt: configVersions.reviewedAt,
-    })
-    .from(configs)
-    .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
-    .where(eq(configs.status, 'published'))
-    .orderBy(desc(effectiveUpdatedAt))
-  return rows.map((row) => ({
-    slug: row.slug,
-    updatedAt: row.reviewedAt ?? row.createdAt,
-  }))
-}
-
 export async function getPublishedConfigs(
   db: Db,
   sort: GallerySort = 'trending',
@@ -108,7 +88,7 @@ export async function getPublishedConfigs(
       ? [desc(configs.copyCount)]
       : sort === 'trending'
         ? [desc(trendingScore(configs.id))]
-        : [desc(configs.createdAt)]
+        : [desc(publishedAt)]
 
   const tagFilter =
     tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
@@ -242,6 +222,7 @@ export {
   MIN_INDEXABLE_FACET_CONFIGS,
   resolveLiveFacet,
 } from './facet-queries'
+export { getPublishedSlugsForSitemap } from './published-at'
 // Re-exported so @/gallery/queries stays the single import surface for gallery
 // queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
