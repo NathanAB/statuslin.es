@@ -15,11 +15,12 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
  *   U+E0A0-E0D7  Powerline (branch, line-number, separators)
  *   U+E5FA-E6B7  Seti-UI + custom dev icons
  *   U+F000-F0FF  Font Awesome subset (folders, git, etc.)
+ *   U+F418       Git branch icon
  */
 const NERD_RELEASE = 'v3.2.1'
 const ZIP_URL = `https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_RELEASE}/JetBrainsMono.zip`
 const TTF = 'JetBrainsMonoNerdFontMono-Regular.ttf'
-const UNICODES = 'U+0020-007E,U+00A0-00FF,U+2500-259F,U+E0A0-E0D7,U+E5FA-E6B7,U+F000-F0FF'
+const UNICODES = 'U+0020-007E,U+00A0-00FF,U+2500-259F,U+E0A0-E0D7,U+E5FA-E6B7,U+F000-F0FF,U+F418'
 const OUT = 'public/fonts/statusline-nerd.woff2'
 const JULIA_RELEASE = 'v0.062'
 const JULIA_ARCHIVE = 'JuliaMono-ttf.tar.gz'
