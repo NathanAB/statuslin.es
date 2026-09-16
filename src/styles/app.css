@@ -3,7 +3,10 @@
 
 @font-face {
   font-family: "StatuslineNerd";
-  src: url("/fonts/statusline-nerd.woff2") format("woff2");
+  /* Relative so Vite emits /assets/statusline-nerd-[hash].woff2. The public/
+     copy at /fonts/statusline-nerd.woff2 is a stable URL. Chromium keeps that
+     family across deploys even after a hard reload, which hid newly subsetted glyphs. */
+  src: url("../../public/fonts/statusline-nerd.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
