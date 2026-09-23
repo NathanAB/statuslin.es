@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { AuthorChip } from '@/ui/author-chip'
@@ -59,5 +60,23 @@ describe('AuthorChip', () => {
 
     expect(container.querySelector('a')).toBeNull()
     expect(screen.getByText('Ada Lovelace')).toBeTruthy()
+  })
+
+  it('server-renders the avatar lazily at 20x20 without an image preload link', () => {
+    const html = renderToString(
+      <html lang="en">
+        <head />
+        <body>
+          <AuthorChip
+            author={{ name: 'Ada Lovelace', username: 'ada', image: 'https://example.com/a.png' }}
+          />
+        </body>
+      </html>,
+    )
+
+    expect(html).not.toContain('rel="preload"')
+    expect(html).toContain(
+      '<img src="https://example.com/a.png" alt="" loading="lazy" width="20" height="20"',
+    )
   })
 })
