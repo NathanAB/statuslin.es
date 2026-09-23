@@ -55,6 +55,11 @@ describe('GuideContent', () => {
     ).toMatch(/\/\/ 0/)
   })
 
+  it('shows when the guide was last updated', () => {
+    render(<GuideContent highlights={highlights} />)
+    expect(screen.getByText('Updated 2026-09-23')).toBeTruthy()
+  })
+
   it('shows the example output once, next to the script, not in the intro', () => {
     const { container } = render(<GuideContent highlights={highlights} />)
     const page = container.textContent ?? ''

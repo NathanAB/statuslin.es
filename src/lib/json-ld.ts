@@ -1,5 +1,5 @@
 import type { GeneratedContent } from '@/content/types'
-import { GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
 /**
@@ -104,39 +104,56 @@ export function configJsonLd(
   return nodes
 }
 
-/**
- * Turn the generated "what it shows / requirements / behavior notes" copy into a FAQPage —
- * the extractable Q&A shape ChatGPT/Perplexity/Claude reward. Skips empty sections, and
- * returns null when there is nothing to say.
- */
+/** One visible question and its plain-text answer. Pages render these and emit them as FAQPage. */
+export interface FaqEntry {
+  question: string
+  answer: string
+}
+
+/** A FAQPage — the extractable Q&A shape ChatGPT/Perplexity/Claude reward. Null when empty. */
+export function faqPageJsonLd(entries: FaqEntry[]): object | null {
+  if (entries.length === 0) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: entries.map((entry) => ({
+      '@type': 'Question',
+      name: entry.question,
+      acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+    })),
+  }
+}
+
+/** The generated "what it shows / requirements / behavior notes" copy as FAQ entries, skipping
+ * empty sections. */
 function configFaqJsonLd(title: string, content: GeneratedContent | null): object | null {
   if (!content) return null
   const sections = [
-    { q: `What does ${title} show?`, lines: content.whatItShows },
-    { q: `What does ${title} require?`, lines: content.requirements },
-    { q: `How does ${title} behave?`, lines: content.behaviorNotes },
+    { question: `What does ${title} show?`, lines: content.whatItShows },
+    { question: `What does ${title} require?`, lines: content.requirements },
+    { question: `How does ${title} behave?`, lines: content.behaviorNotes },
   ]
-  const mainEntity = sections
-    .filter((s) => s.lines.length > 0)
-    .map((s) => ({
-      '@type': 'Question',
-      name: s.q,
-      acceptedAnswer: { '@type': 'Answer', text: s.lines.join(' ') },
-    }))
-  if (mainEntity.length === 0) return null
-  return { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity }
+  return faqPageJsonLd(
+    sections
+      .filter((s) => s.lines.length > 0)
+      .map((s) => ({ question: s.question, answer: s.lines.join(' ') })),
+  )
 }
 
-/** The /guide page as a TechArticle plus a breadcrumb trail back to the gallery. */
-export function guideJsonLd(origin: string, description: string): object[] {
+/** The /guide page as a dated TechArticle, a breadcrumb trail back to the gallery, and its
+ * common questions as a FAQPage. */
+export function guideJsonLd(origin: string, description: string, faq: FaqEntry[]): object[] {
   const url = `${origin}/guide`
-  return [
+  const nodes: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'TechArticle',
       headline: GUIDE_TITLE_BASE,
       url,
       description,
+      author: { '@type': 'Organization', name: 'statuslin.es', url: origin },
+      datePublished: GUIDE_DATES.published,
+      dateModified: GUIDE_DATES.modified,
     },
     {
       '@context': 'https://schema.org',
@@ -147,6 +164,9 @@ export function guideJsonLd(origin: string, description: string): object[] {
       ],
     },
   ]
+  const faqPage = faqPageJsonLd(faq)
+  if (faqPage) nodes.push(faqPage)
+  return nodes
 }
 
 /** The /resources page as a CollectionPage listing the external tools/resources. */

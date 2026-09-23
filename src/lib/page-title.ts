@@ -75,6 +75,11 @@ export function homeMetaDescription(page: number, pageCount: number): string {
 /** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 
+/** /guide dates (YYYY-MM-DD) — shared by the TechArticle JSON-LD, the sitemap, and the page's
+ * "Updated" line. Published is when /guide was restored (b39b1b3); bump `modified` with any
+ * change to the guide's content. */
+export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-09-23' } as const
+
 /** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
 export const GUIDE_DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'

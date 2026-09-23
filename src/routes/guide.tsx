@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getGuideHighlights } from '@/guide/functions'
 import { GuideContent } from '@/guide/guide-content'
+import { GUIDE_FAQ } from '@/guide/guide-faq'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { guideJsonLd, jsonLdScript } from '@/lib/json-ld'
@@ -22,7 +23,7 @@ export const Route = createFileRoute('/guide')({
       }),
     ],
     links: [canonicalLink('/guide')],
-    scripts: guideJsonLd(siteUrl(), GUIDE_DESCRIPTION).map(jsonLdScript),
+    scripts: guideJsonLd(siteUrl(), GUIDE_DESCRIPTION, GUIDE_FAQ).map(jsonLdScript),
   }),
   component: Guide,
 })
