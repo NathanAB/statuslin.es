@@ -76,6 +76,11 @@ function FacetPage() {
             {page.cards.length} published {page.cards.length === 1 ? 'status line' : 'status lines'}
             .
           </Text>
+          {page.updated ? (
+            <Text muted size="sm">
+              Updated {page.updated}
+            </Text>
+          ) : null}
         </Stack>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>

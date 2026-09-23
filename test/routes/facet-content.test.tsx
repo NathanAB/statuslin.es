@@ -36,28 +36,37 @@ vi.mock('@/gallery/config-card', () => ({
 
 const { Route: FacetRoute } = await import('@/routes/status-lines.$facet')
 
+function renderFacet(slug: string) {
+  vi.spyOn(FacetRoute, 'useLoaderData').mockReturnValue({
+    user: null,
+    page: {
+      slug,
+      cards: [
+        { slug: 'a', title: 'A' },
+        { slug: 'b', title: 'B' },
+        { slug: 'c', title: 'C' },
+        { slug: 'd', title: 'D' },
+      ],
+      indexable: true,
+      updated: '2026-09-08',
+      otherFacets: [],
+    },
+  })
+  const FacetPage = FacetRoute.options.component
+  return render(FacetPage ? <FacetPage /> : null)
+}
+
 describe('facet page content', () => {
   it('states the live published count from the cards on the page', () => {
-    vi.spyOn(FacetRoute, 'useLoaderData').mockReturnValue({
-      user: null,
-      page: {
-        slug: 'git',
-        cards: [
-          { slug: 'a', title: 'A' },
-          { slug: 'b', title: 'B' },
-          { slug: 'c', title: 'C' },
-          { slug: 'd', title: 'D' },
-        ],
-        indexable: true,
-        updated: '2026-09-08',
-        otherFacets: [],
-      },
-    })
-    const FacetPage = FacetRoute.options.component
-
-    render(FacetPage ? <FacetPage /> : null)
+    renderFacet('git')
 
     expect(screen.getByText(/4 published status lines/i)).toBeTruthy()
     expect(screen.queryByText(/this page lists/i)).toBeNull()
+  })
+
+  it('shows the date the newest status line in the facet was updated', () => {
+    renderFacet('git')
+
+    expect(screen.getByText('Updated 2026-09-08')).toBeTruthy()
   })
 })
