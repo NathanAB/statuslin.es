@@ -4,7 +4,13 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { coercePage, getPublishedConfigs, getPublishedCount, PAGE_SIZE } from '@/gallery/queries'
+import {
+  coercePage,
+  galleryPageWindow,
+  getPublishedConfigs,
+  getPublishedCount,
+  PAGE_SIZE,
+} from '@/gallery/queries'
 
 describe('coercePage', () => {
   it('passes through positive integers (as string or number)', () => {
@@ -21,6 +27,21 @@ describe('coercePage', () => {
     expect(coercePage('-4')).toBe(1)
     expect(coercePage('abc')).toBe(1)
     expect(coercePage({})).toBe(1)
+  })
+})
+
+describe('galleryPageWindow', () => {
+  it('returns the requested page and the page count while in range', () => {
+    expect(galleryPageWindow(3, 25)).toEqual({ page: 3, pageCount: 3 })
+  })
+
+  it('returns null for a page past the last one so the route can 404', () => {
+    expect(galleryPageWindow(4, 25)).toBeNull()
+    expect(galleryPageWindow(99, 25)).toBeNull()
+  })
+
+  it('still renders page 1 of an empty gallery', () => {
+    expect(galleryPageWindow(1, 0)).toEqual({ page: 1, pageCount: 1 })
   })
 })
 

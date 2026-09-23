@@ -44,6 +44,17 @@ export function coercePage(value: unknown): number {
   return Math.floor(n)
 }
 
+/** Places a requested page inside a gallery of `total` configs. `null` means the page is past
+ * the end and should 404; an empty gallery still has one (empty) page. */
+export function galleryPageWindow(
+  requestedPage: number,
+  total: number,
+): { page: number; pageCount: number } | null {
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  if (requestedPage > pageCount) return null
+  return { page: requestedPage, pageCount }
+}
+
 export interface ConfigAuthor {
   name: string
   username: string | null
