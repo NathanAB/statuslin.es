@@ -1,4 +1,5 @@
-const CONFIG_PAGE_TITLE_SUFFIX = ' — Claude Code Status Line | statuslin.es'
+const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
+const CONFIG_PAGE_TITLE_BRAND = ' | statuslin.es'
 const CONFIG_PAGE_TITLE_MAX_LENGTH = 60
 const CONFIG_META_DESCRIPTION_MAX_LENGTH = 160
 
@@ -22,11 +23,16 @@ function truncateAtWordBoundary(value: string, maxLength: number): string {
  * <title> templates for config pages. The template exists so every config page's
  * title states the target search phrase ("Claude Code Status Line") — titles are
  * the strongest on-page ranking signal, and the config name alone doesn't say it.
+ * When the name is long, the brand goes first so the name stays whole; the name is
+ * truncated only when it doesn't fit beside the keyword alone.
  */
 export function configPageTitle(title: string): string {
   const normalizedTitle = normalizeWhitespace(title)
-  const titleBudget = CONFIG_PAGE_TITLE_MAX_LENGTH - CONFIG_PAGE_TITLE_SUFFIX.length
-  return `${truncateAtWordBoundary(normalizedTitle, titleBudget)}${CONFIG_PAGE_TITLE_SUFFIX}`
+  const branded = `${normalizedTitle}${CONFIG_PAGE_TITLE_KEYWORD}${CONFIG_PAGE_TITLE_BRAND}`
+  if (branded.length <= CONFIG_PAGE_TITLE_MAX_LENGTH) return branded
+
+  const titleBudget = CONFIG_PAGE_TITLE_MAX_LENGTH - CONFIG_PAGE_TITLE_KEYWORD.length
+  return `${truncateAtWordBoundary(normalizedTitle, titleBudget)}${CONFIG_PAGE_TITLE_KEYWORD}`
 }
 
 /** Keep config search snippets concise without changing the description shown on the page. */

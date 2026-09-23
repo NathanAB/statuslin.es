@@ -16,14 +16,18 @@ describe('configPageTitle', () => {
     )
   })
 
-  it('normalizes whitespace and caps long search titles', () => {
-    const title = configPageTitle(
-      'A very long config title that would otherwise make the search result unwieldy\nfor visitors',
+  it('drops the brand before truncating a name that only fits with the keyword', () => {
+    expect(configPageTitle('Fable / All Models Usage')).toBe(
+      'Fable / All Models Usage — Claude Code Status Line',
     )
+  })
 
-    expect(title.length).toBeLessThanOrEqual(60)
-    expect(title).not.toContain('\n')
-    expect(title).toContain('Claude Code Status Line | statuslin.es')
+  it('normalizes whitespace and truncates a name too long even for the keyword alone', () => {
+    expect(
+      configPageTitle(
+        'A very long config title that would otherwise make the search result unwieldy\nfor visitors',
+      ),
+    ).toBe('A very long config title that… — Claude Code Status Line')
   })
 
   it('keeps the not-found title on-brand and two-worded', () => {
