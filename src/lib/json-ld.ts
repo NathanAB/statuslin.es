@@ -1,4 +1,5 @@
 import type { GeneratedContent } from '@/content/types'
+import { withoutInlineCode } from '@/lib/inline-code'
 import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
@@ -117,7 +118,7 @@ export function faqPageJsonLd(entries: FaqEntry[]): object | null {
     mainEntity: entries.map((entry) => ({
       '@type': 'Question',
       name: entry.question,
-      acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+      acceptedAnswer: { '@type': 'Answer', text: withoutInlineCode(entry.answer) },
     })),
   }
 }

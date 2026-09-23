@@ -337,3 +337,22 @@ describe('facetJsonLd', () => {
     expect(p).not.toHaveProperty('dateModified')
   })
 })
+
+describe('faqPageJsonLd', () => {
+  it('emits answers as plain text without inline-code backticks', () => {
+    const faq = faqPageJsonLd([
+      { question: 'Where?', answer: 'Read `workspace.current_dir` first.' },
+    ])
+    expect(faq).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Where?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Read workspace.current_dir first.' },
+        },
+      ],
+    })
+  })
+})

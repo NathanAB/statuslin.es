@@ -67,7 +67,10 @@ describe('facet page content', () => {
   it('answers the how-to question and shows common questions on answered facets', () => {
     renderFacet('token-usage')
 
-    expect(screen.getByText(/Token usage is under context_window\./)).toBeTruthy()
+    const answer = [...document.querySelectorAll('p')].find((p) =>
+      p.textContent?.includes('Token usage is under context_window.'),
+    )
+    expect(answer?.querySelector('.font-mono')?.textContent).toBe('context_window')
     expect(screen.getByRole('heading', { level: 2, name: 'Common questions' })).toBeTruthy()
     expect(
       screen.getByRole('heading', { level: 3, name: 'Why does my token count show null?' }),

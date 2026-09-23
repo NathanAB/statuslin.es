@@ -10,6 +10,7 @@ import { NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
 import { FaqSection } from '@/ui/faq-section'
+import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
@@ -75,7 +76,7 @@ function FacetPage() {
           ))}
           {facet.answer ? (
             <Text size="sm" measure>
-              {facet.answer}
+              <InlineCodeText text={facet.answer} />
             </Text>
           ) : null}
           <Text muted size="sm" measure>

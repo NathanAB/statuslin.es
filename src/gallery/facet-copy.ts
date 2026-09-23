@@ -69,10 +69,10 @@ export const FACET_INTRO = {
 
 export const FACET_ANSWER = {
   'token-usage':
-    'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under context_window. Read context_window.used_percentage for a percentage, or total_input_tokens and context_window_size for raw counts. used_percentage is null in a fresh session, so default it to 0 in jq with // 0.',
+    'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
   quota:
-    "Claude Code passes your plan's usage limits to the status line script as rate_limits in its stdin JSON. rate_limits.five_hour and rate_limits.seven_day each carry used_percentage and resets_at, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing. The configs below differ in how loudly they warn.",
-  git: "Claude Code does not send git state in the status line's stdin JSON. Scripts that show a branch run git themselves in workspace.current_dir, for example git branch --show-current. Dirty-file counts come from git status --porcelain. Handle the no-repo case, or the line prints an error outside a repository. Each preview below includes a directory with no repo.",
+    "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing. The configs below differ in how loudly they warn.",
+  git: "Claude Code does not send git state in the status line's stdin JSON. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository. Each preview below includes a directory with no repo.",
 } satisfies Record<string, string>
 
 export const FACET_FAQ = {
@@ -80,46 +80,46 @@ export const FACET_FAQ = {
     {
       question: 'Why does my token count show null?',
       answer:
-        'context_window.used_percentage and remaining_percentage are null until the first response of a session. current_usage is null then too. Default them in your script, for example with // 0 in jq.',
+        '`context_window.used_percentage` and `remaining_percentage` are null until the first response of a session. `current_usage` is null then too. Default them in your script, for example with `// 0` in jq.',
     },
     {
       question: 'How do I show a context bar instead of a number?',
       answer:
-        'Take context_window.used_percentage, scale it to the bar width, and print that many filled blocks followed by empty ones. The burn-bar configs below work this way.',
+        'Take `context_window.used_percentage`, scale it to the bar width, and print that many filled blocks followed by empty ones. The burn-bar configs above work this way.',
     },
     {
       question: 'Does the context window size change with the model?',
       answer:
-        'It can. context_window.context_window_size carries the window for the current session, such as 200000 or 1000000. Divide by it instead of hardcoding 200k.',
+        'It can. `context_window.context_window_size` carries the window for the current session, such as 200000 or 1000000. Divide by it instead of hardcoding 200k.',
     },
   ],
   quota: [
     {
       question: 'Why is rate_limits missing from my status line input?',
       answer:
-        'Claude Code can omit rate_limits, or send only the five_hour window. Check that each window exists before reading used_percentage, or the script prints empty values.',
+        'Claude Code can omit `rate_limits`, or send only the `five_hour` window. Check that each window exists before reading `used_percentage`, or the script prints empty values.',
     },
     {
       question: 'How do I show when my limit resets?',
       answer:
-        'Subtract the current Unix time from rate_limits.five_hour.resets_at to get the seconds remaining, then format them as hours and minutes. The same works for seven_day.',
+        'Subtract the current Unix time from `rate_limits.five_hour.resets_at` to get the seconds remaining, then format them as hours and minutes. The same works for `seven_day`.',
     },
     {
       question: 'What is the difference between five_hour and seven_day?',
       answer:
-        'five_hour covers the current five-hour usage window. seven_day covers the weekly limit. Each carries its own used_percentage and resets_at.',
+        '`five_hour` covers the current five-hour usage window. `seven_day` covers the weekly limit. Each carries its own `used_percentage` and `resets_at`.',
     },
   ],
   git: [
     {
       question: 'What does the status line show outside a git repository?',
       answer:
-        'Whatever the script prints when git fails. A careful script runs git rev-parse --is-inside-work-tree first and skips the git segment when it fails. Each preview includes a directory with no repo, so you can see how a config handles it.',
+        'Whatever the script prints when git fails. A careful script runs `git rev-parse --is-inside-work-tree` first and skips the git segment when it fails. Each preview includes a directory with no repo, so you can see how a config handles it.',
     },
     {
       question: 'Can the status line show the pull request?',
       answer:
-        'Claude Code can send an optional pr object with number, url, and review_state. It is not always present, so check for it before printing.',
+        'Claude Code can send an optional `pr` object with `number`, `url`, and `review_state`. It is not always present, so check for it before printing.',
     },
   ],
 } satisfies Record<string, FaqEntry[]>
