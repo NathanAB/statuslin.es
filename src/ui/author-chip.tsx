@@ -3,7 +3,8 @@ import type { ConfigAuthor } from '@/gallery/queries'
 /** Author avatar + byline. Renders nothing for a null author (pre-FK data only).
  *  With a GitHub username it links to the profile and shows `@username`; without
  *  one it falls back to the display name with no link.
- *  alt="" is intentional: the name sits adjacent, so alt text would duplicate it. */
+ *  alt="" is intentional: the name sits adjacent, so alt text would duplicate it.
+ *  loading="lazy" also stops React SSR hoisting a preload link per avatar into <head>. */
 export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
   if (!author) return null
 
@@ -11,6 +12,9 @@ export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
     <img
       src={author.image}
       alt=""
+      loading="lazy"
+      width={20}
+      height={20}
       className="size-5 shrink-0 rounded-full ring-primary/0 group-hover:ring-2 group-hover:ring-primary/60"
     />
   ) : (

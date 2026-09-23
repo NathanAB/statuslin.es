@@ -1,4 +1,5 @@
-const CONFIG_PAGE_TITLE_SUFFIX = ' — Claude Code Status Line | statuslin.es'
+const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
+const CONFIG_PAGE_TITLE_BRAND = ' | statuslin.es'
 const CONFIG_PAGE_TITLE_MAX_LENGTH = 60
 const CONFIG_META_DESCRIPTION_MAX_LENGTH = 160
 
@@ -25,8 +26,11 @@ function truncateAtWordBoundary(value: string, maxLength: number): string {
  */
 export function configPageTitle(title: string): string {
   const normalizedTitle = normalizeWhitespace(title)
-  const titleBudget = CONFIG_PAGE_TITLE_MAX_LENGTH - CONFIG_PAGE_TITLE_SUFFIX.length
-  return `${truncateAtWordBoundary(normalizedTitle, titleBudget)}${CONFIG_PAGE_TITLE_SUFFIX}`
+  const branded = `${normalizedTitle}${CONFIG_PAGE_TITLE_KEYWORD}${CONFIG_PAGE_TITLE_BRAND}`
+  if (branded.length <= CONFIG_PAGE_TITLE_MAX_LENGTH) return branded
+
+  const titleBudget = CONFIG_PAGE_TITLE_MAX_LENGTH - CONFIG_PAGE_TITLE_KEYWORD.length
+  return `${truncateAtWordBoundary(normalizedTitle, titleBudget)}${CONFIG_PAGE_TITLE_KEYWORD}`
 }
 
 /** Keep config search snippets concise without changing the description shown on the page. */
@@ -69,9 +73,10 @@ export function homeMetaDescription(page: number, pageCount: number): string {
 /** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 
+export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-09-23' } as const
+
 /** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
 export const GUIDE_DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'
 
-/** /resources title base — shared by the <title> tag and the resources JSON-LD name. */
-export const RESOURCES_TITLE_BASE = 'Claude Code Status Line Tools & Resources'
+export const RESOURCES_TITLE_BASE = 'ccstatusline, claude-powerline & More Claude Code Tools'

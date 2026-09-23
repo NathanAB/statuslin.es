@@ -11,6 +11,13 @@ export interface Resource {
   description: string
 }
 
+export function resourceAnchor(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export interface ResourceSection {
   key: string
   title: string

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   configJsonLd,
   facetJsonLd,
+  faqPageJsonLd,
   guideJsonLd,
   homeJsonLd,
   jsonLdScript,
@@ -220,18 +221,42 @@ describe('configJsonLd', () => {
   })
 })
 
+describe('faqPageJsonLd', () => {
+  it('turns question/answer pairs into a FAQPage', () => {
+    expect(faqPageJsonLd([{ question: 'Why?', answer: 'Because.' }])).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Why?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Because.' },
+        },
+      ],
+    })
+  })
+
+  it('returns null when there are no questions', () => {
+    expect(faqPageJsonLd([])).toBeNull()
+  })
+})
+
 describe('guideJsonLd', () => {
-  it('emits TechArticle plus a breadcrumb trail, never HowTo', () => {
-    const nodes = guideJsonLd('https://statuslin.es', GUIDE_DESCRIPTION) as Array<
-      Record<string, unknown>
-    >
+  const nodes = guideJsonLd('https://statuslin.es', GUIDE_DESCRIPTION, [
+    { question: 'Why?', answer: 'Because.' },
+  ]) as Array<Record<string, unknown>>
+
+  it('emits a dated TechArticle authored by the site plus a breadcrumb trail, never HowTo', () => {
     expect(nodes.some((node) => node['@type'] === 'HowTo')).toBe(false)
     expect(nodes[0]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'TechArticle',
-      headline: GUIDE_TITLE_BASE,
+      headline: 'How to Set Up a Claude Code Status Line',
       url: 'https://statuslin.es/guide',
       description: GUIDE_DESCRIPTION,
+      author: { '@type': 'Organization', name: 'statuslin.es', url: 'https://statuslin.es' },
+      datePublished: '2026-08-14',
+      dateModified: '2026-09-23',
     })
     expect(nodes[1]).toEqual({
       '@context': 'https://schema.org',
@@ -243,6 +268,20 @@ describe('guideJsonLd', () => {
           position: 2,
           name: GUIDE_TITLE_BASE,
           item: 'https://statuslin.es/guide',
+        },
+      ],
+    })
+  })
+
+  it('emits the common questions as a FAQPage', () => {
+    expect(nodes[2]).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Why?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Because.' },
         },
       ],
     })
@@ -296,5 +335,24 @@ describe('facetJsonLd', () => {
       Record<string, unknown>,
     ]
     expect(p).not.toHaveProperty('dateModified')
+  })
+})
+
+describe('faqPageJsonLd', () => {
+  it('emits answers as plain text without inline-code backticks', () => {
+    const faq = faqPageJsonLd([
+      { question: 'Where?', answer: 'Read `workspace.current_dir` first.' },
+    ])
+    expect(faq).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Where?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Read workspace.current_dir first.' },
+        },
+      ],
+    })
   })
 })

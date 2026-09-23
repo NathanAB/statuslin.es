@@ -3,11 +3,15 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
+  Link: ({
+    to,
+    params,
+    children,
+  }: {
+    to: string
+    params?: Record<string, string>
+    children: React.ReactNode
+  }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
 }))
 
 const { MINIMAL_SCRIPT, MINIMAL_SCRIPT_OUTPUT, SAMPLE_STDIN_JSON, SETTINGS_SNIPPET } = await import(
@@ -53,6 +57,11 @@ describe('GuideContent', () => {
       screen.getByRole('heading', { name: /why is used_percentage null/i }).nextElementSibling
         ?.textContent,
     ).toMatch(/\/\/ 0/)
+  })
+
+  it('shows when the guide was last updated', () => {
+    render(<GuideContent highlights={highlights} />)
+    expect(screen.getByText('Updated 2026-09-23')).toBeTruthy()
   })
 
   it('shows the example output once, next to the script, not in the intro', () => {
@@ -131,5 +140,13 @@ describe('GuideContent', () => {
     expect(
       container.querySelector('a[href="https://code.claude.com/docs/en/statusline"]'),
     ).not.toBeNull()
+  })
+
+  it('links the payload fields to the facet pages that show them', () => {
+    render(<GuideContent highlights={highlights} />)
+    const hrefOf = (name: string) => screen.getByRole('link', { name }).getAttribute('href')
+    expect(hrefOf('token usage')).toBe('/status-lines/token-usage')
+    expect(hrefOf('usage limits')).toBe('/status-lines/quota')
+    expect(hrefOf('git status')).toBe('/status-lines/git')
   })
 })

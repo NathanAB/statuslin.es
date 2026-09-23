@@ -10,13 +10,13 @@ import { ResourcesContent } from '@/resources/resources-content'
 import { PageShell } from '@/ui/shell'
 
 const DESCRIPTION =
-  'Explore hand-picked Claude Code status line tools, generators, guides, and resources for building and customizing your setup.'
+  'ccstatusline, claude-powerline, CCometixLine, and other Claude Code status line tools, generators, guides, and resources, each with a short note of our own.'
 
 export const Route = createFileRoute('/resources')({
   loader: () => getSession(),
   head: () => ({
     meta: [
-      { title: `${RESOURCES_TITLE_BASE} | statuslin.es` },
+      { title: RESOURCES_TITLE_BASE },
       { name: 'description', content: DESCRIPTION },
       ...staticPageSocialMeta({
         path: '/resources',

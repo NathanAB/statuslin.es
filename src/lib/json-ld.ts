@@ -1,5 +1,6 @@
 import type { GeneratedContent } from '@/content/types'
-import { GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { withoutInlineCode } from '@/lib/inline-code'
+import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
 
 /**
@@ -104,39 +105,50 @@ export function configJsonLd(
   return nodes
 }
 
-/**
- * Turn the generated "what it shows / requirements / behavior notes" copy into a FAQPage —
- * the extractable Q&A shape ChatGPT/Perplexity/Claude reward. Skips empty sections, and
- * returns null when there is nothing to say.
- */
+export interface FaqEntry {
+  question: string
+  answer: string
+}
+
+export function faqPageJsonLd(entries: FaqEntry[]): object | null {
+  if (entries.length === 0) return null
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: entries.map((entry) => ({
+      '@type': 'Question',
+      name: entry.question,
+      acceptedAnswer: { '@type': 'Answer', text: withoutInlineCode(entry.answer) },
+    })),
+  }
+}
+
 function configFaqJsonLd(title: string, content: GeneratedContent | null): object | null {
   if (!content) return null
   const sections = [
-    { q: `What does ${title} show?`, lines: content.whatItShows },
-    { q: `What does ${title} require?`, lines: content.requirements },
-    { q: `How does ${title} behave?`, lines: content.behaviorNotes },
+    { question: `What does ${title} show?`, lines: content.whatItShows },
+    { question: `What does ${title} require?`, lines: content.requirements },
+    { question: `How does ${title} behave?`, lines: content.behaviorNotes },
   ]
-  const mainEntity = sections
-    .filter((s) => s.lines.length > 0)
-    .map((s) => ({
-      '@type': 'Question',
-      name: s.q,
-      acceptedAnswer: { '@type': 'Answer', text: s.lines.join(' ') },
-    }))
-  if (mainEntity.length === 0) return null
-  return { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity }
+  return faqPageJsonLd(
+    sections
+      .filter((s) => s.lines.length > 0)
+      .map((s) => ({ question: s.question, answer: s.lines.join(' ') })),
+  )
 }
 
-/** The /guide page as a TechArticle plus a breadcrumb trail back to the gallery. */
-export function guideJsonLd(origin: string, description: string): object[] {
+export function guideJsonLd(origin: string, description: string, faq: FaqEntry[]): object[] {
   const url = `${origin}/guide`
-  return [
+  const nodes: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'TechArticle',
       headline: GUIDE_TITLE_BASE,
       url,
       description,
+      author: { '@type': 'Organization', name: 'statuslin.es', url: origin },
+      datePublished: GUIDE_DATES.published,
+      dateModified: GUIDE_DATES.modified,
     },
     {
       '@context': 'https://schema.org',
@@ -147,6 +159,9 @@ export function guideJsonLd(origin: string, description: string): object[] {
       ],
     },
   ]
+  const faqPage = faqPageJsonLd(faq)
+  if (faqPage) nodes.push(faqPage)
+  return nodes
 }
 
 /** The /resources page as a CollectionPage listing the external tools/resources. */
@@ -171,14 +186,13 @@ export function resourcesJsonLd(
   }
 }
 
-/** A facet page as CollectionPage + its breadcrumb trail back to the gallery. */
 export function facetJsonLd(
   origin: string,
   facet: { slug: string; titleBase: string },
   items: Array<{ slug: string; title: string }>,
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
   updated: string | null,
-  options: { includeCollectionPage?: boolean } = {},
+  options: { includeCollectionPage?: boolean; faq?: FaqEntry[] | undefined } = {},
 ): object[] {
   const url = `${origin}/status-lines/${facet.slug}`
   const collectionPage = {
@@ -205,5 +219,8 @@ export function facetJsonLd(
       { '@type': 'ListItem', position: 2, name: facet.titleBase, item: url },
     ],
   }
-  return options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]
+  const nodes =
+    options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]
+  const faqPage = faqPageJsonLd(options.faq ?? [])
+  return faqPage ? [...nodes, faqPage] : nodes
 }

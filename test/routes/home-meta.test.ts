@@ -123,4 +123,14 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).not.toContainEqual({ name: 'robots', content: 'noindex, follow' })
   })
+
+  it('gives the out-of-range 404 view no canonical link or JSON-LD', async () => {
+    const head = await HomeRoute.options.head?.({
+      loaderData: undefined,
+      match: { search: { page: 99 } },
+    } as never)
+
+    expect(head?.links).toEqual([])
+    expect(head?.scripts).toEqual([])
+  })
 })

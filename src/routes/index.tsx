@@ -1,5 +1,5 @@
 import { usePostHog } from '@posthog/react'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
@@ -20,7 +20,7 @@ import { HomeHero, HomeMasthead } from '@/ui/home-hero'
 import { Row, Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { SubmitCta } from '@/ui/submit-cta'
-import { Text } from '@/ui/text'
+import { Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
@@ -38,16 +38,17 @@ export const Route = createFileRoute('/')({
     }
   },
   loaderDeps: ({ search }) => ({ sort: search.sort, page: search.page, tags: search.tags }),
-  loader: async ({ deps }) => ({
-    user: await getSession(),
-    gallery: await getGallery({
+  loader: async ({ deps }) => {
+    const gallery = await getGallery({
       data: {
         sort: deps.sort ?? 'trending',
         page: deps.page ?? 1,
         ...(deps.tags ? { tags: deps.tags } : {}),
       },
-    }),
-  }),
+    })
+    if (!gallery) throw notFound()
+    return { user: await getSession(), gallery }
+  },
   head: ({ loaderData, match }) => {
     const page = loaderData?.gallery.page ?? 1
     const pageCount = loaderData?.gallery.pageCount ?? 1
@@ -58,7 +59,7 @@ export const Route = createFileRoute('/')({
         { name: 'description', content: homeMetaDescription(page, pageCount) },
         ...(isFiltered ? [{ name: 'robots', content: 'noindex, follow' }] : []),
       ],
-      links: [canonicalLink(homeCanonicalPath(page, match.search))],
+      links: loaderData ? [canonicalLink(homeCanonicalPath(page, match.search))] : [],
       scripts: loaderData
         ? homeJsonLd(siteUrl(), loaderData.gallery.cards, {
             page,
@@ -68,6 +69,12 @@ export const Route = createFileRoute('/')({
         : [],
     }
   },
+  notFoundComponent: () => (
+    <PageShell user={null}>
+      <Text>There is no gallery page with that number.</Text>
+      <TextLink to="/">Back to gallery</TextLink>
+    </PageShell>
+  ),
   component: Home,
 })
 

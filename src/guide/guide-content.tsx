@@ -4,10 +4,12 @@ import {
   SAMPLE_STDIN_JSON,
   SETTINGS_SNIPPET,
 } from '@/guide/examples'
-import { GuideFaq } from '@/guide/guide-faq'
+import { GUIDE_FAQ } from '@/guide/guide-faq'
 import { GuideStdinFields } from '@/guide/guide-stdin-fields'
+import { GUIDE_DATES } from '@/lib/page-title'
 import type { AnsiSegment } from '@/render/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
+import { FaqSection } from '@/ui/faq-section'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { Grid, Stack } from '@/ui/layout'
 import { SectionCard } from '@/ui/section-card'
@@ -44,6 +46,9 @@ export function GuideContent({
           The status line is the bar at the bottom of Claude Code. Each time it refreshes, Claude
           Code runs your shell script, sends it a JSON snapshot on stdin, and shows whatever the
           script prints. Start with a fast path, or skip to wiring a script by hand.
+        </Text>
+        <Text muted size="sm">
+          Updated {GUIDE_DATES.modified}
         </Text>
       </Stack>
 
@@ -160,7 +165,19 @@ export function GuideContent({
               <Text inline mono>
                 resets_at
               </Text>{' '}
-              unix timestamp.
+              unix timestamp. The gallery collects configs that show{' '}
+              <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
+                token usage
+              </TextLink>
+              ,{' '}
+              <TextLink to="/status-lines/$facet" params={{ facet: 'quota' }}>
+                usage limits
+              </TextLink>
+              , and{' '}
+              <TextLink to="/status-lines/$facet" params={{ facet: 'git' }}>
+                git status
+              </TextLink>
+              .
             </Text>
             <GuideStdinFields />
           </Stack>
@@ -194,7 +211,7 @@ export function GuideContent({
         </Stack>
       </SectionCard>
 
-      <GuideFaq />
+      <FaqSection entries={GUIDE_FAQ} />
 
       <Stack gap={3}>
         <Heading level={2}>Going further</Heading>

@@ -9,6 +9,8 @@ import { facetJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
+import { FaqSection } from '@/ui/faq-section'
+import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
@@ -45,7 +47,7 @@ export const Route = createFileRoute('/status-lines/$facet')({
         { slug: facet.slug, titleBase },
         loaderData.page.cards.map((c) => ({ slug: c.slug, title: c.title })),
         loaderData.page.updated,
-        { includeCollectionPage: loaderData.page.indexable },
+        { includeCollectionPage: loaderData.page.indexable, faq: facet.faq },
       ).map(jsonLdScript),
     }
   },
@@ -72,10 +74,20 @@ function FacetPage() {
               {paragraph}
             </Text>
           ))}
+          {facet.answer ? (
+            <Text size="sm" measure>
+              <InlineCodeText text={facet.answer} />
+            </Text>
+          ) : null}
           <Text muted size="sm" measure>
             {page.cards.length} published {page.cards.length === 1 ? 'status line' : 'status lines'}
             .
           </Text>
+          {page.updated ? (
+            <Text muted size="sm">
+              Updated {page.updated}
+            </Text>
+          ) : null}
         </Stack>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>
@@ -87,6 +99,7 @@ function FacetPage() {
             />
           ))}
         </Stack>
+        {facet.faq ? <FaqSection entries={facet.faq} /> : null}
         {page.otherFacets.length > 0 ? (
           <Stack gap={2}>
             <Text muted size="sm">

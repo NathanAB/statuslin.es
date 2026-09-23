@@ -1,5 +1,5 @@
 import { CONTACT_EMAIL } from '@/lib/site'
-import { RESOURCE_SECTIONS } from '@/resources/data'
+import { RESOURCE_SECTIONS, resourceAnchor } from '@/resources/data'
 import { Badge } from '@/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { Grid, Row, Stack } from '@/ui/layout'
@@ -72,7 +72,7 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
               <Card key={r.url} interactive>
                 <CardHeader>
                   <Row gap={2} justify="between">
-                    <CardTitle>
+                    <CardTitle id={resourceAnchor(r.name)}>
                       <StretchedLink href={r.url}>{r.name}</StretchedLink>
                     </CardTitle>
                     <Badge variant="outline">{domainLabel(r.url)}</Badge>

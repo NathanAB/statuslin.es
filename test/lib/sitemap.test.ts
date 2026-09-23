@@ -58,21 +58,17 @@ describe('sitemapResponse', () => {
     expect(entryFor(xml, `${BASE}/c/my-line`)).toContain('<lastmod>2026-04-05</lastmod>')
   })
 
-  it('dates only the homepage from the newest published config', async () => {
-    const configs = [
-      {
-        slug: 'newest',
-        updatedAt: new Date('2026-05-06T00:00:00Z'),
-      },
-      {
-        slug: 'older',
-        updatedAt: new Date('2026-03-04T00:00:00Z'),
-      },
-    ]
-    const xml = await sitemapResponse(BASE, configs, []).text()
+  it('dates the homepage and its pages from the newest config, and the guide from its edit date', async () => {
+    const configs = Array.from({ length: 11 }, (_, i) => ({
+      slug: `line-${i}`,
+      updatedAt: new Date(i === 3 ? '2026-05-06T00:00:00Z' : '2026-03-04T00:00:00Z'),
+    }))
+    const xml = await sitemapResponse(BASE, configs, [], 2).text()
 
     expect(entryFor(xml, BASE)).toContain('<lastmod>2026-05-06</lastmod>')
-    for (const path of ['/guide', '/resources', '/terms']) {
+    expect(entryFor(xml, `${BASE}/?page=2`)).toContain('<lastmod>2026-05-06</lastmod>')
+    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-09-23</lastmod>')
+    for (const path of ['/resources', '/terms']) {
       expect(entryFor(xml, `${BASE}${path}`)).not.toContain('<lastmod>')
     }
   })

@@ -9,9 +9,11 @@ import { siteUrl } from '@/lib/site'
 import { sitemapResponse } from '@/lib/sitemap'
 import { getPublishedInventory } from './inventory'
 import {
+  coercePage,
   coerceSort,
   coerceTags,
   type GallerySort,
+  galleryPageWindow,
   getConfigBySlug,
   getFacetCards,
   getFacetStats,
@@ -81,9 +83,9 @@ export const getGallery = createServerFn({ method: 'GET' })
         getPublishedInventory(db),
         getFacetStats(db),
       ])
-      const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
-      // Clamp so a stale ?page= past the end still lands on the last real page.
-      const page = Math.min(Math.max(1, data.page ?? 1), pageCount)
+      const window = galleryPageWindow(coercePage(data.page), total)
+      if (!window) return null
+      const { page, pageCount } = window
       const availableTags = await getAvailableTags(db)
       return {
         cards: await getPublishedConfigs(db, sort, page, tags),

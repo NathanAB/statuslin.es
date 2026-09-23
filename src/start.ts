@@ -1,5 +1,7 @@
 import { createCsrfMiddleware, createStart } from '@tanstack/react-start'
 
+import { canonicalRedirectMiddleware } from './server/canonical-redirect'
+import { htmlAcceptMiddleware } from './server/html-accept'
 import { templatePathGuardMiddleware } from './server/template-path-guard'
 
 const csrfMiddleware = createCsrfMiddleware({
@@ -7,5 +9,10 @@ const csrfMiddleware = createCsrfMiddleware({
 })
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [templatePathGuardMiddleware, csrfMiddleware],
+  requestMiddleware: [
+    templatePathGuardMiddleware,
+    canonicalRedirectMiddleware,
+    htmlAcceptMiddleware,
+    csrfMiddleware,
+  ],
 }))

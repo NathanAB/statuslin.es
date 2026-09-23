@@ -1,4 +1,5 @@
-import { FACET_INTRO } from '@/gallery/facet-copy'
+import { FACET_ANSWER, FACET_FAQ, FACET_INTRO } from '@/gallery/facet-copy'
+import type { FaqEntry } from '@/lib/json-ld'
 import type { Interpreter } from '@/render/types'
 
 /**
@@ -20,6 +21,8 @@ export interface Facet {
   heading?: string
   metaDescription?: string
   intro?: string[]
+  answer?: string
+  faq?: FaqEntry[]
 }
 
 export const FACETS: Facet[] = [
@@ -33,6 +36,8 @@ export const FACETS: Facet[] = [
     metaDescription:
       'Status lines that put your git branch, dirty state, or diff stats in the Claude Code terminal. Rendered previews you can copy in one paste.',
     intro: FACET_INTRO.git,
+    answer: FACET_ANSWER.git,
+    faq: FACET_FAQ.git,
   },
   {
     slug: 'token-usage',
@@ -44,6 +49,8 @@ export const FACETS: Facet[] = [
     metaDescription:
       'Status lines that track context window usage in the Claude Code terminal, as token counts or burn bars. Copy one in a single paste.',
     intro: FACET_INTRO['token-usage'],
+    answer: FACET_ANSWER['token-usage'],
+    faq: FACET_FAQ['token-usage'],
   },
   {
     slug: 'cost',
@@ -66,6 +73,8 @@ export const FACETS: Facet[] = [
     metaDescription:
       'Status lines that watch your Claude Code rate limits: 5-hour and weekly quota percentages, reset times, and overage warnings.',
     intro: FACET_INTRO.quota,
+    answer: FACET_ANSWER.quota,
+    faq: FACET_FAQ.quota,
   },
   {
     slug: 'burn-rate',

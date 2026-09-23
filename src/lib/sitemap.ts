@@ -1,9 +1,11 @@
+import { GUIDE_DATES } from '@/lib/page-title'
+
 /**
  * The `/sitemap.xml` builder. Lists the static public pages plus one `<url>` per published config
  * so crawlers discover the long-tail config pages without relying on link-following alone.
  *
  * `<lastmod>` uses the current version's review date, falling back to config creation, formatted
- * as a W3C date. Facets and the homepage inherit the newest matching/published config date.
+ * as a W3C date.
  * `<priority>`/`<changefreq>` are omitted on purpose: Google ignores them.
  */
 
@@ -19,8 +21,11 @@ export interface SitemapFacet {
   latest: Date | null
 }
 
-/** Always-present public pages, as paths relative to the origin. */
-const STATIC_PATHS = ['/', '/guide', '/resources', '/terms']
+const STATIC_PAGES: Array<{ path: string; lastmod?: string }> = [
+  { path: '/guide', lastmod: GUIDE_DATES.modified },
+  { path: '/resources' },
+  { path: '/terms' },
+]
 
 /** Escape the five XML entities so a slug with `&`/`<` can't break the document. */
 function xmlEscape(value: string): string {
@@ -47,14 +52,14 @@ function buildSitemapXml(
     (latest, config) => (latest === null || config.updatedAt > latest ? config.updatedAt : latest),
     null,
   )
-  const staticEntries = STATIC_PATHS.map((path) =>
-    path === '/'
-      ? urlEntry(base, homepageUpdatedAt?.toISOString().slice(0, 10))
-      : urlEntry(`${base}${path}`),
-  )
+  const homepageLastmod = homepageUpdatedAt?.toISOString().slice(0, 10)
+  const staticEntries = [
+    urlEntry(base, homepageLastmod),
+    ...STATIC_PAGES.map((page) => urlEntry(`${base}${page.path}`, page.lastmod)),
+  ]
   const pageEntries: string[] = []
   for (let page = 2; page <= pageCount; page++) {
-    pageEntries.push(urlEntry(`${base}/?page=${page}`))
+    pageEntries.push(urlEntry(`${base}/?page=${page}`, homepageLastmod))
   }
   const facetEntries = facets.map((f) =>
     urlEntry(

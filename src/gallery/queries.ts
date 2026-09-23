@@ -44,6 +44,15 @@ export function coercePage(value: unknown): number {
   return Math.floor(n)
 }
 
+export function galleryPageWindow(
+  requestedPage: number,
+  total: number,
+): { page: number; pageCount: number } | null {
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  if (requestedPage > pageCount) return null
+  return { page: requestedPage, pageCount }
+}
+
 export interface ConfigAuthor {
   name: string
   username: string | null
