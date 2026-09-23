@@ -11,6 +11,13 @@ describe('canonicalRedirect', () => {
     expect(canonicalRedirect('https://statuslin.es/resources//')).toBe('/resources')
   })
 
+  it('sends every removed /guide subpage to /guide', () => {
+    expect(canonicalRedirect('https://statuslin.es/guide/fields')).toBe('/guide')
+    expect(canonicalRedirect('https://statuslin.es/guide/fields/model/')).toBe('/guide')
+    expect(canonicalRedirect('https://statuslin.es/guide')).toBe(null)
+    expect(canonicalRedirect('https://statuslin.es/guidebook')).toBe(null)
+  })
+
   it('leaves the root and canonical paths alone', () => {
     expect(canonicalRedirect('https://statuslin.es/')).toBe(null)
     expect(canonicalRedirect('https://statuslin.es/status-lines/git?x=1')).toBe(null)

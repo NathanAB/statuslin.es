@@ -8,7 +8,12 @@ function withoutTrailingSlash(pathname: string): string | null {
   return pathname.replace(/\/+$/, '') || '/'
 }
 
-const CANONICAL_PATH_RULES: CanonicalPathRule[] = [withoutTrailingSlash]
+// /guide/fields was deleted 2026-07-07. Nothing lives under /guide/ any more.
+function removedGuideSubpage(pathname: string): string | null {
+  return pathname.startsWith('/guide/') ? '/guide' : null
+}
+
+const CANONICAL_PATH_RULES: CanonicalPathRule[] = [removedGuideSubpage, withoutTrailingSlash]
 
 /** The canonical path + query a URL should permanently redirect to, or null when it is canonical.
  * The first matching rule wins. */
