@@ -165,7 +165,19 @@ export function GuideContent({
               <Text inline mono>
                 resets_at
               </Text>{' '}
-              unix timestamp.
+              unix timestamp. The gallery collects configs that show{' '}
+              <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
+                token usage
+              </TextLink>
+              ,{' '}
+              <TextLink to="/status-lines/$facet" params={{ facet: 'quota' }}>
+                usage limits
+              </TextLink>
+              , and{' '}
+              <TextLink to="/status-lines/$facet" params={{ facet: 'git' }}>
+                git status
+              </TextLink>
+              .
             </Text>
             <GuideStdinFields />
           </Stack>
