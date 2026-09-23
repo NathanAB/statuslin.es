@@ -84,5 +84,8 @@ export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-09-23' } a
 export const GUIDE_DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'
 
-/** /resources title base — shared by the <title> tag and the resources JSON-LD name. */
-export const RESOURCES_TITLE_BASE = 'Claude Code Status Line Tools & Resources'
+/** /resources title — shared by the <title> tag and the resources JSON-LD name. Most of the page's
+ * search impressions are navigational queries for these tools, so the title names the two most
+ * searched (spelled as in src/resources/data.ts). Like long config titles, it drops the brand
+ * rather than the keyword to stay within 60 chars. */
+export const RESOURCES_TITLE_BASE = 'ccstatusline, claude-powerline & More Claude Code Tools'

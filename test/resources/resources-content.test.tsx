@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { RESOURCES_TITLE_BASE } from '@/lib/page-title'
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
@@ -39,10 +38,25 @@ describe('ResourcesContent', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: /claude code status line tools & resources/i }),
     ).toBeTruthy()
-    expect(RESOURCES_TITLE_BASE).toBe('Claude Code Status Line Tools & Resources')
     for (const section of RESOURCE_SECTIONS) {
       expect(screen.getByRole('heading', { level: 2, name: section.title })).toBeTruthy()
     }
+  })
+
+  it('gives each tool heading a stable anchor derived from its name', () => {
+    render(<ResourcesContent signedIn={false} />)
+    const anchorOf = (name: string) =>
+      screen.getByRole('heading', { level: 3, name }).getAttribute('id')
+    expect(anchorOf('ccstatusline')).toBe('ccstatusline')
+    expect(anchorOf('claude-powerline')).toBe('claude-powerline')
+    expect(anchorOf('claude-statusline (TheoBrigitte)')).toBe('claude-statusline-theobrigitte')
+  })
+
+  it('never gives two headings the same anchor', () => {
+    const { container } = render(<ResourcesContent signedIn={false} />)
+    const ids = [...container.querySelectorAll('h3[id]')].map((h) => h.id)
+    expect(ids).toHaveLength(ALL.length)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('renders every entry as an external link that opens in a new tab, plus its description', () => {

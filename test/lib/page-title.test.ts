@@ -6,7 +6,6 @@ import {
   GUIDE_TITLE_BASE,
   HOME_TITLE_BASE,
   NOT_FOUND_TITLE,
-  RESOURCES_TITLE_BASE,
 } from '@/lib/page-title'
 
 describe('configPageTitle', () => {
@@ -45,7 +44,6 @@ describe('configPageTitle', () => {
 
 describe('static page titles', () => {
   it('state the target keyword', () => {
-    expect(RESOURCES_TITLE_BASE).toBe('Claude Code Status Line Tools & Resources')
     expect(GUIDE_TITLE_BASE).toBe('How to Set Up a Claude Code Status Line')
     expect(GUIDE_DESCRIPTION).toMatch(/tested example you can copy/)
   })

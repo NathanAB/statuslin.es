@@ -15,11 +15,34 @@ const HEADING_CLASS = {
   3: 'text-base font-medium leading-snug text-foreground',
 } as const
 
-export function Heading({ level, children }: { level: 1 | 2 | 3; children: React.ReactNode }) {
+export function Heading({
+  level,
+  id,
+  children,
+}: {
+  level: 1 | 2 | 3
+  /** Fragment anchor, so a URL like /resources#ccstatusline can land on this heading. */
+  id?: string | undefined
+  children: React.ReactNode
+}) {
   const className = HEADING_CLASS[level]
-  if (level === 1) return <h1 className={className}>{children}</h1>
-  if (level === 2) return <h2 className={className}>{children}</h2>
-  return <h3 className={className}>{children}</h3>
+  if (level === 1)
+    return (
+      <h1 id={id} className={className}>
+        {children}
+      </h1>
+    )
+  if (level === 2)
+    return (
+      <h2 id={id} className={className}>
+        {children}
+      </h2>
+    )
+  return (
+    <h3 id={id} className={className}>
+      {children}
+    </h3>
+  )
 }
 
 /**

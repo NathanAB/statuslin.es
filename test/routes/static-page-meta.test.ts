@@ -9,16 +9,20 @@ afterEach(() => {
 })
 
 describe('static page social metadata', () => {
-  it('keeps /resources focused on tools and learning resources instead of the gallery', async () => {
+  it('names the most-searched tools in the /resources title and description', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await ResourcesRoute.options.head?.({} as never)
-    const description = head?.meta?.find((entry) => entry?.name === 'description')?.content ?? ''
 
-    expect(description).toMatch(/tools/i)
-    expect(description).toMatch(/generators/i)
-    expect(description).toMatch(/guides/i)
-    expect(description).toMatch(/resources/i)
-    expect(description).not.toMatch(/gallery/i)
+    expect(head?.meta).toEqual(
+      expect.arrayContaining([
+        { title: 'ccstatusline, claude-powerline & More Claude Code Tools' },
+        {
+          name: 'description',
+          content:
+            'ccstatusline, claude-powerline, CCometixLine, and other Claude Code status line tools, generators, guides, and resources, each with a short note of our own.',
+        },
+      ]),
+    )
   })
 
   it('gives /submit its own share metadata', async () => {
