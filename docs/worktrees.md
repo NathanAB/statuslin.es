@@ -2,8 +2,8 @@
 
 Agents sometimes isolate a task in a git worktree (e.g. via the `EnterWorktree` tool or the
 `superpowers:using-git-worktrees` skill). On this repo the native tool creates the worktree under
-`.claude/worktrees/<name>/` — i.e. **nested inside the main repo's own directory tree**. That
-nesting causes a few sharp edges. This doc is the checklist so the next agent doesn't rediscover
+`.claude/worktrees/<name>/`, and some hand-made or scripted worktrees live under `.worktrees/<name>/`
+— both **nested inside the main repo's own directory tree**. That nesting causes a few sharp edges. This doc is the checklist so the next agent doesn't rediscover
 them.
 
 ## First-time setup inside a fresh worktree
@@ -28,9 +28,11 @@ Biome walks down into `.claude/worktrees/<name>/` and finds a second `biome.json
 × Found a nested root configuration, but there's already a root configuration.
 ```
 
-`.claude/worktrees/` is gitignored (see `.gitignore`) specifically so the main repo's whole-tree
-`biome check .` skips worktrees and doesn't hit this. But the rule of thumb stands: **gate from the
-worktree.**
+`.claude/worktrees/` and `.worktrees/` are gitignored (see `.gitignore`) specifically so the main
+repo's whole-tree `biome check .` skips worktrees and doesn't hit this. Vitest doesn't read
+`.gitignore`, so `test.exclude` in `vite.config.ts` lists both directories too; a new worktree
+location must be added in both places, or a main-checkout test run collects every worktree's tests.
+But the rule of thumb stands: **gate from the worktree.**
 
 ## The per-edit hook noise (and why it's now fixed)
 
