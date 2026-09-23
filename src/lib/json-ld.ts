@@ -191,14 +191,15 @@ export function resourcesJsonLd(
   }
 }
 
-/** A facet page as CollectionPage + its breadcrumb trail back to the gallery. */
+/** A facet page as CollectionPage + its breadcrumb trail back to the gallery, plus a FAQPage
+ * when the facet has common questions. */
 export function facetJsonLd(
   origin: string,
   facet: { slug: string; titleBase: string },
   items: Array<{ slug: string; title: string }>,
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
   updated: string | null,
-  options: { includeCollectionPage?: boolean } = {},
+  options: { includeCollectionPage?: boolean; faq?: FaqEntry[] | undefined } = {},
 ): object[] {
   const url = `${origin}/status-lines/${facet.slug}`
   const collectionPage = {
@@ -225,5 +226,8 @@ export function facetJsonLd(
       { '@type': 'ListItem', position: 2, name: facet.titleBase, item: url },
     ],
   }
-  return options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]
+  const nodes =
+    options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]
+  const faqPage = faqPageJsonLd(options.faq ?? [])
+  return faqPage ? [...nodes, faqPage] : nodes
 }

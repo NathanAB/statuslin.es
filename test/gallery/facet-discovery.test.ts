@@ -137,14 +137,14 @@ describe('facet discovery threshold', () => {
     expect(types).toEqual(['BreadcrumbList'])
   })
 
-  it('keeps the 3-config facet indexable with collection and breadcrumb JSON-LD', async () => {
+  it('keeps the 3-config facet indexable with collection, breadcrumb, and FAQ JSON-LD', async () => {
     const { head } = await headFor('git')
 
     expect(head?.meta).not.toContainEqual({ name: 'robots', content: 'noindex, follow' })
     const types = (head?.scripts ?? []).map(
       (script) => JSON.parse(String(script?.children))['@type'] as string,
     )
-    expect(types).toEqual(['CollectionPage', 'BreadcrumbList'])
+    expect(types).toEqual(['CollectionPage', 'BreadcrumbList', 'FAQPage'])
   })
 
   it('omits 1- and 2-config facets from sitemap and llms.txt discovery', async () => {
