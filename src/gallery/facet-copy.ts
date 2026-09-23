@@ -67,11 +67,6 @@ export const FACET_INTRO = {
   ],
 } satisfies Record<string, string[]>
 
-/**
- * A 40–60 word direct answer to "how do I show X in the Claude Code status line", rendered under
- * the intro. Field names come from the rendered scenario payloads (src/render/scenarios.ts);
- * test/gallery/facet-answers.test.ts fails on any cited field that isn't in them.
- */
 export const FACET_ANSWER = {
   'token-usage':
     'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under context_window. Read context_window.used_percentage for a percentage, or total_input_tokens and context_window_size for raw counts. used_percentage is null in a fresh session, so default it to 0 in jq with // 0.',
@@ -80,7 +75,6 @@ export const FACET_ANSWER = {
   git: "Claude Code does not send git state in the status line's stdin JSON. Scripts that show a branch run git themselves in workspace.current_dir, for example git branch --show-current. Dirty-file counts come from git status --porcelain. Handle the no-repo case, or the line prints an error outside a repository. Each preview below includes a directory with no repo.",
 } satisfies Record<string, string>
 
-/** Common questions per facet, rendered on the page and emitted as FAQPage JSON-LD. */
 export const FACET_FAQ = {
   'token-usage': [
     {

@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { SCENARIOS } from '@/render/scenarios'
 
-/** Every key path in the scenario payloads, plus each contiguous run of its segments, so both
- * `context_window.used_percentage` and a bare `used_percentage` count as real fields. */
 function payloadFieldNames(): Set<string> {
   const names = new Set<string>()
   const walk = (value: unknown, path: string[]) => {
@@ -20,7 +18,6 @@ function payloadFieldNames(): Set<string> {
   return names
 }
 
-/** snake_case or dotted identifiers in prose: the stdin field names the copy cites. */
 function citedFields(text: string): string[] {
   return text.match(/\b[a-z][a-z0-9]*(?:[._][a-z0-9]+)+\b/g) ?? []
 }

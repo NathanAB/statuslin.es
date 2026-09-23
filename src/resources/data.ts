@@ -11,8 +11,6 @@ export interface Resource {
   description: string
 }
 
-/** A resource's fragment anchor on /resources, derived from its name:
- * "claude-statusline (TheoBrigitte)" becomes "claude-statusline-theobrigitte". */
 export function resourceAnchor(name: string): string {
   return name
     .toLowerCase()

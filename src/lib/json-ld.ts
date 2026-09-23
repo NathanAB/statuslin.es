@@ -104,13 +104,11 @@ export function configJsonLd(
   return nodes
 }
 
-/** One visible question and its plain-text answer. Pages render these and emit them as FAQPage. */
 export interface FaqEntry {
   question: string
   answer: string
 }
 
-/** A FAQPage — the extractable Q&A shape ChatGPT/Perplexity/Claude reward. Null when empty. */
 export function faqPageJsonLd(entries: FaqEntry[]): object | null {
   if (entries.length === 0) return null
   return {
@@ -124,8 +122,6 @@ export function faqPageJsonLd(entries: FaqEntry[]): object | null {
   }
 }
 
-/** The generated "what it shows / requirements / behavior notes" copy as FAQ entries, skipping
- * empty sections. */
 function configFaqJsonLd(title: string, content: GeneratedContent | null): object | null {
   if (!content) return null
   const sections = [
@@ -140,8 +136,6 @@ function configFaqJsonLd(title: string, content: GeneratedContent | null): objec
   )
 }
 
-/** The /guide page as a dated TechArticle, a breadcrumb trail back to the gallery, and its
- * common questions as a FAQPage. */
 export function guideJsonLd(origin: string, description: string, faq: FaqEntry[]): object[] {
   const url = `${origin}/guide`
   const nodes: object[] = [
@@ -191,8 +185,6 @@ export function resourcesJsonLd(
   }
 }
 
-/** A facet page as CollectionPage + its breadcrumb trail back to the gallery, plus a FAQPage
- * when the facet has common questions. */
 export function facetJsonLd(
   origin: string,
   facet: { slug: string; titleBase: string },

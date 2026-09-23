@@ -1,6 +1,5 @@
 import type { FaqEntry } from '@/lib/json-ld'
 
-/** The /guide "Common questions". Rendered on the page and emitted as FAQPage JSON-LD. */
 export const GUIDE_FAQ: FaqEntry[] = [
   {
     question: "Why isn't git in the JSON?",

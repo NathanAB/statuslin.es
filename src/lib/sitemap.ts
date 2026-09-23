@@ -5,8 +5,7 @@ import { GUIDE_DATES } from '@/lib/page-title'
  * so crawlers discover the long-tail config pages without relying on link-following alone.
  *
  * `<lastmod>` uses the current version's review date, falling back to config creation, formatted
- * as a W3C date. Facets, the homepage, and its `?page=N` pages inherit the newest matching/published
- * config date; /guide uses its edit date.
+ * as a W3C date.
  * `<priority>`/`<changefreq>` are omitted on purpose: Google ignores them.
  */
 
@@ -22,8 +21,6 @@ export interface SitemapFacet {
   latest: Date | null
 }
 
-/** Always-present public pages (other than `/`), as paths relative to the origin, with a lastmod
- * only where there is an honest source for one. */
 const STATIC_PAGES: Array<{ path: string; lastmod?: string }> = [
   { path: '/guide', lastmod: GUIDE_DATES.modified },
   { path: '/resources' },

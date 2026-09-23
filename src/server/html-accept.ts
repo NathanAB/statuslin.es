@@ -16,8 +16,7 @@ function isPageRequestRefusingHtml(request: Request): boolean {
     .some((part) => HTML_ACCEPT_PREFIXES.some((prefix) => part.trim().startsWith(prefix)))
 }
 
-/** Crawlers and agents that ask a page for Markdown or JSON get the HTML page instead of a 500.
- * The router re-reads the Accept header from this same Request after the middleware chain. */
+/** The router re-reads the Accept header from this same Request after the middleware chain. */
 export const htmlAcceptMiddleware = createMiddleware().server(({ request, next }) => {
   if (isPageRequestRefusingHtml(request)) request.headers.set('Accept', 'text/html')
   return next()

@@ -21,7 +21,6 @@ export function Heading({
   children,
 }: {
   level: 1 | 2 | 3
-  /** Fragment anchor, so a URL like /resources#ccstatusline can land on this heading. */
   id?: string | undefined
   children: React.ReactNode
 }) {

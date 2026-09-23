@@ -59,7 +59,6 @@ export const Route = createFileRoute('/')({
         { name: 'description', content: homeMetaDescription(page, pageCount) },
         ...(isFiltered ? [{ name: 'robots', content: 'noindex, follow' }] : []),
       ],
-      // No loaderData means the page is past the end (a 404): no canonical for it.
       links: loaderData ? [canonicalLink(homeCanonicalPath(page, match.search))] : [],
       scripts: loaderData
         ? homeJsonLd(siteUrl(), loaderData.gallery.cards, {

@@ -23,8 +23,6 @@ function truncateAtWordBoundary(value: string, maxLength: number): string {
  * <title> templates for config pages. The template exists so every config page's
  * title states the target search phrase ("Claude Code Status Line") — titles are
  * the strongest on-page ranking signal, and the config name alone doesn't say it.
- * When the name is long, the brand goes first so the name stays whole; the name is
- * truncated only when it doesn't fit beside the keyword alone.
  */
 export function configPageTitle(title: string): string {
   const normalizedTitle = normalizeWhitespace(title)
@@ -75,17 +73,10 @@ export function homeMetaDescription(page: number, pageCount: number): string {
 /** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 
-/** /guide dates (YYYY-MM-DD) — shared by the TechArticle JSON-LD, the sitemap, and the page's
- * "Updated" line. Published is when /guide was restored (b39b1b3); bump `modified` with any
- * change to the guide's content. */
 export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-09-23' } as const
 
 /** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
 export const GUIDE_DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'
 
-/** /resources title — shared by the <title> tag and the resources JSON-LD name. Most of the page's
- * search impressions are navigational queries for these tools, so the title names the two most
- * searched (spelled as in src/resources/data.ts). Like long config titles, it drops the brand
- * rather than the keyword to stay within 60 chars. */
 export const RESOURCES_TITLE_BASE = 'ccstatusline, claude-powerline & More Claude Code Tools'

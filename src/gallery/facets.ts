@@ -21,9 +21,7 @@ export interface Facet {
   heading?: string
   metaDescription?: string
   intro?: string[]
-  /** A direct answer to "how do I show this in the status line", rendered under the intro. */
   answer?: string
-  /** Common questions, rendered on the page and emitted as FAQPage JSON-LD. */
   faq?: FaqEntry[]
 }
 
