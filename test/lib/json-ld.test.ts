@@ -111,7 +111,43 @@ describe('configJsonLd', () => {
       requirements: string[]
       behaviorNotes: string[]
     } | null,
+    primaryFacet: null as { slug: string; heading: string } | null,
   }
+
+  it('breadcrumbs through the primary facet page when the config has one', () => {
+    const [, crumbs] = configJsonLd('https://statuslin.es', {
+      ...base,
+      primaryFacet: { slug: 'git', heading: 'Claude Code status lines that show git status' },
+    }) as Array<Record<string, unknown>>
+    expect(crumbs?.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Status lines', item: 'https://statuslin.es' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Claude Code status lines that show git status',
+        item: 'https://statuslin.es/status-lines/git',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Powerline Dracula',
+        item: 'https://statuslin.es/c/powerline-dracula-6936b97c',
+      },
+    ])
+  })
+
+  it('breadcrumbs straight from home to the config without a primary facet', () => {
+    const [, crumbs] = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
+    expect(crumbs?.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Status lines', item: 'https://statuslin.es' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Powerline Dracula',
+        item: 'https://statuslin.es/c/powerline-dracula-6936b97c',
+      },
+    ])
+  })
 
   it('builds SoftwareSourceCode + BreadcrumbList for a config', () => {
     const [code, crumbs] = configJsonLd('https://statuslin.es', {

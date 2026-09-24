@@ -235,6 +235,7 @@ export {
   isIndexableFacet,
   liveFacetLinks,
   MIN_INDEXABLE_FACET_CONFIGS,
+  primaryFacet,
   resolveLiveFacet,
 } from './facet-queries'
 export { getPublishedSlugsForSitemap } from './published-at'

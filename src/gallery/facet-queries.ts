@@ -103,6 +103,21 @@ export function isIndexableFacet(slug: string, stats: Map<string, FacetStats>): 
   return (stats.get(slug)?.count ?? 0) >= MIN_INDEXABLE_FACET_CONFIGS
 }
 
+/** The facet a config page breadcrumbs through: the first of its tags (stored in registry order,
+ * so feature facets outrank the interpreter) that is an indexable facet page. */
+export function primaryFacet(
+  tags: string[],
+  stats: Map<string, FacetStats>,
+): { slug: string; heading: string } | null {
+  for (const slug of tags) {
+    const facet = FACET_BY_SLUG.get(slug)
+    if (facet?.page && facet.heading && isIndexableFacet(slug, stats)) {
+      return { slug, heading: facet.heading }
+    }
+  }
+  return null
+}
+
 /** Links for every indexable facet, optionally excluding the current one. */
 export function liveFacetLinks(
   stats: Map<string, FacetStats>,

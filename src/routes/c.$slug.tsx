@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { ConfigBadges } from '@/gallery/config-badges'
+import { ConfigBreadcrumb } from '@/gallery/config-breadcrumb'
 import { tagLabel } from '@/gallery/facets'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
@@ -67,6 +68,7 @@ export const Route = createFileRoute('/c/$slug')({
             keywords: detail.facetLinks.map((f) => f.chipLabel),
             updatedAt: detail.updatedAt,
             generatedContent: detail.generatedContent,
+            primaryFacet: detail.primaryFacet,
           }).map(jsonLdScript)
         : [],
     }
@@ -100,6 +102,7 @@ function ConfigDetail() {
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
+          <ConfigBreadcrumb title={detail.title} primaryFacet={detail.primaryFacet} />
           <Row gap={3} wrap justify="between">
             <Heading level={1}>{detail.title}</Heading>
             <ConfigBadges tags={detail.tags} networkHosts={detail.networkHosts} />

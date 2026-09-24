@@ -26,6 +26,7 @@ import {
   isIndexableFacet,
   liveFacetLinks,
   PAGE_SIZE,
+  primaryFacet,
   resolveLiveFacet,
 } from './queries'
 import { rankedCard } from './why-line'
@@ -125,7 +126,10 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
       // versions without it. Either way the browser gets escaped HTML, never Shiki itself.
       // resolveSourceHtml always returns a string, so this overrides the nullable ConfigDetail
       // .sourceHtml with a non-null value — the detail page can render it directly.
-      const related = await getRelatedConfigs(db, data.slug)
+      const [related, stats] = await Promise.all([
+        getRelatedConfigs(db, data.slug),
+        getFacetStats(db),
+      ])
       // Only tags with a facet page are linkable; capability tags (reads-token, network-access)
       // are plain info signals — a `?tags=` link for them just re-shows the whole gallery.
       const facetLinks = detail.tags.map((slug) => ({
@@ -139,6 +143,7 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),
         related,
         facetLinks,
+        primaryFacet: primaryFacet(detail.tags, stats),
       }
     }),
   )
