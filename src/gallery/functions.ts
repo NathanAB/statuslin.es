@@ -1,4 +1,5 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
+import { liveComparePaths } from '@/compare/pages'
 import { db } from '@/db'
 import { getAvailableTags } from '@/gallery/facet-queries'
 import { FACET_BY_SLUG, tagHref } from '@/gallery/facets'
@@ -14,6 +15,7 @@ import {
   coerceTags,
   type GallerySort,
   galleryPageWindow,
+  getCardsByCopies,
   getConfigBySlug,
   getFacetCards,
   getFacetStats,
@@ -24,8 +26,10 @@ import {
   isIndexableFacet,
   liveFacetLinks,
   PAGE_SIZE,
+  primaryFacet,
   resolveLiveFacet,
 } from './queries'
+import { rankedCard } from './why-line'
 
 /**
  * The `/sitemap.xml` response. Lives here (not in the route file) because route files can't import
@@ -47,8 +51,18 @@ export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Resp
   }))
   const configs = await getPublishedSlugsForSitemap(db)
   const pageCount = Math.max(1, Math.ceil(configs.length / PAGE_SIZE))
-  return sitemapResponse(siteUrl(), configs, facets, pageCount)
+  const comparePaths = liveComparePaths(await getCardsByCopies(db))
+  return sitemapResponse(siteUrl(), configs, facets, pageCount, comparePaths)
 })
+
+const BEST_LIMIT = 10
+
+export const getBestPage = createServerFn({ method: 'GET' }).handler(() =>
+  withHttpStatus(async () => ({
+    items: (await getCardsByCopies(db, { limit: BEST_LIMIT })).map(rankedCard),
+    asOf: new Date().toISOString().slice(0, 10),
+  })),
+)
 
 /**
  * The `/llms.txt` response. Server-only for the same reason as the sitemap: it reads live facet
@@ -68,7 +82,7 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Resp
   return llmsResponse(
     siteUrl(),
     facets,
-    top.map((config) => ({ slug: config.slug, title: config.title })),
+    top.map(({ slug, title, description, copyCount }) => ({ slug, title, description, copyCount })),
   )
 })
 
@@ -110,7 +124,10 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
       // versions without it. Either way the browser gets escaped HTML, never Shiki itself.
       // resolveSourceHtml always returns a string, so this overrides the nullable ConfigDetail
       // .sourceHtml with a non-null value — the detail page can render it directly.
-      const related = await getRelatedConfigs(db, data.slug)
+      const [related, stats] = await Promise.all([
+        getRelatedConfigs(db, data.slug),
+        getFacetStats(db),
+      ])
       // Only tags with a facet page are linkable; capability tags (reads-token, network-access)
       // are plain info signals — a `?tags=` link for them just re-shows the whole gallery.
       const facetLinks = detail.tags.map((slug) => ({
@@ -124,6 +141,7 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),
         related,
         facetLinks,
+        primaryFacet: primaryFacet(detail.tags, stats),
       }
     }),
   )

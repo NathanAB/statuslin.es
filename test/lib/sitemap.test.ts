@@ -86,6 +86,13 @@ describe('sitemapResponse', () => {
     expect(xml).toContain(`<loc>${BASE}/c/a&lt;b&gt;c</loc>`)
   })
 
+  it('lists the best page and the live comparison pages', async () => {
+    const xml = await sitemapResponse(BASE, [], [], 1, ['/alternatives/ccstatusline']).text()
+    expect(xml).toContain(`<loc>${BASE}/status-lines/best</loc>`)
+    expect(xml).toContain(`<loc>${BASE}/alternatives/ccstatusline</loc>`)
+    expect(xml).not.toContain(`<loc>${BASE}/compare/`)
+  })
+
   it('lists live facets with their newest-config lastmod', async () => {
     const res = sitemapResponse(
       'https://example.test',

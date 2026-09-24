@@ -52,11 +52,11 @@ export interface RenderResult {
 
 export interface AnsiSegment {
   text: string
-  fg: string | null
-  bg: string | null
-  bold: boolean
-  italic: boolean
-  underline: boolean
+  fg?: string | null
+  bg?: string | null
+  bold?: boolean
+  italic?: boolean
+  underline?: boolean
 }
 
 export interface RenderedPreview {

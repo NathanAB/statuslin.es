@@ -21,6 +21,8 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
   }
 }
 
+export const HOME_CRUMB_NAME = 'Status lines'
+
 /** The site identity plus gallery CollectionPage and its visible configs. */
 export function homeJsonLd(
   origin: string,
@@ -73,9 +75,22 @@ export function configJsonLd(
     keywords: string[]
     updatedAt: string | null
     generatedContent: GeneratedContent | null
+    primaryFacet: { slug: string; heading: string } | null
   },
 ): object[] {
   const url = `${origin}/c/${config.slug}`
+  const crumbs = [
+    { name: HOME_CRUMB_NAME, item: origin },
+    ...(config.primaryFacet
+      ? [
+          {
+            name: config.primaryFacet.heading,
+            item: `${origin}/status-lines/${config.primaryFacet.slug}`,
+          },
+        ]
+      : []),
+    { name: config.title, item: url },
+  ]
   const nodes: object[] = [
     {
       '@context': 'https://schema.org',
@@ -93,10 +108,11 @@ export function configJsonLd(
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
-        { '@type': 'ListItem', position: 2, name: config.title, item: url },
-      ],
+      itemListElement: crumbs.map((crumb, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        ...crumb,
+      })),
     },
   ]
 

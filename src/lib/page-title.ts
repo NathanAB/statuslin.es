@@ -1,3 +1,5 @@
+import { RESOURCE_SECTIONS, type ResourceSection } from '@/resources/data'
+
 const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
 const CONFIG_PAGE_TITLE_BRAND = ' | statuslin.es'
 const CONFIG_PAGE_TITLE_MAX_LENGTH = 60
@@ -50,7 +52,7 @@ export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
  * "examples" or "templates".
  */
 export const HOME_TITLE_BASE = 'Claude Code Status Lines'
-export const HOME_HEADING_BASE = 'Claude Code status lines'
+export const HOME_HEADING = 'A gallery of Claude Code status lines'
 export const HOME_DESCRIPTION_BASE =
   'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.'
 
@@ -79,4 +81,10 @@ export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-09-23' } a
 export const GUIDE_DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'
 
-export const RESOURCES_TITLE_BASE = 'ccstatusline, claude-powerline & More Claude Code Tools'
+export function resourcesTitle(sections: ResourceSection[]): string {
+  const tools = sections.find((s) => s.key === 'tools')?.resources ?? []
+  const lead = tools.slice(0, 2).map((t) => t.name)
+  return `${lead.join(', ')} & More Claude Code Tools`
+}
+
+export const RESOURCES_TITLE_BASE = resourcesTitle(RESOURCE_SECTIONS)

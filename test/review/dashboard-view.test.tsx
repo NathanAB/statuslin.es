@@ -77,7 +77,7 @@ describe('DashboardView', () => {
   it('renders a sign-in prompt for signed-out visitors', () => {
     render(<DashboardView data={{ signedOut: true }} />)
     expect(screen.queryByText('@ada')).toBeNull()
-    expect(screen.getAllByText(/sign in with github/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'Sign in with GitHub' }).length).toBeGreaterThan(0)
   })
 
   it('partitions rejected unsent submissions under Contact needed', () => {

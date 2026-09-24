@@ -22,6 +22,7 @@ export interface SitemapFacet {
 }
 
 const STATIC_PAGES: Array<{ path: string; lastmod?: string }> = [
+  { path: '/status-lines/best' },
   { path: '/guide', lastmod: GUIDE_DATES.modified },
   { path: '/resources' },
   { path: '/terms' },
@@ -47,6 +48,7 @@ function buildSitemapXml(
   configs: SitemapConfig[],
   facets: SitemapFacet[],
   pageCount: number,
+  comparePaths: string[],
 ): string {
   const homepageUpdatedAt = configs.reduce<Date | null>(
     (latest, config) => (latest === null || config.updatedAt > latest ? config.updatedAt : latest),
@@ -56,6 +58,7 @@ function buildSitemapXml(
   const staticEntries = [
     urlEntry(base, homepageLastmod),
     ...STATIC_PAGES.map((page) => urlEntry(`${base}${page.path}`, page.lastmod)),
+    ...comparePaths.map((path) => urlEntry(`${base}${path}`)),
   ]
   const pageEntries: string[] = []
   for (let page = 2; page <= pageCount; page++) {
@@ -83,8 +86,9 @@ export function sitemapResponse(
   configs: SitemapConfig[],
   facets: SitemapFacet[],
   pageCount = 1,
+  comparePaths: string[] = [],
 ): Response {
-  return new Response(buildSitemapXml(base, configs, facets, pageCount), {
+  return new Response(buildSitemapXml(base, configs, facets, pageCount, comparePaths), {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
       'Cache-Control': 'max-age=3600',

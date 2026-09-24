@@ -50,14 +50,39 @@ describe('buildLlmsTxt', () => {
     expect(txt).toContain('(https://statuslin.es/submit)')
   })
 
-  it('lists top configs for non-Google engines', () => {
+  it('lists top configs with a one-line summary and copy count', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets, [
-      { slug: 'everything-bar', title: 'Everything Bar' },
-      { slug: 'usage-dot-bars', title: 'Usage Dot Bars' },
+      {
+        slug: 'everything-bar',
+        title: 'Everything Bar',
+        description: 'Model, branch, and cost.\n  Colors   shift as cost grows.',
+        copyCount: 12,
+      },
+      { slug: 'usage-dot-bars', title: 'Usage Dot Bars', description: '', copyCount: 1 },
+      { slug: 'dots', title: 'Dots', description: 'Dots per quota window', copyCount: 2 },
     ])
     expect(txt).toMatch(/^## Top status lines/m)
-    expect(txt).toContain('[Everything Bar](https://statuslin.es/c/everything-bar)')
-    expect(txt).toContain('[Usage Dot Bars](https://statuslin.es/c/usage-dot-bars)')
+    expect(txt).toContain(
+      '- [Everything Bar](https://statuslin.es/c/everything-bar): Model, branch, and cost. Colors shift as cost grows. Copied 12 times.\n',
+    )
+    expect(txt).toContain(
+      '- [Usage Dot Bars](https://statuslin.es/c/usage-dot-bars): Copied 1 time.\n',
+    )
+    expect(txt).toContain(
+      '- [Dots](https://statuslin.es/c/dots): Dots per quota window. Copied 2 times.\n',
+    )
+  })
+
+  it('trims a long description to one line at a word boundary', () => {
+    const long = `${'word '.repeat(40)}end`
+    const txt = buildLlmsTxt(
+      'https://statuslin.es',
+      [],
+      [{ slug: 'long', title: 'Long', description: long, copyCount: 0 }],
+    )
+    expect(txt).toContain(
+      `- [Long](https://statuslin.es/c/long): ${'word '.repeat(31).trim()}… Copied 0 times.\n`,
+    )
   })
 
   it('omits the top-configs section when none are passed', () => {

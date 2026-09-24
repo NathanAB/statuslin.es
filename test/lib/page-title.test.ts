@@ -6,6 +6,8 @@ import {
   GUIDE_TITLE_BASE,
   HOME_TITLE_BASE,
   NOT_FOUND_TITLE,
+  RESOURCES_TITLE_BASE,
+  resourcesTitle,
 } from '@/lib/page-title'
 
 describe('configPageTitle', () => {
@@ -46,6 +48,23 @@ describe('static page titles', () => {
   it('state the target keyword', () => {
     expect(GUIDE_TITLE_BASE).toBe('How to Set Up a Claude Code Status Line')
     expect(GUIDE_DESCRIPTION).toMatch(/tested example you can copy/)
+  })
+})
+
+describe('resourcesTitle', () => {
+  const tool = (name: string) => ({ name, url: `https://example.com/${name}`, description: '' })
+
+  it('names the first two status line tools in display order', () => {
+    const sections = [
+      { key: 'generators', title: 'Generators', resources: [tool('gen-one')] },
+      { key: 'tools', title: 'Tools', resources: [tool('alpha'), tool('beta'), tool('gamma')] },
+    ]
+    expect(resourcesTitle(sections)).toBe('alpha, beta & More Claude Code Tools')
+  })
+
+  it("builds today's /resources title from the resource data, within 60 chars", () => {
+    expect(RESOURCES_TITLE_BASE).toBe('ccstatusline, claude-powerline & More Claude Code Tools')
+    expect(RESOURCES_TITLE_BASE.length).toBeLessThanOrEqual(60)
   })
 })
 

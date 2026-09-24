@@ -10,7 +10,8 @@ export function SignInButton() {
     <Button
       type="button"
       variant="outline"
-      size="lg"
+      size="nav"
+      aria-label="Sign in with GitHub"
       // Return the user to wherever they clicked sign-in from.
       onClick={() => {
         const path = window.location.pathname
@@ -26,7 +27,9 @@ export function SignInButton() {
       }}
     >
       <GitHubMark />
-      Sign in with GitHub
+      <span>
+        Sign in<span className="hidden sm:inline"> with GitHub</span>
+      </span>
     </Button>
   )
 }

@@ -44,15 +44,15 @@ async function handleSignOut(posthog: PostHog) {
 export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
   return (
     <header className="py-4">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-2 px-6">
         <Link to="/" className="hover:opacity-80">
           <Wordmark />
         </Link>
-        <nav className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="lg">
+        <nav className="ml-auto flex items-center sm:gap-2">
+          <Button asChild variant="ghost" size="nav">
             <Link to="/guide">Guide</Link>
           </Button>
-          <Button asChild variant="ghost" size="lg">
+          <Button asChild variant="ghost" size="nav">
             <Link to="/resources">Resources</Link>
           </Button>
           {user ? <UserMenu user={user} /> : <SignInButton />}

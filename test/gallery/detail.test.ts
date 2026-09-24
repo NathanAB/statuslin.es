@@ -102,6 +102,17 @@ describe('getConfigBySlug', () => {
     expect(detail?.contentSha256).toBe(SHA)
     expect(detail?.previews.map((p) => p.scenarioKey).sort()).toEqual(['clean-main', 'costly-full'])
   })
+  it('ships only what the page renders per preview: the scenario and compact segments', async () => {
+    await seed('published', 'detail-compact', '22'.repeat(32))
+    const detail = await getConfigBySlug(db, 'detail-compact')
+    const byKey = [...(detail?.previews ?? [])].sort((a, b) =>
+      a.scenarioKey.localeCompare(b.scenarioKey),
+    )
+    expect(byKey).toEqual([
+      { scenarioKey: 'clean-main', segments: [{ text: 'clean' }] },
+      { scenarioKey: 'costly-full', segments: [{ text: 'costly' }] },
+    ])
+  })
   it('returns null for a non-published slug', async () => {
     const detail = await getConfigBySlug(db, 'does-not-exist')
     expect(detail).toBeNull()

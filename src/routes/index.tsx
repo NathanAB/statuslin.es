@@ -97,10 +97,10 @@ function Home() {
   return (
     <PageShell user={user}>
       <Stack gap={9}>
-        <Stack gap={4}>
+        <Stack gap={6}>
           <HomeMasthead>
-            <HomeHero page={page} />
-            <HomeGalleryIntro />
+            <HomeHero />
+            <HomeGalleryIntro page={page} />
           </HomeMasthead>
           <HomeFeatureDirectory facets={facets} />
         </Stack>
