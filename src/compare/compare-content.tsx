@@ -1,10 +1,9 @@
-import type { ComparePage } from '@/compare/pages'
-import { FACT_ROWS, type ThirdPartyTool } from '@/compare/tools'
+import { Fragment } from 'react'
+import type { ComparePage, FactSheet } from '@/compare/pages'
 import { RankedCardList } from '@/gallery/ranked-card-list'
 import { BulletList } from '@/ui/bullet-list'
-import { Grid, Row, Stack } from '@/ui/layout'
-import { MetaList } from '@/ui/meta-list'
-import { SectionCard } from '@/ui/section-card'
+import { FactTable } from '@/ui/fact-table'
+import { Row, Stack } from '@/ui/layout'
 import { Heading, Text, TextLink } from '@/ui/text'
 
 export function CompareContent({ page }: { page: ComparePage }) {
@@ -12,25 +11,19 @@ export function CompareContent({ page }: { page: ComparePage }) {
     <Stack gap={9}>
       <Stack gap={3}>
         <Heading level={1}>{page.heading}</Heading>
-        {page.intro.map((paragraph) => (
-          <Text key={paragraph.slice(0, 32)} muted measure>
-            {paragraph}
-          </Text>
-        ))}
+        <Text muted measure>
+          {page.intro}
+        </Text>
       </Stack>
 
       <Stack gap={3}>
         <Heading level={2}>At a glance</Heading>
-        <Grid>
-          {page.tools.map((tool) => (
-            <ToolFacts key={tool.slug} tool={tool} />
-          ))}
-        </Grid>
+        <Facts facts={page.facts} />
       </Stack>
 
       <Stack gap={3}>
-        <Heading level={2}>When to pick which</Heading>
-        <BulletList items={page.picks.map((pick) => pick.text)} />
+        <Heading level={2}>Which to pick</Heading>
+        <BulletList items={page.picks} />
       </Stack>
 
       <Stack gap={4}>
@@ -60,18 +53,27 @@ export function CompareContent({ page }: { page: ComparePage }) {
   )
 }
 
-function ToolFacts({ tool }: { tool: ThirdPartyTool }) {
+function Facts({ facts }: { facts: FactSheet }) {
   return (
-    <SectionCard title={<TextLink href={tool.repoUrl}>{tool.name}</TextLink>}>
-      <Stack gap={3}>
-        <MetaList
-          items={FACT_ROWS.map((row) => ({ label: row.label, value: tool.facts[row.key] }))}
-        />
-        <Text muted size="xs">
-          Checked against the <TextLink href={tool.sources[0] ?? tool.repoUrl}>README</TextLink> on{' '}
-          {tool.verifiedAt}.
-        </Text>
-      </Stack>
-    </SectionCard>
+    <Stack gap={2}>
+      <FactTable
+        columns={facts.columns.map((c) => (
+          <TextLink key={c.name} href={c.repoUrl}>
+            {c.name}
+          </TextLink>
+        ))}
+        rows={facts.rows}
+      />
+      <Text muted size="xs">
+        Checked against the{' '}
+        {facts.columns.map((c, i) => (
+          <Fragment key={c.name}>
+            {i > 0 && ' and '}
+            <TextLink href={c.sourceUrl}>{c.name}</TextLink>
+          </Fragment>
+        ))}{' '}
+        {facts.columns.length > 1 ? 'READMEs' : 'README'} on {facts.checkedOn}.
+      </Text>
+    </Stack>
   )
 }

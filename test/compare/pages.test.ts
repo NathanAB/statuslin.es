@@ -49,16 +49,48 @@ describe('buildComparePage', () => {
 
   it('matches the versus page on the jobs both tools share', () => {
     const page = buildComparePage('/compare/ccstatusline-vs-claude-powerline', gallery)
-    expect(page?.tools.map((t) => t.name)).toEqual(['ccstatusline', 'claude-powerline'])
     expect(page?.cards.map((c) => c.card.slug)).toEqual([
       'three-jobs',
       'five-jobs',
       'powerline-look',
     ])
-    expect(page?.picks.map((p) => p.name)).toEqual([
-      'ccstatusline',
-      'claude-powerline',
-      'A gallery status line',
+  })
+
+  it('leads the versus page with one short intro, a fact table, and one-line picks', () => {
+    const page = buildComparePage('/compare/ccstatusline-vs-claude-powerline', gallery)
+    expect(page?.intro).toBe(
+      'Two npm tools for the Claude Code status line. The biggest difference is setup: ccstatusline uses an interactive terminal UI, claude-powerline uses a JSON file.',
+    )
+    expect(page?.facts.columns.map((c) => c.name)).toEqual(['ccstatusline', 'claude-powerline'])
+    expect(page?.facts.rows).toEqual([
+      { label: 'Setup', cells: ['Interactive terminal UI', 'JSON file or /powerline wizard'] },
+      { label: 'Runs on', cells: ['Node.js or Bun', 'Node.js 18+ and Git'] },
+      { label: 'Themes', cells: ['Powerline themes', '6 built-in, plus custom'] },
+      { label: 'Font', cells: ['Powerline font', 'Nerd Font, or ASCII mode'] },
+      { label: 'Usage limits', cells: ['Yes', 'Yes'] },
+      { label: 'Latest release', cells: ['v2.2.30, Sep 17', 'v1.32.0, Sep 23'] },
+    ])
+    expect(page?.facts.checkedOn).toBe('2026-09-24')
+    expect(page?.picks).toEqual([
+      'Want a setup screen? ccstatusline.',
+      'Want a config file you can commit? claude-powerline.',
+      'Want to read one script and see its real output first? Pick a status line below.',
+    ])
+  })
+
+  it('shows an alternatives page only its own tool’s facts and a two-line pick', () => {
+    const page = buildComparePage('/alternatives/claude-powerline', gallery)
+    expect(page?.intro).toBe(
+      'An alternative to claude-powerline here is a single gallery script that covers at least 3 of the same features, shown with its real output.',
+    )
+    expect(page?.facts.columns.map((c) => c.name)).toEqual(['claude-powerline'])
+    expect(page?.facts.rows[0]).toEqual({
+      label: 'Setup',
+      cells: ['JSON file or /powerline wizard'],
+    })
+    expect(page?.picks).toEqual([
+      'Pick claude-powerline if you want a config file you can commit.',
+      'Pick a gallery status line if you want to read one script and see its real output first.',
     ])
   })
 
@@ -77,9 +109,8 @@ describe('buildComparePage', () => {
       expect(page.title.length, page.title).toBeLessThanOrEqual(60)
       expect(page.description.length, page.description).toBeGreaterThanOrEqual(140)
       expect(page.description.length, page.description).toBeLessThanOrEqual(160)
-      const copy = [page.title, page.description, page.heading, ...page.intro]
-      copy.push(...page.picks.map((p) => p.text))
-      copy.push(...page.tools.flatMap((t) => Object.values(t.facts)))
+      const copy = [page.title, page.description, page.heading, page.intro, ...page.picks]
+      copy.push(...page.facts.rows.flatMap((r) => r.cells))
       expect(copy.filter((s) => s.includes('—'))).toEqual([])
     }
   })

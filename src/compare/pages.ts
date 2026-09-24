@@ -1,24 +1,30 @@
-import { COMPARISONS, type ThirdPartyTool, TOOL_BY_SLUG, TOOLS } from '@/compare/tools'
-import { FACET_BY_SLUG } from '@/gallery/facets'
+import { COMPARISONS, FACT_ROWS, type ThirdPartyTool, TOOL_BY_SLUG, TOOLS } from '@/compare/tools'
 import { type GalleryCard, MIN_INDEXABLE_FACET_CONFIGS } from '@/gallery/queries'
 import { listPhrase, type RankedCard, rankedCard } from '@/gallery/why-line'
 
 const MIN_SHARED_JOBS = 3
 const PREVIEWS_PER_PAGE = 6
 const BRAND = ' | statuslin.es'
+const GALLERY_WANTS = 'to read one script and see its real output first'
 
 export type CompareLink =
   | { to: '/alternatives/$tool'; params: { tool: string }; label: string }
   | { to: '/compare/$pair'; params: { pair: string }; label: string }
+
+export interface FactSheet {
+  columns: Array<Pick<ThirdPartyTool, 'name' | 'repoUrl' | 'sourceUrl'>>
+  rows: Array<{ label: string; cells: string[] }>
+  checkedOn: string
+}
 
 export interface ComparePage {
   path: string
   title: string
   heading: string
   description: string
-  intro: string[]
-  tools: ThirdPartyTool[]
-  picks: Array<{ name: string; text: string }>
+  intro: string
+  facts: FactSheet
+  picks: string[]
   cards: RankedCard[]
   links: CompareLink[]
 }
@@ -30,7 +36,7 @@ type PageSpec =
       kind: 'versus'
       pair: string
       tools: [ThirdPartyTool, ThirdPartyTool]
-      intro: string[]
+      intro: string
     }
 
 function tool(slug: string): ThirdPartyTool {
@@ -59,11 +65,6 @@ const SPECS: PageSpec[] = [
 
 export const COMPARE_PATHS = SPECS.map((s) => s.path)
 
-const GALLERY_PICK = {
-  name: 'A gallery status line',
-  text: 'Pick a gallery status line if you want one script you can read in full, and to see its real output before you copy it.',
-}
-
 function relevantCards(jobs: string[], cards: GalleryCard[]): RankedCard[] {
   return cards
     .filter((c) => jobs.filter((job) => c.tags.includes(job)).length >= MIN_SHARED_JOBS)
@@ -71,12 +72,12 @@ function relevantCards(jobs: string[], cards: GalleryCard[]): RankedCard[] {
     .map(rankedCard)
 }
 
-function galleryIntro(subject: string, jobs: string[]): string {
-  const features = listPhrase(
-    jobs.map((job) => FACET_BY_SLUG.get(job)?.chipLabel ?? job),
-    'or',
-  )
-  return `Every status line below is a single script from the gallery, rendered from its real code. Each one covers at least ${MIN_SHARED_JOBS} of the same features as ${subject}: ${features}.`
+function factSheet(tools: ThirdPartyTool[]): FactSheet {
+  return {
+    columns: tools.map(({ name, repoUrl, sourceUrl }) => ({ name, repoUrl, sourceUrl })),
+    rows: FACT_ROWS.map((row) => ({ label: row.label, cells: tools.map((t) => t.facts[row.key]) })),
+    checkedOn: tools.map((t) => t.verifiedAt).sort()[0] ?? '',
+  }
 }
 
 function alternativesLink(t: ThirdPartyTool): CompareLink {
@@ -104,15 +105,11 @@ function alternativesPage(t: ThirdPartyTool, cards: RankedCard[]): ComparePage {
     title: `${t.name} Alternatives for Claude Code${BRAND}`,
     heading: `${t.name} alternatives`,
     description: `Alternatives to ${t.name} for your Claude Code status line: ${listPhrase(others.map((o) => o.name))}, plus scripts with real rendered previews you can compare before you copy.`,
-    intro: [
-      `${t.name} is ${t.summary}. If it isn't the right fit, there are two kinds of alternative: another configurable tool, or a single script you copy.`,
-      galleryIntro(t.name, t.jobs),
-    ],
-    tools: [t, ...others],
+    intro: `An alternative to ${t.name} here is a single gallery script that covers at least ${MIN_SHARED_JOBS} of the same features, shown with its real output.`,
+    facts: factSheet([t]),
     picks: [
-      { name: t.name, text: `Stay with ${t.name} if ${t.pickIf}` },
-      ...others.map((o) => ({ name: o.name, text: `Pick ${o.name} if ${o.pickIf}` })),
-      GALLERY_PICK,
+      `Pick ${t.name} if you want ${t.wants}.`,
+      `Pick a gallery status line if you want ${GALLERY_WANTS}.`,
     ],
     cards,
     links: [...versusLinks(t), ...others.map(alternativesLink)],
@@ -126,11 +123,11 @@ function versusPage(spec: Extract<PageSpec, { kind: 'versus' }>, cards: RankedCa
     title: `${a.name} vs ${b.name} Compared${BRAND}`,
     heading: `${a.name} vs ${b.name}`,
     description: `${a.name} vs ${b.name}: install, config, themes, fonts, and usage limits compared, plus rendered Claude Code status lines that do the same job.`,
-    intro: [...spec.intro, galleryIntro('both tools', sharedJobs(spec))],
-    tools: [a, b],
+    intro: spec.intro,
+    facts: factSheet(spec.tools),
     picks: [
-      ...spec.tools.map((t) => ({ name: t.name, text: `Pick ${t.name} if ${t.pickIf}` })),
-      GALLERY_PICK,
+      ...spec.tools.map((t) => `Want ${t.wants}? ${t.name}.`),
+      `Want ${GALLERY_WANTS}? Pick a status line below.`,
     ],
     cards,
     links: spec.tools.map(alternativesLink),
