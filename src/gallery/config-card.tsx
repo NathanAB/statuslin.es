@@ -10,7 +10,7 @@ import { StretchedLink } from '@/ui/stretched-link'
 import { Text } from '@/ui/text'
 
 export interface GalleryCardAnalytics {
-  surface: 'home' | 'facet'
+  surface: 'home' | 'facet' | 'best' | 'compare'
   position: number
   facet?: string
   sort?: GallerySort

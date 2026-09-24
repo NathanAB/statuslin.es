@@ -224,6 +224,7 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
 export { coerceInterpreter } from './card-rows'
 export type { FacetStats } from './facet-queries'
 export {
+  getCardsByCopies,
   getFacetCards,
   getFacetStats,
   isIndexableFacet,

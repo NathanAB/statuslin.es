@@ -64,19 +64,26 @@ export async function getAvailableTags(db: Db): Promise<string[]> {
 }
 
 /** A facet page's cards: published matches, most-copied first, newest as the tiebreak. */
-export async function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]> {
-  const rows = await db
+export function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]> {
+  return getCardsByCopies(db, { tag: facet.slug })
+}
+
+/** Published cards, most-copied first, newest as the tiebreak; optionally one tag and a cap. */
+export async function getCardsByCopies(
+  db: Db,
+  options: { tag?: string; limit?: number } = {},
+): Promise<GalleryCard[]> {
+  const tagFilter = options.tag
+    ? sql`${configs.allTags} @> ${JSON.stringify([options.tag])}::jsonb`
+    : undefined
+  const query = db
     .select(galleryCardSelection)
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(user, eq(user.id, configs.authorId))
-    .where(
-      and(
-        eq(configs.status, 'published'),
-        sql`${configs.allTags} @> ${JSON.stringify([facet.slug])}::jsonb`,
-      ),
-    )
+    .where(and(eq(configs.status, 'published'), tagFilter))
     .orderBy(desc(configs.copyCount), desc(configs.createdAt))
+  const rows = await (options.limit === undefined ? query : query.limit(options.limit))
   const cardPreviews = await selectCardPreviews(
     db,
     rows.map((r) => r.version.contentSha256),

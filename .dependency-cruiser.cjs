@@ -14,7 +14,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/ui' },
       to: {
-        path: '^src/(routes|gallery|submit|review|render|adopt|votes|content|guide|resources)',
+        path: '^src/(routes|gallery|submit|review|render|adopt|votes|content|guide|resources|compare)',
         dependencyTypesNot: ['type-only'],
       },
     },

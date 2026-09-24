@@ -5,7 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { FACET_BY_SLUG } from '@/gallery/facets'
-import { getFacetCards, getFacetStats, resolveLiveFacet } from '@/gallery/queries'
+import { getCardsByCopies, getFacetCards, getFacetStats, resolveLiveFacet } from '@/gallery/queries'
 import { computeAllTags } from '@/lib/derived-tags'
 
 let client: PGlite
@@ -147,6 +147,16 @@ describe('facet queries', () => {
 
   it('returns tag-facet cards by lifetime copies', async () => {
     const cards = await getFacetCards(db, FACET_BY_SLUG.get('git')!)
+    expect(cards.map((c) => c.slug)).toEqual(['git-b', 'git-a'])
+  })
+
+  it('ranks every published config by copies, newest first on ties', async () => {
+    const cards = await getCardsByCopies(db)
+    expect(cards.map((c) => c.slug)).toEqual(['git-b', 'git-a', 'py-a', 'plain'])
+  })
+
+  it('caps the copy ranking at a limit', async () => {
+    const cards = await getCardsByCopies(db, { limit: 2 })
     expect(cards.map((c) => c.slug)).toEqual(['git-b', 'git-a'])
   })
 

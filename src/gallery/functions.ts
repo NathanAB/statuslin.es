@@ -1,4 +1,5 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
+import { liveComparePaths } from '@/compare/pages'
 import { db } from '@/db'
 import { getAvailableTags } from '@/gallery/facet-queries'
 import { FACET_BY_SLUG, tagHref } from '@/gallery/facets'
@@ -14,6 +15,7 @@ import {
   coerceTags,
   type GallerySort,
   galleryPageWindow,
+  getCardsByCopies,
   getConfigBySlug,
   getFacetCards,
   getFacetStats,
@@ -26,6 +28,7 @@ import {
   PAGE_SIZE,
   resolveLiveFacet,
 } from './queries'
+import { rankedCard } from './why-line'
 
 /**
  * The `/sitemap.xml` response. Lives here (not in the route file) because route files can't import
@@ -47,8 +50,20 @@ export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Resp
   }))
   const configs = await getPublishedSlugsForSitemap(db)
   const pageCount = Math.max(1, Math.ceil(configs.length / PAGE_SIZE))
-  return sitemapResponse(siteUrl(), configs, facets, pageCount)
+  const comparePaths = liveComparePaths(await getCardsByCopies(db))
+  return sitemapResponse(siteUrl(), configs, facets, pageCount, comparePaths)
 })
+
+/** How many configs /status-lines/best ranks. */
+const BEST_LIMIT = 10
+
+/** /status-lines/best: the most-copied published configs, each with its why line. */
+export const getBestPage = createServerFn({ method: 'GET' }).handler(() =>
+  withHttpStatus(async () => ({
+    items: (await getCardsByCopies(db, { limit: BEST_LIMIT })).map(rankedCard),
+    asOf: new Date().toISOString().slice(0, 10),
+  })),
+)
 
 /**
  * The `/llms.txt` response. Server-only for the same reason as the sitemap: it reads live facet

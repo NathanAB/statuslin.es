@@ -19,10 +19,13 @@ import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
+import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as AlternativesToolRouteImport } from './routes/alternatives.$tool'
 import { Route as AdminReviewRouteImport } from './routes/admin/review'
 import { Route as DotwellKnownSecurityDottxtRouteImport } from './routes/[.]well-known.security[.]txt'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
@@ -78,6 +81,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StatusLinesBestRoute = StatusLinesBestRouteImport.update({
+  id: '/status-lines/best',
+  path: '/status-lines/best',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatusLinesFacetRoute = StatusLinesFacetRouteImport.update({
   id: '/status-lines/$facet',
   path: '/status-lines/$facet',
@@ -88,6 +96,11 @@ const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
   path: '/og/home.png',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComparePairRoute = ComparePairRouteImport.update({
+  id: '/compare/$pair',
+  path: '/compare/$pair',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
   path: '/c/$slug',
@@ -96,6 +109,11 @@ const CSlugRoute = CSlugRouteImport.update({
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlternativesToolRoute = AlternativesToolRouteImport.update({
+  id: '/alternatives/$tool',
+  path: '/alternatives/$tool',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminReviewRoute = AdminReviewRouteImport.update({
@@ -133,10 +151,13 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/.well-known/security.txt': typeof DotwellKnownSecurityDottxtRoute
   '/admin/review': typeof AdminReviewRoute
+  '/alternatives/$tool': typeof AlternativesToolRoute
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
+  '/compare/$pair': typeof ComparePairRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
+  '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -153,10 +174,13 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/.well-known/security.txt': typeof DotwellKnownSecurityDottxtRoute
   '/admin/review': typeof AdminReviewRoute
+  '/alternatives/$tool': typeof AlternativesToolRoute
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
+  '/compare/$pair': typeof ComparePairRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
+  '/status-lines/best': typeof StatusLinesBestRoute
   '/admin': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -174,10 +198,13 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/.well-known/security.txt': typeof DotwellKnownSecurityDottxtRoute
   '/admin/review': typeof AdminReviewRoute
+  '/alternatives/$tool': typeof AlternativesToolRoute
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
+  '/compare/$pair': typeof ComparePairRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
+  '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -196,10 +223,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/security.txt'
     | '/admin/review'
+    | '/alternatives/$tool'
     | '/api/health'
     | '/c/$slug'
+    | '/compare/$pair'
     | '/og/home.png'
     | '/status-lines/$facet'
+    | '/status-lines/best'
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
@@ -216,10 +246,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/security.txt'
     | '/admin/review'
+    | '/alternatives/$tool'
     | '/api/health'
     | '/c/$slug'
+    | '/compare/$pair'
     | '/og/home.png'
     | '/status-lines/$facet'
+    | '/status-lines/best'
     | '/admin'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
@@ -236,10 +269,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/security.txt'
     | '/admin/review'
+    | '/alternatives/$tool'
     | '/api/health'
     | '/c/$slug'
+    | '/compare/$pair'
     | '/og/home.png'
     | '/status-lines/$facet'
+    | '/status-lines/best'
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
@@ -257,10 +293,13 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   DotwellKnownSecurityDottxtRoute: typeof DotwellKnownSecurityDottxtRoute
   AdminReviewRoute: typeof AdminReviewRoute
+  AlternativesToolRoute: typeof AlternativesToolRoute
   ApiHealthRoute: typeof ApiHealthRoute
   CSlugRoute: typeof CSlugRoute
+  ComparePairRoute: typeof ComparePairRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
+  StatusLinesBestRoute: typeof StatusLinesBestRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
@@ -338,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/status-lines/best': {
+      id: '/status-lines/best'
+      path: '/status-lines/best'
+      fullPath: '/status-lines/best'
+      preLoaderRoute: typeof StatusLinesBestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/status-lines/$facet': {
       id: '/status-lines/$facet'
       path: '/status-lines/$facet'
@@ -352,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgHomeDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compare/$pair': {
+      id: '/compare/$pair'
+      path: '/compare/$pair'
+      fullPath: '/compare/$pair'
+      preLoaderRoute: typeof ComparePairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/c/$slug': {
       id: '/c/$slug'
       path: '/c/$slug'
@@ -364,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alternatives/$tool': {
+      id: '/alternatives/$tool'
+      path: '/alternatives/$tool'
+      fullPath: '/alternatives/$tool'
+      preLoaderRoute: typeof AlternativesToolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/review': {
@@ -409,10 +469,13 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   DotwellKnownSecurityDottxtRoute: DotwellKnownSecurityDottxtRoute,
   AdminReviewRoute: AdminReviewRoute,
+  AlternativesToolRoute: AlternativesToolRoute,
   ApiHealthRoute: ApiHealthRoute,
   CSlugRoute: CSlugRoute,
+  ComparePairRoute: ComparePairRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
+  StatusLinesBestRoute: StatusLinesBestRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,

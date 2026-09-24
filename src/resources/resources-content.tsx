@@ -42,6 +42,21 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
           maintaining a script. Start with ccstatusline or claude-powerline.
         </Text>
         <Text muted>
+          Compare:{' '}
+          <TextLink to="/compare/$pair" params={{ pair: 'ccstatusline-vs-claude-powerline' }}>
+            ccstatusline vs claude-powerline
+          </TextLink>
+          ,{' '}
+          <TextLink to="/alternatives/$tool" params={{ tool: 'ccstatusline' }}>
+            ccstatusline alternatives
+          </TextLink>
+          ,{' '}
+          <TextLink to="/alternatives/$tool" params={{ tool: 'claude-powerline' }}>
+            claude-powerline alternatives
+          </TextLink>
+          , or the <TextLink to="/status-lines/best">most-copied gallery status lines</TextLink>.
+        </Text>
+        <Text muted>
           Copy a reviewed script from <TextLink to="/">the gallery</TextLink> if you want a rendered
           preview and a one-paste install — no extra runtime. Powerline look:{' '}
           <TextLink to="/c/$slug" params={{ slug: 'powerline-dracula-6936b97c' }}>
