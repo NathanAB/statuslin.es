@@ -50,7 +50,8 @@ export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
  * "examples" or "templates".
  */
 export const HOME_TITLE_BASE = 'Claude Code Status Lines'
-export const HOME_HEADING_BASE = 'Claude Code status lines'
+/** The home page's h1 — shared by the page and the deploy smoke check. */
+export const HOME_HEADING = 'A gallery of Claude Code status lines'
 export const HOME_DESCRIPTION_BASE =
   'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.'
 

@@ -41,6 +41,18 @@ describe('Heading', () => {
     expect(h3.className).toContain('text-base')
   })
 
+  it('renders a quiet page title (h1 at the section size) with size="compact"', () => {
+    const { container } = render(
+      <Heading level={1} size="compact">
+        Quiet
+      </Heading>,
+    )
+    const h1 = container.querySelector('h1') as HTMLElement
+    expect(h1.className.split(' ').sort()).toEqual(
+      ['font-medium', 'leading-snug', 'text-foreground', 'text-lg'].sort(),
+    )
+  })
+
   it('never uses a monospace (or any non-default) font at any level', () => {
     for (const level of [1, 2, 3] as const) {
       const { container } = render(<Heading level={level}>X</Heading>)

@@ -7,24 +7,28 @@ import { cn } from '@/lib/cn'
  * Page and section headings. `level` is the only knob: it picks both the semantic tag
  * (h1/h2/h3) and a fixed size on one scale. Each level's look is defined once here, so
  * the same level can never render differently on two pages, and headings are never
- * monospace. Level 3 is the card / section-card title.
+ * monospace. Level 3 is the card / section-card title. `size="compact"` is the quiet
+ * title for a page whose wordmark already carries the visual weight (the home masthead).
  */
 const HEADING_CLASS = {
   1: 'text-2xl font-semibold text-foreground',
   2: 'text-lg font-semibold text-foreground',
   3: 'text-base font-medium leading-snug text-foreground',
 } as const
+const COMPACT_HEADING_CLASS = 'text-lg font-medium leading-snug text-foreground'
 
 export function Heading({
   level,
+  size = 'default',
   id,
   children,
 }: {
   level: 1 | 2 | 3
+  size?: 'default' | 'compact'
   id?: string | undefined
   children: React.ReactNode
 }) {
-  const className = HEADING_CLASS[level]
+  const className = size === 'compact' ? COMPACT_HEADING_CLASS : HEADING_CLASS[level]
   if (level === 1)
     return (
       <h1 id={id} className={className}>

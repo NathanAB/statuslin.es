@@ -34,8 +34,8 @@ describe('browserCommandOutput', () => {
 })
 
 describe('assertHomeDocument', () => {
-  it('expects the brand wordmark as the h1', () => {
-    expect(EXPECTED_HOME.h1).toBe('statuslin.es')
+  it('expects the gallery heading as the h1', () => {
+    expect(EXPECTED_HOME.h1).toBe('A gallery of Claude Code status lines')
   })
 
   it('accepts the expected production homepage shell', () => {

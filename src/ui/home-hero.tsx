@@ -1,16 +1,10 @@
 import type { ReactNode } from 'react'
 import { Wordmark } from '@/ui/wordmark'
 
-export function HomeHero({ page = 1 }: { page?: number }) {
+export function HomeHero() {
   return (
     <div className="text-foreground">
       <Wordmark size="hero" />
-      {page > 1 ? (
-        <>
-          {' '}
-          <span className="mt-3 block font-medium text-sm">Page {page}</span>
-        </>
-      ) : null}
     </div>
   )
 }

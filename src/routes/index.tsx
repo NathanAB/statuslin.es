@@ -99,8 +99,8 @@ function Home() {
       <Stack gap={9}>
         <Stack gap={6}>
           <HomeMasthead>
-            <HomeHero page={page} />
-            <HomeGalleryIntro />
+            <HomeHero />
+            <HomeGalleryIntro page={page} />
           </HomeMasthead>
           <HomeFeatureDirectory facets={facets} />
         </Stack>

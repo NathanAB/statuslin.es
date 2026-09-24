@@ -1,18 +1,19 @@
 import { ConfigBadges } from '@/gallery/config-badges'
+import { HOME_HEADING } from '@/lib/page-title'
 import { Row, Stack } from '@/ui/layout'
-import { Text } from '@/ui/text'
+import { Heading, Text } from '@/ui/text'
 
 export interface HomeFacetLink {
   slug: string
   chipLabel: string
 }
 
-export function HomeGalleryIntro() {
+export function HomeGalleryIntro({ page }: { page: number }) {
   return (
     <Stack gap={3}>
-      <h1 className="font-medium text-foreground text-lg leading-snug">
-        A gallery of Claude Code status lines
-      </h1>
+      <Heading level={1} size="compact">
+        {page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
+      </Heading>
       <Text size="sm" measure>
         Community-submitted and reviewed by hand. Every card shows the real script's output.
       </Text>
