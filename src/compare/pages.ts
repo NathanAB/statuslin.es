@@ -105,7 +105,7 @@ function alternativesPage(t: ThirdPartyTool, cards: RankedCard[]): ComparePage {
     title: `${t.name} Alternatives for Claude Code${BRAND}`,
     heading: `${t.name} alternatives`,
     description: `Alternatives to ${t.name} for your Claude Code status line: ${listPhrase(others.map((o) => o.name))}, plus scripts with real rendered previews you can compare before you copy.`,
-    intro: `An alternative to ${t.name} here is a single gallery script that covers at least ${MIN_SHARED_JOBS} of the same features, shown with its real output.`,
+    intro: `Single scripts from the gallery that cover at least ${MIN_SHARED_JOBS} of the same features as ${t.name}, each shown with its real output.`,
     facts: factSheet([t]),
     picks: [
       `Pick ${t.name} if you want ${t.wants}.`,

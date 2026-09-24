@@ -81,7 +81,7 @@ describe('buildComparePage', () => {
   it('shows an alternatives page only its own tool’s facts and a two-line pick', () => {
     const page = buildComparePage('/alternatives/claude-powerline', gallery)
     expect(page?.intro).toBe(
-      'An alternative to claude-powerline here is a single gallery script that covers at least 3 of the same features, shown with its real output.',
+      'Single scripts from the gallery that cover at least 3 of the same features as claude-powerline, each shown with its real output.',
     )
     expect(page?.facts.columns.map((c) => c.name)).toEqual(['claude-powerline'])
     expect(page?.facts.rows[0]).toEqual({
