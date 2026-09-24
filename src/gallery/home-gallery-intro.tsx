@@ -1,6 +1,6 @@
 import { ConfigBadges } from '@/gallery/config-badges'
 import { Row, Stack } from '@/ui/layout'
-import { Heading, Text, TextLink } from '@/ui/text'
+import { Text } from '@/ui/text'
 
 export interface HomeFacetLink {
   slug: string
@@ -10,12 +10,11 @@ export interface HomeFacetLink {
 export function HomeGalleryIntro() {
   return (
     <Stack gap={3}>
+      <h1 className="font-medium text-foreground text-lg leading-snug">
+        A gallery of Claude Code status lines
+      </h1>
       <Text size="sm" measure>
-        A community gallery of reviewed Claude Code status lines. Every card is a real script,
-        sandbox-rendered against the same example sessions, so you can see it before you copy it.
-      </Text>
-      <Text size="sm" measure>
-        To wire one up yourself, read the <TextLink to="/guide">setup guide</TextLink>.
+        Community-submitted and reviewed by hand. Every card shows the real script's output.
       </Text>
     </Stack>
   )
@@ -25,7 +24,9 @@ export function HomeFeatureDirectory({ facets }: { facets: HomeFacetLink[] }) {
   if (facets.length === 0) return null
   return (
     <Row gap={3} align="center" wrap>
-      <Heading level={2}>Browse by feature:</Heading>
+      <Text muted size="sm" inline>
+        Browse by feature
+      </Text>
       <ConfigBadges tags={facets.map((facet) => facet.slug)} networkHosts={[]} />
     </Row>
   )
