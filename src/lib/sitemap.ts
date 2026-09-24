@@ -86,7 +86,6 @@ export function sitemapResponse(
   configs: SitemapConfig[],
   facets: SitemapFacet[],
   pageCount = 1,
-  /** Comparison pages the current gallery can support (see src/compare/pages.ts). */
   comparePaths: string[] = [],
 ): Response {
   return new Response(buildSitemapXml(base, configs, facets, pageCount, comparePaths), {

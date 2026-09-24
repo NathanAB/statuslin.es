@@ -12,7 +12,6 @@ export interface LlmsConfig {
   copyCount: number
 }
 
-/** Longest summary kept on a top-config line, so each entry stays one scannable line. */
 const MAX_SUMMARY_CHARS = 160
 
 export function buildLlmsTxt(

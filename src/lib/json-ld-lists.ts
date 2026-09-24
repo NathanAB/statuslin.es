@@ -1,9 +1,3 @@
-/**
- * JSON-LD for editorial pages built around a list of gallery configs (/status-lines/best and the
- * comparison pages). Kept beside json-ld.ts, which sits at the 250-line file limit.
- */
-
-/** A CollectionPage whose ItemList holds the configs in display order, plus a breadcrumb. */
 export function configListPageJsonLd(
   origin: string,
   page: { path: string; name: string },

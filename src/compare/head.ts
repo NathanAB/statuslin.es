@@ -6,7 +6,6 @@ import { NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
 
-/** head() for a comparison route: title, description, OG, canonical, and ItemList JSON-LD. */
 export function comparePageHead(page: ComparePage | undefined) {
   if (!page) return { meta: [{ title: NOT_FOUND_TITLE }] }
   return {

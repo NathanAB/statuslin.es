@@ -68,7 +68,6 @@ export function getFacetCards(db: Db, facet: Facet): Promise<GalleryCard[]> {
   return getCardsByCopies(db, { tag: facet.slug })
 }
 
-/** Published cards, most-copied first, newest as the tiebreak; optionally one tag and a cap. */
 export async function getCardsByCopies(
   db: Db,
   options: { tag?: string; limit?: number } = {},
@@ -103,8 +102,6 @@ export function isIndexableFacet(slug: string, stats: Map<string, FacetStats>): 
   return (stats.get(slug)?.count ?? 0) >= MIN_INDEXABLE_FACET_CONFIGS
 }
 
-/** The facet a config page breadcrumbs through: the first of its tags (stored in registry order,
- * so feature facets outrank the interpreter) that is an indexable facet page. */
 export function primaryFacet(
   tags: string[],
   stats: Map<string, FacetStats>,

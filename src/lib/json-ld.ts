@@ -21,7 +21,6 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
   }
 }
 
-/** The breadcrumb name of the home page, shared by the visible config breadcrumb. */
 export const HOME_CRUMB_NAME = 'Status lines'
 
 /** The site identity plus gallery CollectionPage and its visible configs. */
@@ -76,7 +75,6 @@ export function configJsonLd(
     keywords: string[]
     updatedAt: string | null
     generatedContent: GeneratedContent | null
-    /** The facet page the breadcrumb passes through, or null for Home › Config. */
     primaryFacet: { slug: string; heading: string } | null
   },
 ): object[] {

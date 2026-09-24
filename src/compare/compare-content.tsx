@@ -7,7 +7,6 @@ import { MetaList } from '@/ui/meta-list'
 import { SectionCard } from '@/ui/section-card'
 import { Heading, Text, TextLink } from '@/ui/text'
 
-/** The body of an alternatives or versus page: intro, tool facts, when to pick, real previews. */
 export function CompareContent({ page }: { page: ComparePage }) {
   return (
     <Stack gap={9}>

@@ -1,10 +1,3 @@
-/**
- * Third-party status line tools the comparison pages describe. Every fact is a paraphrase of the
- * tool's own README (or its GitHub release/repo metadata) as read on `verifiedAt`, and each tool
- * records the URLs it came from. A fact that can't be cited doesn't go in. `name` and `repoUrl`
- * match src/resources/data.ts, which a test enforces.
- */
-
 export type FactKey =
   | 'kind'
   | 'install'
@@ -15,7 +8,6 @@ export type FactKey =
   | 'usageLimits'
   | 'maintained'
 
-/** Display order and labels for a tool's fact list. */
 export const FACT_ROWS: Array<{ key: FactKey; label: string }> = [
   { key: 'kind', label: 'What it is' },
   { key: 'install', label: 'Install' },
@@ -32,14 +24,10 @@ export interface ThirdPartyTool {
   name: string
   repoUrl: string
   sources: string[]
-  /** ISO date the facts were last checked against `sources`. */
   verifiedAt: string
-  /** One clause completing "<name> is …". */
   summary: string
   facts: Record<FactKey, string>
-  /** Gallery feature facets for the jobs the tool does; picks the relevant gallery previews. */
   jobs: string[]
-  /** "Pick <name> if …" in the when-to-pick section. */
   pickIf: string
 }
 
@@ -106,7 +94,6 @@ export const TOOLS: ThirdPartyTool[] = [
 
 export const TOOL_BY_SLUG = new Map(TOOLS.map((t) => [t.slug, t]))
 
-/** A head-to-head page. `intro` is pair-specific copy, drawn from both tools' facts above. */
 export interface Comparison {
   tools: [string, string]
   intro: string[]

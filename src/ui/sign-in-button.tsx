@@ -27,7 +27,6 @@ export function SignInButton() {
       }}
     >
       <GitHubMark />
-      {/* Phones show "Sign in" so the header fits; the mark and aria-label keep "GitHub". */}
       <span>
         Sign in<span className="hidden sm:inline"> with GitHub</span>
       </span>

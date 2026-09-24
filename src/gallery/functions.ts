@@ -55,10 +55,8 @@ export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Resp
   return sitemapResponse(siteUrl(), configs, facets, pageCount, comparePaths)
 })
 
-/** How many configs /status-lines/best ranks. */
 const BEST_LIMIT = 10
 
-/** /status-lines/best: the most-copied published configs, each with its why line. */
 export const getBestPage = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(async () => ({
     items: (await getCardsByCopies(db, { limit: BEST_LIMIT })).map(rankedCard),

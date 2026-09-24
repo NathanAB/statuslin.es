@@ -52,7 +52,6 @@ export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
  * "examples" or "templates".
  */
 export const HOME_TITLE_BASE = 'Claude Code Status Lines'
-/** The home page's h1 — shared by the page and the deploy smoke check. */
 export const HOME_HEADING = 'A gallery of Claude Code status lines'
 export const HOME_DESCRIPTION_BASE =
   'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.'
@@ -82,8 +81,6 @@ export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-09-23' } a
 export const GUIDE_DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'
 
-/** The /resources title names the two lead status line tools from the resource data, so
- * renaming or reordering a tool there retitles the page. */
 export function resourcesTitle(sections: ResourceSection[]): string {
   const tools = sections.find((s) => s.key === 'tools')?.resources ?? []
   const lead = tools.slice(0, 2).map((t) => t.name)

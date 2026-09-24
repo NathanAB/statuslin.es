@@ -3,10 +3,8 @@ import { FACET_BY_SLUG } from '@/gallery/facets'
 import { type GalleryCard, MIN_INDEXABLE_FACET_CONFIGS } from '@/gallery/queries'
 import { listPhrase, type RankedCard, rankedCard } from '@/gallery/why-line'
 
-/** A gallery config counts as doing a tool's job when it shares at least this many of its jobs. */
 const MIN_SHARED_JOBS = 3
-/** Previews shown per page. */
-const CARD_LIMIT = 6
+const PREVIEWS_PER_PAGE = 6
 const BRAND = ' | statuslin.es'
 
 export type CompareLink =
@@ -69,7 +67,7 @@ const GALLERY_PICK = {
 function relevantCards(jobs: string[], cards: GalleryCard[]): RankedCard[] {
   return cards
     .filter((c) => jobs.filter((job) => c.tags.includes(job)).length >= MIN_SHARED_JOBS)
-    .slice(0, CARD_LIMIT)
+    .slice(0, PREVIEWS_PER_PAGE)
     .map(rankedCard)
 }
 
@@ -144,11 +142,6 @@ function sharedJobs(spec: Extract<PageSpec, { kind: 'versus' }>): string[] {
   return a.jobs.filter((job) => b.jobs.includes(job))
 }
 
-/**
- * The comparison page at `path`, built from the tool registry and the published gallery (already
- * ranked by copies). Null when the path is unknown or the gallery can't show enough real previews
- * of status lines doing the same job; the route then 404s and the sitemap leaves it out.
- */
 export function buildComparePage(path: string, gallery: GalleryCard[]): ComparePage | null {
   const spec = SPECS.find((s) => s.path === path)
   if (!spec) return null
@@ -158,7 +151,6 @@ export function buildComparePage(path: string, gallery: GalleryCard[]): CompareP
   return spec.kind === 'alternatives' ? alternativesPage(spec.tool, cards) : versusPage(spec, cards)
 }
 
-/** Paths of the comparison pages the current gallery can support. */
 export function liveComparePaths(gallery: GalleryCard[]): string[] {
   return COMPARE_PATHS.filter((path) => buildComparePage(path, gallery) !== null)
 }

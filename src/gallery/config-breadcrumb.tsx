@@ -10,7 +10,6 @@ function Separator() {
   )
 }
 
-/** The visible trail matching the config page's BreadcrumbList JSON-LD. */
 export function ConfigBreadcrumb({
   title,
   primaryFacet,

@@ -50,7 +50,6 @@ export interface RenderResult {
   trace: BehaviorTrace
 }
 
-/** A run of styled output text. An absent (or null/false) style field means the terminal default. */
 export interface AnsiSegment {
   text: string
   fg?: string | null

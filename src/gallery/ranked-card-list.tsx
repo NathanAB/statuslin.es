@@ -3,7 +3,6 @@ import type { RankedCard } from '@/gallery/why-line'
 import { Stack } from '@/ui/layout'
 import { Text } from '@/ui/text'
 
-/** Gallery cards in a fixed order, each followed by its one-line why. `ranked` numbers them. */
 export function RankedCardList({
   items,
   surface,

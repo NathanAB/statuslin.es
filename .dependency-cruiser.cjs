@@ -1,6 +1,14 @@
 module.exports = {
   forbidden: [
     {
+      name: 'compact-segments-stays-client-safe',
+      comment:
+        'compactSegments ships in the client bundle; importing the ANSI parser (Anser) from it would pull that library into every page.',
+      severity: 'error',
+      from: { path: '^src/render/compact-segments\\.ts$' },
+      to: { path: '(^src/render/ansi\\.ts$|node_modules/anser)' },
+    },
+    {
       name: 'routes-no-direct-db',
       comment: 'Routes must go through server functions, not import the DB directly.',
       severity: 'error',

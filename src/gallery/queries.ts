@@ -154,6 +154,9 @@ export async function selectCardPreviews(
   return bySha
 }
 
+/** The part of a rendered preview the browser needs. Raw stdout and the behavior trace stay on the server. */
+export type ClientSafePreview = Pick<RenderedPreview, 'scenarioKey' | 'segments'>
+
 export interface ConfigDetail {
   id: string
   slug: string
@@ -171,8 +174,7 @@ export interface ConfigDetail {
   readsClaudeToken: boolean
   /** Auto-generated page copy, or null when scripts/generate-content.ts hasn't run for this version. */
   generatedContent: GeneratedContent | null
-  /** Only what the page renders; rawStdout and the behavior trace stay server-side. */
-  previews: Pick<RenderedPreview, 'scenarioKey' | 'segments'>[]
+  previews: ClientSafePreview[]
   /** SPDX license of third-party (seeded) source, e.g. 'MIT'. Null = submitter's own work (CC0 per terms). */
   license: string | null
   /** Permanent link to the upstream source at the pinned revision (seeded configs only). */

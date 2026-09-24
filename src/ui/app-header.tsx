@@ -44,7 +44,6 @@ async function handleSignOut(posthog: PostHog) {
 export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
   return (
     <header className="py-4">
-      {/* Wraps instead of scrolling sideways on screens too narrow for one row (< ~380px). */}
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-2 px-6">
         <Link to="/" className="hover:opacity-80">
           <Wordmark />
