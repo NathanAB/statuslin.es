@@ -161,6 +161,38 @@ describe('selectCardPreviews', () => {
       fallback: selected.get(fallbackSha)?.[0]?.text,
     }).toEqual({ preferred: 'preferred', fallback: 'first fallback' })
   })
+
+  it('omits default style fields so each segment serializes compactly', async () => {
+    const sha = 'compact-preview'.padEnd(64, '0')
+    await db.insert(schema.previews).values({
+      scriptSha: sha,
+      scenarioKey: 'clean-main',
+      segments: [
+        {
+          text: 'main',
+          fg: 'rgb(0, 187, 0)',
+          bg: null,
+          bold: true,
+          italic: false,
+          underline: false,
+        },
+        { text: ' ', fg: null, bg: null, bold: false, italic: false, underline: false },
+        { text: 'x', fg: null, bg: 'rgb(1, 2, 3)', bold: false, italic: true, underline: true },
+      ],
+      rawStdout: 'main x',
+      exitCode: 0,
+      timedOut: 0,
+      trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+    })
+
+    const selected = await selectCardPreviews(db, [sha])
+
+    expect(selected.get(sha)).toEqual([
+      { text: 'main', fg: 'rgb(0, 187, 0)', bold: true },
+      { text: ' ' },
+      { text: 'x', bg: 'rgb(1, 2, 3)', italic: true, underline: true },
+    ])
+  })
 })
 
 describe('getPublishedConfigs sorting', () => {

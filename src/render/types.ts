@@ -50,13 +50,14 @@ export interface RenderResult {
   trace: BehaviorTrace
 }
 
+/** A run of styled output text. An absent (or null/false) style field means the terminal default. */
 export interface AnsiSegment {
   text: string
-  fg: string | null
-  bg: string | null
-  bold: boolean
-  italic: boolean
-  underline: boolean
+  fg?: string | null
+  bg?: string | null
+  bold?: boolean
+  italic?: boolean
+  underline?: boolean
 }
 
 export interface RenderedPreview {

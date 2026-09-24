@@ -3,6 +3,7 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import type { GeneratedContent } from '@/content/types'
 import { configs, configVersions, previews, user } from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
+import { compactSegments } from '@/render/ansi'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
 import { coerceInterpreter, galleryCardSelection, mapCardRows } from './card-rows'
@@ -148,7 +149,7 @@ export async function selectCardPreviews(
       previews.scenarioKey,
     )
   for (const row of rows) {
-    bySha.set(row.scriptSha, row.segments as AnsiSegment[])
+    bySha.set(row.scriptSha, compactSegments(row.segments as AnsiSegment[]))
   }
   return bySha
 }
@@ -170,7 +171,8 @@ export interface ConfigDetail {
   readsClaudeToken: boolean
   /** Auto-generated page copy, or null when scripts/generate-content.ts hasn't run for this version. */
   generatedContent: GeneratedContent | null
-  previews: RenderedPreview[]
+  /** Only what the page renders; rawStdout and the behavior trace stay server-side. */
+  previews: Pick<RenderedPreview, 'scenarioKey' | 'segments'>[]
   /** SPDX license of third-party (seeded) source, e.g. 'MIT'. Null = submitter's own work (CC0 per terms). */
   license: string | null
   /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
@@ -214,7 +216,10 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
     networkHosts: row.version.networkHosts ?? [],
     readsClaudeToken: row.version.readsClaudeToken ?? false,
     generatedContent: row.version.generatedContent ?? null,
-    previews,
+    previews: previews.map((p) => ({
+      scenarioKey: p.scenarioKey,
+      segments: compactSegments(p.segments),
+    })),
     license: row.version.license ?? null,
     sourceUrl: row.version.sourceUrl ?? null,
     updatedAt: (row.version.reviewedAt ?? row.config.createdAt).toISOString().slice(0, 10),
