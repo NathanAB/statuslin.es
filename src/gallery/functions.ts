@@ -83,7 +83,7 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Resp
   return llmsResponse(
     siteUrl(),
     facets,
-    top.map((config) => ({ slug: config.slug, title: config.title })),
+    top.map(({ slug, title, description, copyCount }) => ({ slug, title, description, copyCount })),
   )
 })
 

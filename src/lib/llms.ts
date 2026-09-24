@@ -5,10 +5,20 @@
  * citation audience do. `base` comes from the one origin source so every link is correct per
  * environment. Facets are the *live* ones only (never link a facet page that would 404).
  */
+export interface LlmsConfig {
+  slug: string
+  title: string
+  description: string
+  copyCount: number
+}
+
+/** Longest summary kept on a top-config line, so each entry stays one scannable line. */
+const MAX_SUMMARY_CHARS = 160
+
 export function buildLlmsTxt(
   base: string,
   facets: Array<{ slug: string; label: string }>,
-  configs: Array<{ slug: string; title: string }> = [],
+  configs: LlmsConfig[] = [],
 ): string {
   const blocks = [
     '# statuslin.es',
@@ -38,14 +48,24 @@ function facetLink(base: string, facet: { slug: string; label: string }): string
   return `- [${facet.label}](${base}/status-lines/${facet.slug})`
 }
 
-function configLink(base: string, config: { slug: string; title: string }): string {
-  return `- [${config.title}](${base}/c/${config.slug})`
+function configLink(base: string, config: LlmsConfig): string {
+  const summary = oneLine(config.description)
+  const copies = `Copied ${config.copyCount} ${config.copyCount === 1 ? 'time' : 'times'}.`
+  return `- [${config.title}](${base}/c/${config.slug}): ${summary ? `${summary} ` : ''}${copies}`
+}
+
+function oneLine(text: string): string {
+  const flat = text.replace(/\s+/g, ' ').trim()
+  if (flat.length <= MAX_SUMMARY_CHARS)
+    return flat === '' || /[.!?]$/.test(flat) ? flat : `${flat}.`
+  const cut = flat.slice(0, MAX_SUMMARY_CHARS - 1)
+  return `${cut.slice(0, cut.lastIndexOf(' '))}…`
 }
 
 export function llmsResponse(
   base: string,
   facets: Array<{ slug: string; label: string }>,
-  configs: Array<{ slug: string; title: string }> = [],
+  configs: LlmsConfig[] = [],
 ): Response {
   return new Response(buildLlmsTxt(base, facets, configs), {
     headers: {
