@@ -80,7 +80,7 @@ export function GuideContent({
             <CardContent>
               <Text muted size="sm">
                 Every config shows exactly what it renders before you install it.{' '}
-                <TextLink to="/">Browse the gallery</TextLink>.
+                <TextLink to="/">Browse Claude Code status lines</TextLink>.
               </Text>
             </CardContent>
           </Card>
