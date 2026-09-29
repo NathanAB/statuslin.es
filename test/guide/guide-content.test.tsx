@@ -119,7 +119,7 @@ describe('GuideContent', () => {
     render(<GuideContent highlights={highlights} />)
     const heading = screen.getByRole('heading', { name: /copy from the gallery/i })
     expect(heading.querySelector('a')).toBeNull()
-    expect(screen.getByRole('link', { name: /browse the gallery/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /browse claude code status lines/i })).toBeTruthy()
   })
 
   it('lists the stdin fields this site actually sends to scripts', () => {

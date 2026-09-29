@@ -22,8 +22,8 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
         <Text muted>
           A short, opinionated list of status line tools and reading we'd point a friend at. The
           descriptions are ours, not the projects' own marketing. Want a rendered status line you
-          can copy? <TextLink to="/">Browse the gallery</TextLink>. Wiring a script by hand? See the{' '}
-          <TextLink to="/guide">setup guide</TextLink>.
+          can copy? <TextLink to="/">Browse the Claude Code status line gallery</TextLink>. Wiring a
+          script by hand? See the <TextLink to="/guide">setup guide</TextLink>.
         </Text>
       </Stack>
 
