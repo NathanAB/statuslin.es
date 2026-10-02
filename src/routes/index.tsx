@@ -3,6 +3,7 @@ import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
+import { HomeDesktopNote } from '@/gallery/home-desktop-note'
 import { HomeFeatureDirectory, HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
@@ -103,6 +104,7 @@ function Home() {
             <HomeGalleryIntro page={page} />
           </HomeMasthead>
           <HomeFeatureDirectory facets={facets} />
+          <HomeDesktopNote />
         </Stack>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines</VisuallyHidden>

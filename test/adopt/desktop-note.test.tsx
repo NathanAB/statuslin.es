@@ -22,6 +22,12 @@ describe('DesktopNote', () => {
     )
   })
 
+  it('sits in a muted panel with a Desktop icon', () => {
+    const { container } = render(<DesktopNote />)
+    expect(container.firstElementChild?.className.split(' ')).toContain('bg-muted')
+    expect(container.querySelector('svg')).not.toBeNull()
+  })
+
   it('links the plugin repo in a new tab', () => {
     render(<DesktopNote />)
     const link = screen.getByRole('link', { name: 'statusline-anywhere' })
