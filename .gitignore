@@ -46,6 +46,9 @@ scripts/profiling/results/*
 # or a per-slice build log carrying the maintainer's name / local paths)
 docs/audits/
 docs/superpowers/
+# Research and strategy notes (competitor analysis, traffic numbers, plans)
+docs/research/
+.agents/
 
 # Misc / scratch docs — personal notes, playbooks, drafts that shouldn't ship
 docs/local/
