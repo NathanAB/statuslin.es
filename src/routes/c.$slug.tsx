@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
+import { DesktopNote } from '@/adopt/desktop-note'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { ConfigBreadcrumb } from '@/gallery/config-breadcrumb'
@@ -151,12 +152,15 @@ function ConfigDetail() {
           )}
         </Stack>
 
-        <AdoptPrompt
-          source={detail.source}
-          interpreter={detail.interpreter}
-          title={detail.title}
-          controller={copyController}
-        />
+        <Stack gap={2}>
+          <AdoptPrompt
+            source={detail.source}
+            interpreter={detail.interpreter}
+            title={detail.title}
+            controller={copyController}
+          />
+          <DesktopNote />
+        </Stack>
 
         {/* All scenarios, stacked */}
         <SectionCard title="Preview" headingLevel={2}>

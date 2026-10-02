@@ -22,6 +22,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
+import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
 import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
@@ -96,6 +97,11 @@ const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
   path: '/og/home.png',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
+  id: '/guide_/claude-desktop',
+  path: '/guide/claude-desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComparePairRoute = ComparePairRouteImport.update({
   id: '/compare/$pair',
   path: '/compare/$pair',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide/claude-desktop'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide/claude-desktop'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide_/claude-desktop'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
@@ -297,6 +309,7 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   CSlugRoute: typeof CSlugRoute
   ComparePairRoute: typeof ComparePairRoute
+  GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   StatusLinesBestRoute: typeof StatusLinesBestRoute
@@ -398,6 +411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgHomeDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide_/claude-desktop': {
+      id: '/guide_/claude-desktop'
+      path: '/guide/claude-desktop'
+      fullPath: '/guide/claude-desktop'
+      preLoaderRoute: typeof GuideClaudeDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compare/$pair': {
       id: '/compare/$pair'
       path: '/compare/$pair'
@@ -473,6 +493,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   CSlugRoute: CSlugRoute,
   ComparePairRoute: ComparePairRoute,
+  GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
   StatusLinesBestRoute: StatusLinesBestRoute,

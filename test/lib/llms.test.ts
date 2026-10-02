@@ -25,6 +25,13 @@ describe('buildLlmsTxt', () => {
     expect(txt).toContain('(https://statuslin.es/resources)')
   })
 
+  it('links the Claude Desktop guide', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    expect(txt).toMatch(
+      /\[[^\]]*Claude Desktop[^\]]*\]\(https:\/\/statuslin\.es\/guide\/claude-desktop\)/,
+    )
+  })
+
   it('lists each live facet as a markdown link under a Browse-by-feature section', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     expect(txt).toMatch(/^## .*feature/im)

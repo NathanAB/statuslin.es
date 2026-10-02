@@ -1,3 +1,5 @@
+import { DESKTOP_GUIDE_PATH } from '@/lib/page-title'
+
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
  * engines (ChatGPT, Claude, Perplexity) so they can understand and cite the gallery without
@@ -39,6 +41,7 @@ function corePageLinks(base: string): string[] {
     `- [Gallery](${base}/): every published status line, sorted by trending, newest, or most copied`,
     `- [Submit a status line](${base}/submit): add your own`,
     `- [Guide](${base}/guide): how to wire a Claude Code status line by hand, with a tested example`,
+    `- [Status line not showing in Claude Desktop](${base}${DESKTOP_GUIDE_PATH}): why the Desktop Code tab skips custom status lines, and the plugin that shows them`,
     `- [Resources](${base}/resources): related Claude Code status line tools`,
   ]
 }
