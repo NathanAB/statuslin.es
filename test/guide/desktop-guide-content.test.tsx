@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DESKTOP_GUIDE_DATES } from '@/lib/page-title'
 import {
-  DESKTOP_STATUS_LINE_ISSUE,
   STATUSLINE_ANYWHERE_INSTALL_COMMAND,
   STATUSLINE_ANYWHERE_URL,
 } from '@/lib/statusline-anywhere'
@@ -34,16 +32,24 @@ describe('DesktopGuideContent', () => {
         name: /claude code status line not showing in claude desktop/i,
       }),
     ).toBeTruthy()
-    for (const heading of [/^fix it$/i, /^limits$/i, /^why it happens$/i]) {
+    for (const heading of [
+      /^1\. paste this into a terminal$/i,
+      /^2\. open a new code session in claude desktop$/i,
+    ]) {
       expect(screen.getByRole('heading', { level: 2, name: heading })).toBeTruthy()
     }
-    expect(screen.getByText(`Updated ${DESKTOP_GUIDE_DATES.modified}`)).toBeTruthy()
+    expect(screen.queryByText(/updated/i)).toBeNull()
+    for (const removed of [/fix it/i, /limits/i, /why it happens/i]) {
+      expect(screen.queryByRole('heading', { name: removed })).toBeNull()
+    }
   })
 
-  it('explains the cause and links Anthropic issue #41456', () => {
+  it('explains the cause and the plugin in the intro', () => {
     const { container } = render(<DesktopGuideContent />)
     expect(container.textContent).toMatch(/doesn.t run the statusLine command/i)
-    expect(container.querySelector(`a[href="${DESKTOP_STATUS_LINE_ISSUE.url}"]`)).not.toBeNull()
+    expect(container.textContent).toContain(
+      'statusline-anywhere, a Claude Code plugin, adds it back.',
+    )
   })
 
   it('gives the one-paste install, the new-session step, and the version floor', async () => {
@@ -61,19 +67,6 @@ describe('DesktopGuideContent', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy install command' }))
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(STATUSLINE_ANYWHERE_INSTALL_COMMAND))
-  })
-
-  it('lists the limits, including Windows and the VS Code extension', () => {
-    const { container } = render(<DesktopGuideContent />)
-    const page = container.textContent ?? ''
-    for (const limit of [
-      /lines changed, PR, vim mode, prompt cache, effort and output style stay blank/i,
-      /windows/i,
-      /vs code extension/i,
-      /does nothing in a terminal/i,
-    ]) {
-      expect(page).toMatch(limit)
-    }
   })
 
   it('stays short: no paragraph over 30 words', () => {

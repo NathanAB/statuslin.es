@@ -91,7 +91,7 @@ export const DESKTOP_GUIDE_DATES = { published: '2026-10-02', modified: '2026-10
 
 /** /guide/claude-desktop meta description — shared by the description tag, OG, and JSON-LD. */
 export const DESKTOP_GUIDE_DESCRIPTION =
-  "Claude Desktop's Code tab doesn't run your statusLine command. Why, how to show your status line there with statusline-anywhere, and what it can't show."
+  "Claude Desktop's Code tab doesn't run your statusLine command. Add your status line back in two steps with statusline-anywhere."
 
 export function resourcesTitle(sections: ResourceSection[]): string {
   const tools = sections.find((s) => s.key === 'tools')?.resources ?? []

@@ -2,10 +2,10 @@ import { usePostHog } from '@posthog/react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
-import { DesktopNote } from '@/adopt/desktop-note'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { ConfigBreadcrumb } from '@/gallery/config-breadcrumb'
+import { DesktopNote } from '@/gallery/desktop-note'
 import { tagLabel } from '@/gallery/facets'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
@@ -159,7 +159,7 @@ function ConfigDetail() {
             title={detail.title}
             controller={copyController}
           />
-          <DesktopNote />
+          <DesktopNote surface="config_page" />
         </Stack>
 
         {/* All scenarios, stacked */}
