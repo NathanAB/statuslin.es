@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
 import { SignInButton } from '@/ui/sign-in-button'
+import { StarOnGitHubLink } from '@/ui/star-on-github-link'
 import { Wordmark } from '@/ui/wordmark'
 
 export interface AppHeaderUser {
@@ -37,7 +38,7 @@ async function handleSignOut(posthog: PostHog) {
 }
 
 /**
- * Shared top header: wordmark home-link + nav.
+ * Shared top header: wordmark home-link + nav (Guide, Resources, Star on GitHub).
  * Signed in: avatar + @username dropdown (Log out, plus Review for admins).
  * Signed out: GitHub sign-in. Submitting lives on the home page CTA, not here.
  */
@@ -55,6 +56,7 @@ export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
           <Button asChild variant="ghost" size="nav">
             <Link to="/resources">Resources</Link>
           </Button>
+          <StarOnGitHubLink />
           {user ? <UserMenu user={user} /> : <SignInButton />}
         </nav>
       </div>

@@ -74,6 +74,11 @@ describe('AppHeader', () => {
     expect(guide.textContent).toMatch(/guide/i)
   })
 
+  it('shows the Star on GitHub link', () => {
+    render(<AppHeader user={null} />)
+    expect(screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })).toBeTruthy()
+  })
+
   it('links to the resources page when signed in', () => {
     const { container } = render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,

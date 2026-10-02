@@ -8,7 +8,7 @@ import { requireEnv } from '@/lib/env'
 /** Contact + abuse-report address (live, forwarding-verified). Used by the site footer. */
 export const CONTACT_EMAIL = 'hello@statuslin.es'
 
-/** Public source repository. Linked from the site footer. */
+/** Public source repository. Linked from the site footer and the header's Star on GitHub link. */
 export const REPO_URL = 'https://github.com/NathanAB/statuslin.es'
 
 /**
