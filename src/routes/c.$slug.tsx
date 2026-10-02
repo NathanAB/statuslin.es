@@ -128,15 +128,14 @@ function ConfigDetail() {
           )}
         </Stack>
 
-        <Stack gap={3}>
-          <AdoptPrompt
-            source={detail.source}
-            interpreter={detail.interpreter}
-            title={detail.title}
-            controller={copyController}
-          />
-          <DesktopNote surface="config_page" />
-        </Stack>
+        <AdoptPrompt
+          source={detail.source}
+          interpreter={detail.interpreter}
+          title={detail.title}
+          controller={copyController}
+        />
+
+        <DesktopNote surface="config_page" />
 
         {/* All scenarios, stacked */}
         <SectionCard title="Preview" headingLevel={2}>
