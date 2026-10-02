@@ -1,17 +1,14 @@
+import { scriptExtension } from '@/render/script-extension'
 import type { Interpreter } from '@/render/types'
 
-const FILES: Record<Interpreter, string> = {
-  bash: 'statusline.sh',
-  node: 'statusline.mjs',
-  python: 'statusline.py',
+/** Same extension the sandbox renders with, so node parses the installed file (CommonJS vs ESM)
+ *  exactly as it did for the preview. */
+export function installFilename(interpreter: Interpreter, source: string): string {
+  return `statusline.${scriptExtension(interpreter, source)}`
 }
 
-export function installFilename(interpreter: Interpreter): string {
-  return FILES[interpreter]
-}
-
-export function runCommand(interpreter: Interpreter): string {
-  const path = `~/.claude/${FILES[interpreter]}`
+export function runCommand(interpreter: Interpreter, source: string): string {
+  const path = `~/.claude/${installFilename(interpreter, source)}`
   return interpreter === 'bash' ? path : `${interpreter === 'node' ? 'node' : 'python3'} ${path}`
 }
 
@@ -30,7 +27,7 @@ function fenceFor(text: string): string {
 
 /** A prompt the user pastes into Claude Code — it does the file write + settings.json merge. */
 export function buildClaudePrompt({ source, interpreter, title }: AdoptConfig): string {
-  const file = `~/.claude/${installFilename(interpreter)}`
+  const file = `~/.claude/${installFilename(interpreter, source)}`
   const chmod = interpreter === 'bash' ? `, then run \`chmod +x ${file}\`` : ''
   const fence = fenceFor(source)
   return [
@@ -42,13 +39,13 @@ export function buildClaudePrompt({ source, interpreter, title }: AdoptConfig): 
     source,
     fence,
     ``,
-    `2. In ~/.claude/settings.json, set "statusLine" to { "type": "command", "command": ${JSON.stringify(runCommand(interpreter))} }. Merge it into my existing settings — do NOT overwrite my other keys.`,
+    `2. In ~/.claude/settings.json, set "statusLine" to { "type": "command", "command": ${JSON.stringify(runCommand(interpreter, source))} }. Merge it into my existing settings — do NOT overwrite my other keys.`,
   ].join('\n')
 }
 
 /** Deterministic shell fallback (bash). Quoted heredoc so the script isn't expanded. */
 export function buildShellInstall({ source, interpreter }: AdoptConfig): string {
-  const file = `~/.claude/${installFilename(interpreter)}`
+  const file = `~/.claude/${installFilename(interpreter, source)}`
   const chmod = interpreter === 'bash' ? `\nchmod +x ${file}` : ''
   return `mkdir -p ~/.claude\ncat > ${file} <<'STATUSLINE_EOF'\n${source}\nSTATUSLINE_EOF${chmod}`
 }

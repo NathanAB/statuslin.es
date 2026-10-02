@@ -2,32 +2,41 @@ import { describe, expect, it } from 'vitest'
 import { buildClaudePrompt, buildShellInstall, installFilename, runCommand } from '@/adopt/install'
 import { INTERPRETERS } from '@/render/types'
 
+const CJS_NODE = "const fs = require('node:fs')\nprocess.stdout.write('hi')"
+const ESM_NODE = "import fs from 'node:fs'\nprocess.stdout.write('hi')"
+
 describe('installFilename', () => {
   it('returns statusline.sh for bash', () => {
-    expect(installFilename('bash')).toBe('statusline.sh')
+    expect(installFilename('bash', 'echo hi')).toBe('statusline.sh')
   })
-  it('returns statusline.mjs for node', () => {
-    expect(installFilename('node')).toBe('statusline.mjs')
+  it('returns statusline.cjs for a CommonJS node source', () => {
+    expect(installFilename('node', CJS_NODE)).toBe('statusline.cjs')
+  })
+  it('returns statusline.mjs for an ESM node source', () => {
+    expect(installFilename('node', ESM_NODE)).toBe('statusline.mjs')
   })
   it('returns statusline.py for python', () => {
-    expect(installFilename('python')).toBe('statusline.py')
+    expect(installFilename('python', 'print(1)')).toBe('statusline.py')
   })
   it('covers all INTERPRETERS', () => {
     for (const interp of INTERPRETERS) {
-      expect(installFilename(interp)).toBeTruthy()
+      expect(installFilename(interp, '')).toBeTruthy()
     }
   })
 })
 
 describe('runCommand', () => {
   it('returns bare path for bash', () => {
-    expect(runCommand('bash')).toBe('~/.claude/statusline.sh')
+    expect(runCommand('bash', 'echo hi')).toBe('~/.claude/statusline.sh')
   })
-  it('returns node invocation for node', () => {
-    expect(runCommand('node')).toBe('node ~/.claude/statusline.mjs')
+  it('runs the .cjs file for a CommonJS node source', () => {
+    expect(runCommand('node', CJS_NODE)).toBe('node ~/.claude/statusline.cjs')
+  })
+  it('runs the .mjs file for an ESM node source', () => {
+    expect(runCommand('node', ESM_NODE)).toBe('node ~/.claude/statusline.mjs')
   })
   it('returns python3 invocation for python', () => {
-    expect(runCommand('python')).toBe('python3 ~/.claude/statusline.py')
+    expect(runCommand('python', 'print(1)')).toBe('python3 ~/.claude/statusline.py')
   })
 })
 
@@ -45,9 +54,17 @@ describe('buildClaudePrompt', () => {
     expect(result).toContain('~/.claude/statusline.sh')
   })
 
-  it('names the correct file for node', () => {
-    const result = buildClaudePrompt({ source, interpreter: 'node', title })
-    expect(result).toContain('~/.claude/statusline.mjs')
+  it('saves and runs a CommonJS node source as .cjs', () => {
+    const result = buildClaudePrompt({ source: CJS_NODE, interpreter: 'node', title })
+    expect(result).toContain('Save this script to ~/.claude/statusline.cjs')
+    expect(result).toContain('"node ~/.claude/statusline.cjs"')
+    expect(result).not.toContain('statusline.mjs')
+  })
+
+  it('saves and runs an ESM node source as .mjs', () => {
+    const result = buildClaudePrompt({ source: ESM_NODE, interpreter: 'node', title })
+    expect(result).toContain('Save this script to ~/.claude/statusline.mjs')
+    expect(result).toContain('"node ~/.claude/statusline.mjs"')
   })
 
   it('names the correct file for python', () => {
@@ -75,7 +92,7 @@ describe('buildClaudePrompt', () => {
 
   it('includes the run command in the settings instruction', () => {
     const result = buildClaudePrompt({ source, interpreter: 'bash', title })
-    expect(result).toContain(runCommand('bash'))
+    expect(result).toContain(runCommand('bash', source))
   })
 
   it('includes the title', () => {
@@ -125,9 +142,14 @@ describe('buildShellInstall', () => {
     expect(result).toContain('~/.claude/statusline.sh')
   })
 
-  it('writes to the correct file for node', () => {
-    const result = buildShellInstall({ source, interpreter: 'node', title })
-    expect(result).toContain('~/.claude/statusline.mjs')
+  it('writes a CommonJS node source to .cjs', () => {
+    const result = buildShellInstall({ source: CJS_NODE, interpreter: 'node', title })
+    expect(result).toContain('cat > ~/.claude/statusline.cjs')
+  })
+
+  it('writes an ESM node source to .mjs', () => {
+    const result = buildShellInstall({ source: ESM_NODE, interpreter: 'node', title })
+    expect(result).toContain('cat > ~/.claude/statusline.mjs')
   })
 
   it('writes to the correct file for python', () => {
