@@ -5,7 +5,7 @@ import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { ConfigBreadcrumb } from '@/gallery/config-breadcrumb'
-import { tagLabel } from '@/gallery/facets'
+import { DesktopNote } from '@/gallery/desktop-note'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
 import { LicenseLine } from '@/gallery/license-line'
@@ -65,7 +65,7 @@ export const Route = createFileRoute('/c/$slug')({
             interpreter: detail.interpreter,
             authorName: detail.author?.name ?? null,
             license: detail.license,
-            keywords: detail.facetLinks.map((f) => f.chipLabel),
+            keywords: detail.facetLabels,
             updatedAt: detail.updatedAt,
             generatedContent: detail.generatedContent,
             primaryFacet: detail.primaryFacet,
@@ -126,29 +126,6 @@ function ConfigDetail() {
               <LicenseLine license={detail.license} sourceUrl={detail.sourceUrl} />
             </Stack>
           )}
-
-          <Text muted size="sm">
-            Updated {detail.updatedAt}
-          </Text>
-
-          {detail.facetLinks.length > 0 && (
-            <Row gap={2} wrap>
-              <Text muted size="sm" inline>
-                Shows:
-              </Text>
-              {detail.facetLinks.map((f) =>
-                f.page ? (
-                  <TextLink key={f.slug} {...f.href} size="sm">
-                    {tagLabel(f.chipLabel)}
-                  </TextLink>
-                ) : (
-                  <Text key={f.slug} muted size="sm" inline>
-                    {tagLabel(f.chipLabel)}
-                  </Text>
-                ),
-              )}
-            </Row>
-          )}
         </Stack>
 
         <AdoptPrompt
@@ -157,6 +134,8 @@ function ConfigDetail() {
           title={detail.title}
           controller={copyController}
         />
+
+        <DesktopNote surface="config_page" />
 
         {/* All scenarios, stacked */}
         <SectionCard title="Preview" headingLevel={2}>

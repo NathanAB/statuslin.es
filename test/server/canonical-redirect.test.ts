@@ -18,6 +18,14 @@ describe('canonicalRedirect', () => {
     expect(canonicalRedirect('https://statuslin.es/guidebook')).toBe(null)
   })
 
+  it('serves the live Claude Desktop guide instead of redirecting it', () => {
+    expect(canonicalRedirect('https://statuslin.es/guide/claude-desktop')).toBe(null)
+    expect(canonicalRedirect('https://statuslin.es/guide/claude-desktop/')).toBe(
+      '/guide/claude-desktop',
+    )
+    expect(canonicalRedirect('https://statuslin.es/guide/claude-desktop/x')).toBe('/guide')
+  })
+
   it('leaves the root and canonical paths alone', () => {
     expect(canonicalRedirect('https://statuslin.es/')).toBe(null)
     expect(canonicalRedirect('https://statuslin.es/status-lines/git?x=1')).toBe(null)

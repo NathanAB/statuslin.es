@@ -1,12 +1,6 @@
-import { ConfigBadges } from '@/gallery/config-badges'
 import { HOME_HEADING } from '@/lib/page-title'
-import { Row, Stack } from '@/ui/layout'
+import { Stack } from '@/ui/layout'
 import { Heading, Text } from '@/ui/text'
-
-export interface HomeFacetLink {
-  slug: string
-  chipLabel: string
-}
 
 export function HomeGalleryIntro({ page }: { page: number }) {
   return (
@@ -18,18 +12,6 @@ export function HomeGalleryIntro({ page }: { page: number }) {
         Community-submitted and reviewed by hand. Every card shows the real script's output.
       </Text>
     </Stack>
-  )
-}
-
-export function HomeFeatureDirectory({ facets }: { facets: HomeFacetLink[] }) {
-  if (facets.length === 0) return null
-  return (
-    <Row gap={3} align="center" wrap>
-      <Text muted size="sm" inline>
-        Browse by feature
-      </Text>
-      <ConfigBadges tags={facets.map((facet) => facet.slug)} networkHosts={[]} />
-    </Row>
   )
 }
 

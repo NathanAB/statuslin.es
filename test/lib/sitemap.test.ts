@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DESKTOP_GUIDE_DATES } from '@/lib/page-title'
 import { sitemapResponse } from '@/lib/sitemap'
 
 const BASE = 'https://statuslin.es'
@@ -34,6 +35,13 @@ describe('sitemapResponse', () => {
     expect(xml).toContain(`<loc>${BASE}/resources</loc>`)
     expect(xml).toContain(`<loc>${BASE}/terms</loc>`)
     expect(xml).not.toContain(`<loc>${BASE}/submit</loc>`)
+  })
+
+  it('lists the Claude Desktop guide with its modified date', async () => {
+    const xml = await sitemapResponse(BASE, [], []).text()
+    expect(entryFor(xml, `${BASE}/guide/claude-desktop`)).toContain(
+      `<lastmod>${DESKTOP_GUIDE_DATES.modified}</lastmod>`,
+    )
   })
 
   it('lists unfiltered gallery pages after page 1', async () => {

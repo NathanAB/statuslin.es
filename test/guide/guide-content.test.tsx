@@ -142,6 +142,11 @@ describe('GuideContent', () => {
     ).not.toBeNull()
   })
 
+  it('links to the Claude Desktop guide', () => {
+    const { container } = render(<GuideContent highlights={highlights} />)
+    expect(container.querySelector('a[href="/guide/claude-desktop"]')).not.toBeNull()
+  })
+
   it('links the payload fields to the facet pages that show them', () => {
     render(<GuideContent highlights={highlights} />)
     const hrefOf = (name: string) => screen.getByRole('link', { name }).getAttribute('href')

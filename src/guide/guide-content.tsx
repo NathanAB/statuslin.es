@@ -221,6 +221,10 @@ export function GuideContent({
           trackers. Or <TextLink to="/">copy a status line from the gallery</TextLink> and tweak it.
           If you build one you like, <TextLink to="/submit">submit it to the gallery</TextLink>.
         </Text>
+        <Text muted>
+          Using Claude Desktop? Its Code tab doesn't show custom status lines.{' '}
+          <TextLink to="/guide/claude-desktop">Here's how to show yours there</TextLink>.
+        </Text>
       </Stack>
     </Stack>
   )

@@ -120,6 +120,7 @@ type TextLinkProps =
       target?: string
       rel?: string
       size?: 'inherit' | 'sm'
+      onClick?: () => void
     }
 
 export function TextLink(props: TextLinkProps) {
@@ -137,6 +138,7 @@ export function TextLink(props: TextLinkProps) {
         target={props.target}
         rel={props.rel}
         {...(opensInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        onClick={props.onClick}
         className={className}
       >
         {props.children}

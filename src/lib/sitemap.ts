@@ -1,4 +1,4 @@
-import { GUIDE_DATES } from '@/lib/page-title'
+import { DESKTOP_GUIDE_DATES, DESKTOP_GUIDE_PATH, GUIDE_DATES } from '@/lib/page-title'
 
 /**
  * The `/sitemap.xml` builder. Lists the static public pages plus one `<url>` per published config
@@ -24,6 +24,7 @@ export interface SitemapFacet {
 const STATIC_PAGES: Array<{ path: string; lastmod?: string }> = [
   { path: '/status-lines/best' },
   { path: '/guide', lastmod: GUIDE_DATES.modified },
+  { path: DESKTOP_GUIDE_PATH, lastmod: DESKTOP_GUIDE_DATES.modified },
   { path: '/resources' },
   { path: '/terms' },
 ]

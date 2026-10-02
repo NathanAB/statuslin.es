@@ -81,6 +81,18 @@ export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-09-23' } a
 export const GUIDE_DESCRIPTION =
   'How to set up a Claude Code status line: the statusLine setting, the JSON your script gets, and a tested example you can copy.'
 
+/** The one live /guide subpage; every other /guide/* path redirects to /guide. */
+export const DESKTOP_GUIDE_PATH = '/guide/claude-desktop'
+
+/** /guide/claude-desktop title base — shared by the <title> tag and its JSON-LD headline. */
+export const DESKTOP_GUIDE_TITLE_BASE = 'Claude Code Status Line Not Showing in Claude Desktop'
+
+export const DESKTOP_GUIDE_DATES = { published: '2026-10-02', modified: '2026-10-02' } as const
+
+/** /guide/claude-desktop meta description — shared by the description tag, OG, and JSON-LD. */
+export const DESKTOP_GUIDE_DESCRIPTION =
+  "Claude Desktop's Code tab doesn't run your statusLine command. Add your status line back in two steps with statusline-anywhere."
+
 export function resourcesTitle(sections: ResourceSection[]): string {
   const tools = sections.find((s) => s.key === 'tools')?.resources ?? []
   const lead = tools.slice(0, 2).map((t) => t.name)
