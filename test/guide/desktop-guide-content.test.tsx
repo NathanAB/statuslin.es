@@ -34,7 +34,7 @@ describe('DesktopGuideContent', () => {
         name: /claude code status line not showing in claude desktop/i,
       }),
     ).toBeTruthy()
-    for (const heading of [/why it happens/i, /the fix/i, /what works and what doesn.t/i]) {
+    for (const heading of [/^fix it$/i, /^limits$/i, /^why it happens$/i]) {
       expect(screen.getByRole('heading', { level: 2, name: heading })).toBeTruthy()
     }
     expect(screen.getByText(`Updated ${DESKTOP_GUIDE_DATES.modified}`)).toBeTruthy()
@@ -67,12 +67,19 @@ describe('DesktopGuideContent', () => {
     const { container } = render(<DesktopGuideContent />)
     const page = container.textContent ?? ''
     for (const limit of [
-      /lines changed, PR, vim mode, prompt cache, effort or output style/,
+      /lines changed, PR, vim mode, prompt cache, effort and output style stay blank/i,
       /windows/i,
       /vs code extension/i,
       /does nothing in a terminal/i,
     ]) {
       expect(page).toMatch(limit)
+    }
+  })
+
+  it('stays short: no paragraph over 30 words', () => {
+    const { container } = render(<DesktopGuideContent />)
+    for (const p of container.querySelectorAll('p, li')) {
+      expect((p.textContent ?? '').split(/\s+/).length).toBeLessThanOrEqual(30)
     }
   })
 

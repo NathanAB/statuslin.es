@@ -152,7 +152,7 @@ function ConfigDetail() {
           )}
         </Stack>
 
-        <Stack gap={2}>
+        <Stack gap={3}>
           <AdoptPrompt
             source={detail.source}
             interpreter={detail.interpreter}
