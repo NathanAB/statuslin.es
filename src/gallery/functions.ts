@@ -92,10 +92,9 @@ export const getGallery = createServerFn({ method: 'GET' })
     withHttpStatus(async () => {
       const sort = coerceSort(data.sort)
       const tags = coerceTags(data.tags)
-      const [total, inventory, stats] = await Promise.all([
+      const [total, inventory] = await Promise.all([
         getPublishedCount(db, tags),
         getPublishedInventory(db),
-        getFacetStats(db),
       ])
       const window = galleryPageWindow(coercePage(data.page), total)
       if (!window) return null
@@ -109,7 +108,6 @@ export const getGallery = createServerFn({ method: 'GET' })
         publishedCount: inventory.count,
         copyCount: inventory.copyCount,
         asOf: new Date().toISOString().slice(0, 10),
-        facets: liveFacetLinks(stats),
       }
     }),
   )

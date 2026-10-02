@@ -48,10 +48,6 @@ const gallery = {
   publishedCount: 32,
   copyCount: 148,
   asOf: '2026-09-08',
-  facets: [
-    { slug: 'git', chipLabel: 'git' },
-    { slug: 'quota', chipLabel: 'limits' },
-  ],
 }
 
 function renderHome(overrides: Partial<typeof gallery> = {}) {
@@ -78,10 +74,6 @@ describe('home content', () => {
     expect(page).toMatch(/32 published/)
     expect(page).toMatch(/148/)
     expect(page).toMatch(/Sep 8, 2026/)
-    expect(screen.getByRole('link', { name: 'Git' }).getAttribute('href')).toBe('/status-lines/git')
-    expect(screen.getByRole('link', { name: 'Limits' }).getAttribute('href')).toBe(
-      '/status-lines/quota',
-    )
   })
 
   it('makes the gallery heading the only h1 on the page', () => {
@@ -101,7 +93,7 @@ describe('home content', () => {
     expect(h1s[0]?.textContent).toBe('A gallery of Claude Code status lines, page 2')
   })
 
-  it('sits the heading beside the wordmark, with browse-by-feature in a full-width row below', () => {
+  it('sits the heading beside the wordmark, with no browse-by-feature row', () => {
     const { container } = renderHome()
 
     const masthead = container.querySelector('h1')?.parentElement?.parentElement
@@ -109,11 +101,7 @@ describe('home content', () => {
     expect(masthead?.textContent).toMatch(/statuslin\.es/)
     expect(masthead?.textContent).not.toMatch(/TUI installer/)
     expect(masthead?.textContent).not.toMatch(/32 published/)
-    const browse = screen.getByText('Browse by feature')
-    expect(browse.tagName).toBe('SPAN')
-    expect(masthead?.contains(browse)).toBe(false)
-    expect(masthead?.nextElementSibling?.contains(browse)).toBe(true)
-    expect(browse.parentElement?.contains(screen.getByRole('link', { name: 'Git' }))).toBe(true)
+    expect(screen.queryByText('Browse by feature')).toBeNull()
   })
 
   it('centers the dated inventory note on two lines under the gallery', () => {

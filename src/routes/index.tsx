@@ -4,7 +4,7 @@ import { GalleryConfigCard } from '@/gallery/config-card'
 import { DesktopNote } from '@/gallery/desktop-note'
 import { getGallery } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
-import { HomeFeatureDirectory, HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
+import { HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import {
@@ -81,7 +81,7 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   const { user, gallery } = Route.useLoaderData()
-  const { cards, page, pageCount, publishedCount, copyCount, asOf, facets } = gallery
+  const { cards, page, pageCount, publishedCount, copyCount, asOf } = gallery
   const { sort: rawSort, tags } = Route.useSearch()
   const sort = rawSort ?? 'trending'
   const selectedTags = tags ? tags.split(',') : []
@@ -103,7 +103,6 @@ function Home() {
             <HomeHero />
             <HomeGalleryIntro page={page} />
           </HomeMasthead>
-          <HomeFeatureDirectory facets={facets} />
           <DesktopNote surface="home" />
         </Stack>
         <Stack gap={4}>
