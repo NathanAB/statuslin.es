@@ -2,7 +2,7 @@ import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { liveComparePaths } from '@/compare/pages'
 import { db } from '@/db'
 import { getAvailableTags } from '@/gallery/facet-queries'
-import { FACET_BY_SLUG, tagHref } from '@/gallery/facets'
+import { FACET_BY_SLUG } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
@@ -128,19 +128,13 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
         getRelatedConfigs(db, data.slug),
         getFacetStats(db),
       ])
-      // Only tags with a facet page are linkable; capability tags (reads-token, network-access)
-      // are plain info signals — a `?tags=` link for them just re-shows the whole gallery.
-      const facetLinks = detail.tags.map((slug) => ({
-        slug,
-        chipLabel: FACET_BY_SLUG.get(slug)?.chipLabel ?? slug,
-        page: FACET_BY_SLUG.get(slug)?.page ?? false,
-        href: tagHref(slug),
-      }))
+      // Human-readable tag names for the page's JSON-LD keywords.
+      const facetLabels = detail.tags.map((slug) => FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)
       return {
         ...detail,
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),
         related,
-        facetLinks,
+        facetLabels,
         primaryFacet: primaryFacet(detail.tags, stats),
       }
     }),
