@@ -32,10 +32,7 @@ describe('delete-user cascade across configs → versions → render jobs', () =
       .insert(schema.configs)
       .values({
         slug: 'cascade-config',
-        title: 'Cascade Config',
-        description: '',
         authorId: 'cascade-author',
-        interpreter: 'bash',
         status: 'published',
       })
       .returning()
@@ -46,6 +43,8 @@ describe('delete-user cascade across configs → versions → render jobs', () =
       .values({
         configId,
         versionNumber: 1,
+        title: 'Cascade Config',
+        description: '',
         source: '#!/bin/bash\necho hi',
         interpreter: 'bash',
         contentSha256: 'sha-cascade',

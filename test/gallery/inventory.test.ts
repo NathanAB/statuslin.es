@@ -24,28 +24,19 @@ beforeAll(async () => {
   await db.insert(schema.configs).values([
     {
       slug: 'copied-a',
-      title: 'A',
-      description: 'desc',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
       copyCount: 3,
     },
     {
       slug: 'copied-b',
-      title: 'B',
-      description: 'desc',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
       copyCount: 5,
     },
     {
       slug: 'draft-copy',
-      title: 'Draft',
-      description: '',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'draft',
       copyCount: 99,
     },

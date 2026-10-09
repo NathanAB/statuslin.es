@@ -33,10 +33,7 @@ async function seedConfig(slug: string, status: string): Promise<string> {
     .insert(schema.configs)
     .values({
       slug,
-      title: `Config ${slug}`,
-      description: '',
       authorId: 'takedown-author',
-      interpreter: 'bash',
       status,
     })
     .returning()
@@ -51,6 +48,8 @@ async function seedPublishedWithVersion(slug: string): Promise<void> {
     .values({
       configId,
       versionNumber: 1,
+      title: `Config ${slug}`,
+      description: '',
       source: '#!/bin/bash\necho hi',
       interpreter: 'bash',
       contentSha256: `sha-${slug}`,

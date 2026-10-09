@@ -51,8 +51,8 @@ export async function suggestTags(db: Db, slug: string, runPrompt: RunPrompt): P
   if (!row) throw new Error(`no config found with slug "${slug}"`)
   const previews = await getPreviews(db, row.version.contentSha256)
   const prompt = buildTagsPrompt({
-    title: row.config.title,
-    description: row.config.description,
+    title: row.version.title,
+    description: row.version.description,
     source: row.version.source,
     previewLines: previews.map((p) => p.segments.map((s) => s.text).join('')),
   })

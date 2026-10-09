@@ -50,11 +50,11 @@ export function StatusSummary({ rows }: { rows: DashboardRow[] }) {
 }
 
 /** A published card's title is a stretched link (whole card → detail page); otherwise plain text. */
-export function titleFor(config: DashboardRow['config'], detailSlug: string | undefined) {
-  if (detailSlug === undefined) return config.title
+export function titleFor(version: DashboardRow['version'], detailSlug: string | undefined) {
+  if (detailSlug === undefined) return version.title
   return (
     <StretchedLink to="/c/$slug" params={{ slug: detailSlug }}>
-      {config.title}
+      {version.title}
     </StretchedLink>
   )
 }
@@ -71,7 +71,7 @@ export function metaItems(
   }
   return [
     ...(statusMode === 'review' ? [] : [author]),
-    { label: 'Interpreter', value: config.interpreter },
+    { label: 'Interpreter', value: version.interpreter },
     { label: 'Version', value: `v${version.versionNumber}` },
     { label: 'Submitted', value: <LocalTime value={version.createdAt} /> },
     { label: 'Slug', value: config.slug, mono: true },

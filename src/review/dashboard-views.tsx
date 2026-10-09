@@ -1,4 +1,5 @@
 import { StatusSummary, SubmissionCard } from '@/review/dashboard-card'
+import type { MySubmissionRow } from '@/review/my-submissions'
 import type { DashboardRow, DashboardUser } from '@/review/queue'
 import { Stack } from '@/ui/layout'
 import { CenteredShell, PageShell } from '@/ui/shell'
@@ -69,7 +70,13 @@ export function DashboardView({ data }: { data: DashboardData }) {
 }
 
 /** The signed-in author's own submissions — same cards as the admin view, read-only (no actions). */
-export function MySubmissionsView({ rows, user }: { rows: DashboardRow[]; user: DashboardUser }) {
+export function MySubmissionsView({
+  rows,
+  user,
+}: {
+  rows: MySubmissionRow[]
+  user: DashboardUser
+}) {
   return (
     <PageShell user={user}>
       <Stack gap={6}>
@@ -80,15 +87,21 @@ export function MySubmissionsView({ rows, user }: { rows: DashboardRow[]; user: 
           </Text>
         ) : (
           <Stack gap={4}>
-            {rows.map((row) => (
-              <SubmissionCard
-                key={row.version.id}
-                row={row}
-                showActions={false}
-                statusMode="review"
-                detailSlug={row.config.status === 'published' ? row.config.slug : undefined}
-              />
-            ))}
+            {rows.map((row) => {
+              const published = row.config.status === 'published'
+              return (
+                <SubmissionCard
+                  key={row.version.id}
+                  row={row}
+                  showActions={false}
+                  statusMode="review"
+                  detailSlug={published ? row.config.slug : undefined}
+                  updateDetails={
+                    published ? { slug: row.config.slug, update: row.update } : undefined
+                  }
+                />
+              )
+            })}
           </Stack>
         )}
       </Stack>

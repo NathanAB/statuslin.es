@@ -8,6 +8,9 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 /** When the current version went live, falling back to first submit if `reviewedAt` is missing. */
 export const publishedAt = sql`coalesce(${configVersions.reviewedAt}, ${configs.createdAt})`
 
+/** The gallery's `new` sort: newest first publish first, so an approved update keeps its place. */
+export const newestFirstPublished = sql`${configs.firstPublishedAt} desc nulls last`
+
 /** Published sitemap rows joined to their current version, newest published date first. */
 export async function getPublishedSlugsForSitemap(
   db: Db,

@@ -8,6 +8,10 @@ import { requireEnv } from '@/lib/env'
 
 export const REVIEW_EMAIL_FROM = 'statuslin.es reviews <reviews@statuslin.es>'
 
+/** What a review decision was about: a config's first submission, or an update to a config that
+ * already has a live version. The two get different email wording. */
+export type ReviewedChange = 'submission' | 'update'
+
 export type ReviewEmailSend = (
   payload: CreateEmailOptions,
   options?: CreateEmailRequestOptions,

@@ -5,7 +5,8 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
-import { getDashboardRows, getMySubmissionRows } from '@/review/queue'
+import { getMySubmissionRows } from '@/review/my-submissions'
+import { getDashboardRows } from '@/review/queue'
 import { submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
 
@@ -137,10 +138,7 @@ describe('getDashboardRows', () => {
       .values(
         Array.from({ length: 51 }, (_, index) => ({
           slug: `backlog-${versionId}-${index}`,
-          title: `Backlog ${index}`,
-          description: '',
           authorId: 'u1',
-          interpreter: 'bash',
           status: 'draft',
         })),
       )
@@ -151,6 +149,8 @@ describe('getDashboardRows', () => {
         .values({
           configId: config.id,
           versionNumber: 1,
+          title: `Backlog ${index}`,
+          description: '',
           source: 'echo pending',
           interpreter: 'bash',
           contentSha256: `backlog-${versionId}-${index}`,
@@ -292,7 +292,7 @@ describe('getMySubmissionRows', () => {
     const rows = await getMySubmissionRows(db, 'me1')
     expect(rows.every((r) => r.config.authorId === 'me1')).toBe(true)
     expect(rows.some((r) => r.config.id === mine.configId)).toBe(true)
-    expect(rows.some((r) => r.config.title === 'Theirs')).toBe(false)
+    expect(rows.some((r) => r.version.title === 'Theirs')).toBe(false)
     // render state is attached
     expect(rows.find((r) => r.config.id === mine.configId)?.renderJob.status).toBe('queued')
   })
@@ -310,6 +310,7 @@ describe('getMySubmissionRows', () => {
       .values({
         configId,
         versionNumber: 2,
+        title: 'Versioned',
         source: 'v2',
         interpreter: 'bash',
         contentSha256: 'sha-v2-aaaaaaaa',

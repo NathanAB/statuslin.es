@@ -45,10 +45,7 @@ async function seed(
     .insert(schema.configs)
     .values({
       slug,
-      title: slug,
-      description: 'desc',
       authorId: 'u1',
-      interpreter,
       status: opts.status ?? 'published',
       tags: opts.tags ?? [],
       allTags: computeAllTags({
@@ -67,6 +64,8 @@ async function seed(
     .values({
       configId: cfg!.id,
       versionNumber: 1,
+      title: slug,
+      description: 'desc',
       source: 'echo hi',
       interpreter,
       contentSha256: slug.padEnd(64, '0'),
@@ -93,6 +92,7 @@ describe('facet queries', () => {
     await db.insert(schema.configVersions).values({
       configId: gitA.config.id,
       versionNumber: 2,
+      title: 'git-a',
       source: 'echo newer but not current',
       interpreter: 'bash',
       contentSha256: 'git-a-not-current'.padEnd(64, '0'),
@@ -114,10 +114,7 @@ describe('facet queries', () => {
     await seed('plain', {})
     await db.insert(schema.configs).values({
       slug: 'git-orphan',
-      title: 'git-orphan',
-      description: 'desc',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
       tags: ['git'],
       allTags: computeAllTags({

@@ -42,10 +42,7 @@ async function seed(status: string, slug = 'detail-one', sha = SHA, tags: string
     .insert(schema.configs)
     .values({
       slug,
-      title: 'Detail One',
-      description: 'd',
       authorId: 'u1',
-      interpreter: 'bash',
       status,
       tags,
       allTags: tags,
@@ -57,6 +54,8 @@ async function seed(status: string, slug = 'detail-one', sha = SHA, tags: string
     .values({
       configId: cfg.id,
       versionNumber: 1,
+      title: 'Detail One',
+      description: 'd',
       source: SOURCE,
       interpreter: 'bash',
       contentSha256: sha,

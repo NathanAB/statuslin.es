@@ -40,13 +40,13 @@ export async function tagWeatherMarkets(db: Db, write: boolean): Promise<string[
     .select({ config: schema.configs, version: schema.configVersions })
     .from(schema.configs)
     .innerJoin(schema.configVersions, eq(schema.configVersions.id, schema.configs.currentVersionId))
-    .where(inArray(schema.configs.title, titles))
+    .where(inArray(schema.configVersions.title, titles))
 
   const changed: string[] = []
   for (const { config, version } of rows) {
     if (config.status !== 'published') continue
     const curated = config.tags ?? []
-    const additions = (ASSIGNMENTS[config.title] ?? []).filter((t) => !curated.includes(t))
+    const additions = (ASSIGNMENTS[version.title] ?? []).filter((t) => !curated.includes(t))
     if (additions.length === 0) continue
     const tags = [...curated, ...additions]
     const allTags = computeAllTags({

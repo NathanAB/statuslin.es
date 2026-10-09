@@ -7,7 +7,7 @@ import { compactSegments } from '@/render/compact-segments'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
 import { coerceInterpreter, galleryCardSelection, mapCardRows } from './card-rows'
-import { publishedAt } from './published-at'
+import { newestFirstPublished } from './published-at'
 import { trendingScore } from './trending'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -98,7 +98,7 @@ export async function getPublishedConfigs(
       ? [desc(configs.copyCount)]
       : sort === 'trending'
         ? [desc(trendingScore(configs.id))]
-        : [desc(publishedAt)]
+        : [newestFirstPublished]
 
   const tagFilter =
     tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
@@ -200,9 +200,9 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
   return {
     id: row.config.id,
     slug: row.config.slug,
-    title: row.config.title,
-    description: row.config.description,
-    interpreter: coerceInterpreter(row.config.interpreter),
+    title: row.version.title,
+    description: row.version.description,
+    interpreter: coerceInterpreter(row.version.interpreter),
     tags: row.config.allTags ?? [],
     copyCount: row.config.copyCount,
     author: row.author

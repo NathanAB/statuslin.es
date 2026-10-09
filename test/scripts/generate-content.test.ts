@@ -31,9 +31,7 @@ async function seedConfig(
     .insert(schema.configs)
     .values({
       slug,
-      title: `Config ${slug}`,
       authorId: 'u1',
-      interpreter: 'bash',
       status: opts.status ?? 'published',
     })
     .returning()
@@ -43,6 +41,7 @@ async function seedConfig(
     .values({
       configId: config.id,
       versionNumber: 1,
+      title: `Config ${slug}`,
       source: 'echo "$BRANCH"',
       interpreter: 'bash',
       contentSha256: `sha-${slug}`,
@@ -259,6 +258,7 @@ describe('content generation responses', () => {
       .values({
         configId: staleConfig.id,
         versionNumber: 2,
+        title: 'Config version-batch-stale',
         source: 'echo replacement',
         interpreter: 'bash',
         contentSha256: 'sha-version-batch-stale-v2',

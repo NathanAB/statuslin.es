@@ -8,10 +8,13 @@ import { INTERPRETERS, type Interpreter } from '@/render/types'
 import { detectForeignCredentialAccess, readsClaudeToken } from './credential-access'
 import { validateNetworkHosts } from './network-hosts'
 import { detectObfuscation } from './obfuscation'
-import { createResubmissionVersion, type PreparedResubmission } from './resubmit'
+import { createResubmissionVersion, type PreparedVersion, type ResubmissionDraft } from './resubmit'
 import { slugify } from './slug'
+import { createUpdateVersion, findChangedUpdateBase, type UpdateDraft } from './update'
 
 export { getResubmissionDraft, type ResubmissionDraft } from './resubmit'
+export { getUpdateDraft, type UpdateDraft } from './update'
+export type SubmitDraft = ResubmissionDraft | UpdateDraft
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -70,6 +73,11 @@ export interface SubmitInput {
   license?: string | null
   sourceUrl?: string | null
 }
+/** Where a submission lands: a new config, a resubmission, or an update (never both). */
+export type SubmitOptions =
+  | { rejectedVersionId?: undefined; updateSlug?: undefined }
+  | { rejectedVersionId: string; updateSlug?: undefined }
+  | { updateSlug: string; rejectedVersionId?: undefined }
 export interface SubmitResult {
   configId: string
   versionId: string
@@ -79,7 +87,7 @@ export interface SubmitResult {
 export async function submitConfig(
   db: Db,
   input: SubmitInput,
-  options: { rejectedVersionId?: string } = {},
+  options: SubmitOptions = {},
 ): Promise<SubmitResult> {
   const obfuscationReasons = detectObfuscation(input.source)
   if (obfuscationReasons.length > 0) {
@@ -136,19 +144,24 @@ export async function submitConfig(
   const slug = `${slugify(input.title)}-${randomUUID().slice(0, 8)}`
   const contentSha256 = createHash('sha256').update(input.source).digest('hex')
   const readsToken = readsClaudeToken(input.source)
+  const updateBase = await findChangedUpdateBase(db, options.updateSlug, input.authorId, {
+    ...input,
+    networkHosts,
+  })
   // Highlight once now (best-effort) so the detail page reads stored HTML instead of running Shiki
   // on every render. The source is immutable for this version, so the stored HTML never goes stale.
   const sourceHtml = await tryHighlightSource(input.source, input.interpreter)
+  const prepared: PreparedVersion = {
+    ...input,
+    networkHosts,
+    contentSha256,
+    sourceHtml,
+    readsClaudeToken: readsToken,
+    license: input.license ?? null,
+    sourceUrl: input.sourceUrl ?? null,
+  }
+  if (updateBase) return createUpdateVersion(db, updateBase, prepared)
   if (options.rejectedVersionId) {
-    const prepared: PreparedResubmission = {
-      ...input,
-      networkHosts,
-      contentSha256,
-      sourceHtml,
-      readsClaudeToken: readsToken,
-      license: input.license ?? null,
-      sourceUrl: input.sourceUrl ?? null,
-    }
     return createResubmissionVersion(db, options.rejectedVersionId, prepared)
   }
   return db.transaction(async (tx) => {
@@ -156,10 +169,7 @@ export async function submitConfig(
       .insert(configs)
       .values({
         slug,
-        title: input.title,
-        description: input.description,
         authorId: input.authorId,
-        interpreter: input.interpreter,
         status: 'draft',
       })
       .returning()
@@ -170,6 +180,8 @@ export async function submitConfig(
       .values({
         configId: cfg.id,
         versionNumber: 1,
+        title: input.title,
+        description: input.description,
         source: input.source,
         interpreter: input.interpreter,
         contentSha256,

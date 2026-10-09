@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, lt } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs, user } from '@/db/schema'
 import { computeAllTags } from '@/lib/derived-tags'
@@ -8,7 +8,7 @@ import {
   type SendApprovalEmail,
   sendApprovalEmail,
 } from './approval-email'
-import { ReviewEmailProviderError } from './review-email'
+import { ReviewEmailProviderError, type ReviewedChange } from './review-email'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -33,12 +33,30 @@ export async function approveVersion(
       .from(renderJobs)
       .where(eq(renderJobs.configVersionId, versionId))
     if (job?.status !== 'done') throw new HttpError(409, 'version not rendered')
+    const [target] = await tx
+      .select({ configId: configVersions.configId })
+      .from(configVersions)
+      .where(eq(configVersions.id, versionId))
+    if (!target) throw new HttpError(409, 'version not in a reviewable (pending) state')
+    // Lock the config before the version, the order submitting an update takes them in, so a
+    // takedown or a newer update can't interleave with the pointer move.
+    const [cfg] = await tx
+      .select({
+        tags: configs.tags,
+        status: configs.status,
+        currentVersionId: configs.currentVersionId,
+      })
+      .from(configs)
+      .where(eq(configs.id, target.configId))
+      .for('update')
+    if (!cfg) throw new HttpError(409, 'config not found')
+    const reviewedAt = new Date()
     const [ver] = await tx
       .update(configVersions)
       .set({
         status: 'approved',
         reviewedBy: reviewerId,
-        reviewedAt: new Date(),
+        reviewedAt,
         approvalEmailStatus: 'pending',
         approvalEmailId: null,
         approvalEmailError: null,
@@ -47,21 +65,42 @@ export async function approveVersion(
       .where(and(eq(configVersions.id, versionId), eq(configVersions.status, 'pending')))
       .returning()
     if (!ver) throw new HttpError(409, 'version not in a reviewable (pending) state')
-    const [cfg] = await tx
-      .select({ tags: configs.tags })
-      .from(configs)
-      .where(eq(configs.id, ver.configId))
     const allTags = computeAllTags({
-      curatedTags: cfg?.tags ?? [],
+      curatedTags: cfg.tags,
       interpreter: ver.interpreter,
       networkHosts: ver.networkHosts ?? [],
       readsClaudeToken: ver.readsClaudeToken ?? false,
     })
+    // An update only moves the live pointer: status is left alone, so a takedown sticks.
+    const firstPublish =
+      cfg.status === 'draft' && cfg.currentVersionId === null
+        ? { status: 'published', firstPublishedAt: reviewedAt }
+        : {}
     await tx
       .update(configs)
-      .set({ status: 'published', currentVersionId: ver.id, allTags })
+      .set({ currentVersionId: ver.id, allTags, ...firstPublish })
       .where(eq(configs.id, ver.configId))
   })
+}
+
+/** An approval is an update when an earlier version of the config was approved, so went live. */
+async function approvedChange(
+  database: Db,
+  configId: string,
+  versionNumber: number,
+): Promise<ReviewedChange> {
+  const [earlier] = await database
+    .select({ id: configVersions.id })
+    .from(configVersions)
+    .where(
+      and(
+        eq(configVersions.configId, configId),
+        eq(configVersions.status, 'approved'),
+        lt(configVersions.versionNumber, versionNumber),
+      ),
+    )
+    .limit(1)
+  return earlier ? 'update' : 'submission'
 }
 
 async function deliverApprovalEmail(
@@ -76,8 +115,11 @@ async function deliverApprovalEmail(
       authorName: user.name,
       authorEmail: user.email,
       emailVerified: user.emailVerified,
-      title: configs.title,
+      title: configVersions.title,
       slug: configs.slug,
+      configId: configs.id,
+      configStatus: configs.status,
+      versionNumber: configVersions.versionNumber,
     })
     .from(configVersions)
     .innerJoin(configs, eq(configs.id, configVersions.configId))
@@ -92,7 +134,9 @@ async function deliverApprovalEmail(
   if (!UNSENT_APPROVAL_EMAIL_STATUSES.some((status) => status === row.emailStatus)) {
     throw new HttpError(409, 'approval email is not pending delivery')
   }
-  if (!row.emailVerified) {
+  const kind = await approvedChange(database, row.configId, row.versionNumber)
+  // A config taken down while its update waited isn't live, so the email would be false.
+  if (!row.emailVerified || row.configStatus !== 'published') {
     const [updated] = await database
       .update(configVersions)
       .set({ approvalEmailStatus: 'unavailable', approvalEmailError: null })
@@ -126,6 +170,7 @@ async function deliverApprovalEmail(
     authorEmail: row.authorEmail,
     title: row.title,
     slug: row.slug,
+    kind,
   }
   try {
     const result = await send(input)

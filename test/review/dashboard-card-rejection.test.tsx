@@ -40,9 +40,6 @@ function row(
     config: {
       id: 'c1',
       slug: 'my-line',
-      title: 'My line',
-      description: '',
-      interpreter: 'bash',
       status: 'draft',
       authorId: 'u1',
       author: { name: 'Test User', username: 'test', image: null },
@@ -53,6 +50,9 @@ function row(
     version: {
       id: 'v1',
       versionNumber: 1,
+      title: 'My line',
+      description: '',
+      interpreter: 'bash',
       source: 'echo hi',
       contentSha256: 'abc123',
       status: versionStatus,

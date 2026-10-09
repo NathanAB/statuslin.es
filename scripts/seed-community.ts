@@ -120,7 +120,8 @@ export async function seedCommunityConfig(
   const existing = await db
     .select({ id: configs.id })
     .from(configs)
-    .where(sql`${configs.authorId} = ${authorId} AND ${configs.title} = ${entry.title}`)
+    .innerJoin(configVersions, eq(configVersions.configId, configs.id))
+    .where(and(eq(configs.authorId, authorId), eq(configVersions.title, entry.title)))
   if (existing.length > 0) {
     return { login: entry.githubLogin, title: entry.title, status: 'skipped' }
   }
