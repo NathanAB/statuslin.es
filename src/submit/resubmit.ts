@@ -19,6 +19,7 @@ const SUPERSEDABLE_REJECTION_EMAIL_STATUSES = [
 ] as const
 
 export interface ResubmissionDraft {
+  kind: 'resubmission'
   versionId: string
   slug: string
   title: string
@@ -28,7 +29,7 @@ export interface ResubmissionDraft {
   networkHosts: string[]
 }
 
-export interface PreparedResubmission {
+export interface PreparedVersion {
   authorId: string
   title: string
   description: string
@@ -105,6 +106,7 @@ export async function getResubmissionDraft(
     throw new HttpError(409, 'only the latest rejected version can be resubmitted')
   }
   return {
+    kind: 'resubmission',
     versionId: row.version.id,
     slug: row.config.slug,
     title: row.version.title,
@@ -118,7 +120,7 @@ export async function getResubmissionDraft(
 export async function createResubmissionVersion(
   database: Db,
   rejectedVersionId: string,
-  input: PreparedResubmission,
+  input: PreparedVersion,
 ): Promise<SubmitResult> {
   try {
     return await database.transaction(async (tx) => {

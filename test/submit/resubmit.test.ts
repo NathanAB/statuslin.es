@@ -61,6 +61,7 @@ describe('getResubmissionDraft', () => {
     const rejected = await rejectedSubmission()
 
     await expect(getResubmissionDraft(db, rejected.slug, 'owner')).resolves.toEqual({
+      kind: 'resubmission',
       versionId: rejected.versionId,
       slug: rejected.slug,
       title: original.title,

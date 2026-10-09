@@ -16,6 +16,7 @@ vi.mock('sonner', () => ({ toast: { success: toastSuccess } }))
 
 const USER = { name: 'Test User', username: 'test' }
 const RESUBMISSION = {
+  kind: 'resubmission' as const,
   versionId: 'version-1',
   slug: 'my-status-line',
   title: 'My Statusline',
