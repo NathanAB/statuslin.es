@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('@/lib/auth-functions', () => ({ getSession }))
 vi.mock('@/submit/submit-fn', () => ({ getResubmissionDraftFn, getUpdateDraftFn }))
 
-const { loadSubmitPage, validateSubmitSearch } = await import('@/routes/submit')
+const { loadSubmitPage, validateSubmitSearch } = await import('@/submit/submit-page')
 
 beforeEach(() => {
   getSession.mockReset().mockResolvedValue({
