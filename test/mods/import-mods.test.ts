@@ -40,12 +40,16 @@ interface Fakes {
   fullName?: string
   license?: string | null
   manifest?: Record<string, unknown>
+  validate?: string
+  sandboxError?: Error
 }
 
 function fakes({
   fullName = 'hellosverre/claude-skins',
   license = 'MIT',
   manifest = { name: 'skins', version: '1.4.0', description: 'Reskins Claude Code.' },
+  validate = VALIDATE_OUTPUT,
+  sandboxError,
 }: Fakes = {}) {
   const calls: string[] = []
   const github: GitHubSource = {
@@ -64,7 +68,7 @@ function fakes({
       const stdout = command.endsWith('--version')
         ? '2.1.296 (Claude Code)\n'
         : command.includes(' plugin validate --json ')
-          ? VALIDATE_OUTPUT
+          ? validate
           : command.endsWith('/.claude-plugin/plugin.json')
             ? JSON.stringify(manifest)
             : ''
@@ -73,6 +77,7 @@ function fakes({
   }
   async function withSandbox<T>(source: ModSource, use: (s: ModSandbox) => Promise<T>) {
     calls.push(`sandbox:${source.path || '(root)'}:${source.tarball.byteLength}`)
+    if (sandboxError) throw sandboxError
     return use(sandbox)
   }
   return { calls, github, withSandbox }
@@ -81,7 +86,7 @@ function fakes({
 async function run(curation: unknown, deps = fakes()) {
   const lines: string[] = []
   const exitCode = await importMods(curation, { db, ...deps, log: (line) => lines.push(line) })
-  return { exitCode, output: lines.join('\n'), calls: deps.calls }
+  return { exitCode, lines, output: lines.join('\n'), calls: deps.calls }
 }
 
 const allMods = () => db.select().from(schema.mods)
@@ -202,5 +207,117 @@ describe('importMods', () => {
     await run([entry({ path: 'a' }), entry({ path: 'b', pluginName: 'skins-2' })], deps)
 
     expect(deps.calls.filter((c) => c.startsWith('tarball:'))).toHaveLength(1)
+  })
+
+  describe('prints what a mod controls escaped, one line per entry', () => {
+    const OSC52 = '\u001b]52;c;cm0gLXJmIH4=\u0007'
+    const CRAFTED = `\u001b[2K\r${OSC52}`
+    const CONTROL = /[\p{Cc}\p{Cf}]/u
+
+    it('escapes a plugin.json version', async () => {
+      const { exitCode, lines } = await run(
+        [entry()],
+        fakes({ manifest: { name: 'skins', version: `1.0.0${CRAFTED}` } }),
+      )
+
+      expect(exitCode).toBe(0)
+      expect(lines).toHaveLength(1)
+      expect(lines[0]).not.toMatch(CONTROL)
+      expect(lines[0]).toContain('plugin 1.0.0\\u001b[2K\\u000d\\u001b]52;c;cm0gLXJmIH4=\\u0007,')
+    })
+
+    it('escapes a plugin.json name', async () => {
+      const { exitCode, lines } = await run(
+        [entry()],
+        fakes({ manifest: { name: `skins${CRAFTED}` } }),
+      )
+
+      expect(exitCode).toBe(1)
+      expect(lines).toHaveLength(1)
+      expect(lines[0]).not.toMatch(CONTROL)
+      expect(lines[0]).toContain('names the plugin "skins\\u001b[2K\\u000d\\u001b]52;c;')
+    })
+
+    it('escapes a thrown error message', async () => {
+      const sandboxError = new Error(`tar: member${CRAFTED}\nforged line`)
+      const { exitCode, lines } = await run([entry()], fakes({ sandboxError }))
+
+      expect(exitCode).toBe(1)
+      expect(lines).toHaveLength(1)
+      expect(lines[0]).not.toMatch(CONTROL)
+      expect(lines[0]).toContain('tar: member\\u001b[2K\\u000d\\u001b]52;c;')
+      expect(lines[0]).toContain('\\u000aforged line')
+    })
+
+    it('truncates a long error message', async () => {
+      const sandboxError = new Error(`tar: ${'x'.repeat(10_000)}`)
+      const { lines } = await run([entry()], fakes({ sandboxError }))
+
+      expect(lines[0]?.length).toBeLessThanOrEqual(500)
+      expect(lines[0]).toMatch(/^refused skins: tar: x+… \(\d+ more characters\)$/)
+    })
+
+    it.each([
+      0, 1, 2, 3, 4, 5,
+    ])('cuts a long line between escapes, never inside one (offset %i)', async (offset) => {
+      const sandboxError = new Error(`${'x'.repeat(offset)}${'\u0007'.repeat(200)}`)
+      const { lines } = await run([entry()], fakes({ sandboxError }))
+
+      expect(lines[0]).toMatch(/^refused skins: x*(\\u0007)+… \(\d+ more characters\)$/)
+    })
+  })
+
+  describe('refuses plugin facts past the stored limits and writes nothing', () => {
+    const validateWith = (notes: string[]) =>
+      JSON.stringify({ success: true, contents: [{ errors: [], notes }] })
+    const many = (n: number) => Array.from({ length: n }, (_, i) => `event.e${i}`)
+
+    it.each([
+      [
+        'a description over 1000 characters',
+        fakes({ manifest: { name: 'skins', description: 'd'.repeat(1001) } }),
+        /description.*1000/,
+      ],
+      [
+        'a version over 64 characters',
+        fakes({ manifest: { name: 'skins', version: '1'.repeat(65) } }),
+        /version.*64/,
+      ],
+      ['a name over 100 characters', fakes({ manifest: { name: 'n'.repeat(101) } }), /name.*100/],
+      [
+        'more than 200 events',
+        fakes({ validate: validateWith([`./a.ts hooks: ${many(201).join(', ')}`]) }),
+        /201 events.*200/,
+      ],
+      [
+        'more than 200 calls',
+        fakes({
+          validate: validateWith([
+            `./a.ts calls: ${many(201)
+              .map((e) => `$.${e}`)
+              .join(', ')}`,
+          ]),
+        }),
+        /201 calls.*200/,
+      ],
+      [
+        'an event over 200 characters',
+        fakes({ validate: validateWith([`./a.ts hooks: ${'e'.repeat(201)}`]) }),
+        /events longer than 200 characters/,
+      ],
+      [
+        'a call over 200 characters',
+        fakes({ validate: validateWith([`./a.ts calls: $.${'c'.repeat(199)}`]) }),
+        /calls longer than 200 characters/,
+      ],
+    ])('%s', async (_name, deps, message) => {
+      const { exitCode, output } = await run([entry()], deps)
+
+      expect(exitCode).toBe(1)
+      expect(output).toMatch(/^refused skins: /)
+      expect(output).toMatch(message)
+      expect(await allMods()).toEqual([])
+      expect(await allVersions()).toEqual([])
+    })
   })
 })

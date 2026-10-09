@@ -47,6 +47,36 @@ describe('parseFootprint', () => {
     ])
   })
 
+  const validateWith = (notes: string[]) => ({ success: true, contents: [{ notes }] })
+  const named = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => `${prefix}${i}`)
+
+  it('keeps 200 events and calls of 200 characters each', () => {
+    const events = [...named('e', 199), 'e'.repeat(200)].sort()
+    const calls = [...named('$.c', 199), `$.${'c'.repeat(198)}`].sort()
+    const footprint = parseFootprint(
+      validateWith([`./a.ts hooks: ${events.join(', ')}`, `./a.ts calls: ${calls.join(', ')}`]),
+    )
+
+    expect(footprint).toEqual({ events, calls })
+  })
+
+  it.each([
+    ['201 events', [`./a.ts hooks: ${named('e', 201).join(', ')}`], /201 events; at most 200/],
+    ['201 calls', [`./a.ts calls: ${named('$.c', 201).join(', ')}`], /201 calls; at most 200/],
+    [
+      'an event of 201 characters',
+      [`./a.ts hooks: ${'e'.repeat(201)}`],
+      /events longer than 200 characters/,
+    ],
+    [
+      'a call of 201 characters',
+      [`./a.ts calls: $.${'c'.repeat(199)}`],
+      /calls longer than 200 characters/,
+    ],
+  ])('refuses %s', (_name, notes, message) => {
+    expect(() => parseFootprint(validateWith(notes))).toThrow(message)
+  })
+
   it('is empty for a plugin with no hook modules', () => {
     expect(parseFootprint({ success: true, contents: [] })).toEqual({ events: [], calls: [] })
   })
@@ -69,6 +99,32 @@ describe('parseManifest', () => {
       version: null,
       description: '',
     })
+  })
+
+  it('keeps a name of 100, a version of 64 and a description of 1000 characters', () => {
+    const manifest = {
+      name: 'n'.repeat(100),
+      version: 'v'.repeat(64),
+      description: 'd'.repeat(1000),
+    }
+
+    expect(parseManifest(JSON.stringify(manifest))).toEqual(manifest)
+  })
+
+  it.each([
+    ['name', { name: 'n'.repeat(101) }, /name must be at most 100 characters/],
+    [
+      'version',
+      { name: 'skins', version: 'v'.repeat(65) },
+      /version must be at most 64 characters/,
+    ],
+    [
+      'description',
+      { name: 'skins', description: 'd'.repeat(1001) },
+      /description must be at most 1000 characters/,
+    ],
+  ])('refuses a %s past its limit', (_name, manifest, message) => {
+    expect(() => parseManifest(JSON.stringify(manifest))).toThrow(message)
   })
 
   it.each([

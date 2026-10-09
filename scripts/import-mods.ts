@@ -10,6 +10,7 @@ import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { inspectPlugin } from '@/mods/plugin-facts'
+import { printable } from '@/mods/publish'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
 
 /**
@@ -120,11 +121,30 @@ async function importEntry(
   return `imported ${name} v1 at ${entry.commitSha}: plugin ${facts.manifest.version ?? 'unversioned'}, license ${repo.license ?? 'none'}, ${events.length} events, ${calls.length} calls`
 }
 
+const MAX_LINE_CHARS = 500
+
+/**
+ * plugin.json, validate output, tar stderr and git filenames reach these lines, so each is escaped
+ * (an ESC or OSC 52 sequence could rewrite the log or the operator's clipboard) and capped.
+ */
+function terminalLine(line: string): string {
+  const escaped = printable(line)
+  if (escaped.length <= MAX_LINE_CHARS) return escaped
+  const suffix = (rest: number) => `… (${rest} more characters)`
+  const head = escaped
+    .slice(0, MAX_LINE_CHARS - suffix(escaped.length).length)
+    .replace(/\\(u[0-9a-f]{0,3})?$/, '')
+  return `${head}${suffix(escaped.length - head.length)}`
+}
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error))
+
 export async function importMods(raw: unknown, deps: ImportDeps): Promise<number> {
+  const log = (line: string) => deps.log(terminalLine(line))
   const curation = parseCuration(raw)
   if (!curation.ok) {
-    for (const error of curation.errors) deps.log(`refused ${error}`)
-    deps.log('nothing imported: fix the curation file first')
+    for (const error of curation.errors) log(`refused ${error}`)
+    log('nothing imported: fix the curation file first')
     return 1
   }
 
@@ -139,10 +159,10 @@ export async function importMods(raw: unknown, deps: ImportDeps): Promise<number
   let refused = 0
   for (const entry of curation.entries) {
     try {
-      deps.log(await importEntry(entry, deps, tarball))
+      log(await importEntry(entry, deps, tarball))
     } catch (error) {
       refused++
-      deps.log(`refused ${entry.pluginName}: ${error instanceof Error ? error.message : error}`)
+      log(`refused ${entry.pluginName}: ${messageOf(error)}`)
     }
   }
   return refused === 0 ? 0 : 1
@@ -169,7 +189,7 @@ if (import.meta.main) {
   main().then(
     (code) => process.exit(code),
     (err) => {
-      console.error(`[import-mods] ${err instanceof Error ? err.message : err}`)
+      console.error(terminalLine(`[import-mods] ${messageOf(err)}`))
       process.exit(1)
     },
   )

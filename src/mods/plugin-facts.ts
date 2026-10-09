@@ -20,11 +20,31 @@ export interface PluginFacts {
 /** A plugin.json past this is truncated, fails to parse, and the entry is refused. */
 const MANIFEST_MAX_BYTES = 64 * 1024
 
+/** Stored and served to every Claude Code client, so a value past its limit refuses the entry. */
+const atMost = (max: number) => z.string().max(max, `must be at most ${max} characters`)
+
 const manifestSchema = z.object({
-  name: z.string().min(1),
-  version: z.string().optional(),
-  description: z.string().optional(),
+  name: atMost(100).min(1, 'must not be empty'),
+  version: atMost(64).optional(),
+  description: atMost(1000).optional(),
 })
+
+const FOOTPRINT_MAX_ENTRIES = 200
+const FOOTPRINT_ENTRY_MAX_CHARS = 200
+
+function footprintList(kind: 'event' | 'call', entries: Set<string>): string[] {
+  if (entries.size > FOOTPRINT_MAX_ENTRIES) {
+    throw new Error(
+      `claude plugin validate reports ${entries.size} ${kind}s; at most ${FOOTPRINT_MAX_ENTRIES} are stored`,
+    )
+  }
+  if ([...entries].some((entry) => entry.length > FOOTPRINT_ENTRY_MAX_CHARS)) {
+    throw new Error(
+      `claude plugin validate reports ${kind}s longer than ${FOOTPRINT_ENTRY_MAX_CHARS} characters`,
+    )
+  }
+  return [...entries].sort()
+}
 
 const reportSectionSchema = z.object({
   errors: z.array(z.string()).optional(),
@@ -70,7 +90,7 @@ export function parseFootprint(validateJson: unknown): ModFootprint {
     for (const call of called ? splitTopLevel(called) : [])
       calls.add(call.replace(/\s*\(.*\)$/, ''))
   }
-  return { events: [...events].sort(), calls: [...calls].sort() }
+  return { events: footprintList('event', events), calls: footprintList('call', calls) }
 }
 
 export function parseManifest(text: string): PluginManifest {
@@ -78,7 +98,8 @@ export function parseManifest(text: string): PluginManifest {
   if (json === undefined) throw new Error('.claude-plugin/plugin.json is not valid JSON')
   const parsed = manifestSchema.safeParse(json)
   if (!parsed.success) {
-    throw new Error(`.claude-plugin/plugin.json: ${z.prettifyError(parsed.error)}`)
+    const problems = parsed.error.issues.map((issue) => `${issue.path.join('.')} ${issue.message}`)
+    throw new Error(`.claude-plugin/plugin.json: ${problems.join('; ')}`)
   }
   const { name, version, description } = parsed.data
   return { name, version: version ?? null, description: description ?? '' }
