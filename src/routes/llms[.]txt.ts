@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { llmsTxtResponseForRoute } from '@/gallery/functions'
+import { llmsTxtWithModsForRoute } from '@/mods/discovery'
 
 export const Route = createFileRoute('/llms.txt')({
   server: {
     handlers: {
-      GET: async () => llmsTxtResponseForRoute(),
+      GET: async () => llmsTxtWithModsForRoute(),
     },
   },
 })

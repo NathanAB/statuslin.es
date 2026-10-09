@@ -15,6 +15,12 @@ export interface SitemapConfig {
   updatedAt: Date
 }
 
+/** Published mod rows the sitemap needs; `updatedAt` is the current version's date. */
+export interface SitemapMod {
+  slug: string
+  updatedAt: Date
+}
+
 /** Indexable facet pages the sitemap should list (already filtered to the shared threshold). */
 export interface SitemapFacet {
   slug: string
@@ -95,4 +101,22 @@ export function sitemapResponse(
       'Cache-Control': 'max-age=3600',
     },
   })
+}
+
+/**
+ * Adds a `<url>` per published mod to a built `/sitemap.xml` response, keeping its headers. The
+ * gallery builds the config sitemap without knowing about mods, so `src/mods/discovery.ts` adds them.
+ */
+export async function withModUrls(
+  sitemap: Response,
+  base: string,
+  mods: SitemapMod[],
+): Promise<Response> {
+  const xml = await sitemap.text()
+  const entries = mods.map((m) =>
+    urlEntry(`${base}/mods/${m.slug}`, m.updatedAt.toISOString().slice(0, 10)),
+  )
+  const body =
+    entries.length === 0 ? xml : xml.replace('\n</urlset>', `\n${entries.join('\n')}\n</urlset>`)
+  return new Response(body, { status: sitemap.status, headers: sitemap.headers })
 }

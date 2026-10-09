@@ -14,6 +14,14 @@ export interface LlmsConfig {
   copyCount: number
 }
 
+/** A published mod for the `## Mods` section. */
+export interface LlmsMod {
+  slug: string
+  title: string
+  description: string
+  copyCount: number
+}
+
 const MAX_SUMMARY_CHARS = 160
 
 export function buildLlmsTxt(
@@ -24,7 +32,7 @@ export function buildLlmsTxt(
   const blocks = [
     '# statuslin.es',
     '> Community gallery of Claude Code status lines: browse real, sandbox-rendered previews and copy one into your own setup.',
-    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. Every submission is a shell script; the site runs it in a sandbox and shows the actual rendered terminal output, plus its copy count and a one-command copy to adopt it. It is a curation-first gallery, not documentation.",
+    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. It holds two kinds of submission: status line shell scripts, and mods, which are Claude Code plugins. The site renders each in a sandbox and shows the real output, plus its copy count and a one-command copy or install. It is a curation-first gallery, not documentation.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -51,9 +59,16 @@ function facetLink(base: string, facet: { slug: string; label: string }): string
 }
 
 function configLink(base: string, config: LlmsConfig): string {
-  const summary = oneLine(config.description)
-  const copies = `Copied ${config.copyCount} ${config.copyCount === 1 ? 'time' : 'times'}.`
-  return `- [${config.title}](${base}/c/${config.slug}): ${summary ? `${summary} ` : ''}${copies}`
+  return summaryLink(`${base}/c/${config.slug}`, config)
+}
+
+function summaryLink(
+  url: string,
+  item: { title: string; description: string; copyCount: number },
+): string {
+  const summary = oneLine(item.description)
+  const copies = `Copied ${item.copyCount} ${item.copyCount === 1 ? 'time' : 'times'}.`
+  return `- [${item.title}](${url}): ${summary ? `${summary} ` : ''}${copies}`
 }
 
 function oneLine(text: string): string {
@@ -75,4 +90,21 @@ export function llmsResponse(
       'Cache-Control': 'max-age=86400',
     },
   })
+}
+
+/**
+ * Appends a `## Mods` section to a built `/llms.txt` response, keeping its headers. The gallery
+ * builds the config part without knowing about mods, so `src/mods/discovery.ts` adds them after.
+ */
+export async function withModLinks(
+  llms: Response,
+  base: string,
+  mods: LlmsMod[],
+): Promise<Response> {
+  const txt = await llms.text()
+  const body =
+    mods.length === 0
+      ? txt
+      : `${txt}\n${['## Mods', '', ...mods.map((m) => summaryLink(`${base}/mods/${m.slug}`, m))].join('\n')}\n`
+  return new Response(body, { status: llms.status, headers: llms.headers })
 }

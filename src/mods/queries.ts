@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, modCopyEvents, modPreviews, mods, modVersions } from '@/db/schema'
 import { isUuid } from '@/lib/uuid'
@@ -33,6 +33,33 @@ export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
     )
     .where(eq(mods.status, 'published'))
     .orderBy(asc(mods.pluginName))
+}
+
+export interface PublishedModListing {
+  slug: string
+  title: string
+  description: string
+  copyCount: number
+  updatedAt: Date
+}
+
+/** Every published mod with its own current version, most copied first; `updatedAt` is that version's date. */
+export async function getPublishedModListings(db: Db): Promise<PublishedModListing[]> {
+  return db
+    .select({
+      slug: mods.slug,
+      title: mods.title,
+      description: mods.description,
+      copyCount: mods.copyCount,
+      updatedAt: modVersions.createdAt,
+    })
+    .from(mods)
+    .innerJoin(
+      modVersions,
+      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
+    )
+    .where(eq(mods.status, 'published'))
+    .orderBy(desc(mods.copyCount), asc(mods.slug))
 }
 
 /** True when the `mods` table has a row in any status, published or not. */
