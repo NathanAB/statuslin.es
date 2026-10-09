@@ -208,6 +208,7 @@ export function findUnsafeClassNameWithoutReason(path: string, content: string):
 const FONT_FAMILY_ALLOW = [
   'src/ui/text.tsx', // Text/Heading — the typography components own font-family
   'src/ui/code-block.tsx', // monospace source block
+  'src/ui/line-diff.tsx', // monospace script diff
   'src/ui/statusline-preview.tsx', // ANSI preview (monospace)
   'src/ui/textarea.tsx', // the monospace source-code input
   'src/ui/wordmark.tsx', // the statuslin.es wordmark (monospace)
