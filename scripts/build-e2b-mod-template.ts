@@ -69,13 +69,15 @@ const printsNothing = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -
 
 const ROOT_LISTENERS_OTHER_THAN_ENVD = `ss -Hltunp | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u | xargs -r -n1 ps -o user=,comm= -p | awk '$1 == "root" && $2 != "envd"'`
 
+const MATCHES_CLAUDE_CODE_BINARY_PIN = `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SANDBOX_CLAUDE_CODE_BIN}" | sha256sum -c -`
+
 const RUNS_CLAUDE_CODE_VERSION = `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "${CLAUDE_CODE_VERSION}"`
 
 /**
  * The built sandbox leaves root reachable from `user` (finalize's passwordless sudo, an empty root
- * password beside a setuid `su`) and runs root sshd and rpcbind. Root removes each whole category on
- * the live sandbox, then the build proves it as root and as `user`, and proves the tooling still
- * runs. Any failing command aborts the build before the snapshot.
+ * password beside a setuid `su`, world-writable paths) and runs root sshd and rpcbind. Root removes
+ * each whole category on the live sandbox, then the build proves it as root and as `user`, and
+ * proves the tooling still runs. Any failing command aborts the build before the snapshot.
  */
 const SNAPSHOT_HARDENING: ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> = [
   ...[
@@ -87,9 +89,20 @@ const SNAPSHOT_HARDENING: ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> 
     'passwd -l root',
     'passwd -l user',
     'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
+    // The base image ships these 0777; the world-writable checks below reject them.
+    'chmod go-w /etc/inittab /code',
+    // Unprivileged user namespaces are a kernel-exploit surface, and nothing here needs them.
+    'sysctl -w user.max_user_namespaces=0',
     // As root, because `user` cannot list the root-only usage server directory.
     printsNothing(`find ${PROTECTED_ROOTS} -perm /022 -not -type l`),
     printsNothing('find / -xdev -perm /6000 -type f'),
+    printsNothing(
+      'find / -xdev -perm -0002 ! -type l ! -type d ! -path "/tmp/*" ! -path "/proc/*"',
+    ),
+    printsNothing(
+      'find / -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"',
+    ),
+    'test "$(cat /proc/sys/user/max_user_namespaces)" = 0',
     `passwd -S root | ${EXITS_UNLESS_LOCKED}`,
     `passwd -S user | ${EXITS_UNLESS_LOCKED}`,
     printsNothing(ROOT_LISTENERS_OTHER_THAN_ENVD),
@@ -97,6 +110,8 @@ const SNAPSHOT_HARDENING: ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> 
   ...[
     '! echo | timeout 5 su -c true root',
     '! sudo -n true',
+    'test -x /usr/bin/unshare && ! unshare -Ur true',
+    MATCHES_CLAUDE_CODE_BINARY_PIN,
     ...[
       SANDBOX_CLAUDE_CODE_BIN,
       dirname(SANDBOX_CLAUDE_CODE_BIN),
@@ -129,7 +144,7 @@ export const modRenderTemplate = () =>
     .runCmd(
       [
         `npm install -g --prefix ${SANDBOX_CLAUDE_CODE_PREFIX} --no-fund --no-audit @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}`,
-        `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SANDBOX_CLAUDE_CODE_BIN}" | sha256sum -c -`,
+        MATCHES_CLAUDE_CODE_BINARY_PIN,
         `chmod -R go-w ${SANDBOX_CLAUDE_CODE_PREFIX}`,
         `test -z "$(find ${SANDBOX_CLAUDE_CODE_PREFIX} -perm /022 -not -type l)"`,
         RUNS_CLAUDE_CODE_VERSION,
