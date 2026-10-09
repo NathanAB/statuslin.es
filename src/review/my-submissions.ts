@@ -17,6 +17,8 @@ export interface UpdateSummary {
   versionNumber: number
   status: string
   renderStatus: string
+  /** The reviewer's reason, once the update was not accepted. */
+  rejectionReason: string | null
 }
 
 export type MySubmissionRow = DashboardRow & { update: UpdateSummary | null }
@@ -88,6 +90,7 @@ export async function getMySubmissionRows(
             versionNumber: latest.version.versionNumber,
             status: latest.version.status,
             renderStatus: latest.job.status,
+            rejectionReason: latest.version.rejectionReason,
           }
         : null
     out.push({ ...(await mapRow(database, liveRow ?? latest, false)), update })

@@ -66,7 +66,12 @@ describe('getMySubmissionRows with updates', () => {
     expect(row?.config.status).toBe('published')
     expect(row?.version).toMatchObject({ id: v1.versionId, title: live.title, status: 'approved' })
     expect(row?.renderJob.status).toBe('done')
-    expect(row?.update).toEqual({ versionNumber: 2, status: 'pending', renderStatus: 'queued' })
+    expect(row?.update).toEqual({
+      versionNumber: 2,
+      status: 'pending',
+      renderStatus: 'queued',
+      rejectionReason: null,
+    })
 
     for (const renderStatus of ['running', 'failed', 'done', 'held']) {
       await db
@@ -89,7 +94,12 @@ describe('getMySubmissionRows with updates', () => {
     const row = await rowFor(v1.configId)
     expect(row?.version).toMatchObject({ id: v1.versionId, title: live.title, status: 'approved' })
     expect(row?.renderJob.status).toBe('done')
-    expect(row?.update).toEqual({ versionNumber: 2, status: 'pending', renderStatus: 'queued' })
+    expect(row?.update).toEqual({
+      versionNumber: 2,
+      status: 'pending',
+      renderStatus: 'queued',
+      rejectionReason: null,
+    })
   })
 
   it('has no update summary for a published config without one or for a draft', async () => {

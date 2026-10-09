@@ -1,8 +1,8 @@
-import { and, eq, inArray, lte, max, ne } from 'drizzle-orm'
+import { and, desc, eq, inArray, lte, max, ne } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs } from '@/db/schema'
 import { HttpError } from '@/lib/http'
-import type { PreparedVersion } from './resubmit'
+import { type PreparedVersion, supersedeRejectionDelivery } from './resubmit'
 import type { SubmitResult } from './submit'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -125,7 +125,16 @@ export async function createUpdateVersion(
         .select({ status: configs.status })
         .from(configs)
         .where(eq(configs.id, base.config.id))
+        .for('update')
       if (config?.status !== 'published') throw new HttpError(409, NOT_PUBLISHED)
+      const [latest] = await tx
+        .select()
+        .from(configVersions)
+        .where(eq(configVersions.configId, base.config.id))
+        .orderBy(desc(configVersions.versionNumber))
+        .limit(1)
+      // A rejected update's email can only go out while it is the latest version.
+      if (latest?.status === 'rejected') await supersedeRejectionDelivery(tx, latest)
       const superseded = await tx
         .update(configVersions)
         .set({ status: 'superseded' })

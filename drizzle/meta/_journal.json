@@ -169,6 +169,20 @@
       "when": 1791560205469,
       "tag": "0023_drop_config_listing_text",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791563560497,
+      "tag": "0024_config_first_published_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791563560773,
+      "tag": "0025_backfill_config_first_published_at",
+      "breakpoints": true
     }
   ]
 }

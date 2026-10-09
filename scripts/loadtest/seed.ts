@@ -155,6 +155,7 @@ export async function seedLoadConfigs(db: Db, opts: { count: number }): Promise<
         upvoteCount: (i * 37) % 300,
         copyCount: eventCount,
         createdAt,
+        firstPublishedAt: createdAt,
       })
       .returning()
     if (!cfg) throw new Error(`insert configs returned no row for ${slug}`)

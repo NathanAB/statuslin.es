@@ -74,6 +74,7 @@ async function seedPublished(slug: string, createdAt: Date) {
       authorId: 'u1',
       status: 'published',
       createdAt,
+      firstPublishedAt: createdAt,
     })
     .returning()
   const [ver] = await db

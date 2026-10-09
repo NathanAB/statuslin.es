@@ -55,6 +55,7 @@ async function seedPublished(opts: SeedOpts) {
       status: 'published',
       upvoteCount: opts.upvoteCount ?? 0,
       copyCount: opts.copyCount ?? 0,
+      firstPublishedAt: opts.reviewedAt ?? opts.createdAt ?? new Date(),
       ...(opts.createdAt !== undefined ? { createdAt: opts.createdAt } : {}),
     })
     .returning()

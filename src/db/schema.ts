@@ -51,6 +51,9 @@ export const configs = pgTable(
     currentVersionId: uuid('current_version_id'),
     upvoteCount: integer('upvote_count').notNull().default(0),
     copyCount: integer('copy_count').notNull().default(0),
+    /** When the config first went live. Set once, at first approval; an approved update moves
+     * only `currentVersionId`, so the gallery's `new` sort keeps the config's place. */
+    firstPublishedAt: timestamp('first_published_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -58,9 +61,9 @@ export const configs = pgTable(
     // delete-user cascade and the submit rate-limit query (WHERE author_id ...
     // created_at) use an index instead of a seq scan.
     index('configs_author_created_idx').on(t.authorId, t.createdAt),
-    // The gallery's `new` sort uses (status, created_at). Top now orders by copy_count and
-    // Trending aggregates time-decayed copy events; the gallery is small enough that neither
-    // needs a new index yet. Keep the historical upvote index alongside the retained vote data.
+    // (status, created_at) predates the `new` sort's move to first_published_at. Top orders by
+    // copy_count, Trending aggregates time-decayed copy events, and New orders by
+    // first_published_at; the gallery is small enough that none of them needs a new index yet. Keep the historical upvote index alongside the retained vote data.
     index('configs_status_created_idx').on(t.status, t.createdAt),
     index('configs_status_upvotes_idx').on(t.status, t.upvoteCount),
     // Supports the gallery tag filter's `all_tags @> '[...]'` containment check.

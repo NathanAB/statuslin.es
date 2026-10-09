@@ -59,12 +59,12 @@ function assertResubmissionTarget(
   }
 }
 
-async function supersedeRejectionDelivery(
+export async function supersedeRejectionDelivery(
   database: Pick<Db, 'update'>,
   version: typeof configVersions.$inferSelect,
 ): Promise<void> {
   if (version.rejectionEmailStatus === 'sending') {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before resubmitting')
+    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
   }
   if (
     !SUPERSEDABLE_REJECTION_EMAIL_STATUSES.some((status) => status === version.rejectionEmailStatus)
@@ -82,7 +82,7 @@ async function supersedeRejectionDelivery(
     )
     .returning({ id: configVersions.id })
   if (!superseded) {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before resubmitting')
+    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
   }
 }
 
