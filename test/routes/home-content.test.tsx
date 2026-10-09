@@ -41,7 +41,7 @@ vi.mock('@/ui/submit-cta', () => ({
 const { Route: HomeRoute } = await import('@/routes/index')
 
 const gallery = {
-  cards: [],
+  items: [],
   page: 1,
   pageCount: 1,
   availableTags: [],

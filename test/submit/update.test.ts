@@ -372,7 +372,7 @@ describe('public reads while an update is pending', () => {
     expect(llms).toContain(live.description)
     expect(llms).not.toContain(update.title)
     const bashFacet = await getFacetPage({ data: { facet: 'bash' } })
-    expect(bashFacet?.cards).toEqual([
+    expect(bashFacet?.configs.items.map(({ item }) => item.card)).toEqual([
       expect.objectContaining({ slug: v1.slug, title: live.title }),
     ])
     expect(await getFacetPage({ data: { facet: 'python' } })).toBeNull()

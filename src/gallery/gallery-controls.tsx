@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { ALL_TAG_SLUGS, FACETS, tagLabel } from '@/gallery/facets'
+import type { GalleryFilter } from '@/gallery/gallery-items'
 import type { GallerySort } from '@/gallery/queries'
 import { Button } from '@/ui/button'
 import {
@@ -20,6 +21,11 @@ const SORT_OPTIONS: { label: string; value: GallerySort }[] = [
   { label: 'New', value: 'new' },
 ]
 const SORT_LABEL: Record<GallerySort, string> = { trending: 'Trending', top: 'Top', new: 'New' }
+const KIND_OPTIONS: { label: string; value: GalleryFilter }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Status lines', value: 'status-lines' },
+  { label: 'Mods', value: 'mods' },
+]
 
 /** Builds the canonical `?tags=` CSV (registry order, de-duped) from the tags a user has toggled on. */
 export function buildTagsCsv(selected: Set<string>): string | undefined {
@@ -27,13 +33,15 @@ export function buildTagsCsv(selected: Set<string>): string | undefined {
   return csv === '' ? undefined : csv
 }
 
-/** Sort single-select + tag multiselect controls for the home gallery. Both navigate on
- * change, preserving the other's current search param and resetting `page`. */
+/** Kind toggle, sort single-select and tag multiselect for the home gallery. Each navigates on
+ * change, preserving the others' current search params and resetting `page`. */
 export function GalleryControls({
+  kind,
   sort,
   tags,
   available,
 }: {
+  kind: GalleryFilter
   sort: GallerySort
   tags: string[]
   available: string[]
@@ -56,6 +64,15 @@ export function GalleryControls({
       search: (prev) => {
         const { page: _page, ...rest } = prev
         return { ...rest, sort: value }
+      },
+    })
+  }
+  const setKind = (value: GalleryFilter) => {
+    navigate({
+      to: '/',
+      search: (prev) => {
+        const { page: _page, kind: _kind, ...rest } = prev
+        return value === 'all' ? rest : { ...rest, kind: value }
       },
     })
   }
@@ -84,7 +101,21 @@ export function GalleryControls({
   }
 
   return (
-    <Row gap={2}>
+    <Row gap={2} wrap>
+      <Row gap={1}>
+        {KIND_OPTIONS.map((o) => (
+          <Button
+            key={o.value}
+            variant="outline"
+            active={kind === o.value}
+            aria-pressed={kind === o.value}
+            onClick={() => setKind(o.value)}
+          >
+            {o.label}
+          </Button>
+        ))}
+      </Row>
+
       <DropdownMenu>
         <DropdownMenuButtonTrigger label={`Sort: ${SORT_LABEL[sort]}`} />
         <DropdownMenuContent>

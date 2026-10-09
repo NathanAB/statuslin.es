@@ -159,11 +159,13 @@ describe('approving an update', () => {
     expect(llms).toContain(update.description)
     expect(llms).not.toContain(live.title)
     const pythonFacet = await getFacetPage({ data: { facet: 'python' } })
-    expect(pythonFacet?.cards.find((card) => card.slug === v1.slug)).toMatchObject({
+    expect(
+      pythonFacet?.configs.items.map(({ item }) => item.card).find((card) => card.slug === v1.slug),
+    ).toMatchObject({
       title: update.title,
     })
     const bashFacet = await getFacetPage({ data: { facet: 'bash' } })
-    expect(bashFacet?.cards.map((card) => card.slug)).not.toContain(v1.slug)
+    expect(bashFacet?.configs.items.map(({ item }) => item.card.slug)).not.toContain(v1.slug)
   })
 
   it('keeps the config in place in the new sort', async () => {
