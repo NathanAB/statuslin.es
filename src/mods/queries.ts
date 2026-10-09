@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { type GeneratedContent, generatedContentSchema } from '@/content/types'
 import { type ModFootprint, modCopyEvents, modPreviews, mods, modVersions } from '@/db/schema'
 import { isUuid } from '@/lib/uuid'
 import type { AnsiSegment } from '@/render/types'
@@ -55,6 +56,7 @@ export interface ModDetail {
   footprint: ModFootprint
   desktopScreenshot: string | null
   preview: AnsiSegment[] | null
+  generatedContent: GeneratedContent | null
 }
 
 /** A published mod by slug with its own current version, or null (draft, removed, unknown). */
@@ -74,6 +76,7 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       footprint: modVersions.footprint,
       desktopScreenshot: modVersions.desktopScreenshot,
       preview: modPreviews.segments,
+      generatedContent: modVersions.generatedContent,
     })
     .from(mods)
     .innerJoin(
@@ -88,7 +91,9 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       ),
     )
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
-  return row ?? null
+  if (!row) return null
+  const content = generatedContentSchema.safeParse(row.generatedContent)
+  return { ...row, generatedContent: content.success ? content.data : null }
 }
 
 /**
