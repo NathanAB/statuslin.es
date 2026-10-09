@@ -61,9 +61,10 @@ export const configs = pgTable(
     // delete-user cascade and the submit rate-limit query (WHERE author_id ...
     // created_at) use an index instead of a seq scan.
     index('configs_author_created_idx').on(t.authorId, t.createdAt),
-    // (status, created_at) predates the `new` sort's move to first_published_at. Top orders by
-    // copy_count, Trending aggregates time-decayed copy events, and New orders by
-    // first_published_at; the gallery is small enough that none of them needs a new index yet. Keep the historical upvote index alongside the retained vote data.
+    // No gallery sort leads with (status, created_at) any more. New orders by first_published_at,
+    // Top by copy_count, and Trending by time-decayed copy events. The gallery is small enough
+    // that none of them needs its own index yet. Keep this index, and the historical upvote index
+    // alongside the retained vote data.
     index('configs_status_created_idx').on(t.status, t.createdAt),
     index('configs_status_upvotes_idx').on(t.status, t.upvoteCount),
     // Supports the gallery tag filter's `all_tags @> '[...]'` containment check.
