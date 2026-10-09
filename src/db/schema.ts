@@ -37,12 +37,9 @@ export const configs = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     slug: text('slug').notNull().unique(),
-    title: text('title').notNull(),
-    description: text('description').notNull().default(''),
     authorId: text('author_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    interpreter: text('interpreter').notNull(),
     /** Curated facet tags from the fixed vocabulary in src/gallery/facets.ts (e.g. 'git',
      * 'token-usage'). Suggested by generate-content / the backfill script, human-confirmed. */
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
@@ -54,6 +51,9 @@ export const configs = pgTable(
     currentVersionId: uuid('current_version_id'),
     upvoteCount: integer('upvote_count').notNull().default(0),
     copyCount: integer('copy_count').notNull().default(0),
+    /** When the config first went live. Set once, at first approval; an approved update moves
+     * only `currentVersionId`, so the gallery's `new` sort keeps the config's place. */
+    firstPublishedAt: timestamp('first_published_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -61,9 +61,10 @@ export const configs = pgTable(
     // delete-user cascade and the submit rate-limit query (WHERE author_id ...
     // created_at) use an index instead of a seq scan.
     index('configs_author_created_idx').on(t.authorId, t.createdAt),
-    // The gallery's `new` sort uses (status, created_at). Top now orders by copy_count and
-    // Trending aggregates time-decayed copy events; the gallery is small enough that neither
-    // needs a new index yet. Keep the historical upvote index alongside the retained vote data.
+    // No gallery sort leads with (status, created_at) any more. New orders by first_published_at,
+    // Top by copy_count, and Trending by time-decayed copy events. The gallery is small enough
+    // that none of them needs its own index yet. Keep this index, and the historical upvote index
+    // alongside the retained vote data.
     index('configs_status_created_idx').on(t.status, t.createdAt),
     index('configs_status_upvotes_idx').on(t.status, t.upvoteCount),
     // Supports the gallery tag filter's `all_tags @> '[...]'` containment check.
@@ -79,6 +80,8 @@ export const configVersions = pgTable(
       .notNull()
       .references(() => configs.id, { onDelete: 'cascade' }),
     versionNumber: integer('version_number').notNull(),
+    title: text('title').notNull(),
+    description: text('description').notNull().default(''),
     source: text('source').notNull(),
     interpreter: text('interpreter').notNull(),
     contentSha256: text('content_sha256').notNull(),

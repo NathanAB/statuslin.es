@@ -150,14 +150,12 @@ export async function seedLoadConfigs(db: Db, opts: { count: number }): Promise<
       .insert(configs)
       .values({
         slug,
-        title: `Load Test ${i}`,
-        description: `Synthetic load-test config #${i}.`,
         authorId: author.id,
-        interpreter: 'bash',
         status: 'published',
         upvoteCount: (i * 37) % 300,
         copyCount: eventCount,
         createdAt,
+        firstPublishedAt: createdAt,
       })
       .returning()
     if (!cfg) throw new Error(`insert configs returned no row for ${slug}`)
@@ -175,6 +173,8 @@ export async function seedLoadConfigs(db: Db, opts: { count: number }): Promise<
       .values({
         configId: cfg.id,
         versionNumber: 1,
+        title: `Load Test ${i}`,
+        description: `Synthetic load-test config #${i}.`,
         source,
         interpreter: 'bash',
         contentSha256,

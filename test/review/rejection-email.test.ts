@@ -23,6 +23,7 @@ describe('sendRejectionEmail', () => {
         title: 'Ada status line',
         reason: 'Remove the network updater.',
         slug: 'ada-status-line',
+        kind: 'submission',
       },
       send,
     )
@@ -64,6 +65,7 @@ describe('sendRejectionEmail', () => {
           title: 'Ada status line',
           reason: 'Remove the updater.',
           slug: 'ada-status-line',
+          kind: 'submission',
         },
         send,
       ),
@@ -71,5 +73,48 @@ describe('sendRejectionEmail', () => {
       name: 'ReviewEmailProviderError',
       message: 'Resend validation_error (422)',
     })
+  })
+
+  it('tells the author their update was not accepted and links a new update', async () => {
+    const send = vi.fn().mockResolvedValue({ data: { id: 'email_update' }, error: null })
+
+    await sendRejectionEmail(
+      {
+        versionId: 'version-3',
+        authorName: 'Ada',
+        authorEmail: 'ada@example.com',
+        title: 'Ada status line',
+        reason: 'Breaks on macOS.',
+        slug: 'ada-status-line',
+        kind: 'update',
+      },
+      send,
+    )
+
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: 'statuslin.es reviews <reviews@statuslin.es>',
+        replyTo: 'hello@statuslin.es',
+        subject: 'Your statuslin.es update was not accepted',
+      }),
+      { idempotencyKey: 'rejection/version-3' },
+    )
+    expect(send.mock.calls[0]?.[0].text).toBe(
+      [
+        'Hi Ada,',
+        '',
+        'Your update to “Ada status line” was not accepted.',
+        '',
+        'Reviewer reason:',
+        'Breaks on macOS.',
+        '',
+        'Your live version is unaffected and stays in the gallery.',
+        '',
+        'View your submissions: https://statuslin.es/me',
+        'Submit a new update: https://statuslin.es/submit?update=ada-status-line',
+        '',
+        'Questions? Reply to this email or contact hello@statuslin.es.',
+      ].join('\n'),
+    )
   })
 })

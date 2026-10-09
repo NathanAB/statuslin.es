@@ -55,10 +55,7 @@ async function makeConfig(slug: string, status = 'published'): Promise<string> {
     .insert(schema.configs)
     .values({
       slug,
-      title: slug,
-      description: '',
       authorId: 'author',
-      interpreter: 'bash',
       status,
     })
     .returning()

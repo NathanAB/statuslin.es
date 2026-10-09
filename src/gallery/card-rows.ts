@@ -8,13 +8,13 @@ export const galleryCardSelection = {
   config: {
     id: configs.id,
     slug: configs.slug,
-    title: configs.title,
-    description: configs.description,
-    interpreter: configs.interpreter,
     copyCount: configs.copyCount,
     allTags: configs.allTags,
   },
   version: {
+    title: configVersions.title,
+    description: configVersions.description,
+    interpreter: configVersions.interpreter,
     contentSha256: configVersions.contentSha256,
     networkHosts: configVersions.networkHosts,
     readsClaudeToken: configVersions.readsClaudeToken,
@@ -27,13 +27,10 @@ export const galleryCardSelection = {
 }
 
 type GalleryCardRow = {
-  config: Pick<
-    typeof configs.$inferSelect,
-    'allTags' | 'copyCount' | 'description' | 'id' | 'interpreter' | 'slug' | 'title'
-  >
+  config: Pick<typeof configs.$inferSelect, 'allTags' | 'copyCount' | 'id' | 'slug'>
   version: Pick<
     typeof configVersions.$inferSelect,
-    'contentSha256' | 'networkHosts' | 'readsClaudeToken'
+    'contentSha256' | 'description' | 'interpreter' | 'networkHosts' | 'readsClaudeToken' | 'title'
   >
   author: Pick<typeof user.$inferSelect, 'image' | 'name' | 'username'> | null
 }
@@ -51,9 +48,9 @@ export function mapCardRows(
   return rows.map((r) => ({
     configId: r.config.id,
     slug: r.config.slug,
-    title: r.config.title,
-    description: r.config.description,
-    interpreter: coerceInterpreter(r.config.interpreter),
+    title: r.version.title,
+    description: r.version.description,
+    interpreter: coerceInterpreter(r.version.interpreter),
     copyCount: r.config.copyCount,
     author: r.author
       ? {

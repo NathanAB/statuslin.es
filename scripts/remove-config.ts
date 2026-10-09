@@ -13,11 +13,10 @@ import { requireEnv } from '@/lib/env'
  * to 'published' restores it. `status` is free text, so no migration is involved. The change is fully
  * reversible, which is why `--restore` exists: an accidental takedown is undone without hand-SQL.
  *
- * A takedown is permanent today: the submit flow (src/submit/submit.ts) always creates a *new* config
- * with a new slug, so a removed config can never gain a new version — nothing re-publishes it except
- * `--restore`. Caveat for the future: `approveVersion` (src/review/decide.ts) sets status='published'
- * unconditionally, so IF an edit-existing-config flow is ever added, guard that approve path or
- * approving an update would silently undo a takedown.
+ * A takedown sticks: nothing re-publishes a removed config except `--restore`. Submitting an update
+ * (src/submit/update.ts) refuses a removed config, and approving an update that was already pending
+ * (`approveVersion` in src/review/approval-delivery.ts) moves only the live-version pointer, never
+ * `status`. Only a config's first approval sets status='published'.
  *
  * AGENT USAGE — this is the emergency takedown tool. When asked to "take down" / "pull" / "remove" a
  * live config, run it against the right environment's DB:

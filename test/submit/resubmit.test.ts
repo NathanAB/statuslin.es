@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { getMySubmissionRows } from '@/review/my-submissions'
 import { getResubmissionDraft, submitConfig } from '@/submit/submit'
 
 let client: PGlite
@@ -60,6 +61,7 @@ describe('getResubmissionDraft', () => {
     const rejected = await rejectedSubmission()
 
     await expect(getResubmissionDraft(db, rejected.slug, 'owner')).resolves.toEqual({
+      kind: 'resubmission',
       versionId: rejected.versionId,
       slug: rejected.slug,
       title: original.title,
@@ -88,12 +90,19 @@ describe('linked resubmission', () => {
       source: 'echo corrected',
       networkHosts: [],
     }
+    const configBefore = await db
+      .select()
+      .from(schema.configs)
+      .where(eq(schema.configs.id, rejected.configId))
 
     const result = await submitConfig(db, corrected, {
       rejectedVersionId: rejected.versionId,
     })
 
     expect(result).toMatchObject({ configId: rejected.configId, slug: rejected.slug })
+    await expect(
+      db.select().from(schema.configs).where(eq(schema.configs.id, rejected.configId)),
+    ).resolves.toEqual(configBefore)
     const versions = await db
       .select()
       .from(schema.configVersions)
@@ -103,20 +112,25 @@ describe('linked resubmission', () => {
     expect(versions[0]).toMatchObject({
       id: rejected.versionId,
       versionNumber: 1,
+      title: original.title,
+      description: original.description,
       source: original.source,
       status: 'rejected',
     })
     expect(versions[1]).toMatchObject({
       id: result.versionId,
       versionNumber: 2,
+      title: corrected.title,
+      description: corrected.description,
+      interpreter: corrected.interpreter,
       source: corrected.source,
       status: 'pending',
     })
-    const [config] = await db
-      .select()
-      .from(schema.configs)
-      .where(eq(schema.configs.id, rejected.configId))
-    expect(config).toMatchObject({
+    const ownerRow = (await getMySubmissionRows(db, 'owner')).find(
+      (row) => row.config.id === rejected.configId,
+    )
+    expect(ownerRow?.version).toMatchObject({
+      id: result.versionId,
       title: corrected.title,
       description: corrected.description,
       interpreter: corrected.interpreter,
@@ -163,6 +177,7 @@ describe('linked resubmission', () => {
       .values({
         configId: rejected.configId,
         versionNumber: 2,
+        title: original.title,
         source: 'echo newer',
         interpreter: 'bash',
         contentSha256: 'newer',
@@ -247,5 +262,43 @@ describe('linked resubmission', () => {
       .from(schema.configVersions)
       .where(eq(schema.configVersions.configId, rejected.configId))
     expect(versions).toHaveLength(2)
+  })
+
+  it('returns 409 when a concurrent resubmission inserts v2 between the read and the insert', async () => {
+    const rejected = await rejectedSubmission()
+    // PGlite runs one transaction at a time, so land the winner's v2 at the exact point a
+    // second Postgres connection could: after this attempt's reads, before its insert.
+    const racingDb = new Proxy(db, {
+      get(target, prop, receiver) {
+        if (prop !== 'transaction') return Reflect.get(target, prop, receiver)
+        return (run: (tx: unknown) => Promise<unknown>) =>
+          target.transaction((tx) =>
+            run(
+              new Proxy(tx, {
+                get(txTarget, txProp, txReceiver) {
+                  if (txProp !== 'insert') return Reflect.get(txTarget, txProp, txReceiver)
+                  return (table: typeof schema.configVersions) => {
+                    if (table !== schema.configVersions) return txTarget.insert(table)
+                    return {
+                      values: (row: typeof schema.configVersions.$inferInsert) => ({
+                        returning: async () => {
+                          await txTarget
+                            .insert(schema.configVersions)
+                            .values({ ...row, source: 'echo winner', contentSha256: 'winner' })
+                          return txTarget.insert(table).values(row).returning()
+                        },
+                      }),
+                    }
+                  }
+                },
+              }),
+            ),
+          )
+      },
+    })
+
+    await expect(
+      submitConfig(racingDb, original, { rejectedVersionId: rejected.versionId }),
+    ).rejects.toMatchObject({ status: 409 })
   })
 })

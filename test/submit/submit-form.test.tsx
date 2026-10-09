@@ -16,6 +16,7 @@ vi.mock('sonner', () => ({ toast: { success: toastSuccess } }))
 
 const USER = { name: 'Test User', username: 'test' }
 const RESUBMISSION = {
+  kind: 'resubmission' as const,
   versionId: 'version-1',
   slug: 'my-status-line',
   title: 'My Statusline',
@@ -23,6 +24,16 @@ const RESUBMISSION = {
   interpreter: 'node' as const,
   source: 'console.log("corrected")',
   networkHosts: ['api.github.com'],
+}
+
+const UPDATE = {
+  kind: 'update' as const,
+  slug: 'live-line',
+  title: 'Live line',
+  description: 'Shows the live context',
+  interpreter: 'python' as const,
+  source: 'print("live")',
+  networkHosts: ['wttr.in'],
 }
 
 function fillRequiredFields() {
@@ -152,5 +163,46 @@ describe('SubmitForm', () => {
         data: expect.objectContaining({ rejectedVersionId: second.versionId }),
       }),
     )
+  })
+
+  it('prefills every editable field from the live version for an update', () => {
+    render(<SubmitForm user={USER} initial={UPDATE} />)
+
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe(UPDATE.title)
+    expect((screen.getByLabelText('Description') as HTMLTextAreaElement).value).toBe(
+      UPDATE.description,
+    )
+    expect((screen.getByLabelText('Interpreter') as HTMLSelectElement).value).toBe('python')
+    expect((screen.getByLabelText('Source code') as HTMLTextAreaElement).value).toBe(UPDATE.source)
+    expect(screen.getByText('wttr.in')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Submit update' })).toBeTruthy()
+  })
+
+  it('posts the update slug and no rejected version when submitting an update', async () => {
+    render(<SubmitForm user={USER} initial={UPDATE} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit update' }))
+
+    await waitFor(() =>
+      expect(submitConfigFn).toHaveBeenCalledWith({
+        data: {
+          title: UPDATE.title,
+          description: UPDATE.description,
+          interpreter: UPDATE.interpreter,
+          source: UPDATE.source,
+          networkHosts: UPDATE.networkHosts,
+          updateSlug: UPDATE.slug,
+        },
+      }),
+    )
+  })
+
+  it('resets the fields when switching from a resubmission to an update', () => {
+    const { rerender } = render(<SubmitForm user={USER} initial={RESUBMISSION} />)
+
+    rerender(<SubmitForm user={USER} initial={UPDATE} />)
+
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe(UPDATE.title)
+    expect(screen.getByRole('button', { name: 'Submit update' })).toBeTruthy()
   })
 })

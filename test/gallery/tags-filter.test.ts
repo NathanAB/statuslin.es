@@ -34,10 +34,7 @@ beforeAll(async () => {
       .insert(schema.configs)
       .values({
         slug,
-        title,
-        description: 'desc',
         authorId: 'u1',
-        interpreter: 'bash',
         status: 'published',
         allTags,
       })
@@ -48,6 +45,8 @@ beforeAll(async () => {
       .values({
         configId: cfg.id,
         versionNumber: 1,
+        title,
+        description: 'desc',
         source: '#!/usr/bin/env bash\necho hi',
         interpreter: 'bash',
         contentSha256: sha,

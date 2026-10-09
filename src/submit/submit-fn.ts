@@ -9,36 +9,58 @@ import { isUuid } from '@/lib/uuid'
 import { pingWorkerWake, workerWakeUrl } from '@/lib/wake'
 import {
   getResubmissionDraft,
+  getUpdateDraft,
   type SubmitInput,
+  type SubmitOptions,
   submitConfig,
   validateSubmitInput,
 } from '@/submit/submit'
 import { submittedEvent } from '@/submit/submitted-event'
 
-type SubmitRequest = Omit<SubmitInput, 'authorId'> & { rejectedVersionId?: string }
+type SubmitRequest = Omit<SubmitInput, 'authorId'> & {
+  rejectedVersionId?: string
+  updateSlug?: string
+}
 const SUBMISSION_SLUG_MAX = 256
 
-function validateResubmissionRequest(data: { slug: unknown }) {
-  if (typeof data.slug !== 'string') throw new HttpError(400, 'invalid submission')
-  const slug = data.slug.trim()
+function parseSubmissionSlug(value: unknown): string {
+  if (typeof value !== 'string') throw new HttpError(400, 'invalid submission')
+  const slug = value.trim()
   if (!slug || slug.length > SUBMISSION_SLUG_MAX || !/^[a-z0-9-]+$/.test(slug)) {
     throw new HttpError(400, 'invalid submission')
   }
-  return { slug }
+  return slug
+}
+
+function validateDraftRequest(data: { slug: unknown }) {
+  return { slug: parseSubmissionSlug(data.slug) }
+}
+
+function parseRejectedVersionId(value: unknown): string {
+  if (typeof value !== 'string') throw new HttpError(400, 'invalid rejected version')
+  const rejectedVersionId = value.trim()
+  if (!isUuid(rejectedVersionId)) throw new HttpError(400, 'invalid rejected version')
+  return rejectedVersionId
 }
 
 function validateSubmitRequest(data: SubmitRequest): SubmitRequest {
   const input = validateSubmitInput(data)
-  if (data.rejectedVersionId === undefined) return input
-  if (typeof data.rejectedVersionId !== 'string') {
-    throw new HttpError(400, 'invalid rejected version')
+  if (data.rejectedVersionId !== undefined && data.updateSlug !== undefined) {
+    throw new HttpError(400, 'a submission is either a resubmission or an update, not both')
   }
-  const rejectedVersionId = data.rejectedVersionId.trim()
-  if (!isUuid(rejectedVersionId)) throw new HttpError(400, 'invalid rejected version')
-  return {
-    ...input,
-    rejectedVersionId,
+  if (data.rejectedVersionId !== undefined) {
+    return { ...input, rejectedVersionId: parseRejectedVersionId(data.rejectedVersionId) }
   }
+  if (data.updateSlug !== undefined) {
+    return { ...input, updateSlug: parseSubmissionSlug(data.updateSlug) }
+  }
+  return input
+}
+
+function submitOptions({ rejectedVersionId, updateSlug }: SubmitRequest): SubmitOptions {
+  if (rejectedVersionId !== undefined) return { rejectedVersionId }
+  if (updateSlug !== undefined) return { updateSlug }
+  return {}
 }
 
 export const submitConfigFn = createServerFn({ method: 'POST' })
@@ -47,11 +69,11 @@ export const submitConfigFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })
       if (!session?.user) throw new HttpError(401, 'must be signed in to submit')
-      const { rejectedVersionId, ...input } = data
+      const { rejectedVersionId: _rejected, updateSlug: _update, ...input } = data
       const result = await submitConfig(
         db,
         { ...input, authorId: session.user.id },
-        rejectedVersionId === undefined ? {} : { rejectedVersionId },
+        submitOptions(data),
       )
       // Fire the submission event SERVER-SIDE (was browser-side, where ad blockers strip it) so the
       // count is reliable — this is also what an email-on-submit alert filters on. captureServerEvent
@@ -70,11 +92,21 @@ export const submitConfigFn = createServerFn({ method: 'POST' })
   )
 
 export const getResubmissionDraftFn = createServerFn({ method: 'GET' })
-  .inputValidator(validateResubmissionRequest)
+  .inputValidator(validateDraftRequest)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })
       if (!session?.user) throw new HttpError(401, 'must be signed in to resubmit')
       return getResubmissionDraft(db, data.slug, session.user.id)
+    }),
+  )
+
+export const getUpdateDraftFn = createServerFn({ method: 'GET' })
+  .inputValidator(validateDraftRequest)
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      const session = await auth.api.getSession({ headers: getRequestHeaders() })
+      if (!session?.user) throw new HttpError(401, 'must be signed in to submit an update')
+      return getUpdateDraft(db, data.slug, session.user.id)
     }),
   )

@@ -31,9 +31,7 @@ beforeAll(async () => {
     .insert(schema.configs)
     .values({
       slug: 'all-tags-recompute',
-      title: 'T',
       authorId: 'u1',
-      interpreter: 'node',
       status: 'draft',
       tags: ['quota'],
     })
@@ -46,6 +44,7 @@ beforeAll(async () => {
     .values({
       configId: cfg.id,
       versionNumber: 1,
+      title: 'T',
       source: 'console.log("hi")',
       interpreter: 'node',
       contentSha256: 'sha-all-tags-recompute',

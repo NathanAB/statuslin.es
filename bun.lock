@@ -16,6 +16,7 @@
         "better-auth": "1.6.22",
         "class-variance-authority": "0.7.1",
         "clsx": "2.1.1",
+        "diff": "8.0.4",
         "drizzle-orm": "0.45.2",
         "e2b": "2.27.0",
         "lucide-react": "1.17.0",

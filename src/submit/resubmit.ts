@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs } from '@/db/schema'
+import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
 import type { Interpreter } from '@/render/types'
 import type { SubmitResult } from './submit'
@@ -19,6 +20,7 @@ const SUPERSEDABLE_REJECTION_EMAIL_STATUSES = [
 ] as const
 
 export interface ResubmissionDraft {
+  kind: 'resubmission'
   versionId: string
   slug: string
   title: string
@@ -28,7 +30,7 @@ export interface ResubmissionDraft {
   networkHosts: string[]
 }
 
-export interface PreparedResubmission {
+export interface PreparedVersion {
   authorId: string
   title: string
   description: string
@@ -58,12 +60,12 @@ function assertResubmissionTarget(
   }
 }
 
-async function supersedeRejectionDelivery(
+export async function supersedeRejectionDelivery(
   database: Pick<Db, 'update'>,
   version: typeof configVersions.$inferSelect,
 ): Promise<void> {
   if (version.rejectionEmailStatus === 'sending') {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before resubmitting')
+    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
   }
   if (
     !SUPERSEDABLE_REJECTION_EMAIL_STATUSES.some((status) => status === version.rejectionEmailStatus)
@@ -81,7 +83,7 @@ async function supersedeRejectionDelivery(
     )
     .returning({ id: configVersions.id })
   if (!superseded) {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before resubmitting')
+    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
   }
 }
 
@@ -105,10 +107,11 @@ export async function getResubmissionDraft(
     throw new HttpError(409, 'only the latest rejected version can be resubmitted')
   }
   return {
+    kind: 'resubmission',
     versionId: row.version.id,
     slug: row.config.slug,
-    title: row.config.title,
-    description: row.config.description,
+    title: row.version.title,
+    description: row.version.description,
     interpreter: row.version.interpreter,
     source: row.version.source,
     networkHosts: row.version.networkHosts ?? [],
@@ -118,7 +121,7 @@ export async function getResubmissionDraft(
 export async function createResubmissionVersion(
   database: Db,
   rejectedVersionId: string,
-  input: PreparedResubmission,
+  input: PreparedVersion,
 ): Promise<SubmitResult> {
   try {
     return await database.transaction(async (tx) => {
@@ -136,19 +139,13 @@ export async function createResubmissionVersion(
         .limit(1)
       assertResubmissionTarget(target, latest?.id, input.authorId)
       await supersedeRejectionDelivery(tx, target.version)
-      await tx
-        .update(configs)
-        .set({
-          title: input.title,
-          description: input.description,
-          interpreter: input.interpreter,
-        })
-        .where(eq(configs.id, target.config.id))
       const [version] = await tx
         .insert(configVersions)
         .values({
           configId: target.config.id,
           versionNumber: target.version.versionNumber + 1,
+          title: input.title,
+          description: input.description,
           source: input.source,
           interpreter: input.interpreter,
           contentSha256: input.contentSha256,
@@ -172,7 +169,7 @@ export async function createResubmissionVersion(
       }
     })
   } catch (error) {
-    if ((error as { code?: string }).code === '23505') {
+    if (isUniqueViolation(error)) {
       throw new HttpError(409, 'submission was already resubmitted')
     }
     throw error

@@ -39,9 +39,6 @@ function row(over: {
     config: {
       id: 'c1',
       slug: 'my-line',
-      title: 'My line',
-      description: '',
-      interpreter: 'bash',
       status: 'draft',
       authorId: 'u1',
       author: { name: 'Test User', username: 'test', image: null },
@@ -52,6 +49,9 @@ function row(over: {
     version: {
       id: over.id ?? 'v1',
       versionNumber: 1,
+      title: 'My line',
+      description: '',
+      interpreter: 'bash',
       source: '#!/bin/bash\necho hi',
       contentSha256: 'abc123def456',
       status: over.versionStatus ?? 'pending',

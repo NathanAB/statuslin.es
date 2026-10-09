@@ -35,14 +35,9 @@ export function HomeIndexNote({
   asOf: string
 }) {
   return (
-    <Stack gap={1}>
-      <Text muted size="xs" center>
-        {publishedCount} published status lines, copied {copyCount.toLocaleString('en-US')} times as
-        of <time dateTime={asOf}>{utcDateLabel(asOf)}</time>.
-      </Text>
-      <Text muted size="xs" center>
-        A gallery of scripts you paste into Claude Code, not a TUI installer.
-      </Text>
-    </Stack>
+    <Text muted size="xs" center>
+      {publishedCount} published status lines, copied {copyCount.toLocaleString('en-US')} times as
+      of <time dateTime={asOf}>{utcDateLabel(asOf)}</time>.
+    </Text>
   )
 }

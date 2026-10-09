@@ -15,7 +15,10 @@ import {
 } from '@/review/dashboard-card-parts'
 import { ReviewDecisionControls } from '@/review/dashboard-rejection-controls'
 import { RejectionDetails } from '@/review/dashboard-rejection-details'
+import { UpdateDetails } from '@/review/dashboard-update-details'
+import { UpdateReview } from '@/review/dashboard-update-review'
 import { requeueRenderJobFn, runNetworkPreviewFn, setReadsClaudeTokenFn } from '@/review/decide'
+import type { UpdateSummary } from '@/review/my-submissions'
 import type { DashboardRow } from '@/review/queue'
 
 export { StatusSummary } from '@/review/dashboard-card-parts'
@@ -110,6 +113,7 @@ export function SubmissionCard({
   showActions = true,
   statusMode = 'render',
   detailSlug,
+  updateDetails,
 }: {
   row: DashboardRow
   /** Admin view shows Approve/Reject/Re-queue; an author's own /me view is read-only. */
@@ -119,6 +123,8 @@ export function SubmissionCard({
   /** When the config is published, its detail-page slug — turns the whole card into a link
    *  (gallery hover + stretched title) and drops the disclosures the detail page already shows. */
   detailSlug?: string | undefined
+  /** On an author's published config: its pending update's state and a Submit update link. */
+  updateDetails?: { slug: string; update: UpdateSummary | null } | undefined
 }) {
   const router = useRouter()
   const { config, version, renderJob, previews } = row
@@ -164,22 +170,25 @@ export function SubmissionCard({
     )
 
   return (
-    <SectionCard interactive={linked} title={titleFor(config, detailSlug)}>
+    <SectionCard interactive={linked} title={titleFor(version, detailSlug)}>
       <Stack gap={4}>
         <Row gap={2} align="center" wrap>
+          {row.live ? <Badge variant="secondary">{`Update to ${config.slug}`}</Badge> : null}
           <Badge variant={view.variant}>{view.label}</Badge>
           <Text muted size="sm">
             {view.headline}
           </Text>
         </Row>
 
-        {config.description ? <Text size="sm">{config.description}</Text> : null}
+        {version.description ? <Text size="sm">{version.description}</Text> : null}
 
         {isReady && preview ? <StatuslinePreview segments={preview.segments} /> : null}
 
         {renderJob.status === 'failed' && renderJob.error ? (
           <Notice tone="error">{renderJob.error}</Notice>
         ) : null}
+
+        {row.live ? <UpdateReview version={version} live={row.live} /> : null}
 
         <RejectionDetails version={version} slug={config.slug} showActions={showActions} />
         <ApprovalDetails version={version} showActions={showActions} />
@@ -216,6 +225,8 @@ export function SubmissionCard({
             )}
           </Stack>
         ) : null}
+
+        {updateDetails ? <UpdateDetails {...updateDetails} /> : null}
       </Stack>
     </SectionCard>
   )

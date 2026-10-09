@@ -396,10 +396,7 @@ describe('releaseHeldSeeds', () => {
       .insert(configsTable)
       .values({
         slug: 'real-user-held-config',
-        title: 'Real User Held Config',
-        description: 'd',
         authorId: 'real-web-user',
-        interpreter: 'bash',
         status: 'draft',
       })
       .returning()
@@ -408,6 +405,8 @@ describe('releaseHeldSeeds', () => {
       .values({
         configId: realConfig?.id as string,
         versionNumber: 1,
+        title: 'Real User Held Config',
+        description: 'd',
         source: '#!/usr/bin/env bash\necho ok',
         interpreter: 'bash',
         contentSha256: 'deadbeef',
@@ -544,10 +543,7 @@ describe('publishRenderedSeeds', () => {
       .insert(configsTable)
       .values({
         slug: 'real-user-publish-config',
-        title: 'Real User Publish Config',
-        description: 'd',
         authorId: 'real-publish-user',
-        interpreter: 'bash',
         status: 'draft',
       })
       .returning()
@@ -556,6 +552,8 @@ describe('publishRenderedSeeds', () => {
       .values({
         configId: realConfig?.id as string,
         versionNumber: 1,
+        title: 'Real User Publish Config',
+        description: 'd',
         source: '#!/usr/bin/env bash\necho ok',
         interpreter: 'bash',
         contentSha256: 'realdeadbeef',

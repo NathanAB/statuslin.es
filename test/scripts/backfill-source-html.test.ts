@@ -24,10 +24,7 @@ beforeAll(async () => {
     .insert(schema.configs)
     .values({
       slug: 'bf-cfg',
-      title: 'BF',
-      description: '',
       authorId: 'bf-user',
-      interpreter: 'bash',
       status: 'published',
     })
     .returning()
@@ -35,6 +32,8 @@ beforeAll(async () => {
     {
       configId: cfg!.id,
       versionNumber: 1,
+      title: 'BF',
+      description: '',
       source: 'echo needs-highlight',
       interpreter: 'bash',
       contentSha256: 'a'.repeat(64),
@@ -43,6 +42,8 @@ beforeAll(async () => {
     {
       configId: cfg!.id,
       versionNumber: 2,
+      title: 'BF',
+      description: '',
       source: 'echo already',
       interpreter: 'bash',
       contentSha256: 'b'.repeat(64),

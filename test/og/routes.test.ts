@@ -30,10 +30,7 @@ beforeAll(async () => {
     .insert(schema.configs)
     .values({
       slug: 'card-one',
-      title: 'Card One',
-      description: 'd',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
     })
     .returning()
@@ -42,6 +39,8 @@ beforeAll(async () => {
     .values({
       configId: cfg!.id,
       versionNumber: 1,
+      title: 'Card One',
+      description: 'd',
       source: '#!/bin/bash\necho hi',
       interpreter: 'bash',
       contentSha256: sha,

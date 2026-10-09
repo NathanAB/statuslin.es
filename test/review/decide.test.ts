@@ -28,9 +28,7 @@ async function seedVersionWithJob(
     .insert(schema.configs)
     .values({
       slug: `s-${Date.now()}-${Math.random()}`,
-      title: 'T',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'draft',
     })
     .returning()
@@ -40,6 +38,7 @@ async function seedVersionWithJob(
     .values({
       configId: cfg.id,
       versionNumber: 1,
+      title: 'T',
       source: '#!/bin/bash\necho hi',
       interpreter: 'bash',
       contentSha256: `sha-${Math.random()}`,

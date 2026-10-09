@@ -44,7 +44,7 @@ export async function tagBurnRate(db: Db, write: boolean): Promise<string[]> {
     .select({ config: schema.configs, version: schema.configVersions })
     .from(schema.configs)
     .innerJoin(schema.configVersions, eq(schema.configVersions.id, schema.configs.currentVersionId))
-    .where(inArray(schema.configs.title, BURN_RATE_TITLES))
+    .where(inArray(schema.configVersions.title, BURN_RATE_TITLES))
 
   const changed: string[] = []
   for (const { config, version } of rows) {

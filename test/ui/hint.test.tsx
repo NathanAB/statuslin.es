@@ -17,4 +17,16 @@ describe('Hint', () => {
       expect.arrayContaining(['border', 'border-border', 'bg-card']),
     )
   })
+
+  it('puts an action after its text, inside the same strip', () => {
+    const { container } = render(
+      <Hint icon={Monitor} action={<button type="button">Act</button>}>
+        Some text
+      </Hint>,
+    )
+    const strip = container.firstElementChild
+    expect(strip?.className.split(' ')).toEqual(expect.arrayContaining(['border', 'bg-card']))
+    expect(strip?.lastElementChild?.innerHTML).toBe('<button type="button">Act</button>')
+    expect(container.textContent).toBe('Some textAct')
+  })
 })

@@ -36,6 +36,7 @@ describe('getPublishedSlugsForSitemap', () => {
       .values({
         configId: reviewed.id,
         versionNumber: 1,
+        title: 'reviewed-current',
         source: 'echo reviewed',
         interpreter: 'bash',
         contentSha256: 'reviewed-current'.padEnd(64, '0'),
@@ -46,6 +47,7 @@ describe('getPublishedSlugsForSitemap', () => {
     await db.insert(schema.configVersions).values({
       configId: reviewed.id,
       versionNumber: 2,
+      title: 'reviewed-current',
       source: 'echo not current',
       interpreter: 'bash',
       contentSha256: 'reviewed-not-current'.padEnd(64, '0'),
@@ -60,6 +62,7 @@ describe('getPublishedSlugsForSitemap', () => {
       .values({
         configId: fallback.id,
         versionNumber: 1,
+        title: 'created-fallback',
         source: 'echo fallback',
         interpreter: 'bash',
         contentSha256: 'created-fallback'.padEnd(64, '0'),
@@ -74,6 +77,7 @@ describe('getPublishedSlugsForSitemap', () => {
       .values({
         configId: draft.id,
         versionNumber: 1,
+        title: 'draft-hidden',
         source: 'echo draft',
         interpreter: 'bash',
         contentSha256: 'draft-hidden'.padEnd(64, '0'),
@@ -86,9 +90,7 @@ describe('getPublishedSlugsForSitemap', () => {
     await insertConfig('orphan-hidden', 'published', '2026-07-01')
     await db.insert(schema.configs).values({
       slug: 'unknown-current-hidden',
-      title: 'unknown-current-hidden',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
       currentVersionId: '11111111-1111-4111-8111-111111111111',
       createdAt: new Date('2026-08-01T00:00:00Z'),
@@ -107,9 +109,7 @@ async function insertConfig(slug: string, status: string, createdDate: string) {
     .insert(schema.configs)
     .values({
       slug,
-      title: slug,
       authorId: 'u1',
-      interpreter: 'bash',
       status,
       createdAt: new Date(`${createdDate}T00:00:00Z`),
     })

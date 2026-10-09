@@ -7,7 +7,7 @@ import {
   type SendRejectionEmail,
   sendRejectionEmail,
 } from './rejection-email'
-import { ReviewEmailProviderError } from './review-email'
+import { ReviewEmailProviderError, type ReviewedChange } from './review-email'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -53,20 +53,30 @@ export async function rejectVersion(
   if (!row) throw new HttpError(409, 'version not in a reviewable (pending) state')
 }
 
-async function isCurrentRejectedDraft(
+/** What a still-current rejection is about, with the title its email names: the rejected
+ * version's own for a never-published config, the live version's for an update. Null when a
+ * newer version exists or the config left the state the rejection applies to. */
+async function currentRejection(
   database: Db,
-  configId: string,
+  row: { configId: string; configStatus: string; currentVersionId: string | null; title: string },
   versionId: string,
-  configStatus: string,
-  currentVersionId: string | null,
-): Promise<boolean> {
+): Promise<{ kind: ReviewedChange; title: string } | null> {
   const [latest] = await database
     .select({ id: configVersions.id })
     .from(configVersions)
-    .where(eq(configVersions.configId, configId))
+    .where(eq(configVersions.configId, row.configId))
     .orderBy(desc(configVersions.versionNumber))
     .limit(1)
-  return configStatus === 'draft' && currentVersionId === null && latest?.id === versionId
+  if (latest?.id !== versionId) return null
+  if (row.configStatus === 'draft' && row.currentVersionId === null) {
+    return { kind: 'submission', title: row.title }
+  }
+  if (row.configStatus !== 'published' || row.currentVersionId === null) return null
+  const [live] = await database
+    .select({ title: configVersions.title })
+    .from(configVersions)
+    .where(eq(configVersions.id, row.currentVersionId))
+  return live ? { kind: 'update', title: live.title } : null
 }
 
 function assertRetryableRejectionEmailStatus(status: string | null): void {
@@ -91,7 +101,7 @@ async function deliverRejectionEmail(
       authorName: user.name,
       authorEmail: user.email,
       emailVerified: user.emailVerified,
-      title: configs.title,
+      title: configVersions.title,
       slug: configs.slug,
     })
     .from(configVersions)
@@ -101,15 +111,8 @@ async function deliverRejectionEmail(
   if (row?.versionStatus !== 'rejected' || !row.reason) {
     throw new HttpError(409, 'version is not an email-ready rejection')
   }
-  if (
-    !(await isCurrentRejectedDraft(
-      database,
-      row.configId,
-      versionId,
-      row.configStatus,
-      row.currentVersionId,
-    ))
-  ) {
+  const rejection = await currentRejection(database, row, versionId)
+  if (!rejection) {
     throw new HttpError(409, 'rejection email was superseded by a newer submission state')
   }
   assertRetryableRejectionEmailStatus(row.emailStatus)
@@ -145,9 +148,10 @@ async function deliverRejectionEmail(
     versionId,
     authorName: row.authorName,
     authorEmail: row.authorEmail,
-    title: row.title,
+    title: rejection.title,
     reason: row.reason,
     slug: row.slug,
+    kind: rejection.kind,
   }
   try {
     const result = await send(input)

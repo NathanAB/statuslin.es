@@ -1,0 +1,213 @@
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it, vi } from 'vitest'
+import type { MySubmissionRow, UpdateSummary } from '@/review/my-submissions'
+
+vi.mock('@/lib/auth-client', () => ({ authClient: { signOut: vi.fn() } }))
+vi.mock('@tanstack/react-router', async (orig) => ({
+  ...(await orig<typeof import('@tanstack/react-router')>()),
+  useRouter: () => ({ invalidate: vi.fn() }),
+  Link: ({
+    to,
+    params,
+    search,
+    children,
+    ...props
+  }: {
+    to: string
+    params?: Record<string, string>
+    search?: Record<string, string>
+    children: React.ReactNode
+  }) => {
+    const path = params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to
+    const query = search ? `?${new URLSearchParams(search).toString()}` : ''
+    return (
+      <a href={`${path}${query}`} {...props}>
+        {children}
+      </a>
+    )
+  },
+}))
+
+const { MySubmissionsView } = await import('@/review/dashboard-views')
+
+const USER = { name: 'Owner', username: 'owner', image: null, role: null }
+
+function row(over: {
+  configStatus: string
+  versionStatus: string
+  update?: UpdateSummary | null
+}): MySubmissionRow {
+  return {
+    config: {
+      id: 'c1',
+      slug: 'my-line',
+      status: over.configStatus,
+      authorId: 'owner',
+      author: { name: 'Owner', username: 'owner', image: null },
+      upvoteCount: 0,
+      copyCount: 0,
+      createdAt: new Date('2026-06-13T12:00:00Z'),
+    },
+    version: {
+      id: 'v1',
+      versionNumber: 1,
+      title: 'My line',
+      description: '',
+      interpreter: 'bash',
+      source: 'echo hi',
+      contentSha256: 'abc123',
+      status: over.versionStatus,
+      createdAt: new Date('2026-06-13T12:00:00Z'),
+      networkHosts: [],
+      readsClaudeToken: false,
+      rejectionReason: null,
+    },
+    renderJob: {
+      status: 'done',
+      attempts: 1,
+      error: null,
+      createdAt: new Date('2026-06-13T12:00:00Z'),
+      finishedAt: new Date('2026-06-13T12:01:00Z'),
+    },
+    previews: [],
+    update: over.update ?? null,
+  }
+}
+
+const html = (r: MySubmissionRow) =>
+  renderToStaticMarkup(<MySubmissionsView rows={[r]} user={USER} />)
+const UPDATE_LINK = 'href="/submit?update=my-line"'
+
+/** The update link's button variant and visible label, or null when the card has none. */
+function updateButton(markup: string): { variant: string; label: string } | null {
+  const match = markup.match(
+    /<a href="\/submit\?update=my-line"[^>]*data-slot="button"[^>]*data-variant="(\w+)"[^>]*>(.*?)<\/a>/,
+  )
+  if (!match) return null
+  return { variant: match[1] ?? '', label: (match[2] ?? '').replace(/<[^>]+>/g, '') }
+}
+
+describe('MySubmissionsView update state', () => {
+  it.each([
+    ['queued', 'Update v2 queued to render'],
+    ['running', 'Update v2 rendering'],
+    ['failed', 'Update v2 failed to render'],
+    ['done', 'Update v2 in review'],
+    ['held', 'Update v2 in review'],
+  ])('keeps a published card linked and shows a %s update', (renderStatus, line) => {
+    const markup = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: { versionNumber: 2, status: 'pending', renderStatus, rejectionReason: null },
+      }),
+    )
+    expect(markup).toContain('href="/c/my-line"')
+    expect(markup).toContain('published')
+    expect(markup).toContain(line)
+  })
+
+  it('keeps a published card linked and shows a rejected update with its reason', () => {
+    const markup = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: {
+          versionNumber: 2,
+          status: 'rejected',
+          renderStatus: 'done',
+          rejectionReason: 'Breaks on macOS',
+        },
+      }),
+    )
+    expect(markup).toContain('href="/c/my-line"')
+    expect(markup).toContain('published')
+    expect(markup).not.toContain('Not accepted')
+    expect(markup).toContain('Update not accepted')
+    expect(markup).toMatch(/class="ph-no-capture">.*Breaks on macOS/)
+    expect(updateButton(markup)).toEqual({ variant: 'default', label: 'Submit a new update' })
+    expect(markup).not.toContain('Submit update')
+    expect(markup).not.toContain('Fix and resubmit')
+  })
+
+  it('shows a rejected update without a reason block when none was stored', () => {
+    const markup = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: {
+          versionNumber: 2,
+          status: 'rejected',
+          renderStatus: 'done',
+          rejectionReason: null,
+        },
+      }),
+    )
+    expect(markup).toContain('Update not accepted')
+    expect(markup).toContain('Submit a new update')
+    expect(markup).not.toContain('ph-no-capture')
+  })
+
+  it('offers Submit update only on a published config', () => {
+    expect(html(row({ configStatus: 'published', versionStatus: 'approved' }))).toContain(
+      UPDATE_LINK,
+    )
+    expect(html(row({ configStatus: 'draft', versionStatus: 'pending' }))).not.toContain(
+      'Submit update',
+    )
+    expect(html(row({ configStatus: 'removed', versionStatus: 'approved' }))).not.toContain(
+      'Submit update',
+    )
+  })
+
+  it('lifts Submit update above the card-wide title link so it stays clickable', () => {
+    const markup = html(row({ configStatus: 'published', versionStatus: 'approved' }))
+    expect(markup).toMatch(/<div class="[^"]*\bz-10\b[^"]*"><a href="\/submit\?update=my-line"/)
+  })
+
+  it('styles Submit update as a primary button when no update was rejected', () => {
+    expect(
+      updateButton(html(row({ configStatus: 'published', versionStatus: 'approved' }))),
+    ).toEqual({ variant: 'default', label: 'Submit update' })
+    const pending = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: {
+          versionNumber: 2,
+          status: 'pending',
+          renderStatus: 'done',
+          rejectionReason: null,
+        },
+      }),
+    )
+    expect(updateButton(pending)).toEqual({ variant: 'default', label: 'Submit update' })
+  })
+
+  it('puts the update state just above the button, below the card details', () => {
+    const markup = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: {
+          versionNumber: 2,
+          status: 'pending',
+          renderStatus: 'done',
+          rejectionReason: null,
+        },
+      }),
+    )
+    const meta = markup.indexOf('abc123')
+    const state = markup.indexOf('Update v2 in review')
+    const button = markup.indexOf(UPDATE_LINK)
+    expect(meta).toBeGreaterThan(-1)
+    expect(meta).toBeLessThan(state)
+    expect(state).toBeLessThan(button)
+  })
+
+  it('keeps Fix and resubmit for a rejected draft', () => {
+    const markup = html(row({ configStatus: 'draft', versionStatus: 'rejected' }))
+    expect(markup).toContain('href="/submit?resubmit=my-line"')
+    expect(markup).not.toContain('Submit update')
+  })
+})

@@ -22,10 +22,7 @@ async function seedConfigs(
       .insert(schema.configs)
       .values({
         slug: `seed-${authorId}-${i}-${Date.now()}-${Math.random()}`,
-        title: `Seeded Config ${i}`,
-        description: 'seeded',
         authorId,
-        interpreter: 'bash',
         status: 'draft',
         createdAt,
       })
@@ -33,6 +30,8 @@ async function seedConfigs(
     await db.insert(schema.configVersions).values({
       configId: config!.id,
       versionNumber: 1,
+      title: `Seeded Config ${i}`,
+      description: 'seeded',
       source: 'echo seeded',
       interpreter: 'bash',
       contentSha256: `seed-${authorId}-${i}`,
@@ -54,10 +53,7 @@ async function seedRenderJobs(
     .insert(schema.configs)
     .values({
       slug: `queue-seed-${authorId}-${Date.now()}-${Math.random()}`,
-      title: 'Queue Seed Config',
-      description: 'seeded',
       authorId,
-      interpreter: 'bash',
       status: 'draft',
     })
     .returning()
@@ -68,6 +64,8 @@ async function seedRenderJobs(
     .values({
       configId: cfg.id,
       versionNumber: 1,
+      title: 'Queue Seed Config',
+      description: 'seeded',
       source: '#!/bin/bash\necho seed',
       interpreter: 'bash',
       contentSha256: 'seed',
@@ -178,7 +176,8 @@ describe('submitConfig', () => {
     const rows = await db
       .select()
       .from(schema.configs)
-      .where(eq(schema.configs.title, 'Obfuscated Submission'))
+      .innerJoin(schema.configVersions, eq(schema.configVersions.configId, schema.configs.id))
+      .where(eq(schema.configVersions.title, 'Obfuscated Submission'))
     expect(rows).toHaveLength(0)
   })
 
@@ -346,7 +345,8 @@ describe('submitConfig', () => {
       const rows = await db
         .select()
         .from(schema.configs)
-        .where(eq(schema.configs.title, 'Over Global Queue Cap'))
+        .innerJoin(schema.configVersions, eq(schema.configVersions.configId, schema.configs.id))
+        .where(eq(schema.configVersions.title, 'Over Global Queue Cap'))
       expect(rows).toHaveLength(0)
     })
 

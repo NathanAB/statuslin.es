@@ -37,10 +37,7 @@ async function seedQueuedJob(ageSec: number, sha: string) {
     .insert(schema.configs)
     .values({
       slug: `s-${sha.slice(0, 6)}`,
-      title: 'T',
-      description: '',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'draft',
     })
     .returning()
@@ -49,6 +46,8 @@ async function seedQueuedJob(ageSec: number, sha: string) {
     .values({
       configId: cfg!.id,
       versionNumber: 1,
+      title: 'T',
+      description: '',
       source: '#!/bin/bash\necho x',
       interpreter: 'bash',
       contentSha256: sha,

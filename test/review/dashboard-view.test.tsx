@@ -22,9 +22,6 @@ function contactNeededRow(): DashboardRow {
     config: {
       id: 'c1',
       slug: 'needs-contact',
-      title: 'Needs contact',
-      description: '',
-      interpreter: 'bash',
       status: 'draft',
       authorId: 'u1',
       author: { name: 'Ada', username: 'ada', image: null },
@@ -35,6 +32,9 @@ function contactNeededRow(): DashboardRow {
     version: {
       id: 'v1',
       versionNumber: 1,
+      title: 'Needs contact',
+      description: '',
+      interpreter: 'bash',
       source: 'echo hi',
       contentSha256: 'abc123',
       status: 'rejected',
@@ -96,7 +96,7 @@ describe('DashboardView', () => {
 
   it('partitions approved unsent submissions under Contact needed', () => {
     const approved = contactNeededRow()
-    approved.config.title = 'Approved contact'
+    approved.version.title = 'Approved contact'
     approved.config.status = 'published'
     approved.version.status = 'approved'
     approved.version.rejectionReason = null

@@ -2,7 +2,7 @@ import '@/lib/refuse-in-production'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { user } from '@/db/auth-schema'
-import { configs, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs } from '@/db/schema'
 import { E2BSandboxRunner } from '@/render/e2b-runner'
 import { approveVersion } from '@/review/decide'
 import { submitConfig } from '@/submit/submit'
@@ -70,7 +70,11 @@ async function seedGallery(): Promise<void> {
 
   for (const cfg of SEED_CONFIGS) {
     // Idempotency: skip if a config with this title already exists.
-    const existing = await db.select().from(configs).where(eq(configs.title, cfg.title))
+    const existing = await db
+      .select({ slug: configs.slug })
+      .from(configs)
+      .innerJoin(configVersions, eq(configVersions.configId, configs.id))
+      .where(eq(configVersions.title, cfg.title))
     if (existing.length > 0) {
       console.log(`[skip] "${cfg.title}" — already exists (slug: ${existing[0]?.slug ?? '?'})`)
       continue
