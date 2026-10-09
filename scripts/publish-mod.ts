@@ -20,7 +20,7 @@ import { versionIsRendered } from '@/mods/queries'
 
 /**
  * Publish a mod version, or re-pin a published mod to a newer one. The version must already exist
- * (the import script creates versions); publishing makes it the mod's current version and sets the
+ * (the mod import, issue #40, creates them); publishing makes it the mod's current version and sets the
  * mod to 'published', which puts it in /marketplace.json at that commit.
  *
  * Guards. It refuses a SHA that is not 40 lowercase hex, a commit not on the repo's default branch,
@@ -123,9 +123,9 @@ export async function runPublish(
     return 1
   }
 
-  const badSha = shaGuards(sha)
-  if (refused(badSha)) {
-    for (const g of badSha) log(guardLine(g))
+  const shaRefusals = shaGuards(sha)
+  if (refused(shaRefusals)) {
+    for (const g of shaRefusals) log(guardLine(g))
     return 1
   }
 

@@ -1,7 +1,5 @@
-// biome-ignore-all lint/style/useNamingConvention: keys mirror the GitHub REST API JSON contract.
 const GITHUB_API = 'https://api.github.com'
 
-/** The GitHub facts the mod scripts check, behind an injected fetch so tests never touch the network. */
 export interface GitHub {
   commitIsOnDefaultBranch(repoUrl: string, sha: string): Promise<boolean>
   filesChanged(repoUrl: string, base: string, head: string): Promise<string[]>
@@ -14,6 +12,7 @@ function repoApiUrl(repoUrl: string): string {
   return `${GITHUB_API}/repos/${match[1]}/${match[2]}`
 }
 
+/** `fetchFn` is injected so tests never touch the network. */
 export function createGitHub(fetchFn: typeof fetch = fetch): GitHub {
   async function request(url: string, missingStatuses: number[] = []): Promise<unknown | null> {
     const res = await fetchFn(url, {
@@ -27,6 +26,7 @@ export function createGitHub(fetchFn: typeof fetch = fetch): GitHub {
   return {
     async commitIsOnDefaultBranch(repoUrl, sha) {
       const repo = repoApiUrl(repoUrl)
+      // biome-ignore lint/style/useNamingConvention: GitHub API response field.
       const { default_branch } = (await request(repo)) as { default_branch: string }
       const comparison = (await request(`${repo}/compare/${sha}...${default_branch}`, [404])) as {
         status: string

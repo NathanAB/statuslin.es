@@ -1,7 +1,6 @@
 import type { ModFootprint, ModStatus } from '@/db/schema'
 import { MOD_SCENARIO_KEY } from './queries'
 
-/** A named check result: a refusal blocks the publish, a warning is printed for the reviewer. */
 export interface Guard {
   level: 'refuse' | 'warn'
   name: string
@@ -15,7 +14,7 @@ export interface PublishVersion {
   rendered: boolean
 }
 
-/** Everything publish decides on, gathered from the database and GitHub before any guard runs. */
+/** Gathered from the database and GitHub up front so every guard stays a pure function. */
 export interface PublishFacts {
   slug: string
   modStatus: ModStatus
@@ -43,7 +42,7 @@ function added(before: string[], after: string[]): string[] {
   return after.filter((item) => !before.includes(item))
 }
 
-function list(items: string[]): string {
+function bracketed(items: string[]): string {
   return `[${items.join(', ')}]`
 }
 
@@ -52,8 +51,8 @@ function footprintGuards({ current, target }: PublishFacts): Guard[] {
   const events = added(current.footprint.events, target.footprint.events)
   const calls = added(current.footprint.calls, target.footprint.calls)
   const additions = [
-    ...(events.length > 0 ? [`adds events ${list(events)}`] : []),
-    ...(calls.length > 0 ? [`adds $ calls ${list(calls)}`] : []),
+    ...(events.length > 0 ? [`adds events ${bracketed(events)}`] : []),
+    ...(calls.length > 0 ? [`adds $ calls ${bracketed(calls)}`] : []),
   ]
   if (additions.length === 0) return []
   return [
@@ -112,7 +111,6 @@ export function publishGuards(facts: PublishFacts): Guard[] {
 
 const CONFIRM_FLAG = '--confirm='
 
-/** Destructive steps need the slug typed back as `--confirm=<slug>`. */
 export function confirmationGuards(slug: string, argv: string[]): Guard[] {
   const confirm = argv.find((a) => a.startsWith(CONFIRM_FLAG))?.slice(CONFIRM_FLAG.length)
   if (confirm === slug) return []
@@ -127,7 +125,7 @@ export function confirmationGuards(slug: string, argv: string[]): Guard[] {
 
 function footprintLine(label: string, footprint: ModFootprint | null): string {
   if (!footprint) return `footprint ${label}: none (first publish)`
-  return `footprint ${label}: events ${list(footprint.events)} calls ${list(footprint.calls)}`
+  return `footprint ${label}: events ${bracketed(footprint.events)} calls ${bracketed(footprint.calls)}`
 }
 
 export function publishReport(facts: PublishFacts): string[] {

@@ -67,7 +67,7 @@ export async function runDelist(argv: string[], { db, log }: DelistDeps): Promis
 
   if (argv.includes('--restore')) {
     await transitionStatus(db, slug, 'removed', 'published')
-    log(`[delist-mod] "${slug}": removed → published`)
+    log(`"${slug}": removed → published`)
     return 0
   }
 
@@ -78,7 +78,7 @@ export async function runDelist(argv: string[], { db, log }: DelistDeps): Promis
     return 1
   }
   await transitionStatus(db, slug, 'published', 'removed')
-  log(`[delist-mod] "${slug}": published → removed`)
+  log(`"${slug}": published → removed`)
   return 0
 }
 
