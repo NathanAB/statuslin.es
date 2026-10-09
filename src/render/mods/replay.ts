@@ -9,6 +9,11 @@ import { TERMINAL } from './session'
 export const ROW_MAX_BYTES = 6_000
 /** The recorded screens so far are 2 to 4 KB, so this leaves over ten times their size. */
 export const SCREEN_MAX_BYTES = 64 * 1024
+/**
+ * `CSI n b` repeats the last character n times, up to 2^31 for 4 bytes, and xterm allocates and
+ * prints every one. A hundred screens of repeats cost milliseconds; past that the replay is refused.
+ */
+export const REPEAT_MAX_CELLS = 100 * TERMINAL.cols * TERMINAL.rows
 
 const RESET = '0'
 
@@ -76,8 +81,16 @@ function serializeRow(line: IBufferLine, cell: IBufferCell): string {
  */
 export async function replayScreen(recording: Uint8Array): Promise<string[]> {
   const term = new Terminal({ ...TERMINAL, allowProposedApi: true, scrollback: 0 })
+  let repeatedCells = 0
+  term.parser.registerCsiHandler({ final: 'b' }, ([count]) => {
+    repeatedCells += typeof count === 'number' && count > 0 ? count : 1
+    return repeatedCells > REPEAT_MAX_CELLS
+  })
   try {
     await new Promise<void>((resolve) => term.write(recording, resolve))
+    if (repeatedCells > REPEAT_MAX_CELLS) {
+      throw new Error(`recording repeats more than ${REPEAT_MAX_CELLS} cells`)
+    }
     const buffer = term.buffer.active
     const cell = buffer.getNullCell()
     const rows: string[] = []

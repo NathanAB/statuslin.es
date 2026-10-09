@@ -6,6 +6,7 @@ import type { RecordingSandbox } from '@/render/mods/mod-sandbox'
 import {
   e2bModRecorder,
   MAX_INPUT_STEPS,
+  PtyOutput,
   RECORDING_MAX_BYTES,
   recordInSandbox,
 } from '@/render/mods/recorder'
@@ -48,6 +49,20 @@ function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit
 }
 
 const isLaunch = (input: string) => input.startsWith('clear; ')
+
+describe('PtyOutput', () => {
+  it('keeps nothing past the cap and reports the overflow', () => {
+    const output = new PtyOutput()
+    const chunk = new Uint8Array(64 * 1024)
+    const chunksToCap = RECORDING_MAX_BYTES / chunk.byteLength
+
+    const kept = Array.from({ length: chunksToCap + 10 }, () => output.push(chunk))
+
+    expect(kept.filter(Boolean)).toHaveLength(chunksToCap)
+    expect(output.chunks.reduce((n, c) => n + c.byteLength, 0)).toBe(RECORDING_MAX_BYTES)
+    expect(output.overflowed).toBe(true)
+  })
+})
 
 describe('recordInSandbox', () => {
   it(

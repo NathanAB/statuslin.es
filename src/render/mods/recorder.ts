@@ -52,7 +52,10 @@ const STEP_MAX_MS = 45_000
 const KEY_PAUSE_MS = 200
 const POLL_MS = 100
 const PROMPT_GLYPH = '❯'
-/** Sandbox creation, unpacking, `claude --version` and setup; about 10 s together in measured runs. */
+/**
+ * Sandbox creation, unpacking, `claude --version` and setup: about 10 s together in measured runs,
+ * and each of the last three may take up to its 60 s command timeout.
+ */
 const SETUP_RESERVE_MS = 60_000
 /** Each step waits at most this long: its settle plus the pause before Enter. */
 const STEP_BUDGET_MS = STEP_MAX_MS + KEY_PAUSE_MS
@@ -75,15 +78,30 @@ async function claudeCodeVersion(sandbox: RecordingSandbox, scenario: Scenario):
   return versionSchema.parse(stdout.trim().split(' ')[0])
 }
 
+/** Pty output held on the host. Past `RECORDING_MAX_BYTES` it keeps nothing more. */
+export class PtyOutput {
+  readonly chunks: Uint8Array[] = []
+  overflowed = false
+  private byteCount = 0
+
+  /** False when `bytes` was dropped because the output has passed the cap. */
+  push(bytes: Uint8Array): boolean {
+    if (this.overflowed) return false
+    this.byteCount += bytes.byteLength
+    this.overflowed = this.byteCount > RECORDING_MAX_BYTES
+    if (this.overflowed) return false
+    this.chunks.push(bytes)
+    return true
+  }
+}
+
 async function recordSession(
   sandbox: RecordingSandbox,
   scenario: Scenario,
   modPluginDir: string | null,
   inputSteps: readonly InputStep[],
 ): Promise<Uint8Array> {
-  const chunks: Uint8Array[] = []
-  let byteCount = 0
-  let overflowed = false
+  const output = new PtyOutput()
   let lastActivityAt = performance.now()
   let launchChunk: number | undefined
   let promptShown = false
@@ -93,13 +111,7 @@ async function recordSession(
     cwd: feedStdin(scenario).workspace.current_dir,
     envs: sessionEnv(scenario),
     onData: (bytes) => {
-      if (overflowed) return
-      byteCount += bytes.byteLength
-      if (byteCount > RECORDING_MAX_BYTES) {
-        overflowed = true
-        return
-      }
-      chunks.push(bytes)
+      if (!output.push(bytes)) return
       lastActivityAt = performance.now()
       if (launchChunk !== undefined && !promptShown) {
         promptShown = decoder.decode(bytes, { stream: true }).includes(PROMPT_GLYPH)
@@ -113,12 +125,13 @@ async function recordSession(
   const settle = async (maxMs: number, ready = () => true) => {
     const startedAt = performance.now()
     const settled = () => ready() && performance.now() - lastActivityAt >= QUIET_MS
-    while (!overflowed && !settled() && performance.now() - startedAt < maxMs) await sleep(POLL_MS)
-    if (overflowed) throw new Error(`pty output passed ${RECORDING_MAX_BYTES} bytes`)
+    while (!output.overflowed && !settled() && performance.now() - startedAt < maxMs)
+      await sleep(POLL_MS)
+    if (output.overflowed) throw new Error(`pty output passed ${RECORDING_MAX_BYTES} bytes`)
   }
   try {
     await settle(SHELL_MAX_MS)
-    launchChunk = chunks.length
+    launchChunk = output.chunks.length
     await send(`clear; ${launchCommand(scenario, modPluginDir)}\r`)
     // Quiet alone is not enough: Claude Code can be silent for 2 s while it starts, and a prompt
     // typed then stayed unsubmitted in a measured run.
@@ -130,7 +143,7 @@ async function recordSession(
       }
       await settle(STEP_MAX_MS)
     }
-    return Buffer.concat(chunks.slice(launchChunk))
+    return Buffer.concat(output.chunks.slice(launchChunk))
   } finally {
     await terminal.kill()
   }

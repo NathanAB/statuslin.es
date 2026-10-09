@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { ROW_MAX_BYTES, replayScreen, SCREEN_MAX_BYTES } from '@/render/mods/replay'
+import {
+  REPEAT_MAX_CELLS,
+  ROW_MAX_BYTES,
+  replayScreen,
+  SCREEN_MAX_BYTES,
+} from '@/render/mods/replay'
 import { TERMINAL } from '@/render/mods/session'
 import styledRows from './fixtures/styled-session.rows.json'
 
@@ -48,6 +53,27 @@ describe('replayScreen', () => {
 
     await expect(replayScreen(bytes(screen))).rejects.toThrow(
       `screen is over ${SCREEN_MAX_BYTES} bytes`,
+    )
+  })
+
+  it('repeats the preceding character as a terminal does', async () => {
+    const [row] = await replayScreen(bytes('ab\u001b[3b'))
+
+    expect(row).toBe('abbbb')
+  })
+
+  it('refuses one repeat far past the screen, without hanging', async () => {
+    await expect(replayScreen(bytes('x\u001b[2147483647b'))).rejects.toThrow(
+      `recording repeats more than ${REPEAT_MAX_CELLS} cells`,
+    )
+  }, 5_000)
+
+  it('refuses many repeats that each fit the screen but together pass the budget', async () => {
+    const screenful = TERMINAL.cols * TERMINAL.rows
+    const recording = bytes(`x\u001b[${screenful}b`.repeat(REPEAT_MAX_CELLS / screenful + 1))
+
+    await expect(replayScreen(recording)).rejects.toThrow(
+      `recording repeats more than ${REPEAT_MAX_CELLS} cells`,
     )
   })
 })
