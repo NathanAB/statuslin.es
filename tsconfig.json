@@ -17,8 +17,6 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "test", "scripts", "vite.config.ts", "drizzle.config.ts"]
