@@ -5,7 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { buildMarketplace } from '@/mods/marketplace'
-import { getMarketplaceRows, MOD_SCENARIO_KEY, versionIsRendered } from '@/mods/queries'
+import { getMarketplaceRows, hasAnyMods, MOD_SCENARIO_KEY, versionIsRendered } from '@/mods/queries'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -152,6 +152,22 @@ describe('getMarketplaceRows', () => {
       commitSha: expect.stringMatching(/^[0-9a-f]{40}$/),
       license: 'MIT',
     })
+  })
+})
+
+describe('hasAnyMods', () => {
+  it('is false when the mods table has no rows', async () => {
+    expect(await hasAnyMods(db)).toBe(false)
+  })
+
+  it.each([
+    'removed',
+    'draft',
+  ] as const)('is true when the only mod is %s, though none is listed', async (status) => {
+    await addMod('lonely', status, 'scenario-preview')
+
+    expect(await listedSlugs()).toEqual([])
+    expect(await hasAnyMods(db)).toBe(true)
   })
 })
 

@@ -32,3 +32,9 @@ export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
     .where(eq(mods.status, 'published'))
     .orderBy(asc(mods.pluginName))
 }
+
+/** True when the `mods` table has a row in any status, published or not. */
+export async function hasAnyMods(db: Db): Promise<boolean> {
+  const [row] = await db.select({ id: mods.id }).from(mods).limit(1)
+  return row !== undefined
+}
