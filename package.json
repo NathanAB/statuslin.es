@@ -28,6 +28,7 @@
     "rerender:previews": "bun run scripts/rerender-previews.ts",
     "worker": "bun run scripts/worker.ts",
     "build:e2b-template": "bun run scripts/build-e2b-template.ts",
+    "build:e2b-mod-template": "bun run scripts/build-e2b-mod-template.ts",
     "build:font": "bun run scripts/build-font-subset.ts",
     "seed:gallery": "bun run scripts/seed-gallery.ts",
     "seed:community": "bun run scripts/run-seed-community.ts",

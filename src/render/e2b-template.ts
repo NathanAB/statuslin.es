@@ -29,3 +29,20 @@ export const SANDBOX_ANTHROPIC_USAGE_DIR = '/opt/statuslines/anthropic-usage'
 export const SANDBOX_ANTHROPIC_USAGE_SERVER_DEST = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.py`
 export const SANDBOX_ANTHROPIC_USAGE_CERT_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.crt`
 export const SANDBOX_ANTHROPIC_USAGE_KEY_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.key`
+
+/** E2B build alias for the mod render template: the status line template plus Claude Code. */
+export const E2B_MOD_TEMPLATE_BUILD_NAME = 'statuslines-mod-render-build'
+
+/** Immutable E2B snapshot selected by every mod render. Updated only after a reviewed build. */
+export const E2B_MOD_TEMPLATE_ID = '2zrv33p5jx6u8c9y3xen:default'
+
+/** Root-owned npm prefix holding Claude Code in the mod template, and the binary to run. */
+export const SANDBOX_CLAUDE_CODE_PREFIX = '/opt/statuslines/claude-code'
+export const SANDBOX_CLAUDE_CODE_BIN = `${SANDBOX_CLAUDE_CODE_PREFIX}/bin/claude`
+
+/** Where `@xterm/headless` is installed in the mod template, so recordings replay in the sandbox. */
+export const SANDBOX_REPLAY_DIR = '/opt/statuslines/replay'
+
+/** A world-readable copy of the usage server, so its `--canned-reply` mode runs as `user`. */
+export const SANDBOX_CANNED_MODEL_DIR = '/opt/statuslines/canned-model'
+export const SANDBOX_CANNED_MODEL_SERVER_DEST = `${SANDBOX_CANNED_MODEL_DIR}/server.py`
