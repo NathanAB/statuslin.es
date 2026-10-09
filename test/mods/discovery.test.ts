@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
-import { addMod, addVersion, openTestDb, setCurrentVersion, sha, type TestDb } from './seed-mods'
+import { openTestDb, seedMod, type TestDb } from './seed-mods'
 
 const testState = vi.hoisted(() => ({ db: null as unknown }))
 
@@ -24,18 +24,11 @@ let db: TestDb
 let close: () => Promise<void>
 let discovery: typeof import('@/mods/discovery')
 
-async function seed(slug: string, status: schema.ModStatus, commitChar: string) {
-  const modId = await addMod(db, slug, status)
-  const versionId = await addVersion(db, modId, { commitSha: sha(commitChar), versionNumber: 1 })
-  await setCurrentVersion(db, modId, versionId)
-  return { modId, versionId }
-}
-
 beforeAll(async () => {
   vi.stubEnv('BETTER_AUTH_URL', `${BASE}/`)
   ;({ db, close } = await openTestDb())
   testState.db = db
-  const meter = await seed('context-meter', 'published', 'a')
+  const meter = await seedMod(db, 'context-meter', 'published', 'a')
   await db
     .update(schema.mods)
     .set({ title: 'Context Meter', description: 'Shows how full\n the context is', copyCount: 3 })
@@ -44,8 +37,8 @@ beforeAll(async () => {
     .update(schema.modVersions)
     .set({ createdAt: new Date('2026-09-30T12:00:00Z') })
     .where(eq(schema.modVersions.id, meter.versionId))
-  await seed('draft-mod', 'draft', 'b')
-  await seed('removed-mod', 'removed', 'c')
+  await seedMod(db, 'draft-mod', 'draft', 'b')
+  await seedMod(db, 'removed-mod', 'removed', 'c')
   discovery = await import('@/mods/discovery')
 })
 afterAll(async () => {
@@ -92,7 +85,7 @@ describe('llms.txt with mods', () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
     expect(txt).not.toMatch(/every submission is a shell script/i)
-    expect(txt).toMatch(/mods/i)
+    expect(txt).toContain('status line shell scripts, and mods, which are Claude Code plugins')
   })
 
   it('keeps the llms.txt content type', async () => {

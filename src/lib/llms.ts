@@ -14,7 +14,6 @@ export interface LlmsConfig {
   copyCount: number
 }
 
-/** A published mod for the `## Mods` section. */
 export interface LlmsMod {
   slug: string
   title: string
@@ -32,7 +31,7 @@ export function buildLlmsTxt(
   const blocks = [
     '# statuslin.es',
     '> Community gallery of Claude Code status lines: browse real, sandbox-rendered previews and copy one into your own setup.',
-    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. It holds two kinds of submission: status line shell scripts, and mods, which are Claude Code plugins. The site renders each in a sandbox and shows the real output, plus its copy count and a one-command copy or install. It is a curation-first gallery, not documentation.",
+    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. It holds two kinds of submission: status line shell scripts, and mods, which are Claude Code plugins. The site shows each one's real output, rendered in a sandbox or, for a mod that draws only in Claude Desktop, as a screenshot, plus its copy count and a one-command copy or install. It is a curation-first gallery, not documentation.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -92,10 +91,7 @@ export function llmsResponse(
   })
 }
 
-/**
- * Appends a `## Mods` section to a built `/llms.txt` response, keeping its headers. The gallery
- * builds the config part without knowing about mods, so `src/mods/discovery.ts` adds them after.
- */
+/** The gallery builds `/llms.txt` without knowing about mods, so they are appended to its response. */
 export async function withModLinks(
   llms: Response,
   base: string,

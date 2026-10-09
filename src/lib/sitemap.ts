@@ -15,7 +15,7 @@ export interface SitemapConfig {
   updatedAt: Date
 }
 
-/** Published mod rows the sitemap needs; `updatedAt` is the current version's date. */
+/** `updatedAt` is the date of the mod's current version. */
 export interface SitemapMod {
   slug: string
   updatedAt: Date
@@ -103,10 +103,7 @@ export function sitemapResponse(
   })
 }
 
-/**
- * Adds a `<url>` per published mod to a built `/sitemap.xml` response, keeping its headers. The
- * gallery builds the config sitemap without knowing about mods, so `src/mods/discovery.ts` adds them.
- */
+/** The gallery builds `/sitemap.xml` without knowing about mods, so they are spliced into its response. */
 export async function withModUrls(
   sitemap: Response,
   base: string,

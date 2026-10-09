@@ -225,7 +225,6 @@ export function configCard(input: {
 // Enough rows of a pane mod's preview to fill the card below the header without overflowing it.
 const MOD_PREVIEW_MAX_LINES = 9
 
-/** A mod's card: its terminal preview, or a "Claude Desktop" label when a screenshot is all it has. */
 export function modCard(input: {
   title: string
   authorGithub: string

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLlmsTxt } from '@/lib/llms'
+import { buildLlmsTxt, llmsResponse, withModLinks } from '@/lib/llms'
 
 describe('buildLlmsTxt', () => {
   const facets = [
@@ -95,5 +95,15 @@ describe('buildLlmsTxt', () => {
   it('omits the top-configs section when none are passed', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     expect(txt).not.toMatch(/Top status lines/)
+  })
+})
+
+describe('withModLinks', () => {
+  it('adds no Mods section when no mod is published', async () => {
+    const txt = await (
+      await withModLinks(llmsResponse('https://statuslin.es', []), 'https://statuslin.es', [])
+    ).text()
+
+    expect(txt).toBe(buildLlmsTxt('https://statuslin.es', []))
   })
 })

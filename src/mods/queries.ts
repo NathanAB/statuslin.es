@@ -43,7 +43,7 @@ export interface PublishedModListing {
   updatedAt: Date
 }
 
-/** Every published mod with its own current version, most copied first; `updatedAt` is that version's date. */
+/** `updatedAt` is the date of the mod's current version. */
 export async function getPublishedModListings(db: Db): Promise<PublishedModListing[]> {
   return db
     .select({

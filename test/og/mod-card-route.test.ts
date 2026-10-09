@@ -2,41 +2,23 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { modCardResponse } from '@/og/routes'
-import {
-  addMod,
-  addVersion,
-  openTestDb,
-  setCurrentVersion,
-  sha,
-  type TestDb,
-} from '../mods/seed-mods'
+import { openTestDb, seedMod, type TestDb } from '../mods/seed-mods'
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
 let db: TestDb
 let close: () => Promise<void>
 
-async function seed(slug: string, status: schema.ModStatus, commitChar: string, rendered = true) {
-  const modId = await addMod(db, slug, status)
-  const versionId = await addVersion(db, modId, {
-    commitSha: sha(commitChar),
-    versionNumber: 1,
-    rendered,
-  })
-  await setCurrentVersion(db, modId, versionId)
-  return versionId
-}
-
 beforeAll(async () => {
   ;({ db, close } = await openTestDb())
-  await seed('meter', 'published', 'a')
-  const anywhere = await seed('anywhere', 'published', 'b', false)
+  await seedMod(db, 'meter', 'published', 'a')
+  const anywhere = await seedMod(db, 'anywhere', 'published', 'b', false)
   await db
     .update(schema.modVersions)
     .set({ desktopScreenshot: '/mods/screenshots/anywhere.png' })
-    .where(eq(schema.modVersions.id, anywhere))
-  await seed('draft-mod', 'draft', 'c')
-  await seed('removed-mod', 'removed', 'd')
+    .where(eq(schema.modVersions.id, anywhere.versionId))
+  await seedMod(db, 'draft-mod', 'draft', 'c')
+  await seedMod(db, 'removed-mod', 'removed', 'd')
 })
 afterAll(async () => {
   await close()

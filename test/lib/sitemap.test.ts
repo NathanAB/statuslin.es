@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DESKTOP_GUIDE_DATES } from '@/lib/page-title'
-import { sitemapResponse } from '@/lib/sitemap'
+import { sitemapResponse, withModUrls } from '@/lib/sitemap'
 
 const BASE = 'https://statuslin.es'
 
@@ -114,5 +114,13 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('<loc>https://example.test/status-lines/git</loc>')
     expect(xml).toContain('<lastmod>2026-06-02</lastmod>')
     expect(xml).toContain('<loc>https://example.test/status-lines/bash</loc>')
+  })
+})
+
+describe('withModUrls', () => {
+  it('leaves the sitemap untouched when no mod is published', async () => {
+    const original = await sitemapResponse(BASE, [], []).text()
+
+    expect(await (await withModUrls(sitemapResponse(BASE, [], []), BASE, [])).text()).toBe(original)
   })
 })
