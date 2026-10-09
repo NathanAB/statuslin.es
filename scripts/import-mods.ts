@@ -115,6 +115,7 @@ async function importEntry(
       footprint: facts.footprint,
       validatedWith: facts.claudeCodeVersion,
       inputSteps: entry.inputSteps,
+      desktopScreenshot: entry.desktopScreenshot,
     })
   })
   const { events, calls } = facts.footprint

@@ -4,8 +4,8 @@ import { Heading, Text, TextLink } from '@/ui/text'
 
 /**
  * Terms page body: what the gallery is, the license on submitted configs, the terms for
- * listed mods, and how to report or take down a config. Kept as a component (not inline in
- * the route) so the key points are unit-testable. Linked from the site footer.
+ * listed mods, and how to report or take down a config or a mod. Kept as a component (not
+ * inline in the route) so the key points are unit-testable. Linked from the site footer.
  */
 export function TermsContent() {
   return (
@@ -52,6 +52,10 @@ export function TermsContent() {
           <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>. Security issues go
           through the{' '}
           <TextLink href={`${REPO_URL}/blob/main/SECURITY.md`}>security policy</TextLink>.
+        </Text>
+        <Text muted measure>
+          The maintainer can remove any listed mod at any time. Anyone can report a mod by emailing{' '}
+          <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
         </Text>
       </Stack>
     </Stack>

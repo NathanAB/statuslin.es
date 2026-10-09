@@ -1,8 +1,10 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CURATION_FILE, parseCuration } from '@/mods/curation'
+import { DESKTOP_SCREENSHOT_SIZE } from '@/mods/mod-preview'
 
 const SHA = 'a'.repeat(40)
+const SCREENSHOT_ERROR = /desktopScreenshot: must be a site path under \/mods\/ ending in \.png/
 
 const entry = (overrides: Record<string, unknown> = {}) => ({
   repoUrl: 'https://github.com/octocat/meter',
@@ -39,6 +41,15 @@ describe('parseCuration', () => {
   })
 
   it.each([
+    '/mods/statusline-anywhere-desktop.png',
+    '/mods/screenshots/meter.png',
+  ])('keeps a Desktop screenshot at %s', (desktopScreenshot) => {
+    const result = parseCuration([entry({ desktopScreenshot })])
+
+    expect(result.ok && result.entries[0]?.desktopScreenshot).toBe(desktopScreenshot)
+  })
+
+  it.each([
     ['a short SHA', { commitSha: 'abc1234' }, /commitSha.*40/],
     ['an uppercase SHA', { commitSha: 'A'.repeat(40) }, /commitSha.*40/],
     ['a non-https URL', { repoUrl: 'http://github.com/octocat/meter' }, /repoUrl.*https/],
@@ -50,6 +61,11 @@ describe('parseCuration', () => {
     ['a ".." path segment', { path: 'mods/../meter' }, /path/],
     ['a trailing slash in the path', { path: 'mods/meter/' }, /path/],
     ['an empty title', { title: ' ' }, /title/],
+    ['a screenshot outside /mods/', { desktopScreenshot: '/fonts/meter.png' }, SCREENSHOT_ERROR],
+    ['a screenshot that is not a PNG', { desktopScreenshot: '/mods/meter.jpg' }, SCREENSHOT_ERROR],
+    ['a relative screenshot path', { desktopScreenshot: 'mods/meter.png' }, SCREENSHOT_ERROR],
+    ['a screenshot URL', { desktopScreenshot: 'https://x.test/mods/a.png' }, SCREENSHOT_ERROR],
+    ['a ".." screenshot segment', { desktopScreenshot: '/mods/../meter.png' }, SCREENSHOT_ERROR],
   ])('refuses %s', (_name, overrides, message) => {
     const errors = errorsFor([entry(overrides)])
 
@@ -77,5 +93,18 @@ describe('parseCuration', () => {
     const result = parseCuration(JSON.parse(readFileSync(CURATION_FILE, 'utf8')))
 
     expect(result.ok ? [] : result.errors).toEqual([])
+  })
+
+  it('points every committed screenshot at a file in public/ of the size the mod page reserves', () => {
+    const result = parseCuration(JSON.parse(readFileSync(CURATION_FILE, 'utf8')))
+    const screenshots = result.ok ? result.entries.flatMap((e) => e.desktopScreenshot ?? []) : []
+
+    expect(screenshots).toContain('/mods/statusline-anywhere-desktop.png')
+    expect(screenshots.filter((path) => !existsSync(`public${path}`))).toEqual([])
+    for (const path of screenshots) {
+      const png = readFileSync(`public${path}`)
+      const size = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) }
+      expect(size, path).toEqual(DESKTOP_SCREENSHOT_SIZE)
+    }
   })
 })

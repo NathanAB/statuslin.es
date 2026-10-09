@@ -125,6 +125,7 @@
     "path": "",
     "commitSha": "93fb965863571fca8140aca0d17277d121a2f9df",
     "pluginName": "statusline-anywhere",
-    "title": "Status Line Anywhere"
+    "title": "Status Line Anywhere",
+    "desktopScreenshot": "/mods/statusline-anywhere-desktop.png"
   }
 ]

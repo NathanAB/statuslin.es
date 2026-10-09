@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import type { GitHubSource, RepoInfo } from '@/mods/github'
+import { versionIsRendered } from '@/mods/queries'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
 import { importMods } from '../../scripts/import-mods'
 import { addMod, openTestDb, type TestDb } from './seed-mods'
@@ -126,6 +127,27 @@ describe('importMods', () => {
     expect(version?.footprint.events).toContain('ui.render{component=AbovePrompt}')
     expect(version?.footprint.calls).toContain('$.ui.toast')
     expect(mod?.currentVersionId).toBe(version?.id)
+  })
+
+  it('lands a curated Desktop screenshot on the version, which then counts as rendered', async () => {
+    const desktopScreenshot = '/mods/skins-desktop.png'
+
+    await run([entry({ desktopScreenshot })])
+
+    const [version] = await allVersions()
+    expect(version?.desktopScreenshot).toBe(desktopScreenshot)
+    const rendered = await db
+      .select({ id: schema.modVersions.id })
+      .from(schema.modVersions)
+      .where(versionIsRendered)
+    expect(rendered.map((r) => r.id)).toEqual([version?.id])
+  })
+
+  it('leaves the screenshot empty when the entry names none', async () => {
+    await run([entry()])
+
+    const [version] = await allVersions()
+    expect(version?.desktopScreenshot).toBeNull()
   })
 
   it('records a missing plugin version and licence as null', async () => {

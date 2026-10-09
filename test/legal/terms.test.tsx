@@ -46,4 +46,11 @@ describe('TermsContent', () => {
     const removal = screen.getByText(/mod removed on request/i)
     expect(removal.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`)).not.toBeNull()
   })
+
+  it('states the maintainer can remove any listed mod and anyone can report one', () => {
+    render(<TermsContent />)
+    const takedown = screen.getByText(/remove any listed mod at any time/i)
+    expect(takedown.textContent).toMatch(/anyone can report a mod/i)
+    expect(takedown.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`)).not.toBeNull()
+  })
 })
