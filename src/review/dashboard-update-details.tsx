@@ -41,13 +41,16 @@ export function UpdateDetails({ slug, update }: { slug: string; update: UpdateSu
           ) : null}
         </Stack>
       ) : null}
-      <Row gap={2} aboveOverlay>
-        <Button asChild variant={rejected ? 'default' : 'outline'}>
-          <Link to="/submit" search={{ update: slug }}>
-            <FilePen />
-            {rejected ? 'Submit a new update' : 'Submit update'}
-          </Link>
-        </Button>
+      {/* The outer row shrink-wraps the lifted one, so only the button covers the card link. */}
+      <Row gap={2}>
+        <Row gap={2} aboveOverlay>
+          <Button asChild variant={rejected ? 'default' : 'outline'}>
+            <Link to="/submit" search={{ update: slug }}>
+              <FilePen />
+              {rejected ? 'Submit a new update' : 'Submit update'}
+            </Link>
+          </Button>
+        </Row>
       </Row>
     </Stack>
   )
