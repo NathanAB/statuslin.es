@@ -10,6 +10,7 @@ import { InstallCommandBlock } from '@/mods/install-command-block'
 import { ModCredit } from '@/mods/mod-credit'
 import { ModPreview } from '@/mods/mod-preview'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { Stack } from '@/ui/layout'
 import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
@@ -24,10 +25,16 @@ export const Route = createFileRoute('/mods/$slug')({
   head: ({ loaderData }) => {
     const mod = loaderData?.mod
     if (!mod) return { meta: [{ title: MOD_NOT_FOUND_TITLE }] }
+    const image = `${loaderData.origin}/og/mods/${mod.slug}.png`
     return {
       meta: [
         { title: modPageTitle(mod.title) },
         { name: 'description', content: modMetaDescription(mod.description) },
+        { property: 'og:image', content: image },
+        { property: 'og:image:width', content: String(CARD_WIDTH) },
+        { property: 'og:image:height', content: String(CARD_HEIGHT) },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:image', content: image },
       ],
       links: [canonicalLink(`/mods/${mod.slug}`)],
     }
