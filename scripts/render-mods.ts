@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -112,7 +112,7 @@ async function storePreview(
     .values({ modVersionId: versionId, scenarioKey: MOD_SCENARIO_KEY, ...preview })
     .onConflictDoUpdate({
       target: [schema.modPreviews.modVersionId, schema.modPreviews.scenarioKey],
-      set: { ...preview, createdAt: new Date() },
+      set: { ...preview, createdAt: sql`now()` },
     })
 }
 

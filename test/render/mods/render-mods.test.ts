@@ -14,6 +14,7 @@ import {
   addVersion,
   openTestDb,
   REPO_URL,
+  SEEDED_PREVIEW,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -23,7 +24,6 @@ import skins from './fixtures/skins.json'
 import tokenWeather from './fixtures/token-weather.json'
 
 const TARBALL = new Uint8Array([31, 139, 8, 0])
-const EARLIER_PREVIEW = { segments: [{ text: 'meter' }], claudeCodeVersion: '2.1.0' }
 
 let db: TestDb
 let close: () => Promise<void>
@@ -95,13 +95,17 @@ const modRequests = (requests: RecordRequest[]) => requests.filter((r) => r.mod 
 const baselineRequests = (requests: RecordRequest[]) => requests.filter((r) => r.mod === null)
 
 /** Wraps a recorder to fail for named plugins, or report a Claude Code version per plugin. */
+interface Script {
+  failFor?: string[]
+  /** Claude Code version each plugin's recording reports. */
+  versions?: Record<string, string>
+  /** Claude Code version each successive baseline recording reports. */
+  baselineVersions?: string[]
+}
+
 function scriptedRecorder(
   inner: ModRecorder,
-  { failFor = [], versions = {}, baselineVersions = [] as string[] } = {} as {
-    failFor?: string[]
-    versions?: Record<string, string>
-    baselineVersions?: string[]
-  },
+  { failFor = [], versions = {}, baselineVersions = [] }: Script = {},
 ): ModRecorder & { requests: RecordRequest[] } {
   const requests: RecordRequest[] = []
   return {
@@ -147,7 +151,7 @@ describe('renderMods', () => {
 
     expect(await exitCode).toBe(0)
     expect(await storedPreviews(versionId)).toEqual([
-      { scenarioKey: MOD_SCENARIO_KEY, ...EARLIER_PREVIEW },
+      { scenarioKey: MOD_SCENARIO_KEY, ...SEEDED_PREVIEW },
     ])
     expect(lines).toContain(
       'not rendered statusline-anywhere: the recording matches the baseline outside the prompt row',
@@ -166,7 +170,7 @@ describe('renderMods', () => {
 
     expect(await exitCode).toBe(1)
     expect(await storedPreviews(brokenId)).toEqual([
-      { scenarioKey: MOD_SCENARIO_KEY, ...EARLIER_PREVIEW },
+      { scenarioKey: MOD_SCENARIO_KEY, ...SEEDED_PREVIEW },
     ])
     expect(await storedPreviews(fineId)).toHaveLength(1)
     expect(lines).toContain('failed skins: sandbox for skins died')
@@ -230,7 +234,7 @@ describe('renderMods', () => {
 
     expect(await exitCode).toBe(1)
     expect(await storedPreviews(versionId)).toEqual([
-      { scenarioKey: MOD_SCENARIO_KEY, ...EARLIER_PREVIEW },
+      { scenarioKey: MOD_SCENARIO_KEY, ...SEEDED_PREVIEW },
     ])
     expect(lines).toContain(
       `failed flood: recording row 1 is over the ${RECORDING_MAX_ROW_BYTES}-byte limit`,

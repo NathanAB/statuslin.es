@@ -29,6 +29,9 @@ export async function addMod(db: TestDb, slug: string, status: schema.ModStatus)
   return mod?.id as string
 }
 
+/** The preview `addVersion` stores for a version seeded as rendered. */
+export const SEEDED_PREVIEW = { segments: [{ text: 'meter' }], claudeCodeVersion: '2.1.0' }
+
 interface VersionSeed {
   commitSha: string
   versionNumber: number
@@ -58,8 +61,7 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
     await db.insert(schema.modPreviews).values({
       modVersionId: versionId,
       scenarioKey: MOD_SCENARIO_KEY,
-      segments: [{ text: 'meter' }],
-      claudeCodeVersion: '2.1.0',
+      ...SEEDED_PREVIEW,
     })
   }
   return versionId
