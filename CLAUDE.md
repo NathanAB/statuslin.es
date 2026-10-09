@@ -81,3 +81,17 @@ where visitors **copy it to use** (`src/adopt`).
 - **Claude Code self-hook** (`.claude/settings.json`): runs the fast gate when an agent finishes work, so an agent can't quietly wrap up on red.
 - **No magic-string regressions:** config (URLs, ports, secrets) comes from env via one source; reading required env vars goes through `requireEnv()` (`src/lib/env.ts`), never `process.env.X!`.
 - **CI** (`.github/workflows/ci.yml`): GitHub Actions runs the full `bun run check:ci` + coverage on every push and PR. Forked PRs run without secrets (`pull_request`, all-dummy env). Branch protection: not yet (solo, agent-first) — add as contributors grow.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `NathanAB/statuslin.es` (via `gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root (created lazily). See `docs/agents/domain.md`.
