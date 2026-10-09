@@ -69,6 +69,24 @@ export async function setCurrentVersion(db: TestDb, modId: string, versionId: st
   await db.update(schema.mods).set({ currentVersionId: versionId }).where(eq(schema.mods.id, modId))
 }
 
+/** A mod whose current version is its only version, rendered with a clean-main preview unless told not to. */
+export async function seedMod(
+  db: TestDb,
+  slug: string,
+  status: schema.ModStatus,
+  commitChar: string,
+  rendered = true,
+): Promise<{ modId: string; versionId: string }> {
+  const modId = await addMod(db, slug, status)
+  const versionId = await addVersion(db, modId, {
+    commitSha: sha(commitChar),
+    versionNumber: 1,
+    rendered,
+  })
+  await setCurrentVersion(db, modId, versionId)
+  return { modId, versionId }
+}
+
 export async function modState(db: TestDb, slug: string) {
   const [row] = await db
     .select({ status: schema.mods.status, currentVersionId: schema.mods.currentVersionId })

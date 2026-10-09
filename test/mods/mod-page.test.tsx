@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import type { ModDetail } from '@/mods/queries'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 const recordModCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/functions', () => ({ recordModCopyFn, getModDetailFn: vi.fn() }))
@@ -36,6 +37,7 @@ const MOD: ModDetail = {
   },
   desktopScreenshot: null,
   preview: [{ text: 'src/\n  app.ts' }],
+  generatedContent: null,
 }
 
 function renderPage(mod: Partial<ModDetail> = {}) {
@@ -70,11 +72,23 @@ describe('mod page head', () => {
   it('titles and describes the mod through the page-title helpers', () => {
     const long = { ...MOD, description: `A file tree pane ${'with details '.repeat(20)}` }
 
-    expect(head(long).meta).toEqual([
+    expect(head(long).meta.slice(0, 2)).toEqual([
       { title: modPageTitle(MOD.title) },
       { name: 'description', content: modMetaDescription(long.description) },
     ])
     expect(modMetaDescription(long.description).length).toBeLessThanOrEqual(160)
+  })
+
+  it('points og:image and twitter:image at the mod card on the site origin', () => {
+    const image = `${ORIGIN}/og/mods/filetree.png`
+
+    expect(head(MOD).meta.slice(2)).toEqual([
+      { property: 'og:image', content: image },
+      { property: 'og:image:width', content: String(CARD_WIDTH) },
+      { property: 'og:image:height', content: String(CARD_HEIGHT) },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:image', content: image },
+    ])
   })
 
   it('titles a missing mod as not found', () => {
@@ -161,6 +175,28 @@ describe('mod page', () => {
     expect(screen.getByRole('link', { name: '0123456' }).getAttribute('href')).toBe(
       `https://github.com/octocat/mods/tree/${SHA}`,
     )
+  })
+
+  it('renders the generated page copy when the version has it', () => {
+    renderPage({
+      generatedContent: {
+        whatItShows: ['The files in the current folder'],
+        requirements: [],
+        behaviorNotes: ['Folders open on click'],
+      },
+    })
+
+    expect(screen.getByRole('heading', { level: 2, name: 'What it shows' })).toBeTruthy()
+    expect(screen.getByText('The files in the current folder')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'Behavior notes' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Requirements' })).toBeNull()
+  })
+
+  it('renders no generated copy when the version has none', () => {
+    renderPage()
+
+    expect(screen.queryByRole('heading', { name: 'What it shows' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Behavior notes' })).toBeNull()
   })
 
   it('says so when there is no licence', () => {

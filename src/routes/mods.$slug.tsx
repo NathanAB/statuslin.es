@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { GeneratedContentSections } from '@/gallery/generated-content'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
@@ -10,6 +11,7 @@ import { InstallCommandBlock } from '@/mods/install-command-block'
 import { ModCredit } from '@/mods/mod-credit'
 import { ModPreview } from '@/mods/mod-preview'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
+import { modSocialMeta } from '@/og/meta'
 import { Stack } from '@/ui/layout'
 import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
@@ -28,6 +30,7 @@ export const Route = createFileRoute('/mods/$slug')({
       meta: [
         { title: modPageTitle(mod.title) },
         { name: 'description', content: modMetaDescription(mod.description) },
+        ...modSocialMeta(loaderData.origin, mod.slug),
       ],
       links: [canonicalLink(`/mods/${mod.slug}`)],
     }
@@ -74,7 +77,7 @@ function ModPage() {
           <FootprintSection mod={mod} />
         </SectionCard>
 
-        {/* Generated page copy (unit 43b) renders here. */}
+        {mod.generatedContent && <GeneratedContentSections content={mod.generatedContent} />}
       </Stack>
     </PageShell>
   )

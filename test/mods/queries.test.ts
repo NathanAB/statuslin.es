@@ -222,6 +222,7 @@ describe('getModDetail', () => {
       footprint,
       desktopScreenshot: null,
       preview: [{ text: 'meter' }],
+      generatedContent: null,
     })
   })
 
@@ -232,6 +233,23 @@ describe('getModDetail', () => {
       desktopScreenshot: '/mods/screenshots/meter.png',
       preview: null,
     })
+  })
+
+  it('returns the version generated content, and null for a stored value that is not page copy', async () => {
+    const content = { whatItShows: ['A meter'], requirements: [], behaviorNotes: [] }
+    const { versionId } = await addMod('copy', 'published', 'none')
+    const { versionId: badId } = await addMod('bad-copy', 'published', 'none')
+    await db
+      .update(schema.modVersions)
+      .set({ generatedContent: content })
+      .where(eq(schema.modVersions.id, versionId))
+    await db
+      .update(schema.modVersions)
+      .set({ generatedContent: { whatItShows: 'not a list' } })
+      .where(eq(schema.modVersions.id, badId))
+
+    expect((await getModDetail(db, 'copy'))?.generatedContent).toEqual(content)
+    expect((await getModDetail(db, 'bad-copy'))?.generatedContent).toBeNull()
   })
 
   it('ignores a preview from another scenario', async () => {

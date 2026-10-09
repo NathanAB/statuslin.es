@@ -15,6 +15,12 @@ export interface SitemapConfig {
   updatedAt: Date
 }
 
+/** `updatedAt` is the date of the mod's current version. */
+export interface SitemapMod {
+  slug: string
+  updatedAt: Date
+}
+
 /** Indexable facet pages the sitemap should list (already filtered to the shared threshold). */
 export interface SitemapFacet {
   slug: string
@@ -95,4 +101,19 @@ export function sitemapResponse(
       'Cache-Control': 'max-age=3600',
     },
   })
+}
+
+/** The gallery builds `/sitemap.xml` without knowing about mods, so they are spliced into its response. */
+export async function withModUrls(
+  sitemap: Response,
+  base: string,
+  mods: SitemapMod[],
+): Promise<Response> {
+  const xml = await sitemap.text()
+  const entries = mods.map((m) =>
+    urlEntry(`${base}/mods/${m.slug}`, m.updatedAt.toISOString().slice(0, 10)),
+  )
+  const body =
+    entries.length === 0 ? xml : xml.replace('\n</urlset>', `\n${entries.join('\n')}\n</urlset>`)
+  return new Response(body, { status: sitemap.status, headers: sitemap.headers })
 }
