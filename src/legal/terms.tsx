@@ -54,7 +54,8 @@ export function TermsContent() {
           <TextLink href={`${REPO_URL}/blob/main/SECURITY.md`}>security policy</TextLink>.
         </Text>
         <Text muted measure>
-          The maintainer can remove any listed mod at any time. Anyone can report a mod by emailing{' '}
+          The maintainer may remove any listed mod at any time. Anyone can report a mod or ask for
+          its removal by emailing{' '}
           <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
         </Text>
       </Stack>

@@ -6,6 +6,9 @@ import { DESKTOP_SCREENSHOT_SIZE } from '@/mods/mod-preview'
 const SHA = 'a'.repeat(40)
 const SCREENSHOT_ERROR = /desktopScreenshot: must be a site path under \/mods\/ ending in \.png/
 
+/** A PNG's IHDR chunk holds its width and height as big-endian words at bytes 16 and 20. */
+const pngSize = (png: Buffer) => ({ width: png.readUInt32BE(16), height: png.readUInt32BE(20) })
+
 const entry = (overrides: Record<string, unknown> = {}) => ({
   repoUrl: 'https://github.com/octocat/meter',
   path: 'mods/meter',
@@ -102,9 +105,7 @@ describe('parseCuration', () => {
     expect(screenshots).toContain('/mods/statusline-anywhere-desktop.png')
     expect(screenshots.filter((path) => !existsSync(`public${path}`))).toEqual([])
     for (const path of screenshots) {
-      const png = readFileSync(`public${path}`)
-      const size = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) }
-      expect(size, path).toEqual(DESKTOP_SCREENSHOT_SIZE)
+      expect(pngSize(readFileSync(`public${path}`)), path).toEqual(DESKTOP_SCREENSHOT_SIZE)
     }
   })
 })
