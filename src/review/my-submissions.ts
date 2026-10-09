@@ -56,11 +56,27 @@ export async function getMySubmissionRows(
           .select(joinedRow)
           .from(configVersions)
           .innerJoin(configs, eq(configs.id, configVersions.configId))
-          .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
+          // Left join: legacy or seeded live versions may have no render_jobs row.
+          .leftJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
           .leftJoin(user, eq(user.id, configs.authorId))
           .where(inArray(configVersions.id, liveIds))
       : []
-  const liveById = new Map(liveRows.map((r) => [r.version.id, r]))
+  // A live version was published, so a missing job row stands in as a finished render.
+  const liveById = new Map(
+    liveRows.map((r) => [
+      r.version.id,
+      {
+        ...r,
+        job: r.job ?? {
+          status: 'done',
+          attempts: 0,
+          error: null,
+          createdAt: r.version.createdAt,
+          finishedAt: null,
+        },
+      },
+    ]),
+  )
   const out: MySubmissionRow[] = []
   for (const latest of latestRows) {
     const liveRow = latest.config.currentVersionId

@@ -59,7 +59,10 @@ const RENDER_STATUS_ORDER = sql`case ${renderJobs.status}
 export type RawRow = {
   config: typeof configs.$inferSelect
   version: typeof configVersions.$inferSelect
-  job: typeof renderJobs.$inferSelect
+  job: Pick<
+    typeof renderJobs.$inferSelect,
+    'status' | 'attempts' | 'error' | 'createdAt' | 'finishedAt'
+  >
   author: typeof user.$inferSelect | null
 }
 

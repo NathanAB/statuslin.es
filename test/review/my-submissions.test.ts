@@ -77,6 +77,21 @@ describe('getMySubmissionRows with updates', () => {
     }
   })
 
+  it('shows the live version when it has no render job row (legacy or seeded data)', async () => {
+    const v1 = await publish()
+    await submitConfig(
+      db,
+      { ...live, title: 'Updated line', source: 'echo updated' },
+      { updateSlug: v1.slug },
+    )
+    await db.delete(schema.renderJobs).where(eq(schema.renderJobs.configVersionId, v1.versionId))
+
+    const row = await rowFor(v1.configId)
+    expect(row?.version).toMatchObject({ id: v1.versionId, title: live.title, status: 'approved' })
+    expect(row?.renderJob.status).toBe('done')
+    expect(row?.update).toEqual({ versionNumber: 2, status: 'pending', renderStatus: 'queued' })
+  })
+
   it('has no update summary for a published config without one or for a draft', async () => {
     const published = await publish()
     const draft = await submitConfig(db, { ...live, title: 'Draft line' })
