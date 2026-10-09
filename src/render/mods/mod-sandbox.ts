@@ -24,16 +24,20 @@ export interface ModSandbox {
 
 export interface ModSource {
   tarball: Uint8Array
-  /** Validated by `parseCuration` (letters, digits, `.`, `_`, `-`, `/`), so it is safe inside the single quotes in `unpackCommand`. */
+  /** Validated by `parseCuration` (letters, digits, `.`, `_`, `-`, `/`), so it is safe inside the double quotes in `unpackCommand`. */
   path: string
 }
 
-/** GitHub tarballs wrap the repository in one top-level folder, so strip it plus `path`. */
+/**
+ * GitHub tarballs wrap the repository in one top-level folder, so strip it plus `path`. The member
+ * is named exactly under that folder; a wildcard would also match `<path>` nested elsewhere.
+ */
 function unpackCommand(path: string): string {
   const depth = path === '' ? 0 : path.split('/').length
-  const member = path === '' ? '' : ` --wildcards '*/${path}/*'`
+  const member = path === '' ? '' : ` "$top/${path}"`
   return [
     `mkdir -p ${PLUGIN_DIR}`,
+    `top="$(tar -tzf ${TARBALL_PATH} | head -n 1 | cut -d/ -f1)"`,
     `tar -xzf ${TARBALL_PATH} -C ${PLUGIN_DIR} --strip-components=${depth + 1}${member}`,
     `test -f ${PLUGIN_DIR}/.claude-plugin/plugin.json`,
   ].join(' && ')

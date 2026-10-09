@@ -65,7 +65,7 @@ function fakes({
         ? '2.1.296 (Claude Code)\n'
         : command.includes(' plugin validate --json ')
           ? VALIDATE_OUTPUT
-          : command.startsWith('cat ')
+          : command.endsWith('/.claude-plugin/plugin.json')
             ? JSON.stringify(manifest)
             : ''
       return { exitCode: stdout ? 0 : 127, stdout, stderr: '' }

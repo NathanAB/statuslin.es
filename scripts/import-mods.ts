@@ -19,8 +19,9 @@ import { withModSandbox } from '@/render/mods/mod-sandbox'
  * its first version, one transaction per mod. Publishing is separate (scripts/publish-mod.ts).
  *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
- * request, so rerunning the same file changes nothing. Every entry is validated before anything is
- * fetched or written; a refused entry is reported and the others still import.
+ * request, so rerunning the same file changes nothing. The whole file's format is checked before
+ * anything is fetched or written; an entry refused later is reported and the others still import.
+ * It only creates mods: an entry re-pinned to a new commit of an existing mod is refused.
  *
  * AGENT USAGE (needs E2B_API_KEY and DATABASE_URL):
  *
@@ -71,7 +72,11 @@ async function importEntry(
   const imported = await importedSlug(db, entry)
   if (imported) return `unchanged ${imported}: already imported at ${entry.commitSha}`
   const taken = await slugUsingName(db, name)
-  if (taken) throw new Error(`plugin name "${name}" is already used by mod "${taken}"`)
+  if (taken) {
+    throw new Error(
+      `plugin name "${name}" is already used by mod "${taken}"; the import only creates new mods`,
+    )
+  }
 
   const repo = await github.repoInfo(entry.repoUrl)
   const canonical = `https://github.com/${repo.fullName}`

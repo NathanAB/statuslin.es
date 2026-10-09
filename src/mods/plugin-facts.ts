@@ -17,6 +17,9 @@ export interface PluginFacts {
   claudeCodeVersion: string
 }
 
+/** A plugin.json past this is truncated, fails to parse, and the entry is refused. */
+const MANIFEST_MAX_BYTES = 64 * 1024
+
 const manifestSchema = z.object({
   name: z.string().min(1),
   version: z.string().optional(),
@@ -71,25 +74,28 @@ export function parseFootprint(validateJson: unknown): ModFootprint {
 }
 
 export function parseManifest(text: string): PluginManifest {
-  let json: unknown
-  try {
-    json = JSON.parse(text)
-  } catch {
-    throw new Error('.claude-plugin/plugin.json is not valid JSON')
-  }
+  const json = parseJson(text)
+  if (json === undefined) throw new Error('.claude-plugin/plugin.json is not valid JSON')
   const parsed = manifestSchema.safeParse(json)
-  if (!parsed.success) throw new Error('.claude-plugin/plugin.json has no "name"')
+  if (!parsed.success) {
+    throw new Error(`.claude-plugin/plugin.json: ${z.prettifyError(parsed.error)}`)
+  }
   const { name, version, description } = parsed.data
   return { name, version: version ?? null, description: description ?? '' }
 }
 
-function validateErrors(stdout: string): string[] {
-  let report: z.infer<typeof validateReportSchema>
+function parseJson(text: string): unknown {
   try {
-    report = validateReportSchema.parse(JSON.parse(stdout))
+    return JSON.parse(text)
   } catch {
-    return ['its output is not a validate report']
+    return undefined
   }
+}
+
+function validateErrors(validateJson: unknown): string[] {
+  const parsed = validateReportSchema.safeParse(validateJson)
+  if (!parsed.success) return ['its output is not a validate report']
+  const report = parsed.data
   if (report.success) return []
   const sections = [...(report.manifest ? [report.manifest] : []), ...(report.contents ?? [])]
   const errors = sections.flatMap((section) => section.errors ?? [])
@@ -106,17 +112,20 @@ export async function inspectPlugin(sandbox: ModSandbox): Promise<PluginFacts> {
   const validate = await sandbox.run(
     `${SANDBOX_CLAUDE_CODE_BIN} plugin validate --json ${sandbox.pluginDir}`,
   )
-  const errors = validateErrors(validate.stdout)
+  const validateJson = parseJson(validate.stdout)
+  const errors = validateErrors(validateJson)
   if (validate.exitCode !== 0 || errors.length > 0) {
     const detail = errors.length > 0 ? errors : [validate.stderr.trim()]
     throw new Error(`claude plugin validate failed: ${detail.join('; ')}`)
   }
 
-  const manifest = await sandbox.run(`cat ${sandbox.pluginDir}/.claude-plugin/plugin.json`)
+  const manifest = await sandbox.run(
+    `head -c ${MANIFEST_MAX_BYTES} ${sandbox.pluginDir}/.claude-plugin/plugin.json`,
+  )
   if (manifest.exitCode !== 0) throw new Error('could not read .claude-plugin/plugin.json')
   return {
     manifest: parseManifest(manifest.stdout),
-    footprint: parseFootprint(JSON.parse(validate.stdout)),
+    footprint: parseFootprint(validateJson),
     claudeCodeVersion,
   }
 }
