@@ -65,6 +65,12 @@ module.exports = {
   options: {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.json' },
-    tsPreCompilationDeps: true,
+    // TypeScript 7 ships no compiler API, so depcruise can't use it to read .ts/.tsx and silently
+    // cruises 0 modules (issue #68). swc parses the TypeScript source directly and
+    // still marks `import type` as type-only, which ui-stays-presentational relies on.
+    // depcruise still prints a `missing-typescript-transpiler` warning because `tsConfig` is set;
+    // it's expected. `tsConfig` only feeds the `@/` alias, which resolves without the TS API, and
+    // test/scripts/check-boundaries.test.ts fails if any src module goes uncruised.
+    parser: 'swc',
   },
 }
