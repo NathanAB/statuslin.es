@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs } from '@/db/schema'
+import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
 import type { Interpreter } from '@/render/types'
 import type { SubmitResult } from './submit'
@@ -168,7 +169,7 @@ export async function createResubmissionVersion(
       }
     })
   } catch (error) {
-    if ((error as { code?: string }).code === '23505') {
+    if (isUniqueViolation(error)) {
       throw new HttpError(409, 'submission was already resubmitted')
     }
     throw error

@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, lte, max, ne } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs } from '@/db/schema'
+import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
 import { type PreparedVersion, supersedeRejectionDelivery } from './resubmit'
 import type { SubmitResult } from './submit'
@@ -48,12 +49,6 @@ function sameAsLive(live: ListedFields, input: ListedFields): boolean {
     live.source === input.source &&
     sameHosts(live.networkHosts, input.networkHosts)
   )
-}
-
-// Drizzle wraps driver errors, so the Postgres code sits on the cause.
-function isUniqueViolation(error: unknown): boolean {
-  const { code, cause } = error as { code?: string; cause?: { code?: string } }
-  return code === '23505' || cause?.code === '23505'
 }
 
 export async function findUpdateBase(

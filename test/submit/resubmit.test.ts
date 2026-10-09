@@ -263,4 +263,42 @@ describe('linked resubmission', () => {
       .where(eq(schema.configVersions.configId, rejected.configId))
     expect(versions).toHaveLength(2)
   })
+
+  it('returns 409 when a concurrent resubmission inserts v2 between the read and the insert', async () => {
+    const rejected = await rejectedSubmission()
+    // PGlite runs one transaction at a time, so land the winner's v2 at the exact point a
+    // second Postgres connection could: after this attempt's reads, before its insert.
+    const racingDb = new Proxy(db, {
+      get(target, prop, receiver) {
+        if (prop !== 'transaction') return Reflect.get(target, prop, receiver)
+        return (run: (tx: unknown) => Promise<unknown>) =>
+          target.transaction((tx) =>
+            run(
+              new Proxy(tx, {
+                get(txTarget, txProp, txReceiver) {
+                  if (txProp !== 'insert') return Reflect.get(txTarget, txProp, txReceiver)
+                  return (table: typeof schema.configVersions) => {
+                    if (table !== schema.configVersions) return txTarget.insert(table)
+                    return {
+                      values: (row: typeof schema.configVersions.$inferInsert) => ({
+                        returning: async () => {
+                          await txTarget
+                            .insert(schema.configVersions)
+                            .values({ ...row, source: 'echo winner', contentSha256: 'winner' })
+                          return txTarget.insert(table).values(row).returning()
+                        },
+                      }),
+                    }
+                  }
+                },
+              }),
+            ),
+          )
+      },
+    })
+
+    await expect(
+      submitConfig(racingDb, original, { rejectedVersionId: rejected.versionId }),
+    ).rejects.toMatchObject({ status: 409 })
+  })
 })
