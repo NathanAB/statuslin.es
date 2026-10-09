@@ -7,6 +7,7 @@ import json
 import os
 import re
 import ssl
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -110,6 +111,7 @@ CANNED_MESSAGE_ID = "msg_statuslines_preview"
 CANNED_MODEL_PATTERN = re.compile(r"^[a-z0-9.\-\[\]]{1,64}$")
 CANNED_FALLBACK_MODEL = "claude-opus-4-8"
 NOT_FOUND = {"type": "error", "error": {"type": "not_found_error", "message": "not found"}}
+BAD_LENGTH = {"type": "error", "error": {"type": "invalid_request_error", "message": "bad content-length"}}
 
 
 def canned_message(model, reply):
@@ -179,7 +181,11 @@ class CannedMessagesHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _read_request(self):
-        length = int(self.headers.get("Content-Length") or 0)
+        """The request body as a dict, or None when Content-Length is not a number."""
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return None
         if length <= 0 or length > MAX_REQUEST_BYTES:
             return {}
         try:
@@ -191,6 +197,9 @@ class CannedMessagesHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         path = self.path.split("?", 1)[0]
         request = self._read_request()
+        if request is None:
+            self._send_json(400, BAD_LENGTH)
+            return
         if path == COUNT_TOKENS_PATH:
             self._send_json(200, {"input_tokens": self.reply["usage"]["input_tokens"]})
             return
@@ -219,11 +228,11 @@ class CannedMessagesHandler(BaseHTTPRequestHandler):
 
 
 def serve_canned_messages(listen, port, reply_path):
+    if os.geteuid() == 0:
+        sys.exit("canned model server: refusing to run as root")
     with open(reply_path, encoding="utf-8") as reply_file:
         CannedMessagesHandler.reply = json.load(reply_file)
-    server = ThreadingHTTPServer((listen, port), CannedMessagesHandler)
-    server.daemon_threads = True
-    server.serve_forever()
+    UsageServer((listen, port), CannedMessagesHandler).serve_forever()
 
 
 def self_test():
