@@ -47,6 +47,18 @@ export function configSocialMeta(input: {
   ]
 }
 
+/** The mod page's card; `base` is the loader's origin. */
+export function modSocialMeta(base: string, slug: string): Array<Record<string, string>> {
+  const image = `${base}/og/mods/${slug}.png`
+  return [
+    { property: 'og:image', content: image },
+    { property: 'og:image:width', content: String(CARD_WIDTH) },
+    { property: 'og:image:height', content: String(CARD_HEIGHT) },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:image', content: image },
+  ]
+}
+
 /**
  * Social meta for static editorial pages (/guide, /resources). Reuses the home OG
  * card — these pages have no per-page image, and an on-brand card beats none when

@@ -11,6 +11,7 @@ import { InstallCommandBlock } from '@/mods/install-command-block'
 import { ModCredit } from '@/mods/mod-credit'
 import { ModPreview } from '@/mods/mod-preview'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
+import { modSocialMeta } from '@/og/meta'
 import { Stack } from '@/ui/layout'
 import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/mods/$slug')({
       meta: [
         { title: modPageTitle(mod.title) },
         { name: 'description', content: modMetaDescription(mod.description) },
+        ...modSocialMeta(loaderData.origin, mod.slug),
       ],
       links: [canonicalLink(`/mods/${mod.slug}`)],
     }
