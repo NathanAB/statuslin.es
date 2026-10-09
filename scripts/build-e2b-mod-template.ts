@@ -53,6 +53,13 @@ export const MOD_TEMPLATE_PACKAGES = [
   },
 ] as const
 
+/**
+ * sha256 of the native `claude.exe` that Claude Code's postinstall puts behind `bin/claude`, confirmed
+ * by two fresh installs of this version on E2B's base image. Update it with the version.
+ */
+export const CLAUDE_CODE_BINARY_SHA256 =
+  '24972e3bc859fab2b46ed4c1e51f7d6130f06d3bd550811a114640de3370d0de'
+
 const PROTECTED_ROOTS = `/opt/statuslines /usr/local`
 
 const EXITS_UNLESS_LOCKED = `awk '{ exit $2 != "L" }'`
@@ -122,6 +129,7 @@ export const modRenderTemplate = () =>
     .runCmd(
       [
         `npm install -g --prefix ${SANDBOX_CLAUDE_CODE_PREFIX} --no-fund --no-audit @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}`,
+        `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SANDBOX_CLAUDE_CODE_BIN}" | sha256sum -c -`,
         `chmod -R go-w ${SANDBOX_CLAUDE_CODE_PREFIX}`,
         `test -z "$(find ${SANDBOX_CLAUDE_CODE_PREFIX} -perm /022 -not -type l)"`,
         RUNS_CLAUDE_CODE_VERSION,

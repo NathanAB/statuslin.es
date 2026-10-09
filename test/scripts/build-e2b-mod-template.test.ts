@@ -10,6 +10,7 @@ import {
 } from '@/render/e2b-template'
 import {
   buildModSnapshot,
+  CLAUDE_CODE_BINARY_SHA256,
   MOD_TEMPLATE_PACKAGES,
   modRenderTemplate,
 } from '../../scripts/build-e2b-mod-template'
@@ -89,6 +90,21 @@ describe('mod template package integrity', () => {
       expect(check, `${pkg.name} integrity check`).toBeGreaterThan(-1)
       expect(check).toBeLessThan(firstInstall)
     }
+  })
+})
+
+describe('mod template Claude Code binary pin', () => {
+  it('pins the native binary to an exact sha256', () => {
+    expect(CLAUDE_CODE_BINARY_SHA256).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('checks the binary against the pin right after npm installs Claude Code', async () => {
+    const commands = await runCommands(modRenderTemplate())
+    const install = commands.findIndex((c) => /npm install .*@anthropic-ai\/claude-code@/.test(c))
+    expect(install).toBeGreaterThan(-1)
+    expect(commands[install + 1]).toBe(
+      `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SANDBOX_CLAUDE_CODE_BIN}" | sha256sum -c -`,
+    )
   })
 })
 
