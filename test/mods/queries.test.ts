@@ -5,7 +5,14 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { buildMarketplace } from '@/mods/marketplace'
-import { getMarketplaceRows, hasAnyMods, MOD_SCENARIO_KEY, versionIsRendered } from '@/mods/queries'
+import {
+  getMarketplaceRows,
+  getModDetail,
+  hasAnyMods,
+  MOD_SCENARIO_KEY,
+  recordModCopy,
+  versionIsRendered,
+} from '@/mods/queries'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -189,5 +196,105 @@ describe('versionIsRendered', () => {
     const { versionId } = await addMod('judged', 'published', rendering)
 
     expect(await renderedVersionIds()).toEqual(rendered ? [versionId] : [])
+  })
+})
+
+describe('getModDetail', () => {
+  it('returns a published mod with its current version and clean-main preview', async () => {
+    const { modId } = await addMod('meter', 'published', 'scenario-preview', 'plugins/meter')
+    const footprint = { events: ['ui.render{component=AbovePrompt}'], calls: ['$.fs.read'] }
+    await db
+      .update(schema.modVersions)
+      .set({ footprint })
+      .where(eq(schema.modVersions.modId, modId))
+
+    expect(await getModDetail(db, 'meter')).toEqual({
+      id: modId,
+      slug: 'meter',
+      pluginName: 'meter',
+      title: 'meter',
+      description: '',
+      authorGithub: 'octocat',
+      repoUrl: 'https://github.com/octocat/mods',
+      path: 'plugins/meter',
+      commitSha: expect.stringMatching(/^[0-9a-f]{40}$/),
+      license: 'MIT',
+      footprint,
+      desktopScreenshot: null,
+      preview: [{ text: 'meter' }],
+    })
+  })
+
+  it('returns a screenshot-only mod with no preview', async () => {
+    await addMod('anywhere', 'published', 'screenshot')
+
+    expect(await getModDetail(db, 'anywhere')).toMatchObject({
+      desktopScreenshot: '/mods/screenshots/meter.png',
+      preview: null,
+    })
+  })
+
+  it('ignores a preview from another scenario', async () => {
+    await addMod('other', 'published', 'other-scenario')
+
+    expect((await getModDetail(db, 'other'))?.preview).toBeNull()
+  })
+
+  it.each([
+    ['a draft mod', 'draft'],
+    ['a removed mod', 'removed'],
+  ] as const)('returns null for %s', async (_name, status) => {
+    await addMod('hidden', status, 'scenario-preview')
+
+    expect(await getModDetail(db, 'hidden')).toBeNull()
+  })
+
+  it('returns null for an unknown slug', async () => {
+    expect(await getModDetail(db, 'nope')).toBeNull()
+  })
+
+  it('returns null when the current version belongs to another mod', async () => {
+    const victim = await addMod('victim', 'draft', 'scenario-preview')
+    const { modId } = await addMod('hijacked', 'published', 'none')
+    await db
+      .update(schema.mods)
+      .set({ currentVersionId: victim.versionId })
+      .where(eq(schema.mods.id, modId))
+
+    expect(await getModDetail(db, 'hijacked')).toBeNull()
+  })
+})
+
+describe('recordModCopy', () => {
+  async function copyRows(modId: string) {
+    return db.select().from(schema.modCopyEvents).where(eq(schema.modCopyEvents.modId, modId))
+  }
+
+  it('counts one copy per IP hash and records one row', async () => {
+    const { modId } = await addMod('meter', 'published', 'scenario-preview')
+
+    expect(await recordModCopy(db, modId, 'hash-a')).toBe(1)
+    expect(await recordModCopy(db, modId, 'hash-a')).toBe(1)
+    expect(await recordModCopy(db, modId, 'hash-b')).toBe(2)
+
+    expect((await copyRows(modId)).map((r) => r.ipHash).sort()).toEqual(['hash-a', 'hash-b'])
+  })
+
+  it('reports the count without recording when there is no trustworthy IP', async () => {
+    const { modId } = await addMod('meter', 'published', 'scenario-preview')
+
+    expect(await recordModCopy(db, modId, null)).toBe(0)
+    expect(await copyRows(modId)).toEqual([])
+  })
+
+  it.each(['draft', 'removed'] as const)('records nothing for a %s mod', async (status) => {
+    const { modId } = await addMod('hidden', status, 'scenario-preview')
+
+    expect(await recordModCopy(db, modId, 'hash-a')).toBe(0)
+    expect(await copyRows(modId)).toEqual([])
+  })
+
+  it('returns 0 for a malformed id', async () => {
+    expect(await recordModCopy(db, 'not-a-uuid', 'hash-a')).toBe(0)
   })
 })
