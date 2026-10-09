@@ -3,7 +3,8 @@ import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Text } from '@/ui/text'
 import type { ModDetail } from './queries'
 
-// mod_versions stores only the screenshot path, so its box is reserved at a fixed Desktop ratio.
+// mod_versions stores only the screenshot path, so this reserved size is a guess at a Desktop
+// window until the screenshot's real dimensions are stored.
 const DESKTOP_SCREENSHOT_SIZE = { width: 1600, height: 1000 }
 
 /** The terminal preview, else the Desktop screenshot that stands in for it. */
