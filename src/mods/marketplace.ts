@@ -7,6 +7,7 @@ export interface MarketplaceModRow {
   description: string
   authorGithub: string
   tags: string[]
+  /** Canonical `https://github.com/<owner>/<repo>` (DB CHECK `mod_versions_repo_url_check`), so appending `.git` needs no normalizing. */
   repoUrl: string
   /** Folder holding the plugin inside the repo; empty when the plugin is at the repo root. */
   path: string
@@ -36,12 +37,8 @@ export interface Marketplace {
   plugins: MarketplacePlugin[]
 }
 
-function gitUrl(repoUrl: string): string {
-  return `${repoUrl.replace(/\/+$/, '').replace(/\.git$/, '')}.git`
-}
-
 function pluginSource(row: MarketplaceModRow): MarketplaceSource {
-  const url = gitUrl(row.repoUrl)
+  const url = `${row.repoUrl}.git`
   if (row.path === '') return { source: 'url', url, sha: row.commitSha }
   return { source: 'git-subdir', url, path: row.path, sha: row.commitSha }
 }

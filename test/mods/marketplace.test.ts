@@ -62,15 +62,6 @@ describe('buildMarketplace', () => {
     })
   })
 
-  it.each([
-    ['already ending in .git', 'https://github.com/octocat/meter.git'],
-    ['with a trailing slash', 'https://github.com/octocat/meter/'],
-  ])('ends a repo url %s in exactly one .git', (_name, repoUrl) => {
-    const [plugin] = buildMarketplace(ORIGIN, [row({ repoUrl })]).plugins
-
-    expect(plugin?.source.url).toBe('https://github.com/octocat/meter.git')
-  })
-
   it('builds the homepage from the site origin and the mod slug, not the plugin name', () => {
     const [plugin] = buildMarketplace('https://staging.statuslin.es', [
       row({ slug: 'context-meter', pluginName: 'meter' }),

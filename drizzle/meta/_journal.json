@@ -197,6 +197,13 @@
       "when": 1791580693989,
       "tag": "0027_mod_versions_desktop_screenshot",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791581916032,
+      "tag": "0028_mod_versions_repo_url_and_path_checks",
+      "breakpoints": true
     }
   ]
 }

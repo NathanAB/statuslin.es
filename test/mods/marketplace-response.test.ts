@@ -36,12 +36,24 @@ describe('marketplaceResponseForRoute', () => {
     const response = await marketplaceResponseForRoute()
 
     expect(getMarketplaceRows).toHaveBeenCalledWith({ name: 'database' })
+    expect(response.status).toBe(200)
     expect(response.headers.get('Content-Type')).toMatch(/^application\/json/)
     const body = await response.json()
     expect(body.name).toBe('statuslines')
     expect(body.plugins.map((p: { homepage: string }) => p.homepage)).toEqual([
       'https://staging.statuslin.es/mods/context-meter',
     ])
+  })
+
+  it('answers 503 instead of an empty catalog, so clients keep their cached plugins', async () => {
+    getMarketplaceRows.mockResolvedValue([])
+
+    const response = await marketplaceResponseForRoute()
+
+    expect(response.status).toBe(503)
+    expect(captureServerEvent).toHaveBeenCalledWith('marketplace_fetched', 'marketplace', {
+      pluginCount: 0,
+    })
   })
 
   it('logs one server-side analytics event per fetch', async () => {
