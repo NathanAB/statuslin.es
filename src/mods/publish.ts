@@ -116,7 +116,7 @@ export function confirmationGuards(slug: string, confirm: string | null): Guard[
     {
       level: 'refuse',
       name: 'confirmation',
-      message: `--apply needs the slug typed back: --confirm=${slug}`,
+      message: `type the slug back to confirm: --confirm=${slug}`,
     },
   ]
 }
