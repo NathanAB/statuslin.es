@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { runCommand } from '@/adopt/install'
 import { listPublishedSlugsMissingContent } from '@/content/generation-workflow'
 import * as schema from '@/db/schema'
+import { getFacetPage, llmsTxtResponseForRoute } from '@/gallery/functions'
 import {
   getCardsByCopies,
   getConfigBySlug,
@@ -30,6 +31,29 @@ import { removeConfig } from '../../scripts/remove-config'
 const configCard = vi.hoisted(() => vi.fn(() => null))
 vi.mock('@/og/card', () => ({ configCard, homeCard: vi.fn(() => null) }))
 vi.mock('@/og/render', () => ({ toElementPng: vi.fn(async () => new Uint8Array([1])) }))
+const testState = vi.hoisted(() => ({ db: null as unknown }))
+vi.mock('@/db', () => ({
+  get db() {
+    return testState.db
+  },
+}))
+vi.mock('@tanstack/react-start', () => ({
+  createServerOnlyFn: (handler: () => unknown) => handler,
+  createServerFn: () => {
+    const wrap = (handler: (args: { data: unknown }) => unknown) => (args?: { data?: unknown }) =>
+      handler({ data: args?.data })
+    return {
+      handler: wrap,
+      inputValidator: (validator: (data: never) => unknown) => ({
+        handler: (handler: (args: { data: unknown }) => unknown) => (args: { data: never }) =>
+          handler({ data: validator(args.data) }),
+      }),
+    }
+  },
+}))
+vi.mock('@/lib/http.server', () => ({
+  withHttpStatus: (run: () => unknown) => run(),
+}))
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -37,6 +61,7 @@ let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
   client = new PGlite()
   db = drizzle({ client, schema })
+  testState.db = db
   await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values(
     ['owner', 'neighbour'].map((id) => ({
@@ -129,6 +154,16 @@ describe('approving an update', () => {
     ).toMatchObject({ title: update.title, interpreter: update.interpreter })
     await configCardResponse(db, v1.slug)
     expect(configCard).toHaveBeenLastCalledWith(expect.objectContaining({ title: update.title }))
+    const llms = await (await llmsTxtResponseForRoute()).text()
+    expect(llms).toContain(`[${update.title}]`)
+    expect(llms).toContain(update.description)
+    expect(llms).not.toContain(live.title)
+    const pythonFacet = await getFacetPage({ data: { facet: 'python' } })
+    expect(pythonFacet?.cards.find((card) => card.slug === v1.slug)).toMatchObject({
+      title: update.title,
+    })
+    const bashFacet = await getFacetPage({ data: { facet: 'bash' } })
+    expect(bashFacet?.cards.map((card) => card.slug)).not.toContain(v1.slug)
   })
 
   it('keeps the config in place in the new sort', async () => {

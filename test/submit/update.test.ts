@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { runCommand } from '@/adopt/install'
 import * as schema from '@/db/schema'
+import { getFacetPage, llmsTxtResponseForRoute } from '@/gallery/functions'
 import { getConfigBySlug, getPublishedConfigs } from '@/gallery/queries'
 import { tryHighlightSource } from '@/lib/highlight'
 import { configCardResponse } from '@/og/routes'
@@ -28,6 +29,29 @@ vi.mock('@/lib/highlight', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/highlight')>()
   return { ...actual, tryHighlightSource: vi.fn(actual.tryHighlightSource) }
 })
+const testState = vi.hoisted(() => ({ db: null as unknown }))
+vi.mock('@/db', () => ({
+  get db() {
+    return testState.db
+  },
+}))
+vi.mock('@tanstack/react-start', () => ({
+  createServerOnlyFn: (handler: () => unknown) => handler,
+  createServerFn: () => {
+    const wrap = (handler: (args: { data: unknown }) => unknown) => (args?: { data?: unknown }) =>
+      handler({ data: args?.data })
+    return {
+      handler: wrap,
+      inputValidator: (validator: (data: never) => unknown) => ({
+        handler: (handler: (args: { data: unknown }) => unknown) => (args: { data: never }) =>
+          handler({ data: validator(args.data) }),
+      }),
+    }
+  },
+}))
+vi.mock('@/lib/http.server', () => ({
+  withHttpStatus: (run: () => unknown) => run(),
+}))
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -35,6 +59,7 @@ let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
   client = new PGlite()
   db = drizzle({ client, schema })
+  testState.db = db
   await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values(
     ['owner', 'other', 'filler'].map((id) => ({
@@ -341,5 +366,14 @@ describe('public reads while an update is pending', () => {
     expect(card).toMatchObject({ slug: v1.slug, title: live.title })
     await configCardResponse(db, v1.slug)
     expect(configCard).toHaveBeenLastCalledWith(expect.objectContaining({ title: live.title }))
+    const llms = await (await llmsTxtResponseForRoute()).text()
+    expect(llms).toContain(`[${live.title}]`)
+    expect(llms).toContain(live.description)
+    expect(llms).not.toContain(update.title)
+    const bashFacet = await getFacetPage({ data: { facet: 'bash' } })
+    expect(bashFacet?.cards).toEqual([
+      expect.objectContaining({ slug: v1.slug, title: live.title }),
+    ])
+    expect(await getFacetPage({ data: { facet: 'python' } })).toBeNull()
   })
 })
