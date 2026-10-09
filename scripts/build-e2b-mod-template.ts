@@ -1,3 +1,4 @@
+import { dirname } from 'node:path'
 import type { Sandbox } from 'e2b'
 import {
   E2B_MOD_TEMPLATE_BUILD_NAME,
@@ -54,23 +55,53 @@ export const MOD_TEMPLATE_PACKAGES = [
 
 const PROTECTED_ROOTS = `/opt/statuslines /usr/local`
 
-/** Root first strips what finalize granted, then `user` proves it can no longer escalate or write. */
+const EXITS_UNLESS_LOCKED = `awk '{ exit $2 != "L" }'`
+
+/** Fails when `cmd` fails as well as when it prints anything, so a broken probe never passes. */
+const printsNothing = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$out"`
+
+const ROOT_LISTENERS_OTHER_THAN_ENVD = `ss -Hltunp | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u | xargs -r -n1 ps -o user=,comm= -p | awk '$1 == "root" && $2 != "envd"'`
+
+const RUNS_CLAUDE_CODE_VERSION = `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "${CLAUDE_CODE_VERSION}"`
+
+/**
+ * The built sandbox leaves root reachable from `user` (finalize's passwordless sudo, an empty root
+ * password beside a setuid `su`) and runs root sshd and rpcbind. Root removes each whole category on
+ * the live sandbox, then the build proves it as root and as `user`, and proves the tooling still
+ * runs. Any failing command aborts the build before the snapshot.
+ */
 const SNAPSHOT_HARDENING: ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> = [
-  {
-    user: 'root',
-    cmd: [
-      "sed -i '/^user ALL=/d' /etc/sudoers",
-      'rm -rf /etc/sudoers.d/*',
-      'gpasswd -d user sudo',
-      'chmod -R go-w /usr/local',
-      // As root, because `user` cannot list the root-only usage server directory.
-      `test -z "$(find ${PROTECTED_ROOTS} -perm /022 -not -type l)"`,
-    ].join(' && '),
-  },
-  { user: 'user', cmd: '! sudo -n true' },
-  ...[SANDBOX_CLAUDE_CODE_BIN, SANDBOX_CANNED_MODEL_SERVER_DEST, SANDBOX_REPLAY_DIR].map(
-    (path) => ({ user: 'user' as const, cmd: `test ! -w ${path}` }),
-  ),
+  ...[
+    "sed -i '/^user ALL=/d' /etc/sudoers",
+    'rm -rf /etc/sudoers.d/*',
+    'gpasswd -d user sudo',
+    'chmod -R go-w /usr/local',
+    'find / -xdev -perm /6000 -type f -exec chmod ug-s {} +',
+    'passwd -l root',
+    'passwd -l user',
+    'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
+    // As root, because `user` cannot list the root-only usage server directory.
+    printsNothing(`find ${PROTECTED_ROOTS} -perm /022 -not -type l`),
+    printsNothing('find / -xdev -perm /6000 -type f'),
+    `passwd -S root | ${EXITS_UNLESS_LOCKED}`,
+    `passwd -S user | ${EXITS_UNLESS_LOCKED}`,
+    printsNothing(ROOT_LISTENERS_OTHER_THAN_ENVD),
+  ].map((cmd) => ({ user: 'root' as const, cmd })),
+  ...[
+    '! echo | timeout 5 su -c true root',
+    '! sudo -n true',
+    ...[
+      SANDBOX_CLAUDE_CODE_BIN,
+      dirname(SANDBOX_CLAUDE_CODE_BIN),
+      SANDBOX_CANNED_MODEL_SERVER_DEST,
+      SANDBOX_CANNED_MODEL_DIR,
+      SANDBOX_REPLAY_DIR,
+      dirname(SANDBOX_REPLAY_DIR),
+      dirname(dirname(SANDBOX_REPLAY_DIR)),
+    ].map((path) => `test -e ${path} && test ! -w ${path}`),
+    RUNS_CLAUDE_CODE_VERSION,
+    `cd ${SANDBOX_REPLAY_DIR} && node -e "require('@xterm/headless')"`,
+  ].map((cmd) => ({ user: 'user' as const, cmd })),
 ]
 
 async function hardenSnapshot(sandbox: Sandbox): Promise<void> {
@@ -84,6 +115,8 @@ const verifyIntegrity = ({ name, version, integrity }: (typeof MOD_TEMPLATE_PACK
 
 export const modRenderTemplate = () =>
   renderTemplate()
+    // `ss`, for the build's check that envd is the only root process listening on a port.
+    .aptInstall(['iproute2'])
     .runCmd(MOD_TEMPLATE_PACKAGES.map(verifyIntegrity).join(' && '))
     // A root-owned prefix under /opt, because E2B's build finalize makes /usr/local world-writable.
     .runCmd(
@@ -91,7 +124,7 @@ export const modRenderTemplate = () =>
         `npm install -g --prefix ${SANDBOX_CLAUDE_CODE_PREFIX} --no-fund --no-audit @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}`,
         `chmod -R go-w ${SANDBOX_CLAUDE_CODE_PREFIX}`,
         `test -z "$(find ${SANDBOX_CLAUDE_CODE_PREFIX} -perm /022 -not -type l)"`,
-        `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "${CLAUDE_CODE_VERSION}"`,
+        RUNS_CLAUDE_CODE_VERSION,
       ].join(' && '),
       { user: 'root' },
     )

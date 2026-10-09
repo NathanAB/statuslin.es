@@ -2,8 +2,10 @@ import { Sandbox, Template, type TemplateClass } from 'e2b'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   E2B_TEMPLATE_BUILD_NAME,
+  SANDBOX_CANNED_MODEL_DIR,
   SANDBOX_CANNED_MODEL_SERVER_DEST,
   SANDBOX_CLAUDE_CODE_BIN,
+  SANDBOX_CLAUDE_CODE_PREFIX,
   SANDBOX_REPLAY_DIR,
 } from '@/render/e2b-template'
 import {
@@ -50,6 +52,12 @@ describe('mod render template definition', () => {
     expect((await steps(modRenderTemplate())).slice(0, base.length)).toEqual(base)
   })
 
+  it('installs iproute2 so the build can list listening sockets with ss', async () => {
+    expect((await steps(modRenderTemplate())).map((s) => s.args.join(' '))).toEqual(
+      expect.arrayContaining([expect.stringMatching(/apt-get install .*\biproute2\b/)]),
+    )
+  })
+
   it('leaves Claude Code out of the status line template', async () => {
     expect(await installedVersion(renderTemplate(), '@anthropic-ai/claude-code')).toBeUndefined()
   })
@@ -86,6 +94,45 @@ describe('mod template package integrity', () => {
 
 type Ran = { cmd: string; user: string | undefined }
 
+const HARDENING_STEPS = [
+  "sed -i '/^user ALL=/d' /etc/sudoers",
+  'rm -rf /etc/sudoers.d/*',
+  'gpasswd -d user sudo',
+  'chmod -R go-w /usr/local',
+  'find / -xdev -perm /6000 -type f -exec chmod ug-s {} +',
+  'passwd -l root',
+  'passwd -l user',
+  'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
+]
+
+const noOutput = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$out"`
+
+const ROOT_ASSERTIONS = [
+  noOutput('find /opt/statuslines /usr/local -perm /022 -not -type l'),
+  noOutput('find / -xdev -perm /6000 -type f'),
+  'passwd -S root | awk \'{ exit $2 != "L" }\'',
+  'passwd -S user | awk \'{ exit $2 != "L" }\'',
+  noOutput(
+    `ss -Hltunp | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u | xargs -r -n1 ps -o user=,comm= -p | awk '$1 == "root" && $2 != "envd"'`,
+  ),
+]
+
+const USER_ASSERTIONS = [
+  '! echo | timeout 5 su -c true root',
+  '! sudo -n true',
+  ...[
+    SANDBOX_CLAUDE_CODE_BIN,
+    `${SANDBOX_CLAUDE_CODE_PREFIX}/bin`,
+    SANDBOX_CANNED_MODEL_SERVER_DEST,
+    SANDBOX_CANNED_MODEL_DIR,
+    SANDBOX_REPLAY_DIR,
+    '/opt/statuslines',
+    '/opt',
+  ].map((path) => `test -e ${path} && test ! -w ${path}`),
+  `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "2.1.296"`,
+  `cd ${SANDBOX_REPLAY_DIR} && node -e "require('@xterm/headless')"`,
+]
+
 function fakeE2b(failWhen: (cmd: string) => boolean = () => false) {
   const events: string[] = []
   const ran: Ran[] = []
@@ -121,36 +168,32 @@ describe('snapshot hardening', () => {
     vi.restoreAllMocks()
   })
 
-  it('strips sudo and write access as root, then proves it as user, before the mod snapshot', async () => {
+  it('strips every route to root as root, then proves it, before the mod snapshot', async () => {
     const { events, ran } = fakeE2b()
 
     await buildModSnapshot()
 
-    const asRoot = ran.filter((r) => r.user === 'root').map((r) => r.cmd)
-    const asUser = ran.filter((r) => r.user === 'user').map((r) => r.cmd)
-    expect(asRoot.join('\n')).toContain("sed -i '/^user ALL=/d' /etc/sudoers")
-    expect(asRoot.join('\n')).toContain('rm -rf /etc/sudoers.d/*')
-    expect(asRoot.join('\n')).toContain('gpasswd -d user sudo')
-    expect(asRoot.join('\n')).toContain('chmod -R go-w /usr/local')
-    expect(asRoot.join('\n')).toContain(
-      'test -z "$(find /opt/statuslines /usr/local -perm /022 -not -type l)"',
+    expect(ran.filter((r) => r.user === 'root').map((r) => r.cmd)).toEqual(
+      expect.arrayContaining([...HARDENING_STEPS, ...ROOT_ASSERTIONS]),
     )
-    expect(asUser).toEqual(
-      expect.arrayContaining([
-        '! sudo -n true',
-        `test ! -w ${SANDBOX_CLAUDE_CODE_BIN}`,
-        `test ! -w ${SANDBOX_CANNED_MODEL_SERVER_DEST}`,
-        `test ! -w ${SANDBOX_REPLAY_DIR}`,
-      ]),
+    expect(ran.filter((r) => r.user === 'user').map((r) => r.cmd)).toEqual(
+      expect.arrayContaining(USER_ASSERTIONS),
     )
-    expect(ran[0]?.user).toBe('root')
+    const lastHardening = Math.max(...HARDENING_STEPS.map((c) => ran.findIndex((r) => r.cmd === c)))
+    const firstAssertion = Math.min(
+      ...[...ROOT_ASSERTIONS, ...USER_ASSERTIONS].map((c) => ran.findIndex((r) => r.cmd === c)),
+    )
+    expect(lastHardening).toBeLessThan(firstAssertion)
     expect(events.slice(-2)).toEqual(['snapshot', 'kill'])
   })
 
-  it('takes no snapshot when a hardening assertion fails', async () => {
-    const { sandbox } = fakeE2b((cmd) => cmd === '! sudo -n true')
+  it.each([
+    ...ROOT_ASSERTIONS,
+    ...USER_ASSERTIONS,
+  ])('takes no snapshot when `%s` fails', async (assertion) => {
+    const { sandbox } = fakeE2b((cmd) => cmd === assertion)
 
-    await expect(buildModSnapshot()).rejects.toThrow('sudo')
+    await expect(buildModSnapshot()).rejects.toThrow(assertion)
     expect(sandbox.createSnapshot).not.toHaveBeenCalled()
     expect(sandbox.kill).toHaveBeenCalled()
   })
