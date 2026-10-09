@@ -55,7 +55,7 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "diff": "8.0.4",
-    "drizzle-orm": "0.45.2",
+    "drizzle-orm": "0.45.3",
     "e2b": "2.27.0",
     "lucide-react": "1.52.0",
     "postgres": "3.4.9",
