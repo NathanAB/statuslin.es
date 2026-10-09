@@ -25,7 +25,10 @@ export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
       license: modVersions.license,
     })
     .from(mods)
-    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
-    .where(and(eq(mods.status, 'published'), versionIsRendered))
+    .innerJoin(
+      modVersions,
+      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
+    )
+    .where(eq(mods.status, 'published'))
     .orderBy(asc(mods.pluginName))
 }
