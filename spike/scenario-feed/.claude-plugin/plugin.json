@@ -1,0 +1,5 @@
+{
+  "name": "scenario-feed",
+  "version": "0.1.0",
+  "description": "Answers $.session calls from the statuslin.es clean-main preview scenario."
+}

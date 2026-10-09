@@ -1,0 +1,35 @@
+{
+  "measuredAt": "2026-10-09T21:41:38.520Z",
+  "privacy": [
+    {
+      "names": ["nathanb92/statuslines-render-build"],
+      "templateID": "f1td48331i8danqk4suw",
+      "public": false,
+      "diskSizeMB": 23301,
+      "memoryMB": 1024,
+      "cpuCount": 2
+    },
+    {
+      "names": ["nathanb92/statuslines-mod-spike"],
+      "templateID": "fe4biv7fefspcuejk68f",
+      "public": false,
+      "diskSizeMB": 0,
+      "memoryMB": 0,
+      "cpuCount": 0
+    }
+  ],
+  "measured": [
+    {
+      "template": "statuslines-mod-spike:cc-2-1-296-r1",
+      "startMs": [576, 617, 791, 264, 678, 323, 867, 553, 560],
+      "facts": "rootfs_used_mb=2022\ndu_mb /usr/local/lib/node_modules/@anthropic-ai=485\ndu_mb /opt/statuslines/replay=2\nclaude_version_cold_ms=1123\nclaude_version_warm_ms=11\nv20.9.0\nLinux 6.1.158+ x86_64\n2\nmem_total_mb=976\n",
+      "medianStartMs": 576
+    },
+    {
+      "template": "vyu32r2hpq6q92smes7j:default",
+      "startMs": [615, 863, 537, 479, 472, 515, 616, 495, 744],
+      "facts": "rootfs_used_mb=1317\nclaude=absent\nv20.9.0\nLinux 6.1.158+ x86_64\n2\nmem_total_mb=981\n",
+      "medianStartMs": 537
+    }
+  ]
+}

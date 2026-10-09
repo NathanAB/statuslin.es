@@ -1,0 +1,3 @@
+# Per-run captures stay local (about 500 KB for a full --all); results/summary.md is the committed digest.
+results/runs/
+results/baseline.json

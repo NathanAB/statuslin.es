@@ -5,6 +5,7 @@ import argparse
 import hmac
 import json
 import os
+import re
 import ssl
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -102,6 +103,147 @@ class UsageHandler(BaseHTTPRequestHandler):
         return
 
 
+MESSAGES_PATH = "/v1/messages"
+COUNT_TOKENS_PATH = "/v1/messages/count_tokens"
+MAX_REQUEST_BYTES = 8 * 1024 * 1024
+CANNED_MODEL_PATTERN = re.compile(r"^[a-z0-9.\-\[\]]{1,64}$")
+CANNED_FALLBACK_MODEL = "claude-opus-4-8"
+
+
+def canned_message_events(model, reply):
+    """The fixed reply as Messages API stream events, in order."""
+    usage = reply["usage"]
+    message = {
+        "id": "msg_statuslines_preview",
+        "type": "message",
+        "role": "assistant",
+        "model": model,
+        "content": [],
+        "stop_reason": None,
+        "stop_sequence": None,
+        "usage": {**usage, "output_tokens": 1},
+    }
+    return [
+        ("message_start", {"type": "message_start", "message": message}),
+        (
+            "content_block_start",
+            {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}},
+        ),
+        (
+            "content_block_delta",
+            {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": reply["text"]}},
+        ),
+        ("content_block_stop", {"type": "content_block_stop", "index": 0}),
+        (
+            "message_delta",
+            {
+                "type": "message_delta",
+                "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                "usage": {"output_tokens": usage["output_tokens"]},
+            },
+        ),
+        ("message_stop", {"type": "message_stop"}),
+    ]
+
+
+def canned_message(model, reply):
+    """The fixed reply as one non-streaming Messages API response."""
+    return {
+        "id": "msg_statuslines_preview",
+        "type": "message",
+        "role": "assistant",
+        "model": model,
+        "content": [{"type": "text", "text": reply["text"]}],
+        "stop_reason": "end_turn",
+        "stop_sequence": None,
+        "usage": reply["usage"],
+    }
+
+
+def canned_model(request):
+    model = request.get("model") if isinstance(request, dict) else None
+    if isinstance(model, str) and CANNED_MODEL_PATTERN.match(model):
+        return model
+    return CANNED_FALLBACK_MODEL
+
+
+class CannedMessagesHandler(BaseHTTPRequestHandler):
+    """Answers every model request with one fixed reply so a scripted turn completes."""
+
+    protocol_version = "HTTP/1.1"
+    server_version = "statuslines-preview"
+    sys_version = ""
+    reply = {}
+    request_log = None
+
+    def _send_reply_headers(self):
+        for name, value in self.reply.get("headers", {}).items():
+            self.send_header(name, str(value))
+
+    def _send_json(self, status, payload):
+        body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        self.send_response(status)
+        self._send_reply_headers()
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _read_json(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > MAX_REQUEST_BYTES:
+            return {}
+        try:
+            return json.loads(self.rfile.read(length))
+        except ValueError:
+            return {}
+
+    def _log(self, path):
+        if self.request_log:
+            with open(self.request_log, "a", encoding="utf-8") as log:
+                log.write("%s %s\n" % (self.command, path))
+
+    def do_POST(self):
+        path = self.path.split("?", 1)[0]
+        self._log(path)
+        request = self._read_json()
+        if path == COUNT_TOKENS_PATH:
+            self._send_json(200, {"input_tokens": self.reply["usage"]["input_tokens"]})
+            return
+        if path != MESSAGES_PATH:
+            self._send_json(404, {"type": "error", "error": {"type": "not_found_error", "message": "not found"}})
+            return
+        model = canned_model(request)
+        if not request.get("stream"):
+            self._send_json(200, canned_message(model, self.reply))
+            return
+        self.send_response(200)
+        self._send_reply_headers()
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        for event, data in canned_message_events(model, self.reply):
+            chunk = "event: %s\ndata: %s\n\n" % (event, json.dumps(data, separators=(",", ":")))
+            self.wfile.write(chunk.encode("utf-8"))
+            self.wfile.flush()
+
+    def do_GET(self):
+        self._log(self.path.split("?", 1)[0])
+        self._send_json(404, {"type": "error", "error": {"type": "not_found_error", "message": "not found"}})
+
+    def log_message(self, _format, *_args):
+        return
+
+
+def serve_canned_messages(listen, port, reply_path, request_log):
+    with open(reply_path, encoding="utf-8") as reply_file:
+        CannedMessagesHandler.reply = json.load(reply_file)
+    CannedMessagesHandler.request_log = request_log
+    ThreadingHTTPServer((listen, port), CannedMessagesHandler).serve_forever()
+
+
 def self_test():
     expected = "Bearer " + SELF_TEST_TOKEN
     results = {
@@ -124,10 +266,16 @@ def main():
     parser.add_argument("--key")
     parser.add_argument("--response")
     parser.add_argument("--token")
+    parser.add_argument("--canned-reply")
+    parser.add_argument("--request-log")
     args = parser.parse_args()
 
     if args.self_test:
         self_test()
+        return
+
+    if args.canned_reply:
+        serve_canned_messages(args.listen, args.port, args.canned_reply, args.request_log)
         return
 
     for name in ("cert", "key", "response", "token"):
