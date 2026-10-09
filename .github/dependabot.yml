@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # bun (not npm) so Dependabot updates bun.lock along with package.json.
+  # It keeps the exact pins in package.json as-is.
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly

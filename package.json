@@ -81,7 +81,7 @@
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
-    "@vitest/coverage-v8": "4.1.7",
+    "@vitest/coverage-v8": "4.1.11",
     "dependency-cruiser": "17.4.3",
     "drizzle-kit": "0.31.10",
     "jsdom": "29.1.1",
@@ -89,7 +89,7 @@
     "simple-git-hooks": "2.13.1",
     "typescript": "6.0.3",
     "vite": "8.0.16",
-    "vitest": "4.1.7",
+    "vitest": "4.1.11",
     "vitest-axe": "0.1.0"
   }
 }
