@@ -3,12 +3,14 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
+import { getViewerIsAuthor } from '@/gallery/authorship'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { ConfigBreadcrumb } from '@/gallery/config-breadcrumb'
 import { DesktopNote } from '@/gallery/desktop-note'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
 import { LicenseLine } from '@/gallery/license-line'
+import { OwnerUpdateStrip } from '@/gallery/owner-update-strip'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
@@ -32,8 +34,11 @@ export const Route = createFileRoute('/c/$slug')({
   loader: async ({ params }) => {
     const detail = await getConfigDetail({ data: { slug: params.slug } })
     if (!detail) throw notFound()
-    const user = await getSession()
-    return { detail, user }
+    const [user, viewerIsAuthor] = await Promise.all([
+      getSession(),
+      getViewerIsAuthor({ data: { slug: params.slug } }),
+    ])
+    return { detail, user, viewerIsAuthor }
   },
   head: ({ loaderData }) => {
     // loaderData is undefined when the loader throws notFound() (the 404 page),
@@ -84,7 +89,7 @@ export const Route = createFileRoute('/c/$slug')({
 
 function ConfigDetail() {
   const posthog = usePostHog()
-  const { detail, user } = Route.useLoaderData()
+  const { detail, user, viewerIsAuthor } = Route.useLoaderData()
   const copyController = useRecordedCopy(detail.id, detail.copyCount)
 
   useEffect(() => {
@@ -127,6 +132,8 @@ function ConfigDetail() {
             </Stack>
           )}
         </Stack>
+
+        <OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />
 
         <AdoptPrompt
           source={detail.source}
