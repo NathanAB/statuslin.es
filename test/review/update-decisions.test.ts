@@ -166,9 +166,13 @@ describe('approving an update', () => {
     const v1 = await publish()
     const v2 = await submitUpdate(v1.slug)
     await removeConfig(db, v1.slug)
+    const send = sentEmail()
 
-    await approveVersion(db, v2.versionId, 'admin')
+    await expect(approveAndEmailVersion(db, v2.versionId, 'admin', send)).resolves.toEqual({
+      delivery: 'unavailable',
+    })
 
+    expect(send).not.toHaveBeenCalled()
     expect((await configRow(v1.configId))?.status).toBe('removed')
     expect(await getConfigBySlug(db, v1.slug)).toBeNull()
     expect((await getPublishedConfigs(db, 'new')).map((card) => card.slug)).not.toContain(v1.slug)
