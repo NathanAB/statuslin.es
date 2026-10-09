@@ -23,9 +23,7 @@ async function seed(
     .insert(schema.configs)
     .values({
       slug,
-      title: `Config ${slug}`,
       authorId: 'u1',
-      interpreter,
       status: opts.status ?? 'published',
       ...(opts.tags ? { tags: opts.tags } : {}),
     })
@@ -36,6 +34,7 @@ async function seed(
     .values({
       configId: config.id,
       versionNumber: 1,
+      title: `Config ${slug}`,
       source: 'echo "$(git branch --show-current)"',
       interpreter,
       contentSha256: `sha-${slug}`,

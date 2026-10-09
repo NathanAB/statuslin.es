@@ -107,8 +107,8 @@ export async function getResubmissionDraft(
   return {
     versionId: row.version.id,
     slug: row.config.slug,
-    title: row.config.title,
-    description: row.config.description,
+    title: row.version.title,
+    description: row.version.description,
     interpreter: row.version.interpreter,
     source: row.version.source,
     networkHosts: row.version.networkHosts ?? [],
@@ -136,19 +136,13 @@ export async function createResubmissionVersion(
         .limit(1)
       assertResubmissionTarget(target, latest?.id, input.authorId)
       await supersedeRejectionDelivery(tx, target.version)
-      await tx
-        .update(configs)
-        .set({
-          title: input.title,
-          description: input.description,
-          interpreter: input.interpreter,
-        })
-        .where(eq(configs.id, target.config.id))
       const [version] = await tx
         .insert(configVersions)
         .values({
           configId: target.config.id,
           versionNumber: target.version.versionNumber + 1,
+          title: input.title,
+          description: input.description,
           source: input.source,
           interpreter: input.interpreter,
           contentSha256: input.contentSha256,

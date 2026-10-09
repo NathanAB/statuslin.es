@@ -71,10 +71,7 @@ async function seedPublished(slug: string, createdAt: Date) {
     .insert(schema.configs)
     .values({
       slug,
-      title: slug,
-      description: 'desc',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
       createdAt,
     })
@@ -84,6 +81,8 @@ async function seedPublished(slug: string, createdAt: Date) {
     .values({
       configId: cfg!.id,
       versionNumber: 1,
+      title: slug,
+      description: 'desc',
       source: 'echo hi',
       interpreter: 'bash',
       contentSha256: slug.padEnd(64, '0'),
@@ -104,10 +103,7 @@ describe('getPublishedConfigs pagination', () => {
     }
     await db.insert(schema.configs).values({
       slug: 'a-draft',
-      title: 'Draft',
-      description: '',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'draft',
     })
   })

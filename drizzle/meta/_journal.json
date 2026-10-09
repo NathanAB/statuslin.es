@@ -148,6 +148,27 @@
       "when": 1785158424885,
       "tag": "0020_supreme_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791560182030,
+      "tag": "0021_version_listing_text",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791560187853,
+      "tag": "0022_backfill_version_listing_text",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791560205469,
+      "tag": "0023_drop_config_listing_text",
+      "breakpoints": true
     }
   ]
 }

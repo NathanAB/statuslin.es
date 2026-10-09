@@ -200,9 +200,9 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
   return {
     id: row.config.id,
     slug: row.config.slug,
-    title: row.config.title,
-    description: row.config.description,
-    interpreter: coerceInterpreter(row.config.interpreter),
+    title: row.version.title,
+    description: row.version.description,
+    interpreter: coerceInterpreter(row.version.interpreter),
     tags: row.config.allTags ?? [],
     copyCount: row.config.copyCount,
     author: row.author

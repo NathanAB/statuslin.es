@@ -59,8 +59,8 @@ export async function getRelatedConfigs(
   return ranked.map((r) => ({
     configId: r.config.id,
     slug: r.config.slug,
-    title: r.config.title,
-    interpreter: coerceInterpreter(r.config.interpreter),
+    title: r.version.title,
+    interpreter: coerceInterpreter(r.version.interpreter),
     copyCount: r.config.copyCount,
     preview: cardPreviews.get(r.version.contentSha256) ?? null,
   }))

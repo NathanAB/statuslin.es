@@ -21,9 +21,7 @@ async function seedConfig(slug: string, generatedContent: GeneratedContent | nul
     .insert(schema.configs)
     .values({
       slug,
-      title: `Config ${slug}`,
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
     })
     .returning()
@@ -33,6 +31,7 @@ async function seedConfig(slug: string, generatedContent: GeneratedContent | nul
     .values({
       configId: config.id,
       versionNumber: 1,
+      title: `Config ${slug}`,
       source: 'echo hi',
       interpreter: 'bash',
       contentSha256: `sha-${slug}`,

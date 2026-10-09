@@ -51,8 +51,8 @@ export async function prepareContentGenerationRequest(
     versionId: row.version.id,
     contentSha256: row.version.contentSha256,
     contentPrompt: buildContentPrompt({
-      title: row.config.title,
-      description: row.config.description,
+      title: row.version.title,
+      description: row.version.description,
       interpreter: row.version.interpreter,
       source: row.version.source,
       networkHosts: row.version.networkHosts ?? [],
@@ -60,8 +60,8 @@ export async function prepareContentGenerationRequest(
       previews,
     }),
     tagsPrompt: buildTagsPrompt({
-      title: row.config.title,
-      description: row.config.description,
+      title: row.version.title,
+      description: row.version.description,
       source: row.version.source,
       previewLines: previews.map((preview) =>
         preview.segments.map((segment) => segment.text).join(''),

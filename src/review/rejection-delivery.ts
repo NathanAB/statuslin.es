@@ -91,7 +91,7 @@ async function deliverRejectionEmail(
       authorName: user.name,
       authorEmail: user.email,
       emailVerified: user.emailVerified,
-      title: configs.title,
+      title: configVersions.title,
       slug: configs.slug,
     })
     .from(configVersions)

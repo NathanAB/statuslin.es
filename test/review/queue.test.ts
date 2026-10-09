@@ -137,10 +137,7 @@ describe('getDashboardRows', () => {
       .values(
         Array.from({ length: 51 }, (_, index) => ({
           slug: `backlog-${versionId}-${index}`,
-          title: `Backlog ${index}`,
-          description: '',
           authorId: 'u1',
-          interpreter: 'bash',
           status: 'draft',
         })),
       )
@@ -151,6 +148,8 @@ describe('getDashboardRows', () => {
         .values({
           configId: config.id,
           versionNumber: 1,
+          title: `Backlog ${index}`,
+          description: '',
           source: 'echo pending',
           interpreter: 'bash',
           contentSha256: `backlog-${versionId}-${index}`,
@@ -292,7 +291,7 @@ describe('getMySubmissionRows', () => {
     const rows = await getMySubmissionRows(db, 'me1')
     expect(rows.every((r) => r.config.authorId === 'me1')).toBe(true)
     expect(rows.some((r) => r.config.id === mine.configId)).toBe(true)
-    expect(rows.some((r) => r.config.title === 'Theirs')).toBe(false)
+    expect(rows.some((r) => r.version.title === 'Theirs')).toBe(false)
     // render state is attached
     expect(rows.find((r) => r.config.id === mine.configId)?.renderJob.status).toBe('queued')
   })
@@ -310,6 +309,7 @@ describe('getMySubmissionRows', () => {
       .values({
         configId,
         versionNumber: 2,
+        title: 'Versioned',
         source: 'v2',
         interpreter: 'bash',
         contentSha256: 'sha-v2-aaaaaaaa',

@@ -34,9 +34,7 @@ describe('config schema', () => {
       .insert(schema.configs)
       .values({
         slug: 's1',
-        title: 'Mine',
         authorId: 'u1',
-        interpreter: 'bash',
       })
       .returning()
     const cfg = cfgRows[0]
@@ -46,6 +44,7 @@ describe('config schema', () => {
       .values({
         configId: cfg.id,
         versionNumber: 1,
+        title: 'Mine',
         source: '#!/bin/bash',
         interpreter: 'bash',
         contentSha256: 'abc',
@@ -65,9 +64,7 @@ describe('config schema', () => {
       .insert(schema.configs)
       .values({
         slug: 's2',
-        title: 'Dup',
         authorId: 'u1',
-        interpreter: 'bash',
       })
       .returning()
     const cfg = dupCfgRows[0]
@@ -75,6 +72,7 @@ describe('config schema', () => {
     const v = {
       configId: cfg.id,
       versionNumber: 1,
+      title: 'Dup',
       source: 'x',
       interpreter: 'bash',
       contentSha256: 'h',

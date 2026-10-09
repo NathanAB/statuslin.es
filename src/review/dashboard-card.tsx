@@ -164,7 +164,7 @@ export function SubmissionCard({
     )
 
   return (
-    <SectionCard interactive={linked} title={titleFor(config, detailSlug)}>
+    <SectionCard interactive={linked} title={titleFor(version, detailSlug)}>
       <Stack gap={4}>
         <Row gap={2} align="center" wrap>
           <Badge variant={view.variant}>{view.label}</Badge>
@@ -173,7 +173,7 @@ export function SubmissionCard({
           </Text>
         </Row>
 
-        {config.description ? <Text size="sm">{config.description}</Text> : null}
+        {version.description ? <Text size="sm">{version.description}</Text> : null}
 
         {isReady && preview ? <StatuslinePreview segments={preview.segments} /> : null}
 

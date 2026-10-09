@@ -38,10 +38,7 @@ async function makeConfig(
     .insert(schema.configs)
     .values({
       slug,
-      title: slug,
-      description: '',
       authorId: 'author',
-      interpreter: 'bash',
       status,
     })
     .returning()

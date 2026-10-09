@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { getMySubmissionRows } from '@/review/queue'
 import { getResubmissionDraft, submitConfig } from '@/submit/submit'
 
 let client: PGlite
@@ -88,12 +89,19 @@ describe('linked resubmission', () => {
       source: 'echo corrected',
       networkHosts: [],
     }
+    const configBefore = await db
+      .select()
+      .from(schema.configs)
+      .where(eq(schema.configs.id, rejected.configId))
 
     const result = await submitConfig(db, corrected, {
       rejectedVersionId: rejected.versionId,
     })
 
     expect(result).toMatchObject({ configId: rejected.configId, slug: rejected.slug })
+    await expect(
+      db.select().from(schema.configs).where(eq(schema.configs.id, rejected.configId)),
+    ).resolves.toEqual(configBefore)
     const versions = await db
       .select()
       .from(schema.configVersions)
@@ -103,20 +111,25 @@ describe('linked resubmission', () => {
     expect(versions[0]).toMatchObject({
       id: rejected.versionId,
       versionNumber: 1,
+      title: original.title,
+      description: original.description,
       source: original.source,
       status: 'rejected',
     })
     expect(versions[1]).toMatchObject({
       id: result.versionId,
       versionNumber: 2,
+      title: corrected.title,
+      description: corrected.description,
+      interpreter: corrected.interpreter,
       source: corrected.source,
       status: 'pending',
     })
-    const [config] = await db
-      .select()
-      .from(schema.configs)
-      .where(eq(schema.configs.id, rejected.configId))
-    expect(config).toMatchObject({
+    const ownerRow = (await getMySubmissionRows(db, 'owner')).find(
+      (row) => row.config.id === rejected.configId,
+    )
+    expect(ownerRow?.version).toMatchObject({
+      id: result.versionId,
       title: corrected.title,
       description: corrected.description,
       interpreter: corrected.interpreter,
@@ -163,6 +176,7 @@ describe('linked resubmission', () => {
       .values({
         configId: rejected.configId,
         versionNumber: 2,
+        title: original.title,
         source: 'echo newer',
         interpreter: 'bash',
         contentSha256: 'newer',

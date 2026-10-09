@@ -75,10 +75,7 @@ async function seedPublished(slug: string, allTags: string[]) {
     .insert(schema.configs)
     .values({
       slug,
-      title: slug,
-      description: `${slug} description`,
       authorId: 'facet-discovery-author',
-      interpreter: 'bash',
       allTags,
       status: 'published',
       createdAt: new Date('2026-06-01T00:00:00Z'),
@@ -89,6 +86,8 @@ async function seedPublished(slug: string, allTags: string[]) {
     .values({
       configId: config!.id,
       versionNumber: 1,
+      title: slug,
+      description: `${slug} description`,
       source: `echo ${slug}`,
       interpreter: 'bash',
       contentSha256: slug.padEnd(64, '0'),

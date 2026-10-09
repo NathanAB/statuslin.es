@@ -46,10 +46,7 @@ async function seedPublished(opts: {
     .insert(schema.configs)
     .values({
       slug: opts.slug,
-      title: opts.title,
-      description: 'desc',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'published',
       upvoteCount: opts.upvoteCount ?? 0,
       copyCount: opts.copyCount ?? 0,
@@ -62,6 +59,8 @@ async function seedPublished(opts: {
     .values({
       configId: cfg.id,
       versionNumber: 1,
+      title: opts.title,
+      description: 'desc',
       source: '#!/usr/bin/env bash\necho hi',
       interpreter: 'bash',
       contentSha256: opts.sha,
@@ -107,10 +106,7 @@ describe('getRelatedConfigs', () => {
     })
     await db.insert(schema.configs).values({
       slug: 'draft-one',
-      title: 'Draft',
-      description: '',
       authorId: 'u1',
-      interpreter: 'bash',
       status: 'draft',
     })
 

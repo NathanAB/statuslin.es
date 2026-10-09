@@ -189,8 +189,12 @@ async function main() {
   await browser(AUTHOR_SESSION, 'fill', '#source', originalSource)
   await browser(AUTHOR_SESSION, 'eval', "document.querySelector('form')?.requestSubmit()")
   const submitted = await waitFor('submitted config', async () => {
-    const [row] = await db.select().from(configs).where(eq(configs.title, marker))
-    return row
+    const [row] = await db
+      .select({ config: configs })
+      .from(configs)
+      .innerJoin(configVersions, eq(configVersions.configId, configs.id))
+      .where(eq(configVersions.title, marker))
+    return row?.config
   })
 
   const [v1] = await db

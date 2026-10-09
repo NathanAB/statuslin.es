@@ -37,12 +37,9 @@ export const configs = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     slug: text('slug').notNull().unique(),
-    title: text('title').notNull(),
-    description: text('description').notNull().default(''),
     authorId: text('author_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    interpreter: text('interpreter').notNull(),
     /** Curated facet tags from the fixed vocabulary in src/gallery/facets.ts (e.g. 'git',
      * 'token-usage'). Suggested by generate-content / the backfill script, human-confirmed. */
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
@@ -79,6 +76,8 @@ export const configVersions = pgTable(
       .notNull()
       .references(() => configs.id, { onDelete: 'cascade' }),
     versionNumber: integer('version_number').notNull(),
+    title: text('title').notNull(),
+    description: text('description').notNull().default(''),
     source: text('source').notNull(),
     interpreter: text('interpreter').notNull(),
     contentSha256: text('content_sha256').notNull(),

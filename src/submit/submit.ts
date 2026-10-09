@@ -156,10 +156,7 @@ export async function submitConfig(
       .insert(configs)
       .values({
         slug,
-        title: input.title,
-        description: input.description,
         authorId: input.authorId,
-        interpreter: input.interpreter,
         status: 'draft',
       })
       .returning()
@@ -170,6 +167,8 @@ export async function submitConfig(
       .values({
         configId: cfg.id,
         versionNumber: 1,
+        title: input.title,
+        description: input.description,
         source: input.source,
         interpreter: input.interpreter,
         contentSha256,

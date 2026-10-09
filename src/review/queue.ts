@@ -18,9 +18,6 @@ export interface DashboardRow {
   config: {
     id: string
     slug: string
-    title: string
-    description: string
-    interpreter: string
     status: string
     authorId: string
     author: { name: string; username: string | null; image: string | null } | null
@@ -31,6 +28,9 @@ export interface DashboardRow {
   version: {
     id: string
     versionNumber: number
+    title: string
+    description: string
+    interpreter: string
     source: string
     contentSha256: string
     status: string
@@ -74,6 +74,9 @@ async function mapRow(
   const version: DashboardRow['version'] = {
     id: r.version.id,
     versionNumber: r.version.versionNumber,
+    title: r.version.title,
+    description: r.version.description,
+    interpreter: r.version.interpreter,
     source: r.version.source,
     contentSha256: r.version.contentSha256,
     status: r.version.status,
@@ -90,9 +93,6 @@ async function mapRow(
     config: {
       id: r.config.id,
       slug: r.config.slug,
-      title: r.config.title,
-      description: r.config.description,
-      interpreter: r.config.interpreter,
       status: r.config.status,
       authorId: r.config.authorId,
       author: r.author

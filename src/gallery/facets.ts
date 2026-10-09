@@ -13,7 +13,7 @@ export interface Facet {
   group: 'interpreter' | 'capability' | 'feature'
   /** true = standalone /status-lines/<slug> page + sitemap entry; false = badge + filter only. */
   page: boolean
-  /** group 'interpreter' only: the configs.interpreter value this facet selects. */
+  /** group 'interpreter' only: the live version's interpreter this facet selects. */
   interpreter?: Interpreter
   /** Short label for tag chips / the filter dropdown. Required for every tag. */
   chipLabel: string
