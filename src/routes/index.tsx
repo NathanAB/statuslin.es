@@ -139,7 +139,7 @@ function Home() {
           <DesktopNote surface="home" />
         </Stack>
         <Stack gap={4}>
-          <VisuallyHidden as="h2">Status lines</VisuallyHidden>
+          <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
             <GalleryControls
               kind={kind ?? 'all'}

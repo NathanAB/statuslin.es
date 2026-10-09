@@ -113,6 +113,18 @@ describe('home gallery loader', () => {
   })
 })
 
+describe('getGallery input', () => {
+  it('ignores malformed mod tag lists instead of failing the page', async () => {
+    const { getGallery } = await import('@/gallery/functions')
+    const gallery = await getGallery({
+      data: { modTags: [['powerline', 3], 42] },
+    } as never)
+
+    expect(gallery.availableTags).toContain('powerline')
+    expect(gallery.availableTags).not.toContain('cost')
+  })
+})
+
 describe('facet page loader', () => {
   it('shows a mod only when it carries the tag', async () => {
     expect(listed((await loadFacet('git')).items)).toEqual(['mod:git-mod', 'status-line:git-line'])

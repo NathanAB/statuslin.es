@@ -105,7 +105,7 @@ function FacetPage() {
           ) : null}
         </Stack>
         <Stack gap={4}>
-          <VisuallyHidden as="h2">Status lines</VisuallyHidden>
+          <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           {items.map((item, index) =>
             item.kind === 'mod' ? (
               <ModCard key={`mod:${item.card.slug}`} card={item.card} />
