@@ -33,8 +33,12 @@ export const SANDBOX_ANTHROPIC_USAGE_KEY_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/
 /** E2B build alias for the mod render template: the status line template plus Claude Code. */
 export const E2B_MOD_TEMPLATE_BUILD_NAME = 'statuslines-mod-render-build'
 
-/** Immutable E2B snapshot selected by every mod render. Updated only after a reviewed build. */
-export const E2B_MOD_TEMPLATE_ID = '1928oinjb82jpy9dasxw:default'
+/**
+ * Immutable E2B snapshot selected by every mod render. Updated only after a reviewed build.
+ * Create sandboxes from it with the SDK's default `secure: true`: without it, envd takes commands
+ * with no access token, so code inside the sandbox could ask envd to run commands as root.
+ */
+export const E2B_MOD_TEMPLATE_ID = 'xwhhq2gqlkp8dx6lbh4l:default'
 
 /** Root-owned npm prefix holding Claude Code in the mod template, and the binary to run. */
 export const SANDBOX_CLAUDE_CODE_PREFIX = '/opt/statuslines/claude-code'

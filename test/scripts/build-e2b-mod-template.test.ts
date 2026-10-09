@@ -119,6 +119,8 @@ const HARDENING_STEPS = [
   'passwd -l root',
   'passwd -l user',
   'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
+  'chmod go-w /etc/inittab /code',
+  'sysctl -w user.max_user_namespaces=0',
 ]
 
 const noOutput = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$out"`
@@ -126,6 +128,9 @@ const noOutput = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$o
 const ROOT_ASSERTIONS = [
   noOutput('find /opt/statuslines /usr/local -perm /022 -not -type l'),
   noOutput('find / -xdev -perm /6000 -type f'),
+  noOutput('find / -xdev -perm -0002 ! -type l ! -type d ! -path "/tmp/*" ! -path "/proc/*"'),
+  noOutput('find / -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"'),
+  'test "$(cat /proc/sys/user/max_user_namespaces)" = 0',
   'passwd -S root | awk \'{ exit $2 != "L" }\'',
   'passwd -S user | awk \'{ exit $2 != "L" }\'',
   noOutput(
@@ -136,6 +141,8 @@ const ROOT_ASSERTIONS = [
 const USER_ASSERTIONS = [
   '! echo | timeout 5 su -c true root',
   '! sudo -n true',
+  'test -x /usr/bin/unshare && ! unshare -Ur true',
+  `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SANDBOX_CLAUDE_CODE_BIN}" | sha256sum -c -`,
   ...[
     SANDBOX_CLAUDE_CODE_BIN,
     `${SANDBOX_CLAUDE_CODE_PREFIX}/bin`,
@@ -204,6 +211,7 @@ describe('snapshot hardening', () => {
   })
 
   it.each([
+    ...HARDENING_STEPS,
     ...ROOT_ASSERTIONS,
     ...USER_ASSERTIONS,
   ])('takes no snapshot when `%s` fails', async (assertion) => {
