@@ -1,0 +1,79 @@
+{
+  "success": true,
+  "strict": false,
+  "target": "/home/user/plugins/mod/.claude-plugin/marketplace.json",
+  "manifest": {
+    "file": "/home/user/plugins/mod/.claude-plugin/marketplace.json",
+    "type": "marketplace",
+    "errors": [],
+    "warnings": [],
+    "notes": [],
+    "gatingHooks": []
+  },
+  "contents": [
+    {
+      "file": "/home/user/plugins/mod/.claude-plugin/plugin.json",
+      "type": "plugin",
+      "errors": [],
+      "warnings": [],
+      "notes": [
+        "types ./types/index.d.ts declares on $: nothing (no EngineInterface member)",
+        "types ./types/index.d.ts declares state: skins.prefs, skins.custom, skins.startedAt, skins.frame, skins.turns, skins.duration, skins.editing, skins.usage, skins.isLight, skins.images, skins.quiet, skins.compacting, skins.pinned, skins.lastReply"
+      ],
+      "gatingHooks": []
+    },
+    {
+      "file": "/home/user/plugins/mod/hooks/hooks.json",
+      "type": "hooks",
+      "errors": [],
+      "warnings": [],
+      "notes": [
+        "./register.tsx hooks: session.start, classic.SessionStart{source=clear|resume|fork}, turn.start, config.set, session.append, session.measure, turn.complete, tool.call, tool.call{tool=/\"^mcp__skins__design$\"/}, command.run{command=skin}, ui.render{component=Pane, requestId=skins-settings}, ui.render{component=Pane, requestId=skins-gallery}, ui.render{component=ToolUse}, ui.render{component=ToolGroup}, ui.render{component=ToolResult}, ui.render{component=UserMessage}, prompt.compose, ui.render{component=AssistantMessage}, ui.render{component=Spinner}, ui.render{component=TurnDuration}, ui.render{component=AbovePrompt}, ui.render{component=AskUserQuestion}",
+        "./register.tsx answers its own command: command.run{command=skin}",
+        "./register.tsx gating hook without .catch: classic.SessionStart{source=clear|resume|fork}",
+        "./register.tsx gating hook without .catch: config.set",
+        "./register.tsx gating hook without .catch: session.append",
+        "./register.tsx gating hook without .catch: tool.call",
+        "./register.tsx gating hook without .catch: tool.call{tool=/\"^mcp__skins__design$\"/}",
+        "./register.tsx calls: $.clock.after, $.clock.every, $.clock.now, $.command.register, $.command.run, $.config.list (via refreshTheme), $.env.get (via refreshTheme), $.fs.read (via checkForUpdate), $.http.fetch (via checkForUpdate), $.process.run (via systemDark), $.session.cwd, $.session.usage (via refreshUsage), $.state.get, $.state.set, $.store.get (via checkForUpdate, load, runFolderCommand, savePrefs), $.store.set (via checkForUpdate, commit, runFolderCommand, savePrefs), $.tool.register, $.ui.copy, $.ui.log, $.ui.open, $.ui.resolve, $.ui.toast",
+        "./register.tsx env writes: nothing",
+        "./register.tsx env reads: COLORFGBG, SKINS_THEME",
+        "./register.tsx state writes: skins.compacting, skins.custom, skins.duration, skins.editing, skins.frame, skins.images, skins.isLight, skins.lastReply, skins.pinned, skins.prefs, skins.quiet, skins.startedAt, skins.turns, skins.usage",
+        "./register.tsx state reads: skins.compacting, skins.custom, skins.duration, skins.editing, skins.frame, skins.images, skins.isLight, skins.lastReply, skins.pinned, skins.prefs, skins.quiet, skins.startedAt, skins.turns, skins.usage"
+      ],
+      "gatingHooks": [
+        {
+          "module": "./register.tsx",
+          "pattern": "classic.SessionStart",
+          "hook": "classic.SessionStart{source=clear|resume|fork}",
+          "hasCatch": false
+        },
+        {
+          "module": "./register.tsx",
+          "pattern": "config.set",
+          "hook": "config.set",
+          "hasCatch": false
+        },
+        {
+          "module": "./register.tsx",
+          "pattern": "session.append",
+          "hook": "session.append",
+          "hasCatch": false
+        },
+        {
+          "module": "./register.tsx",
+          "pattern": "tool.call",
+          "hook": "tool.call",
+          "hasCatch": false
+        },
+        {
+          "module": "./register.tsx",
+          "pattern": "tool.call",
+          "hook": "tool.call{tool=/\"^mcp__skins__design$\"/}",
+          "hasCatch": false
+        }
+      ]
+    }
+  ],
+  "advice": []
+}

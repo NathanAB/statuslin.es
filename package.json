@@ -33,6 +33,7 @@
     "seed:gallery": "bun run scripts/seed-gallery.ts",
     "seed:community": "bun run scripts/run-seed-community.ts",
     "generate:content": "bun run scripts/generate-content.ts",
+    "import:mods": "bun run scripts/import-mods.ts",
     "profile:bench": "bun run scripts/profiling/bench-phases.ts",
     "profile:memory": "PROFILE_MEMORY_HOST=127.0.0.1 bun run scripts/profiling/memory-loop.ts",
     "profile:server": "bun run scripts/profiling/profile-server.ts",

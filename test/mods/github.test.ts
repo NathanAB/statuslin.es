@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { createGitHub } from '@/mods/github'
+import { createGitHub, TARBALL_MAX_BYTES, TARBALL_MAX_FILES } from '@/mods/github'
 
 const REPO = 'https://github.com/octocat/meter'
 const SHA = 'a'.repeat(40)
 const BASE = 'b'.repeat(40)
 
-type Route = { status: number; body?: unknown }
+type Route = { status: number; body?: unknown; headers?: Record<string, string> }
 
 function fakeFetch(routes: Record<string, Route>) {
   const requested: string[] = []
@@ -14,7 +14,11 @@ function fakeFetch(routes: Record<string, Route>) {
     requested.push(url)
     const route = routes[url]
     if (!route) return new Response('not found', { status: 404 })
-    return new Response(JSON.stringify(route.body ?? {}), { status: route.status })
+    const body =
+      route.body instanceof Uint8Array
+        ? new Blob([route.body as Uint8Array<ArrayBuffer>])
+        : JSON.stringify(route.body ?? {})
+    return new Response(body, { status: route.status, headers: route.headers ?? {} })
   }
   return { fetchFn: fetchFn as typeof fetch, requested }
 }
@@ -102,4 +106,88 @@ it('gives up on a GitHub request that outlives the timeout', async () => {
   await expect(createGitHub(hang, 5).commitIsFetchable(REPO, SHA)).rejects.toThrow(
     /timed out|abort/i,
   )
+})
+
+describe('repoInfo', () => {
+  it('reads the canonical name, SPDX licence and default branch', async () => {
+    const { fetchFn } = fakeFetch({
+      [api('')]: {
+        status: 200,
+        body: { full_name: 'OctoCat/Meter', default_branch: 'trunk', license: { spdx_id: 'MIT' } },
+      },
+    })
+
+    expect(await createGitHub(fetchFn).repoInfo(REPO)).toEqual({
+      fullName: 'OctoCat/Meter',
+      license: 'MIT',
+      defaultBranch: 'trunk',
+    })
+  })
+
+  it.each([
+    ['no licence', null],
+    ['a licence GitHub cannot identify', { spdx_id: 'NOASSERTION' }],
+  ])('records %s as null', async (_name, license) => {
+    const { fetchFn } = fakeFetch({
+      [api('')]: {
+        status: 200,
+        body: { full_name: 'octocat/meter', default_branch: 'main', license },
+      },
+    })
+
+    expect((await createGitHub(fetchFn).repoInfo(REPO)).license).toBeNull()
+  })
+})
+
+describe('tarball', () => {
+  const tree = (entries: number, truncated = false) => ({
+    status: 200,
+    body: { truncated, tree: Array.from({ length: entries }, (_, i) => ({ path: `f${i}` })) },
+  })
+  const archiveUrl = `https://codeload.github.com/octocat/meter/tar.gz/${SHA}`
+
+  it('downloads the repository at the commit as bytes', async () => {
+    const bytes = new Uint8Array([31, 139, 8, 0])
+    const { fetchFn } = fakeFetch({
+      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
+      [archiveUrl]: { status: 200, body: bytes },
+    })
+
+    expect(await createGitHub(fetchFn).tarball(REPO, SHA)).toEqual(bytes)
+  })
+
+  it.each([
+    ['more files than the limit', tree(TARBALL_MAX_FILES + 1), /files/],
+    ['a tree GitHub truncated', tree(10, true), /files/],
+  ])('refuses a repository with %s before downloading it', async (_name, route, message) => {
+    const { fetchFn, requested } = fakeFetch({
+      [api(`/git/trees/${SHA}?recursive=1`)]: route,
+      [archiveUrl]: { status: 200, body: new Uint8Array(4) },
+    })
+
+    await expect(createGitHub(fetchFn).tarball(REPO, SHA)).rejects.toThrow(message)
+    expect(requested).not.toContain(archiveUrl)
+  })
+
+  it('refuses an archive larger than the limit', async () => {
+    const { fetchFn } = fakeFetch({
+      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
+      [archiveUrl]: { status: 200, body: new Uint8Array(TARBALL_MAX_BYTES + 1) },
+    })
+
+    await expect(createGitHub(fetchFn).tarball(REPO, SHA)).rejects.toThrow(/larger than/)
+  })
+
+  it('refuses an archive whose declared size is over the limit without reading it', async () => {
+    const { fetchFn } = fakeFetch({
+      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
+      [archiveUrl]: {
+        status: 200,
+        body: new Uint8Array(4),
+        headers: { 'content-length': String(TARBALL_MAX_BYTES + 1) },
+      },
+    })
+
+    await expect(createGitHub(fetchFn).tarball(REPO, SHA)).rejects.toThrow(/larger than/)
+  })
 })
