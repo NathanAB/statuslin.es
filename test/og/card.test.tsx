@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configCard, homeCard } from '@/og/card'
+import { configCard, homeCard, modCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
 
@@ -62,5 +62,22 @@ describe('og cards render to PNG', () => {
   it('configCard tolerates an empty previews list and a null author', async () => {
     const png = await toElementPng(configCard({ title: 'No previews', author: null, previews: [] }))
     expect(Array.from(png.slice(0, 8))).toEqual(PNG_MAGIC)
+  })
+
+  it('modCard draws only the first nine rows of a tall preview', async () => {
+    const rows = (count: number) => [
+      seg(Array.from({ length: count }, (_, i) => `row ${i + 1}`).join('\n')),
+    ]
+    const draw = async (count: number) =>
+      Buffer.from(
+        await toElementPng(
+          modCard({ title: 'Tree', authorGithub: 'octocat', preview: rows(count) }),
+        ),
+      )
+
+    const [eight, nine, twenty] = await Promise.all([draw(8), draw(9), draw(20)])
+
+    expect(twenty.equals(nine)).toBe(true)
+    expect(nine.equals(eight)).toBe(false)
   })
 })

@@ -31,6 +31,7 @@ import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AlternativesToolRouteImport } from './routes/alternatives.$tool'
 import { Route as AdminReviewRouteImport } from './routes/admin/review'
 import { Route as DotwellKnownSecurityDottxtRouteImport } from './routes/[.]well-known.security[.]txt'
+import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -145,6 +146,12 @@ const DotwellKnownSecurityDottxtRoute =
     path: '/.well-known/security.txt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const OgModsChar123slugChar125DotpngRoute =
+  OgModsChar123slugChar125DotpngRouteImport.update({
+    id: '/og/mods/{$slug}.png',
+    path: '/og/mods/{$slug}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const OgCChar123slugChar125DotpngRoute =
   OgCChar123slugChar125DotpngRouteImport.update({
     id: '/og/c/{$slug}.png',
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -208,6 +216,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -235,6 +244,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
   id:
     | '__root__'
     | '/'
@@ -315,6 +327,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -342,6 +355,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
+  OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -500,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownSecurityDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/og/mods/{$slug}.png': {
+      id: '/og/mods/{$slug}.png'
+      path: '/og/mods/{$slug}.png'
+      fullPath: '/og/mods/{$slug}.png'
+      preLoaderRoute: typeof OgModsChar123slugChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/og/c/{$slug}.png': {
       id: '/og/c/{$slug}.png'
       path: '/og/c/{$slug}.png'
@@ -542,6 +563,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
+  OgModsChar123slugChar125DotpngRoute: OgModsChar123slugChar125DotpngRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
