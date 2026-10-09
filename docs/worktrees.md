@@ -82,6 +82,5 @@ main checkout). Until then, still run `bun run check` from the worktree root you
 
 ## Pushing from a worktree
 
-Worktrees share git hooks with the main repo but have no `node_modules`, so the `pre-push` hook
-(`yarn git:pre-push` / `bun run check:ci`) fails. Push with `SKIP_SIMPLE_GIT_HOOKS=1 git push` and
-make sure you have already run `bun run check` from the worktree root (the real gate).
+There is no pre-push hook, so nothing gates the push for you: run `bun run check` from the
+worktree root first (the real gate).

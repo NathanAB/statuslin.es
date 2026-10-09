@@ -151,7 +151,6 @@ All rules run in `bun run check` and at the hooks listed below.
 - **PostToolUse (Edit / Write / MultiEdit on `src/*.{ts,tsx}`):** `frontend-gate.sh` runs Biome on the changed file + the full `check-frontend.ts` walk. Violations block the edit result and feed the error back to the agent.
 - **Stop:** `agent-gate.sh` runs the full gate before the agent ends its turn.
 - **pre-commit:** lint + typecheck (simple-git-hooks).
-- **pre-push:** full strict gate `bun run check:ci` (simple-git-hooks).
 
 ## Correct and wrong examples
 

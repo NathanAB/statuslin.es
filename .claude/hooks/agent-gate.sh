@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Agent self-enforcement: when an agent finishes a turn with uncommitted
 # TypeScript changes, run the fast gate (typecheck + lint) and block finishing
-# if it's red. Full test suite is enforced at pre-push and via `bun run check`.
+# if it's red. The full test suite runs via `bun run check`.
 #
 # Wired from .claude/settings.json as a Stop hook. Exit 2 = block + show stderr
 # to the agent; exit 0 = allow stop.

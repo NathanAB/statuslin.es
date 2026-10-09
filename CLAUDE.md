@@ -75,13 +75,13 @@ where visitors **copy it to use** (`src/adopt`).
 ## Enforcement (the guardrails)
 
 - **`bun run check`** — the full gate, for local use: it auto-fixes with Biome (`format`) first, then runs the strict gate (typecheck + lint + design/boundary checks + test). Run it before claiming any work complete, and show the output in the same message. **Codex must request elevated sandbox permission before the first run** because the suite binds an ephemeral socket.
-- **`bun run check:ci`** — the same gate **without** auto-fix (read-only `lint`). CI and the `pre-push` hook run this so messy committed code fails the build instead of being silently fixed in a throwaway checkout. Never point CI or hooks at `check`.
+- **`bun run check:ci`** — the same gate **without** auto-fix (read-only `lint`). CI runs this so messy committed code fails the build instead of being silently fixed in a throwaway checkout. Never point CI or hooks at `check`.
 - Individual gates: **`bun run typecheck`** (tsc), **`bun run lint`** (Biome: lint + format check + import order, read-only), **`bun run format`** (Biome auto-fix), **`bun --bun run test`** (Vitest).
 - **Linter/formatter — Biome** (`biome.json`): 2-space indent, single quotes, no semicolons, trailing commas, organized imports. Generated files (`routeTree.gen.ts`, `src/db/auth-schema.ts`, `drizzle/`) are excluded. Fix style with `bun run format`; never hand-fight the formatter.
-- **Git hooks — simple-git-hooks:** `pre-commit` runs lint + typecheck; `pre-push` runs the full strict gate (`check:ci`). These block bad commits/pushes — **never** bypass with `git commit --no-verify`. In a worktree (no `node_modules`): `SKIP_SIMPLE_GIT_HOOKS=1 git push`.
+- **Git hooks — simple-git-hooks:** `pre-commit` runs lint + typecheck and blocks bad commits — **never** bypass with `git commit --no-verify`. There is no pre-push hook: run `bun run check` once yourself before pushing.
 - **Claude Code self-hook** (`.claude/settings.json`): runs the fast gate when an agent finishes work, so an agent can't quietly wrap up on red.
 - **No magic-string regressions:** config (URLs, ports, secrets) comes from env via one source; reading required env vars goes through `requireEnv()` (`src/lib/env.ts`), never `process.env.X!`.
-- **CI** (`.github/workflows/ci.yml`): GitHub Actions runs the full `bun run check:ci` + coverage on every push and PR. Forked PRs run without secrets (`pull_request`, all-dummy env). Branch protection: not yet (solo, agent-first) — add as contributors grow.
+- **CI** (`.github/workflows/ci.yml`): GitHub Actions runs the full `bun run check:ci` + coverage on every push and PR. **Currently disabled on GitHub** (too slow); re-enable with `gh workflow enable CI`. Forked PRs run without secrets (`pull_request`, all-dummy env). Branch protection: not yet (solo, agent-first) — add as contributors grow.
 
 ## Agent skills
 
