@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { runCommand } from '@/adopt/install'
 import * as schema from '@/db/schema'
 import { getConfigBySlug, getPublishedConfigs } from '@/gallery/queries'
+import { tryHighlightSource } from '@/lib/highlight'
 import { configCardResponse } from '@/og/routes'
 import { FakeSandboxRunner } from '@/render/fake-runner'
 import { approveVersion, runNetworkPreview } from '@/review/decide'
@@ -23,6 +24,10 @@ import { processNextRenderJob } from '@/submit/worker'
 const configCard = vi.hoisted(() => vi.fn(() => null))
 vi.mock('@/og/card', () => ({ configCard, homeCard: vi.fn(() => null) }))
 vi.mock('@/og/render', () => ({ toElementPng: vi.fn(async () => new Uint8Array([1])) }))
+vi.mock('@/lib/highlight', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/highlight')>()
+  return { ...actual, tryHighlightSource: vi.fn(actual.tryHighlightSource) }
+})
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -206,6 +211,22 @@ describe('submitting an update', () => {
       ),
     ).rejects.toMatchObject({ status: 400, message: 'Nothing changed from the live version' })
     expect(await versionsOf(v1.configId)).toHaveLength(1)
+  })
+})
+
+describe('highlighting an update', () => {
+  it('waits until ownership and a real change are confirmed', async () => {
+    const v1 = await publish()
+    vi.mocked(tryHighlightSource).mockClear()
+    await expect(
+      submitConfig(db, { ...update, authorId: 'other' }, { updateSlug: v1.slug }),
+    ).rejects.toMatchObject({ status: 404 })
+    await expect(submitConfig(db, live, { updateSlug: v1.slug })).rejects.toMatchObject({
+      status: 400,
+    })
+    expect(tryHighlightSource).not.toHaveBeenCalled()
+    await submitConfig(db, update, { updateSlug: v1.slug })
+    expect(tryHighlightSource).toHaveBeenCalledTimes(1)
   })
 })
 

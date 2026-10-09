@@ -98,14 +98,27 @@ export async function getUpdateDraft(
   }
 }
 
+/** The base for an update the author owns that changes the live version, or null when `slug`
+ * names no update. Runs before highlighting, so a refused update costs no Shiki. */
+export async function findChangedUpdateBase(
+  database: Db,
+  slug: string | undefined,
+  authorId: string,
+  input: ListedFields,
+): Promise<UpdateBase | null> {
+  if (!slug) return null
+  const base = await findUpdateBase(database, slug, authorId)
+  if (sameAsLive({ ...base.live, networkHosts: base.live.networkHosts ?? [] }, input)) {
+    throw new HttpError(400, 'Nothing changed from the live version')
+  }
+  return base
+}
+
 export async function createUpdateVersion(
   database: Db,
   base: UpdateBase,
   input: PreparedVersion,
 ): Promise<SubmitResult> {
-  if (sameAsLive({ ...base.live, networkHosts: base.live.networkHosts ?? [] }, input)) {
-    throw new HttpError(400, 'Nothing changed from the live version')
-  }
   try {
     return await database.transaction(async (tx) => {
       const [config] = await tx

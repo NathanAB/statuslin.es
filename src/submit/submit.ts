@@ -10,7 +10,7 @@ import { validateNetworkHosts } from './network-hosts'
 import { detectObfuscation } from './obfuscation'
 import { createResubmissionVersion, type PreparedVersion, type ResubmissionDraft } from './resubmit'
 import { slugify } from './slug'
-import { createUpdateVersion, findUpdateBase, type UpdateDraft } from './update'
+import { createUpdateVersion, findChangedUpdateBase, type UpdateDraft } from './update'
 
 export { getResubmissionDraft, type ResubmissionDraft } from './resubmit'
 export { getUpdateDraft, type UpdateDraft } from './update'
@@ -144,6 +144,10 @@ export async function submitConfig(
   const slug = `${slugify(input.title)}-${randomUUID().slice(0, 8)}`
   const contentSha256 = createHash('sha256').update(input.source).digest('hex')
   const readsToken = readsClaudeToken(input.source)
+  const updateBase = await findChangedUpdateBase(db, options.updateSlug, input.authorId, {
+    ...input,
+    networkHosts,
+  })
   // Highlight once now (best-effort) so the detail page reads stored HTML instead of running Shiki
   // on every render. The source is immutable for this version, so the stored HTML never goes stale.
   const sourceHtml = await tryHighlightSource(input.source, input.interpreter)
@@ -156,10 +160,7 @@ export async function submitConfig(
     license: input.license ?? null,
     sourceUrl: input.sourceUrl ?? null,
   }
-  if (options.updateSlug) {
-    const base = await findUpdateBase(db, options.updateSlug, input.authorId)
-    return createUpdateVersion(db, base, prepared)
-  }
+  if (updateBase) return createUpdateVersion(db, updateBase, prepared)
   if (options.rejectedVersionId) {
     return createResubmissionVersion(db, options.rejectedVersionId, prepared)
   }
