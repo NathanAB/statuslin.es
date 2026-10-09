@@ -15,7 +15,9 @@ import {
 } from '@/review/dashboard-card-parts'
 import { ReviewDecisionControls } from '@/review/dashboard-rejection-controls'
 import { RejectionDetails } from '@/review/dashboard-rejection-details'
+import { UpdateDetails } from '@/review/dashboard-update-details'
 import { requeueRenderJobFn, runNetworkPreviewFn, setReadsClaudeTokenFn } from '@/review/decide'
+import type { UpdateSummary } from '@/review/my-submissions'
 import type { DashboardRow } from '@/review/queue'
 
 export { StatusSummary } from '@/review/dashboard-card-parts'
@@ -110,6 +112,7 @@ export function SubmissionCard({
   showActions = true,
   statusMode = 'render',
   detailSlug,
+  updateDetails,
 }: {
   row: DashboardRow
   /** Admin view shows Approve/Reject/Re-queue; an author's own /me view is read-only. */
@@ -119,6 +122,8 @@ export function SubmissionCard({
   /** When the config is published, its detail-page slug — turns the whole card into a link
    *  (gallery hover + stretched title) and drops the disclosures the detail page already shows. */
   detailSlug?: string | undefined
+  /** On an author's published config: its pending update's state and a Submit update link. */
+  updateDetails?: { slug: string; update: UpdateSummary | null } | undefined
 }) {
   const router = useRouter()
   const { config, version, renderJob, previews } = row
@@ -172,6 +177,8 @@ export function SubmissionCard({
             {view.headline}
           </Text>
         </Row>
+
+        {updateDetails ? <UpdateDetails {...updateDetails} /> : null}
 
         {version.description ? <Text size="sm">{version.description}</Text> : null}
 

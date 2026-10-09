@@ -4,8 +4,6 @@ import { and, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
 import { configs, configVersions, renderJobs, user } from '@/db/schema'
-import { auth } from '@/lib/auth'
-import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPreviews } from '@/render/store'
 import type { RenderedPreview } from '@/render/types'
@@ -58,7 +56,7 @@ const RENDER_STATUS_ORDER = sql`case ${renderJobs.status}
   when 'queued' then 2
   else 3 end`
 
-type RawRow = {
+export type RawRow = {
   config: typeof configs.$inferSelect
   version: typeof configVersions.$inferSelect
   job: typeof renderJobs.$inferSelect
@@ -66,7 +64,7 @@ type RawRow = {
 }
 
 /** Shape a joined config/version/job/author row into a DashboardRow (+ fetch its previews). */
-async function mapRow(
+export async function mapRow(
   database: Db,
   r: RawRow,
   includeDeliveryState: boolean,
@@ -173,29 +171,6 @@ export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
   return out
 }
 
-/** Every config owned by `userId`, latest version each, any status — for the /me page. */
-export async function getMySubmissionRows(database: Db, userId: string): Promise<DashboardRow[]> {
-  const rows = await database
-    .selectDistinctOn([configVersions.configId], {
-      config: configs,
-      version: configVersions,
-      job: renderJobs,
-      author: user,
-    })
-    .from(configVersions)
-    .innerJoin(configs, eq(configs.id, configVersions.configId))
-    .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
-    .leftJoin(user, eq(user.id, configs.authorId))
-    .where(eq(configs.authorId, userId))
-    // DISTINCT ON keeps the first row per config; lead the sort with configId + newest version.
-    .orderBy(configVersions.configId, desc(configVersions.versionNumber))
-  // Re-sort for display: newest config first (DISTINCT ON forced the configId-led order above).
-  rows.sort((a, b) => b.config.createdAt.getTime() - a.config.createdAt.getTime())
-  const out: DashboardRow[] = []
-  for (const r of rows) out.push(await mapRow(database, r, false))
-  return out
-}
-
 /** Header-shaped user, for rendering the signed-in admin in the page header. */
 export interface DashboardUser {
   name: string
@@ -213,28 +188,6 @@ export const getAdminDashboard = createServerFn({ method: 'GET' }).handler(() =>
       username: admin.username,
       image: admin.image,
       role: admin.role,
-    }
-    return { user, rows }
-  }),
-)
-
-export const getMySubmissions = createServerFn({ method: 'GET' }).handler(() =>
-  withHttpStatus(async () => {
-    const session = await auth.api.getSession({ headers: getRequestHeaders() })
-    if (!session?.user) throw new HttpError(401, 'sign in required')
-    const u = session.user as {
-      id: string
-      name: string
-      username?: string | null
-      image?: string | null
-      role?: string | null
-    }
-    const rows = await getMySubmissionRows(db, u.id)
-    const user: DashboardUser = {
-      name: u.name,
-      username: u.username ?? null,
-      image: u.image ?? null,
-      role: u.role ?? null,
     }
     return { user, rows }
   }),

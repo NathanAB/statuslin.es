@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { HttpError } from '@/lib/http'
 import { MySubmissionsView } from '@/review/dashboard-views'
-import { getMySubmissions } from '@/review/queue'
+import { getMySubmissions } from '@/review/my-submissions'
 import { SignInPrompt } from '@/ui/sign-in-prompt'
 
 export const Route = createFileRoute('/me')({

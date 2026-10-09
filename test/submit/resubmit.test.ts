@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getMySubmissionRows } from '@/review/queue'
+import { getMySubmissionRows } from '@/review/my-submissions'
 import { getResubmissionDraft, submitConfig } from '@/submit/submit'
 
 let client: PGlite
