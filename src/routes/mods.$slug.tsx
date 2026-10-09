@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { GeneratedContentSections } from '@/gallery/generated-content'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
@@ -74,7 +75,7 @@ function ModPage() {
           <FootprintSection mod={mod} />
         </SectionCard>
 
-        {/* Generated page copy (unit 43b) renders here. */}
+        {mod.generatedContent && <GeneratedContentSections content={mod.generatedContent} />}
       </Stack>
     </PageShell>
   )

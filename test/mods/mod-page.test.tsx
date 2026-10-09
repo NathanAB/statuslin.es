@@ -36,6 +36,7 @@ const MOD: ModDetail = {
   },
   desktopScreenshot: null,
   preview: [{ text: 'src/\n  app.ts' }],
+  generatedContent: null,
 }
 
 function renderPage(mod: Partial<ModDetail> = {}) {
@@ -161,6 +162,28 @@ describe('mod page', () => {
     expect(screen.getByRole('link', { name: '0123456' }).getAttribute('href')).toBe(
       `https://github.com/octocat/mods/tree/${SHA}`,
     )
+  })
+
+  it('renders the generated page copy when the version has it', () => {
+    renderPage({
+      generatedContent: {
+        whatItShows: ['The files in the current folder'],
+        requirements: [],
+        behaviorNotes: ['Folders open on click'],
+      },
+    })
+
+    expect(screen.getByRole('heading', { level: 2, name: 'What it shows' })).toBeTruthy()
+    expect(screen.getByText('The files in the current folder')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'Behavior notes' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Requirements' })).toBeNull()
+  })
+
+  it('renders no generated copy when the version has none', () => {
+    renderPage()
+
+    expect(screen.queryByRole('heading', { name: 'What it shows' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Behavior notes' })).toBeNull()
   })
 
   it('says so when there is no licence', () => {
