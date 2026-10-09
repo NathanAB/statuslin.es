@@ -117,6 +117,11 @@ describe('MySubmissionsView update state', () => {
     )
   })
 
+  it('lifts Submit update above the card-wide title link so it stays clickable', () => {
+    const markup = html(row({ configStatus: 'published', versionStatus: 'approved' }))
+    expect(markup).toMatch(/<div class="[^"]*\bz-10\b[^"]*"><a href="\/submit\?update=my-line"/)
+  })
+
   it('keeps Fix and resubmit for a rejected draft', () => {
     const markup = html(row({ configStatus: 'draft', versionStatus: 'rejected' }))
     expect(markup).toContain('href="/submit?resubmit=my-line"')
