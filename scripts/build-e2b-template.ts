@@ -106,11 +106,16 @@ export const renderTemplate = () =>
       { user: 'root' },
     )
 
-/** Builds `template` to the mutable `buildName` alias and prints the immutable snapshot to commit. */
+/**
+ * Builds `template` to the mutable `buildName` alias and prints the immutable snapshot to commit.
+ * `harden` runs on the live sandbox before the snapshot, because E2B's build finalize step runs after
+ * every template step (it grants `user` passwordless sudo and makes /usr/local world-writable).
+ */
 export async function buildSnapshot(
   template: TemplateClass,
   buildName: string,
   snapshotConstant: string,
+  harden?: (sandbox: Sandbox) => Promise<void>,
 ): Promise<void> {
   const apiKey = requireEnv('E2B_API_KEY')
   const build = await Template.build(template, buildName, {
@@ -123,6 +128,7 @@ export async function buildSnapshot(
   const sandbox = await Sandbox.create(buildName, { apiKey, timeoutMs: 60_000 })
   let snapshotId: string
   try {
+    await harden?.(sandbox)
     const snapshot = await sandbox.createSnapshot({ apiKey })
     snapshotId = snapshot.snapshotId
   } finally {

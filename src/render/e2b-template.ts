@@ -34,7 +34,7 @@ export const SANDBOX_ANTHROPIC_USAGE_KEY_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/
 export const E2B_MOD_TEMPLATE_BUILD_NAME = 'statuslines-mod-render-build'
 
 /** Immutable E2B snapshot selected by every mod render. Updated only after a reviewed build. */
-export const E2B_MOD_TEMPLATE_ID = '2zrv33p5jx6u8c9y3xen:default'
+export const E2B_MOD_TEMPLATE_ID = 'fqm6elo7wmsdtq42pifj:default'
 
 /** Root-owned npm prefix holding Claude Code in the mod template, and the binary to run. */
 export const SANDBOX_CLAUDE_CODE_PREFIX = '/opt/statuslines/claude-code'
