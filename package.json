@@ -57,7 +57,7 @@
     "diff": "8.0.4",
     "drizzle-orm": "0.45.2",
     "e2b": "2.27.0",
-    "lucide-react": "1.17.0",
+    "lucide-react": "1.52.0",
     "postgres": "3.4.9",
     "posthog-js": "1.438.1",
     "posthog-node": "5.49.1",
@@ -82,7 +82,7 @@
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "5.0.3",
     "dependency-cruiser": "17.4.3",
     "drizzle-kit": "0.31.11",
     "jsdom": "29.1.1",
@@ -90,7 +90,7 @@
     "simple-git-hooks": "2.13.1",
     "typescript": "7.0.2",
     "vite": "8.0.16",
-    "vitest": "4.1.11",
+    "vitest": "5.0.3",
     "vitest-axe": "0.1.0"
   }
 }

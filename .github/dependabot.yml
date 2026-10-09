@@ -6,3 +6,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # vitest and its plugins must share a version: a lone @vitest/coverage-v8 major
+      # bump against an older vitest crashes the coverage run.
+      vitest:
+        patterns:
+          - vitest
+          - '@vitest/*'
