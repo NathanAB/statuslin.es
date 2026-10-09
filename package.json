@@ -59,7 +59,7 @@
     "e2b": "2.27.0",
     "lucide-react": "1.17.0",
     "postgres": "3.4.9",
-    "posthog-js": "1.418.4",
+    "posthog-js": "1.438.1",
     "posthog-node": "5.49.1",
     "radix-ui": "1.4.3",
     "react": "19.2.6",
