@@ -2,11 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { InputStep } from '@/mods/curation'
-import {
-  SANDBOX_CANNED_MODEL_SERVER_DEST,
-  SANDBOX_CLAUDE_CODE_BIN,
-  SANDBOX_REPLAY_DIR,
-} from '../e2b-template'
+import { SANDBOX_CANNED_MODEL_SERVER_DEST, SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
 import { cannedReply, feedFile, feedStdin } from './scenario-feed'
@@ -26,9 +22,6 @@ const MODEL_URL = `http://${MODEL_HOST}:${MODEL_PORT}`
 const FAKE_API_KEY = `sk-ant-api03-${'statuslinespreview'.padEnd(80, '0')}-AA`
 const FEED_PLUGIN_ASSETS = ['.claude-plugin/plugin.json', 'hooks/hooks.json', 'hooks/register.ts']
 const FEED_PLUGIN_SRC = join(import.meta.dirname, 'sandbox/scenario-feed')
-const RECORDING_FILE = `${WORK_DIR}/recording.bin`
-const REPLAY_SCRIPT_FILE = `${WORK_DIR}/replay.cjs`
-const REPLAY_SCRIPT_SRC = join(import.meta.dirname, 'sandbox/replay.cjs')
 
 /** Typed before the input steps, so every recording has a finished turn. */
 export const SCRIPTED_PROMPT: InputStep = { type: 'text', text: 'hello' }
@@ -99,16 +92,21 @@ export function sessionFiles(
   ]
 }
 
+/** One literal shell word, whatever `value` holds. */
+export function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`
+}
+
 /** The workspace repo, then the canned model on loopback, waiting until it answers. */
 export function setupCommand(scenario: Scenario): string {
   const { workspace } = feedStdin(scenario)
   const { host, owner, name } = workspace.repo
   const branch = scenario.git?.branch ?? 'main'
   return [
-    `mkdir -p ${workspace.current_dir}`,
-    `cd ${workspace.current_dir}`,
-    `git init -q -b ${branch}`,
-    `git remote add origin https://${host}/${owner}/${name}.git`,
+    `mkdir -p ${shellQuote(workspace.current_dir)}`,
+    `cd ${shellQuote(workspace.current_dir)}`,
+    `git init -q -b ${shellQuote(branch)}`,
+    `git remote add origin ${shellQuote(`https://${host}/${owner}/${name}.git`)}`,
     'echo seed > README.md',
     'git add -A',
     'git -c user.email=preview@statuslin.es -c user.name=preview commit -qm seed',
@@ -120,22 +118,10 @@ export function setupCommand(scenario: Scenario): string {
 /** The feed's `--plugin-dir` comes first, so its hooks sit above the mod's. */
 export function launchCommand(scenario: Scenario, modPluginDir: string | null): string {
   const pluginDirs = [FEED_PLUGIN_DIR, ...(modPluginDir ? [modPluginDir] : [])]
-  const flags = pluginDirs.map((dir) => `--plugin-dir ${dir}`).join(' ')
-  return `exec ${SANDBOX_CLAUDE_CODE_BIN} --model ${feedStdin(scenario).model.id} ${flags}`
+  const flags = pluginDirs.map((dir) => `--plugin-dir ${shellQuote(dir)}`).join(' ')
+  return `exec ${SANDBOX_CLAUDE_CODE_BIN} --model ${shellQuote(feedStdin(scenario).model.id)} ${flags}`
 }
 
 export function keystrokes(step: InputStep): string[] {
   return step.submit === false ? [step.text] : [step.text, '\r']
-}
-
-export function replayFiles(recording: Uint8Array): { path: string; data: string | Uint8Array }[] {
-  return [
-    { path: RECORDING_FILE, data: recording },
-    { path: REPLAY_SCRIPT_FILE, data: readFileSync(REPLAY_SCRIPT_SRC, 'utf8') },
-  ]
-}
-
-export const REPLAY = {
-  command: `node ${REPLAY_SCRIPT_FILE} ${RECORDING_FILE} ${TERMINAL.cols} ${TERMINAL.rows}`,
-  envs: { NODE_PATH: `${SANDBOX_REPLAY_DIR}/node_modules` },
 }

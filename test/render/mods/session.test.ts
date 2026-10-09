@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -16,11 +17,41 @@ import {
   sessionEnv,
   sessionFiles,
   setupCommand,
+  shellQuote,
 } from '@/render/mods/session'
 import { usage } from '@/render/scenario-helpers'
+import type { Scenario } from '@/render/types'
 
 const NOW_MS = Date.UTC(2026, 9, 9, 12, 0, 0)
 const MOD_DIR = '/home/user/plugins/mod'
+const HOSTILE = [
+  "it's",
+  'two words',
+  '"double"',
+  '$(echo injected)',
+  '`echo injected`',
+  'a; echo injected',
+  "'; echo injected; '",
+]
+
+/** The scenario with every value the session commands interpolate replaced by `value`. */
+function scenarioWith(value: string): Scenario {
+  const scenario = feedScenario()
+  const stdin = scenario.stdin as Record<string, Record<string, unknown>>
+  return {
+    ...scenario,
+    git: { branch: value, dirty: false },
+    stdin: {
+      ...stdin,
+      model: { ...stdin.model, id: value },
+      workspace: {
+        ...stdin.workspace,
+        current_dir: value,
+        repo: { host: value, owner: value, name: value },
+      },
+    },
+  } as Scenario
+}
 
 function fileAt(path: string, target: string | null = 'token-weather'): string {
   const seed = { target, nowMs: NOW_MS, claudeCodeVersion: '2.1.296' }
@@ -113,13 +144,34 @@ describe('scenario feed plugin', () => {
   })
 })
 
+describe('shellQuote', () => {
+  it.each(HOSTILE)('passes %s to a shell as one literal argument', (value) => {
+    const echoed = execFileSync('/bin/sh', ['-c', `printf '%s\n' ${shellQuote(value)}`], {
+      encoding: 'utf8',
+    })
+
+    expect(echoed).toBe(`${value}\n`)
+  })
+})
+
 describe('setupCommand', () => {
   const command = setupCommand(feedScenario())
 
   it('makes the working directory a git repo on main with an acme/app origin', () => {
-    expect(command).toContain('mkdir -p /home/user/app')
-    expect(command).toContain('git init -q -b main')
-    expect(command).toContain('git remote add origin https://github.com/acme/app.git')
+    expect(command).toContain("mkdir -p '/home/user/app'")
+    expect(command).toContain("git init -q -b 'main'")
+    expect(command).toContain("git remote add origin 'https://github.com/acme/app.git'")
+  })
+
+  it.each(HOSTILE)('quotes the scenario value %s wherever it goes', (value) => {
+    const hostile = setupCommand(scenarioWith(value))
+
+    expect(hostile).toContain(`mkdir -p ${shellQuote(value)}`)
+    expect(hostile).toContain(`cd ${shellQuote(value)}`)
+    expect(hostile).toContain(`git init -q -b ${shellQuote(value)}`)
+    expect(hostile).toContain(
+      `git remote add origin ${shellQuote(`https://${value}/${value}/${value}.git`)}`,
+    )
   })
 
   it('starts the canned model on loopback with the reply file', () => {
@@ -132,14 +184,18 @@ describe('setupCommand', () => {
 describe('launchCommand', () => {
   it('runs Claude Code by its absolute path on the scenario model with only the feed', () => {
     expect(launchCommand(feedScenario(), null)).toBe(
-      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model claude-opus-4-8 --plugin-dir ${FEED_PLUGIN_DIR}`,
+      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model 'claude-opus-4-8' --plugin-dir '${FEED_PLUGIN_DIR}'`,
     )
   })
 
   it('loads the mod after the feed, so the feed sits above it', () => {
     expect(launchCommand(feedScenario(), MOD_DIR)).toBe(
-      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model claude-opus-4-8 --plugin-dir ${FEED_PLUGIN_DIR} --plugin-dir ${MOD_DIR}`,
+      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model 'claude-opus-4-8' --plugin-dir '${FEED_PLUGIN_DIR}' --plugin-dir '${MOD_DIR}'`,
     )
+  })
+
+  it.each(HOSTILE)('quotes the scenario model id %s', (value) => {
+    expect(launchCommand(scenarioWith(value), null)).toContain(`--model ${shellQuote(value)} `)
   })
 })
 

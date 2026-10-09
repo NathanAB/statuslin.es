@@ -3,13 +3,17 @@ import { z } from 'zod'
 import type { InputStep } from '@/mods/curation'
 import { SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
-import { type ModSource, type RecordingSandbox, withRecordingSandbox } from './mod-sandbox'
+import {
+  type ModSource,
+  type RecordingSandbox,
+  SANDBOX_TIMEOUT_MS,
+  withRecordingSandbox,
+} from './mod-sandbox'
+import { replayScreen } from './replay'
 import { feedScenario, feedStdin } from './scenario-feed'
 import {
   keystrokes,
   launchCommand,
-  REPLAY,
-  replayFiles,
   SCRIPTED_PROMPT,
   sessionEnv,
   sessionFiles,
@@ -48,9 +52,22 @@ const STEP_MAX_MS = 45_000
 const KEY_PAUSE_MS = 200
 const POLL_MS = 100
 const PROMPT_GLYPH = '❯'
+/**
+ * Sandbox creation, unpacking, `claude --version` and setup: about 10 s together in measured runs,
+ * and each of the last three may take up to its 60 s command timeout.
+ */
+const SETUP_RESERVE_MS = 60_000
+/** Each step waits at most this long: its settle plus the pause before Enter. */
+const STEP_BUDGET_MS = STEP_MAX_MS + KEY_PAUSE_MS
+/** The input steps whose waits, after the scripted prompt's, still end before the sandbox does. */
+export const MAX_INPUT_STEPS =
+  Math.floor(
+    (SANDBOX_TIMEOUT_MS - SETUP_RESERVE_MS - SHELL_MAX_MS - LAUNCH_MAX_MS) / STEP_BUDGET_MS,
+  ) - 1
+/** A whole session's pty output; a mod flooding the tty fails the recording here. */
+export const RECORDING_MAX_BYTES = 4 * 1024 * 1024
 
 const versionSchema = z.string().regex(/^\d+\.\d+\.\d+$/)
-const screenSchema = z.array(z.string()).length(TERMINAL.rows)
 
 async function claudeCodeVersion(sandbox: RecordingSandbox, scenario: Scenario): Promise<string> {
   const { exitCode, stdout, stderr } = await sandbox.run(
@@ -61,13 +78,30 @@ async function claudeCodeVersion(sandbox: RecordingSandbox, scenario: Scenario):
   return versionSchema.parse(stdout.trim().split(' ')[0])
 }
 
+/** Pty output held on the host. Past `RECORDING_MAX_BYTES` it keeps nothing more. */
+export class PtyOutput {
+  readonly chunks: Uint8Array[] = []
+  overflowed = false
+  private byteCount = 0
+
+  /** False when `bytes` was dropped because the output has passed the cap. */
+  push(bytes: Uint8Array): boolean {
+    if (this.overflowed) return false
+    this.byteCount += bytes.byteLength
+    this.overflowed = this.byteCount > RECORDING_MAX_BYTES
+    if (this.overflowed) return false
+    this.chunks.push(bytes)
+    return true
+  }
+}
+
 async function recordSession(
   sandbox: RecordingSandbox,
   scenario: Scenario,
   modPluginDir: string | null,
   inputSteps: readonly InputStep[],
 ): Promise<Uint8Array> {
-  const chunks: Uint8Array[] = []
+  const output = new PtyOutput()
   let lastActivityAt = performance.now()
   let launchChunk: number | undefined
   let promptShown = false
@@ -77,7 +111,7 @@ async function recordSession(
     cwd: feedStdin(scenario).workspace.current_dir,
     envs: sessionEnv(scenario),
     onData: (bytes) => {
-      chunks.push(bytes)
+      if (!output.push(bytes)) return
       lastActivityAt = performance.now()
       if (launchChunk !== undefined && !promptShown) {
         promptShown = decoder.decode(bytes, { stream: true }).includes(PROMPT_GLYPH)
@@ -91,11 +125,13 @@ async function recordSession(
   const settle = async (maxMs: number, ready = () => true) => {
     const startedAt = performance.now()
     const settled = () => ready() && performance.now() - lastActivityAt >= QUIET_MS
-    while (!settled() && performance.now() - startedAt < maxMs) await sleep(POLL_MS)
+    while (!output.overflowed && !settled() && performance.now() - startedAt < maxMs)
+      await sleep(POLL_MS)
+    if (output.overflowed) throw new Error(`pty output passed ${RECORDING_MAX_BYTES} bytes`)
   }
   try {
     await settle(SHELL_MAX_MS)
-    launchChunk = chunks.length
+    launchChunk = output.chunks.length
     await send(`clear; ${launchCommand(scenario, modPluginDir)}\r`)
     // Quiet alone is not enough: Claude Code can be silent for 2 s while it starts, and a prompt
     // typed then stayed unsubmitted in a measured run.
@@ -107,39 +143,39 @@ async function recordSession(
       }
       await settle(STEP_MAX_MS)
     }
-    return Buffer.concat(chunks.slice(launchChunk))
+    return Buffer.concat(output.chunks.slice(launchChunk))
   } finally {
     await terminal.kill()
   }
 }
 
-async function replay(sandbox: RecordingSandbox, recording: Uint8Array): Promise<string[]> {
-  await sandbox.writeFiles(replayFiles(recording))
-  const { exitCode, stdout, stderr } = await sandbox.run(REPLAY.command, REPLAY.envs)
-  if (exitCode !== 0) throw new Error(`replay failed: ${stderr.trim()}`)
-  return screenSchema.parse(JSON.parse(stdout))
+/** Mod code runs only in the sandbox; its pty bytes are replayed into a screen on the host. */
+export async function recordInSandbox(
+  sandbox: RecordingSandbox,
+  { mod, inputSteps }: RecordRequest,
+): Promise<Recording> {
+  const scenario = feedScenario()
+  const version = await claudeCodeVersion(sandbox, scenario)
+  const seed = { target: mod?.pluginName ?? null, nowMs: Date.now(), claudeCodeVersion: version }
+  await sandbox.writeFiles(sessionFiles(scenario, seed))
+  const setup = await sandbox.run(setupCommand(scenario))
+  if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)
+  const modPluginDir = mod ? sandbox.pluginDir : null
+  const recording = await recordSession(sandbox, scenario, modPluginDir, inputSteps)
+  return { rows: await replayScreen(recording), claudeCodeVersion: version }
 }
 
-/** One fresh sandbox per recording, with the network off. Mod code runs only in there. */
+/** One fresh sandbox per recording, with the network off. */
 export const e2bModRecorder: ModRecorder = {
-  record: ({ mod, inputSteps }) =>
-    withRecordingSandbox(mod?.source ?? null, async (sandbox) => {
-      const scenario = feedScenario()
-      const version = await claudeCodeVersion(sandbox, scenario)
-      const seed = {
-        target: mod?.pluginName ?? null,
-        nowMs: Date.now(),
-        claudeCodeVersion: version,
-      }
-      await sandbox.writeFiles(sessionFiles(scenario, seed))
-      const setup = await sandbox.run(setupCommand(scenario))
-      if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)
-      const recording = await recordSession(
-        sandbox,
-        scenario,
-        mod ? sandbox.pluginDir : null,
-        inputSteps,
+  record: async (request) => {
+    const steps = request.inputSteps.length
+    if (steps > MAX_INPUT_STEPS) {
+      throw new Error(
+        `${steps} input steps cannot finish inside the sandbox lifetime; at most ${MAX_INPUT_STEPS} can`,
       )
-      return { rows: await replay(sandbox, recording), claudeCodeVersion: version }
-    }),
+    }
+    return withRecordingSandbox(request.mod?.source ?? null, (sandbox) =>
+      recordInSandbox(sandbox, request),
+    )
+  },
 }

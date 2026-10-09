@@ -10,7 +10,7 @@ export const SANDBOX_PLUGINS_DIR = '/home/user/plugins'
 const TARBALL_PATH = `${SANDBOX_WORK_DIR}/mod.tar.gz`
 const PLUGIN_DIR = `${SANDBOX_PLUGINS_DIR}/mod`
 /** Sandbox lifetime ceiling. The `finally` kill is the real teardown; this is a backstop. */
-const SANDBOX_TIMEOUT_MS = 5 * 60_000
+export const SANDBOX_TIMEOUT_MS = 5 * 60_000
 const COMMAND_TIMEOUT_MS = 60_000
 
 export interface CommandOutput {
