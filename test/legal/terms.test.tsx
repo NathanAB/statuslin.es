@@ -20,11 +20,30 @@ describe('TermsContent', () => {
 
   it('states the maintainer can remove a config', () => {
     render(<TermsContent />)
-    expect(screen.getByText(/remove/i)).toBeTruthy()
+    expect(screen.getByText(/remove any config/i)).toBeTruthy()
   })
 
   it('notes seeded configs keep their original license instead of CC0', () => {
     render(<TermsContent />)
     expect(screen.getByText(/original license/i)).toBeTruthy()
+  })
+
+  it('states listed mods keep their own license or have none', () => {
+    render(<TermsContent />)
+    const license = screen.getByText(/each mod keeps its own license, or has none/i)
+    expect(license.textContent).toMatch(
+      new RegExp(`${CONTENT_LICENSE.shortLabel} release above does not cover mods`),
+    )
+  })
+
+  it("states mods are listed on their authors' behalf", () => {
+    render(<TermsContent />)
+    expect(screen.getByText(/listed on their authors' behalf/i)).toBeTruthy()
+  })
+
+  it('says how to have a mod removed on request', () => {
+    render(<TermsContent />)
+    const removal = screen.getByText(/mod removed on request/i)
+    expect(removal.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`)).not.toBeNull()
   })
 })
