@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Sandbox-local HTTPS stand-in for Anthropic's OAuth usage endpoint."""
+"""Sandbox-local stand-ins for Anthropic's OAuth usage endpoint and, in --canned-reply mode, the Messages API."""
 
 import argparse
 import hmac
 import json
 import os
+import re
 import ssl
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -102,6 +104,137 @@ class UsageHandler(BaseHTTPRequestHandler):
         return
 
 
+MESSAGES_PATH = "/v1/messages"
+COUNT_TOKENS_PATH = "/v1/messages/count_tokens"
+MAX_REQUEST_BYTES = 8 * 1024 * 1024
+CANNED_MESSAGE_ID = "msg_statuslines_preview"
+CANNED_MODEL_PATTERN = re.compile(r"^[a-z0-9.\-\[\]]{1,64}$")
+CANNED_FALLBACK_MODEL = "claude-opus-4-8"
+NOT_FOUND = {"type": "error", "error": {"type": "not_found_error", "message": "not found"}}
+BAD_LENGTH = {"type": "error", "error": {"type": "invalid_request_error", "message": "bad content-length"}}
+
+
+def canned_message(model, reply):
+    """The fixed reply as one non-streaming Messages API response."""
+    return {
+        "id": CANNED_MESSAGE_ID,
+        "type": "message",
+        "role": "assistant",
+        "model": model,
+        "content": [{"type": "text", "text": reply["text"]}],
+        "stop_reason": "end_turn",
+        "stop_sequence": None,
+        "usage": reply["usage"],
+    }
+
+
+def canned_message_events(model, reply):
+    """The fixed reply as Messages API stream events, in order."""
+    usage = reply["usage"]
+    start = {
+        **canned_message(model, reply),
+        "content": [],
+        "stop_reason": None,
+        "usage": {**usage, "output_tokens": 1},
+    }
+    text_block = {"type": "text", "text": ""}
+    text_delta = {"type": "text_delta", "text": reply["text"]}
+    return [
+        ("message_start", {"type": "message_start", "message": start}),
+        ("content_block_start", {"type": "content_block_start", "index": 0, "content_block": text_block}),
+        ("content_block_delta", {"type": "content_block_delta", "index": 0, "delta": text_delta}),
+        ("content_block_stop", {"type": "content_block_stop", "index": 0}),
+        (
+            "message_delta",
+            {
+                "type": "message_delta",
+                "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                "usage": {"output_tokens": usage["output_tokens"]},
+            },
+        ),
+        ("message_stop", {"type": "message_stop"}),
+    ]
+
+
+def canned_model(request):
+    model = request.get("model")
+    if isinstance(model, str) and CANNED_MODEL_PATTERN.match(model):
+        return model
+    return CANNED_FALLBACK_MODEL
+
+
+class CannedMessagesHandler(BaseHTTPRequestHandler):
+    """Answers every model request with one fixed reply so a scripted turn completes."""
+
+    protocol_version = "HTTP/1.1"
+    server_version = "statuslines-preview"
+    sys_version = ""
+    reply = {}
+
+    def _send_json(self, status, payload):
+        body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _read_request(self):
+        """The request body as a dict, or None when Content-Length is not a number."""
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return None
+        if length <= 0 or length > MAX_REQUEST_BYTES:
+            return {}
+        try:
+            request = json.loads(self.rfile.read(length))
+        except ValueError:
+            return {}
+        return request if isinstance(request, dict) else {}
+
+    def do_POST(self):
+        path = self.path.split("?", 1)[0]
+        request = self._read_request()
+        if request is None:
+            self._send_json(400, BAD_LENGTH)
+            return
+        if path == COUNT_TOKENS_PATH:
+            self._send_json(200, {"input_tokens": self.reply["usage"]["input_tokens"]})
+            return
+        if path != MESSAGES_PATH:
+            self._send_json(404, NOT_FOUND)
+            return
+        model = canned_model(request)
+        if not request.get("stream"):
+            self._send_json(200, canned_message(model, self.reply))
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        for event, data in canned_message_events(model, self.reply):
+            chunk = "event: %s\ndata: %s\n\n" % (event, json.dumps(data, separators=(",", ":")))
+            self.wfile.write(chunk.encode("utf-8"))
+            self.wfile.flush()
+
+    def do_GET(self):
+        self._send_json(404, NOT_FOUND)
+
+    def log_message(self, _format, *_args):
+        return
+
+
+def serve_canned_messages(listen, port, reply_path):
+    if os.geteuid() == 0:
+        sys.exit("canned model server: refusing to run as root")
+    with open(reply_path, encoding="utf-8") as reply_file:
+        CannedMessagesHandler.reply = json.load(reply_file)
+    UsageServer((listen, port), CannedMessagesHandler).serve_forever()
+
+
 def self_test():
     expected = "Bearer " + SELF_TEST_TOKEN
     results = {
@@ -124,10 +257,15 @@ def main():
     parser.add_argument("--key")
     parser.add_argument("--response")
     parser.add_argument("--token")
+    parser.add_argument("--canned-reply")
     args = parser.parse_args()
 
     if args.self_test:
         self_test()
+        return
+
+    if args.canned_reply:
+        serve_canned_messages(args.listen, args.port, args.canned_reply)
         return
 
     for name in ("cert", "key", "response", "token"):
