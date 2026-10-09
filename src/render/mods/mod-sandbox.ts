@@ -4,8 +4,11 @@ import { buildNetworkOption } from '../e2b-network'
 import { E2B_MOD_TEMPLATE_ID } from '../e2b-template'
 
 const SANDBOX_USER = 'user'
-const TARBALL_PATH = '/home/user/.statuslines/mod.tar.gz'
-const PLUGIN_DIR = '/home/user/plugins/mod'
+/** Harness files the recorder and importer write as `user`. */
+export const SANDBOX_WORK_DIR = '/home/user/.statuslines'
+export const SANDBOX_PLUGINS_DIR = '/home/user/plugins'
+const TARBALL_PATH = `${SANDBOX_WORK_DIR}/mod.tar.gz`
+const PLUGIN_DIR = `${SANDBOX_PLUGINS_DIR}/mod`
 /** Sandbox lifetime ceiling. The `finally` kill is the real teardown; this is a backstop. */
 const SANDBOX_TIMEOUT_MS = 5 * 60_000
 const COMMAND_TIMEOUT_MS = 60_000

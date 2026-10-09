@@ -52,8 +52,11 @@ const PROMPT_GLYPH = '❯'
 const versionSchema = z.string().regex(/^\d+\.\d+\.\d+$/)
 const screenSchema = z.array(z.string()).length(TERMINAL.rows)
 
-async function claudeCodeVersion(sandbox: RecordingSandbox): Promise<string> {
-  const { exitCode, stdout, stderr } = await sandbox.run(`${SANDBOX_CLAUDE_CODE_BIN} --version`)
+async function claudeCodeVersion(sandbox: RecordingSandbox, scenario: Scenario): Promise<string> {
+  const { exitCode, stdout, stderr } = await sandbox.run(
+    `${SANDBOX_CLAUDE_CODE_BIN} --version`,
+    sessionEnv(scenario),
+  )
   if (exitCode !== 0) throw new Error(`claude --version failed: ${stderr.trim()}`)
   return versionSchema.parse(stdout.trim().split(' ')[0])
 }
@@ -66,7 +69,7 @@ async function recordSession(
 ): Promise<Uint8Array> {
   const chunks: Uint8Array[] = []
   let lastActivityAt = performance.now()
-  let launchedAt: number | undefined
+  let launchChunk: number | undefined
   let promptShown = false
   const decoder = new TextDecoder()
   const terminal = await sandbox.openTerminal({
@@ -76,7 +79,7 @@ async function recordSession(
     onData: (bytes) => {
       chunks.push(bytes)
       lastActivityAt = performance.now()
-      if (launchedAt !== undefined && !promptShown) {
+      if (launchChunk !== undefined && !promptShown) {
         promptShown = decoder.decode(bytes, { stream: true }).includes(PROMPT_GLYPH)
       }
     },
@@ -92,7 +95,7 @@ async function recordSession(
   }
   try {
     await settle(SHELL_MAX_MS)
-    launchedAt = chunks.length
+    launchChunk = chunks.length
     await send(`clear; ${launchCommand(scenario, modPluginDir)}\r`)
     // Quiet alone is not enough: Claude Code can be silent for 2 s while it starts, and a prompt
     // typed then stayed unsubmitted in a measured run.
@@ -104,7 +107,7 @@ async function recordSession(
       }
       await settle(STEP_MAX_MS)
     }
-    return Buffer.concat(chunks.slice(launchedAt))
+    return Buffer.concat(chunks.slice(launchChunk))
   } finally {
     await terminal.kill()
   }
@@ -122,7 +125,7 @@ export const e2bModRecorder: ModRecorder = {
   record: ({ mod, inputSteps }) =>
     withRecordingSandbox(mod?.source ?? null, async (sandbox) => {
       const scenario = feedScenario()
-      const version = await claudeCodeVersion(sandbox)
+      const version = await claudeCodeVersion(sandbox, scenario)
       const seed = {
         target: mod?.pluginName ?? null,
         nowMs: Date.now(),

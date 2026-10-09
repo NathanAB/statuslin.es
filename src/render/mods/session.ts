@@ -8,18 +8,21 @@ import {
   SANDBOX_REPLAY_DIR,
 } from '../e2b-template'
 import type { Scenario } from '../types'
+import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
 import { cannedReply, feedFile, feedStdin } from './scenario-feed'
 
 export const TERMINAL = { cols: 100, rows: 30 }
 
 const HOME = '/home/user/session-home'
 const CONFIG_DIR = `${HOME}/.claude`
-const WORK_DIR = '/home/user/.statuslines'
+const WORK_DIR = SANDBOX_WORK_DIR
 /** The feed plugin reads this path literally (sandbox/scenario-feed/hooks/register.ts). */
 export const FEED_FILE = `${WORK_DIR}/feed.json`
 export const REPLY_FILE = `${WORK_DIR}/reply.json`
-export const FEED_PLUGIN_DIR = '/home/user/plugins/scenario-feed'
+export const FEED_PLUGIN_DIR = `${SANDBOX_PLUGINS_DIR}/scenario-feed`
+const MODEL_HOST = '127.0.0.1'
 const MODEL_PORT = 8787
+const MODEL_URL = `http://${MODEL_HOST}:${MODEL_PORT}`
 const FAKE_API_KEY = `sk-ant-api03-${'statuslinespreview'.padEnd(80, '0')}-AA`
 const FEED_PLUGIN_ASSETS = ['.claude-plugin/plugin.json', 'hooks/hooks.json', 'hooks/register.ts']
 const FEED_PLUGIN_SRC = join(import.meta.dirname, 'sandbox/scenario-feed')
@@ -42,7 +45,7 @@ export function sessionEnv(scenario: Scenario): Record<string, string> {
     HOME,
     CLAUDE_CONFIG_DIR: CONFIG_DIR,
     ANTHROPIC_API_KEY: FAKE_API_KEY,
-    ANTHROPIC_BASE_URL: `http://127.0.0.1:${MODEL_PORT}`,
+    ANTHROPIC_BASE_URL: MODEL_URL,
     DISABLE_TELEMETRY: '1',
     DISABLE_AUTOUPDATER: '1',
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
@@ -101,7 +104,6 @@ export function setupCommand(scenario: Scenario): string {
   const { workspace } = feedStdin(scenario)
   const { host, owner, name } = workspace.repo
   const branch = scenario.git?.branch ?? 'main'
-  const modelUrl = `http://127.0.0.1:${MODEL_PORT}/`
   return [
     `mkdir -p ${workspace.current_dir}`,
     `cd ${workspace.current_dir}`,
@@ -110,8 +112,8 @@ export function setupCommand(scenario: Scenario): string {
     'echo seed > README.md',
     'git add -A',
     'git -c user.email=preview@statuslin.es -c user.name=preview commit -qm seed',
-    `(nohup python3 ${SANDBOX_CANNED_MODEL_SERVER_DEST} --listen 127.0.0.1 --port ${MODEL_PORT} --canned-reply ${REPLY_FILE} >${WORK_DIR}/model.log 2>&1 &)`,
-    `for i in $(seq 1 50); do curl -s -o /dev/null ${modelUrl} && exit 0; sleep 0.1; done; cat ${WORK_DIR}/model.log >&2; exit 1`,
+    `(nohup python3 ${SANDBOX_CANNED_MODEL_SERVER_DEST} --listen ${MODEL_HOST} --port ${MODEL_PORT} --canned-reply ${REPLY_FILE} >${WORK_DIR}/model.log 2>&1 &)`,
+    `for i in $(seq 1 50); do curl -s -o /dev/null ${MODEL_URL}/ && exit 0; sleep 0.1; done; cat ${WORK_DIR}/model.log >&2; exit 1`,
   ].join(' && ')
 }
 
