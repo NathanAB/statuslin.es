@@ -71,8 +71,7 @@ export async function runDelist(argv: string[], { db, log }: DelistDeps): Promis
     return 0
   }
 
-  const confirmArg = argv.find((a) => a.startsWith('--confirm='))
-  const refusals = confirmationGuards(slug, confirmArg?.slice('--confirm='.length) ?? null)
+  const refusals = confirmationGuards(slug, argv)
   if (refusals.length > 0) {
     log(`delisting "${slug}" will uninstall it for every subscriber at their next session start.`)
     for (const g of refusals) log(guardLine(g))

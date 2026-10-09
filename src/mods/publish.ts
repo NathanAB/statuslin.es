@@ -110,13 +110,17 @@ export function publishGuards(facts: PublishFacts): Guard[] {
   return [...refusals, ...footprintGuards(facts), ...pluginVersionGuards(facts)]
 }
 
-export function confirmationGuards(slug: string, confirm: string | null): Guard[] {
+const CONFIRM_FLAG = '--confirm='
+
+/** Destructive steps need the slug typed back as `--confirm=<slug>`. */
+export function confirmationGuards(slug: string, argv: string[]): Guard[] {
+  const confirm = argv.find((a) => a.startsWith(CONFIRM_FLAG))?.slice(CONFIRM_FLAG.length)
   if (confirm === slug) return []
   return [
     {
       level: 'refuse',
       name: 'confirmation',
-      message: `type the slug back to confirm: --confirm=${slug}`,
+      message: `type the slug back to confirm: ${CONFIRM_FLAG}${slug}`,
     },
   ]
 }

@@ -106,13 +106,7 @@ async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
 
 function parseArgs(argv: string[]) {
   const [slug, sha] = argv.filter((a) => !a.startsWith('--'))
-  const confirmArg = argv.find((a) => a.startsWith('--confirm='))
-  return {
-    slug,
-    sha,
-    apply: argv.includes('--apply'),
-    confirm: confirmArg ? confirmArg.slice('--confirm='.length) : null,
-  }
+  return { slug, sha, apply: argv.includes('--apply') }
 }
 
 function refused(guards: Guard[]): boolean {
@@ -123,7 +117,7 @@ export async function runPublish(
   argv: string[],
   { db, github, log }: PublishDeps,
 ): Promise<number> {
-  const { slug, sha, apply, confirm } = parseArgs(argv)
+  const { slug, sha, apply } = parseArgs(argv)
   if (!slug || !sha) {
     log(USAGE)
     return 1
@@ -136,7 +130,7 @@ export async function runPublish(
   }
 
   const { modId, targetId, facts } = await loadFacts(db, github, slug, sha)
-  const guards = [...publishGuards(facts), ...(apply ? confirmationGuards(slug, confirm) : [])]
+  const guards = [...publishGuards(facts), ...(apply ? confirmationGuards(slug, argv) : [])]
   for (const line of publishReport(facts)) log(line)
   for (const g of guards) log(guardLine(g))
 
