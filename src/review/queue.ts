@@ -8,6 +8,7 @@ import { withHttpStatus } from '@/lib/http.server'
 import { getPreviews } from '@/render/store'
 import type { RenderedPreview } from '@/render/types'
 import { assertAdmin } from './admin'
+import { getLiveVersions, type LiveVersion } from './live-version'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -47,6 +48,8 @@ export interface DashboardRow {
     finishedAt: Date | null
   }
   previews: RenderedPreview[]
+  /** Set on an admin queue row for an update: the config's live version, to review against. */
+  live?: LiveVersion
 }
 
 // Problems first so a failure or a growing backlog is at the top where an admin will see it.
@@ -163,15 +166,30 @@ export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
     .limit(50)
   const out: DashboardRow[] = []
   const seen = new Set<string>()
+  const liveVersions = await getLiveVersions(
+    database,
+    pendingRows.flatMap((r) => liveVersionIdOf(r) ?? []),
+  )
   for (const r of [...pendingRows, ...contactRows]) {
     // One row per version. There's no DB uniqueness on render_jobs.config_version_id, so a stray
     // second job row would otherwise duplicate the version. The ordering puts the highest-priority
     // job first, so keep that one.
     if (seen.has(r.version.id)) continue
     seen.add(r.version.id)
-    out.push(await mapRow(database, r, true))
+    const row = await mapRow(database, r, true)
+    const liveId = liveVersionIdOf(r)
+    const live = liveId === undefined ? undefined : liveVersions.get(liveId)
+    out.push(live ? { ...row, live } : row)
   }
   return out
+}
+
+/** An update is a pending version of a config whose live version is another version. */
+function liveVersionIdOf(r: RawRow): string | undefined {
+  const liveId = r.config.currentVersionId
+  return r.version.status === 'pending' && liveId !== null && liveId !== r.version.id
+    ? liveId
+    : undefined
 }
 
 /** Header-shaped user, for rendering the signed-in admin in the page header. */
