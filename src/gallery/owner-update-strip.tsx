@@ -17,7 +17,7 @@ export function OwnerUpdateStrip({
     <Hint
       icon={UserRoundCheck}
       action={
-        <Button asChild variant="outline" size="sm">
+        <Button asChild size="sm">
           <Link to="/submit" search={{ update: slug }}>
             <FilePen />
             Submit update

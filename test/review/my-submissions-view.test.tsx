@@ -165,10 +165,10 @@ describe('MySubmissionsView update state', () => {
     expect(markup).toMatch(/<div class="[^"]*\bz-10\b[^"]*"><a href="\/submit\?update=my-line"/)
   })
 
-  it('styles Submit update as an outline button when no update was rejected', () => {
+  it('styles Submit update as a primary button when no update was rejected', () => {
     expect(
       updateButton(html(row({ configStatus: 'published', versionStatus: 'approved' }))),
-    ).toEqual({ variant: 'outline', label: 'Submit update' })
+    ).toEqual({ variant: 'default', label: 'Submit update' })
     const pending = html(
       row({
         configStatus: 'published',
@@ -181,7 +181,7 @@ describe('MySubmissionsView update state', () => {
         },
       }),
     )
-    expect(updateButton(pending)).toEqual({ variant: 'outline', label: 'Submit update' })
+    expect(updateButton(pending)).toEqual({ variant: 'default', label: 'Submit update' })
   })
 
   it('puts the update state just above the button, below the card details', () => {

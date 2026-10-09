@@ -20,7 +20,7 @@ function pendingLine(update: UpdateSummary | null): string | null {
 }
 
 /** The foot of an author's published card: where their latest update stands, then the way to
- *  submit one. A rejected update makes the button the primary action. */
+ *  submit one. */
 export function UpdateDetails({ slug, update }: { slug: string; update: UpdateSummary | null }) {
   const line = pendingLine(update)
   const rejected = update?.status === 'rejected'
@@ -44,7 +44,7 @@ export function UpdateDetails({ slug, update }: { slug: string; update: UpdateSu
       {/* The outer row shrink-wraps the lifted one, so only the button covers the card link. */}
       <Row gap={2}>
         <Row gap={2} aboveOverlay>
-          <Button asChild variant={rejected ? 'default' : 'outline'}>
+          <Button asChild>
             <Link to="/submit" search={{ update: slug }}>
               <FilePen />
               {rejected ? 'Submit a new update' : 'Submit update'}

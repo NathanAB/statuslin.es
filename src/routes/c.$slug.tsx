@@ -106,6 +106,8 @@ function ConfigDetail() {
   return (
     <PageShell user={user}>
       <Stack gap={6}>
+        <OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />
+
         <Stack gap={3}>
           <ConfigBreadcrumb title={detail.title} primaryFacet={detail.primaryFacet} />
           <Row gap={3} wrap justify="between">
@@ -132,8 +134,6 @@ function ConfigDetail() {
             </Stack>
           )}
         </Stack>
-
-        <OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />
 
         <AdoptPrompt
           source={detail.source}
