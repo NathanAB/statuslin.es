@@ -1,6 +1,6 @@
-import { type ChildProcess, spawn } from 'node:child_process'
+import { type ChildProcess, spawn, spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { createServer } from 'node:net'
+import { connect, createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -122,5 +122,39 @@ describe('sandbox canned model server', () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ input_tokens: REPLY.usage.input_tokens })
+  })
+
+  it('answers 400 to a non-numeric Content-Length and keeps serving', async () => {
+    const { port } = new URL(baseUrl)
+    const statusLine = await new Promise<string>((done, fail) => {
+      const socket = connect(Number(port), '127.0.0.1', () => {
+        socket.write('POST /v1/messages HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Length: abc\r\n\r\n')
+      })
+      let received = ''
+      socket.setEncoding('utf8')
+      socket.on('data', (chunk) => {
+        received += chunk
+      })
+      socket.on('end', () => done(received.split('\r\n')[0] ?? ''))
+      socket.on('error', fail)
+    })
+
+    expect(statusLine).toBe('HTTP/1.1 400 Bad Request')
+    expect((await postJson('/v1/messages', request)).status).toBe(200)
+    expect((await postJson('/v1/messages/count_tokens', request)).status).toBe(200)
+  })
+
+  it('refuses to serve canned replies as root', () => {
+    const asRoot = [
+      'import os, runpy, sys',
+      'os.geteuid = lambda: 0',
+      `sys.argv = ["server.py", "--port", "0", "--canned-reply", ${JSON.stringify(join(workDir, 'reply.json'))}]`,
+      `runpy.run_path(${JSON.stringify(SERVER_PATH)}, run_name="__main__")`,
+    ].join('\n')
+
+    const result = spawnSync('python3', ['-c', asRoot], { encoding: 'utf8', timeout: 5_000 })
+
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain('refusing to run as root')
   })
 })
