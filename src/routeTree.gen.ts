@@ -23,6 +23,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
+import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
 import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
 import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
@@ -103,6 +104,11 @@ const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
   path: '/og/home.png',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModsSlugRoute = ModsSlugRouteImport.update({
+  id: '/mods/$slug',
+  path: '/mods/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
   id: '/guide_/claude-desktop',
   path: '/guide/claude-desktop',
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide/claude-desktop'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide/claude-desktop'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide_/claude-desktop'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
@@ -323,6 +335,7 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   ComparePairRoute: typeof ComparePairRoute
   GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
+  ModsSlugRoute: typeof ModsSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   StatusLinesBestRoute: typeof StatusLinesBestRoute
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgHomeDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mods/$slug': {
+      id: '/mods/$slug'
+      path: '/mods/$slug'
+      fullPath: '/mods/$slug'
+      preLoaderRoute: typeof ModsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guide_/claude-desktop': {
       id: '/guide_/claude-desktop'
       path: '/guide/claude-desktop'
@@ -515,6 +535,7 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   ComparePairRoute: ComparePairRoute,
   GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
+  ModsSlugRoute: ModsSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
   StatusLinesBestRoute: StatusLinesBestRoute,
