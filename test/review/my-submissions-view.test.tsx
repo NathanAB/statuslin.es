@@ -85,7 +85,7 @@ describe('MySubmissionsView update state', () => {
       row({
         configStatus: 'published',
         versionStatus: 'approved',
-        update: { versionNumber: 2, status: 'pending', renderStatus },
+        update: { versionNumber: 2, status: 'pending', renderStatus, rejectionReason: null },
       }),
     )
     expect(markup).toContain('href="/c/my-line"')
@@ -93,16 +93,47 @@ describe('MySubmissionsView update state', () => {
     expect(markup).toContain(line)
   })
 
-  it('shows no update line for an update that is no longer pending', () => {
+  it('keeps a published card linked and shows a rejected update with its reason', () => {
     const markup = html(
       row({
         configStatus: 'published',
         versionStatus: 'approved',
-        update: { versionNumber: 2, status: 'rejected', renderStatus: 'done' },
+        update: {
+          versionNumber: 2,
+          status: 'rejected',
+          renderStatus: 'done',
+          rejectionReason: 'Breaks on macOS',
+        },
       }),
     )
-    expect(markup).not.toContain('Update v2')
-    expect(markup).toContain(UPDATE_LINK)
+    expect(markup).toContain('href="/c/my-line"')
+    expect(markup).toContain('published')
+    expect(markup).not.toContain('Not accepted')
+    expect(markup).toContain('Update not accepted')
+    expect(markup).toMatch(/class="ph-no-capture">.*Breaks on macOS/)
+    expect(markup).toMatch(
+      /<div class="[^"]*\bz-10\b[^"]*"><a href="\/submit\?update=my-line">Submit a new update<\/a>/,
+    )
+    expect(markup).not.toContain('Submit update')
+    expect(markup).not.toContain('Fix and resubmit')
+  })
+
+  it('shows a rejected update without a reason block when none was stored', () => {
+    const markup = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: {
+          versionNumber: 2,
+          status: 'rejected',
+          renderStatus: 'done',
+          rejectionReason: null,
+        },
+      }),
+    )
+    expect(markup).toContain('Update not accepted')
+    expect(markup).toContain('Submit a new update')
+    expect(markup).not.toContain('ph-no-capture')
   })
 
   it('offers Submit update only on a published config', () => {
