@@ -1,5 +1,24 @@
 const GITHUB_API = 'https://api.github.com'
+const GITHUB_ARCHIVES = 'https://codeload.github.com'
 const REQUEST_TIMEOUT_MS = 10_000
+
+/** Caps on a mod repository's download; every mod the #38 spike rendered fits well inside both. */
+export const TARBALL_MAX_BYTES = 20 * 1024 * 1024
+export const TARBALL_MAX_FILES = 2_000
+
+export interface RepoInfo {
+  /** `owner/repo` as GitHub spells it, the canonical form of the repository URL. */
+  fullName: string
+  /** SPDX id; null for no licence and for GitHub's NOASSERTION. */
+  license: string | null
+  defaultBranch: string
+}
+
+export interface GitHubSource {
+  repoInfo(repoUrl: string): Promise<RepoInfo>
+  /** The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. */
+  tarball(repoUrl: string, sha: string): Promise<Uint8Array>
+}
 
 export interface GitHub {
   commitIsOnDefaultBranch(repoUrl: string, sha: string): Promise<boolean>
@@ -7,38 +26,83 @@ export interface GitHub {
   commitIsFetchable(repoUrl: string, sha: string): Promise<boolean>
 }
 
-function repoApiUrl(repoUrl: string): string {
+function repoPath(repoUrl: string): string {
   const match = /^https:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?\/?$/.exec(
     repoUrl,
   )
   if (!match || match[2] === '.' || match[2] === '..')
     throw new Error(`"${repoUrl}" is not a https://github.com/<owner>/<repo> URL`)
-  return `${GITHUB_API}/repos/${match[1]}/${match[2]}`
+  return `${match[1]}/${match[2]}`
+}
+
+const repoApiUrl = (repoUrl: string) => `${GITHUB_API}/repos/${repoPath(repoUrl)}`
+
+async function readAtMost(res: Response, maxBytes: number, url: string): Promise<Uint8Array> {
+  const tooLarge = () => new Error(`${url} is larger than ${maxBytes} bytes`)
+  if (Number(res.headers.get('content-length') ?? 0) > maxBytes) throw tooLarge()
+  const reader = res.body?.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (let chunk = await reader?.read(); chunk && !chunk.done; chunk = await reader?.read()) {
+    size += chunk.value.byteLength
+    if (size > maxBytes) {
+      await reader?.cancel()
+      throw tooLarge()
+    }
+    chunks.push(chunk.value)
+  }
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
 }
 
 /** `fetchFn` is injected so tests never touch the network. */
 export function createGitHub(
   fetchFn: typeof fetch = fetch,
   timeoutMs = REQUEST_TIMEOUT_MS,
-): GitHub {
-  async function request(url: string, missingStatuses: number[] = []): Promise<unknown | null> {
-    const res = await fetchFn(url, {
+): GitHub & GitHubSource {
+  const send = (url: string) =>
+    fetchFn(url, {
       headers: { accept: 'application/vnd.github+json', 'user-agent': 'statuslin.es' },
       signal: AbortSignal.timeout(timeoutMs),
     })
+
+  async function request(url: string, missingStatuses: number[] = []): Promise<unknown | null> {
+    const res = await send(url)
     if (missingStatuses.includes(res.status)) return null
     if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
     return res.json()
   }
 
+  async function repoInfo(repoUrl: string): Promise<RepoInfo> {
+    // biome-ignore-start lint/style/useNamingConvention: GitHub API response fields.
+    const repo = (await request(repoApiUrl(repoUrl))) as {
+      full_name: string
+      default_branch: string
+      license: { spdx_id: string | null } | null
+    }
+    const spdx = repo.license?.spdx_id
+    return {
+      fullName: repo.full_name,
+      license: spdx && spdx !== 'NOASSERTION' ? spdx : null,
+      defaultBranch: repo.default_branch,
+    }
+    // biome-ignore-end lint/style/useNamingConvention: GitHub API response fields.
+  }
+
   return {
+    repoInfo,
+
     async commitIsOnDefaultBranch(repoUrl, sha) {
-      const repo = repoApiUrl(repoUrl)
-      // biome-ignore lint/style/useNamingConvention: GitHub API response field.
-      const { default_branch } = (await request(repo)) as { default_branch: string }
-      const comparison = (await request(`${repo}/compare/${sha}...${default_branch}`, [404])) as {
-        status: string
-      } | null
+      const { defaultBranch } = await repoInfo(repoUrl)
+      const comparison = (await request(
+        `${repoApiUrl(repoUrl)}/compare/${sha}...${defaultBranch}`,
+        [404],
+      )) as { status: string } | null
       return comparison?.status === 'ahead' || comparison?.status === 'identical'
     },
 
@@ -47,6 +111,19 @@ export function createGitHub(
         files: { filename: string }[]
       }
       return files.map((f) => f.filename)
+    },
+
+    async tarball(repoUrl, sha) {
+      const { truncated, tree } = (await request(
+        `${repoApiUrl(repoUrl)}/git/trees/${sha}?recursive=1`,
+      )) as { truncated: boolean; tree: unknown[] }
+      if (truncated || tree.length > TARBALL_MAX_FILES) {
+        throw new Error(`${repoUrl} at ${sha} has more than ${TARBALL_MAX_FILES} files`)
+      }
+      const url = `${GITHUB_ARCHIVES}/${repoPath(repoUrl)}/tar.gz/${sha}`
+      const res = await send(url)
+      if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
+      return readAtMost(res, TARBALL_MAX_BYTES, url)
     },
 
     async commitIsFetchable(repoUrl, sha) {
