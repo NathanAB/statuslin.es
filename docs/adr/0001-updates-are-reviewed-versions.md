@@ -1,0 +1,3 @@
+# Every change to a published config is a new reviewed version
+
+Submitters can update a published config, but every change, a text-only typo fix included, becomes a new version that an admin reviews before it goes live; the live version keeps serving until then. To make that possible, a config's listing text (title, description) lives on the version, not the config, so pending text can wait in review beside its script. We chose this over letting text edits go live instantly because it keeps one path to the gallery and holds to `SECURITY.md`'s rule that nothing unreviewed is swapped in after approval. This reverses the July 2026 rejection-email spec, which excluded a general published-config update flow.
