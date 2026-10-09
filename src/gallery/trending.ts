@@ -1,6 +1,6 @@
 import { getTableName, type SQL, sql } from 'drizzle-orm'
 import type { PgColumn } from 'drizzle-orm/pg-core'
-import { copyEvents } from '@/db/schema'
+import { copyEvents, modCopyEvents } from '@/db/schema'
 
 export const TRENDING_HALF_LIFE_SECONDS = 7 * 24 * 60 * 60
 
@@ -12,6 +12,11 @@ export interface CopyEventColumns {
 export const CONFIG_COPY_EVENTS: CopyEventColumns = {
   ownerId: copyEvents.configId,
   createdAt: copyEvents.createdAt,
+}
+
+export const MOD_COPY_EVENTS: CopyEventColumns = {
+  ownerId: modCopyEvents.modId,
+  createdAt: modCopyEvents.createdAt,
 }
 
 function qualified(column: PgColumn): SQL {

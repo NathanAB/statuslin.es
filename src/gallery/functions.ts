@@ -8,6 +8,7 @@ import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
 import { sitemapResponse } from '@/lib/sitemap'
+import { getPublishedConfigs } from './config-items'
 import { getPublishedInventory } from './inventory'
 import {
   coercePage,
@@ -19,7 +20,6 @@ import {
   getConfigBySlug,
   getFacetCards,
   getFacetStats,
-  getPublishedConfigs,
   getPublishedCount,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,

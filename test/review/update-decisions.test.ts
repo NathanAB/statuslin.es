@@ -6,11 +6,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { runCommand } from '@/adopt/install'
 import { listPublishedSlugsMissingContent } from '@/content/generation-workflow'
 import * as schema from '@/db/schema'
+import { getPublishedConfigs } from '@/gallery/config-items'
 import { getFacetPage, llmsTxtResponseForRoute } from '@/gallery/functions'
 import {
   getCardsByCopies,
   getConfigBySlug,
-  getPublishedConfigs,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,
 } from '@/gallery/queries'

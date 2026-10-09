@@ -4,8 +4,9 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { getPublishedConfigs } from '@/gallery/config-items'
 import { getAvailableTags } from '@/gallery/facet-queries'
-import { getPublishedConfigs, getPublishedCount } from '@/gallery/queries'
+import { getPublishedCount } from '@/gallery/queries'
 import { storePreviews } from '@/render/store'
 
 let client: PGlite

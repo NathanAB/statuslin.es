@@ -4,6 +4,7 @@ import * as schema from '@/db/schema'
 import { getConfigSource } from '@/gallery/config-items'
 import { type GalleryItem, mergeGalleryItems } from '@/gallery/gallery-items'
 import { getModSource } from '@/mods/gallery-queries'
+import { addPublishedConfig } from '../gallery/seed-configs'
 import { addMod, addVersion, openTestDb, setCurrentVersion, sha, type TestDb } from './seed-mods'
 
 let db: TestDb
@@ -21,7 +22,6 @@ beforeEach(async () => {
 })
 
 const HOUR_MS = 60 * 60 * 1000
-let shaChar = 0
 
 async function publishedMod(
   slug: string,
@@ -29,7 +29,7 @@ async function publishedMod(
 ): Promise<string> {
   const modId = await addMod(db, slug, opts.status ?? 'published')
   const versionId = await addVersion(db, modId, {
-    commitSha: sha((shaChar++ % 10).toString()),
+    commitSha: sha('a'),
     versionNumber: 1,
     rendered: opts.screenshot === undefined,
     repoUrl: `https://github.com/octocat/${slug}`,
@@ -43,43 +43,6 @@ async function publishedMod(
     await db.update(schema.mods).set({ allTags: opts.allTags }).where(eq(schema.mods.id, modId))
   }
   return modId
-}
-
-async function publishedConfig(slug: string): Promise<string> {
-  await db
-    .insert(schema.user)
-    .values({
-      id: 'u1',
-      name: 'Author',
-      email: 'author@test.com',
-      emailVerified: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .onConflictDoNothing()
-  const [config] = await db
-    .insert(schema.configs)
-    .values({ slug, authorId: 'u1', status: 'published', firstPublishedAt: new Date() })
-    .returning()
-  const configId = config?.id as string
-  const [version] = await db
-    .insert(schema.configVersions)
-    .values({
-      configId,
-      versionNumber: 1,
-      title: slug,
-      description: '',
-      source: 'echo hi',
-      interpreter: 'bash',
-      contentSha256: slug.padEnd(64, '0'),
-      status: 'approved',
-    })
-    .returning()
-  await db
-    .update(schema.configs)
-    .set({ currentVersionId: version?.id as string })
-    .where(eq(schema.configs.id, configId))
-  return configId
 }
 
 const slugs = (items: GalleryItem[]) => items.map((item) => `${item.kind}:${item.card.slug}`)
@@ -139,7 +102,7 @@ describe('trending across kinds', () => {
   it('weighs a mod copy the same as a config copy of the same age', async () => {
     const now = Date.now()
     const modId = await publishedMod('mod-copied-now')
-    const configId = await publishedConfig('config-copied-now')
+    const configId = await addPublishedConfig(db, 'config-copied-now')
     await db.insert(schema.modCopyEvents).values({ modId, ipHash: 'a', createdAt: new Date(now) })
     await db.insert(schema.copyEvents).values({ configId, ipHash: 'a', createdAt: new Date(now) })
 
@@ -155,7 +118,7 @@ describe('trending across kinds', () => {
   it('ranks a recently copied mod above a config copied a week ago', async () => {
     const now = Date.now()
     const modId = await publishedMod('fresh-mod')
-    const configId = await publishedConfig('stale-config')
+    const configId = await addPublishedConfig(db, 'stale-config')
     await publishedMod('never-copied')
     await db
       .insert(schema.modCopyEvents)

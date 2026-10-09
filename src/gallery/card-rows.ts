@@ -45,7 +45,14 @@ export function mapCardRows(
   rows: GalleryCardRow[],
   cardPreviews: Map<string, AnsiSegment[]>,
 ): GalleryCard[] {
-  return rows.map((r) => ({
+  return rows.map((row) => mapCardRow(row, cardPreviews))
+}
+
+export function mapCardRow(
+  r: GalleryCardRow,
+  cardPreviews: Map<string, AnsiSegment[]>,
+): GalleryCard {
+  return {
     configId: r.config.id,
     slug: r.config.slug,
     title: r.version.title,
@@ -63,5 +70,5 @@ export function mapCardRows(
     networkHosts: r.version.networkHosts ?? [],
     readsClaudeToken: r.version.readsClaudeToken ?? false,
     tags: r.config.allTags ?? [],
-  }))
+  }
 }
