@@ -1,8 +1,11 @@
+import { Link } from '@tanstack/react-router'
+import { FilePen } from 'lucide-react'
 import type { UpdateSummary } from '@/review/my-submissions'
 import { AnalyticsPrivate } from '@/ui/analytics-private'
+import { Button } from '@/ui/button'
 import { Row, Stack } from '@/ui/layout'
 import { Notice } from '@/ui/notice'
-import { Text, TextLink } from '@/ui/text'
+import { Text } from '@/ui/text'
 
 const UPDATE_RENDER_LINE: Record<string, (versionNumber: number) => string> = {
   queued: (n) => `Update v${n} queued to render`,
@@ -16,7 +19,8 @@ function pendingLine(update: UpdateSummary | null): string | null {
   return (UPDATE_RENDER_LINE[update.renderStatus] ?? inReview)(update.versionNumber)
 }
 
-/** On an author's published card: where their latest update stands, and the way to submit one. */
+/** The foot of an author's published card: where their latest update stands, then the way to
+ *  submit one. A rejected update makes the button the primary action. */
 export function UpdateDetails({ slug, update }: { slug: string; update: UpdateSummary | null }) {
   const line = pendingLine(update)
   const rejected = update?.status === 'rejected'
@@ -38,9 +42,12 @@ export function UpdateDetails({ slug, update }: { slug: string; update: UpdateSu
         </Stack>
       ) : null}
       <Row gap={2} aboveOverlay>
-        <TextLink to="/submit" search={{ update: slug }}>
-          {rejected ? 'Submit a new update' : 'Submit update'}
-        </TextLink>
+        <Button asChild variant={rejected ? 'default' : 'outline'}>
+          <Link to="/submit" search={{ update: slug }}>
+            <FilePen />
+            {rejected ? 'Submit a new update' : 'Submit update'}
+          </Link>
+        </Button>
       </Row>
     </Stack>
   )

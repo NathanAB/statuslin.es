@@ -11,6 +11,7 @@ vi.mock('@tanstack/react-router', async (orig) => ({
     params,
     search,
     children,
+    ...props
   }: {
     to: string
     params?: Record<string, string>
@@ -19,7 +20,11 @@ vi.mock('@tanstack/react-router', async (orig) => ({
   }) => {
     const path = params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to
     const query = search ? `?${new URLSearchParams(search).toString()}` : ''
-    return <a href={`${path}${query}`}>{children}</a>
+    return (
+      <a href={`${path}${query}`} {...props}>
+        {children}
+      </a>
+    )
   },
 }))
 
@@ -73,6 +78,15 @@ const html = (r: MySubmissionRow) =>
   renderToStaticMarkup(<MySubmissionsView rows={[r]} user={USER} />)
 const UPDATE_LINK = 'href="/submit?update=my-line"'
 
+/** The update link's button variant and visible label, or null when the card has none. */
+function updateButton(markup: string): { variant: string; label: string } | null {
+  const match = markup.match(
+    /<a href="\/submit\?update=my-line"[^>]*data-slot="button"[^>]*data-variant="(\w+)"[^>]*>(.*?)<\/a>/,
+  )
+  if (!match) return null
+  return { variant: match[1] ?? '', label: (match[2] ?? '').replace(/<[^>]+>/g, '') }
+}
+
 describe('MySubmissionsView update state', () => {
   it.each([
     ['queued', 'Update v2 queued to render'],
@@ -111,9 +125,7 @@ describe('MySubmissionsView update state', () => {
     expect(markup).not.toContain('Not accepted')
     expect(markup).toContain('Update not accepted')
     expect(markup).toMatch(/class="ph-no-capture">.*Breaks on macOS/)
-    expect(markup).toMatch(
-      /<div class="[^"]*\bz-10\b[^"]*"><a href="\/submit\?update=my-line">Submit a new update<\/a>/,
-    )
+    expect(updateButton(markup)).toEqual({ variant: 'default', label: 'Submit a new update' })
     expect(markup).not.toContain('Submit update')
     expect(markup).not.toContain('Fix and resubmit')
   })
@@ -151,6 +163,46 @@ describe('MySubmissionsView update state', () => {
   it('lifts Submit update above the card-wide title link so it stays clickable', () => {
     const markup = html(row({ configStatus: 'published', versionStatus: 'approved' }))
     expect(markup).toMatch(/<div class="[^"]*\bz-10\b[^"]*"><a href="\/submit\?update=my-line"/)
+  })
+
+  it('styles Submit update as an outline button when no update was rejected', () => {
+    expect(
+      updateButton(html(row({ configStatus: 'published', versionStatus: 'approved' }))),
+    ).toEqual({ variant: 'outline', label: 'Submit update' })
+    const pending = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: {
+          versionNumber: 2,
+          status: 'pending',
+          renderStatus: 'done',
+          rejectionReason: null,
+        },
+      }),
+    )
+    expect(updateButton(pending)).toEqual({ variant: 'outline', label: 'Submit update' })
+  })
+
+  it('puts the update state just above the button, below the card details', () => {
+    const markup = html(
+      row({
+        configStatus: 'published',
+        versionStatus: 'approved',
+        update: {
+          versionNumber: 2,
+          status: 'pending',
+          renderStatus: 'done',
+          rejectionReason: null,
+        },
+      }),
+    )
+    const meta = markup.indexOf('abc123')
+    const state = markup.indexOf('Update v2 in review')
+    const button = markup.indexOf(UPDATE_LINK)
+    expect(meta).toBeGreaterThan(-1)
+    expect(meta).toBeLessThan(state)
+    expect(state).toBeLessThan(button)
   })
 
   it('keeps Fix and resubmit for a rejected draft', () => {

@@ -180,8 +180,6 @@ export function SubmissionCard({
           </Text>
         </Row>
 
-        {updateDetails ? <UpdateDetails {...updateDetails} /> : null}
-
         {version.description ? <Text size="sm">{version.description}</Text> : null}
 
         {isReady && preview ? <StatuslinePreview segments={preview.segments} /> : null}
@@ -227,6 +225,8 @@ export function SubmissionCard({
             )}
           </Stack>
         ) : null}
+
+        {updateDetails ? <UpdateDetails {...updateDetails} /> : null}
       </Stack>
     </SectionCard>
   )
