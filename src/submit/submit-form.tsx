@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 import { HttpError } from '@/lib/http'
 import { CONTENT_LICENSE } from '@/lib/site'
 import { NetworkSection } from '@/submit/network-section'
-import type { ResubmissionDraft } from '@/submit/submit'
+import type { SubmitDraft } from '@/submit/submit'
+import { submitPageCopy } from '@/submit/submit-copy'
 import { submitConfigFn } from '@/submit/submit-fn'
 import type { AppHeaderUser } from '@/ui/app-header'
 import { Button } from '@/ui/button'
@@ -27,9 +28,21 @@ export function SubmitForm({
   initial,
 }: {
   user: AppHeaderUser
-  initial?: ResubmissionDraft | null
+  initial?: SubmitDraft | null
 }) {
-  return <SubmitFormFields key={initial?.versionId ?? 'new'} user={user} initial={initial} />
+  return <SubmitFormFields key={draftKey(initial)} user={user} initial={initial} />
+}
+
+function draftKey(draft: SubmitDraft | null | undefined): string {
+  if (!draft) return 'new'
+  return draft.kind === 'update' ? `update:${draft.slug}` : `resubmission:${draft.versionId}`
+}
+
+function draftTarget(draft: SubmitDraft | null | undefined) {
+  if (!draft) return {}
+  return draft.kind === 'update'
+    ? { updateSlug: draft.slug }
+    : { rejectedVersionId: draft.versionId }
 }
 
 function SubmitFormFields({
@@ -37,7 +50,7 @@ function SubmitFormFields({
   initial,
 }: {
   user: AppHeaderUser
-  initial: ResubmissionDraft | null | undefined
+  initial: SubmitDraft | null | undefined
 }) {
   const posthog = usePostHog()
   const [title, setTitle] = useState(initial?.title ?? '')
@@ -64,7 +77,7 @@ function SubmitFormFields({
           interpreter,
           source,
           networkHosts,
-          ...(initial ? { rejectedVersionId: initial.versionId } : {}),
+          ...draftTarget(initial),
         },
       })
       // The statusline_submitted event fires server-side in submitConfigFn now (ad blockers can't
@@ -150,7 +163,7 @@ function SubmitFormFields({
           </Text>
           <div>
             <Button type="submit" disabled={submitting} size={'lg'}>
-              {submitting ? 'Submitting…' : initial ? 'Resubmit' : 'Submit'}
+              {submitting ? 'Submitting…' : submitPageCopy(initial).button}
             </Button>
           </div>
         </Stack>
