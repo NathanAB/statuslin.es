@@ -10,5 +10,7 @@ export const marketplaceResponseForRoute = createServerOnlyFn(async (): Promise<
   const marketplace = buildMarketplace(siteUrl(), await getMarketplaceRows(db))
   const fetched = marketplaceFetchedEvent(marketplace.plugins.length)
   captureServerEvent(fetched.event, fetched.distinctId, fetched.properties)
+  // forceRemoveDeletedPlugins uninstalls anything a 200 omits; a 503 leaves clients' cached catalog intact.
+  if (marketplace.plugins.length === 0) return new Response(null, { status: 503 })
   return Response.json(marketplace)
 })
