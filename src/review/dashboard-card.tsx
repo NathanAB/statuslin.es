@@ -16,6 +16,7 @@ import {
 import { ReviewDecisionControls } from '@/review/dashboard-rejection-controls'
 import { RejectionDetails } from '@/review/dashboard-rejection-details'
 import { UpdateDetails } from '@/review/dashboard-update-details'
+import { UpdateReview } from '@/review/dashboard-update-review'
 import { requeueRenderJobFn, runNetworkPreviewFn, setReadsClaudeTokenFn } from '@/review/decide'
 import type { UpdateSummary } from '@/review/my-submissions'
 import type { DashboardRow } from '@/review/queue'
@@ -172,6 +173,7 @@ export function SubmissionCard({
     <SectionCard interactive={linked} title={titleFor(version, detailSlug)}>
       <Stack gap={4}>
         <Row gap={2} align="center" wrap>
+          {row.live ? <Badge variant="secondary">{`Update to ${config.slug}`}</Badge> : null}
           <Badge variant={view.variant}>{view.label}</Badge>
           <Text muted size="sm">
             {view.headline}
@@ -187,6 +189,8 @@ export function SubmissionCard({
         {renderJob.status === 'failed' && renderJob.error ? (
           <Notice tone="error">{renderJob.error}</Notice>
         ) : null}
+
+        {row.live ? <UpdateReview version={version} live={row.live} /> : null}
 
         <RejectionDetails version={version} slug={config.slug} showActions={showActions} />
         <ApprovalDetails version={version} showActions={showActions} />
