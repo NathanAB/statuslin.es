@@ -9,7 +9,6 @@ import { StretchedLink } from '@/ui/stretched-link'
 import { Text } from '@/ui/text'
 import { ModPreview } from './mod-preview'
 
-/** A mod in the gallery, laid out like a status line card and labelled as a mod. */
 export function ModCard({ card }: { card: GalleryModCard }) {
   return (
     <Card interactive>

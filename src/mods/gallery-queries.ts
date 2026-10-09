@@ -22,11 +22,10 @@ const MOD_RANKING: RankedColumns = {
   status: mods.status,
   allTags: mods.allTags,
   copyCount: mods.copyCount,
-  publishedAt: mods.createdAt,
+  newSortTime: mods.createdAt,
   copyEvents: MOD_COPY_EVENTS,
 }
 
-/** Published mods as one gallery source: the first `limit` in sort order, and the total. */
 export async function getModSource(db: Db, query: GallerySourceQuery): Promise<GallerySource> {
   const ranking = galleryRanking(MOD_RANKING, query)
   const rows = await limited(

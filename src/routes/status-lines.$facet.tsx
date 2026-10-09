@@ -132,7 +132,6 @@ function FacetPage() {
   )
 }
 
-/** "4 published status lines and 1 mod.", or "2 published mods." when only mods match. */
 function publishedCountLine(statusLines: number, mods: number): string {
   const statusLineCount = `${statusLines} published ${statusLines === 1 ? 'status line' : 'status lines'}`
   const modNoun = mods === 1 ? 'mod' : 'mods'

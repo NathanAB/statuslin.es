@@ -3,28 +3,26 @@ import type { PgColumn, PgSelect } from 'drizzle-orm/pg-core'
 import { coercePage, coerceSort, coerceTags, type GallerySort, hasAllTags } from './queries'
 import { type CopyEventColumns, trendingScore } from './trending'
 
-/** What one gallery kind is asked for: a sort, the tags every item carries, and how many. */
 export interface GallerySourceQuery {
   sort: GallerySort
   tags?: string[]
   limit?: number
 }
 
-/** The columns a gallery kind ranks by. `publishedAt` orders `new`. */
 export interface RankedColumns {
   id: PgColumn
   slug: PgColumn
   status: PgColumn
   allTags: PgColumn
   copyCount: PgColumn
-  publishedAt: PgColumn
+  newSortTime: PgColumn
   copyEvents: CopyEventColumns
 }
 
 const SORT_KEYS: Record<GallerySort, (columns: RankedColumns) => SQL> = {
   top: (columns) => sql`${columns.copyCount}`,
   trending: (columns) => trendingScore(columns.id, columns.copyEvents),
-  new: (columns) => sql`extract(epoch from ${columns.publishedAt})`,
+  new: (columns) => sql`extract(epoch from ${columns.newSortTime})`,
 }
 
 /**
@@ -45,7 +43,7 @@ export function limited<T extends PgSelect>(select: T, limit: number | undefined
   return limit === undefined ? select : select.limit(limit)
 }
 
-/** Narrows a source query from a server-fn caller to a known sort, registry tags and a positive limit. */
+/** Server-fn input is untrusted. */
 export function coerceSourceQuery(query: GallerySourceQuery): GallerySourceQuery {
   return {
     sort: coerceSort(query.sort),

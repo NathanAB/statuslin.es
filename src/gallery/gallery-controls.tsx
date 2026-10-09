@@ -33,8 +33,6 @@ export function buildTagsCsv(selected: Set<string>): string | undefined {
   return csv === '' ? undefined : csv
 }
 
-/** Kind toggle, sort single-select and tag multiselect for the home gallery. Each navigates on
- * change, preserving the others' current search params and resetting `page`. */
 export function GalleryControls({
   kind,
   sort,

@@ -73,12 +73,10 @@ export interface GalleryCard {
   tags: string[]
 }
 
-/** Matches rows whose `allTags` carry every tag; no condition when `tags` is empty. */
 export function hasAllTags(allTags: PgColumn, tags: string[]): SQL | undefined {
   return tags.length > 0 ? sql`${allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
 }
 
-/** Total published configs matching the active tag filter; drives the gallery's page count. */
 export async function getPublishedCount(db: Db, tags: string[] = []): Promise<number> {
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })

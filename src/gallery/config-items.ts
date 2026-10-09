@@ -17,7 +17,7 @@ const CONFIG_RANKING: RankedColumns = {
   status: configs.status,
   allTags: configs.allTags,
   copyCount: configs.copyCount,
-  publishedAt: configs.firstPublishedAt,
+  newSortTime: configs.firstPublishedAt,
   copyEvents: CONFIG_COPY_EVENTS,
 }
 
@@ -63,7 +63,6 @@ export async function getPublishedConfigs(
   return cards.map(({ card }) => card)
 }
 
-/** Published configs as one gallery source: the first `limit` in sort order, and the total. */
 export async function getConfigSource(db: Db, query: GallerySourceQuery): Promise<GallerySource> {
   const { cards, total } = await selectRankedCards(db, query)
   return {

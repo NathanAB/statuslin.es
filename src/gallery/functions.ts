@@ -94,7 +94,6 @@ export const getGalleryConfigs = createServerFn({ method: 'GET' })
   .inputValidator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
 
-/** The home page's tag filter options and inventory line. `modTags` holds each published mod's tags. */
 export const getGallery = createServerFn({ method: 'GET' })
   .inputValidator((d: { modTags: string[][] }) => ({ modTags: coerceModTags(d.modTags) }))
   .handler(({ data }) =>
@@ -138,7 +137,6 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
     }),
   )
 
-/** A facet page's status lines, ranked by lifetime copies. `modTags` holds each published mod's tags. */
 export const getFacetPage = createServerFn({ method: 'GET' })
   .inputValidator((d: { facet: string; modTags?: string[][] }) => ({
     facet: d.facet,

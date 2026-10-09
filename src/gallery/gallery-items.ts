@@ -29,7 +29,7 @@ export interface RankedGalleryItem {
   sortKey: number | null
 }
 
-/** One kind's items, already in sort order, and how many that kind has in all. */
+/** `items` arrive already in sort order. */
 export interface GallerySource {
   items: RankedGalleryItem[]
   total: number
@@ -45,7 +45,7 @@ export function coerceGalleryFilter(value: unknown): GalleryFilter {
   return value === 'status-lines' || value === 'mods' ? value : 'all'
 }
 
-/** One list from several sorted sources. The sort is stable, so ties keep each source's order. */
+/** The sort is stable, so ties keep each source's order. */
 export function mergeGalleryItems(sources: RankedGalleryItem[][]): GalleryItem[] {
   const key = (ranked: RankedGalleryItem) => ranked.sortKey ?? Number.NEGATIVE_INFINITY
   return sources
