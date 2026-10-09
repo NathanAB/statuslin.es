@@ -83,7 +83,7 @@
     "@vitejs/plugin-react": "6.0.2",
     "@vitest/coverage-v8": "4.1.11",
     "dependency-cruiser": "17.4.3",
-    "drizzle-kit": "0.31.10",
+    "drizzle-kit": "0.31.11",
     "jsdom": "29.1.1",
     "nitro": "3.0.260522-beta",
     "simple-git-hooks": "2.13.1",
