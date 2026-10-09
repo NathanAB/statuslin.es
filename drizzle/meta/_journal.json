@@ -190,6 +190,13 @@
       "when": 1791579402316,
       "tag": "0026_mods_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791580693989,
+      "tag": "0027_mod_versions_desktop_screenshot",
+      "breakpoints": true
     }
   ]
 }

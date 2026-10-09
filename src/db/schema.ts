@@ -200,6 +200,8 @@ export const modVersions = pgTable(
     footprint: jsonb('footprint').$type<ModFootprint>().notNull(),
     validatedWith: text('validated_with').notNull(),
     inputSteps: jsonb('input_steps').$type<ModInputSteps>().notNull().default(sql`'[]'::jsonb`),
+    /** Site-relative path to a static Claude Desktop screenshot, for mods that draw only there. */
+    desktopScreenshot: text('desktop_screenshot'),
     generatedContent: jsonb('generated_content'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
