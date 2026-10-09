@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DRAW_LOCATION_LABEL, describeFootprint, modSurfaces } from '@/mods/footprint'
+import { DRAW_LOCATION_LABEL, describeFootprint, describeModFootprint } from '@/mods/footprint'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -92,30 +92,37 @@ describe('describeFootprint', () => {
   })
 })
 
-describe('modSurfaces', () => {
+describe('describeModFootprint', () => {
+  const PLAIN = { events: ['ui.render{component=AbovePrompt}'], calls: [] }
+  const PREVIEW = [{ text: 'row' }]
+
   it('is the terminal for a mod with a terminal preview', () => {
     expect(
-      modSurfaces({
-        hasTerminalPreview: true,
-        hasDesktopScreenshot: false,
-        mentionsDesktop: false,
-      }),
+      describeModFootprint({ footprint: PLAIN, preview: PREVIEW, desktopScreenshot: null })
+        .surfaces,
     ).toEqual(['terminal'])
   })
 
   it('is Desktop alone for a mod shown only by a Desktop screenshot', () => {
     expect(
-      modSurfaces({
-        hasTerminalPreview: false,
-        hasDesktopScreenshot: true,
-        mentionsDesktop: false,
-      }),
+      describeModFootprint({ footprint: PLAIN, preview: null, desktopScreenshot: '/shot.png' })
+        .surfaces,
     ).toEqual(['desktop'])
   })
 
   it('adds Desktop when the footprint targets it', () => {
+    const footprint = { events: ['ui.render{component=AbovePrompt, surface=desktop}'], calls: [] }
     expect(
-      modSurfaces({ hasTerminalPreview: true, hasDesktopScreenshot: false, mentionsDesktop: true }),
+      describeModFootprint({ footprint, preview: PREVIEW, desktopScreenshot: null }).surfaces,
     ).toEqual(['terminal', 'desktop'])
+  })
+
+  it('carries the plain-words footprint alongside the surfaces', () => {
+    const described = describeModFootprint({
+      footprint: FILETREE,
+      preview: PREVIEW,
+      desktopScreenshot: null,
+    })
+    expect(described).toMatchObject(describeFootprint(FILETREE))
   })
 })

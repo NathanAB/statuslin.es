@@ -1,4 +1,5 @@
 import type { ModFootprint } from '@/db/schema'
+import type { ModDetail } from './queries'
 
 /** Where a mod's output appears in Claude Code, in display order. */
 export const DRAW_LOCATIONS = [
@@ -189,13 +190,24 @@ export function describeFootprint(footprint: ModFootprint): FootprintDescription
   }
 }
 
-export function modSurfaces(rendered: {
-  hasTerminalPreview: boolean
-  hasDesktopScreenshot: boolean
-  mentionsDesktop: boolean
-}): Surface[] {
+function modSurfaces(
+  version: Pick<ModDetail, 'preview' | 'desktopScreenshot'>,
+  mentionsDesktop: boolean,
+): Surface[] {
   const surfaces: Surface[] = []
-  if (rendered.hasTerminalPreview) surfaces.push('terminal')
-  if (rendered.hasDesktopScreenshot || rendered.mentionsDesktop) surfaces.push('desktop')
+  if (version.preview !== null) surfaces.push('terminal')
+  if (version.desktopScreenshot !== null || mentionsDesktop) surfaces.push('desktop')
   return surfaces
+}
+
+export interface ModFootprintDescription extends FootprintDescription {
+  surfaces: Surface[]
+}
+
+/** A version's footprint in plain words, plus the surfaces it renders on. */
+export function describeModFootprint(
+  version: Pick<ModDetail, 'footprint' | 'preview' | 'desktopScreenshot'>,
+): ModFootprintDescription {
+  const footprint = describeFootprint(version.footprint)
+  return { ...footprint, surfaces: modSurfaces(version, footprint.mentionsDesktop) }
 }

@@ -2,6 +2,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import type { ModDetail } from '@/mods/queries'
 
 const recordModCopyFn = vi.hoisted(() => vi.fn())
@@ -58,6 +59,29 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+describe('mod page head', () => {
+  function head(mod: ModDetail | undefined) {
+    const loaderData = mod ? { mod, user: null, origin: ORIGIN } : undefined
+    return ModRoute.options.head?.({ loaderData } as never) as {
+      meta: Array<Record<string, string>>
+    }
+  }
+
+  it('titles and describes the mod through the page-title helpers', () => {
+    const long = { ...MOD, description: `A file tree pane ${'with details '.repeat(20)}` }
+
+    expect(head(long).meta).toEqual([
+      { title: modPageTitle(MOD.title) },
+      { name: 'description', content: modMetaDescription(long.description) },
+    ])
+    expect(modMetaDescription(long.description).length).toBeLessThanOrEqual(160)
+  })
+
+  it('titles a missing mod as not found', () => {
+    expect(head(undefined).meta).toEqual([{ title: MOD_NOT_FOUND_TITLE }])
+  })
+})
+
 describe('mod page', () => {
   it('renders the terminal preview, rows and all', () => {
     renderPage()
@@ -71,7 +95,13 @@ describe('mod page', () => {
 
     const image = screen.getByRole('img', { name: /File Tree in Claude Desktop/ })
     expect(image.getAttribute('src')).toBe('/mods/screenshots/anywhere.png')
-    expect(screen.getByText('Claude Desktop, screenshot')).toBeTruthy()
+    expect(image.getAttribute('width')).toMatch(/^\d+$/)
+    expect(image.getAttribute('height')).toMatch(/^\d+$/)
+    const figure = screen.getByRole('figure')
+    expect(image.parentElement).toBe(figure)
+    expect(figure.querySelector(':scope > figcaption')?.textContent).toBe(
+      'Claude Desktop, screenshot',
+    )
   })
 
   it('shows both install commands against the site origin', () => {
@@ -98,6 +128,7 @@ describe('mod page', () => {
     expect(recordModCopyFn).toHaveBeenCalledWith({
       data: { modId: MOD.id, kind, distinctId: 'did-test', sessionId: 'sid-test' },
     })
+    expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy()
   })
 
   it('describes the footprint in plain words, keeping an unknown entry verbatim', () => {
