@@ -61,7 +61,7 @@
     "postgres": "3.4.9",
     "posthog-js": "1.438.1",
     "posthog-node": "5.49.1",
-    "radix-ui": "1.4.3",
+    "radix-ui": "1.7.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "resend": "6.18.0",
