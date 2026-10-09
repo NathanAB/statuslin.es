@@ -70,7 +70,7 @@ describe('home content', () => {
     )
     expect(page).not.toMatch(/examples/)
     expect(page).not.toMatch(/templates/)
-    expect(page).toMatch(/not a TUI installer/)
+    expect(page).not.toMatch(/TUI installer/)
     expect(page).toMatch(/32 published/)
     expect(page).toMatch(/148/)
     expect(page).toMatch(/Sep 8, 2026/)
@@ -99,20 +99,15 @@ describe('home content', () => {
     const masthead = container.querySelector('h1')?.parentElement?.parentElement
     expect(masthead?.className).toContain('sm:grid-cols-2')
     expect(masthead?.textContent).toMatch(/statuslin\.es/)
-    expect(masthead?.textContent).not.toMatch(/TUI installer/)
     expect(masthead?.textContent).not.toMatch(/32 published/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
   })
 
-  it('centers the dated inventory note on two lines under the gallery', () => {
+  it('centers the dated inventory note under the gallery', () => {
     renderHome()
 
     const inventory = screen.getByText(/32 published status lines/)
-    const disambiguation = screen.getByText(/not a TUI installer/)
     expect(inventory.tagName).toBe('P')
-    expect(disambiguation.tagName).toBe('P')
-    expect(inventory).not.toBe(disambiguation)
     expect(inventory.className).toContain('text-center')
-    expect(disambiguation.className).toContain('text-center')
   })
 })
