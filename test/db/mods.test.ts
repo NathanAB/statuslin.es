@@ -61,11 +61,43 @@ describe('mods schema', () => {
     )
   })
 
-  it('rejects a repo_url that is not https', async () => {
-    const modId = await insertMod('http-repo')
+  it.each([
+    ['plain http', 'http://github.com/octocat/mods'],
+    ['credentials', 'https://user:token@github.com/octocat/mods'],
+    ['a non-GitHub host', 'https://gitlab.com/octocat/mods'],
+    ['a host that only starts with github.com', 'https://github.com.evil.example/octocat/mods'],
+    ['a query', 'https://github.com/octocat/mods?ref=main'],
+    ['a fragment', 'https://github.com/octocat/mods#main'],
+    ['a trailing .git', 'https://github.com/octocat/mods.git'],
+    ['a trailing .GIT', 'https://github.com/octocat/mods.GIT'],
+    ['a path below the repo', 'https://github.com/octocat/mods/tree/main'],
+  ])('rejects a repo_url with %s', async (_name, repoUrl) => {
+    const modId = await insertMod(`repo-${repoUrl}`)
+    await expect(insertVersion(modId, { repoUrl })).rejects.toMatchObject(
+      violates('mod_versions_repo_url_check'),
+    )
+  })
+
+  it.each([
+    ['a parent segment', '../x'],
+    ['an absolute path', '/etc'],
+    ['a backslash', 'a\\b'],
+    ['an inner parent segment', 'a/../b'],
+  ])('rejects a path with %s', async (_name, path) => {
+    const modId = await insertMod(`path-${path}`)
+    await expect(insertVersion(modId, { path })).rejects.toMatchObject(
+      violates('mod_versions_path_check'),
+    )
+  })
+
+  it.each([
+    ['a repo root', 'https://github.com/o/r', ''],
+    ['a plugin folder', 'https://github.com/o/r', 'mods/context-bar'],
+  ])('accepts %s', async (name, repoUrl, path) => {
+    const modId = await insertMod(`accept-${name}`)
     await expect(
-      insertVersion(modId, { repoUrl: 'http://github.com/octocat/mods' }),
-    ).rejects.toMatchObject(violates('mod_versions_repo_url_check'))
+      insertVersion(modId, { repoUrl, path, commitSha: 'c'.repeat(40) }),
+    ).resolves.toEqual(expect.any(String))
   })
 
   it('rejects a second version at the same repo, path and commit', async () => {
