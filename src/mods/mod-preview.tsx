@@ -8,7 +8,11 @@ import type { ModDetail } from './queries'
 const DESKTOP_SCREENSHOT_SIZE = { width: 1600, height: 1000 }
 
 /** The terminal preview, else the Desktop screenshot that stands in for it. */
-export function ModPreview({ mod }: { mod: ModDetail }) {
+export function ModPreview({
+  mod,
+}: {
+  mod: Pick<ModDetail, 'title' | 'preview' | 'desktopScreenshot'>
+}) {
   if (mod.preview) return <StatuslinePreview segments={mod.preview} />
   if (mod.desktopScreenshot) {
     return (
