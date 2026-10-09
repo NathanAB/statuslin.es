@@ -1,0 +1,5 @@
+{
+  "name": "scenario-feed",
+  "version": "1.0.0",
+  "description": "Answers the session calls of the mod under render from the statuslin.es preview scenario."
+}

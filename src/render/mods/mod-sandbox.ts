@@ -22,6 +22,27 @@ export interface ModSandbox {
   run(command: string): Promise<CommandOutput>
 }
 
+export interface TerminalOptions {
+  cols: number
+  rows: number
+  cwd: string
+  envs: Record<string, string>
+  onData: (bytes: Uint8Array) => void
+}
+
+/** A pty running the user's login shell. */
+export interface Terminal {
+  send(input: string): Promise<void>
+  kill(): Promise<void>
+}
+
+/** What recording a session needs on top of importing: files, env and a terminal. */
+export interface RecordingSandbox extends ModSandbox {
+  run(command: string, envs?: Record<string, string>): Promise<CommandOutput>
+  writeFiles(files: { path: string; data: string | Uint8Array }[]): Promise<void>
+  openTerminal(options: TerminalOptions): Promise<Terminal>
+}
+
 export interface ModSource {
   tarball: Uint8Array
   /** Validated by `parseCuration` (letters, digits, `.`, `_`, `-`, `/`), so it is safe inside the double quotes in `unpackCommand`. */
@@ -43,11 +64,16 @@ function unpackCommand(path: string): string {
   ].join(' && ')
 }
 
-async function run(sandbox: Sandbox, command: string): Promise<CommandOutput> {
+async function run(
+  sandbox: Sandbox,
+  command: string,
+  envs: Record<string, string> = {},
+): Promise<CommandOutput> {
   try {
     const { exitCode, stdout, stderr } = await sandbox.commands.run(command, {
       user: SANDBOX_USER,
       timeoutMs: COMMAND_TIMEOUT_MS,
+      envs,
     })
     return { exitCode, stdout, stderr }
   } catch (error) {
@@ -56,10 +82,44 @@ async function run(sandbox: Sandbox, command: string): Promise<CommandOutput> {
   }
 }
 
-/** Internet is off, and the tarball's bytes never touch the host's filesystem. */
-export async function withModSandbox<T>(
-  source: ModSource,
-  use: (sandbox: ModSandbox) => Promise<T>,
+const arrayBuffer = ({ buffer, byteOffset, byteLength }: Uint8Array) =>
+  buffer.slice(byteOffset, byteOffset + byteLength) as ArrayBuffer
+
+async function unpack(sandbox: Sandbox, source: ModSource): Promise<void> {
+  await sandbox.files.write(TARBALL_PATH, arrayBuffer(source.tarball), { user: SANDBOX_USER })
+  const unpacked = await run(sandbox, unpackCommand(source.path))
+  if (unpacked.exitCode !== 0) {
+    const where = source.path === '' ? 'the repository root' : `"${source.path}"`
+    throw new Error(`no .claude-plugin/plugin.json at ${where}: ${unpacked.stderr.trim()}`)
+  }
+}
+
+async function openTerminal(sandbox: Sandbox, options: TerminalOptions): Promise<Terminal> {
+  const { cols, rows, cwd, envs, onData } = options
+  const pty = await sandbox.pty.create({
+    cols,
+    rows,
+    cwd,
+    envs,
+    user: SANDBOX_USER,
+    timeoutMs: SANDBOX_TIMEOUT_MS,
+    onData,
+  })
+  return {
+    send: (input) => sandbox.pty.sendInput(pty.pid, new TextEncoder().encode(input)),
+    kill: async () => {
+      await sandbox.pty.kill(pty.pid).catch(() => false)
+    },
+  }
+}
+
+/**
+ * Internet is off, and the tarball's bytes never touch the host's filesystem. A null source opens
+ * the same sandbox with no mod, for the baseline recording.
+ */
+export async function withRecordingSandbox<T>(
+  source: ModSource | null,
+  use: (sandbox: RecordingSandbox) => Promise<T>,
 ): Promise<T> {
   const sandbox = await Sandbox.create(E2B_MOD_TEMPLATE_ID, {
     apiKey: requireEnv('E2B_API_KEY'),
@@ -67,19 +127,30 @@ export async function withModSandbox<T>(
     timeoutMs: SANDBOX_TIMEOUT_MS,
   })
   try {
-    const { buffer, byteOffset, byteLength } = source.tarball
-    await sandbox.files.write(
-      TARBALL_PATH,
-      buffer.slice(byteOffset, byteOffset + byteLength) as ArrayBuffer,
-      { user: SANDBOX_USER },
-    )
-    const unpacked = await run(sandbox, unpackCommand(source.path))
-    if (unpacked.exitCode !== 0) {
-      const where = source.path === '' ? 'the repository root' : `"${source.path}"`
-      throw new Error(`no .claude-plugin/plugin.json at ${where}: ${unpacked.stderr.trim()}`)
-    }
-    return await use({ pluginDir: PLUGIN_DIR, run: (command) => run(sandbox, command) })
+    if (source) await unpack(sandbox, source)
+    return await use({
+      pluginDir: PLUGIN_DIR,
+      run: (command, envs) => run(sandbox, command, envs),
+      writeFiles: (files) =>
+        sandbox.files
+          .write(
+            files.map(({ path, data }) => ({
+              path,
+              data: typeof data === 'string' ? data : arrayBuffer(data),
+            })),
+            { user: SANDBOX_USER },
+          )
+          .then(() => {}),
+      openTerminal: (options) => openTerminal(sandbox, options),
+    })
   } finally {
     await sandbox.kill().catch(() => {})
   }
+}
+
+export function withModSandbox<T>(
+  source: ModSource,
+  use: (sandbox: ModSandbox) => Promise<T>,
+): Promise<T> {
+  return withRecordingSandbox(source, use)
 }
