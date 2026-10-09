@@ -53,7 +53,7 @@ From `.env.example` (the committed contract):
 
 | var | differs per env? | notes |
 |---|---|---|
-| `DATABASE_URL` | yes | the env's Neon branch; use the **pooled** connection string |
+| `DATABASE_URL` | yes | the env's Neon branch; use the **pooled** connection string, and add **`sslmode=require`** (or verify-ca / verify-full) so the connection is encrypted — staging and prod refuse to boot without it (`src/db/assert-tls.ts`) |
 | `BETTER_AUTH_SECRET` | yes | a distinct random secret per env (`openssl rand -base64 32`) |
 | `BETTER_AUTH_URL` | yes | the env's public origin; everything else (dev port, auth origins) derives from this |
 | `GITHUB_CLIENT_ID` | yes | the env's OAuth app |

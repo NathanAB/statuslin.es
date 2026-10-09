@@ -149,9 +149,13 @@ export default defineConfig(({ mode }) => ({
           viteReact(),
           nitro({
             preset: 'node-server',
-            // Server-side error capture: this plugin registers a Nitro `error` hook that forwards SSR
-            // crashes / uncaught exceptions / unhandled rejections to PostHog (src/lib/posthog-server).
-            plugins: ['./src/server/posthog-error-plugin.ts'],
+            // Nitro startup plugins, run once at server init.
+            // - db-tls-plugin: fails the web process fast on a plaintext production DATABASE_URL,
+            //   before it serves any request (the SSR bundle imports `@/db` lazily, so the guard in
+            //   src/db/index.ts alone would throw per request instead of at boot).
+            // - posthog-error-plugin: registers a Nitro `error` hook forwarding SSR crashes /
+            //   uncaught exceptions / unhandled rejections to PostHog (src/lib/posthog-server).
+            plugins: ['./src/server/db-tls-plugin.ts', './src/server/posthog-error-plugin.ts'],
             // Nitro's generated static-asset manifest contains only this build's files. Its static
             // middleware runs first and falls through on a miss; this route then serves retained
             // generations before the catch-all TanStack renderer. Keep it method-agnostic so the

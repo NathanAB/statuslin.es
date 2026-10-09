@@ -4,11 +4,17 @@
 const ENCRYPTING_SSLMODES = new Set(['require', 'verify-ca', 'verify-full'])
 
 /**
- * Refuse to boot in production with a DATABASE_URL that doesn't force TLS.
+ * Throw in production when DATABASE_URL doesn't force TLS.
  *
  * postgres-js connects in plaintext unless TLS is requested, so a prod URL without an encrypting
- * `sslmode` sends every credential and row over the wire unencrypted. This throws at startup in
- * production if `sslmode` is absent or set to a non-encrypting mode.
+ * `sslmode` sends every credential and row over the wire unencrypted. This throws in production if
+ * `sslmode` is absent or set to a non-encrypting mode.
+ *
+ * It throws only where it runs — it does NOT enforce at startup on its own. Call it from a true
+ * startup point: the Nitro plugin (`src/server/db-tls-plugin.ts`) for the web process, the static
+ * `@/db` import for the worker, and the migrate entrypoint (`src/db/migrate.ts`). The SSR bundle
+ * imports `@/db` lazily, so the module-scope call in `src/db/index.ts` alone runs per request, not
+ * at boot — which is why the web process needs the plugin.
  *
  * Intentionally a no-op outside production: local dev and the PGlite-backed tests use a localhost
  * Postgres with no TLS, and `@/db` is imported on some of those paths — gating to production keeps
