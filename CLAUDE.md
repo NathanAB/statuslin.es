@@ -65,7 +65,8 @@ where visitors **copy it to use** (`src/adopt`).
   to `bun run generate:content --apply`. Apply validates and transactionally writes
   `config_versions.generated_content` plus tags. Inspect the stored result before publishing and
   regenerate when source changes. The agent-agnostic workflow launches no second agent and creates
-  no request/response files; use staging first, then prod.
+  no request/response files; use staging first, then prod. Run it again after approving an update:
+  the newly live version starts with no generated content, and `--all --prepare` lists it.
 - **Front-end:** see `docs/frontend-guidelines.md` for the three rules: tokens define-once in `src/styles/app.css`; `src/ui` components are closed (no `className` prop — variants only); zero `className=` outside `src/ui` (only `Box UNSAFE_className` with a `// REASON:` comment). Every rule in that doc's enforcement table is gate-enforced at edit / Stop / commit / push.
 - **Commits:** Conventional Commits (`feat` / `fix` / `chore` / `docs` / `refactor`); small and focused; only on green gates.
 - **Deploy:** staging → production runbook in `docs/deploy.md`. Same image, three environments; deploy staging with `bun run deploy:staging`, then promote with the gated `bun run deploy:prod` (smokes staging in a real browser, promotes the validated image by digest). Submitted scripts only reach the review queue after the always-on `worker` process renders them — if it isn't running, render jobs sit `queued` and nothing appears for review.
