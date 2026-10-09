@@ -79,11 +79,27 @@ describe('commitIsFetchable', () => {
   })
 })
 
-it('refuses a repository URL that is not on github.com', async () => {
-  const { fetchFn, requested } = fakeFetch({})
+it.each([
+  ['not on github.com', 'https://gitlab.com/octocat/meter'],
+  ['with a query', `${REPO}?`],
+  ['with a query string', `${REPO}?x=1`],
+  ['with a fragment', `${REPO}#readme`],
+  ['with a dot-dot repository', 'https://github.com/octocat/..'],
+  ['with an underscore owner', 'https://github.com/octo_cat/meter'],
+])('refuses a repository URL %s without a request', async (_name, url) => {
+  const { fetchFn, requested } = fakeFetch({ [api('')]: { status: 200 } })
 
-  await expect(
-    createGitHub(fetchFn).commitIsFetchable('https://gitlab.com/octocat/meter', SHA),
-  ).rejects.toThrow(/github\.com/)
+  await expect(createGitHub(fetchFn).commitIsFetchable(url, SHA)).rejects.toThrow(/github\.com/)
   expect(requested).toEqual([])
+})
+
+it('gives up on a GitHub request that outlives the timeout', async () => {
+  const hang = ((_input: unknown, init?: RequestInit) =>
+    new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => reject(init.signal?.reason))
+    })) as typeof fetch
+
+  await expect(createGitHub(hang, 5).commitIsFetchable(REPO, SHA)).rejects.toThrow(
+    /timed out|abort/i,
+  )
 })

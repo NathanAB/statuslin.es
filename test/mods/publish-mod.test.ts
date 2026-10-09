@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import type { GitHub } from '@/mods/github'
@@ -5,8 +6,10 @@ import { runPublish } from '../../scripts/publish-mod'
 import {
   addMod,
   addVersion,
+  fakeGitHub,
   modState,
   openTestDb,
+  REPO_URL,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -25,32 +28,10 @@ afterAll(async () => {
   await close()
 })
 
-interface FakeGitHub extends GitHub {
-  calls: string[]
-}
-
-function fakeGitHub(opts: { onDefaultBranch?: boolean; filesChanged?: string[] } = {}): FakeGitHub {
-  const calls: string[] = []
-  return {
-    calls,
-    async commitIsOnDefaultBranch(_repo, commit) {
-      calls.push(`on-default:${commit}`)
-      return opts.onDefaultBranch ?? true
-    },
-    async filesChanged(_repo, base, head) {
-      calls.push(`files:${base}...${head}`)
-      return opts.filesChanged ?? []
-    },
-    async commitIsFetchable() {
-      throw new Error('publish never asks whether a commit is fetchable')
-    },
-  }
-}
-
 async function publish(args: string[], github: GitHub = fakeGitHub()) {
   const lines: string[] = []
   const exitCode = await runPublish(args, { db, github, log: (line) => lines.push(line) })
-  return { exitCode, output: lines.join('\n') }
+  return { exitCode, lines, output: lines.join('\n') }
 }
 
 async function draftMod(slug = 'meter', rendered = true) {
@@ -248,4 +229,137 @@ describe('publish review output', () => {
 
     expect(output).not.toMatch(/WARN/)
   })
+})
+
+describe('publish report escaping', () => {
+  const FORGED = 'evil.ts\n\x1b[1A\x1b[2KWARN forged: nothing to see'
+
+  it.each([
+    ['a filename', { filesChanged: [FORGED] }, {}],
+    ['a footprint event', {}, { events: [FORGED], calls: [] }],
+  ])('prints control characters in %s escaped, on one line', async (_name, github, footprint) => {
+    const { modId } = await publishedMod({})
+    await addVersion(db, modId, {
+      commitSha: sha('b'),
+      versionNumber: 2,
+      footprint: { events: [], calls: [], ...footprint },
+    })
+
+    const { lines } = await publish(['meter', sha('b')], fakeGitHub(github))
+
+    expect(lines.join('')).not.toContain('\n')
+    expect(lines.join('')).not.toContain('\x1b')
+    expect(lines.some((line) => line.startsWith('WARN forged'))).toBe(false)
+    expect(
+      lines.some((line) => line.includes('evil.ts\\u000a\\u001b[1A\\u001b[2KWARN forged')),
+    ).toBe(true)
+  })
+
+  it('escapes a literal backslash so a filename cannot pose as an escaped one', async () => {
+    const { modId } = await publishedMod({})
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+
+    const { output } = await publish(
+      ['meter', sha('b')],
+      fakeGitHub({ filesChanged: ['evil\\u000a.ts'] }),
+    )
+
+    expect(output).toContain('evil\\u005cu000a.ts')
+  })
+})
+
+describe('publish source', () => {
+  it('refuses when two versions of the mod share the SHA', async () => {
+    const modId = await addMod(db, 'meter', 'draft')
+    await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1 })
+    await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 2, path: 'plugins/meter' })
+
+    await expect(publish(['meter', sha('a'), '--apply', '--confirm=meter'])).rejects.toThrow(
+      /2 versions of "meter" at a{40}/,
+    )
+    expect(await modState(db, 'meter')).toEqual({ status: 'draft', currentVersionId: null })
+  })
+
+  it('prints the repository and path before and after', async () => {
+    const { modId } = await publishedMod({})
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+
+    const { output } = await publish(['meter', sha('b')])
+
+    expect(output).toContain(`source before: ${REPO_URL} path ""`)
+    expect(output).toContain(`source after: ${REPO_URL} path ""`)
+    expect(output).not.toMatch(/WARN/)
+  })
+
+  it('prints no source before on a first publish', async () => {
+    await draftMod()
+
+    const { output } = await publish(['meter', sha('a')])
+
+    expect(output).toContain('source before: none (first publish)')
+    expect(output).toContain(`source after: ${REPO_URL} path ""`)
+  })
+
+  it.each([
+    ['repository', { repoUrl: 'https://github.com/mallory/meter' }, /mallory\/meter path ""/],
+    ['path', { path: 'plugins/other' }, /octocat\/meter path "plugins\/other"/],
+  ])('warns when the %s changes', async (_name, seed, after) => {
+    const { modId } = await publishedMod({})
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2, ...seed })
+
+    const { exitCode, output } = await publish(['meter', sha('b')])
+
+    expect(exitCode).toBe(0)
+    expect(output).toMatch(/WARN source-changed/)
+    expect(output).toMatch(after)
+  })
+
+  it('skips the files compare when the repository changes', async () => {
+    const { modId } = await publishedMod({})
+    const repoUrl = 'https://github.com/mallory/meter'
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2, repoUrl })
+    const github = fakeGitHub()
+
+    const { output } = await publish(['meter', sha('b')], github)
+
+    expect(github.calls.filter((c) => c.startsWith('files:'))).toEqual([])
+    expect(output).toMatch(/files changed: none to compare \(the repository changed\)/)
+  })
+
+  it("warns at GitHub's 300-file compare cap and names the compare URL", async () => {
+    const { modId } = await publishedMod({})
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    const files = Array.from({ length: 300 }, (_, i) => `file-${i}.ts`)
+
+    const { output } = await publish(['meter', sha('b')], fakeGitHub({ filesChanged: files }))
+
+    expect(output).toMatch(/WARN files-truncated/)
+    expect(output).toContain(`${REPO_URL}/compare/${sha('a')}...${sha('b')}`)
+  })
+
+  it('does not warn about truncation under 300 files', async () => {
+    const { modId } = await publishedMod({})
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    const files = Array.from({ length: 299 }, (_, i) => `file-${i}.ts`)
+
+    const { output } = await publish(['meter', sha('b')], fakeGitHub({ filesChanged: files }))
+
+    expect(output).not.toMatch(/WARN/)
+  })
+})
+
+it('leaves a mod removed when a delist lands between the checks and the write', async () => {
+  const { modId } = await draftMod()
+  const delistMeanwhile = async () => {
+    await db.update(schema.mods).set({ status: 'removed' }).where(eq(schema.mods.id, modId))
+  }
+
+  const { exitCode, output } = await publish(
+    ['meter', sha('a'), '--apply', '--confirm=meter'],
+    fakeGitHub({ meanwhile: delistMeanwhile }),
+  )
+
+  expect(exitCode).toBe(1)
+  expect(output).toMatch(/delisted/)
+  expect(await modState(db, 'meter')).toEqual({ status: 'removed', currentVersionId: null })
 })

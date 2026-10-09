@@ -1,5 +1,10 @@
-import type { ModFootprint, ModStatus } from '@/db/schema'
-import { MOD_SCENARIO_KEY } from './queries'
+import { and, eq, type SQL, sql } from 'drizzle-orm'
+import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { type ModFootprint, type ModStatus, modVersions } from '@/db/schema'
+import { MOD_SCENARIO_KEY, versionIsRendered } from './queries'
+
+// biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
+type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface Guard {
   level: 'refuse' | 'warn'
@@ -7,35 +12,75 @@ export interface Guard {
   message: string
 }
 
+const refuse = (name: string, message: string): Guard => ({ level: 'refuse', name, message })
+const warn = (name: string, message: string): Guard => ({ level: 'warn', name, message })
+
 export interface PublishVersion {
+  id: string
+  repoUrl: string
+  path: string
   commitSha: string
   pluginVersion: string | null
   footprint: ModFootprint
   rendered: boolean
 }
 
+export async function loadVersions(db: Db, where: SQL | undefined): Promise<PublishVersion[]> {
+  return db
+    .select({
+      id: modVersions.id,
+      repoUrl: modVersions.repoUrl,
+      path: modVersions.path,
+      commitSha: modVersions.commitSha,
+      pluginVersion: modVersions.pluginVersion,
+      footprint: modVersions.footprint,
+      rendered: sql<boolean>`${versionIsRendered}`,
+    })
+    .from(modVersions)
+    .where(where)
+}
+
+/** Scoped to the mod, so a current_version_id pointing at another mod's version finds nothing. */
+export async function loadCurrentVersion(
+  db: Db,
+  mod: { id: string; currentVersionId: string | null },
+): Promise<PublishVersion | null> {
+  if (!mod.currentVersionId) return null
+  const [current] = await loadVersions(
+    db,
+    and(eq(modVersions.id, mod.currentVersionId), eq(modVersions.modId, mod.id)),
+  )
+  return current ?? null
+}
+
+/** What any version must satisfy before the marketplace lists it, by publish or by restore. */
+export interface ListingFacts {
+  target: PublishVersion
+  onDefaultBranch: boolean
+}
+
 /** Gathered from the database and GitHub up front so every guard stays a pure function. */
-export interface PublishFacts {
+export interface PublishFacts extends ListingFacts {
   slug: string
   modStatus: ModStatus
-  target: PublishVersion
   current: PublishVersion | null
-  onDefaultBranch: boolean
-  /** Files changed since the current version's commit; null on a first publish. */
+  /** Files changed since `compareBase`; null when there is no base to compare against. */
   filesChanged: string[] | null
+}
+
+/** GitHub compares commits only within one repository, so a move to another repo has no base. */
+export function compareBase(
+  current: PublishVersion | null,
+  target: PublishVersion,
+): PublishVersion | null {
+  return current?.repoUrl === target.repoUrl ? current : null
 }
 
 const COMMIT_SHA = /^[0-9a-f]{40}$/
 
 export function shaGuards(sha: string): Guard[] {
   if (COMMIT_SHA.test(sha)) return []
-  return [
-    {
-      level: 'refuse',
-      name: 'sha-format',
-      message: `"${sha}" is not a full commit SHA (40 lowercase hex characters)`,
-    },
-  ]
+  return [refuse('sha-format', `"${sha}" is not a full commit SHA (40 lowercase hex characters)`)]
 }
 
 function added(before: string[], after: string[]): string[] {
@@ -55,9 +100,7 @@ function footprintGuards({ current, target }: PublishFacts): Guard[] {
     ...(calls.length > 0 ? [`adds $ calls ${bracketed(calls)}`] : []),
   ]
   if (additions.length === 0) return []
-  return [
-    { level: 'warn', name: 'footprint-grows', message: `the footprint ${additions.join(' and ')}` },
-  ]
+  return [warn('footprint-grows', `the footprint ${additions.join(' and ')}`)]
 }
 
 /**
@@ -69,44 +112,65 @@ function pluginVersionGuards({ current, target }: PublishFacts): Guard[] {
   if (!current || target.pluginVersion === null) return []
   if (target.pluginVersion !== current.pluginVersion) return []
   return [
-    {
-      level: 'warn',
-      name: 'plugin-version-unchanged',
-      message: `plugin.json version ${target.pluginVersion} is unchanged, so existing installs won't update`,
-    },
+    warn(
+      'plugin-version-unchanged',
+      `plugin.json version ${target.pluginVersion} is unchanged, so existing installs won't update`,
+    ),
   ]
 }
 
-interface Refusal {
-  name: string
-  refuses: (facts: PublishFacts) => boolean
-  message: (facts: PublishFacts) => string
+export function sourceLabel(version: PublishVersion): string {
+  return `${version.repoUrl} path ${JSON.stringify(version.path)}`
 }
 
-const REFUSALS: Refusal[] = [
-  {
-    name: 'mod-removed',
-    refuses: (f) => f.modStatus === 'removed',
-    message: (f) => `"${f.slug}" is delisted; bring it back with delist-mod.ts --restore first`,
-  },
-  {
-    name: 'not-on-default-branch',
-    refuses: (f) => !f.onDefaultBranch,
-    message: (f) => `commit ${f.target.commitSha} is not on the repository's default branch`,
-  },
-  {
-    name: 'not-rendered',
-    refuses: (f) => !f.target.rendered,
-    message: (f) =>
-      `the version at ${f.target.commitSha} has not rendered (no ${MOD_SCENARIO_KEY} preview or Desktop screenshot)`,
-  },
-]
+function sourceGuards({ current, target }: PublishFacts): Guard[] {
+  if (!current || (current.repoUrl === target.repoUrl && current.path === target.path)) return []
+  return [
+    warn(
+      'source-changed',
+      `the plugin moves from ${sourceLabel(current)} to ${sourceLabel(target)}`,
+    ),
+  ]
+}
+
+const GITHUB_COMPARE_FILE_CAP = 300
+
+function truncationGuards({ current, target, filesChanged }: PublishFacts): Guard[] {
+  const base = compareBase(current, target)
+  if (!base || filesChanged === null || filesChanged.length < GITHUB_COMPARE_FILE_CAP) return []
+  return [
+    warn(
+      'files-truncated',
+      `GitHub lists at most ${GITHUB_COMPARE_FILE_CAP} files; review the full diff at ${target.repoUrl}/compare/${base.commitSha}...${target.commitSha}`,
+    ),
+  ]
+}
+
+export function listingGuards({ target, onDefaultBranch }: ListingFacts): Guard[] {
+  const offDefault = `commit ${target.commitSha} is not on the repository's default branch`
+  const unrendered = `the version at ${target.commitSha} has not rendered (no ${MOD_SCENARIO_KEY} preview or Desktop screenshot)`
+  return [
+    ...(onDefaultBranch ? [] : [refuse('not-on-default-branch', offDefault)]),
+    ...(target.rendered ? [] : [refuse('not-rendered', unrendered)]),
+  ]
+}
+
+export function removedGuard(slug: string): Guard {
+  return refuse(
+    'mod-removed',
+    `"${slug}" is delisted; bring it back with delist-mod.ts --restore first`,
+  )
+}
 
 export function publishGuards(facts: PublishFacts): Guard[] {
-  const refusals = REFUSALS.filter((r) => r.refuses(facts)).map(
-    (r): Guard => ({ level: 'refuse', name: r.name, message: r.message(facts) }),
-  )
-  return [...refusals, ...footprintGuards(facts), ...pluginVersionGuards(facts)]
+  return [
+    ...(facts.modStatus === 'removed' ? [removedGuard(facts.slug)] : []),
+    ...listingGuards(facts),
+    ...sourceGuards(facts),
+    ...truncationGuards(facts),
+    ...footprintGuards(facts),
+    ...pluginVersionGuards(facts),
+  ]
 }
 
 const CONFIRM_FLAG = '--confirm='
@@ -114,13 +178,26 @@ const CONFIRM_FLAG = '--confirm='
 export function confirmationGuards(slug: string, argv: string[]): Guard[] {
   const confirm = argv.find((a) => a.startsWith(CONFIRM_FLAG))?.slice(CONFIRM_FLAG.length)
   if (confirm === slug) return []
-  return [
-    {
-      level: 'refuse',
-      name: 'confirmation',
-      message: `type the slug back to confirm: ${CONFIRM_FLAG}${slug}`,
-    },
-  ]
+  return [refuse('confirmation', `type the slug back to confirm: ${CONFIRM_FLAG}${slug}`)]
+}
+
+export function refuses(guards: Guard[]): boolean {
+  return guards.some((g) => g.level === 'refuse')
+}
+
+const UNPRINTABLE = /[\\\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
+
+/**
+ * Filenames, plugin.json's version and the footprint come from the mod's repository, so an author
+ * controls them. Escaping control and format characters keeps a newline or ANSI escape in one from
+ * forging or erasing the lines the operator reads before --apply; escaping the backslash keeps an
+ * author from typing a fake escape.
+ */
+export function printable(line: string): string {
+  return line.replace(
+    UNPRINTABLE,
+    (char) => `\\u${(char.codePointAt(0) ?? 0).toString(16).padStart(4, '0')}`,
+  )
 }
 
 function footprintLine(label: string, footprint: ModFootprint | null): string {
@@ -128,22 +205,32 @@ function footprintLine(label: string, footprint: ModFootprint | null): string {
   return `footprint ${label}: events ${bracketed(footprint.events)} calls ${bracketed(footprint.calls)}`
 }
 
-export function publishReport(facts: PublishFacts): string[] {
-  const files =
-    facts.filesChanged === null
-      ? ['files changed: none to compare (first publish)']
-      : [
-          `files changed (${facts.filesChanged.length}):`,
-          ...facts.filesChanged.map((f) => `  ${f}`),
-        ]
+function sourceLine(label: string, version: PublishVersion | null): string {
+  return `source ${label}: ${version ? sourceLabel(version) : 'none (first publish)'}`
+}
+
+function filesLines({ current, filesChanged }: PublishFacts): string[] {
+  if (filesChanged !== null) {
+    return [`files changed (${filesChanged.length}):`, ...filesChanged.map((f) => `  ${f}`)]
+  }
   return [
-    `${facts.slug}: ${facts.current?.commitSha ?? 'unpublished'} → ${facts.target.commitSha}`,
-    ...files,
-    footprintLine('before', facts.current?.footprint ?? null),
-    footprintLine('after', facts.target.footprint),
+    `files changed: none to compare (${current ? 'the repository changed' : 'first publish'})`,
   ]
 }
 
+export function publishReport(facts: PublishFacts): string[] {
+  return [
+    `${facts.slug}: ${facts.current?.commitSha ?? 'unpublished'} → ${facts.target.commitSha}`,
+    sourceLine('before', facts.current),
+    sourceLine('after', facts.target),
+    ...filesLines(facts),
+    footprintLine('before', facts.current?.footprint ?? null),
+    footprintLine('after', facts.target.footprint),
+  ].map(printable)
+}
+
 export function guardLine(guard: Guard): string {
-  return `${guard.level === 'refuse' ? 'REFUSE' : 'WARN'} ${guard.name}: ${guard.message}`
+  return printable(
+    `${guard.level === 'refuse' ? 'REFUSE' : 'WARN'} ${guard.name}: ${guard.message}`,
+  )
 }

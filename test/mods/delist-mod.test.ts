@@ -1,7 +1,17 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import type { GitHub } from '@/mods/github'
 import { runDelist } from '../../scripts/delist-mod'
-import { addMod, modState, openTestDb, type TestDb } from './seed-mods'
+import {
+  addMod,
+  addVersion,
+  fakeGitHub,
+  modState,
+  openTestDb,
+  setCurrentVersion,
+  sha,
+  type TestDb,
+} from './seed-mods'
 
 let db: TestDb
 let close: () => Promise<void>
@@ -16,9 +26,9 @@ afterAll(async () => {
   await close()
 })
 
-async function delist(args: string[]) {
+async function delist(args: string[], github: GitHub = fakeGitHub()) {
   const lines: string[] = []
-  const exitCode = await runDelist(args, { db, log: (line) => lines.push(line) })
+  const exitCode = await runDelist(args, { db, github, log: (line) => lines.push(line) })
   return { exitCode, output: lines.join('\n') }
 }
 
@@ -59,19 +69,76 @@ describe('delist', () => {
 })
 
 describe('delist --restore', () => {
-  it('puts a removed mod back', async () => {
-    await addMod(db, 'meter', 'removed')
+  async function removedMod(rendered = true) {
+    const modId = await addMod(db, 'meter', 'removed')
+    const versionId = await addVersion(db, modId, {
+      commitSha: sha('a'),
+      versionNumber: 1,
+      rendered,
+    })
+    await setCurrentVersion(db, modId, versionId)
+  }
 
-    const { exitCode } = await delist(['meter', '--restore'])
+  it('puts a removed mod back once the slug is typed back', async () => {
+    await removedMod()
+
+    const { exitCode } = await delist(['meter', '--restore', '--confirm=meter'])
 
     expect(exitCode).toBe(0)
     expect(await statusOf('meter')).toBe('published')
   })
 
+  it.each([
+    ['no confirmation', []],
+    ['a confirmation that does not match', ['--confirm=metre']],
+  ])('changes nothing with %s', async (_name, flags) => {
+    await removedMod()
+
+    const { exitCode, output } = await delist(['meter', '--restore', ...flags])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/REFUSE confirmation: .*--confirm=meter/)
+    expect(await statusOf('meter')).toBe('removed')
+  })
+
+  it('refuses when the current version has not rendered', async () => {
+    await removedMod(false)
+
+    const { exitCode, output } = await delist(['meter', '--restore', '--confirm=meter'])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/REFUSE not-rendered/)
+    expect(await statusOf('meter')).toBe('removed')
+  })
+
+  it('refuses when the current commit is not on the default branch', async () => {
+    await removedMod()
+
+    const { exitCode, output } = await delist(
+      ['meter', '--restore', '--confirm=meter'],
+      fakeGitHub({ onDefaultBranch: false }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/REFUSE not-on-default-branch/)
+    expect(await statusOf('meter')).toBe('removed')
+  })
+
+  it('refuses a mod with no current version', async () => {
+    await addMod(db, 'meter', 'removed')
+
+    await expect(delist(['meter', '--restore', '--confirm=meter'])).rejects.toThrow(
+      /no current version/,
+    )
+    expect(await statusOf('meter')).toBe('removed')
+  })
+
   it('refuses a mod that is not removed', async () => {
     await addMod(db, 'meter', 'draft')
 
-    await expect(delist(['meter', '--restore'])).rejects.toThrow(/is draft, not removed/)
+    await expect(delist(['meter', '--restore', '--confirm=meter'])).rejects.toThrow(
+      /is draft, not removed/,
+    )
   })
 })
 

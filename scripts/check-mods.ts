@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -42,7 +42,13 @@ export async function runCheck({ db, github, log }: CheckDeps): Promise<number> 
       commitSha: schema.modVersions.commitSha,
     })
     .from(schema.mods)
-    .innerJoin(schema.modVersions, eq(schema.modVersions.id, schema.mods.currentVersionId))
+    .innerJoin(
+      schema.modVersions,
+      and(
+        eq(schema.modVersions.id, schema.mods.currentVersionId),
+        eq(schema.modVersions.modId, schema.mods.id),
+      ),
+    )
     .where(eq(schema.mods.status, 'published'))
     .orderBy(asc(schema.mods.slug))
 
