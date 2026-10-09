@@ -200,6 +200,8 @@ export const modVersions = pgTable(
     footprint: jsonb('footprint').$type<ModFootprint>().notNull(),
     validatedWith: text('validated_with').notNull(),
     inputSteps: jsonb('input_steps').$type<ModInputSteps>().notNull().default(sql`'[]'::jsonb`),
+    /** Site-relative path to a static Claude Desktop screenshot, for mods that draw only there. */
+    desktopScreenshot: text('desktop_screenshot'),
     generatedContent: jsonb('generated_content'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -207,7 +209,14 @@ export const modVersions = pgTable(
     uniqueIndex('mod_versions_mod_version_uq').on(t.modId, t.versionNumber),
     uniqueIndex('mod_versions_repo_path_commit_uq').on(t.repoUrl, t.path, t.commitSha),
     check('mod_versions_commit_sha_check', sql`${t.commitSha} ~ '^[0-9a-f]{40}$'`),
-    check('mod_versions_repo_url_check', sql`${t.repoUrl} LIKE 'https://%'`),
+    check(
+      'mod_versions_repo_url_check',
+      sql`${t.repoUrl} ~ '^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+$' AND ${t.repoUrl} !~* '(\\.git|/\\.{1,2})$'`,
+    ),
+    check(
+      'mod_versions_path_check',
+      sql`${t.path} ~ '^([A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*)?$' AND ${t.path} !~ '(^|/)\\.{1,2}(/|$)'`,
+    ),
   ],
 )
 
