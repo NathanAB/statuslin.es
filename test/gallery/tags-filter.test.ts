@@ -117,4 +117,13 @@ describe('getAvailableTags (drives the filter dropdown)', () => {
     // seed carries node, quota, python; registry order puts quota before python before node.
     expect(await getAvailableTags(db)).toEqual(['quota', 'python', 'node'])
   })
+
+  it('adds the tags only a published mod carries', async () => {
+    expect(await getAvailableTags(db, [['git'], ['node']])).toEqual([
+      'git',
+      'quota',
+      'python',
+      'node',
+    ])
+  })
 })

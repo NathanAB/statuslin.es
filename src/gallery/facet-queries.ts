@@ -30,9 +30,13 @@ function facetMatches(row: StatsRow, facet: Facet): boolean {
  * Match counts + newest effective update date for every registry facet, from ONE scan of
  * published configs joined to their current versions. The gallery is small (tens of rows); a
  * per-facet SQL query apiece would be slower and noisier than counting in JS. Drives each facet
- * page's live/404 decision, the sitemap, and count line.
+ * page's live/404 decision, the sitemap, and count line. `modTags` holds each published mod's
+ * tags; src/gallery cannot query mods, so the caller passes them in. They add to the counts only.
  */
-export async function getFacetStats(db: Db): Promise<Map<string, FacetStats>> {
+export async function getFacetStats(
+  db: Db,
+  modTags: string[][] = [],
+): Promise<Map<string, FacetStats>> {
   const rows = await db
     .select({
       allTags: configs.allTags,
@@ -53,13 +57,23 @@ export async function getFacetStats(db: Db): Promise<Map<string, FacetStats>> {
       if (!s.latest || updatedAt > s.latest) s.latest = updatedAt
     }
   }
+  addModCounts(stats, modTags)
   return stats
 }
 
-/** The tag slugs at least one published config carries, in registry (display) order.
+function addModCounts(stats: Map<string, FacetStats>, modTags: string[][]): void {
+  for (const tags of modTags) {
+    for (const tag of new Set(tags)) {
+      const s = stats.get(tag)
+      if (s) s.count += 1
+    }
+  }
+}
+
+/** The tag slugs at least one published config or mod carries, in registry (display) order.
  * Drives the home filter dropdown so it never offers a tag that would match nothing. */
-export async function getAvailableTags(db: Db): Promise<string[]> {
-  const stats = await getFacetStats(db)
+export async function getAvailableTags(db: Db, modTags: string[][] = []): Promise<string[]> {
+  const stats = await getFacetStats(db, modTags)
   return ALL_TAG_SLUGS.filter((slug) => (stats.get(slug)?.count ?? 0) >= 1)
 }
 

@@ -186,6 +186,20 @@ describe('facet queries', () => {
     expect(resolveLiveFacet('cost', stats)?.slug).toBe('cost')
   })
 
+  it('counts the published mods it is given alongside configs', async () => {
+    const stats = await getFacetStats(db, [['git'], ['powerline', 'git'], []])
+    expect(stats.get('git')?.count).toBe(4)
+    expect(stats.get('powerline')?.count).toBe(1)
+    expect(stats.get('cost')?.count).toBe(1)
+  })
+
+  it('resolves a facet whose only matches are mods', async () => {
+    expect(resolveLiveFacet('powerline', await getFacetStats(db))).toBeNull()
+    expect(resolveLiveFacet('powerline', await getFacetStats(db, [['powerline']]))?.slug).toBe(
+      'powerline',
+    )
+  })
+
   it('a page:false capability tag never resolves to a page', async () => {
     const stats = await getFacetStats(db)
     expect(resolveLiveFacet('reads-token', stats)).toBeNull()
