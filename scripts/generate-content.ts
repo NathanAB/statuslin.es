@@ -73,8 +73,8 @@ export function parseGenerateContentArgs(argv: string[]): GenerateContentArgs {
   const mods = argv.filter((arg) => arg === '--mod').length
   if (mods > 1) throw usageError()
   const args = argv.filter((arg) => arg !== '--mod')
-  const catalog = mods === 1 ? { mods: true as const } : {}
-  if (args.length === 1 && args[0] === '--apply') return { mode: 'apply', ...catalog }
+  const modFlag = mods === 1 ? { mods: true as const } : {}
+  if (args.length === 1 && args[0] === '--apply') return { mode: 'apply', ...modFlag }
   if (!args.includes('--prepare') || args.includes('--apply')) throw usageError()
 
   const unknownFlags = args.filter(
@@ -87,8 +87,8 @@ export function parseGenerateContentArgs(argv: string[]): GenerateContentArgs {
   }
   if (args.length !== 2) throw usageError()
   return all
-    ? { mode: 'prepare', slug: null, all: true, ...catalog }
-    : { mode: 'prepare', slug: slugs[0] as string, all: false, ...catalog }
+    ? { mode: 'prepare', slug: null, all: true, ...modFlag }
+    : { mode: 'prepare', slug: slugs[0] as string, all: false, ...modFlag }
 }
 
 /** The README GitHub picks for `path` at `commitSha`, raw, cut to README_MAX_CHARS. */

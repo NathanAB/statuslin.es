@@ -174,7 +174,7 @@ describe('mod content generation responses', () => {
     await applyModContentGenerationResponses(
       db,
       parseModContentGenerationResponses(
-        JSON.stringify(response('meter', versionId, commitSha, ['weather', 'minimal'])),
+        JSON.stringify(response('meter', versionId, commitSha, ['weather', 'minimal', 'weather'])),
       ),
     )
 

@@ -41,9 +41,13 @@ const modContentResponseSchema = z.object({
   versionId: z.string().min(1),
   commitSha: z.string().min(1),
   generatedContent: generatedContentSchema,
-  tags: z.array(
-    z.string().refine((tag) => TAGS.has(tag), { error: (issue) => `unknown tag "${issue.input}"` }),
-  ),
+  tags: z
+    .array(
+      z
+        .string()
+        .refine((tag) => TAGS.has(tag), { error: (issue) => `unknown tag "${issue.input}"` }),
+    )
+    .transform((tags) => [...new Set(tags)]),
 })
 
 export type ModContentGenerationResponse = z.infer<typeof modContentResponseSchema>
@@ -65,13 +69,17 @@ function untrustedBlock(pin: VersionPin, untrusted: string): string {
   return `BEGIN UNTRUSTED ${pin.versionId}\n${untrusted}\nEND UNTRUSTED ${pin.versionId}`
 }
 
-function buildModContentPrompt(pin: VersionPin, untrusted: string, footprint: string): string {
+function buildModContentPrompt(
+  pin: VersionPin,
+  untrusted: string,
+  validatorSummary: string,
+): string {
   return `You are writing factual copy for a gallery page about one Claude Code mod: a plugin that draws in Claude Code, installed from a marketplace.
 
 ${pinAndWarn(pin)}
 
 ## What the plugin validator says it does (written by statuslin.es, trusted)
-${footprint}
+${validatorSummary}
 
 ## From the mod
 ${untrustedBlock(pin, untrusted)}
