@@ -27,8 +27,10 @@ describe('site paths', () => {
     expect(routesByPath[MOD_DESKTOP_PREVIEW_ROUTE]).toBe(DesktopPreviewRoute)
   })
 
-  it("fills the Desktop preview route's version id", () => {
-    expect(modDesktopPreviewPath('v-1')).toBe('/mod-previews/v-1/desktop.png')
+  it("fills the Desktop preview route's version id and names the render, so a re-render is a new URL", () => {
+    expect(modDesktopPreviewPath('v-1', new Date(1_700_000_000_000))).toBe(
+      '/mod-previews/v-1/desktop.png?r=1700000000000',
+    )
   })
 
   it('names the route that serves the marketplace', () => {

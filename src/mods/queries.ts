@@ -48,24 +48,28 @@ export const desktopPreviewColumns = {
   width: modDesktopPreviews.width,
   height: modDesktopPreviews.height,
   cardAnchor: modDesktopPreviews.cardAnchor,
+  renderedAt: modDesktopPreviews.createdAt,
 }
 
 type Nullable<T> = { [K in keyof T]: T[K] | null }
 type DesktopPreviewRow = Nullable<
   Pick<typeof modDesktopPreviews.$inferSelect, 'kind' | 'width' | 'height' | 'cardAnchor'> & {
     versionId: string
+    renderedAt: Date
   }
 >
 
 /** The left-joined `desktopPreviewColumns`, or null when the version has no Desktop result yet. */
 export function desktopPreview(row: DesktopPreviewRow | null): DesktopPreview | null {
   if (row?.kind === 'nothing') return { kind: 'nothing' }
-  const { versionId, width, height, cardAnchor } = row ?? {}
+  const { versionId, width, height, cardAnchor, renderedAt } = row ?? {}
   // The table's check constraint gives every shot a size and an anchor.
-  if (row?.kind !== 'shot' || !versionId || !width || !height || !cardAnchor) return null
+  if (row?.kind !== 'shot' || !versionId || !width || !height || !cardAnchor || !renderedAt) {
+    return null
+  }
   return {
     kind: 'shot',
-    shot: { src: modDesktopPreviewPath(versionId), width, height, cardAnchor },
+    shot: { src: modDesktopPreviewPath(versionId, renderedAt), width, height, cardAnchor },
   }
 }
 

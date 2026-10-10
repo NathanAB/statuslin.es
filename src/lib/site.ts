@@ -44,11 +44,12 @@ export function modPath(slug: string): string {
   return MOD_ROUTE.replace('$slug', slug)
 }
 
-/** A mod version's Claude Desktop preview image. A new version is a new URL, so it caches forever. */
+/** A mod version's Claude Desktop preview image. */
 export const MOD_DESKTOP_PREVIEW_ROUTE = '/mod-previews/$versionId/desktop.png'
 
-export function modDesktopPreviewPath(versionId: string): string {
-  return MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)
+/** Names the render too, so a re-render is a new URL and the image can cache forever. */
+export function modDesktopPreviewPath(versionId: string, renderedAt: Date): string {
+  return `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)}?r=${renderedAt.getTime()}`
 }
 
 export const MARKETPLACE_PATH = '/marketplace.json'

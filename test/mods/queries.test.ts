@@ -246,7 +246,9 @@ describe('getModDetail', () => {
       desktop: {
         kind: 'shot',
         shot: {
-          src: `/mod-previews/${versionId}/desktop.png`,
+          src: expect.stringMatching(
+            new RegExp(`^/mod-previews/${versionId}/desktop\\.png\\?r=\\d+$`),
+          ),
           width: SEEDED_DESKTOP_SHOT.width,
           height: SEEDED_DESKTOP_SHOT.height,
           cardAnchor: SEEDED_DESKTOP_SHOT.cardAnchor,
@@ -254,6 +256,21 @@ describe('getModDetail', () => {
       },
     })
     expect((await getModDetail(db, 'anywhere'))?.desktop).not.toHaveProperty('shot.png')
+  })
+
+  it('gives a re-rendered Desktop shot a new image URL', async () => {
+    const { versionId } = await addMod('rerendered', 'published', 'none')
+    await addDesktopPreview(db, versionId)
+    const before = (await getModDetail(db, 'rerendered'))?.desktop
+    await db
+      .update(schema.modDesktopPreviews)
+      .set({ createdAt: new Date(Date.now() + 60_000) })
+      .where(eq(schema.modDesktopPreviews.modVersionId, versionId))
+    const after = (await getModDetail(db, 'rerendered'))?.desktop
+
+    expect(before?.kind === 'shot' && after?.kind === 'shot').toBe(true)
+    if (before?.kind !== 'shot' || after?.kind !== 'shot') return
+    expect(after.shot.src).not.toBe(before.shot.src)
   })
 
   it('returns that a mod drew nothing in Claude Desktop', async () => {
