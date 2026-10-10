@@ -69,4 +69,34 @@ describe('check:boundaries', () => {
     },
     TIMEOUT_MS,
   )
+
+  test(
+    'lets src/mods import only the gallery, and fails when src/gallery imports src/mods',
+    async () => {
+      const root = await fixture({
+        'tsconfig.json': JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }),
+        'src/gallery/listing.ts':
+          "import { modCard } from '@/mods/card'\nexport const listing = modCard\n",
+        'src/mods/card.ts':
+          "import { rank } from '@/gallery/ranking'\nexport const modCard = rank\n",
+        'src/gallery/ranking.ts': 'export const rank = 1\n',
+        'src/mods/install.ts':
+          "import { copied } from '@/adopt/copy'\nexport const install = copied\n",
+        'src/adopt/copy.ts': 'export const copied = 1\n',
+      })
+
+      const { stdout } = depcruise(root, ['--output-type', 'json'])
+      const { violations } = (JSON.parse(stdout) as ICruiseResult).summary
+
+      expect(violations.map(({ rule, from, to }) => ({ rule: rule.name, from, to }))).toEqual([
+        {
+          rule: 'gallery-no-cross-feature',
+          from: 'src/gallery/listing.ts',
+          to: 'src/mods/card.ts',
+        },
+        { rule: 'mods-no-cross-feature', from: 'src/mods/install.ts', to: 'src/adopt/copy.ts' },
+      ])
+    },
+    TIMEOUT_MS,
+  )
 })

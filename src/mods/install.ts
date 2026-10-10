@@ -1,4 +1,4 @@
-import type { CopyCaptureMessage } from '@/adopt/copy-event'
+import type { ServerEvent } from '@/lib/posthog-server'
 import { MARKETPLACE_PATH } from '@/lib/site'
 
 export type InstallCommandKind = 'session' | 'shell'
@@ -49,7 +49,7 @@ export function modCopyEvent(input: {
   modId: string
   distinctId: string | null | undefined
   sessionId?: string | null | undefined
-}): CopyCaptureMessage | null {
+}): ServerEvent | null {
   if (!input.distinctId || !Object.hasOwn(COMMAND_KINDS, input.kind)) return null
   const properties: Record<string, unknown> = { modId: input.modId, command: input.kind }
   if (input.sessionId) properties[SESSION_ID_PROP] = input.sessionId
