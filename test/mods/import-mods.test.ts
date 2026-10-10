@@ -129,7 +129,7 @@ describe('importMods', () => {
     expect(mod?.currentVersionId).toBe(version?.id)
   })
 
-  it('lands a curated Desktop screenshot on the version, which then counts as rendered', async () => {
+  it('lands a curated Desktop screenshot on the version, which no longer counts as rendered', async () => {
     const desktopScreenshot = '/mods/skins-desktop.png'
 
     await run([entry({ desktopScreenshot })])
@@ -140,7 +140,7 @@ describe('importMods', () => {
       .select({ id: schema.modVersions.id })
       .from(schema.modVersions)
       .where(versionIsRendered)
-    expect(rendered.map((r) => r.id)).toEqual([version?.id])
+    expect(rendered).toEqual([])
   })
 
   it('leaves the screenshot empty when the entry names none', async () => {

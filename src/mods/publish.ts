@@ -155,7 +155,7 @@ function truncationGuards({ current, target, filesChanged }: PublishFacts): Guar
 
 export function listingGuards({ target, onDefaultBranch }: ListingFacts): Guard[] {
   const offDefault = `commit ${target.commitSha} is not on the repository's default branch`
-  const unrendered = `the version at ${target.commitSha} has not rendered (no ${MOD_SCENARIO_KEY} preview or Desktop screenshot)`
+  const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop)`
   return [
     ...(onDefaultBranch ? [] : [refuse('not-on-default-branch', offDefault)]),
     ...(target.rendered ? [] : [refuse('not-rendered', unrendered)]),

@@ -189,14 +189,26 @@ describe('versionIsRendered', () => {
   }
 
   it.each([
-    ['a clean-main preview', 'scenario-preview', true],
-    ['only a Desktop screenshot', 'screenshot', true],
-    ['only a preview in another scenario', 'other-scenario', false],
-    ['no preview and no screenshot', 'none', false],
-  ] as const)('judges a version with %s', async (_name, rendering, rendered) => {
+    ['a clean-main preview and a Desktop shot', 'scenario-preview', 'shot', true],
+    ['a clean-main preview and a Desktop nothing', 'scenario-preview', 'nothing', true],
+    ['only a clean-main preview', 'scenario-preview', null, false],
+    ['only a Desktop shot', 'none', 'shot', false],
+    ['a preview in another scenario and a Desktop shot', 'other-scenario', 'shot', false],
+    ['only a Desktop screenshot', 'screenshot', null, false],
+    ['no results', 'none', null, false],
+  ] as const)('judges a version with %s', async (_name, rendering, desktop, rendered) => {
     const { versionId } = await addMod('judged', 'published', rendering)
+    if (desktop) await addDesktopPreview(db, versionId, desktop)
 
     expect(await renderedVersionIds()).toEqual(rendered ? [versionId] : [])
+  })
+
+  it('counts a mod that drew nothing in the terminal and a shot in Claude Desktop', async () => {
+    const { versionId } = await addMod('anywhere', 'published', 'scenario-preview')
+    await db.update(schema.modPreviews).set({ segments: [] })
+    await addDesktopPreview(db, versionId)
+
+    expect(await renderedVersionIds()).toEqual([versionId])
   })
 })
 

@@ -33,7 +33,7 @@ beforeAll(async () => {
   const blank = await seedMod(db, 'blank', 'published', 'e')
   await addDesktopPreview(db, blank.versionId, 'nothing')
   ids.nothing = blank.versionId
-  ids.unrendered = (await seedMod(db, 'unrendered', 'published', 'f')).versionId
+  ids.unrendered = (await seedMod(db, 'unrendered', 'published', 'f', false)).versionId
 })
 afterAll(async () => {
   await close()

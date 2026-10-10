@@ -29,7 +29,7 @@ export async function addMod(db: TestDb, slug: string, status: schema.ModStatus)
   return mod?.id as string
 }
 
-/** The preview `addVersion` stores for a version seeded as rendered. */
+/** The terminal preview `addVersion` stores for a version seeded as rendered. */
 export const SEEDED_PREVIEW = { segments: [{ text: 'meter' }], claudeCodeVersion: '2.1.0' }
 
 interface VersionSeed {
@@ -57,12 +57,14 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
     })
     .returning()
   const versionId = version?.id as string
+  // Rendered means publishable: a result on both surfaces. Desktop drew nothing unless a test adds a shot.
   if (seed.rendered ?? true) {
     await db.insert(schema.modPreviews).values({
       modVersionId: versionId,
       scenarioKey: MOD_SCENARIO_KEY,
       ...SEEDED_PREVIEW,
     })
+    await addDesktopPreview(db, versionId, 'nothing')
   }
   return versionId
 }
@@ -75,19 +77,29 @@ export const SEEDED_DESKTOP_SHOT = {
   cardAnchor: 'bottom' as const,
 }
 
-/** A clean-main Desktop result for the version: a shot, or that it drew nothing. */
+/** Sets the version's clean-main Desktop result: a shot, or that it drew nothing. */
 export async function addDesktopPreview(
   db: TestDb,
   versionId: string,
   result: 'shot' | 'nothing' = 'shot',
 ) {
-  await db.insert(schema.modDesktopPreviews).values({
-    modVersionId: versionId,
-    scenarioKey: MOD_SCENARIO_KEY,
-    desktopVersion: '1.0.0',
-    engineVersion: '2.1.0',
-    ...(result === 'shot' ? { kind: 'shot', ...SEEDED_DESKTOP_SHOT } : { kind: 'nothing' }),
-  })
+  const row =
+    result === 'shot'
+      ? { kind: 'shot' as const, ...SEEDED_DESKTOP_SHOT }
+      : { kind: 'nothing' as const, png: null, width: null, height: null, cardAnchor: null }
+  await db
+    .insert(schema.modDesktopPreviews)
+    .values({
+      modVersionId: versionId,
+      scenarioKey: MOD_SCENARIO_KEY,
+      desktopVersion: '1.0.0',
+      engineVersion: '2.1.0',
+      ...row,
+    })
+    .onConflictDoUpdate({
+      target: [schema.modDesktopPreviews.modVersionId, schema.modDesktopPreviews.scenarioKey],
+      set: row,
+    })
 }
 
 export async function setCurrentVersion(db: TestDb, modId: string, versionId: string) {

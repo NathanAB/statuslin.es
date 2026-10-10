@@ -239,7 +239,9 @@ describe('publish refusals', () => {
     const { exitCode, output } = await publish(['meter', sha('a'), '--apply', '--confirm=meter'])
 
     expect(exitCode).toBe(1)
-    expect(output).toMatch(/has not rendered/)
+    expect(output).toMatch(
+      /has not rendered on both surfaces \(it needs a clean-main result in the terminal and in Claude Desktop\)/,
+    )
     expect(await modState(db, 'meter')).toEqual({ status: 'draft', currentVersionId: null })
   })
 
