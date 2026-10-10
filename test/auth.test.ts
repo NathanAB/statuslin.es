@@ -1,6 +1,7 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { PGlite } from '@electric-sql/pglite'
 import { betterAuth } from 'better-auth'
+import { getIP } from 'better-auth/api'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
@@ -185,5 +186,23 @@ describe('GitHub provider config (production auth)', () => {
     expect(github?.mapProfileToUser).toBeTypeOf('function')
     const mapped = await github?.mapProfileToUser?.({ login: 'octocat' })
     expect(mapped).not.toHaveProperty('role')
+  })
+})
+
+// Rate limiting keys on the client IP. Behind Fly, X-Forwarded-For always carries 2+ hops (the
+// app's own IP is appended), which Better Auth 1.7 refuses, so every visitor fell into one shared
+// per-path bucket. Fly-Client-IP is overwritten by Fly's proxy, so it is the header to trust.
+describe('client IP resolution (production auth)', () => {
+  const request = (headers: Record<string, string>) =>
+    new Request('http://localhost:3000/api/auth/sign-in/social', { headers })
+
+  it('reads the client IP from the Fly-Client-IP header', () => {
+    expect(getIP(request({ 'fly-client-ip': '203.0.113.7' }), prodAuth.options)).toBe('203.0.113.7')
+  })
+
+  it('ignores a client-supplied X-Forwarded-For', () => {
+    expect(getIP(request({ 'x-forwarded-for': '198.51.100.9' }), prodAuth.options)).not.toBe(
+      '198.51.100.9',
+    )
   })
 })
