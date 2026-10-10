@@ -14,6 +14,7 @@ import { terminalLine } from '@/mods/terminal-line'
 import { boundRecording } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
 import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
+import { e2bDesktopRecorder } from '@/render/mods/desktop/recorder'
 import type { DesktopRecorder, DesktopRecording } from '@/render/mods/desktop/types'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import {
@@ -36,9 +37,8 @@ import type { AnsiSegment } from '@/render/types'
  *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
  * run fails keeps whatever result it had, and the other surface is still stored; nothing is ever
- * deleted. Uses real E2B for the terminal when E2B_API_KEY is set, else a fake recorder under which
- * every mod draws nothing. Claude Desktop uses a fake recorder under which every mod draws nothing,
- * until the real one is wired in.
+ * deleted. Uses real E2B for both surfaces when E2B_API_KEY is set, else fake recorders under which
+ * every mod draws nothing.
  *
  * AGENT USAGE (needs DATABASE_URL, and E2B_API_KEY for real renders):
  *
@@ -264,14 +264,15 @@ async function main(): Promise<number> {
   const url = requireEnv('DATABASE_URL')
   const client = postgres(url, isPooledUrl(url) ? { prepare: false } : {})
   const db = drizzle({ client, schema }) as unknown as Db
-  const recorder = process.env.E2B_API_KEY ? e2bModRecorder : new FakeModRecorder({ baseline: [] })
-  if (!process.env.E2B_API_KEY) console.log('E2B_API_KEY is not set: using the fake recorder')
-  console.log('using the fake Desktop recorder: every mod draws nothing in Claude Desktop')
+  const real = Boolean(process.env.E2B_API_KEY)
+  const recorder = real ? e2bModRecorder : new FakeModRecorder({ baseline: [] })
+  const desktopRecorder = real ? e2bDesktopRecorder() : new FakeDesktopRecorder()
+  if (!real) console.log('E2B_API_KEY is not set: using the fake recorders')
   try {
     return await renderMods(values, {
       db,
       recorder,
-      desktopRecorder: new FakeDesktopRecorder(),
+      desktopRecorder,
       github: createGitHub(),
       log: (line) => console.log(line),
     })
