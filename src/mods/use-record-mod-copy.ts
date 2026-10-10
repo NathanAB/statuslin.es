@@ -1,4 +1,5 @@
 import { usePostHog } from '@posthog/react'
+import { browserFunnelIds } from '@/lib/posthog-funnel-ids'
 import { recordModCopyFn } from './functions'
 import type { InstallCommandKind } from './install'
 
@@ -10,12 +11,6 @@ import type { InstallCommandKind } from './install'
 export function useRecordModCopy(modId: string): (kind: InstallCommandKind) => void {
   const posthog = usePostHog()
   return (kind) => {
-    let tracking: { distinctId?: string; sessionId?: string } = {}
-    try {
-      tracking = { distinctId: posthog.get_distinct_id(), sessionId: posthog.get_session_id() }
-    } catch {
-      // PostHog is uninitialized outside production; record without funnel ids.
-    }
-    recordModCopyFn({ data: { modId, kind, ...tracking } }).catch(() => {})
+    recordModCopyFn({ data: { modId, kind, ...browserFunnelIds(posthog) } }).catch(() => {})
   }
 }

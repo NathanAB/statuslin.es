@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { useRef, useState } from 'react'
 import type { CopyKind } from '@/adopt/copy-event'
 import { recordCopyFn } from '@/adopt/functions'
+import { browserFunnelIds } from '@/lib/posthog-funnel-ids'
 
 export interface RecordedCopyController {
   count: number
@@ -42,17 +43,8 @@ export function useRecordedCopy(configId: string, copyCount: number): RecordedCo
       count:
         (current.configId === requestConfigId ? Math.max(current.count, copyCount) : copyCount) + 1,
     }))
-    // Best-effort PostHog ids so the server-side copy event can join this person's funnel. When
-    // analytics is off (non-prod), the instance is uninitialized and these can be undefined or
-    // throw — never let that stop the copy from being recorded.
-    let tracking: { distinctId?: string; sessionId?: string } = {}
     try {
-      tracking = { distinctId: posthog.get_distinct_id(), sessionId: posthog.get_session_id() }
-    } catch {
-      // PostHog not initialized — record the copy without funnel ids.
-    }
-    try {
-      const next = await recordCopyFn({ data: { configId, kind, ...tracking } })
+      const next = await recordCopyFn({ data: { configId, kind, ...browserFunnelIds(posthog) } })
       // recordCopy returns 0 for a malformed/missing/unpublished config — don't let
       // that regress the display. copyCount is an approximate signal, so we keep the
       // optimistic value and only adopt a positive server total.
