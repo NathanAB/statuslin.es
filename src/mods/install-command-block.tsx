@@ -22,6 +22,8 @@ export function InstallCommandBlock({
         </Text>
         <CopyButton
           text={command.command}
+          size="lg"
+          variant="default"
           ariaLabel={`Copy command: ${command.label}`}
           onCopied={() => onCopied(command.kind)}
         />
