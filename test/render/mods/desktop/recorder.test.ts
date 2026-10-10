@@ -35,25 +35,25 @@ describe('desktopRecorder', () => {
   })
 
   it('refuses more input steps than the sandbox lifetime fits, before opening a sandbox', async () => {
-    const withDesktopSandbox = vi.fn()
+    const sandboxes = { withRecordingDesktop: vi.fn(), withAnalysisSandbox: vi.fn() }
     const steps = Array.from({ length: MAX_INPUT_STEPS + 1 }, () => ({
       type: 'text' as const,
       text: '/radar',
     }))
 
     await expect(
-      desktopRecorder({ withDesktopSandbox }).record({ mod: MOD, inputSteps: steps, draws: [] }),
+      desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: steps, draws: [] }),
     ).rejects.toThrow(/input steps/)
-    expect(withDesktopSandbox).not.toHaveBeenCalled()
+    expect(sandboxes.withRecordingDesktop).not.toHaveBeenCalled()
   })
 
   it('refuses a step too long to type inside its wait', async () => {
-    const withDesktopSandbox = vi.fn()
+    const sandboxes = { withRecordingDesktop: vi.fn(), withAnalysisSandbox: vi.fn() }
     const step = { type: 'text' as const, text: 'x'.repeat(MAX_STEP_CHARS + 1) }
 
     await expect(
-      desktopRecorder({ withDesktopSandbox }).record({ mod: MOD, inputSteps: [step], draws: [] }),
+      desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: [step], draws: [] }),
     ).rejects.toThrow(/characters/)
-    expect(withDesktopSandbox).not.toHaveBeenCalled()
+    expect(sandboxes.withRecordingDesktop).not.toHaveBeenCalled()
   })
 })

@@ -1,12 +1,13 @@
 // biome-ignore-all lint/style/useNamingConvention: env var names and settings keys are external contracts.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { SANDBOX_DESKTOP_BOOT } from '../../e2b-template'
+import type { InputStep } from '@/mods/curation'
+import { SANDBOX_DESKTOP_BOOT, SANDBOX_DESKTOP_ENGINE_VERSION } from '../../e2b-template'
 import type { Scenario } from '../../types'
+import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import { cannedReply, feedStdin } from '../scenario-feed'
 import {
   FEED_PLUGIN_DIR,
-  REPLY_FILE,
   SCRIPTED_PROMPT,
   type SessionSeed,
   sessionEnv,
@@ -80,17 +81,10 @@ const DARK_THEME = {
 }
 
 /**
- * What must exist before Desktop boots: its dark theme, and the canned reply the model server
- * answers with, since Desktop checks the gateway while it starts.
- */
-export function desktopBootFiles(scenario: Scenario): { path: string; data: string }[] {
-  return [{ path: REPLY_FILE, data: JSON.stringify(cannedReply(scenario)) }, DARK_THEME]
-}
-
-/**
- * The terminal session's files, plus the committed sample status line (so a mod that shows the
- * user's status line has one to draw) and Desktop's dark theme. Written once the engine's version
- * is known, before the session starts the engine.
+ * The terminal session's files (the canned reply among them, which Desktop's gateway check needs
+ * while it boots), plus the committed sample status line, so a mod that shows the user's status
+ * line has one to draw, and Desktop's dark theme. Uploaded before Desktop starts: once a mod's
+ * code may be running, nothing more is uploaded into its sandbox.
  */
 export function desktopSessionFiles(
   scenario: Scenario,
@@ -106,6 +100,13 @@ export function desktopSessionFiles(
     },
     DARK_THEME,
   ]
+}
+
+/** Where input step `index`'s text is staged; the recorder types it from there. */
+export const stepTextPath = (index: number) => `${SANDBOX_WORK_DIR}/step-${index}.txt`
+
+export function stepFiles(steps: readonly InputStep[]): { path: string; data: string }[] {
+  return steps.map((step, i) => ({ path: stepTextPath(i), data: step.text }))
 }
 
 const transcripts = (scenario: Scenario) => `${configDir(scenario)}/projects/*/*.jsonl`
@@ -132,7 +133,7 @@ export const FIT_WINDOW_COMMAND = [
 export const DESKTOP_VERSION_COMMAND = `dpkg-query -W -f='\${Version}' claude-desktop`
 /** Desktop installs its preseeded engine under a folder named for the engine's version. */
 export const ENGINE_INSTALLED_COMMAND = `ls ${DESKTOP_DATA_DIR}/claude-code/*/*/.verified`
-export const ENGINE_VERSION_COMMAND = `ls ${DESKTOP_DATA_DIR}/claude-code`
+export const ENGINE_VERSION_COMMAND = `cat ${SANDBOX_DESKTOP_ENGINE_VERSION}`
 
 const VERSION = /^\d+\.\d+\.\d+$/
 

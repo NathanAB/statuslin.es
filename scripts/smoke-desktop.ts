@@ -5,7 +5,7 @@ import { type DrawLocation, describeFootprint } from '@/mods/footprint'
 import { createGitHub } from '@/mods/github'
 import { inspectPlugin } from '@/mods/plugin-facts'
 import { terminalLine } from '@/mods/terminal-line'
-import { withDesktopSandbox } from '@/render/mods/desktop/desktop-sandbox'
+import { E2B_DESKTOP_SANDBOXES } from '@/render/mods/desktop/desktop-sandbox'
 import { desktopRecorder } from '@/render/mods/desktop/recorder'
 import type { DesktopRecording } from '@/render/mods/desktop/types'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
@@ -58,7 +58,7 @@ async function main(): Promise<number> {
   const entries = curation.entries.filter((e) => names.length === 0 || names.includes(e.pluginName))
 
   const github = createGitHub()
-  const recorder = desktopRecorder({ withDesktopSandbox })
+  const recorder = desktopRecorder(E2B_DESKTOP_SANDBOXES)
   const started = performance.now()
   const baseline = recorder.baseline()
   baseline.catch(() => {})

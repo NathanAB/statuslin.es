@@ -1,15 +1,17 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { SANDBOX_DESKTOP_BOOT } from '@/render/e2b-template'
+import { SANDBOX_DESKTOP_BOOT, SANDBOX_DESKTOP_ENGINE_VERSION } from '@/render/e2b-template'
 import {
   bootCommand,
   deepLink,
-  desktopBootFiles,
   desktopEnv,
   desktopSessionFiles,
+  ENGINE_VERSION_COMMAND,
   FIT_WINDOW_COMMAND,
   parseVersion,
   repliedCommand,
+  stepFiles,
+  stepTextPath,
   transcriptLinesCommand,
 } from '@/render/mods/desktop/session'
 import { cannedReply, feedScenario } from '@/render/mods/scenario-feed'
@@ -91,14 +93,30 @@ describe('desktopSessionFiles', () => {
   it('keeps the terminal session files, so both surfaces see the same feed', () => {
     expect([...files.keys()]).toContain(`${CONFIG_DIR}/.claude.json`)
   })
+
+  it('has the canned reply in place for the model server Desktop checks while it boots', () => {
+    expect([...files.keys()]).toContain(REPLY_FILE)
+  })
 })
 
-describe('desktopBootFiles', () => {
-  it('has the canned reply and the dark theme in place before Desktop starts', () => {
-    expect(desktopBootFiles(scenario).map((f) => f.path)).toEqual([
-      REPLY_FILE,
-      '/home/user/.config/Claude-3p/config.json',
+describe('stepFiles', () => {
+  it('stages each input step as its own file, to be uploaded before any mod code runs', () => {
+    const steps = [
+      { type: 'text' as const, text: '/radar' },
+      { type: 'text' as const, text: "look at [Image #1]; echo '$HOME'", submit: false },
+    ]
+
+    expect(stepFiles(steps)).toEqual([
+      { path: stepTextPath(0), data: '/radar' },
+      { path: stepTextPath(1), data: "look at [Image #1]; echo '$HOME'" },
     ])
+    expect(stepTextPath(1)).toBe('/home/user/.statuslines/step-1.txt')
+  })
+})
+
+describe('ENGINE_VERSION_COMMAND', () => {
+  it('reads the version the template recorded, not anything the session wrote', () => {
+    expect(ENGINE_VERSION_COMMAND).toBe(`cat ${SANDBOX_DESKTOP_ENGINE_VERSION}`)
   })
 })
 
