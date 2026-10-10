@@ -110,10 +110,18 @@ async function runBounded(
 ): Promise<CommandOutput> {
   let outputBytes = 0
   let handle: CommandHandle | undefined
+  let stopped = false
   const overflowed = () => outputBytes > maxOutputBytes
+  /** Disconnecting stops the SDK buffering output at once, whether or not the kill lands. */
+  const stopIfOverflowed = async () => {
+    if (!overflowed() || stopped || !handle) return
+    stopped = true
+    await handle.disconnect()
+    await handle.kill().catch(() => false)
+  }
   const count = (data: string) => {
     outputBytes += Buffer.byteLength(data)
-    if (overflowed()) handle?.kill().catch(() => false)
+    void stopIfOverflowed()
   }
   handle = await sandbox.commands.run(command, {
     background: true,
@@ -122,7 +130,7 @@ async function runBounded(
     onStdout: count,
     onStderr: count,
   })
-  if (overflowed()) await handle.kill().catch(() => false)
+  await stopIfOverflowed()
   const result = await handle.wait().catch((error: unknown) => {
     if (overflowed() || error instanceof TimeoutError) return null
     if (error instanceof CommandExitError) return error

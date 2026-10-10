@@ -23,6 +23,9 @@ import { withRecordingSandbox, withReplaySandbox } from '@/render/mods/mod-sandb
 function command(chunks: string[], outcome: () => Promise<unknown>) {
   let killed = false
   const handle = {
+    disconnect: vi.fn(async () => {
+      killed = true
+    }),
     kill: vi.fn(async () => {
       killed = true
       return true
@@ -99,7 +102,8 @@ describe('withReplaySandbox', () => {
     const run = withReplaySandbox((sandbox) => sandbox.runBounded('node x', LIMITS))
 
     await expect(run).rejects.toThrow(`command output passed ${LIMITS.maxOutputBytes} bytes`)
-    expect(handle.kill).toHaveBeenCalled()
+    expect(handle.disconnect).toHaveBeenCalledOnce()
+    expect(handle.kill).toHaveBeenCalledOnce()
     expect(fake.sandbox.kill).toHaveBeenCalledOnce()
   })
 

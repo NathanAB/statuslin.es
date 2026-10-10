@@ -6,7 +6,7 @@
 const { readFileSync } = require('node:fs')
 
 process.on('uncaughtException', (error) => {
-  process.stderr.write(String(error?.message).slice(0, 200))
+  process.stderr.write(String(error?.message))
   process.exit(1)
 })
 
@@ -19,8 +19,6 @@ const term = new Terminal({
   scrollback: 0,
 })
 const RESET = '0'
-const BLACK_FG = 30
-const WHITE_BG = 47
 
 function colorParams(isRgb, isPalette, value, base) {
   if (isRgb) return [base + 8, 2, (value >> 16) & 255, (value >> 8) & 255, value & 255]
@@ -30,12 +28,13 @@ function colorParams(isRgb, isPalette, value, base) {
   return [base + 8, 5, value]
 }
 
+/** An inverse cell swaps its colours; a default colour becomes black on white. */
 function cellStyle(cell) {
   let fg = colorParams(cell.isFgRGB(), cell.isFgPalette(), cell.getFgColor(), 30)
   let bg = colorParams(cell.isBgRGB(), cell.isBgPalette(), cell.getBgColor(), 40)
   if (cell.isInverse()) {
-    const swappedFg = bg.length ? [bg[0] - 10, ...bg.slice(1)] : [BLACK_FG]
-    const swappedBg = fg.length ? [fg[0] + 10, ...fg.slice(1)] : [WHITE_BG]
+    const swappedFg = bg.length ? [bg[0] - 10, ...bg.slice(1)] : [30]
+    const swappedBg = fg.length ? [fg[0] + 10, ...fg.slice(1)] : [47]
     fg = swappedFg
     bg = swappedBg
   }
