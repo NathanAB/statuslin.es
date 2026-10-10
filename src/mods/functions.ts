@@ -15,7 +15,7 @@ export const recordModCopyFn = createServerFn({ method: 'POST' })
   .inputValidator((d: { modId: string; kind: InstallCommandKind } & BrowserCopyTracking) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
-      const { ipHash, ...tracking } = requestCopyIdentity(data)
+      const { ipHash, ...tracking } = await requestCopyIdentity(data)
       const event = modCopyEvent({ kind: data.kind, modId: data.modId, ...tracking })
       if (event) getPostHogClient()?.capture(event)
       return recordModCopy(db, data.modId, ipHash)

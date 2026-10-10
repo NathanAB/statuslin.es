@@ -53,12 +53,24 @@ describe('captureServerException', () => {
     )
   })
 
-  it('uses the provided distinctId when one is given', async () => {
+  it('skips person processing for the default "server" distinctId', async () => {
+    process.env[TOKEN] = 'phc_test'
+    const { captureServerException } = await import('@/lib/posthog-server')
+    captureServerException(new Error('boom'))
+    expect(captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      'server',
+      expect.objectContaining({ $process_person_profile: false }),
+    )
+  })
+
+  it('uses the provided distinctId, keeping person processing, when one is given', async () => {
     process.env[TOKEN] = 'phc_test'
     const { captureServerException } = await import('@/lib/posthog-server')
     const err = new Error('x')
     captureServerException(err, { distinctId: 'user-123' })
     expect(captureException).toHaveBeenCalledWith(err, 'user-123', expect.any(Object))
+    expect(captureException.mock.calls[0]?.[2]).not.toHaveProperty('$process_person_profile')
   })
 
   it('merges allowlisted properties from context', async () => {
@@ -121,7 +133,11 @@ describe('captureServerExceptionImmediate', () => {
     expect(captureExceptionImmediate).toHaveBeenCalledWith(
       err,
       'server',
-      expect.objectContaining({ serverException: true, source: 'uncaught' }),
+      expect.objectContaining({
+        serverException: true,
+        source: 'uncaught',
+        $process_person_profile: false,
+      }),
     )
   })
 

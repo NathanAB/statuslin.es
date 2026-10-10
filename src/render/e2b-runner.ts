@@ -24,7 +24,7 @@ const NETWORK_SANDBOX_TIMEOUT_MS = 45_000 // sandbox lifetime cap when hosts are
 /** Exit code we report when the script is killed by the timeout. */
 const TIMEOUT_EXIT_CODE = 124
 /** Exit code we report when our own infra (RPC, sandbox) failed — NOT a script timeout. */
-const INFRA_ERROR_EXIT_CODE = 125
+export const INFRA_ERROR_EXIT_CODE = 125
 
 /** Scenario-derived working dir must look like this (absolute, under /home/user). */
 const SAFE_DIR_PATTERN = /^\/home\/user\/[A-Za-z0-9._/-]+$/

@@ -8,6 +8,7 @@ import { FakeSandboxRunner } from '@/render/fake-runner'
 import { getPreviews } from '@/render/store'
 import type { RenderInput, RenderResult, SandboxRunner } from '@/render/types'
 import { runNetworkPreview } from '@/review/decide'
+import type { RenderJobReport } from '@/submit/render-completed-event'
 import { submitConfig } from '@/submit/submit'
 import { drainRenderJobs, processNextRenderJob, requeueStaleJobs } from '@/submit/worker'
 
@@ -156,6 +157,39 @@ describe('processNextRenderJob', () => {
     expect(failedJob.error).toContain('sandbox down')
   })
 
+  it('reports a finished job with its ids, slug, duration and per-scenario exit status', async () => {
+    const { configId, versionId, slug } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Reported',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho hi',
+    })
+    const reports: RenderJobReport[] = []
+    const runner = new FakeSandboxRunner({ 'clean-main': { exitCode: 2, stdout: 'out' } })
+    await processNextRenderJob(db, runner, (r) => reports.push(r))
+    expect(reports).toHaveLength(1)
+    const [report] = reports
+    expect(report).toMatchObject({ configId, versionId, slug })
+    expect(report?.durationMs).toBeGreaterThanOrEqual(0)
+    expect(report?.scenarios).toHaveLength(8)
+    expect(report?.scenarios).toContainEqual({ exitCode: 2, timedOut: false })
+  })
+
+  it('reports a job that threw with null scenarios', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Boom report',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    const reports: RenderJobReport[] = []
+    const runner = { render: () => Promise.reject(new Error('sandbox down')) }
+    await processNextRenderJob(db, runner, (r) => reports.push(r))
+    expect(reports).toEqual([expect.objectContaining({ versionId, scenarios: null })])
+  })
+
   it('forwards a network version token disclosure to every render scenario', async () => {
     const { versionId } = await submitConfig(db, {
       authorId: 'u1',
@@ -208,6 +242,21 @@ describe('drainRenderJobs', () => {
       .from(schema.renderJobs)
       .where(eq(schema.renderJobs.status, 'queued'))
     expect(remaining).toHaveLength(0)
+  })
+
+  it('reports each job it drains', async () => {
+    for (const title of ['A', 'B']) {
+      await submitConfig(db, {
+        authorId: 'u1',
+        title,
+        description: '',
+        interpreter: 'bash',
+        source: `#!/bin/bash\necho ${title}`,
+      })
+    }
+    const reports: RenderJobReport[] = []
+    await drainRenderJobs(db, new FakeSandboxRunner(), (r) => reports.push(r))
+    expect(reports).toHaveLength(2)
   })
 
   it('returns 0 when nothing is queued', async () => {

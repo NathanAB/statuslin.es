@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { getRequestHeaders } from '@tanstack/react-start/server'
+import { auth } from './auth'
 import { requireStrongSecret } from './env'
 
 /** The browser's PostHog ids, passed through so a server-fired copy event joins its funnel. */
@@ -14,6 +15,8 @@ export interface CopyIdentity {
   /** Who the PostHog event is attributed to: the browser's id, else the IP pseudonym. */
   distinctId: string | null
   sessionId: string | undefined
+  /** The signed-in user's id, so only a copy attributed to that user creates a person profile. */
+  signedInUserId: string | null
 }
 
 // Turn the client IP into a one-way keyed token so the DB never stores a raw IP. HMAC with
@@ -39,7 +42,15 @@ function resolveIpHash(ip: string | null): string | null {
  * The identity of one copy request, shared by config and mod copies so one visitor dedupes and
  * attributes the same way on both counters. Reads the request, so it only runs inside a handler.
  */
-export function requestCopyIdentity(browser: BrowserCopyTracking): CopyIdentity {
-  const ipHash = resolveIpHash(getRequestHeaders().get('fly-client-ip'))
-  return { ipHash, distinctId: browser.distinctId ?? ipHash, sessionId: browser.sessionId }
+export async function requestCopyIdentity(browser: BrowserCopyTracking): Promise<CopyIdentity> {
+  const headers = getRequestHeaders()
+  const ipHash = resolveIpHash(headers.get('fly-client-ip'))
+  // The session only decides person processing, so a lookup failure must not fail the copy.
+  const session = await auth.api.getSession({ headers }).catch(() => null)
+  return {
+    ipHash,
+    distinctId: browser.distinctId ?? ipHash,
+    sessionId: browser.sessionId,
+    signedInUserId: session?.user.id ?? null,
+  }
 }

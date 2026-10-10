@@ -1,3 +1,4 @@
+import { copierPersonProperties } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
 import { MARKETPLACE_PATH } from '@/lib/site'
 
@@ -48,10 +49,15 @@ export function modCopyEvent(input: {
   kind: InstallCommandKind
   modId: string
   distinctId: string | null | undefined
+  signedInUserId: string | null
   sessionId?: string | null | undefined
 }): ServerEvent | null {
   if (!input.distinctId || !Object.hasOwn(COMMAND_KINDS, input.kind)) return null
-  const properties: Record<string, unknown> = { modId: input.modId, command: input.kind }
+  const properties: Record<string, unknown> = {
+    modId: input.modId,
+    command: input.kind,
+    ...copierPersonProperties(input.distinctId, input.signedInUserId),
+  }
   if (input.sessionId) properties[SESSION_ID_PROP] = input.sessionId
   return { distinctId: input.distinctId, event: 'mod_install_command_copied', properties }
 }

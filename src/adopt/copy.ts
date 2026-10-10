@@ -6,6 +6,28 @@ import { isUuid } from '@/lib/uuid'
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
+/** A published config's slug and live version — the ids a copy event carries to join the
+ * submit and review events. */
+export interface CopiedConfig {
+  slug: string
+  versionId: string
+}
+
+/**
+ * Look up the slug and live version of a published config, server-side, for its copy event — the
+ * client only sends the configId, and a client-sent slug could only mislabel telemetry. Null when
+ * the id is malformed or the config is missing/not published (recordCopy counts nothing then).
+ */
+export async function findCopiedConfig(db: Db, configId: string): Promise<CopiedConfig | null> {
+  if (!isUuid(configId)) return null
+  const [cfg] = await db
+    .select({ slug: configs.slug, versionId: configs.currentVersionId })
+    .from(configs)
+    .where(and(eq(configs.id, configId), eq(configs.status, 'published')))
+  if (!cfg?.versionId) return null
+  return { slug: cfg.slug, versionId: cfg.versionId }
+}
+
 /**
  * Count a copy of a published config, deduped per client: copyCount goes up at most once per
  * `ipHash` per config. An approximate popularity signal (like a view count) — returns the

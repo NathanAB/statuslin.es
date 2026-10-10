@@ -1,4 +1,5 @@
 import { PostHog } from 'posthog-node'
+import { PERSONLESS } from './posthog-person'
 
 let posthogClient: PostHog | null = null
 let warnedMissingToken = false
@@ -75,6 +76,8 @@ function serverErrorProperties(ctx?: ServerErrorContext): Record<string, unknown
     // `$exception` events posthog-js sends. Plain camelCase (not a `$`-reserved name) so PostHog
     // keeps it as a queryable custom property and the repo's naming lint stays happy.
     serverException: true,
+    // The default 'server' distinct id isn't a person.
+    ...(ctx?.distinctId ? {} : PERSONLESS),
     ...(ctx?.source ? { source: ctx.source } : {}),
     ...ctx?.properties,
   }
