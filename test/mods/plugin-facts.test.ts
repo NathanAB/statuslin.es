@@ -127,6 +127,36 @@ describe('parseManifest', () => {
     expect(() => parseManifest(JSON.stringify(manifest))).toThrow(message)
   })
 
+  const unprintable: [string, string][] = [
+    ['ESC', '\u001b[2J'],
+    ['a bidi override', '\u202e'],
+    ['U+2028', '\u2028'],
+    ['NUL', '\u0000'],
+  ]
+  it.each(
+    ['name', 'version', 'description'].flatMap((field) =>
+      unprintable.map(([what, char]): [string, string, string] => [field, what, char]),
+    ),
+  )('refuses a %s containing %s, escaped in the error', (field, _what, char) => {
+    const manifest = { name: 'skins', [field]: `a${char}b` }
+    const codePoint = `U+${(char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`
+
+    expect(() => parseManifest(JSON.stringify(manifest))).toThrow(
+      `${field} must not contain control or format characters (${codePoint})`,
+    )
+    expect(() => parseManifest(JSON.stringify(manifest))).not.toThrow(char)
+  })
+
+  it('keeps ordinary spaces and printable unicode', () => {
+    const manifest = {
+      name: 'skins für Claude',
+      version: '1.0.0 β',
+      description: 'Reskins it 🎨 — 日本語 and Ünïcödé, tabs aside.',
+    }
+
+    expect(parseManifest(JSON.stringify(manifest))).toEqual(manifest)
+  })
+
   it.each([
     ['not JSON', 'nope'],
     ['no name', '{"version":"1.0.0"}'],

@@ -20,8 +20,27 @@ export interface PluginFacts {
 /** A plugin.json past this is truncated, fails to parse, and the entry is refused. */
 const MANIFEST_MAX_BYTES = 64 * 1024
 
-/** Stored and served to every Claude Code client, so a value past its limit refuses the entry. */
-const atMost = (max: number) => z.string().max(max, `must be at most ${max} characters`)
+const CONTROL_OR_FORMAT = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u
+
+const codePoint = (char: string) =>
+  `U+${(char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`
+
+/**
+ * Stored and served to every Claude Code client, so a value past its limit, or one carrying a
+ * character that can rewrite a terminal or reorder text, refuses the entry.
+ */
+const atMost = (max: number) =>
+  z
+    .string()
+    .max(max, `must be at most ${max} characters`)
+    .superRefine((value, ctx) => {
+      const char = CONTROL_OR_FORMAT.exec(value)?.[0]
+      if (char === undefined) return
+      ctx.addIssue({
+        code: 'custom',
+        message: `must not contain control or format characters (${codePoint(char)})`,
+      })
+    })
 
 const manifestSchema = z.object({
   name: atMost(100).min(1, 'must not be empty'),

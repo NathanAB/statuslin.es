@@ -236,30 +236,6 @@ describe('importMods', () => {
     const CRAFTED = `\u001b[2K\r${OSC52}`
     const CONTROL = /[\p{Cc}\p{Cf}]/u
 
-    it('escapes a plugin.json version', async () => {
-      const { exitCode, lines } = await run(
-        [entry()],
-        fakes({ manifest: { name: 'skins', version: `1.0.0${CRAFTED}` } }),
-      )
-
-      expect(exitCode).toBe(0)
-      expect(lines).toHaveLength(1)
-      expect(lines[0]).not.toMatch(CONTROL)
-      expect(lines[0]).toContain('plugin 1.0.0\\u001b[2K\\u000d\\u001b]52;c;cm0gLXJmIH4=\\u0007,')
-    })
-
-    it('escapes a plugin.json name', async () => {
-      const { exitCode, lines } = await run(
-        [entry()],
-        fakes({ manifest: { name: `skins${CRAFTED}` } }),
-      )
-
-      expect(exitCode).toBe(1)
-      expect(lines).toHaveLength(1)
-      expect(lines[0]).not.toMatch(CONTROL)
-      expect(lines[0]).toContain('names the plugin "skins\\u001b[2K\\u000d\\u001b]52;c;')
-    })
-
     it('escapes a thrown error message', async () => {
       const sandboxError = new Error(`tar: member${CRAFTED}\nforged line`)
       const { exitCode, lines } = await run([entry()], fakes({ sandboxError }))
@@ -306,6 +282,16 @@ describe('importMods', () => {
         /version.*64/,
       ],
       ['a name over 100 characters', fakes({ manifest: { name: 'n'.repeat(101) } }), /name.*100/],
+      [
+        'a version carrying an escape sequence',
+        fakes({ manifest: { name: 'skins', version: '1.0.0\u001b[2K' } }),
+        /version must not contain control or format characters \(U\+001B\)/,
+      ],
+      [
+        'a name carrying a bidi override',
+        fakes({ manifest: { name: 'skins\u202e' } }),
+        /name must not contain control or format characters \(U\+202E\)/,
+      ],
       [
         'more than 200 events',
         fakes({ validate: validateWith([`./a.ts hooks: ${many(201).join(', ')}`]) }),
