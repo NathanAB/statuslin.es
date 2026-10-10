@@ -1,0 +1,1 @@
+ALTER TABLE "mod_versions" DROP COLUMN "desktop_screenshot";

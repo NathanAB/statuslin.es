@@ -8,9 +8,6 @@ export const COMMIT_SHA = /^[0-9a-f]{40}$/
 /** Claude Code's rule for a plugin id. */
 const PLUGIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 const PATH_SEGMENT = /^[A-Za-z0-9._-]+$/
-/** A site path served from public/mods/; no segment may start with "." so ".." cannot climb out. */
-const DESKTOP_SCREENSHOT =
-  /^\/mods\/(?:[A-Za-z0-9_-][A-Za-z0-9._-]*\/)*[A-Za-z0-9_-][A-Za-z0-9._-]*\.png$/
 
 const segments = (path: string) => (path === '' ? [] : path.split('/'))
 
@@ -46,11 +43,6 @@ const entrySchema = z.strictObject({
     .regex(PLUGIN_NAME, 'must start with a letter or digit, then letters, digits, ".", "_" or "-"'),
   title: z.string().trim().min(1, 'must not be empty'),
   inputSteps: inputStepsSchema.default([]),
-  /** Stands in for the terminal preview of a mod that only draws in Claude Desktop. */
-  desktopScreenshot: z
-    .string()
-    .regex(DESKTOP_SCREENSHOT, 'must be a site path under /mods/ ending in .png')
-    .optional(),
 })
 
 export type InputStep = z.infer<typeof inputStepSchema>

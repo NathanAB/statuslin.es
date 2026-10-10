@@ -36,7 +36,7 @@ function nextSha(): string {
   return shaSeed.toString(16).padStart(40, '0')
 }
 
-type Rendering = 'scenario-preview' | 'other-scenario' | 'screenshot' | 'none'
+type Rendering = 'scenario-preview' | 'other-scenario' | 'none'
 
 async function addVersion(modId: string, versionNumber: number, rendering: Rendering, path = '') {
   const [version] = await db
@@ -50,7 +50,6 @@ async function addVersion(modId: string, versionNumber: number, rendering: Rende
       license: 'MIT',
       footprint: { events: [], calls: [] },
       validatedWith: '2.1.0',
-      desktopScreenshot: rendering === 'screenshot' ? '/mods/screenshots/meter.png' : null,
     })
     .returning()
   const versionId = version?.id as string
@@ -88,7 +87,7 @@ async function listedSlugs(): Promise<string[]> {
 describe('getMarketplaceRows', () => {
   it('gives every listed plugin an https .git source pinned to a 40-hex sha', async () => {
     await addMod('at-root', 'published', 'scenario-preview')
-    await addMod('in-folder', 'published', 'screenshot', 'plugins/meter')
+    await addMod('in-folder', 'published', 'none', 'plugins/meter')
 
     const { plugins } = buildMarketplace('https://statuslin.es', await getMarketplaceRows(db))
 
@@ -140,7 +139,7 @@ describe('getMarketplaceRows', () => {
 
   it('returns the fields the marketplace entry needs, ordered by plugin name', async () => {
     await addMod('zeta', 'published', 'scenario-preview')
-    await addMod('alpha', 'published', 'screenshot')
+    await addMod('alpha', 'published', 'none')
     await db
       .update(schema.mods)
       .set({ description: 'First', tags: ['minimal'] })
@@ -194,7 +193,6 @@ describe('versionIsRendered', () => {
     ['only a clean-main preview', 'scenario-preview', null, false],
     ['only a Desktop shot', 'none', 'shot', false],
     ['a preview in another scenario and a Desktop shot', 'other-scenario', 'shot', false],
-    ['only a Desktop screenshot', 'screenshot', null, false],
     ['no results', 'none', null, false],
   ] as const)('judges a version with %s', async (_name, rendering, desktop, rendered) => {
     const { versionId } = await addMod('judged', 'published', rendering)

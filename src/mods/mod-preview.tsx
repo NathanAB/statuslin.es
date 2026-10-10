@@ -7,10 +7,6 @@ import { Text } from '@/ui/text'
 import { SURFACE_LABEL, type Surface } from './footprint'
 import type { ModDetail } from './queries'
 
-// mod_versions stores only the screenshot path, so every curated screenshot must have this pixel
-// size until per-image dimensions are stored; test/mods/curation.test.ts holds them to it.
-export const DESKTOP_SCREENSHOT_SIZE = { width: 1828, height: 365 }
-
 const desktopAlt = (title: string) => `${title} in Claude Desktop`
 
 function Labelled({ surface, children }: { surface: Surface; children: ReactNode }) {

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { modCardResponse } from '@/og/routes'
-import { openTestDb, seedMod, type TestDb } from '../mods/seed-mods'
+import { addDesktopPreview, openTestDb, seedMod, type TestDb } from '../mods/seed-mods'
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
@@ -12,11 +12,12 @@ let close: () => Promise<void>
 beforeAll(async () => {
   ;({ db, close } = await openTestDb())
   await seedMod(db, 'meter', 'published', 'a')
-  const anywhere = await seedMod(db, 'anywhere', 'published', 'b', false)
+  const anywhere = await seedMod(db, 'anywhere', 'published', 'b')
   await db
-    .update(schema.modVersions)
-    .set({ desktopScreenshot: '/mods/screenshots/anywhere.png' })
-    .where(eq(schema.modVersions.id, anywhere.versionId))
+    .update(schema.modPreviews)
+    .set({ segments: [] })
+    .where(eq(schema.modPreviews.modVersionId, anywhere.versionId))
+  await addDesktopPreview(db, anywhere.versionId)
   await seedMod(db, 'draft-mod', 'draft', 'c')
   await seedMod(db, 'removed-mod', 'removed', 'd')
 })
@@ -31,7 +32,7 @@ async function magic(res: Response) {
 describe('modCardResponse', () => {
   it.each([
     ['a published mod with a terminal preview', 'meter'],
-    ['a screenshot-only published mod', 'anywhere'],
+    ['a published mod that draws only in Claude Desktop', 'anywhere'],
   ])('renders a PNG for %s', async (_name, slug) => {
     const res = await modCardResponse(db, slug)
 
