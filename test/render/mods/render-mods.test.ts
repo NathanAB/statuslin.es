@@ -6,6 +6,8 @@ import type { GitHubSource } from '@/mods/github'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { RECORDING_MAX_ROW_BYTES } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
+import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
+import type { DesktopRecorder } from '@/render/mods/desktop/types'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModRecorder, Recording, RecordRequest } from '@/render/mods/recorder'
 import { renderMods } from '../../../scripts/render-mods'
@@ -47,6 +49,7 @@ interface Seed {
   rendered?: boolean
   path?: string
   inputSteps?: InputStep[]
+  footprint?: schema.ModFootprint
 }
 
 async function seedMod(
@@ -57,6 +60,7 @@ async function seedMod(
     rendered = false,
     path = '',
     inputSteps = [],
+    footprint,
   }: Seed = {},
 ) {
   const modId = await addMod(db, slug, status)
@@ -65,6 +69,7 @@ async function seedMod(
     versionNumber: 1,
     rendered,
     path,
+    ...(footprint ? { footprint } : {}),
   })
   await db
     .update(schema.modVersions)
@@ -85,7 +90,27 @@ async function storedPreviews(versionId: string) {
     .where(eq(schema.modPreviews.modVersionId, versionId))
 }
 
-function run(recorder: ModRecorder, options: { slug?: string } = {}) {
+async function storedDesktopPreviews(versionId: string) {
+  return db
+    .select({
+      scenarioKey: schema.modDesktopPreviews.scenarioKey,
+      kind: schema.modDesktopPreviews.kind,
+      png: schema.modDesktopPreviews.png,
+      width: schema.modDesktopPreviews.width,
+      height: schema.modDesktopPreviews.height,
+      cardAnchor: schema.modDesktopPreviews.cardAnchor,
+      desktopVersion: schema.modDesktopPreviews.desktopVersion,
+      engineVersion: schema.modDesktopPreviews.engineVersion,
+    })
+    .from(schema.modDesktopPreviews)
+    .where(eq(schema.modDesktopPreviews.modVersionId, versionId))
+}
+
+function run(
+  recorder: ModRecorder,
+  options: { slug?: string } = {},
+  desktopRecorder: DesktopRecorder = new FakeDesktopRecorder(),
+) {
   const lines: string[] = []
   const tarballs: string[] = []
   const github: Pick<GitHubSource, 'tarball'> = {
@@ -94,7 +119,13 @@ function run(recorder: ModRecorder, options: { slug?: string } = {}) {
       return TARBALL
     },
   }
-  const exitCode = renderMods(options, { db, recorder, github, log: (line) => lines.push(line) })
+  const exitCode = renderMods(options, {
+    db,
+    recorder,
+    desktopRecorder,
+    github,
+    log: (line) => lines.push(line),
+  })
   return { exitCode, lines, tarballs }
 }
 
@@ -147,7 +178,7 @@ describe('renderMods', () => {
       },
     ])
     for (const segment of stored[0]?.segments ?? []) expect(typeof segment.text).toBe('string')
-    expect(lines).toContain('rendered token-weather')
+    expect(lines).toContain('rendered token-weather in the terminal')
   })
 
   it('stores an empty preview for a crop with no rows of its own, replacing the earlier one', async () => {
@@ -160,7 +191,7 @@ describe('renderMods', () => {
     expect(await storedPreviews(versionId)).toEqual([
       { scenarioKey: MOD_SCENARIO_KEY, segments: [], claudeCodeVersion: '0.0.0-fake' },
     ])
-    expect(lines).toContain('drew nothing statusline-anywhere')
+    expect(lines).toContain('drew nothing statusline-anywhere in the terminal')
   })
 
   it('keeps the earlier preview and exits non-zero when a recording fails', async () => {
@@ -178,19 +209,24 @@ describe('renderMods', () => {
       { scenarioKey: MOD_SCENARIO_KEY, ...SEEDED_PREVIEW },
     ])
     expect(await storedPreviews(fineId)).toHaveLength(1)
-    expect(lines).toContain('failed skins: sandbox for skins died')
+    expect(lines).toContain('failed skins in the terminal: sandbox for skins died')
   })
 
-  it('fails a mod whose stored input steps do not parse, without recording it', async () => {
+  it('fails a mod whose stored input steps do not parse on both surfaces, without recording it', async () => {
     const malformed = [{ type: 'key', key: 'ctrl+c' }] as unknown as InputStep[]
     await seedMod('radar', { inputSteps: malformed })
     const recorder = new FakeModRecorder({ baseline })
+    const desktopRecorder = new FakeDesktopRecorder()
 
-    const { exitCode, lines } = run(recorder)
+    const { exitCode, lines } = run(recorder, {}, desktopRecorder)
 
     expect(await exitCode).toBe(1)
     expect(modRequests(recorder.requests)).toEqual([])
-    expect(lines[0]).toMatch(/^failed radar: /)
+    expect(desktopRecorder.requests).toEqual([])
+    expect(lines).toEqual([
+      expect.stringMatching(/^failed radar in the terminal: /),
+      expect.stringMatching(/^failed radar in Claude Desktop: /),
+    ])
   })
 
   it('records each version with its tarball, path, plugin name and input steps', async () => {
@@ -254,7 +290,7 @@ describe('renderMods', () => {
       { scenarioKey: MOD_SCENARIO_KEY, ...SEEDED_PREVIEW },
     ])
     expect(lines).toContain(
-      `failed flood: recording row 1 is over the ${RECORDING_MAX_ROW_BYTES}-byte limit`,
+      `failed flood in the terminal: recording row 1 is over the ${RECORDING_MAX_ROW_BYTES}-byte limit`,
     )
   })
 
@@ -314,8 +350,10 @@ describe('renderMods', () => {
     const { exitCode, lines } = run(recorder)
 
     expect(await exitCode).toBe(1)
-    expect(lines).toHaveLength(1)
-    expect(lines[0]).toMatch(/^failed skins: \\u001b\]52;c;A+… \(\d+ more characters\)$/)
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toMatch(
+      /^failed skins in the terminal: \\u001b\]52;c;A+… \(\d+ more characters\)$/,
+    )
     expect(lines[0]?.length).toBeLessThanOrEqual(500)
   })
 
@@ -328,5 +366,129 @@ describe('renderMods', () => {
     expect(await exitCode).toBe(1)
     expect(recorder.requests).toEqual([])
     expect(lines).toContain('no mod with slug "nope" has a current version')
+  })
+})
+
+const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7])
+const SHOT = { png: PNG, width: 790, height: 52, cardAnchor: 'bottom' as const }
+const FAKE_DESKTOP = { desktopVersion: '0.0.0-fake', engineVersion: '0.0.0-fake' }
+const STORED_NOTHING = {
+  scenarioKey: MOD_SCENARIO_KEY,
+  kind: 'nothing',
+  png: null,
+  width: null,
+  height: null,
+  cardAnchor: null,
+  ...FAKE_DESKTOP,
+}
+
+async function seedDesktopShot(versionId: string) {
+  await db.insert(schema.modDesktopPreviews).values({
+    modVersionId: versionId,
+    scenarioKey: MOD_SCENARIO_KEY,
+    kind: 'shot',
+    ...SHOT,
+    desktopVersion: '1.0.0',
+    engineVersion: '2.1.0',
+  })
+}
+
+function failingDesktop(pluginName: string): DesktopRecorder {
+  const inner = new FakeDesktopRecorder()
+  return {
+    async record(request) {
+      if (request.mod.pluginName === pluginName) throw new Error(`desktop for ${pluginName} died`)
+      return inner.record(request)
+    },
+  }
+}
+
+describe('renderMods in Claude Desktop', () => {
+  const terminal = () =>
+    new FakeModRecorder({ baseline, mods: { skins, 'token-weather': tokenWeather } })
+
+  it('stores a shot with its PNG, CSS size, card anchor and versions', async () => {
+    const versionId = await seedMod('token-weather')
+
+    const { exitCode, lines } = run(
+      terminal(),
+      {},
+      new FakeDesktopRecorder({ 'token-weather': SHOT }),
+    )
+
+    expect(await exitCode).toBe(0)
+    expect(await storedDesktopPreviews(versionId)).toEqual([
+      { scenarioKey: MOD_SCENARIO_KEY, kind: 'shot', ...SHOT, ...FAKE_DESKTOP },
+    ])
+    expect(lines).toEqual([
+      'rendered token-weather in the terminal',
+      'rendered token-weather in Claude Desktop',
+    ])
+  })
+
+  it('stores that a mod draws nothing there, replacing an earlier shot', async () => {
+    const versionId = await seedMod('token-weather')
+    await seedDesktopShot(versionId)
+
+    const { exitCode, lines } = run(terminal())
+
+    expect(await exitCode).toBe(0)
+    expect(await storedDesktopPreviews(versionId)).toEqual([STORED_NOTHING])
+    expect(lines).toContain('drew nothing token-weather in Claude Desktop')
+  })
+
+  it('asks for the mod with its input steps and where its footprint draws', async () => {
+    const inputSteps: InputStep[] = [{ type: 'text', text: '/radar' }]
+    await seedMod('radar', {
+      path: 'mods/radar',
+      inputSteps,
+      footprint: {
+        events: ['ui.render{component=Pane, requestId=radar}', 'ui.render{component=AbovePrompt}'],
+        calls: ['$.ui.toast'],
+      },
+    })
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    expect(await run(new FakeModRecorder({ baseline }), {}, desktopRecorder).exitCode).toBe(0)
+
+    expect(desktopRecorder.requests).toEqual([
+      {
+        mod: { source: { tarball: TARBALL, path: 'mods/radar' }, pluginName: 'radar' },
+        inputSteps,
+        draws: ['above-prompt', 'pane', 'toast'],
+      },
+    ])
+  })
+
+  it('keeps the earlier Desktop result and still stores the terminal when Desktop fails', async () => {
+    const versionId = await seedMod('skins')
+    await seedDesktopShot(versionId)
+
+    const { exitCode, lines } = run(terminal(), {}, failingDesktop('skins'))
+
+    expect(await exitCode).toBe(1)
+    expect(await storedDesktopPreviews(versionId)).toMatchObject([{ kind: 'shot', ...SHOT }])
+    expect((await storedPreviews(versionId))[0]?.claudeCodeVersion).toBe('0.0.0-fake')
+    expect(lines).toEqual([
+      'rendered skins in the terminal',
+      'failed skins in Claude Desktop: desktop for skins died',
+    ])
+  })
+
+  it('still stores the Desktop result when the terminal fails', async () => {
+    const versionId = await seedMod('skins', { rendered: true })
+    const recorder = scriptedRecorder(terminal(), { failFor: ['skins'] })
+
+    const { exitCode, lines } = run(recorder, {}, new FakeDesktopRecorder({ skins: SHOT }))
+
+    expect(await exitCode).toBe(1)
+    expect(await storedPreviews(versionId)).toEqual([
+      { scenarioKey: MOD_SCENARIO_KEY, ...SEEDED_PREVIEW },
+    ])
+    expect(await storedDesktopPreviews(versionId)).toMatchObject([{ kind: 'shot' }])
+    expect(lines).toEqual([
+      'failed skins in the terminal: sandbox for skins died',
+      'rendered skins in Claude Desktop',
+    ])
   })
 })

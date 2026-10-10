@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import {
   check,
+  customType,
   integer,
   jsonb,
   pgTable,
@@ -9,6 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
+import type { DesktopRecording, DesktopShot } from '../render/mods/desktop/types'
 import type { AnsiSegment } from '../render/types'
 
 export type ModStatus = 'draft' | 'published' | 'removed'
@@ -77,11 +79,44 @@ export const modPreviews = pgTable(
       .notNull()
       .references(() => modVersions.id, { onDelete: 'cascade' }),
     scenarioKey: text('scenario_key').notNull(),
+    /** Empty when the mod drew nothing in the terminal. */
     segments: jsonb('segments').$type<AnsiSegment[]>().notNull(),
     claudeCodeVersion: text('claude_code_version').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('mod_previews_version_scenario_uq').on(t.modVersionId, t.scenarioKey)],
+)
+
+const bytea = customType<{ data: Uint8Array }>({ dataType: () => 'bytea' })
+
+/** A mod's Claude Desktop preview: a PNG shot, or the fact that it drew nothing there. */
+export const modDesktopPreviews = pgTable(
+  'mod_desktop_previews',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    modVersionId: uuid('mod_version_id')
+      .notNull()
+      .references(() => modVersions.id, { onDelete: 'cascade' }),
+    scenarioKey: text('scenario_key').notNull(),
+    kind: text('kind').$type<DesktopRecording['kind']>().notNull(),
+    /** Untrusted pixels, served only as image/png. */
+    png: bytea('png'),
+    /** CSS pixels; the PNG is recorded at a higher device scale. */
+    width: integer('width'),
+    height: integer('height'),
+    cardAnchor: text('card_anchor').$type<DesktopShot['cardAnchor']>(),
+    desktopVersion: text('desktop_version').notNull(),
+    engineVersion: text('engine_version').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('mod_desktop_previews_version_scenario_uq').on(t.modVersionId, t.scenarioKey),
+    check(
+      'mod_desktop_previews_kind_check',
+      // IS TRUE, so a null width or anchor fails the check instead of passing it as unknown.
+      sql`((${t.kind} = 'shot' AND ${t.png} IS NOT NULL AND ${t.width} > 0 AND ${t.height} > 0 AND ${t.cardAnchor} IN ('top', 'bottom')) OR (${t.kind} = 'nothing' AND ${t.png} IS NULL AND ${t.width} IS NULL AND ${t.height} IS NULL AND ${t.cardAnchor} IS NULL)) IS TRUE`,
+    ),
+  ],
 )
 
 export const modCopyEvents = pgTable(

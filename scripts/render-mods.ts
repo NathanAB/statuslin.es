@@ -6,33 +6,47 @@ import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
-import { inputStepsSchema } from '@/mods/curation'
+import { type InputStep, inputStepsSchema } from '@/mods/curation'
+import { describeFootprint, type Surface } from '@/mods/footprint'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { terminalLine } from '@/mods/terminal-line'
 import { boundRecording } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
+import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
+import type { DesktopRecorder, DesktopRecording } from '@/render/mods/desktop/types'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
-import { e2bModRecorder, type ModRecorder, type Recording } from '@/render/mods/recorder'
+import {
+  e2bModRecorder,
+  type ModRecorder,
+  type ModUnderRender,
+  type Recording,
+} from '@/render/mods/recorder'
 import type { AnsiSegment } from '@/render/types'
 
 /**
  * Render the current version of each mod that is not removed against the `clean-main` scenario and
- * store its preview. Every mod is recorded in its own offline E2B sandbox and cropped against one
- * baseline recording (the same session with no mod), shared across the run while the Claude Code
- * version matches.
+ * store its preview on both surfaces, the terminal and Claude Desktop.
  *
- * A version's preview is replaced in one statement. A crop with no rows of its own is stored as an
- * empty preview, which records that the mod draws nothing in the terminal. A version whose run fails
- * keeps whatever preview it had; nothing is ever deleted. Uses real E2B when E2B_API_KEY is set, else
- * a fake recorder under which every mod draws nothing.
+ * Terminal: every mod is recorded in its own offline E2B sandbox and cropped against one baseline
+ * recording (the same session with no mod), shared across the run while the Claude Code version
+ * matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
+ * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames the mod where its
+ * footprint says it draws, and stores the PNG, or the fact that it drew nothing.
+ *
+ * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
+ * run fails keeps whatever result it had, and the other surface is still stored; nothing is ever
+ * deleted. Uses real E2B for the terminal when E2B_API_KEY is set, else a fake recorder under which
+ * every mod draws nothing. Claude Desktop uses a fake recorder under which every mod draws nothing,
+ * until the real one is wired in.
  *
  * AGENT USAGE (needs DATABASE_URL, and E2B_API_KEY for real renders):
  *
  *   bun run render:mods                 # every mod's current version
  *   bun run render:mods --slug <slug>   # one mod
  *
- * Exit code 0 when every mod rendered or cleanly did not, 1 when any run failed.
+ * Prints one outcome per mod per surface. Exit code 0 when every surface rendered or drew nothing,
+ * 1 when any surface failed.
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -41,6 +55,7 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 export interface RenderModsDeps {
   db: Db
   recorder: ModRecorder
+  desktopRecorder: DesktopRecorder
   github: Pick<GitHubSource, 'tarball'>
   log: (line: string) => void
 }
@@ -48,6 +63,11 @@ export interface RenderModsDeps {
 const CONCURRENCY = 4
 
 type Outcome = { kind: 'rendered' } | { kind: 'drew nothing' } | { kind: 'failed'; reason: string }
+
+const IN_SURFACE: Record<Surface, string> = {
+  terminal: 'in the terminal',
+  desktop: 'in Claude Desktop',
+}
 
 interface Target {
   slug: string
@@ -58,6 +78,7 @@ interface Target {
   commitSha: string
   /** Stored jsonb, parsed in renderTarget so a malformed row fails only its own mod. */
   inputSteps: unknown
+  footprint: schema.ModFootprint
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
@@ -70,6 +91,7 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       path: schema.modVersions.path,
       commitSha: schema.modVersions.commitSha,
       inputSteps: schema.modVersions.inputSteps,
+      footprint: schema.modVersions.footprint,
     })
     .from(schema.mods)
     .innerJoin(
@@ -126,29 +148,81 @@ async function storePreview(
     })
 }
 
-async function renderTarget(
+async function storeDesktopPreview(db: Db, versionId: string, recording: DesktopRecording) {
+  const shot = recording.kind === 'shot' ? recording : null
+  const preview = {
+    kind: recording.kind,
+    png: shot?.png ?? null,
+    width: shot?.width ?? null,
+    height: shot?.height ?? null,
+    cardAnchor: shot?.cardAnchor ?? null,
+    desktopVersion: recording.desktopVersion,
+    engineVersion: recording.engineVersion,
+  }
+  await db
+    .insert(schema.modDesktopPreviews)
+    .values({ modVersionId: versionId, scenarioKey: MOD_SCENARIO_KEY, ...preview })
+    .onConflictDoUpdate({
+      target: [schema.modDesktopPreviews.modVersionId, schema.modDesktopPreviews.scenarioKey],
+      set: { ...preview, createdAt: sql`now()` },
+    })
+}
+
+interface ModRequest {
+  mod: ModUnderRender
+  inputSteps: InputStep[]
+}
+
+async function renderTerminal(
   target: Target,
-  { db, recorder, github }: RenderModsDeps,
+  request: ModRequest,
+  { db, recorder }: RenderModsDeps,
   baselineFor: (version: string) => Promise<Recording>,
 ): Promise<Outcome> {
-  const inputSteps = inputStepsSchema.parse(target.inputSteps)
-  const recording = boundRecording(
-    await recorder.record({
-      mod: {
-        source: {
-          tarball: await github.tarball(target.repoUrl, target.commitSha),
-          path: target.path,
-        },
-        pluginName: target.pluginName,
-      },
-      inputSteps,
-    }),
-  )
+  const recording = boundRecording(await recorder.record(request))
   const baseline = await baselineFor(recording.claudeCodeVersion)
   const crop = cropModPreview(baseline.rows, recording.rows)
   const segments = crop.kind === 'rendered' ? crop.segments : []
   await storePreview(db, target.versionId, segments, recording.claudeCodeVersion)
   return { kind: crop.kind === 'rendered' ? 'rendered' : 'drew nothing' }
+}
+
+async function renderDesktop(
+  target: Target,
+  request: ModRequest,
+  { db, desktopRecorder }: RenderModsDeps,
+): Promise<Outcome> {
+  const draws = describeFootprint(target.footprint).draws
+  const recording = await desktopRecorder.record({ ...request, draws })
+  await storeDesktopPreview(db, target.versionId, recording)
+  return { kind: recording.kind === 'shot' ? 'rendered' : 'drew nothing' }
+}
+
+const failure = (error: unknown): Outcome => ({
+  kind: 'failed',
+  reason: error instanceof Error ? error.message : String(error),
+})
+
+/** Both surfaces need the mod's source; past that, neither surface's failure touches the other. */
+async function renderTarget(
+  target: Target,
+  deps: RenderModsDeps,
+  baselineFor: (version: string) => Promise<Recording>,
+): Promise<Record<Surface, Outcome>> {
+  let request: ModRequest
+  try {
+    const inputSteps = inputStepsSchema.parse(target.inputSteps)
+    const tarball = await deps.github.tarball(target.repoUrl, target.commitSha)
+    const source = { tarball, path: target.path }
+    request = { mod: { source, pluginName: target.pluginName }, inputSteps }
+  } catch (error) {
+    return { terminal: failure(error), desktop: failure(error) }
+  }
+  const [terminal, desktop] = await Promise.all([
+    renderTerminal(target, request, deps, baselineFor).catch(failure),
+    renderDesktop(target, request, deps).catch(failure),
+  ])
+  return { terminal, desktop }
 }
 
 async function forEachConcurrently<T>(items: T[], limit: number, work: (item: T) => Promise<void>) {
@@ -174,14 +248,13 @@ export async function renderMods(
 
   let failed = 0
   await forEachConcurrently(todo, CONCURRENCY, async (target) => {
-    const outcome = await renderTarget(target, deps, baselineFor).catch(
-      (error): Outcome => ({
-        kind: 'failed',
-        reason: error instanceof Error ? error.message : String(error),
-      }),
-    )
-    if (outcome.kind === 'failed') failed++
-    log(`${outcome.kind} ${target.slug}${'reason' in outcome ? `: ${outcome.reason}` : ''}`)
+    const outcomes = await renderTarget(target, deps, baselineFor)
+    for (const surface of ['terminal', 'desktop'] as const) {
+      const outcome = outcomes[surface]
+      if (outcome.kind === 'failed') failed++
+      const reason = 'reason' in outcome ? `: ${outcome.reason}` : ''
+      log(`${outcome.kind} ${target.slug} ${IN_SURFACE[surface]}${reason}`)
+    }
   })
   return failed === 0 ? 0 : 1
 }
@@ -193,10 +266,12 @@ async function main(): Promise<number> {
   const db = drizzle({ client, schema }) as unknown as Db
   const recorder = process.env.E2B_API_KEY ? e2bModRecorder : new FakeModRecorder({ baseline: [] })
   if (!process.env.E2B_API_KEY) console.log('E2B_API_KEY is not set: using the fake recorder')
+  console.log('using the fake Desktop recorder: every mod draws nothing in Claude Desktop')
   try {
     return await renderMods(values, {
       db,
       recorder,
+      desktopRecorder: new FakeDesktopRecorder(),
       github: createGitHub(),
       log: (line) => console.log(line),
     })
