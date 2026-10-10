@@ -47,7 +47,7 @@ export function modPath(slug: string): string {
 /** A mod version's Claude Desktop preview image. */
 export const MOD_DESKTOP_PREVIEW_ROUTE = '/mod-previews/$versionId/desktop.png'
 
-/** Names the render too, so a re-render is a new URL and the image can cache forever. */
+/** Names the render too, so a re-render is a new URL that no cache has seen. */
 export function modDesktopPreviewPath(versionId: string, renderedAt: Date): string {
   return `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)}?r=${renderedAt.getTime()}`
 }

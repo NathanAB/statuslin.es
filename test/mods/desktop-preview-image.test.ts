@@ -1,4 +1,6 @@
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import * as schema from '@/db/schema'
 import { modDesktopPreviewResponse } from '@/mods/desktop-preview-image'
 import {
   addDesktopPreview,
@@ -39,14 +41,25 @@ afterAll(async () => {
   await close()
 })
 
+/** The `r` the page puts in a version's image URL: when its Desktop result was stored. */
+async function renderOf(versionId: string): Promise<string> {
+  const [row] = await db
+    .select({ createdAt: schema.modDesktopPreviews.createdAt })
+    .from(schema.modDesktopPreviews)
+    .where(eq(schema.modDesktopPreviews.modVersionId, versionId))
+  return String(row?.createdAt.getTime() ?? 0)
+}
+
 describe('modDesktopPreviewResponse', () => {
-  it("serves a published mod's current Desktop shot as an immutable PNG", async () => {
-    const res = await modDesktopPreviewResponse(db, ids.live as string)
+  it("serves a published mod's current Desktop shot as a PNG cached for an hour", async () => {
+    const live = ids.live as string
+    const res = await modDesktopPreviewResponse(db, live, await renderOf(live))
 
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    // Short enough that a delisted mod's image leaves shared caches soon after its page does.
+    expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
     expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(
       Array.from(SEEDED_DESKTOP_SHOT.png),
     )
@@ -59,7 +72,8 @@ describe('modDesktopPreviewResponse', () => {
     ['a version that drew nothing in Desktop', 'nothing'],
     ['a version with no Desktop result', 'unrendered'],
   ])('is a 404 for %s', async (_name, key) => {
-    const res = await modDesktopPreviewResponse(db, ids[key] as string)
+    const versionId = ids[key] as string
+    const res = await modDesktopPreviewResponse(db, versionId, await renderOf(versionId))
 
     expect(res.status).toBe(404)
     expect(res.headers.get('content-type')).not.toBe('image/png')
@@ -69,6 +83,14 @@ describe('modDesktopPreviewResponse', () => {
     ['an unknown id', '00000000-0000-4000-8000-000000000000'],
     ['an id that is not a UUID', 'not-a-uuid'],
   ])('is a 404 for %s', async (_name, versionId) => {
-    expect((await modDesktopPreviewResponse(db, versionId)).status).toBe(404)
+    expect((await modDesktopPreviewResponse(db, versionId, '0')).status).toBe(404)
+  })
+
+  it.each([
+    ['no render', null],
+    ['another render', '1'],
+    ['a render that is not a number', 'abc'],
+  ])('is a 404 for the current shot named with %s, so made-up URLs miss every cache', async (_name, render) => {
+    expect((await modDesktopPreviewResponse(db, ids.live as string, render)).status).toBe(404)
   })
 })
