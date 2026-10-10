@@ -25,7 +25,7 @@ describe('DesktopShot', () => {
   it.each([
     'top',
     'bottom',
-  ] as const)('crops a card shot anchored at the %s to a fixed height without shrinking it', (cardAnchor) => {
+  ] as const)('crops a card shot anchored at the %s to a fixed height without shrinking it, its frame hugging the shot', (cardAnchor) => {
     render(<DesktopShot shot={{ ...SHOT, cardAnchor }} alt="Radar in Claude Desktop" fit="card" />)
 
     const image = screen.getByRole('img', { name: 'Radar in Claude Desktop' })
@@ -34,6 +34,7 @@ describe('DesktopShot', () => {
     expect(image.className).toContain('max-w-none')
     expect(frame?.className).toContain('overflow-hidden')
     expect(frame?.className).toContain('max-h-37.5')
+    expect(frame?.className).toContain('w-fit')
     expect(frame?.className.includes('justify-end')).toBe(cardAnchor === 'bottom')
   })
 })
