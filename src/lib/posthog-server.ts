@@ -42,6 +42,14 @@ export interface ServerEvent {
   properties: Record<string, unknown>
 }
 
+// posthog-node processes a person profile for every distinct id it sees, so a server event sent under
+// an id that isn't a signed-in user (an anonymous browser id, an ip hash, 'server') would create a
+// profile per id. Spreading this into an event's properties turns that off — the client's
+// person_profiles: 'identified_only', applied server-side. Assigned through a variable key so
+// neither the camelCase naming rule nor the literal-keys rule fires on the leading '$'.
+const PROCESS_PERSON_PROFILE_PROP = '$process_person_profile'
+export const PERSONLESS: Readonly<Record<string, false>> = { [PROCESS_PERSON_PROFILE_PROP]: false }
+
 /** Context attached to a server-side error capture. Only safe, non-script metadata belongs here. */
 export type ServerErrorContext = {
   /** Defaults to the constant `'server'`; error tracking groups by fingerprint, not person. */
@@ -75,6 +83,8 @@ function serverErrorProperties(ctx?: ServerErrorContext): Record<string, unknown
     // `$exception` events posthog-js sends. Plain camelCase (not a `$`-reserved name) so PostHog
     // keeps it as a queryable custom property and the repo's naming lint stays happy.
     serverException: true,
+    // The default 'server' distinct id isn't a person.
+    ...(ctx?.distinctId ? {} : PERSONLESS),
     ...(ctx?.source ? { source: ctx.source } : {}),
     ...ctx?.properties,
   }

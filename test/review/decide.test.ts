@@ -8,6 +8,7 @@ import { FakeSandboxRunner } from '@/render/fake-runner'
 import {
   approveAndEmailVersion,
   approveVersion,
+  findVersionConfig,
   rejectAndEmailVersion,
   rejectVersion,
   requeueRenderJob,
@@ -735,5 +736,23 @@ describe('setReadsClaudeToken', () => {
       .where(eq(schema.configVersions.id, versionId))
     expect(ver?.readsClaudeToken).toBe(true)
     expect(ver?.reviewedBy).toBe('u1')
+  })
+})
+
+describe('findVersionConfig', () => {
+  it('returns the id and slug of the config a version belongs to', async () => {
+    const versionId = await seedVersionWithJob(db, { status: 'done', networkHosts: [] })
+    const [ver] = await db
+      .select({ configId: schema.configVersions.configId, slug: schema.configs.slug })
+      .from(schema.configVersions)
+      .innerJoin(schema.configs, eq(schema.configs.id, schema.configVersions.configId))
+      .where(eq(schema.configVersions.id, versionId))
+    expect(await findVersionConfig(db, versionId)).toEqual({
+      configId: ver?.configId,
+      slug: ver?.slug,
+    })
+  })
+  it('returns undefined for an unknown version', async () => {
+    expect(await findVersionConfig(db, '00000000-0000-4000-8000-000000000000')).toBeUndefined()
   })
 })
