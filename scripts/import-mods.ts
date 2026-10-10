@@ -128,7 +128,7 @@ const MAX_LINE_CHARS = 500
  * plugin.json, validate output, tar stderr and git filenames reach these lines, so each is escaped
  * (an ESC or OSC 52 sequence could rewrite the log or the operator's clipboard) and capped.
  */
-function terminalLine(line: string): string {
+export function terminalLine(line: string): string {
   const escaped = printable(line)
   if (escaped.length <= MAX_LINE_CHARS) return escaped
   const suffix = (rest: number) => `… (${rest} more characters)`
