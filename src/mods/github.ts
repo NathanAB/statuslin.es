@@ -100,7 +100,7 @@ export function createGitHub(
     async commitIsOnDefaultBranch(repoUrl, sha) {
       const { defaultBranch } = await repoInfo(repoUrl)
       const comparison = (await request(
-        `${repoApiUrl(repoUrl)}/compare/${sha}...${defaultBranch}`,
+        `${repoApiUrl(repoUrl)}/compare/${sha}...${encodeURIComponent(defaultBranch)}`,
         [404],
       )) as { status: string } | null
       return comparison?.status === 'ahead' || comparison?.status === 'identical'

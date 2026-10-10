@@ -40,6 +40,17 @@ describe('commitIsOnDefaultBranch', () => {
     expect(await createGitHub(fetchFn).commitIsOnDefaultBranch(REPO, SHA)).toBe(expected)
   })
 
+  it('encodes a default branch name, so a # cannot cut the compare short', async () => {
+    const { fetchFn: routed } = fakeFetch({
+      [api('')]: { status: 200, body: { default_branch: 'release#1' } },
+      [api(`/compare/${SHA}...release`)]: { status: 200, body: { status: 'identical' } },
+      [api(`/compare/${SHA}...release%231`)]: { status: 200, body: { status: 'diverged' } },
+    })
+    const dropsFragment = ((url: string) => routed(url.split('#')[0] ?? url)) as typeof fetch
+
+    expect(await createGitHub(dropsFragment).commitIsOnDefaultBranch(REPO, SHA)).toBe(false)
+  })
+
   it('treats a commit GitHub does not know as off the default branch', async () => {
     const { fetchFn } = fakeFetch({
       [api('')]: { status: 200, body: { default_branch: 'main' } },

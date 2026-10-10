@@ -1,4 +1,4 @@
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq, isNull, ne } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -9,6 +9,8 @@ import { createGitHub, type GitHub } from '@/mods/github'
 import {
   compareBase,
   confirmationGuards,
+  currentChangedGuard,
+  type Guard,
   guardLine,
   loadCurrentVersion,
   loadVersions,
@@ -98,6 +100,40 @@ function parseArgs(argv: string[]) {
   return { slug, sha, apply: argv.includes('--apply') }
 }
 
+/**
+ * Writes only while the mod is not removed and still points at the version the report compared
+ * against; otherwise returns the guard that explains which of the two changed.
+ */
+async function makeCurrent(
+  db: Db,
+  {
+    modId,
+    targetId,
+    slug,
+    compared,
+  }: { modId: string; targetId: string; slug: string; compared: string | null },
+): Promise<Guard | null> {
+  const published = await db
+    .update(schema.mods)
+    .set({ currentVersionId: targetId, status: 'published' })
+    .where(
+      and(
+        eq(schema.mods.id, modId),
+        ne(schema.mods.status, 'removed'),
+        compared
+          ? eq(schema.mods.currentVersionId, compared)
+          : isNull(schema.mods.currentVersionId),
+      ),
+    )
+    .returning({ id: schema.mods.id })
+  if (published.length > 0) return null
+  const [mod] = await db
+    .select({ status: schema.mods.status })
+    .from(schema.mods)
+    .where(eq(schema.mods.id, modId))
+  return mod?.status === 'removed' ? removedGuard(slug) : currentChangedGuard(slug)
+}
+
 export async function runPublish(argv: string[], deps: PublishDeps): Promise<number> {
   const { db, github } = deps
   const log = (line: string) => deps.log(terminalLine(line))
@@ -123,13 +159,14 @@ export async function runPublish(argv: string[], deps: PublishDeps): Promise<num
     log(`dry run: nothing changed. Rerun with --apply --confirm=${slug} to publish.`)
     return 0
   }
-  const published = await db
-    .update(schema.mods)
-    .set({ currentVersionId: targetId, status: 'published' })
-    .where(and(eq(schema.mods.id, modId), ne(schema.mods.status, 'removed')))
-    .returning({ id: schema.mods.id })
-  if (published.length === 0) {
-    log(guardLine(removedGuard(slug)))
+  const refusal = await makeCurrent(db, {
+    modId,
+    targetId,
+    slug,
+    compared: facts.current?.id ?? null,
+  })
+  if (refusal) {
+    log(guardLine(refusal))
     return 1
   }
   log(`published "${slug}" at ${sha}`)

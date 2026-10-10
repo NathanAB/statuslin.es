@@ -40,7 +40,10 @@ export async function loadVersions(db: Db, where: SQL | undefined): Promise<Publ
     .where(where)
 }
 
-/** Scoped to the mod, so a current_version_id pointing at another mod's version finds nothing. */
+/**
+ * Scoped to the mod. A current_version_id pointing at another mod's version is refused, so it is
+ * never mistaken for a first publish with nothing to compare against.
+ */
 export async function loadCurrentVersion(
   db: Db,
   mod: { id: string; currentVersionId: string | null },
@@ -50,7 +53,10 @@ export async function loadCurrentVersion(
     db,
     and(eq(modVersions.id, mod.currentVersionId), eq(modVersions.modId, mod.id)),
   )
-  return current ?? null
+  if (!current) {
+    throw new Error(`current_version_id ${mod.currentVersionId} is not a version of this mod`)
+  }
+  return current
 }
 
 /** What any version must satisfy before the marketplace lists it, by publish or by restore. */
@@ -159,6 +165,13 @@ export function removedGuard(slug: string): Guard {
   return refuse(
     'mod-removed',
     `"${slug}" is delisted; bring it back with delist-mod.ts --restore first`,
+  )
+}
+
+export function currentChangedGuard(slug: string): Guard {
+  return refuse(
+    'current-version-changed',
+    `"${slug}" was re-pinned after this report was read; rerun to review the new diff`,
   )
 }
 

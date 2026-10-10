@@ -378,3 +378,34 @@ it('leaves a mod removed when a delist lands between the checks and the write', 
   expect(output).toMatch(/delisted/)
   expect(await modState(db, 'meter')).toEqual({ status: 'removed', currentVersionId: null })
 })
+
+it('refuses when another publish re-pins the mod between the report and the write', async () => {
+  const { modId } = await publishedMod({})
+  await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+  const otherId = await addVersion(db, modId, { commitSha: sha('c'), versionNumber: 3 })
+  const repinMeanwhile = async () => {
+    await setCurrentVersion(db, modId, otherId)
+  }
+
+  const { exitCode, output } = await publish(
+    ['meter', sha('b'), '--apply', '--confirm=meter'],
+    fakeGitHub({ meanwhile: repinMeanwhile }),
+  )
+
+  expect(exitCode).toBe(1)
+  expect(output).toMatch(/REFUSE current-version-changed/)
+  expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: otherId })
+})
+
+it('refuses a mod whose current version belongs to another mod instead of calling it a first publish', async () => {
+  const ownerId = await addMod(db, 'owner', 'published')
+  const borrowedId = await addVersion(db, ownerId, { commitSha: sha('a'), versionNumber: 1 })
+  const modId = await addMod(db, 'meter', 'published')
+  await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 1 })
+  await setCurrentVersion(db, modId, borrowedId)
+
+  await expect(publish(['meter', sha('b')])).rejects.toThrow(
+    `current_version_id ${borrowedId} is not a version of this mod`,
+  )
+  expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: borrowedId })
+})
