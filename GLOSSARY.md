@@ -32,8 +32,12 @@ _Avoid_: meter, usage mod, status line mod
 A named, fixed Claude Code session state (model, usage, folder, git and so on) that previews are rendered against. Status lines and mods draw from the same set.
 _Avoid_: fixture, test case, sample
 
+**Surface**:
+Where Claude Code draws a mod: the terminal or Claude Desktop.
+_Avoid_: client, app, platform
+
 **Preview**:
-What a status line or mod showed when statuslin.es rendered it against one scenario.
+What a status line or mod showed when statuslin.es rendered it against one scenario, on one surface.
 _Avoid_: screenshot, demo, render
 
 **Marketplace**:
