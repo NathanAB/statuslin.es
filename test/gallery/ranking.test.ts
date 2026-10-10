@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MAX_GALLERY_PAGE, PAGE_SIZE } from '@/gallery/queries'
 import { coerceSourceQuery, type GallerySourceQuery } from '@/gallery/ranking'
 
 const untrusted = (value: unknown) => value as GallerySourceQuery
@@ -16,6 +17,12 @@ describe('coerceSourceQuery', () => {
     expect(
       coerceSourceQuery(untrusted({ sort: 'loudest', tags: ['git', 'nope', 7], limit: -5 })),
     ).toEqual({ sort: 'trending', tags: ['git'], limit: 1 })
+  })
+
+  it('caps the limit at the last page the gallery serves', () => {
+    expect(coerceSourceQuery({ sort: 'top', limit: 1_000_000_000 }).limit).toBe(
+      MAX_GALLERY_PAGE * PAGE_SIZE,
+    )
   })
 
   it('treats a non-array tags value as no tags and leaves an absent limit absent', () => {

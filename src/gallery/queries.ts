@@ -13,6 +13,8 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /** Cards per gallery page. */
 export const PAGE_SIZE = 10
+/** The last gallery page served, so one request can fetch at most this many pages of each kind. */
+export const MAX_GALLERY_PAGE = 100
 /** The scenario shown on a gallery card; falls back to the first available preview. */
 const CARD_SCENARIO = 'clean-main'
 
@@ -75,14 +77,6 @@ export interface GalleryCard {
 
 export function hasAllTags(allTags: PgColumn, tags: string[]): SQL | undefined {
   return tags.length > 0 ? sql`${allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
-}
-
-export async function getPublishedCount(db: Db, tags: string[] = []): Promise<number> {
-  const [row] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(configs)
-    .where(and(eq(configs.status, 'published'), hasAllTags(configs.allTags, tags)))
-  return row?.n ?? 0
 }
 
 /**

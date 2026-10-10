@@ -4,9 +4,8 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getPublishedConfigs } from '@/gallery/config-items'
+import { getConfigSource, getPublishedConfigs } from '@/gallery/config-items'
 import { getAvailableTags } from '@/gallery/facet-queries'
-import { getPublishedCount } from '@/gallery/queries'
 import { storePreviews } from '@/render/store'
 
 let client: PGlite
@@ -99,16 +98,17 @@ describe('getPublishedConfigs tag filter (flat AND)', () => {
   })
 })
 
-describe('getPublishedCount tag filter (drives page count)', () => {
+describe('getConfigSource total tag filter (drives page count)', () => {
+  const total = async (tags: string[]) => (await getConfigSource(db, { sort: 'new', tags })).total
   it('no tags → counts all published', async () => {
-    expect(await getPublishedCount(db)).toBe(3)
+    expect(await total([])).toBe(3)
   })
   it('filters the count by the same tags as the cards', async () => {
-    expect(await getPublishedCount(db, ['node'])).toBe(2)
-    expect(await getPublishedCount(db, ['node', 'quota'])).toBe(1)
+    expect(await total(['node'])).toBe(2)
+    expect(await total(['node', 'quota'])).toBe(1)
   })
   it('a tag no config carries counts zero', async () => {
-    expect(await getPublishedCount(db, ['themed'])).toBe(0)
+    expect(await total(['themed'])).toBe(0)
   })
 })
 

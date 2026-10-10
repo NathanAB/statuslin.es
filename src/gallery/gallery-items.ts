@@ -1,5 +1,5 @@
 import type { AnsiSegment } from '@/render/types'
-import { type GalleryCard, galleryPageWindow, PAGE_SIZE } from './queries'
+import { type GalleryCard, galleryPageWindow, MAX_GALLERY_PAGE, PAGE_SIZE } from './queries'
 
 /** The home grid's kind filter, kept in the URL; `all` is the default and stays out of it. */
 export type GalleryFilter = 'all' | 'status-lines' | 'mods'
@@ -62,6 +62,7 @@ export async function loadGalleryPage(
   query: { page: number; filter: GalleryFilter },
   loaders: Record<GalleryKind, (limit: number) => Promise<GallerySource>>,
 ): Promise<{ items: GalleryItem[]; page: number; pageCount: number } | null> {
+  if (query.page > MAX_GALLERY_PAGE) return null
   const sources = await Promise.all(
     FILTER_KINDS[query.filter].map((kind) => loaders[kind](query.page * PAGE_SIZE)),
   )

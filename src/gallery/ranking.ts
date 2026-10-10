@@ -1,6 +1,14 @@
 import { and, asc, eq, type SQL, sql } from 'drizzle-orm'
 import type { PgColumn, PgSelect } from 'drizzle-orm/pg-core'
-import { coercePage, coerceSort, coerceTags, type GallerySort, hasAllTags } from './queries'
+import {
+  coercePage,
+  coerceSort,
+  coerceTags,
+  type GallerySort,
+  hasAllTags,
+  MAX_GALLERY_PAGE,
+  PAGE_SIZE,
+} from './queries'
 import { type CopyEventColumns, trendingScore } from './trending'
 
 export interface GallerySourceQuery {
@@ -48,6 +56,8 @@ export function coerceSourceQuery(query: GallerySourceQuery): GallerySourceQuery
   return {
     sort: coerceSort(query.sort),
     tags: coerceTags(Array.isArray(query.tags) ? query.tags.join(',') : undefined),
-    ...(query.limit === undefined ? {} : { limit: coercePage(query.limit) }),
+    ...(query.limit === undefined
+      ? {}
+      : { limit: Math.min(coercePage(query.limit), MAX_GALLERY_PAGE * PAGE_SIZE) }),
   }
 }

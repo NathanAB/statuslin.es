@@ -8,7 +8,7 @@ import {
   mergeGalleryItems,
   type RankedGalleryItem,
 } from '@/gallery/gallery-items'
-import { type GalleryCard, PAGE_SIZE } from '@/gallery/queries'
+import { type GalleryCard, MAX_GALLERY_PAGE, PAGE_SIZE } from '@/gallery/queries'
 
 function statusLine(slug: string, sortKey: number | null): RankedGalleryItem {
   const card: GalleryCard = {
@@ -146,5 +146,15 @@ describe('loadGalleryPage', () => {
       { 'status-line': async () => statusLines, mod: async () => mods },
     )
     expect(page).toBeNull()
+  })
+
+  it('refuses a page past the last one the gallery serves without loading anything', async () => {
+    const load = vi.fn(async () => statusLines)
+    const page = await loadGalleryPage(
+      { page: MAX_GALLERY_PAGE + 1, filter: 'all' },
+      { 'status-line': load, mod: load },
+    )
+    expect(page).toBeNull()
+    expect(load).not.toHaveBeenCalled()
   })
 })
