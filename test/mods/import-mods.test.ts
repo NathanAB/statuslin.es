@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import type { GitHubSource, RepoInfo } from '@/mods/github'
+import type { RepoInfo } from '@/mods/github'
 import { versionIsRendered } from '@/mods/queries'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
-import { importMods } from '../../scripts/import-mods'
+import { type ImportDeps, importMods } from '../../scripts/import-mods'
 import { addMod, openTestDb, type TestDb } from './seed-mods'
 
 const SHA = 'c'.repeat(40)
@@ -53,7 +53,7 @@ function fakes({
   sandboxError,
 }: Fakes = {}) {
   const calls: string[] = []
-  const github: GitHubSource = {
+  const github: ImportDeps['github'] = {
     async repoInfo(repoUrl): Promise<RepoInfo> {
       calls.push(`repoInfo:${repoUrl}`)
       return { fullName, license, defaultBranch: 'main' }
@@ -222,13 +222,6 @@ describe('importMods', () => {
     expect(output).toMatch(/entry 2 \(meter\) commitSha/)
     expect(calls).toEqual([])
     expect(await allMods()).toEqual([])
-  })
-
-  it('downloads a repository once for entries that share its commit', async () => {
-    const deps = fakes({ manifest: { name: 'skins' } })
-    await run([entry({ path: 'a' }), entry({ path: 'b', pluginName: 'skins-2' })], deps)
-
-    expect(deps.calls.filter((c) => c.startsWith('tarball:'))).toHaveLength(1)
   })
 
   describe('prints what a mod controls escaped, one line per entry', () => {

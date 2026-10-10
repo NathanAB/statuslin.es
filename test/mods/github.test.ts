@@ -167,6 +167,26 @@ describe('tarball', () => {
     expect(await createGitHub(fetchFn).tarball(REPO, SHA)).toEqual(bytes)
   })
 
+  it('downloads a repository at a commit once for every caller in a run', async () => {
+    const bytes = new Uint8Array([31, 139, 8, 0])
+    const { fetchFn, requested } = fakeFetch({
+      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
+      [archiveUrl]: { status: 200, body: bytes },
+      [api(`/git/trees/${BASE}?recursive=1`)]: tree(3),
+      [`https://codeload.github.com/octocat/meter/tar.gz/${BASE}`]: { status: 200, body: bytes },
+    })
+    const github = createGitHub(fetchFn)
+
+    await Promise.all([github.tarball(REPO, SHA), github.tarball(REPO, SHA)])
+    await github.tarball(REPO, SHA)
+    await github.tarball(REPO, BASE)
+
+    expect(requested.filter((url) => url.includes('/tar.gz/'))).toEqual([
+      archiveUrl,
+      `https://codeload.github.com/octocat/meter/tar.gz/${BASE}`,
+    ])
+  })
+
   it.each([
     ['more files than the limit', tree(TARBALL_MAX_FILES + 1), /files/],
     ['a tree GitHub truncated', tree(10, true), /files/],
@@ -200,5 +220,40 @@ describe('tarball', () => {
     })
 
     await expect(createGitHub(fetchFn).tarball(REPO, SHA)).rejects.toThrow(/larger than/)
+  })
+})
+
+describe('readme', () => {
+  function readmeFetch(status: number, body = '') {
+    const calls: Array<{ url: string; accept: string | null }> = []
+    const fetchFn = (async (url: string, init?: RequestInit) => {
+      calls.push({ url, accept: new Headers(init?.headers).get('accept') })
+      return new Response(body, { status })
+    }) as unknown as typeof fetch
+    return { calls, fetchFn }
+  }
+
+  it('reads the raw README of the plugin folder at the pinned commit', async () => {
+    const { calls, fetchFn } = readmeFetch(200, '# Meter')
+    const github = createGitHub(fetchFn)
+
+    expect(await github.readme('https://github.com/octocat/mods', 'plugins/meter', SHA)).toBe(
+      '# Meter',
+    )
+    expect(await github.readme(REPO, '', SHA)).toBe('# Meter')
+    expect(calls).toEqual([
+      {
+        url: `https://api.github.com/repos/octocat/mods/readme/plugins/meter?ref=${SHA}`,
+        accept: 'application/vnd.github.raw+json',
+      },
+      { url: api(`/readme?ref=${SHA}`), accept: 'application/vnd.github.raw+json' },
+    ])
+  })
+
+  it('returns null when there is no README and throws on other failures', async () => {
+    expect(await createGitHub(readmeFetch(404).fetchFn).readme(REPO, '', SHA)).toBeNull()
+    await expect(createGitHub(readmeFetch(500).fetchFn).readme(REPO, '', SHA)).rejects.toThrow(
+      /500/,
+    )
   })
 })

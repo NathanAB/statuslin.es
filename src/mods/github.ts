@@ -16,8 +16,13 @@ export interface RepoInfo {
 
 export interface GitHubSource {
   repoInfo(repoUrl: string): Promise<RepoInfo>
-  /** The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. */
+  /**
+   * The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. Downloaded
+   * once per repository and commit for the life of this source.
+   */
   tarball(repoUrl: string, sha: string): Promise<Uint8Array>
+  /** The raw README GitHub picks for `path` at `sha`, or null when the folder has none. */
+  readme(repoUrl: string, path: string, sha: string): Promise<string | null>
 }
 
 export interface GitHub {
@@ -65,9 +70,9 @@ export function createGitHub(
   fetchFn: typeof fetch = fetch,
   timeoutMs = REQUEST_TIMEOUT_MS,
 ): GitHub & GitHubSource {
-  const send = (url: string) =>
+  const send = (url: string, accept = 'application/vnd.github+json') =>
     fetchFn(url, {
-      headers: { accept: 'application/vnd.github+json', 'user-agent': 'statuslin.es' },
+      headers: { accept, 'user-agent': 'statuslin.es' },
       signal: AbortSignal.timeout(timeoutMs),
     })
 
@@ -94,6 +99,21 @@ export function createGitHub(
     // biome-ignore-end lint/style/useNamingConvention: GitHub API response fields.
   }
 
+  async function download(repoUrl: string, sha: string): Promise<Uint8Array> {
+    const { truncated, tree } = (await request(
+      `${repoApiUrl(repoUrl)}/git/trees/${sha}?recursive=1`,
+    )) as { truncated: boolean; tree: unknown[] }
+    if (truncated || tree.length > TARBALL_MAX_FILES) {
+      throw new Error(`${repoUrl} at ${sha} has more than ${TARBALL_MAX_FILES} files`)
+    }
+    const url = `${GITHUB_ARCHIVES}/${repoPath(repoUrl)}/tar.gz/${sha}`
+    const res = await send(url)
+    if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
+    return readAtMost(res, TARBALL_MAX_BYTES, url)
+  }
+
+  const downloads = new Map<string, Promise<Uint8Array>>()
+
   return {
     repoInfo,
 
@@ -113,17 +133,20 @@ export function createGitHub(
       return files.map((f) => f.filename)
     },
 
-    async tarball(repoUrl, sha) {
-      const { truncated, tree } = (await request(
-        `${repoApiUrl(repoUrl)}/git/trees/${sha}?recursive=1`,
-      )) as { truncated: boolean; tree: unknown[] }
-      if (truncated || tree.length > TARBALL_MAX_FILES) {
-        throw new Error(`${repoUrl} at ${sha} has more than ${TARBALL_MAX_FILES} files`)
-      }
-      const url = `${GITHUB_ARCHIVES}/${repoPath(repoUrl)}/tar.gz/${sha}`
-      const res = await send(url)
+    tarball(repoUrl, sha) {
+      const key = `${repoPath(repoUrl)}@${sha}`
+      const pending = downloads.get(key) ?? download(repoUrl, sha)
+      downloads.set(key, pending)
+      return pending
+    },
+
+    async readme(repoUrl, path, sha) {
+      const folder = path ? `/${path}` : ''
+      const url = `${repoApiUrl(repoUrl)}/readme${folder}?ref=${sha}`
+      const res = await send(url, 'application/vnd.github.raw+json')
+      if (res.status === 404) return null
       if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
-      return readAtMost(res, TARBALL_MAX_BYTES, url)
+      return res.text()
     },
 
     async commitIsFetchable(repoUrl, sha) {

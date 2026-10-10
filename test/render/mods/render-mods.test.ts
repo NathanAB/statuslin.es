@@ -183,6 +183,18 @@ describe('renderMods', () => {
     expect(lines).toContain('failed skins: sandbox for skins died')
   })
 
+  it('fails a mod whose stored input steps do not parse, without recording it', async () => {
+    const malformed = [{ type: 'key', key: 'ctrl+c' }] as unknown as InputStep[]
+    await seedMod('radar', { inputSteps: malformed })
+    const recorder = new FakeModRecorder({ baseline })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(modRequests(recorder.requests)).toEqual([])
+    expect(lines[0]).toMatch(/^failed radar: /)
+  })
+
   it('records each version with its tarball, path, plugin name and input steps', async () => {
     const inputSteps: InputStep[] = [{ type: 'text', text: '/radar', submit: false }]
     await seedMod('radar', { commitSha: sha('d'), path: 'mods/radar', inputSteps })

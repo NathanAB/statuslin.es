@@ -36,7 +36,7 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface ImportDeps {
   db: Db
-  github: GitHubSource
+  github: Pick<GitHubSource, 'repoInfo' | 'tarball'>
   withSandbox: typeof withModSandbox
   log: (line: string) => void
 }
@@ -67,7 +67,6 @@ async function slugUsingName(db: Db, name: string): Promise<string | undefined> 
 async function importEntry(
   entry: CurationEntry,
   { db, github, withSandbox }: ImportDeps,
-  tarball: (entry: CurationEntry) => Promise<Uint8Array>,
 ): Promise<string> {
   const name = entry.pluginName
   const imported = await importedSlug(db, entry)
@@ -83,7 +82,7 @@ async function importEntry(
   const canonical = `https://github.com/${repo.fullName}`
   if (canonical !== entry.repoUrl) throw new Error(`write the repository URL as ${canonical}`)
   const facts = await withSandbox(
-    { tarball: await tarball(entry), path: entry.path },
+    { tarball: await github.tarball(entry.repoUrl, entry.commitSha), path: entry.path },
     inspectPlugin,
   )
   if (facts.manifest.name !== name) {
@@ -133,18 +132,10 @@ export async function importMods(raw: unknown, deps: ImportDeps): Promise<number
     return 1
   }
 
-  const downloads = new Map<string, Promise<Uint8Array>>()
-  const tarball = ({ repoUrl, commitSha }: CurationEntry) => {
-    const key = `${repoUrl}@${commitSha}`
-    const download = downloads.get(key) ?? deps.github.tarball(repoUrl, commitSha)
-    downloads.set(key, download)
-    return download
-  }
-
   let refused = 0
   for (const entry of curation.entries) {
     try {
-      log(await importEntry(entry, deps, tarball))
+      log(await importEntry(entry, deps))
     } catch (error) {
       refused++
       log(`refused ${entry.pluginName}: ${messageOf(error)}`)

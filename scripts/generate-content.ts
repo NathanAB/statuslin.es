@@ -17,6 +17,7 @@ import {
   parseModContentGenerationResponses,
   prepareModContentGenerationRequest,
 } from '@/mods/content-generation'
+import { createGitHub, type GitHubSource } from '@/mods/github'
 
 /**
  * Agent-agnostic generated-content workflow.
@@ -92,18 +93,12 @@ export function parseGenerateContentArgs(argv: string[]): GenerateContentArgs {
 }
 
 /** The README GitHub picks for `path` at `commitSha`, raw, cut to README_MAX_CHARS. */
-export function fetchModReadme(fetchFn: typeof fetch = fetch): ModReadmeSource {
+export function fetchModReadme(
+  github: Pick<GitHubSource, 'readme'> = createGitHub(),
+): ModReadmeSource {
   return async (repoUrl, path, commitSha) => {
-    const repo = new URL(repoUrl).pathname
-    const folder = path ? `/${path}` : ''
-    const url = `https://api.github.com/repos${repo}/readme${folder}?ref=${commitSha}`
-    const res = await fetchFn(url, {
-      headers: { accept: 'application/vnd.github.raw+json', 'user-agent': 'statuslin.es' },
-      signal: AbortSignal.timeout(10_000),
-    })
-    if (res.status === 404) return null
-    if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
-    const text = await res.text()
+    const text = await github.readme(repoUrl, path, commitSha)
+    if (text === null) return null
     return text.length > README_MAX_CHARS
       ? `${text.slice(0, README_MAX_CHARS)}\n[README cut off at ${README_MAX_CHARS} characters]`
       : text

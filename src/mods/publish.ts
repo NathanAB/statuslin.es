@@ -1,6 +1,7 @@
 import { and, eq, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, type ModStatus, modVersions } from '@/db/schema'
+import { COMMIT_SHA } from './curation'
 import { MOD_SCENARIO_KEY, versionIsRendered } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -81,8 +82,6 @@ export function compareBase(
 ): PublishVersion | null {
   return current?.repoUrl === target.repoUrl ? current : null
 }
-
-const COMMIT_SHA = /^[0-9a-f]{40}$/
 
 export function shaGuards(sha: string): Guard[] {
   if (COMMIT_SHA.test(sha)) return []

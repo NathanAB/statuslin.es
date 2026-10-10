@@ -6,7 +6,7 @@ import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
-import type { InputStep } from '@/mods/curation'
+import { inputStepsSchema } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { terminalLine } from '@/mods/publish'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
@@ -58,7 +58,8 @@ interface Target {
   repoUrl: string
   path: string
   commitSha: string
-  inputSteps: InputStep[]
+  /** Stored jsonb, parsed in renderTarget so a malformed row fails only its own mod. */
+  inputSteps: unknown
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
@@ -87,8 +88,7 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       ),
     )
     .orderBy(schema.mods.slug)
-  // The import writes input steps only after parseCuration has validated them.
-  return rows.map((row) => ({ ...row, inputSteps: row.inputSteps as InputStep[] }))
+  return rows
 }
 
 /** One baseline per Claude Code version, recorded the first time a mod's recording asks for it. */
@@ -130,17 +130,20 @@ async function storePreview(
 
 async function renderTarget(
   target: Target,
-  { db, recorder }: RenderModsDeps,
-  tarball: (target: Target) => Promise<Uint8Array>,
+  { db, recorder, github }: RenderModsDeps,
   baselineFor: (version: string) => Promise<Recording>,
 ): Promise<Outcome> {
+  const inputSteps = inputStepsSchema.parse(target.inputSteps)
   const recording = boundRecording(
     await recorder.record({
       mod: {
-        source: { tarball: await tarball(target), path: target.path },
+        source: {
+          tarball: await github.tarball(target.repoUrl, target.commitSha),
+          path: target.path,
+        },
         pluginName: target.pluginName,
       },
-      inputSteps: target.inputSteps,
+      inputSteps,
     }),
   )
   const baseline = await baselineFor(recording.claudeCodeVersion)
@@ -174,18 +177,11 @@ export async function renderMods(
     return 1
   }
 
-  const downloads = new Map<string, Promise<Uint8Array>>()
-  const tarball = ({ repoUrl, commitSha }: Target) => {
-    const key = `${repoUrl}@${commitSha}`
-    const download = downloads.get(key) ?? deps.github.tarball(repoUrl, commitSha)
-    downloads.set(key, download)
-    return download
-  }
   const baselineFor = sharedBaselines(deps.recorder)
 
   let failed = 0
   await forEachConcurrently(todo, CONCURRENCY, async (target) => {
-    const outcome = await renderTarget(target, deps, tarball, baselineFor).catch(
+    const outcome = await renderTarget(target, deps, baselineFor).catch(
       (error): Outcome => ({
         kind: 'failed',
         reason: error instanceof Error ? error.message : String(error),

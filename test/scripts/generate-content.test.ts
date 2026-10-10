@@ -500,45 +500,9 @@ describe('generate-content for mods', () => {
 describe('fetchModReadme', () => {
   const COMMIT = 'd'.repeat(40)
 
-  function fakeFetch(status: number, body = '') {
-    const calls: Array<{ url: string; accept: string | null }> = []
-    const fetchFn = (async (url: string, init?: RequestInit) => {
-      calls.push({ url, accept: new Headers(init?.headers).get('accept') })
-      return new Response(body, { status })
-    }) as unknown as typeof fetch
-    return { calls, fetchFn }
-  }
-
-  it('reads the raw README of the plugin folder at the pinned commit', async () => {
-    const { calls, fetchFn } = fakeFetch(200, '# Meter')
-
-    expect(
-      await fetchModReadme(fetchFn)('https://github.com/octocat/mods', 'plugins/meter', COMMIT),
-    ).toBe('# Meter')
-    expect(await fetchModReadme(fetchFn)('https://github.com/octocat/meter', '', COMMIT)).toBe(
-      '# Meter',
-    )
-    expect(calls).toEqual([
-      {
-        url: `https://api.github.com/repos/octocat/mods/readme/plugins/meter?ref=${COMMIT}`,
-        accept: 'application/vnd.github.raw+json',
-      },
-      {
-        url: `https://api.github.com/repos/octocat/meter/readme?ref=${COMMIT}`,
-        accept: 'application/vnd.github.raw+json',
-      },
-    ])
-  })
-
-  it('returns null when there is no README and throws on other failures', async () => {
-    const repo = 'https://github.com/octocat/meter'
-    expect(await fetchModReadme(fakeFetch(404).fetchFn)(repo, '', COMMIT)).toBeNull()
-    await expect(fetchModReadme(fakeFetch(500).fetchFn)(repo, '', COMMIT)).rejects.toThrow(/500/)
-  })
-
   it('cuts a very long README down to a fixed size', async () => {
     const long = 'x'.repeat(100_000)
-    const text = await fetchModReadme(fakeFetch(200, long).fetchFn)(
+    const text = await fetchModReadme({ readme: async () => long })(
       'https://github.com/octocat/meter',
       '',
       COMMIT,
