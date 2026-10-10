@@ -40,20 +40,30 @@ function repoPath(repoUrl: string): string {
   return `${match[1]}/${match[2]}`
 }
 
+/** Four times the characters content generation keeps: UTF-8 spends at most 3 bytes per UTF-16
+ * unit, so a README cut here still runs past that limit and gets its cut-off note. */
+export const README_MAX_BYTES = 80_000
+
 const repoApiUrl = (repoUrl: string) => `${GITHUB_API}/repos/${repoPath(repoUrl)}`
 
-async function readAtMost(res: Response, maxBytes: number, url: string): Promise<Uint8Array> {
-  const tooLarge = () => new Error(`${url} is larger than ${maxBytes} bytes`)
-  if (Number(res.headers.get('content-length') ?? 0) > maxBytes) throw tooLarge()
+/** The first `maxBytes` of the body (or all of it), cancelling the rest unread. */
+async function readUpTo(
+  res: Response,
+  maxBytes: number,
+): Promise<{ bytes: Uint8Array; truncated: boolean }> {
   const reader = res.body?.getReader()
   const chunks: Uint8Array[] = []
   let size = 0
+  let truncated = false
   for (let chunk = await reader?.read(); chunk && !chunk.done; chunk = await reader?.read()) {
-    size += chunk.value.byteLength
-    if (size > maxBytes) {
+    if (size + chunk.value.byteLength > maxBytes) {
+      chunks.push(chunk.value.subarray(0, maxBytes - size))
+      size = maxBytes
+      truncated = true
       await reader?.cancel()
-      throw tooLarge()
+      break
     }
+    size += chunk.value.byteLength
     chunks.push(chunk.value)
   }
   const bytes = new Uint8Array(size)
@@ -62,6 +72,14 @@ async function readAtMost(res: Response, maxBytes: number, url: string): Promise
     bytes.set(chunk, offset)
     offset += chunk.byteLength
   }
+  return { bytes, truncated }
+}
+
+async function readAtMost(res: Response, maxBytes: number, url: string): Promise<Uint8Array> {
+  const tooLarge = () => new Error(`${url} is larger than ${maxBytes} bytes`)
+  if (Number(res.headers.get('content-length') ?? 0) > maxBytes) throw tooLarge()
+  const { bytes, truncated } = await readUpTo(res, maxBytes)
+  if (truncated) throw tooLarge()
   return bytes
 }
 
@@ -146,7 +164,7 @@ export function createGitHub(
       const res = await send(url, 'application/vnd.github.raw+json')
       if (res.status === 404) return null
       if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
-      return res.text()
+      return new TextDecoder().decode((await readUpTo(res, README_MAX_BYTES)).bytes)
     },
 
     async commitIsFetchable(repoUrl, sha) {

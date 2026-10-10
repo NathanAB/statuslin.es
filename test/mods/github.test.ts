@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createGitHub, TARBALL_MAX_BYTES, TARBALL_MAX_FILES } from '@/mods/github'
+import { createGitHub, README_MAX_BYTES, TARBALL_MAX_BYTES, TARBALL_MAX_FILES } from '@/mods/github'
 
 const REPO = 'https://github.com/octocat/meter'
 const SHA = 'a'.repeat(40)
@@ -255,5 +255,23 @@ describe('readme', () => {
     await expect(createGitHub(readmeFetch(500).fetchFn).readme(REPO, '', SHA)).rejects.toThrow(
       /500/,
     )
+  })
+
+  it('stops reading a huge README at the byte cap', async () => {
+    const CHUNK = 1024
+    let pulled = 0
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled++
+        if (pulled > 1000) controller.close()
+        else controller.enqueue(new TextEncoder().encode('a'.repeat(CHUNK)))
+      },
+    })
+    const fetchFn = (async () => new Response(body)) as unknown as typeof fetch
+
+    const text = await createGitHub(fetchFn).readme(REPO, '', SHA)
+
+    expect(text).toBe('a'.repeat(README_MAX_BYTES))
+    expect(pulled).toBeLessThanOrEqual(Math.ceil(README_MAX_BYTES / CHUNK) + 1)
   })
 })
