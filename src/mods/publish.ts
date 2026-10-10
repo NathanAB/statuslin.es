@@ -169,10 +169,14 @@ export function removedGuard(slug: string): Guard {
   )
 }
 
+export function alreadyCurrentGuard(slug: string, sha: string): Guard {
+  return refuse('already-current', `"${slug}" is already published at ${sha}; nothing to publish`)
+}
+
 export function currentChangedGuard(slug: string): Guard {
   return refuse(
     'current-version-changed',
-    `"${slug}" was re-pinned after this report was read; rerun to review the new diff`,
+    `"${slug}" was published or re-pinned after this report was read; rerun to review the new diff`,
   )
 }
 

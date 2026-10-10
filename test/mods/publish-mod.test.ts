@@ -101,6 +101,103 @@ describe('publish confirmation', () => {
   })
 })
 
+describe('first publish of an imported draft', () => {
+  async function importedDraft() {
+    const modId = await addMod(db, 'meter', 'draft')
+    const versionId = await addVersion(db, modId, {
+      commitSha: sha('a'),
+      versionNumber: 1,
+      pluginVersion: '0.1.0',
+      footprint: { events: ['Stop'], calls: ['$.model'] },
+    })
+    await setCurrentVersion(db, modId, versionId)
+    return { modId, versionId }
+  }
+
+  it('reports a first publish with no comparison against the imported pointer', async () => {
+    await importedDraft()
+    const github = fakeGitHub()
+
+    const { exitCode, output } = await publish(['meter', sha('a')], github)
+
+    expect(exitCode).toBe(0)
+    expect(output).not.toMatch(/WARN/)
+    expect(output).toContain('source before: none (first publish)')
+    expect(output).toContain('footprint before: none (first publish)')
+    expect(output).toContain('files changed: none to compare (first publish)')
+    expect(github.calls.filter((c) => c.startsWith('files:'))).toEqual([])
+  })
+
+  it('publishes it with --apply', async () => {
+    const { versionId } = await importedDraft()
+
+    const { exitCode } = await publish(['meter', sha('a'), '--apply', '--confirm=meter'])
+
+    expect(exitCode).toBe(0)
+    expect(await modState(db, 'meter')).toEqual({
+      status: 'published',
+      currentVersionId: versionId,
+    })
+  })
+
+  it('treats a draft pointing at an older version as a first publish of the target', async () => {
+    const { modId } = await importedDraft()
+    const nextId = await addVersion(db, modId, {
+      commitSha: sha('b'),
+      versionNumber: 2,
+      pluginVersion: '0.1.0',
+      repoUrl: 'https://github.com/mallory/meter',
+      footprint: { events: ['Stop', 'SessionStart'], calls: ['$.model'] },
+    })
+
+    const { exitCode, output } = await publish(['meter', sha('b'), '--apply', '--confirm=meter'])
+
+    expect(output).not.toMatch(/WARN/)
+    expect(output).toContain('source before: none (first publish)')
+    expect(exitCode).toBe(0)
+    expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: nextId })
+  })
+
+  it('refuses when the draft is published between its first-publish report and the write', async () => {
+    const { modId, versionId } = await importedDraft()
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    const publishMeanwhile = async () => {
+      await db.update(schema.mods).set({ status: 'published' }).where(eq(schema.mods.id, modId))
+    }
+
+    const { exitCode, output } = await publish(
+      ['meter', sha('b'), '--apply', '--confirm=meter'],
+      fakeGitHub({ meanwhile: publishMeanwhile }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/REFUSE current-version-changed/)
+    expect(await modState(db, 'meter')).toEqual({
+      status: 'published',
+      currentVersionId: versionId,
+    })
+  })
+
+  it('refuses to re-publish the version a published mod already points at', async () => {
+    const { currentId } = await publishedMod({ pluginVersion: '0.1.0' })
+    const github = fakeGitHub()
+
+    const { exitCode, output } = await publish(
+      ['meter', sha('a'), '--apply', '--confirm=meter'],
+      github,
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/REFUSE already-current: "meter" is already published at a{40}/)
+    expect(output).not.toMatch(/WARN/)
+    expect(github.calls).toEqual([])
+    expect(await modState(db, 'meter')).toEqual({
+      status: 'published',
+      currentVersionId: currentId,
+    })
+  })
+})
+
 describe('publish refusals', () => {
   it.each([
     ['uppercase hex', 'A'.repeat(40)],
