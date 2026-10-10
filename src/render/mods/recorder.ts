@@ -3,13 +3,17 @@ import { z } from 'zod'
 import type { InputStep } from '@/mods/curation'
 import { SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
+import { boundRecording } from './bound-recording'
 import {
+  COMMAND_TIMEOUT_MS,
   type ModSource,
+  REQUEST_TIMEOUT_MS,
   type RecordingSandbox,
   SANDBOX_TIMEOUT_MS,
   withRecordingSandbox,
+  withReplaySandbox,
 } from './mod-sandbox'
-import { replayScreen } from './replay'
+import { replayInSandbox } from './replay'
 import { feedScenario, feedStdin } from './scenario-feed'
 import {
   keystrokes,
@@ -53,19 +57,22 @@ const KEY_PAUSE_MS = 200
 const POLL_MS = 100
 const PROMPT_GLYPH = '❯'
 /**
- * Sandbox creation, unpacking, `claude --version` and setup: about 10 s together in measured runs,
- * and each of the last three may take up to its 60 s command timeout.
+ * The worst case inside the recording sandbox before the session starts: the tarball upload, the
+ * session-file upload and the pty start at their request timeout, and unpacking, `claude --version`
+ * and setup at their command timeout. Measured runs take about 10 s.
  */
-const SETUP_RESERVE_MS = 60_000
+const SETUP_MAX_MS = 3 * REQUEST_TIMEOUT_MS + 3 * COMMAND_TIMEOUT_MS
 /** Each step waits at most this long: its settle plus the pause before Enter. */
 const STEP_BUDGET_MS = STEP_MAX_MS + KEY_PAUSE_MS
-/** The input steps whose waits, after the scripted prompt's, still end before the sandbox does. */
+/**
+ * The input steps whose waits, after the scripted prompt's, still end before the recording sandbox
+ * does. The replay runs after that sandbox is killed, in a sandbox with its own lifetime.
+ */
 export const MAX_INPUT_STEPS =
-  Math.floor(
-    (SANDBOX_TIMEOUT_MS - SETUP_RESERVE_MS - SHELL_MAX_MS - LAUNCH_MAX_MS) / STEP_BUDGET_MS,
-  ) - 1
+  Math.floor((SANDBOX_TIMEOUT_MS - SETUP_MAX_MS - SHELL_MAX_MS - LAUNCH_MAX_MS) / STEP_BUDGET_MS) -
+  1
 /** A whole session's pty output; a mod flooding the tty fails the recording here. */
-export const RECORDING_MAX_BYTES = 4 * 1024 * 1024
+export const PTY_MAX_BYTES = 4 * 1024 * 1024
 
 const versionSchema = z.string().regex(/^\d+\.\d+\.\d+$/)
 
@@ -78,7 +85,6 @@ async function claudeCodeVersion(sandbox: RecordingSandbox, scenario: Scenario):
   return versionSchema.parse(stdout.trim().split(' ')[0])
 }
 
-/** Pty output held on the host. Past `RECORDING_MAX_BYTES` it keeps nothing more. */
 export class PtyOutput {
   readonly chunks: Uint8Array[] = []
   overflowed = false
@@ -88,7 +94,7 @@ export class PtyOutput {
   push(bytes: Uint8Array): boolean {
     if (this.overflowed) return false
     this.byteCount += bytes.byteLength
-    this.overflowed = this.byteCount > RECORDING_MAX_BYTES
+    this.overflowed = this.byteCount > PTY_MAX_BYTES
     if (this.overflowed) return false
     this.chunks.push(bytes)
     return true
@@ -127,7 +133,7 @@ async function recordSession(
     const settled = () => ready() && performance.now() - lastActivityAt >= QUIET_MS
     while (!output.overflowed && !settled() && performance.now() - startedAt < maxMs)
       await sleep(POLL_MS)
-    if (output.overflowed) throw new Error(`pty output passed ${RECORDING_MAX_BYTES} bytes`)
+    if (output.overflowed) throw new Error(`pty output passed ${PTY_MAX_BYTES} bytes`)
   }
   try {
     await settle(SHELL_MAX_MS)
@@ -149,11 +155,16 @@ async function recordSession(
   }
 }
 
-/** Mod code runs only in the sandbox; its pty bytes are replayed into a screen on the host. */
+/** A session's raw pty bytes, from the launch on. Hostile: parse them only in a fresh sandbox. */
+export interface SessionCapture {
+  pty: Uint8Array
+  claudeCodeVersion: string
+}
+
 export async function recordInSandbox(
   sandbox: RecordingSandbox,
   { mod, inputSteps }: RecordRequest,
-): Promise<Recording> {
+): Promise<SessionCapture> {
   const scenario = feedScenario()
   const version = await claudeCodeVersion(sandbox, scenario)
   const seed = { target: mod?.pluginName ?? null, nowMs: Date.now(), claudeCodeVersion: version }
@@ -161,21 +172,36 @@ export async function recordInSandbox(
   const setup = await sandbox.run(setupCommand(scenario))
   if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)
   const modPluginDir = mod ? sandbox.pluginDir : null
-  const recording = await recordSession(sandbox, scenario, modPluginDir, inputSteps)
-  return { rows: await replayScreen(recording), claudeCodeVersion: version }
+  const pty = await recordSession(sandbox, scenario, modPluginDir, inputSteps)
+  return { pty, claudeCodeVersion: version }
 }
 
-/** One fresh sandbox per recording, with the network off. */
-export const e2bModRecorder: ModRecorder = {
-  record: async (request) => {
-    const steps = request.inputSteps.length
-    if (steps > MAX_INPUT_STEPS) {
-      throw new Error(
-        `${steps} input steps cannot finish inside the sandbox lifetime; at most ${MAX_INPUT_STEPS} can`,
-      )
-    }
-    return withRecordingSandbox(request.mod?.source ?? null, (sandbox) =>
-      recordInSandbox(sandbox, request),
-    )
-  },
+interface Sandboxes {
+  withRecordingSandbox: typeof withRecordingSandbox
+  withReplaySandbox: typeof withReplaySandbox
 }
+
+/**
+ * Mod code runs in a recording sandbox, which is killed before its pty bytes are parsed. They are
+ * parsed in a second, fresh sandbox, so a stream that exhausts xterm takes down only that sandbox.
+ */
+export function modRecorder(sandboxes: Sandboxes): ModRecorder {
+  return {
+    record: async (request) => {
+      const steps = request.inputSteps.length
+      if (steps > MAX_INPUT_STEPS) {
+        throw new Error(
+          `${steps} input steps cannot finish inside the sandbox lifetime; at most ${MAX_INPUT_STEPS} can`,
+        )
+      }
+      const { pty, claudeCodeVersion } = await sandboxes.withRecordingSandbox(
+        request.mod?.source ?? null,
+        (sandbox) => recordInSandbox(sandbox, request),
+      )
+      const rows = await sandboxes.withReplaySandbox((sandbox) => replayInSandbox(sandbox, pty))
+      return boundRecording({ rows, claudeCodeVersion })
+    },
+  }
+}
+
+export const e2bModRecorder = modRecorder({ withRecordingSandbox, withReplaySandbox })

@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -8,18 +8,19 @@ import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import type { InputStep } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
-import { printable } from '@/mods/publish'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { boundRecording } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import { e2bModRecorder, type ModRecorder, type Recording } from '@/render/mods/recorder'
 import type { AnsiSegment } from '@/render/types'
+import { terminalLine } from './import-mods'
 
 /**
- * Render each mod's current version against the `clean-main` scenario and store its preview. Every
- * mod is recorded in its own offline E2B sandbox and cropped against one baseline recording (the
- * same session with no mod), shared across the run while the Claude Code version matches.
+ * Render the current version of each mod that is not removed against the `clean-main` scenario and
+ * store its preview. Every mod is recorded in its own offline E2B sandbox and cropped against one
+ * baseline recording (the same session with no mod), shared across the run while the Claude Code
+ * version matches.
  *
  * A rendered version's preview is replaced in one statement. A version that does not render, or
  * whose run fails, keeps whatever preview it had; nothing is ever deleted. Uses real E2B when
@@ -72,8 +73,19 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       inputSteps: schema.modVersions.inputSteps,
     })
     .from(schema.mods)
-    .innerJoin(schema.modVersions, eq(schema.modVersions.id, schema.mods.currentVersionId))
-    .where(slug === undefined ? undefined : eq(schema.mods.slug, slug))
+    .innerJoin(
+      schema.modVersions,
+      and(
+        eq(schema.modVersions.id, schema.mods.currentVersionId),
+        eq(schema.modVersions.modId, schema.mods.id),
+      ),
+    )
+    .where(
+      and(
+        ne(schema.mods.status, 'removed'),
+        slug === undefined ? undefined : eq(schema.mods.slug, slug),
+      ),
+    )
     .orderBy(schema.mods.slug)
   // The import writes input steps only after parseCuration has validated them.
   return rows.map((row) => ({ ...row, inputSteps: row.inputSteps as InputStep[] }))
@@ -155,7 +167,7 @@ export async function renderMods(
   options: { slug?: string },
   deps: RenderModsDeps,
 ): Promise<number> {
-  const log = (line: string) => deps.log(printable(line))
+  const log = (line: string) => deps.log(terminalLine(line))
   const todo = await targets(deps.db, options.slug)
   if (options.slug !== undefined && todo.length === 0) {
     log(`no mod with slug "${options.slug}" has a current version`)
@@ -208,7 +220,7 @@ if (import.meta.main) {
   main().then(
     (code) => process.exit(code),
     (err) => {
-      console.error(printable(`[render-mods] ${err instanceof Error ? err.message : err}`))
+      console.error(terminalLine(`[render-mods] ${err instanceof Error ? err.message : err}`))
       process.exit(1)
     },
   )

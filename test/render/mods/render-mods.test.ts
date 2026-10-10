@@ -42,6 +42,7 @@ let seeded = 0
 const nextSha = () => sha('0123456789abcdef'[seeded++ % 16] ?? '0')
 
 interface Seed {
+  status?: schema.ModStatus
   commitSha?: string
   rendered?: boolean
   path?: string
@@ -50,9 +51,15 @@ interface Seed {
 
 async function seedMod(
   slug: string,
-  { commitSha = nextSha(), rendered = false, path = '', inputSteps = [] }: Seed = {},
+  {
+    status = 'draft',
+    commitSha = nextSha(),
+    rendered = false,
+    path = '',
+    inputSteps = [],
+  }: Seed = {},
 ) {
-  const modId = await addMod(db, slug, 'draft')
+  const modId = await addMod(db, slug, status)
   const versionId = await addVersion(db, modId, {
     commitSha,
     versionNumber: 1,
@@ -253,6 +260,53 @@ describe('renderMods', () => {
 
     expect(modRequests(recorder.requests).map((r) => r.mod?.pluginName)).toEqual(['skins'])
     expect(await storedPreviews(otherId)).toEqual([])
+  })
+
+  it('skips a removed mod', async () => {
+    await seedMod('skins', { status: 'removed' })
+    await seedMod('token-weather', { status: 'published' })
+    const recorder = new FakeModRecorder({
+      baseline,
+      mods: { skins, 'token-weather': tokenWeather },
+    })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(0)
+    expect(modRequests(recorder.requests).map((r) => r.mod?.pluginName)).toEqual(['token-weather'])
+    expect(lines.join('\n')).not.toContain('skins')
+  })
+
+  it("renders only a mod's own current version, never one that belongs to another mod", async () => {
+    const othersVersionId = await seedMod('token-weather')
+    const modId = await addMod(db, 'skins', 'draft')
+    await setCurrentVersion(db, modId, othersVersionId)
+    const recorder = new FakeModRecorder({
+      baseline,
+      mods: { skins, 'token-weather': tokenWeather },
+    })
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    expect(modRequests(recorder.requests).map((r) => r.mod?.pluginName)).toEqual(['token-weather'])
+  })
+
+  it('escapes and caps each printed line', async () => {
+    await seedMod('skins')
+    const reason = `\u001b]52;c;${'A'.repeat(10_000)}\u0007`
+    const recorder: ModRecorder = {
+      async record(request) {
+        if (request.mod) throw new Error(reason)
+        return { rows: baseline, claudeCodeVersion: '2.1.296' }
+      },
+    }
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toMatch(/^failed skins: \\u001b\]52;c;A+… \(\d+ more characters\)$/)
+    expect(lines[0]?.length).toBeLessThanOrEqual(500)
   })
 
   it('exits non-zero when --slug names no mod', async () => {
