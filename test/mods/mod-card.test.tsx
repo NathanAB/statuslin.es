@@ -26,7 +26,14 @@ const card: GalleryModCard = {
   copyCount: 3,
   tags: [],
   preview: [{ text: 'ctx 42%' }],
-  desktopScreenshot: null,
+  desktopShot: null,
+}
+
+const SHOT = {
+  src: '/mod-previews/v1/desktop.png',
+  width: 790,
+  height: 52,
+  cardAnchor: 'bottom' as const,
 }
 
 describe('ModCard', () => {
@@ -52,11 +59,33 @@ describe('ModCard', () => {
     expect(screen.getByText('Shows the context meter.')).toBeTruthy()
   })
 
-  it('labels a Desktop screenshot when the mod has no terminal preview', () => {
-    render(<ModCard card={{ ...card, preview: null, desktopScreenshot: '/mods/meter.png' }} />)
+  it('labels the terminal preview and leaves out a Desktop slot when there is no shot', () => {
+    render(<ModCard card={card} />)
 
-    const figure = screen.getByRole('figure')
-    expect(figure.querySelector('figcaption')?.textContent).toBe('Claude Desktop, screenshot')
-    expect(figure.querySelector('img')?.getAttribute('src')).toBe('/mods/meter.png')
+    expect(screen.getByText('Terminal')).toBeTruthy()
+    expect(screen.queryByText('Claude Desktop')).toBeNull()
+    expect(screen.queryByRole('img')).toBeNull()
+  })
+
+  it('shows the terminal on top and the Desktop shot below it, each labelled', () => {
+    render(<ModCard card={{ ...card, desktopShot: SHOT }} />)
+
+    const terminal = screen.getByText('Terminal')
+    const desktop = screen.getByText('Claude Desktop')
+    const image = screen.getByRole('img', { name: 'Meter in Claude Desktop' })
+    expect(image.getAttribute('src')).toBe(SHOT.src)
+    expect(image.getAttribute('width')).toBe('790')
+    expect(
+      terminal.compareDocumentPosition(desktop) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(desktop.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows only the Desktop shot for a mod that draws nothing in the terminal', () => {
+    render(<ModCard card={{ ...card, preview: null, desktopShot: SHOT }} />)
+
+    expect(screen.queryByText('Terminal')).toBeNull()
+    expect(screen.getByText('Claude Desktop')).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Meter in Claude Desktop' })).toBeTruthy()
   })
 })

@@ -5,7 +5,16 @@ import { getConfigSource } from '@/gallery/config-items'
 import { type GalleryItem, mergeGalleryItems } from '@/gallery/gallery-items'
 import { getModSource } from '@/mods/gallery-queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
-import { addMod, addVersion, openTestDb, setCurrentVersion, sha, type TestDb } from './seed-mods'
+import {
+  addDesktopPreview,
+  addMod,
+  addVersion,
+  openTestDb,
+  SEEDED_DESKTOP_SHOT,
+  setCurrentVersion,
+  sha,
+  type TestDb,
+} from './seed-mods'
 
 let db: TestDb
 let close: () => Promise<void>
@@ -25,20 +34,22 @@ const HOUR_MS = 60 * 60 * 1000
 
 async function publishedMod(
   slug: string,
-  opts: { status?: schema.ModStatus; allTags?: string[]; screenshot?: string } = {},
+  opts: {
+    status?: schema.ModStatus
+    allTags?: string[]
+    terminal?: boolean
+    desktop?: 'shot' | 'nothing'
+  } = {},
 ): Promise<string> {
   const modId = await addMod(db, slug, opts.status ?? 'published')
   const versionId = await addVersion(db, modId, {
     commitSha: sha('a'),
     versionNumber: 1,
-    rendered: opts.screenshot === undefined,
+    rendered: opts.terminal ?? true,
     repoUrl: `https://github.com/octocat/${slug}`,
   })
   await setCurrentVersion(db, modId, versionId)
-  await db
-    .update(schema.modVersions)
-    .set({ desktopScreenshot: opts.screenshot ?? null })
-    .where(eq(schema.modVersions.id, versionId))
+  if (opts.desktop) await addDesktopPreview(db, versionId, opts.desktop)
   if (opts.allTags) {
     await db.update(schema.mods).set({ allTags: opts.allTags }).where(eq(schema.mods.id, modId))
   }
@@ -59,9 +70,10 @@ describe('getModSource', () => {
     expect(source.total).toBe(1)
   })
 
-  it('carries the clean-main preview, or the Desktop screenshot when there is none', async () => {
+  it('carries the clean-main terminal preview and Desktop shot, and no shot for nothing', async () => {
     await publishedMod('terminal')
-    await publishedMod('desktop', { screenshot: '/mods/desktop.png' })
+    const desktopId = await publishedMod('desktop', { terminal: false, desktop: 'shot' })
+    await publishedMod('blank-desktop', { desktop: 'nothing' })
 
     const cards = new Map(
       (await getModSource(db, { sort: 'new' })).items.map(({ item }) => [item.card.slug, item]),
@@ -69,11 +81,24 @@ describe('getModSource', () => {
 
     expect(cards.get('terminal')).toMatchObject({
       kind: 'mod',
-      card: { preview: [{ text: 'meter' }], desktopScreenshot: null, authorGithub: 'octocat' },
+      card: { preview: [{ text: 'meter' }], desktopShot: null, authorGithub: 'octocat' },
     })
+    const [version] = await db
+      .select({ id: schema.modVersions.id })
+      .from(schema.modVersions)
+      .where(eq(schema.modVersions.modId, desktopId))
     expect(cards.get('desktop')).toMatchObject({
-      card: { preview: null, desktopScreenshot: '/mods/desktop.png' },
+      card: {
+        preview: null,
+        desktopShot: {
+          src: `/mod-previews/${version?.id}/desktop.png`,
+          width: SEEDED_DESKTOP_SHOT.width,
+          height: SEEDED_DESKTOP_SHOT.height,
+          cardAnchor: SEEDED_DESKTOP_SHOT.cardAnchor,
+        },
+      },
     })
+    expect(cards.get('blank-desktop')).toMatchObject({ card: { desktopShot: null } })
   })
 
   it('carries no terminal preview for a mod that draws nothing in the terminal', async () => {

@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { modPreviews, mods, modVersions } from '@/db/schema'
+import { modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
 import type { GallerySource } from '@/gallery/gallery-items'
 import {
   type GallerySourceQuery,
@@ -11,7 +11,12 @@ import {
 import { MOD_COPY_EVENTS } from '@/gallery/trending'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
-import { MOD_SCENARIO_KEY } from './queries'
+import {
+  desktopPreview,
+  desktopPreviewColumns,
+  desktopPreviewJoin,
+  terminalPreviewJoin,
+} from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -40,7 +45,7 @@ export async function getModSource(db: Db, query: GallerySourceQuery): Promise<G
         copyCount: mods.copyCount,
         tags: mods.allTags,
         preview: modPreviews.segments,
-        desktopScreenshot: modVersions.desktopScreenshot,
+        desktop: desktopPreviewColumns,
         sortKey: ranking.sortKey,
         total: ranking.total,
       })
@@ -49,24 +54,26 @@ export async function getModSource(db: Db, query: GallerySourceQuery): Promise<G
         modVersions,
         and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
       )
-      .leftJoin(
-        modPreviews,
-        and(
-          eq(modPreviews.modVersionId, modVersions.id),
-          eq(modPreviews.scenarioKey, MOD_SCENARIO_KEY),
-        ),
-      )
+      .leftJoin(modPreviews, terminalPreviewJoin)
+      .leftJoin(modDesktopPreviews, desktopPreviewJoin)
       .where(ranking.where)
       .orderBy(...ranking.orderBy)
       .$dynamic(),
     query.limit,
   )
-  // A card has no terminal slot for a mod that drew nothing there.
+  // A card has no slot for a surface the mod drew nothing on.
   const terminal = (preview: AnsiSegment[] | null) =>
     preview && preview.length > 0 ? compactSegments(preview) : null
+  const desktopShot = (row: (typeof rows)[number]['desktop']) => {
+    const desktop = desktopPreview(row)
+    return desktop?.kind === 'shot' ? desktop.shot : null
+  }
   return {
-    items: rows.map(({ sortKey, total: _total, preview, ...card }) => ({
-      item: { kind: 'mod', card: { ...card, preview: terminal(preview) } },
+    items: rows.map(({ sortKey, total: _total, preview, desktop, ...card }) => ({
+      item: {
+        kind: 'mod',
+        card: { ...card, preview: terminal(preview), desktopShot: desktopShot(desktop) },
+      },
       sortKey,
     })),
     total: rows[0]?.total ?? 0,

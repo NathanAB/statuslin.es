@@ -9,7 +9,15 @@ import {
   parseModContentGenerationResponses,
   prepareModContentGenerationRequest,
 } from '@/mods/content-generation'
-import { addMod, addVersion, openTestDb, setCurrentVersion, sha, type TestDb } from './seed-mods'
+import {
+  addDesktopPreview,
+  addMod,
+  addVersion,
+  openTestDb,
+  setCurrentVersion,
+  sha,
+  type TestDb,
+} from './seed-mods'
 
 let db: TestDb
 let close: () => Promise<void>
@@ -139,6 +147,15 @@ describe('prepareModContentGenerationRequest', () => {
     const { contentPrompt } = await prepareModContentGenerationRequest(db, 'blank', readme)
 
     expect(contentPrompt).toContain('It drew nothing in the terminal.')
+  })
+
+  it('lists Claude Desktop as a surface when the mod has a Desktop shot', async () => {
+    const { versionId } = await seedMod('anywhere')
+    await addDesktopPreview(db, versionId)
+
+    const { contentPrompt } = await prepareModContentGenerationRequest(db, 'anywhere', readme)
+
+    expect(contentPrompt).toContain('- Surfaces: Terminal, Claude Desktop')
   })
 
   it('says when there is no README', async () => {

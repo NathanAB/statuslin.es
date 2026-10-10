@@ -98,36 +98,42 @@ describe('describeModFootprint', () => {
 
   it('is the terminal for a mod with a terminal preview', () => {
     expect(
-      describeModFootprint({ footprint: PLAIN, preview: PREVIEW, desktopScreenshot: null })
-        .surfaces,
+      describeModFootprint({ footprint: PLAIN, preview: PREVIEW, desktop: null }).surfaces,
     ).toEqual(['terminal'])
   })
 
   it('leaves out the terminal for a mod that draws nothing there', () => {
-    expect(
-      describeModFootprint({ footprint: PLAIN, preview: [], desktopScreenshot: null }).surfaces,
-    ).toEqual([])
+    expect(describeModFootprint({ footprint: PLAIN, preview: [], desktop: null }).surfaces).toEqual(
+      [],
+    )
   })
 
-  it('is Desktop alone for a mod shown only by a Desktop screenshot', () => {
+  it('is Desktop alone for a mod whose only drawing is a Desktop shot', () => {
     expect(
-      describeModFootprint({ footprint: PLAIN, preview: null, desktopScreenshot: '/shot.png' })
-        .surfaces,
+      describeModFootprint({ footprint: PLAIN, preview: [], desktop: { kind: 'shot' } }).surfaces,
     ).toEqual(['desktop'])
+  })
+
+  it('leaves out Desktop for a mod that draws nothing there', () => {
+    expect(
+      describeModFootprint({ footprint: PLAIN, preview: PREVIEW, desktop: { kind: 'nothing' } })
+        .surfaces,
+    ).toEqual(['terminal'])
   })
 
   it('adds Desktop when the footprint targets it', () => {
     const footprint = { events: ['ui.render{component=AbovePrompt, surface=desktop}'], calls: [] }
-    expect(
-      describeModFootprint({ footprint, preview: PREVIEW, desktopScreenshot: null }).surfaces,
-    ).toEqual(['terminal', 'desktop'])
+    expect(describeModFootprint({ footprint, preview: PREVIEW, desktop: null }).surfaces).toEqual([
+      'terminal',
+      'desktop',
+    ])
   })
 
   it('carries the plain-words footprint alongside the surfaces', () => {
     const described = describeModFootprint({
       footprint: FILETREE,
       preview: PREVIEW,
-      desktopScreenshot: null,
+      desktop: null,
     })
     expect(described).toMatchObject(describeFootprint(FILETREE))
   })

@@ -13,6 +13,7 @@ import {
   recordModCopy,
   versionIsRendered,
 } from '@/mods/queries'
+import { addDesktopPreview, SEEDED_DESKTOP_SHOT } from './seed-mods'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -220,19 +221,36 @@ describe('getModDetail', () => {
       commitSha: expect.stringMatching(/^[0-9a-f]{40}$/),
       license: 'MIT',
       footprint,
-      desktopScreenshot: null,
       preview: [{ text: 'meter' }],
+      desktop: null,
       generatedContent: null,
     })
   })
 
-  it('returns a screenshot-only mod with no preview', async () => {
-    await addMod('anywhere', 'published', 'screenshot')
+  it('returns a Desktop shot as its image path, CSS size and card anchor, never its bytes', async () => {
+    const { versionId } = await addMod('anywhere', 'published', 'none')
+    await addDesktopPreview(db, versionId)
 
     expect(await getModDetail(db, 'anywhere')).toMatchObject({
-      desktopScreenshot: '/mods/screenshots/meter.png',
       preview: null,
+      desktop: {
+        kind: 'shot',
+        shot: {
+          src: `/mod-previews/${versionId}/desktop.png`,
+          width: SEEDED_DESKTOP_SHOT.width,
+          height: SEEDED_DESKTOP_SHOT.height,
+          cardAnchor: SEEDED_DESKTOP_SHOT.cardAnchor,
+        },
+      },
     })
+    expect((await getModDetail(db, 'anywhere'))?.desktop).not.toHaveProperty('shot.png')
+  })
+
+  it('returns that a mod drew nothing in Claude Desktop', async () => {
+    const { versionId } = await addMod('blank', 'published', 'scenario-preview')
+    await addDesktopPreview(db, versionId, 'nothing')
+
+    expect((await getModDetail(db, 'blank'))?.desktop).toEqual({ kind: 'nothing' })
   })
 
   it('returns the version generated content, and null for a stored value that is not page copy', async () => {

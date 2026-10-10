@@ -1,5 +1,6 @@
 import type { ModFootprint } from '@/db/schema'
-import type { ModDetail } from './queries'
+import type { AnsiSegment } from '@/render/types'
+import type { DesktopPreview } from './queries'
 
 /** Where a mod's output appears in Claude Code, in display order. */
 export const DRAW_LOCATIONS = [
@@ -190,13 +191,16 @@ export function describeFootprint(footprint: ModFootprint): FootprintDescription
   }
 }
 
-function modSurfaces(
-  version: Pick<ModDetail, 'preview' | 'desktopScreenshot'>,
-  mentionsDesktop: boolean,
-): Surface[] {
+/** What a version's previews recorded. Only a Desktop result's kind matters here. */
+interface RecordedSurfaces {
+  preview: AnsiSegment[] | null
+  desktop: Pick<DesktopPreview, 'kind'> | null
+}
+
+function modSurfaces(version: RecordedSurfaces, mentionsDesktop: boolean): Surface[] {
   const surfaces: Surface[] = []
   if (version.preview !== null && version.preview.length > 0) surfaces.push('terminal')
-  if (version.desktopScreenshot !== null || mentionsDesktop) surfaces.push('desktop')
+  if (version.desktop?.kind === 'shot' || mentionsDesktop) surfaces.push('desktop')
   return surfaces
 }
 
@@ -206,7 +210,7 @@ export interface ModFootprintDescription extends FootprintDescription {
 
 /** A version's footprint in plain words, plus the surfaces it renders on. */
 export function describeModFootprint(
-  version: Pick<ModDetail, 'footprint' | 'preview' | 'desktopScreenshot'>,
+  version: RecordedSurfaces & { footprint: ModFootprint },
 ): ModFootprintDescription {
   const footprint = describeFootprint(version.footprint)
   return { ...footprint, surfaces: modSurfaces(version, footprint.mentionsDesktop) }

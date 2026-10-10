@@ -37,7 +37,7 @@ function mod(slug: string, sortKey: number | null): RankedGalleryItem {
     copyCount: 0,
     tags: [],
     preview: null,
-    desktopScreenshot: null,
+    desktopShot: null,
   }
   return { item: { kind: 'mod', card }, sortKey }
 }

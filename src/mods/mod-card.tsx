@@ -8,7 +8,7 @@ import { CopyCount } from '@/ui/copy-count'
 import { Row, Stack } from '@/ui/layout'
 import { StretchedLink } from '@/ui/stretched-link'
 import { Text } from '@/ui/text'
-import { ModPreview } from './mod-preview'
+import { ModCardPreview } from './mod-preview'
 
 export function ModCard({ card }: { card: GalleryModCard }) {
   return (
@@ -29,7 +29,7 @@ export function ModCard({ card }: { card: GalleryModCard }) {
       </CardHeader>
       <CardContent>
         <Stack gap={3}>
-          <ModPreview mod={card} />
+          <ModCardPreview card={card} />
           <Row gap={3} justify="between">
             <Text muted size="sm" breakLong>
               {card.description}

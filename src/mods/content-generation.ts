@@ -4,11 +4,11 @@ import z from 'zod'
 import { COPY_STYLE_RULES } from '@/content/prompt'
 import { TAG_CRITERIA } from '@/content/tags'
 import { generatedContentSchema } from '@/content/types'
-import { modPreviews, mods, modVersions } from '@/db/schema'
+import { modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
 import { TAG_VOCABULARY } from '@/gallery/facets'
 import { mergeTags } from '@/lib/derived-tags'
 import { DRAW_LOCATION_LABEL, describeModFootprint, SURFACE_LABEL } from './footprint'
-import { MOD_SCENARIO_KEY } from './queries'
+import { desktopPreviewJoin, terminalPreviewJoin } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -125,24 +125,24 @@ export async function prepareModContentGenerationRequest(
   readReadme: ModReadmeSource,
 ): Promise<ModContentGenerationRequest> {
   const [row] = await db
-    .select({ mod: mods, version: modVersions, preview: modPreviews.segments })
+    .select({
+      mod: mods,
+      version: modVersions,
+      preview: modPreviews.segments,
+      desktop: modDesktopPreviews.kind,
+    })
     .from(mods)
     .innerJoin(modVersions, currentVersion)
-    .leftJoin(
-      modPreviews,
-      and(
-        eq(modPreviews.modVersionId, modVersions.id),
-        eq(modPreviews.scenarioKey, MOD_SCENARIO_KEY),
-      ),
-    )
+    .leftJoin(modPreviews, terminalPreviewJoin)
+    .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(eq(mods.slug, slug))
   if (!row) throw new Error(`no mod found with slug "${slug}"`)
-  const { mod, version, preview } = row
+  const { mod, version, preview, desktop } = row
 
   const footprint = describeModFootprint({
     footprint: version.footprint,
     preview,
-    desktopScreenshot: version.desktopScreenshot,
+    desktop: desktop ? { kind: desktop } : null,
   })
   const readme = await readReadme(version.repoUrl, version.path, version.commitSha)
   const pin = { slug, versionId: version.id, commitSha: version.commitSha }

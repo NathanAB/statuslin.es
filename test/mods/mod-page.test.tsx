@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
@@ -35,8 +35,8 @@ const MOD: ModDetail = {
     events: ['ui.render{component=Pane, requestId=filetree}', 'command.run{command=filetree}'],
     calls: ['$.fs.read', '$.ui.toast', '$.warp.drive'],
   },
-  desktopScreenshot: null,
   preview: [{ text: 'src/\n  app.ts' }],
+  desktop: null,
   generatedContent: null,
 }
 
@@ -96,33 +96,77 @@ describe('mod page head', () => {
   })
 })
 
+const SHOT = {
+  kind: 'shot' as const,
+  shot: {
+    src: '/mod-previews/v1/desktop.png',
+    width: 790,
+    height: 52,
+    cardAnchor: 'bottom' as const,
+  },
+}
+
+/** The card holding the section whose h2 is `title`. */
+function section(title: string) {
+  const heading = screen.getByRole('heading', { level: 2, name: title })
+  const card = heading.closest('[data-slot="card"]')
+  if (!(card instanceof HTMLElement)) throw new Error(`no card around ${title}`)
+  return within(card)
+}
+
 describe('mod page', () => {
-  it('renders the terminal preview, rows and all', () => {
+  it('renders the labelled terminal preview, rows and all, and no Desktop slot without a result', () => {
     renderPage()
 
-    expect(screen.getByText(/src\/\s+app\.ts/)).toBeTruthy()
-    expect(screen.queryByText('Claude Desktop, screenshot')).toBeNull()
+    const preview = section('Preview')
+    expect(preview.getByText('Terminal')).toBeTruthy()
+    expect(preview.getByText(/src\/\s+app\.ts/)).toBeTruthy()
+    expect(preview.queryByText('Claude Desktop')).toBeNull()
   })
 
   it('says so when the mod draws nothing in the terminal', () => {
     renderPage({ preview: [] })
 
-    expect(screen.getByText('Draws nothing in the terminal.')).toBeTruthy()
+    expect(section('Preview').getByText('Draws nothing in the terminal.')).toBeTruthy()
     expect(screen.queryByText('No preview available.')).toBeNull()
   })
 
-  it('shows the labelled Desktop screenshot when that is all the version has', () => {
-    renderPage({ preview: null, desktopScreenshot: '/mods/screenshots/anywhere.png' })
+  it('stacks the Desktop shot under the terminal, whole and at its CSS size', () => {
+    renderPage({ desktop: SHOT })
 
-    const image = screen.getByRole('img', { name: /File Tree in Claude Desktop/ })
-    expect(image.getAttribute('src')).toBe('/mods/screenshots/anywhere.png')
-    expect(image.getAttribute('width')).toMatch(/^\d+$/)
-    expect(image.getAttribute('height')).toMatch(/^\d+$/)
-    const figure = screen.getByRole('figure')
-    expect(image.parentElement).toBe(figure)
-    expect(figure.querySelector(':scope > figcaption')?.textContent).toBe(
-      'Claude Desktop, screenshot',
-    )
+    const preview = section('Preview')
+    const terminal = preview.getByText('Terminal')
+    const desktop = preview.getByText('Claude Desktop')
+    const image = preview.getByRole('img', { name: 'File Tree in Claude Desktop' })
+    expect(image.getAttribute('src')).toBe(SHOT.shot.src)
+    expect(image.getAttribute('width')).toBe('790')
+    expect(image.getAttribute('height')).toBe('52')
+    expect(
+      terminal.compareDocumentPosition(desktop) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('says so when the mod draws nothing in Claude Desktop', () => {
+    renderPage({ desktop: { kind: 'nothing' } })
+
+    const preview = section('Preview')
+    expect(preview.getByText('Claude Desktop')).toBeTruthy()
+    expect(preview.getByText('Draws nothing in Claude Desktop.')).toBeTruthy()
+    expect(preview.queryByRole('img')).toBeNull()
+  })
+
+  it('shows only the Desktop shot when the terminal has no result yet', () => {
+    renderPage({ preview: null, desktop: SHOT })
+
+    const preview = section('Preview')
+    expect(preview.queryByText('Terminal')).toBeNull()
+    expect(preview.getByRole('img', { name: 'File Tree in Claude Desktop' })).toBeTruthy()
+  })
+
+  it('says there is no preview when neither surface has a result', () => {
+    renderPage({ preview: null, desktop: null })
+
+    expect(section('Preview').getByText('No preview available.')).toBeTruthy()
   })
 
   it('shows both install commands against the site origin', () => {
@@ -171,7 +215,7 @@ describe('mod page', () => {
     expect(screen.getByText('$.warp.drive')).toBeTruthy()
     expect(screen.getByText('a pane')).toBeTruthy()
     expect(screen.getByText('a toast')).toBeTruthy()
-    expect(screen.getByText('Terminal')).toBeTruthy()
+    expect(section('What it does').getByText('Terminal')).toBeTruthy()
   })
 
   it('credits the author with a link to the source at the pinned commit', () => {

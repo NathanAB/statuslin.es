@@ -1,9 +1,18 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type GeneratedContent, generatedContentSchema } from '@/content/types'
-import { type ModFootprint, modCopyEvents, modPreviews, mods, modVersions } from '@/db/schema'
+import {
+  type ModFootprint,
+  modCopyEvents,
+  modDesktopPreviews,
+  modPreviews,
+  mods,
+  modVersions,
+} from '@/db/schema'
+import { modDesktopPreviewPath } from '@/lib/site'
 import { isUuid } from '@/lib/uuid'
 import type { AnsiSegment } from '@/render/types'
+import type { DesktopShotImage } from '@/ui/desktop-shot'
 import type { MarketplaceModRow } from './marketplace'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -13,6 +22,49 @@ export const MOD_SCENARIO_KEY = 'clean-main'
 
 /** A `mod_versions` row counts as rendered when it has its scenario preview or a Desktop screenshot. */
 export const versionIsRendered = sql`(${modVersions.desktopScreenshot} is not null or exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}))`
+
+/** Joins a version's clean-main terminal preview. */
+export const terminalPreviewJoin = and(
+  eq(modPreviews.modVersionId, modVersions.id),
+  eq(modPreviews.scenarioKey, MOD_SCENARIO_KEY),
+)
+
+/** Joins a version's clean-main Desktop result. */
+export const desktopPreviewJoin = and(
+  eq(modDesktopPreviews.modVersionId, modVersions.id),
+  eq(modDesktopPreviews.scenarioKey, MOD_SCENARIO_KEY),
+)
+
+/** A version's Claude Desktop result: a shot to show, or that the mod drew nothing there. */
+export type DesktopPreview = { kind: 'shot'; shot: DesktopShotImage } | { kind: 'nothing' }
+
+/** What `desktopPreview` reads. Never the PNG, which only the image route sends. */
+export const desktopPreviewColumns = {
+  versionId: modDesktopPreviews.modVersionId,
+  kind: modDesktopPreviews.kind,
+  width: modDesktopPreviews.width,
+  height: modDesktopPreviews.height,
+  cardAnchor: modDesktopPreviews.cardAnchor,
+}
+
+type Nullable<T> = { [K in keyof T]: T[K] | null }
+type DesktopPreviewRow = Nullable<
+  Pick<typeof modDesktopPreviews.$inferSelect, 'kind' | 'width' | 'height' | 'cardAnchor'> & {
+    versionId: string
+  }
+>
+
+/** The left-joined `desktopPreviewColumns`, or null when the version has no Desktop result yet. */
+export function desktopPreview(row: DesktopPreviewRow | null): DesktopPreview | null {
+  if (row?.kind === 'nothing') return { kind: 'nothing' }
+  const { versionId, width, height, cardAnchor } = row ?? {}
+  // The table's check constraint gives every shot a size and an anchor.
+  if (row?.kind !== 'shot' || !versionId || !width || !height || !cardAnchor) return null
+  return {
+    kind: 'shot',
+    shot: { src: modDesktopPreviewPath(versionId), width, height, cardAnchor },
+  }
+}
 
 export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
   return db
@@ -81,9 +133,10 @@ export interface ModDetail {
   commitSha: string
   license: string | null
   footprint: ModFootprint
-  desktopScreenshot: string | null
   /** The terminal preview: null before it renders, empty when the mod drew nothing there. */
   preview: AnsiSegment[] | null
+  /** Null before it renders. */
+  desktop: DesktopPreview | null
   generatedContent: GeneratedContent | null
 }
 
@@ -102,8 +155,8 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       commitSha: modVersions.commitSha,
       license: modVersions.license,
       footprint: modVersions.footprint,
-      desktopScreenshot: modVersions.desktopScreenshot,
       preview: modPreviews.segments,
+      desktop: desktopPreviewColumns,
       generatedContent: modVersions.generatedContent,
     })
     .from(mods)
@@ -111,17 +164,16 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       modVersions,
       and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
     )
-    .leftJoin(
-      modPreviews,
-      and(
-        eq(modPreviews.modVersionId, modVersions.id),
-        eq(modPreviews.scenarioKey, MOD_SCENARIO_KEY),
-      ),
-    )
+    .leftJoin(modPreviews, terminalPreviewJoin)
+    .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row) return null
   const content = generatedContentSchema.safeParse(row.generatedContent)
-  return { ...row, generatedContent: content.success ? content.data : null }
+  return {
+    ...row,
+    desktop: desktopPreview(row.desktop),
+    generatedContent: content.success ? content.data : null,
+  }
 }
 
 /**

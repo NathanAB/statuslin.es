@@ -1,39 +1,90 @@
-import { ScreenshotFigure } from '@/ui/screenshot-figure'
+import type { ReactNode } from 'react'
+import type { GalleryModCard } from '@/gallery/gallery-items'
+import { DesktopShot } from '@/ui/desktop-shot'
+import { Stack } from '@/ui/layout'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Text } from '@/ui/text'
+import { SURFACE_LABEL, type Surface } from './footprint'
 import type { ModDetail } from './queries'
 
 // mod_versions stores only the screenshot path, so every curated screenshot must have this pixel
 // size until per-image dimensions are stored; test/mods/curation.test.ts holds them to it.
 export const DESKTOP_SCREENSHOT_SIZE = { width: 1828, height: 365 }
 
-/** The terminal preview, else the Desktop screenshot that stands in for it. */
-export function ModPreview({
-  mod,
-}: {
-  mod: Pick<ModDetail, 'title' | 'preview' | 'desktopScreenshot'>
-}) {
-  if (mod.preview?.length === 0) {
-    return (
-      <Text muted size="sm">
-        Draws nothing in the terminal.
+const desktopAlt = (title: string) => `${title} in Claude Desktop`
+
+function Labelled({ surface, children }: { surface: Surface; children: ReactNode }) {
+  return (
+    <Stack gap={1.5}>
+      <Text muted size="xs">
+        {SURFACE_LABEL[surface]}
       </Text>
-    )
-  }
-  if (mod.preview) return <StatuslinePreview segments={mod.preview} />
-  if (mod.desktopScreenshot) {
-    return (
-      <ScreenshotFigure
-        src={mod.desktopScreenshot}
-        alt={`${mod.title} in Claude Desktop`}
-        caption="Claude Desktop, screenshot"
-        {...DESKTOP_SCREENSHOT_SIZE}
-      />
-    )
-  }
+      {children}
+    </Stack>
+  )
+}
+
+function DrewNothing({ where }: { where: string }) {
   return (
     <Text muted size="sm">
-      No preview available.
+      Draws nothing {where}.
     </Text>
+  )
+}
+
+const NoPreview = () => (
+  <Text muted size="sm">
+    No preview available.
+  </Text>
+)
+
+/** The mod page's previews, the terminal then Claude Desktop. A surface with no result is left out. */
+export function ModPreview({ mod }: { mod: Pick<ModDetail, 'title' | 'preview' | 'desktop'> }) {
+  const { preview, desktop } = mod
+  if (preview === null && desktop === null) return <NoPreview />
+  return (
+    <Stack gap={4}>
+      {preview !== null && (
+        <Labelled surface="terminal">
+          {preview.length > 0 ? (
+            <StatuslinePreview segments={preview} />
+          ) : (
+            <DrewNothing where="in the terminal" />
+          )}
+        </Labelled>
+      )}
+      {desktop !== null && (
+        <Labelled surface="desktop">
+          {desktop.kind === 'shot' ? (
+            <DesktopShot shot={desktop.shot} alt={desktopAlt(mod.title)} fit="whole" />
+          ) : (
+            <DrewNothing where="in Claude Desktop" />
+          )}
+        </Labelled>
+      )}
+    </Stack>
+  )
+}
+
+/** A card's previews: only what the mod drew, the terminal on top and Claude Desktop cropped below. */
+export function ModCardPreview({
+  card,
+}: {
+  card: Pick<GalleryModCard, 'title' | 'preview' | 'desktopShot'>
+}) {
+  if (card.preview === null && card.desktopShot === null) return <NoPreview />
+  return (
+    <Stack gap={3}>
+      {card.preview !== null && (
+        <Labelled surface="terminal">
+          <StatuslinePreview segments={card.preview} />
+        </Labelled>
+      )}
+      {card.desktopShot !== null && (
+        <Labelled surface="desktop">
+          <DesktopShot shot={card.desktopShot} alt={desktopAlt(card.title)} fit="card" />
+        </Labelled>
+      )}
+    </Stack>
   )
 }

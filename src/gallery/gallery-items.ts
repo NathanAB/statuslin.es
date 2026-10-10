@@ -1,4 +1,5 @@
 import type { AnsiSegment } from '@/render/types'
+import type { DesktopShotImage } from '@/ui/desktop-shot'
 import { type GalleryCard, galleryPageWindow, MAX_GALLERY_PAGE, PAGE_SIZE } from './queries'
 
 /** The home grid's kind filter, kept in the URL; `all` is the default and stays out of it. */
@@ -13,8 +14,9 @@ export interface GalleryModCard {
   authorGithub: string
   copyCount: number
   tags: string[]
+  /** Null when there is nothing to show: no result yet, or the mod drew nothing there. */
   preview: AnsiSegment[] | null
-  desktopScreenshot: string | null
+  desktopShot: DesktopShotImage | null
 }
 
 export type GalleryItem =
