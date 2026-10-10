@@ -242,11 +242,11 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    DATABASE_URL='<env pooled url>' bun run render:mods
    ```
 4. Generate the page copy. `--all --prepare --mod` prints a request for every draft and published
-   mod without content. Answer it per the "Generated page copy" convention in `CLAUDE.md`, then pipe
-   the response JSON into apply:
+   mod without content. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
+   the response JSON to apply on stdin, without writing it to a file:
    ```sh
    DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare --mod
-   DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod < response.json
+   DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod   # response JSON on stdin
    ```
 5. Publish each mod. `<sha>` is the entry's `commitSha` in `src/mods/curation.json`. Run the dry
    run first and read its WARN lines, then apply with the slug typed back:
