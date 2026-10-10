@@ -3,6 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
 import { auth } from '@/lib/auth'
+import { CLIENT_IP_HEADER } from '@/lib/client-ip'
 import { requireStrongSecret } from '@/lib/env'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
@@ -38,7 +39,7 @@ export const recordCopyFn = createServerFn({ method: 'POST' })
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const headers = getRequestHeaders()
-      const ipHash = resolveIpHash(headers.get('fly-client-ip'))
+      const ipHash = resolveIpHash(headers.get(CLIENT_IP_HEADER))
       // North Star metric: fire the copy event SERVER-SIDE so ad blockers can't strip it. Prefer the
       // browser's PostHog distinct id (so the copy joins the View→Copy funnel); fall back to the
       // pseudonymous ipHash so an ad-blocked copy is still counted under a stable per-client id. This
