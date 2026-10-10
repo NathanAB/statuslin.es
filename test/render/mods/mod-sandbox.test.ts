@@ -119,7 +119,7 @@ describe('withReplaySandbox', () => {
     expect(fake.sandbox.kill).toHaveBeenCalledOnce()
   })
 
-  it('swallows a failed disconnect when output overflows after the command started', async () => {
+  it('still kills the command when its disconnect fails after an overflow', async () => {
     const unhandled: unknown[] = []
     const onUnhandled = (reason: unknown) => unhandled.push(reason)
     process.on('unhandledRejection', onUnhandled)
@@ -146,6 +146,7 @@ describe('withReplaySandbox', () => {
       await expect(run).rejects.toThrow(`command output passed ${LIMITS.maxOutputBytes} bytes`)
       await new Promise((resolve) => setTimeout(resolve, 10))
       expect(handle.disconnect).toHaveBeenCalledOnce()
+      expect(handle.kill).toHaveBeenCalledOnce()
       expect(unhandled).toEqual([])
     } finally {
       process.off('unhandledRejection', onUnhandled)

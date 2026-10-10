@@ -117,7 +117,7 @@ async function runBounded(
   const stopIfOverflowed = async () => {
     if (!overflowed() || stopped || !handle) return
     stopped = true
-    await handle.disconnect()
+    await handle.disconnect().catch(() => {})
     await handle.kill().catch(() => false)
   }
   const count = (data: string) => {
