@@ -21,6 +21,7 @@ describe('social meta', () => {
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
     const description = meta.find((entry) => entry.property === 'og:description')?.content
     expect(description).toMatch(/cop(?:y|ied|ies)/i)
+    expect(description).toMatch(/status lines.*\bmods\b/i)
     expect(description).not.toMatch(/upvote/i)
   })
   it('config emits a per-slug og:image', () => {

@@ -15,7 +15,8 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     { property: 'og:title', content: HOME_TITLE_BASE },
     {
       property: 'og:description',
-      content: 'Browse rendered Claude Code status lines and copy one to use.',
+      content:
+        'Browse rendered Claude Code status lines and mods. Copy a status line or install a mod.',
     },
     { property: 'og:image', content: `${base}/og/home.png` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },

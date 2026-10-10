@@ -22,7 +22,7 @@ describe('buildLlmsTxt', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     const lines = txt.split('\n')
     expect(lines[0]).toBe('# statuslin.es')
-    expect(txt).toMatch(/\n> .+/) // a blockquote summary line
+    expect(txt).toMatch(/\n> .*status lines.*\bmods\b/) // a blockquote summary line
     expect(txt).toMatch(/cop(?:y|ied|ies)/i)
     expect(txt).not.toMatch(/upvote/i)
   })

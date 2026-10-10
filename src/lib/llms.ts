@@ -31,7 +31,7 @@ export function buildLlmsTxt(
 ): string {
   const blocks = [
     '# statuslin.es',
-    '> Community gallery of Claude Code status lines: browse real, sandbox-rendered previews and copy one into your own setup.',
+    '> Community gallery of Claude Code status lines, plus curated mods: browse real previews, then copy a status line or install a mod.',
     "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. It holds two kinds of submission: status line shell scripts, and mods, which are Claude Code plugins. The site shows each one's real output, rendered in a sandbox or, for a mod that draws only in Claude Desktop, as a screenshot, plus its copy count and a one-command copy or install. It is a curation-first gallery, not documentation.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
