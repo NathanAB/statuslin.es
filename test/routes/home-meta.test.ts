@@ -125,6 +125,30 @@ describe('home search indexing metadata', () => {
     expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
   })
 
+  it('canonicalizes a kind-filtered gallery to itself and marks it noindex', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: { gallery: { page: 1, pageCount: 1, items: [] } },
+      match: { search: { kind: 'mods' } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(head?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es/?kind=mods' }])
+  })
+
+  it('keeps the kind in the canonical of a later kind-filtered page', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: { gallery: { page: 2, pageCount: 2, items: [] } },
+      match: { search: { kind: 'mods', page: 2 } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(head?.links).toEqual([
+      { rel: 'canonical', href: 'https://statuslin.es/?kind=mods&page=2' },
+    ])
+  })
+
   it('marks filtered gallery views noindex while keeping links followable', async () => {
     const head = await HomeRoute.options.head?.({
       loaderData: undefined,

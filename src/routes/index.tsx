@@ -81,7 +81,7 @@ export const Route = createFileRoute('/')({
   head: ({ loaderData, match }) => {
     const page = loaderData?.gallery.page ?? 1
     const pageCount = loaderData?.gallery.pageCount ?? 1
-    const isFiltered = isFilteredHomeSearch(match.search) || match.search.kind !== undefined
+    const isFiltered = isFilteredHomeSearch(match.search)
     return {
       meta: [
         { title: homePageTitle(page) },
@@ -115,10 +115,7 @@ function Home() {
   const selectedTags = tags ? tags.split(',') : []
   const posthog = usePostHog()
 
-  const pageSearch = (nextPage: number) => ({
-    ...homePaginationSearch(nextPage, { sort, ...(tags ? { tags } : {}) }),
-    ...(kind ? { kind } : {}),
-  })
+  const pageSearch = (nextPage: number) => homePaginationSearch(nextPage, { sort, tags, kind })
 
   const trackPageChange = (nextPage: number) => {
     posthog.capture('gallery_page_changed', {

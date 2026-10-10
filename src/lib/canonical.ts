@@ -15,22 +15,24 @@ export function canonicalLink(path: string): { rel: string; href: string } {
 export interface HomeCanonicalSearch {
   sort?: string
   tags?: string
+  kind?: string
 }
 
 export function isFilteredHomeSearch(search: HomeCanonicalSearch): boolean {
-  return search.sort !== undefined || search.tags !== undefined
+  return search.sort !== undefined || search.tags !== undefined || search.kind !== undefined
 }
 
 /** Search params for gallery pagination links. The default trending sort is implicit, so keeping
  * it out of the URL prevents an unfiltered page from being mistaken for a noindex sorted view. */
-export function homePaginationSearch<TSort extends string>(
+export function homePaginationSearch<TSort extends string, TKind extends string>(
   page: number,
-  search: { sort?: TSort; tags?: string } = {},
-): { page?: number; sort?: TSort; tags?: string } {
+  search: { sort?: TSort | undefined; tags?: string | undefined; kind?: TKind | undefined } = {},
+): { page?: number; sort?: TSort; tags?: string; kind?: TKind } {
   return {
     ...(search.sort && search.sort !== 'trending' ? { sort: search.sort } : {}),
     ...(page > 1 ? { page } : {}),
     ...(search.tags ? { tags: search.tags } : {}),
+    ...(search.kind ? { kind: search.kind } : {}),
   }
 }
 
@@ -43,6 +45,7 @@ export function homeCanonicalPath(page: number, search: HomeCanonicalSearch = {}
   const params = new URLSearchParams()
   if (search.sort !== undefined) params.set('sort', search.sort)
   if (search.tags !== undefined) params.set('tags', search.tags)
+  if (search.kind !== undefined) params.set('kind', search.kind)
   if (page > 1) params.set('page', String(page))
   const query = params.toString()
   return query ? `/?${query}` : '/'
