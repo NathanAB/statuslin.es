@@ -18,7 +18,12 @@ vi.mock('e2b', async (importOriginal) => {
   return { ...actual, Sandbox: { create: fake.create } }
 })
 
-import { withRecordingSandbox, withReplaySandbox } from '@/render/mods/mod-sandbox'
+import {
+  REPLAY_TIMEOUT_MS,
+  REQUEST_TIMEOUT_MS,
+  withRecordingSandbox,
+  withReplaySandbox,
+} from '@/render/mods/mod-sandbox'
 
 function command(chunks: string[], outcome: () => Promise<unknown>) {
   let killed = false
@@ -72,6 +77,13 @@ describe('withReplaySandbox', () => {
     expect(replay.timeoutMs).toBeLessThan(recording.timeoutMs)
   })
 
+  it('lives long enough for the file upload, the command start and the replay', async () => {
+    await withReplaySandbox(async () => {})
+
+    const [, options] = fake.create.mock.calls[0] ?? []
+    expect(options.timeoutMs).toBeGreaterThanOrEqual(2 * REQUEST_TIMEOUT_MS + REPLAY_TIMEOUT_MS)
+  })
+
   it('kills the sandbox when the replay throws', async () => {
     const replay = withReplaySandbox(async () => {
       throw new Error('replay failed')
@@ -105,6 +117,39 @@ describe('withReplaySandbox', () => {
     expect(handle.disconnect).toHaveBeenCalledOnce()
     expect(handle.kill).toHaveBeenCalledOnce()
     expect(fake.sandbox.kill).toHaveBeenCalledOnce()
+  })
+
+  it('swallows a failed disconnect when output overflows after the command started', async () => {
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown) => unhandled.push(reason)
+    process.on('unhandledRejection', onUnhandled)
+    let emit: OnOutput = () => {}
+    const handle = {
+      disconnect: vi.fn(async () => {
+        throw new Error('disconnect failed')
+      }),
+      kill: vi.fn(async () => true),
+      wait: async () => {
+        emit('x'.repeat(LIMITS.maxOutputBytes + 1))
+        throw new Error('signal: killed')
+      },
+    }
+    fake.sandbox.commands.run.mockImplementation(
+      async (_cmd: string, opts: { onStdout: OnOutput }) => {
+        emit = opts.onStdout
+        return handle
+      },
+    )
+    try {
+      const run = withReplaySandbox((sandbox) => sandbox.runBounded('node x', LIMITS))
+
+      await expect(run).rejects.toThrow(`command output passed ${LIMITS.maxOutputBytes} bytes`)
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      expect(handle.disconnect).toHaveBeenCalledOnce()
+      expect(unhandled).toEqual([])
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
   })
 
   it('fails a command that runs past its timeout', async () => {

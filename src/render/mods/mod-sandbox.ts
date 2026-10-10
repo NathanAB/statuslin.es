@@ -14,7 +14,8 @@ export const SANDBOX_TIMEOUT_MS = 10 * 60_000
 export const REQUEST_TIMEOUT_MS = 60_000
 export const COMMAND_TIMEOUT_MS = 60_000
 export const REPLAY_TIMEOUT_MS = 20_000
-const REPLAY_SANDBOX_TIMEOUT_MS = REQUEST_TIMEOUT_MS + REPLAY_TIMEOUT_MS
+/** The recording's upload and the replay command's start are each one request. */
+const REPLAY_SANDBOX_TIMEOUT_MS = 2 * REQUEST_TIMEOUT_MS + REPLAY_TIMEOUT_MS
 
 export interface CommandOutput {
   exitCode: number
@@ -121,7 +122,7 @@ async function runBounded(
   }
   const count = (data: string) => {
     outputBytes += Buffer.byteLength(data)
-    void stopIfOverflowed()
+    void stopIfOverflowed().catch(() => {})
   }
   handle = await sandbox.commands.run(command, {
     background: true,

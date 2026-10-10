@@ -62,7 +62,11 @@ const PROMPT_GLYPH = '❯'
  * and setup at their command timeout. Measured runs take about 10 s.
  */
 const SETUP_MAX_MS = 3 * REQUEST_TIMEOUT_MS + 3 * COMMAND_TIMEOUT_MS
-/** Each step waits at most this long: its settle plus the pause before Enter. */
+/**
+ * A step's waits: its settle plus the pause before Enter. The pty input requests it sends, like the
+ * launch's and the closing kill, are not counted; each returns in milliseconds, and one that stalls
+ * to its request timeout runs into the sandbox lifetime, which fails the recording.
+ */
 const STEP_BUDGET_MS = STEP_MAX_MS + KEY_PAUSE_MS
 /**
  * The input steps whose waits, after the scripted prompt's, still end before the recording sandbox
