@@ -145,6 +145,17 @@ describe('mod page', () => {
     expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy()
   })
 
+  it.each([
+    'In a Claude Code session',
+    'From a shell',
+  ])('makes the "%s" copy button the primary, large call to action', (label) => {
+    renderPage()
+
+    const button = screen.getByRole('button', { name: `Copy command: ${label}` })
+    expect(button.dataset.variant).toBe('default')
+    expect(button.dataset.size).toBe('lg')
+  })
+
   it('describes the footprint in plain words, keeping an unknown entry verbatim', () => {
     renderPage()
 
