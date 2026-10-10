@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { HOME_HEADING } from '@/lib/page-title'
 import { OG_PALETTE } from '@/og/palette'
 import { orderByScenario } from '@/render/scenarios'
 import type { AnsiSegment } from '@/render/types'
@@ -145,7 +146,7 @@ export function homeCard(): ReactElement {
           fontSize: 30,
         }}
       >
-        A community gallery of Claude Code status lines
+        {HOME_HEADING}
       </div>
     </div>
   )

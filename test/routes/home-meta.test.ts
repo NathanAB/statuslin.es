@@ -25,7 +25,7 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.',
+            'Browse a gallery of Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
         },
       ]),
     )
@@ -50,7 +50,7 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste. Page 2 of 3.',
+            'Browse a gallery of Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
       ]),
     )
