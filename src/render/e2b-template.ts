@@ -50,3 +50,17 @@ export const SANDBOX_REPLAY_DIR = '/opt/statuslines/replay'
 /** A world-readable copy of the usage server, so its `--canned-reply` mode runs as `user`. */
 export const SANDBOX_CANNED_MODEL_DIR = '/opt/statuslines/canned-model'
 export const SANDBOX_CANNED_MODEL_SERVER_DEST = `${SANDBOX_CANNED_MODEL_DIR}/server.py`
+
+/** E2B build alias for the Desktop template: the mod template plus Claude Desktop on a virtual display. */
+export const E2B_DESKTOP_TEMPLATE_BUILD_NAME = 'statuslines-desktop-render-build'
+
+/**
+ * Immutable E2B snapshot selected by every Desktop recording. Updated only after a reviewed build.
+ * Created with `secure: true` like the mod template, for the same reason.
+ */
+export const E2B_DESKTOP_TEMPLATE_ID = 'ieap5wnwkqccoa2bzxpu:default'
+
+/** Root-owned files the Desktop template adds: the boot script and Desktop's managed settings. */
+export const SANDBOX_DESKTOP_DIR = '/opt/statuslines/desktop'
+export const SANDBOX_DESKTOP_BOOT = `${SANDBOX_DESKTOP_DIR}/boot.sh`
+export const SANDBOX_DESKTOP_MANAGED_SETTINGS = '/etc/claude-desktop/managed-settings.json'
