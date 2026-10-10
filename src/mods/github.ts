@@ -40,9 +40,11 @@ function repoPath(repoUrl: string): string {
   return `${match[1]}/${match[2]}`
 }
 
-/** Four times the characters content generation keeps: UTF-8 spends at most 3 bytes per UTF-16
- * unit, so a README cut here still runs past that limit and gets its cut-off note. */
-export const README_MAX_BYTES = 80_000
+/** How much of a README content generation hands the copy-writing agent. */
+export const README_MAX_CHARS = 20_000
+/** UTF-8 spends at most 3 bytes per UTF-16 unit, so a README cut here still runs past
+ * README_MAX_CHARS and gets its cut-off note. */
+export const README_MAX_BYTES = 4 * README_MAX_CHARS
 
 const repoApiUrl = (repoUrl: string) => `${GITHUB_API}/repos/${repoPath(repoUrl)}`
 

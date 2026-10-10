@@ -60,25 +60,23 @@ const EMOJI_FETCH_TIMEOUT_MS = 2000
 const TWEMOJI_BASE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg'
 
 /** A preview holds hundreds of cells, so an emoji-packed one could otherwise fetch hundreds of SVGs
- * per uncached card on a public GET. Past the cap satori draws the emoji from the fonts instead. */
+ * per uncached card on a public GET. Past the cap the loader returns null, satori's skip value, as
+ * it does for a failed fetch. */
 export const MAX_EMOJI_FETCHES_PER_RENDER = 16
 const MAX_CACHED_EMOJI = 512
 
 /** Codepoint to data URL (null for a codepoint twemoji lacks), shared by every render. */
 const emojiCache = new Map<string, Promise<string | null>>()
 
+/** Null when twemoji has no SVG for the codepoint; throws on anything worth retrying. */
 async function fetchTwemoji(codepoint: string): Promise<string | null> {
-  try {
-    const res = await fetch(`${TWEMOJI_BASE}/${codepoint}.svg`, {
-      signal: AbortSignal.timeout(EMOJI_FETCH_TIMEOUT_MS),
-    })
-    if (!res.ok) return null
-    const svg = await res.text()
-    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
-  } catch {
-    emojiCache.delete(codepoint)
-    return null
-  }
+  const res = await fetch(`${TWEMOJI_BASE}/${codepoint}.svg`, {
+    signal: AbortSignal.timeout(EMOJI_FETCH_TIMEOUT_MS),
+  })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`twemoji ${res.status} for ${codepoint}`)
+  const svg = await res.text()
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 }
 
 /** satori loadAdditionalAsset for one render: for an emoji segment, a twemoji SVG as a data URL;
@@ -94,10 +92,13 @@ export function createEmojiLoader(): (code: string, segment: string) => Promise<
     if (fetches >= MAX_EMOJI_FETCHES_PER_RENDER) return Promise.resolve(null)
     fetches++
     if (emojiCache.size >= MAX_CACHED_EMOJI) {
-      const oldest = emojiCache.keys().next().value
-      if (oldest !== undefined) emojiCache.delete(oldest)
+      const firstInserted = emojiCache.keys().next().value
+      if (firstInserted !== undefined) emojiCache.delete(firstInserted)
     }
-    const pending = fetchTwemoji(codepoint)
+    const pending = fetchTwemoji(codepoint).catch(() => {
+      emojiCache.delete(codepoint)
+      return null
+    })
     emojiCache.set(codepoint, pending)
     return pending
   }

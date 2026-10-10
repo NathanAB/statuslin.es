@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseGeneratedContent } from '@/content/types'
+import { MAX_ITEM_CHARS, MAX_SECTION_ITEMS, parseGeneratedContent } from '@/content/types'
 
 const VALID = {
   whatItShows: ['Current git branch', 'Model name'],
@@ -56,18 +56,24 @@ describe('parseGeneratedContent', () => {
     expect(() => parseGeneratedContent(JSON.stringify(bad))).toThrow(/failed validation/i)
   })
 
-  it('refuses a section with more items than a page shows', () => {
-    const steered = { ...VALID, requirements: Array.from({ length: 13 }, (_, i) => `need ${i}`) }
+  it('refuses a section with more items than the cap', () => {
+    const steered = {
+      ...VALID,
+      requirements: Array.from({ length: MAX_SECTION_ITEMS + 1 }, (_, i) => `need ${i}`),
+    }
     expect(() => parseGeneratedContent(JSON.stringify(steered))).toThrow(/failed validation/i)
   })
 
-  it('refuses an item longer than one short sentence', () => {
-    const steered = { ...VALID, behaviorNotes: ['x'.repeat(301)] }
+  it('refuses an item longer than the cap', () => {
+    const steered = { ...VALID, behaviorNotes: ['x'.repeat(MAX_ITEM_CHARS + 1)] }
     expect(() => parseGeneratedContent(JSON.stringify(steered))).toThrow(/failed validation/i)
   })
 
   it('accepts a section at the item and length limits', () => {
-    const full = { ...VALID, whatItShows: Array.from({ length: 12 }, () => 'y'.repeat(300)) }
+    const full = {
+      ...VALID,
+      whatItShows: Array.from({ length: MAX_SECTION_ITEMS }, () => 'y'.repeat(MAX_ITEM_CHARS)),
+    }
     expect(parseGeneratedContent(JSON.stringify(full))).toEqual(full)
   })
 })

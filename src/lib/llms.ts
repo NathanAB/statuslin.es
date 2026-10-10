@@ -66,13 +66,13 @@ function summaryLink(
   url: string,
   item: { title: string; description: string; copyCount: number },
 ): string {
-  const summary = inertMarkdown(oneLine(item.description))
+  const summary = escapeMarkdownLinks(oneLine(item.description))
   const copies = `Copied ${item.copyCount} ${item.copyCount === 1 ? 'time' : 'times'}.`
-  return `- [${inertMarkdown(flat(item.title))}](${url}): ${summary ? `${summary} ` : ''}${copies}`
+  return `- [${escapeMarkdownLinks(flat(item.title))}](${url}): ${summary ? `${summary} ` : ''}${copies}`
 }
 
 /** Authors write titles and descriptions, so a `](` or `<url>` in them must not forge a link. */
-function inertMarkdown(text: string): string {
+function escapeMarkdownLinks(text: string): string {
   return text.replace(/[\\[\]<>]/g, (c) => `\\${c}`)
 }
 

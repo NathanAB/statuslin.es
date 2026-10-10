@@ -17,7 +17,7 @@ import {
   parseModContentGenerationResponses,
   prepareModContentGenerationRequest,
 } from '@/mods/content-generation'
-import { createGitHub, type GitHubSource } from '@/mods/github'
+import { createGitHub, type GitHubSource, README_MAX_CHARS } from '@/mods/github'
 
 /**
  * Agent-agnostic generated-content workflow.
@@ -50,8 +50,6 @@ const USAGE = `Usage:
   bun run generate:content --all --prepare
   bun run generate:content --apply
 Add --mod to any of these to work on mods instead of configs.`
-
-const README_MAX_CHARS = 20_000
 
 export type GenerateContentArgs = (
   | { mode: 'prepare'; slug: string; all: false }

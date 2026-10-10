@@ -45,6 +45,26 @@ describe('createEmojiLoader', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 
+  it('retries after a server error but not after a missing emoji', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response('', { status: 404 }))
+      .mockResolvedValueOnce(new Response('', { status: 503 }))
+    const [flaky = '', missing = ''] = emojiFrom(0x1f600, 2)
+
+    for (let render = 0; render < 2; render++) {
+      const load = createEmojiLoader()
+      await load('emoji', flaky)
+      await load('emoji', missing)
+    }
+
+    expect(fetchSpy.mock.calls.map(([url]) => String(url).split('/').pop())).toEqual([
+      '1f600.svg',
+      '1f601.svg',
+      '1f600.svg',
+    ])
+  })
+
   it('fetches each emoji once across renders', async () => {
     const fetchSpy = fakeFetch()
     const [emoji = ''] = emojiFrom(0x1f400, 1)
