@@ -94,14 +94,15 @@ describe('ConfigBadges', () => {
     }
   })
 
-  it("keeps a card's badge row at least its widest chip wide, so chips never cover the title", () => {
+  it("takes a card's leftover header width but stays at least its widest chip wide", () => {
     const { container } = render(
       <TooltipProvider>
         <ConfigBadges tags={['git', 'minimal']} networkHosts={[]} align="end" />
       </TooltipProvider>,
     )
-    const row = container.firstChild as HTMLElement
-    expect(row.className.split(/\s+/)).not.toContain('min-w-0')
+    const classes = (container.firstChild as HTMLElement).className.split(/\s+/)
+    expect(classes).toContain('flex-1')
+    expect(classes).not.toContain('min-w-0')
   })
 
   it('lists the declared hosts in the network-access badge accessible label', () => {
