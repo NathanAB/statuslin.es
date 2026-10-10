@@ -18,6 +18,7 @@ import {
   refuses,
   removedGuard,
   shaGuards,
+  terminalLine,
 } from '@/mods/publish'
 
 /**
@@ -97,13 +98,12 @@ function parseArgs(argv: string[]) {
   return { slug, sha, apply: argv.includes('--apply') }
 }
 
-export async function runPublish(
-  argv: string[],
-  { db, github, log }: PublishDeps,
-): Promise<number> {
+export async function runPublish(argv: string[], deps: PublishDeps): Promise<number> {
+  const { db, github } = deps
+  const log = (line: string) => deps.log(terminalLine(line))
   const { slug, sha, apply } = parseArgs(argv)
   if (!slug || !sha) {
-    log(USAGE)
+    for (const line of USAGE.split('\n')) log(line)
     return 1
   }
 
@@ -155,7 +155,7 @@ if (import.meta.main) {
   main().then(
     (code) => process.exit(code),
     (err) => {
-      console.error(`[publish-mod] ${err instanceof Error ? err.message : err}`)
+      console.error(terminalLine(`[publish-mod] ${err instanceof Error ? err.message : err}`))
       process.exit(1)
     },
   )

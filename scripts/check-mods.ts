@@ -6,6 +6,7 @@ import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { createGitHub, type GitHub } from '@/mods/github'
+import { terminalLine } from '@/mods/publish'
 
 /**
  * Confirm that every published mod's current commit can still be fetched from GitHub. Claude Code
@@ -34,7 +35,9 @@ export interface CheckDeps {
   log: (line: string) => void
 }
 
-export async function runCheck({ db, github, log }: CheckDeps): Promise<number> {
+export async function runCheck(deps: CheckDeps): Promise<number> {
+  const { db, github } = deps
+  const log = (line: string) => deps.log(terminalLine(line))
   const pins = await db
     .select({
       slug: schema.mods.slug,
@@ -81,7 +84,7 @@ if (import.meta.main) {
   main().then(
     (code) => process.exit(code),
     (err) => {
-      console.error(`[check-mods] ${err instanceof Error ? err.message : err}`)
+      console.error(terminalLine(`[check-mods] ${err instanceof Error ? err.message : err}`))
       process.exit(1)
     },
   )

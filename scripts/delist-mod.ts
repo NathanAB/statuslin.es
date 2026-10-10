@@ -11,9 +11,9 @@ import {
   guardLine,
   listingGuards,
   loadCurrentVersion,
-  printable,
   refuses,
   sourceLabel,
+  terminalLine,
 } from '@/mods/publish'
 
 /**
@@ -91,7 +91,7 @@ async function restore(
   const current = await loadCurrentVersion(db, mod)
   if (!current) throw new Error(`mod "${slug}" has no current version to restore`)
 
-  log(printable(`restoring "${slug}" at ${sourceLabel(current)} ${current.commitSha}`))
+  log(`restoring "${slug}" at ${sourceLabel(current)} ${current.commitSha}`)
   const onDefaultBranch = await github.commitIsOnDefaultBranch(current.repoUrl, current.commitSha)
   const guards = [
     ...listingGuards({ target: current, onDefaultBranch }),
@@ -106,13 +106,14 @@ async function restore(
 }
 
 export async function runDelist(argv: string[], deps: DelistDeps): Promise<number> {
-  const { db, log } = deps
+  const { db } = deps
+  const log = (line: string) => deps.log(terminalLine(line))
   const slug = argv.find((a) => !a.startsWith('--'))
   if (!slug) {
-    log(USAGE)
+    for (const line of USAGE.split('\n')) log(line)
     return 1
   }
-  if (argv.includes('--restore')) return restore(slug, argv, deps)
+  if (argv.includes('--restore')) return restore(slug, argv, { ...deps, log })
 
   const refusals = confirmationGuards(slug, argv)
   if (refusals.length > 0) {
@@ -144,7 +145,7 @@ if (import.meta.main) {
   main().then(
     (code) => process.exit(code),
     (err) => {
-      console.error(`[delist-mod] ${err instanceof Error ? err.message : err}`)
+      console.error(terminalLine(`[delist-mod] ${err instanceof Error ? err.message : err}`))
       process.exit(1)
     },
   )

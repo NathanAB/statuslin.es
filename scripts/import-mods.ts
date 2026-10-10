@@ -10,7 +10,7 @@ import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { inspectPlugin } from '@/mods/plugin-facts'
-import { printable } from '@/mods/publish'
+import { terminalLine } from '@/mods/publish'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
 
 /**
@@ -120,22 +120,6 @@ async function importEntry(
   })
   const { events, calls } = facts.footprint
   return `imported ${name} v1 at ${entry.commitSha}: plugin ${facts.manifest.version ?? 'unversioned'}, license ${repo.license ?? 'none'}, ${events.length} events, ${calls.length} calls`
-}
-
-const MAX_LINE_CHARS = 500
-
-/**
- * plugin.json, validate output, tar stderr and git filenames reach these lines, so each is escaped
- * (an ESC or OSC 52 sequence could rewrite the log or the operator's clipboard) and capped.
- */
-export function terminalLine(line: string): string {
-  const escaped = printable(line)
-  if (escaped.length <= MAX_LINE_CHARS) return escaped
-  const suffix = (rest: number) => `… (${rest} more characters)`
-  const head = escaped
-    .slice(0, MAX_LINE_CHARS - suffix(escaped.length).length)
-    .replace(/\\(u[0-9a-f]{0,3})?$/, '')
-  return `${head}${suffix(escaped.length - head.length)}`
 }
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error))

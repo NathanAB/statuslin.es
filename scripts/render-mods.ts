@@ -8,13 +8,13 @@ import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import type { InputStep } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
+import { terminalLine } from '@/mods/publish'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { boundRecording } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import { e2bModRecorder, type ModRecorder, type Recording } from '@/render/mods/recorder'
 import type { AnsiSegment } from '@/render/types'
-import { terminalLine } from './import-mods'
 
 /**
  * Render the current version of each mod that is not removed against the `clean-main` scenario and

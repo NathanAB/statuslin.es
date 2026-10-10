@@ -268,6 +268,21 @@ describe('publish report escaping', () => {
   })
 })
 
+describe('publish report length', () => {
+  it('caps each printed line at 500 characters', async () => {
+    const { modId } = await publishedMod({})
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+
+    const { lines } = await publish(
+      ['meter', sha('b')],
+      fakeGitHub({ filesChanged: [`${'x'.repeat(1000)}.ts`] }),
+    )
+
+    expect(lines.some((line) => /^ {2}x+… \(\d+ more characters\)$/.test(line))).toBe(true)
+    for (const line of lines) expect(line.length).toBeLessThanOrEqual(500)
+  })
+})
+
 describe('publish source', () => {
   it('refuses when two versions of the mod share the SHA', async () => {
     const modId = await addMod(db, 'meter', 'draft')

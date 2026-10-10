@@ -142,6 +142,25 @@ describe('delist --restore', () => {
   })
 })
 
+it('escapes and caps each printed line', async () => {
+  const slug = 'meter\u001b[2K\n'
+  const modId = await addMod(db, slug, 'removed')
+  const path = `plugins/${'p'.repeat(1000)}`
+  const versionId = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1, path })
+  await setCurrentVersion(db, modId, versionId)
+
+  const lines: string[] = []
+  await runDelist([slug, '--restore', `--confirm=${slug}`], {
+    db,
+    github: fakeGitHub(),
+    log: (line) => lines.push(line),
+  })
+
+  expect(lines.join('')).not.toMatch(/\p{Cc}/u)
+  expect(lines.some((line) => line.includes('meter\\u001b[2K\\u000a'))).toBe(true)
+  for (const line of lines) expect(line.length).toBeLessThanOrEqual(500)
+})
+
 it('prints usage without a slug', async () => {
   const { exitCode, output } = await delist([])
 
