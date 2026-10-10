@@ -206,6 +206,76 @@ smokes the real production bundle. The smoke uses the signed-out checks only (th
 a session against the local dev DB, which staging doesn't share). **Do not** run the two `fly deploy`
 commands by hand and skip the smoke — that's the hole that let the crash ship.
 
+## Mods
+
+Mods are Claude Code plugins listed in `/marketplace.json` and shown at `/mods/<slug>`. The slug is
+the curated `pluginName`. Every script below prints its full usage in its header comment.
+
+### The mods E2B template
+
+Mods render in their own E2B template, separate from the status line template:
+```sh
+bun run build:e2b-mod-template
+```
+It prints an immutable snapshot ID. Commit that value as `E2B_MOD_TEMPLATE_ID` in
+`src/render/e2b-template.ts` before deploying. Rebuild only when the Claude Code or headless-terminal
+version in `scripts/build-e2b-mod-template.ts` changes. It leaves `E2B_TEMPLATE_ID` alone.
+
+### Launch runbook
+
+Run every step against **staging first, then production**, from your machine. `<env pooled url>` is
+that environment's `DATABASE_URL`. The import and render steps also need `E2B_API_KEY`.
+
+1. Apply the migrations (`0026` to `0028` add the mods tables, plus anything newer). The deploy's
+   `release_command` already applies them, so on a deployed environment this only confirms it:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run db:migrate
+   ```
+2. Import the curated mods in `src/mods/curation.json` as drafts. Rerunning skips mods already
+   imported at the same commit:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run import:mods
+   ```
+3. Render each mod's preview. Exit code 1 means a run failed; rerun it, or a single mod with
+   `--slug <slug>`:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run render:mods
+   ```
+4. Generate the page copy. `--all --prepare --mod` prints a request for every draft and published
+   mod without content. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
+   the response JSON to apply on stdin, without writing it to a file:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare --mod
+   DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod   # response JSON on stdin
+   ```
+5. Publish each mod. `<sha>` is the entry's `commitSha` in `src/mods/curation.json`. Run the dry
+   run first and read its WARN lines, then apply with the slug typed back:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
+   ```
+   The same command re-pins a published mod to a newer commit.
+
+### Emergency delist
+
+Delisting removes a mod from `/marketplace.json`. The marketplace sets `forceRemoveDeletedPlugins`,
+so **delisting uninstalls the mod for every subscriber** at their next session start. Restoring
+re-lists it but reinstalls it for no one.
+```sh
+fly ssh console --app statuslines --command "bun run scripts/delist-mod.ts <slug> --confirm=<slug>"
+fly ssh console --app statuslines --command "bun run scripts/delist-mod.ts <slug> --restore --confirm=<slug>"
+```
+
+### Pinned-commit check
+
+Claude Code installs each mod from the commit the marketplace pins. A force-pushed or deleted commit
+breaks every new install. `scripts/check-mods.ts` lists each published mod whose commit GitHub no
+longer serves, and exits 1 when any is missing:
+```sh
+fly ssh console --app statuslines --command "bun run scripts/check-mods.ts"
+```
+Re-pin a listed mod to a fetchable commit with `publish-mod.ts`, or delist it.
+
 ## DNS (Cloudflare, after the first Fly deploy)
 
 For each subdomain, point Cloudflare at the Fly app. First deploy **DNS-only** (gray cloud) so
@@ -238,7 +308,7 @@ run on PGlite against the committed migrations.
 
 ## Render-queue alerts (PostHog)
 
-The render worker emits two PostHog events the maintainer can alert on. Both are **fail-soft and
+The render worker emits three PostHog events the maintainer can alert on. All are **fail-soft and
 prod-only**: `captureServerEvent` is a no-op when the worker has no `POSTHOG_PROJECT_TOKEN`, so local
 and staging never emit them — the alerts only have data to act on once the worker runs in production.
 

@@ -37,3 +37,11 @@ export function siteUrl(): string {
   if (typeof window !== 'undefined') return window.location.origin
   return requireEnv('BETTER_AUTH_URL').replace(/\/+$/, '')
 }
+
+export const MOD_ROUTE = '/mods/$slug'
+
+export function modPath(slug: string): string {
+  return MOD_ROUTE.replace('$slug', slug)
+}
+
+export const MARKETPLACE_PATH = '/marketplace.json'

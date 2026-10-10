@@ -1,12 +1,15 @@
 import { RESOURCE_SECTIONS, type ResourceSection } from '@/resources/data'
 
 const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
-const CONFIG_PAGE_TITLE_BRAND = ' | statuslin.es'
-const CONFIG_PAGE_TITLE_MAX_LENGTH = 60
-const CONFIG_META_DESCRIPTION_MAX_LENGTH = 160
+const MOD_PAGE_TITLE_KEYWORD = ' — Claude Code mod'
+const PAGE_TITLE_BRAND = ' | statuslin.es'
+const PAGE_TITLE_MAX_LENGTH = 60
+const META_DESCRIPTION_MAX_LENGTH = 160
 
 export const CONFIG_META_DESCRIPTION_FALLBACK =
   'A reviewed Claude Code status line — rendered preview, source, and one-paste install.'
+const MOD_META_DESCRIPTION_FALLBACK =
+  'A Claude Code mod — rendered preview, what it touches, and a one-line install.'
 
 function normalizeWhitespace(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
@@ -21,28 +24,44 @@ function truncateAtWordBoundary(value: string, maxLength: number): string {
   return `${value.slice(0, end).trimEnd()}…`
 }
 
+/** `<name><keyword> | statuslin.es`, dropping the brand and then truncating the name to fit. */
+function keywordPageTitle(name: string, keyword: string): string {
+  const normalizedName = normalizeWhitespace(name)
+  const branded = `${normalizedName}${keyword}${PAGE_TITLE_BRAND}`
+  if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
+
+  const nameBudget = PAGE_TITLE_MAX_LENGTH - keyword.length
+  return `${truncateAtWordBoundary(normalizedName, nameBudget)}${keyword}`
+}
+
+function metaDescription(description: string | null | undefined, fallback: string): string {
+  const normalizedDescription = normalizeWhitespace(description ?? '')
+  return truncateAtWordBoundary(normalizedDescription || fallback, META_DESCRIPTION_MAX_LENGTH)
+}
+
 /**
  * <title> templates for config pages. The template exists so every config page's
  * title states the target search phrase ("Claude Code Status Line") — titles are
  * the strongest on-page ranking signal, and the config name alone doesn't say it.
  */
 export function configPageTitle(title: string): string {
-  const normalizedTitle = normalizeWhitespace(title)
-  const branded = `${normalizedTitle}${CONFIG_PAGE_TITLE_KEYWORD}${CONFIG_PAGE_TITLE_BRAND}`
-  if (branded.length <= CONFIG_PAGE_TITLE_MAX_LENGTH) return branded
-
-  const titleBudget = CONFIG_PAGE_TITLE_MAX_LENGTH - CONFIG_PAGE_TITLE_KEYWORD.length
-  return `${truncateAtWordBoundary(normalizedTitle, titleBudget)}${CONFIG_PAGE_TITLE_KEYWORD}`
+  return keywordPageTitle(title, CONFIG_PAGE_TITLE_KEYWORD)
 }
 
 /** Keep config search snippets concise without changing the description shown on the page. */
 export function configMetaDescription(description: string | null | undefined): string {
-  const normalizedDescription = normalizeWhitespace(description ?? '')
-  return truncateAtWordBoundary(
-    normalizedDescription || CONFIG_META_DESCRIPTION_FALLBACK,
-    CONFIG_META_DESCRIPTION_MAX_LENGTH,
-  )
+  return metaDescription(description, CONFIG_META_DESCRIPTION_FALLBACK)
 }
+
+export function modPageTitle(title: string): string {
+  return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
+}
+
+export function modMetaDescription(description: string | null | undefined): string {
+  return metaDescription(description, MOD_META_DESCRIPTION_FALLBACK)
+}
+
+export const MOD_NOT_FOUND_TITLE = 'Mod not found — statuslin.es'
 
 export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
 
@@ -52,9 +71,9 @@ export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
  * "examples" or "templates".
  */
 export const HOME_TITLE_BASE = 'Claude Code Status Lines'
-export const HOME_HEADING = 'A gallery of Claude Code status lines'
+export const HOME_HEADING = 'A gallery of Claude Code status lines and mods'
 export const HOME_DESCRIPTION_BASE =
-  'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.'
+  'Browse a gallery of Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.'
 
 function homePageSuffix(page: number): string {
   return page > 1 ? ` — Page ${page}` : ''

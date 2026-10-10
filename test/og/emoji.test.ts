@@ -1,5 +1,20 @@
-import { describe, expect, it, vi } from 'vitest'
-import { emojiCodepoint, loadEmojiAsset } from '@/og/font'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createEmojiLoader, emojiCodepoint, MAX_EMOJI_FETCHES_PER_RENDER } from '@/og/font'
+
+const SVG = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+
+function fakeFetch() {
+  return vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(SVG))
+}
+
+/** Distinct emoji per test: the loader memoizes fetched SVGs for the life of the process. */
+function emojiFrom(first: number, count: number): string[] {
+  return Array.from({ length: count }, (_, i) => String.fromCodePoint(first + i))
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('emojiCodepoint', () => {
   it('returns the lowercase hex codepoint of a single emoji', () => {
@@ -7,26 +22,79 @@ describe('emojiCodepoint', () => {
   })
 })
 
-describe('loadEmojiAsset', () => {
+describe('createEmojiLoader', () => {
   it('returns null for non-emoji segments without fetching', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
-    expect(await loadEmojiAsset('en', 'main')).toBeNull()
+    const fetchSpy = fakeFetch()
+    expect(await createEmojiLoader()('en', 'main')).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
-    fetchSpy.mockRestore()
   })
+
   it('fetches the twemoji svg and returns a base64 data URL for an emoji', async () => {
-    const svg = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
-    const fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(svg, { status: 200 }))
-    const url = await loadEmojiAsset('emoji', '🤖')
+    const fetchSpy = fakeFetch()
+    const url = await createEmojiLoader()('emoji', '🤖')
     expect(url).toMatch(/^data:image\/svg\+xml;base64,/)
     expect(fetchSpy).toHaveBeenCalledWith(expect.stringContaining('1f916.svg'), expect.anything())
-    fetchSpy.mockRestore()
   })
-  it('returns null when the fetch fails (skip, never hang the render)', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network'))
-    expect(await loadEmojiAsset('emoji', '🤖')).toBeNull()
-    fetchSpy.mockRestore()
+
+  it('returns null when the fetch fails (skip, never hang the render), and retries next time', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('network'))
+    expect(await createEmojiLoader()('emoji', '🛰')).toBeNull()
+
+    fetchSpy.mockResolvedValueOnce(new Response(SVG))
+    expect(await createEmojiLoader()('emoji', '🛰')).toMatch(/^data:image\/svg\+xml;base64,/)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('retries after a server error but not after a missing emoji', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async () => new Response('', { status: 404 }))
+      .mockResolvedValueOnce(new Response('', { status: 503 }))
+    const [flaky = '', missing = ''] = emojiFrom(0x1f600, 2)
+
+    for (let render = 0; render < 2; render++) {
+      const load = createEmojiLoader()
+      await load('emoji', flaky)
+      await load('emoji', missing)
+    }
+
+    expect(fetchSpy.mock.calls.map(([url]) => String(url).split('/').pop())).toEqual([
+      '1f600.svg',
+      '1f601.svg',
+      '1f600.svg',
+    ])
+  })
+
+  it('fetches each emoji once across renders', async () => {
+    const fetchSpy = fakeFetch()
+    const [emoji = ''] = emojiFrom(0x1f400, 1)
+
+    const first = await createEmojiLoader()('emoji', emoji)
+    const second = await createEmojiLoader()('emoji', emoji)
+
+    expect(second).toBe(first)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops fetching past the per-render cap and skips the rest', async () => {
+    const fetchSpy = fakeFetch()
+    const load = createEmojiLoader()
+    const emoji = emojiFrom(0xe000, 450)
+
+    const urls = await Promise.all(emoji.map((e) => load('emoji', e)))
+
+    expect(fetchSpy).toHaveBeenCalledTimes(MAX_EMOJI_FETCHES_PER_RENDER)
+    expect(urls.filter((u) => u !== null)).toHaveLength(MAX_EMOJI_FETCHES_PER_RENDER)
+  })
+
+  it('still serves an already-fetched emoji past the cap', async () => {
+    const fetchSpy = fakeFetch()
+    const [cached = '', ...fresh] = emojiFrom(0x1f500, MAX_EMOJI_FETCHES_PER_RENDER + 1)
+    await createEmojiLoader()('emoji', cached)
+    const load = createEmojiLoader()
+    await Promise.all(fresh.map((e) => load('emoji', e)))
+
+    expect(await load('emoji', cached)).toMatch(/^data:image\/svg\+xml;base64,/)
+    expect(fetchSpy).toHaveBeenCalledTimes(MAX_EMOJI_FETCHES_PER_RENDER + 1)
   })
 })

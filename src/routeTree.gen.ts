@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as MeRouteImport } from './routes/me'
+import { Route as MarketplaceDotjsonRouteImport } from './routes/marketplace[.]json'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
@@ -22,6 +23,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
+import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
 import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
 import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
@@ -29,6 +31,7 @@ import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AlternativesToolRouteImport } from './routes/alternatives.$tool'
 import { Route as AdminReviewRouteImport } from './routes/admin/review'
 import { Route as DotwellKnownSecurityDottxtRouteImport } from './routes/[.]well-known.security[.]txt'
+import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -60,6 +63,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
 const MeRoute = MeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketplaceDotjsonRoute = MarketplaceDotjsonRouteImport.update({
+  id: '/marketplace.json',
+  path: '/marketplace.json',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
@@ -95,6 +103,11 @@ const StatusLinesFacetRoute = StatusLinesFacetRouteImport.update({
 const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
   id: '/og/home.png',
   path: '/og/home.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModsSlugRoute = ModsSlugRouteImport.update({
+  id: '/mods/$slug',
+  path: '/mods/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
@@ -133,6 +146,12 @@ const DotwellKnownSecurityDottxtRoute =
     path: '/.well-known/security.txt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const OgModsChar123slugChar125DotpngRoute =
+  OgModsChar123slugChar125DotpngRouteImport.update({
+    id: '/og/mods/{$slug}.png',
+    path: '/og/mods/{$slug}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const OgCChar123slugChar125DotpngRoute =
   OgCChar123slugChar125DotpngRouteImport.update({
     id: '/og/c/{$slug}.png',
@@ -149,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -162,17 +182,20 @@ export interface FileRoutesByFullPath {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -186,18 +209,21 @@ export interface FileRoutesByTo {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -211,12 +237,14 @@ export interface FileRoutesById {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -224,6 +252,7 @@ export interface FileRouteTypes {
     | '/'
     | '/guide'
     | '/llms.txt'
+    | '/marketplace.json'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -237,17 +266,20 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide/claude-desktop'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/guide'
     | '/llms.txt'
+    | '/marketplace.json'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -261,17 +293,20 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide/claude-desktop'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
   id:
     | '__root__'
     | '/'
     | '/guide'
     | '/llms.txt'
+    | '/marketplace.json'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -285,18 +320,21 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide_/claude-desktop'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
     | '/api/auth/$'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GuideRoute: typeof GuideRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
+  MarketplaceDotjsonRoute: typeof MarketplaceDotjsonRoute
   MeRoute: typeof MeRoute
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -310,12 +348,14 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   ComparePairRoute: typeof ComparePairRoute
   GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
+  ModsSlugRoute: typeof ModsSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   StatusLinesBestRoute: typeof StatusLinesBestRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
+  OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -360,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketplace.json': {
+      id: '/marketplace.json'
+      path: '/marketplace.json'
+      fullPath: '/marketplace.json'
+      preLoaderRoute: typeof MarketplaceDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/llms.txt': {
@@ -411,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgHomeDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mods/$slug': {
+      id: '/mods/$slug'
+      path: '/mods/$slug'
+      fullPath: '/mods/$slug'
+      preLoaderRoute: typeof ModsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guide_/claude-desktop': {
       id: '/guide_/claude-desktop'
       path: '/guide/claude-desktop'
@@ -460,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownSecurityDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/og/mods/{$slug}.png': {
+      id: '/og/mods/{$slug}.png'
+      path: '/og/mods/{$slug}.png'
+      fullPath: '/og/mods/{$slug}.png'
+      preLoaderRoute: typeof OgModsChar123slugChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/og/c/{$slug}.png': {
       id: '/og/c/{$slug}.png'
       path: '/og/c/{$slug}.png'
@@ -481,6 +542,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GuideRoute: GuideRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
+  MarketplaceDotjsonRoute: MarketplaceDotjsonRoute,
   MeRoute: MeRoute,
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
@@ -494,12 +556,14 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   ComparePairRoute: ComparePairRoute,
   GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
+  ModsSlugRoute: ModsSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
   StatusLinesBestRoute: StatusLinesBestRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
+  OgModsChar123slugChar125DotpngRoute: OgModsChar123slugChar125DotpngRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

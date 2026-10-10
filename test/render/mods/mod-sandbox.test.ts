@@ -1,0 +1,177 @@
+import { CommandExitError, TimeoutError } from 'e2b'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { E2B_MOD_TEMPLATE_ID } from '@/render/e2b-template'
+
+type OnOutput = (data: string) => void
+
+const fake = vi.hoisted(() => ({
+  sandbox: {
+    files: { write: vi.fn() },
+    commands: { run: vi.fn() },
+    kill: vi.fn(),
+  },
+  create: vi.fn(),
+}))
+
+vi.mock('e2b', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('e2b')>()
+  return { ...actual, Sandbox: { create: fake.create } }
+})
+
+import {
+  REPLAY_TIMEOUT_MS,
+  REQUEST_TIMEOUT_MS,
+  withRecordingSandbox,
+  withReplaySandbox,
+} from '@/render/mods/mod-sandbox'
+
+function command(chunks: string[], outcome: () => Promise<unknown>) {
+  let killed = false
+  const handle = {
+    disconnect: vi.fn(async () => {
+      killed = true
+    }),
+    kill: vi.fn(async () => {
+      killed = true
+      return true
+    }),
+    wait: () => (killed ? Promise.reject(new Error('signal: killed')) : outcome()),
+  }
+  fake.sandbox.commands.run.mockImplementation(
+    async (_cmd: string, opts: { onStdout: OnOutput; onStderr: OnOutput }) => {
+      for (const chunk of chunks) opts.onStdout(chunk)
+      return handle
+    },
+  )
+  return handle
+}
+
+const LIMITS = { timeoutMs: 20_000, maxOutputBytes: 1_000 }
+
+beforeEach(() => {
+  vi.stubEnv('E2B_API_KEY', 'test-key')
+  fake.create.mockResolvedValue(fake.sandbox)
+  fake.sandbox.kill.mockResolvedValue(undefined)
+})
+afterEach(() => {
+  vi.unstubAllEnvs()
+  vi.clearAllMocks()
+})
+
+describe('withReplaySandbox', () => {
+  it('opens a fresh mods sandbox with the network off and secure mode on', async () => {
+    await withReplaySandbox(async () => {})
+
+    const [template, options] = fake.create.mock.calls[0] ?? []
+    expect(template).toBe(E2B_MOD_TEMPLATE_ID)
+    expect(options).toMatchObject({ allowInternetAccess: false })
+    expect(options).toMatchObject({ secure: true })
+  })
+
+  it('opens its sandbox the same way the recording sandbox is opened, but for less time', async () => {
+    await withRecordingSandbox(null, async () => {})
+    await withReplaySandbox(async () => {})
+
+    const [recording, replay] = fake.create.mock.calls.map(([, options]) => options)
+    expect({ ...replay, timeoutMs: 0 }).toEqual({ ...recording, timeoutMs: 0 })
+    expect(replay.timeoutMs).toBeLessThan(recording.timeoutMs)
+  })
+
+  it('lives long enough for the file upload, the command start and the replay', async () => {
+    await withReplaySandbox(async () => {})
+
+    const [, options] = fake.create.mock.calls[0] ?? []
+    expect(options.timeoutMs).toBeGreaterThanOrEqual(2 * REQUEST_TIMEOUT_MS + REPLAY_TIMEOUT_MS)
+  })
+
+  it('kills the sandbox when the replay throws', async () => {
+    const replay = withReplaySandbox(async () => {
+      throw new Error('replay failed')
+    })
+
+    await expect(replay).rejects.toThrow('replay failed')
+    expect(fake.sandbox.kill).toHaveBeenCalledOnce()
+  })
+
+  it('returns a non-zero exit with its output', async () => {
+    command([], async () => {
+      throw new CommandExitError({
+        exitCode: 1,
+        stdout: '',
+        stderr: 'boom',
+        error: 'exit status 1',
+      })
+    })
+
+    const output = await withReplaySandbox((sandbox) => sandbox.runBounded('node x', LIMITS))
+
+    expect(output).toEqual({ exitCode: 1, stdout: '', stderr: 'boom' })
+  })
+
+  it('kills the command and fails once its output passes the cap', async () => {
+    const handle = command(['x'.repeat(600), 'x'.repeat(600)], () => new Promise(() => {}))
+
+    const run = withReplaySandbox((sandbox) => sandbox.runBounded('node x', LIMITS))
+
+    await expect(run).rejects.toThrow(`command output passed ${LIMITS.maxOutputBytes} bytes`)
+    expect(handle.disconnect).toHaveBeenCalledOnce()
+    expect(handle.kill).toHaveBeenCalledOnce()
+    expect(fake.sandbox.kill).toHaveBeenCalledOnce()
+  })
+
+  it('still kills the command when its disconnect fails after an overflow', async () => {
+    const unhandled: unknown[] = []
+    const onUnhandled = (reason: unknown) => unhandled.push(reason)
+    process.on('unhandledRejection', onUnhandled)
+    let emit: OnOutput = () => {}
+    const handle = {
+      disconnect: vi.fn(async () => {
+        throw new Error('disconnect failed')
+      }),
+      kill: vi.fn(async () => true),
+      wait: async () => {
+        emit('x'.repeat(LIMITS.maxOutputBytes + 1))
+        throw new Error('signal: killed')
+      },
+    }
+    fake.sandbox.commands.run.mockImplementation(
+      async (_cmd: string, opts: { onStdout: OnOutput }) => {
+        emit = opts.onStdout
+        return handle
+      },
+    )
+    try {
+      const run = withReplaySandbox((sandbox) => sandbox.runBounded('node x', LIMITS))
+
+      await expect(run).rejects.toThrow(`command output passed ${LIMITS.maxOutputBytes} bytes`)
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      expect(handle.disconnect).toHaveBeenCalledOnce()
+      expect(handle.kill).toHaveBeenCalledOnce()
+      expect(unhandled).toEqual([])
+    } finally {
+      process.off('unhandledRejection', onUnhandled)
+    }
+  })
+
+  it('fails a command that runs past its timeout', async () => {
+    command([], async () => {
+      throw new TimeoutError('deadline exceeded')
+    })
+
+    const run = withReplaySandbox((sandbox) => sandbox.runBounded('node x', LIMITS))
+
+    await expect(run).rejects.toThrow(`command ran past ${LIMITS.timeoutMs} ms`)
+    expect(fake.sandbox.kill).toHaveBeenCalledOnce()
+  })
+
+  it('runs the command as the unprivileged user with the timeout', async () => {
+    command([], async () => ({ exitCode: 0, stdout: '[]', stderr: '' }))
+
+    await withReplaySandbox((sandbox) => sandbox.runBounded('node x', LIMITS))
+
+    expect(fake.sandbox.commands.run).toHaveBeenCalledWith(
+      'node x',
+      expect.objectContaining({ user: 'user', timeoutMs: LIMITS.timeoutMs, background: true }),
+    )
+  })
+})

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
-import { configSocialMeta, rootSocialMeta, staticPageSocialMeta } from '@/og/meta'
+import { configSocialMeta, modSocialMeta, rootSocialMeta, staticPageSocialMeta } from '@/og/meta'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -21,6 +21,8 @@ describe('social meta', () => {
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
     const description = meta.find((entry) => entry.property === 'og:description')?.content
     expect(description).toMatch(/cop(?:y|ied|ies)/i)
+    expect(description).toMatch(/status lines.*\bmods\b/i)
+    expect(description).not.toMatch(/curat|pick|chose|behalf/i)
     expect(description).not.toMatch(/upvote/i)
   })
   it('config emits a per-slug og:image', () => {
@@ -71,5 +73,17 @@ describe('social meta', () => {
     const byProp = (p: string) => meta.find((m) => m.property === p)?.content
     expect(byProp('og:type')).toBe('website')
     expect(byProp('og:url')).toMatch(/\/c\/my-config$/)
+  })
+
+  it('mod points og:image and twitter:image at its card on the given origin', () => {
+    const image = 'https://staging.statuslin.es/og/mods/file-tree.png'
+
+    expect(modSocialMeta('https://staging.statuslin.es', 'file-tree')).toEqual([
+      { property: 'og:image', content: image },
+      { property: 'og:image:width', content: String(CARD_WIDTH) },
+      { property: 'og:image:height', content: String(CARD_HEIGHT) },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:image', content: image },
+    ])
   })
 })

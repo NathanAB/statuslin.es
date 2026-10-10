@@ -122,6 +122,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 - `src/ui/` — primitives only. Imports only `src/ui` / `src/lib`. Type-only imports from elsewhere are allowed (erased at build).
 - `src/<feature>/` — feature code colocated (`src/gallery`, `src/submit`, `src/review`, `src/adopt`, `src/votes`). No cross-feature value imports — go through `src/lib` or `src/ui`.
+- `src/mods/` may import `src/gallery`, the shared listing and ranking code that ranks mods and status lines on one scale. `src/gallery` never imports `src/mods` or any other feature folder; a route maps mod data into the gallery's shapes instead.
 - `src/routes/` — thin: a loader calling a server function + a component composing `src/ui` primitives. No data shaping, no `@/db` import.
 - Files ≤ 250 lines, one responsibility. Named exports (default exports only in `src/routes/`). Components `PascalCase`, files `kebab-case.tsx`.
 
@@ -143,7 +144,7 @@ All rules run in `bun run check` and at the hooks listed below.
 | 10 | No arbitrary Tailwind values | `w-[200px]`-style values in app code (allowed in `src/ui/` vendored files) | `check-frontend.ts` — gate error |
 | 11 | File size | Any file over 250 lines | `check-frontend.ts` — gate error |
 | 12 | Centralized font family | A `font-<family>` class (`font-mono`, a typo like `font-heading`, …) outside `src/ui/text.tsx` + the code/header allowlist — text must render through `Text`/`Heading`, which own the font | `check-frontend.ts` — gate error |
-| 13 | Import boundaries | routes ↛ db; `src/ui` ↛ features; no cross-feature value imports | `check-boundaries` (dependency-cruiser) |
+| 13 | Import boundaries | routes ↛ db; `src/ui` ↛ features; `src/gallery` ↛ `src/mods`; no cross-feature value imports | `check-boundaries` (dependency-cruiser) |
 | 14 | Biome lint + format | Style, complexity, naming, import order, `noConsole` | `bun run lint` |
 
 **Hook schedule:**

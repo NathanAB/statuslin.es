@@ -5,8 +5,9 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { runCommand } from '@/adopt/install'
 import * as schema from '@/db/schema'
+import { getPublishedConfigs } from '@/gallery/config-items'
 import { getFacetPage, llmsTxtResponseForRoute } from '@/gallery/functions'
-import { getConfigBySlug, getPublishedConfigs } from '@/gallery/queries'
+import { getConfigBySlug } from '@/gallery/queries'
 import { tryHighlightSource } from '@/lib/highlight'
 import { configCardResponse } from '@/og/routes'
 import { FakeSandboxRunner } from '@/render/fake-runner'
@@ -371,7 +372,7 @@ describe('public reads while an update is pending', () => {
     expect(llms).toContain(live.description)
     expect(llms).not.toContain(update.title)
     const bashFacet = await getFacetPage({ data: { facet: 'bash' } })
-    expect(bashFacet?.cards).toEqual([
+    expect(bashFacet?.configs.items.map(({ item }) => item.card)).toEqual([
       expect.objectContaining({ slug: v1.slug, title: live.title }),
     ])
     expect(await getFacetPage({ data: { facet: 'python' } })).toBeNull()

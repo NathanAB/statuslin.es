@@ -183,6 +183,27 @@
       "when": 1791563560773,
       "tag": "0025_backfill_config_first_published_at",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791579402316,
+      "tag": "0026_mods_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791580693989,
+      "tag": "0027_mod_versions_desktop_screenshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791581916032,
+      "tag": "0028_mod_versions_repo_url_and_path_checks",
+      "breakpoints": true
     }
   ]
 }

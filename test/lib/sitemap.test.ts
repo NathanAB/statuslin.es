@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DESKTOP_GUIDE_DATES } from '@/lib/page-title'
-import { sitemapResponse } from '@/lib/sitemap'
+import { sitemapResponse, withModUrls } from '@/lib/sitemap'
 
 const BASE = 'https://statuslin.es'
 
@@ -114,5 +114,26 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('<loc>https://example.test/status-lines/git</loc>')
     expect(xml).toContain('<lastmod>2026-06-02</lastmod>')
     expect(xml).toContain('<loc>https://example.test/status-lines/bash</loc>')
+  })
+})
+
+describe('withModUrls', () => {
+  it('leaves the sitemap untouched when no mod is published', async () => {
+    const original = await sitemapResponse(BASE, [], []).text()
+
+    expect(await (await withModUrls(sitemapResponse(BASE, [], []), BASE, [])).text()).toBe(original)
+  })
+
+  it("keeps $' and $` in a mod url literal instead of splicing the sitemap into it", async () => {
+    const base = "https://a$'b.example/c$`d"
+    const xml = await (
+      await withModUrls(sitemapResponse(BASE, [], []), base, [
+        { slug: 'meter', updatedAt: new Date('2026-10-01T00:00:00Z') },
+      ])
+    ).text()
+
+    expect(xml).toContain('<loc>https://a$&apos;b.example/c$`d/mods/meter</loc>')
+    expect(xml.match(/<urlset/g)).toHaveLength(1)
+    expect(xml.endsWith('</urlset>\n')).toBe(true)
   })
 })

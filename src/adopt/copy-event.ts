@@ -1,4 +1,4 @@
-import { PERSONLESS } from '@/lib/posthog-server'
+import { copierPersonProperties } from '@/lib/posthog-person'
 import type { CopiedConfig } from './copy'
 
 export type CopyKind = 'prompt' | 'script'
@@ -43,10 +43,11 @@ export function copyEvent(input: CopyEventInput): CopyCaptureMessage | null {
   // kind is attacker-controllable (the server fn input is a passthrough), so guard the lookup
   // against own properties only — an unknown kind like '__proto__' must not resolve to a value.
   if (!Object.hasOwn(EVENT_BY_KIND, input.kind)) return null
-  const properties: Record<string, unknown> = { configId: input.configId, ...input.config }
+  const properties: Record<string, unknown> = {
+    configId: input.configId,
+    ...input.config,
+    ...copierPersonProperties(input.distinctId, input.signedInUserId),
+  }
   if (input.sessionId) properties[SESSION_ID_PROP] = input.sessionId
-  // A signed-in browser identifies on user.id (see __root.tsx), so only that id is a person; an
-  // anonymous browser id or the ipHash fallback must not create a person profile per copier.
-  if (input.distinctId !== input.signedInUserId) Object.assign(properties, PERSONLESS)
   return { distinctId: input.distinctId, event: EVENT_BY_KIND[input.kind], properties }
 }

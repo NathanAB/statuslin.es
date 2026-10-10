@@ -51,7 +51,7 @@ export function CopyButton({
       variant={variant}
       size={iconOnly ? 'icon-sm' : size}
       onClick={handleClick}
-      aria-label={ariaLabel ?? name}
+      aria-label={copied ? copiedLabel : (ariaLabel ?? name)}
     >
       {copied ? <Check /> : <Copy />}
       {iconOnly ? null : name}

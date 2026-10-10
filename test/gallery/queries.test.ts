@@ -4,8 +4,9 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getPublishedConfigs, selectCardPreviews } from '@/gallery/queries'
-import { trendingScore } from '@/gallery/trending'
+import { getPublishedConfigs } from '@/gallery/config-items'
+import { selectCardPreviews } from '@/gallery/queries'
+import { CONFIG_COPY_EVENTS, trendingScore } from '@/gallery/trending'
 import { storePreviews } from '@/render/store'
 
 let client: PGlite
@@ -316,7 +317,10 @@ describe('getPublishedConfigs sorting', () => {
     ])
 
     const scores = await db
-      .select({ id: schema.configs.id, score: trendingScore(schema.configs.id) })
+      .select({
+        id: schema.configs.id,
+        score: trendingScore(schema.configs.id, CONFIG_COPY_EVENTS),
+      })
       .from(schema.configs)
       .where(inArray(schema.configs.id, [recent.id, weekOld.id]))
     const scoreById = new Map(scores.map((row) => [row.id, Number(row.score)]))

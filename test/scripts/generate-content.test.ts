@@ -12,7 +12,11 @@ import {
 import type { GeneratedContent } from '@/content/types'
 import * as schema from '@/db/schema'
 import { storePreviews } from '@/render/store'
-import { parseGenerateContentArgs, runGenerateContentCommand } from '../../scripts/generate-content'
+import {
+  fetchModReadme,
+  parseGenerateContentArgs,
+  runGenerateContentCommand,
+} from '../../scripts/generate-content'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -379,5 +383,131 @@ describe('runGenerateContentCommand', () => {
 
     expect(stdout).toEqual([])
     expect(stderr).toEqual(['[generate-content] applied 1 response(s)'])
+  })
+})
+
+describe('generate-content for mods', () => {
+  const COMMIT = 'c'.repeat(40)
+
+  async function seedMod(slug: string): Promise<string> {
+    const [mod] = await db
+      .insert(schema.mods)
+      .values({ slug, pluginName: slug, title: slug, authorGithub: 'octocat' })
+      .returning()
+    const [version] = await db
+      .insert(schema.modVersions)
+      .values({
+        modId: mod?.id as string,
+        versionNumber: 1,
+        repoUrl: `https://github.com/octocat/${slug}`,
+        commitSha: COMMIT,
+        footprint: { events: [], calls: [] },
+        validatedWith: '2.1.0',
+      })
+      .returning()
+    await db
+      .update(schema.mods)
+      .set({ currentVersionId: version?.id as string })
+      .where(eq(schema.mods.id, mod?.id as string))
+    return version?.id as string
+  }
+
+  function capture(stdin = '') {
+    const stdout: string[] = []
+    const stderr: string[] = []
+    return {
+      stdout,
+      stderr,
+      io: {
+        readStdin: async () => stdin,
+        writeStdout: (value: string) => stdout.push(value),
+        writeStderr: (value: string) => stderr.push(value),
+        readModReadme: async () => 'A meter mod.',
+      },
+    }
+  }
+
+  it('selects the mod catalog with --mod in every mode', () => {
+    expect(parseGenerateContentArgs(['token-weather', '--prepare', '--mod'])).toEqual({
+      mode: 'prepare',
+      slug: 'token-weather',
+      all: false,
+      mods: true,
+    })
+    expect(parseGenerateContentArgs(['--mod', '--all', '--prepare'])).toEqual({
+      mode: 'prepare',
+      slug: null,
+      all: true,
+      mods: true,
+    })
+    expect(parseGenerateContentArgs(['--apply', '--mod'])).toEqual({ mode: 'apply', mods: true })
+    expect(() => parseGenerateContentArgs(['--mod'])).toThrow(/usage/i)
+    expect(() => parseGenerateContentArgs(['a', '--prepare', '--mod', '--mod'])).toThrow(/usage/i)
+  })
+
+  it('prepares one mod request, or only mods with --all', async () => {
+    const versionId = await seedMod('cli-meter')
+    const one = capture()
+    await runGenerateContentCommand(
+      { mode: 'prepare', slug: 'cli-meter', all: false, mods: true },
+      db,
+      one.io,
+    )
+    expect(JSON.parse(one.stdout[0] ?? '')).toMatchObject({
+      kind: 'mod',
+      slug: 'cli-meter',
+      versionId,
+      commitSha: COMMIT,
+    })
+
+    const all = capture()
+    await runGenerateContentCommand(
+      { mode: 'prepare', slug: null, all: true, mods: true },
+      db,
+      all.io,
+    )
+    const requests = JSON.parse(all.stdout[0] ?? '') as Array<{ kind: string; slug: string }>
+    expect(requests.map((r) => [r.kind, r.slug])).toContainEqual(['mod', 'cli-meter'])
+    expect(requests.every((r) => r.kind === 'mod')).toBe(true)
+  })
+
+  it('applies mod responses with --mod', async () => {
+    const versionId = await seedMod('cli-apply')
+    const run = capture(
+      JSON.stringify({
+        schemaVersion: 1,
+        kind: 'mod',
+        slug: 'cli-apply',
+        versionId,
+        commitSha: COMMIT,
+        generatedContent: CONTENT,
+        tags: ['minimal'],
+      }),
+    )
+
+    await runGenerateContentCommand({ mode: 'apply', mods: true }, db, run.io)
+
+    expect(run.stdout).toEqual([])
+    expect(run.stderr).toEqual(['[generate-content] applied 1 mod response(s)'])
+    const [row] = await db
+      .select({ generatedContent: schema.modVersions.generatedContent })
+      .from(schema.modVersions)
+      .where(eq(schema.modVersions.id, versionId))
+    expect(row?.generatedContent).toEqual(CONTENT)
+  })
+})
+
+describe('fetchModReadme', () => {
+  const COMMIT = 'd'.repeat(40)
+
+  it('cuts a very long README down to a fixed size', async () => {
+    const long = 'x'.repeat(100_000)
+    const text = await fetchModReadme({ readme: async () => long })(
+      'https://github.com/octocat/meter',
+      '',
+      COMMIT,
+    )
+    expect(text?.length).toBeLessThan(long.length)
+    expect(text).toMatch(/README cut off/)
   })
 })

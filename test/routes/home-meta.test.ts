@@ -13,7 +13,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 1,
           pageCount: 3,
-          cards: [],
+          items: [],
         },
       },
       match: { search: {} },
@@ -25,7 +25,7 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste.',
+            'Browse a gallery of Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
         },
       ]),
     )
@@ -38,7 +38,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 2,
           pageCount: 3,
-          cards: [],
+          items: [],
         },
       },
       match: { search: { page: 999 } },
@@ -50,7 +50,7 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse a community gallery of Claude Code status lines. See real rendered previews and copy one in a single paste. Page 2 of 3.',
+            'Browse a gallery of Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
       ]),
     )
@@ -75,7 +75,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 1,
           pageCount: 1,
-          cards: [{ slug: 'alpha', title: 'Alpha' }],
+          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
         },
       },
       match: { search: {} },
@@ -87,6 +87,65 @@ describe('home search indexing metadata', () => {
     expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
       'WebSite',
       'CollectionPage',
+    ])
+  })
+
+  it('lists only status lines in the CollectionPage, since its item URLs are config pages', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: {
+        gallery: {
+          page: 1,
+          pageCount: 1,
+          items: [
+            { kind: 'mod', card: { slug: 'meter', title: 'Meter' } },
+            { kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } },
+          ],
+        },
+      },
+      match: { search: {} },
+    } as never)
+
+    const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
+      .map((script) => JSON.parse(script.children) as Record<string, unknown>)
+      .find((node) => node['@type'] === 'CollectionPage') as
+      | { mainEntity: { itemListElement: Array<{ url: string }> } }
+      | undefined
+    expect(collectionPage?.mainEntity.itemListElement.map((item) => item.url)).toEqual([
+      'https://statuslin.es/c/alpha',
+    ])
+  })
+
+  it('marks a kind-filtered gallery view noindex', async () => {
+    const head = await HomeRoute.options.head?.({
+      loaderData: undefined,
+      match: { search: { kind: 'mods' } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+  })
+
+  it('canonicalizes a kind-filtered gallery to itself and marks it noindex', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: { gallery: { page: 1, pageCount: 1, items: [] } },
+      match: { search: { kind: 'mods' } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(head?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es/?kind=mods' }])
+  })
+
+  it('keeps the kind in the canonical of a later kind-filtered page', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: { gallery: { page: 2, pageCount: 2, items: [] } },
+      match: { search: { kind: 'mods', page: 2 } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(head?.links).toEqual([
+      { rel: 'canonical', href: 'https://statuslin.es/?kind=mods&page=2' },
     ])
   })
 
@@ -105,7 +164,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 2,
           pageCount: 3,
-          cards: [{ slug: 'alpha', title: 'Alpha' }],
+          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
         },
       },
       match: { search: { sort: 'new', page: 2 } },

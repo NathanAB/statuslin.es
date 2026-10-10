@@ -3,9 +3,9 @@ import { Stack } from '@/ui/layout'
 import { Heading, Text, TextLink } from '@/ui/text'
 
 /**
- * Terms page body: what the gallery is, the license on submitted configs, and how to
- * report or take down a config. Kept as a component (not inline in the route) so the
- * key points are unit-testable. Linked from the site footer.
+ * Terms page body: what the gallery is, the license on submitted configs, the terms for
+ * listed mods, and how to report or take down a config or a mod. Kept as a component (not
+ * inline in the route) so the key points are unit-testable. Linked from the site footer.
  */
 export function TermsContent() {
   return (
@@ -34,6 +34,16 @@ export function TermsContent() {
       </Stack>
 
       <Stack gap={2}>
+        <Heading level={2}>Listed mods</Heading>
+        <Text muted measure>
+          Mods are listed on their authors' behalf, with credit to each author. Each mod keeps its
+          own license, or has none. The {CONTENT_LICENSE.shortLabel} release above does not cover
+          mods. Authors can have a mod removed on request by emailing{' '}
+          <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
+        </Text>
+      </Stack>
+
+      <Stack gap={2}>
         <Heading level={2}>Reporting & takedown</Heading>
         <Text muted measure>
           The maintainer may remove any config at its discretion — for example, a malicious script,
@@ -42,6 +52,11 @@ export function TermsContent() {
           <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>. Security issues go
           through the{' '}
           <TextLink href={`${REPO_URL}/blob/main/SECURITY.md`}>security policy</TextLink>.
+        </Text>
+        <Text muted measure>
+          The maintainer may remove any listed mod at any time. Anyone can report a mod or ask for
+          its removal by emailing{' '}
+          <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
         </Text>
       </Stack>
     </Stack>

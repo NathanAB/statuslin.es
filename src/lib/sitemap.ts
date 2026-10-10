@@ -1,4 +1,5 @@
 import { DESKTOP_GUIDE_DATES, DESKTOP_GUIDE_PATH, GUIDE_DATES } from '@/lib/page-title'
+import { modPath } from '@/lib/site'
 
 /**
  * The `/sitemap.xml` builder. Lists the static public pages plus one `<url>` per published config
@@ -11,6 +12,12 @@ import { DESKTOP_GUIDE_DATES, DESKTOP_GUIDE_PATH, GUIDE_DATES } from '@/lib/page
 
 /** Published config rows the sitemap needs — just enough to build each `<url>`. */
 export interface SitemapConfig {
+  slug: string
+  updatedAt: Date
+}
+
+/** `updatedAt` is the date of the mod's current version. */
+export interface SitemapMod {
   slug: string
   updatedAt: Date
 }
@@ -95,4 +102,21 @@ export function sitemapResponse(
       'Cache-Control': 'max-age=3600',
     },
   })
+}
+
+/** The gallery builds `/sitemap.xml` without knowing about mods, so they are spliced into its response. */
+export async function withModUrls(
+  sitemap: Response,
+  base: string,
+  mods: SitemapMod[],
+): Promise<Response> {
+  const xml = await sitemap.text()
+  const entries = mods.map((m) =>
+    urlEntry(`${base}${modPath(m.slug)}`, m.updatedAt.toISOString().slice(0, 10)),
+  )
+  const body =
+    entries.length === 0
+      ? xml
+      : xml.replace('\n</urlset>', () => `\n${entries.join('\n')}\n</urlset>`)
+  return new Response(body, { status: sitemap.status, headers: sitemap.headers })
 }

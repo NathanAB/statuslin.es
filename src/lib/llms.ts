@@ -1,4 +1,5 @@
 import { DESKTOP_GUIDE_PATH } from '@/lib/page-title'
+import { modPath } from '@/lib/site'
 
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
@@ -14,6 +15,13 @@ export interface LlmsConfig {
   copyCount: number
 }
 
+export interface LlmsMod {
+  slug: string
+  title: string
+  description: string
+  copyCount: number
+}
+
 const MAX_SUMMARY_CHARS = 160
 
 export function buildLlmsTxt(
@@ -23,8 +31,8 @@ export function buildLlmsTxt(
 ): string {
   const blocks = [
     '# statuslin.es',
-    '> Community gallery of Claude Code status lines: browse real, sandbox-rendered previews and copy one into your own setup.',
-    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. Every submission is a shell script; the site runs it in a sandbox and shows the actual rendered terminal output, plus its copy count and a one-command copy to adopt it. It is a curation-first gallery, not documentation.",
+    '> A gallery of Claude Code status lines and mods. Status lines are submitted by the community. Browse real previews, then copy a status line or install a mod.',
+    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. It holds two kinds of entry: status line shell scripts, which the community submits, and mods, which are Claude Code plugins. The site shows each one's real output, rendered in a sandbox or, for a mod that draws only in Claude Desktop, as a screenshot, plus its copy count and a one-command copy or install. It is a curation-first gallery, not documentation.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -51,16 +59,32 @@ function facetLink(base: string, facet: { slug: string; label: string }): string
 }
 
 function configLink(base: string, config: LlmsConfig): string {
-  const summary = oneLine(config.description)
-  const copies = `Copied ${config.copyCount} ${config.copyCount === 1 ? 'time' : 'times'}.`
-  return `- [${config.title}](${base}/c/${config.slug}): ${summary ? `${summary} ` : ''}${copies}`
+  return summaryLink(`${base}/c/${config.slug}`, config)
+}
+
+function summaryLink(
+  url: string,
+  item: { title: string; description: string; copyCount: number },
+): string {
+  const summary = escapeMarkdownLinks(oneLine(item.description))
+  const copies = `Copied ${item.copyCount} ${item.copyCount === 1 ? 'time' : 'times'}.`
+  return `- [${escapeMarkdownLinks(flat(item.title))}](${url}): ${summary ? `${summary} ` : ''}${copies}`
+}
+
+/** Authors write titles and descriptions, so a `](` or `<url>` in them must not forge a link. */
+function escapeMarkdownLinks(text: string): string {
+  return text.replace(/[\\[\]<>]/g, (c) => `\\${c}`)
+}
+
+function flat(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
 }
 
 function oneLine(text: string): string {
-  const flat = text.replace(/\s+/g, ' ').trim()
-  if (flat.length <= MAX_SUMMARY_CHARS)
-    return flat === '' || /[.!?]$/.test(flat) ? flat : `${flat}.`
-  const cut = flat.slice(0, MAX_SUMMARY_CHARS - 1)
+  const line = flat(text)
+  if (line.length <= MAX_SUMMARY_CHARS)
+    return line === '' || /[.!?]$/.test(line) ? line : `${line}.`
+  const cut = line.slice(0, MAX_SUMMARY_CHARS - 1)
   return `${cut.slice(0, cut.lastIndexOf(' '))}…`
 }
 
@@ -75,4 +99,18 @@ export function llmsResponse(
       'Cache-Control': 'max-age=86400',
     },
   })
+}
+
+/** The gallery builds `/llms.txt` without knowing about mods, so they are appended to its response. */
+export async function withModLinks(
+  llms: Response,
+  base: string,
+  mods: LlmsMod[],
+): Promise<Response> {
+  const txt = await llms.text()
+  const body =
+    mods.length === 0
+      ? txt
+      : `${txt}\n${['## Mods', '', ...mods.map((m) => summaryLink(`${base}${modPath(m.slug)}`, m))].join('\n')}\n`
+  return new Response(body, { status: llms.status, headers: llms.headers })
 }

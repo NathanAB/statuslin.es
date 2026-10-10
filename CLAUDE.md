@@ -18,9 +18,10 @@ where visitors **copy it to use** (`src/adopt`).
 `src/` map (one responsibility each):
 - `routes/` — TanStack Start file-based routes: pages + API handlers
 - `submit/` — submission form + flow (slug, obfuscation checks, allowed network hosts)
-- `render/` — render pipeline: real E2B runner, fake runner (tests/no key), ANSI parsing, scenarios
+- `render/` — render pipeline: real E2B runner, fake runner (tests/no key), ANSI parsing, scenarios; mod recording and cropping in `render/mods/`
 - `review/` — admin review queue and publish/reject decisions
 - `gallery/` — gallery list queries
+- `mods/` — mods marketplace, pages, import, publish and gallery source
 - `votes/` — retained legacy voting code · `adopt/` — copy/install a config
 - `og/` — Open Graph card images · `legal/` — terms page
 - `db/` — Drizzle schema + migration client · `lib/` — shared utils (`env.ts`)
@@ -52,7 +53,7 @@ where visitors **copy it to use** (`src/adopt`).
 - **Run it:** `bun run dev` (the app) + `bun run worker` (renders queued jobs locally, or nothing reaches the review queue); full setup in `README.md`.
 - **Terminology — "status line" (two words):** Anthropic spells the Claude Code feature **status line** (two words), so all user-facing copy does too — "a status line", "status lines", "Status line not found". The single word "statusline" is wrong in prose. Exceptions that stay one word because they're not prose: the brand/domain **statuslin.es**, the JSON settings key `statusLine`, the docs URL path `.../statusline`, and code identifiers / filenames / analytics event names (`StatuslinePreview`, `statusline.sh`, `statusline_submitted`, …). When in doubt in anything a user reads, two words.
 - **Env:** never hardcode URLs/ports/secrets. Local dev reads `.env.local` (its Postgres is a dedicated Docker container `statuslines-postgres` on host port 5433 — full setup in `README.md`); `.env.staging` / `.env.production` are push-to-Fly only (a server never reads those files). All `.env*` are gitignored except `.env.example` (the committed template) — keep it in sync. Auth is same-origin — the client infers its origin, the server reads `BETTER_AUTH_URL`.
-- **Tests:** run via `bun --bun run test` (Vitest) — never bare `bun test` (it ignores the Vite config). DB tests use PGlite running the **real committed migrations**; always close clients in `afterAll`. `test/lib/wake.test.ts` binds a real ephemeral socket. **In Codex, run every full `bun run check` with elevated sandbox permission from the first attempt**; do not wait for the predictable restricted-sandbox `Failed to start server. Is port 0 in use?` failure and rerun. Use the same elevated permission for any focused run containing `test/lib/wake.test.ts`.
+- **Tests:** run via `bun --bun run test` (Vitest) — never bare `bun test` (it ignores the Vite config). DB tests use PGlite running the **real committed migrations**; always close clients in `afterAll`. `test/lib/wake.test.ts` and `test/render/sandbox-canned-model-server.test.ts` bind a real ephemeral socket. **In Codex, run every full `bun run check` with elevated sandbox permission from the first attempt**; do not wait for the predictable restricted-sandbox `Failed to start server. Is port 0 in use?` failure and rerun. Use the same elevated permission for any focused run containing either file.
 - **Worktrees:** if you work in a git worktree (created under `.claude/worktrees/`), `bun install` and copy `.env.local` in first, and run the gate from the worktree root — not the main repo. Per-edit Biome hook errors inside a worktree are a known papercut. Full checklist in `docs/worktrees.md`.
 - **Signed-in UX testing:** auth is GitHub-only, so to test signed-in pages in an automated browser, `bun run dev:login` mints a session + prints a cookie command for agent-browser. See `docs/testing-signed-in.md`. (Apply `bun run db:migrate` to the dev DB first — PGlite-backed tests hide unapplied migrations.)
 - **DB:** Drizzle; migrations via `drizzle-kit generate` → `migrate`, committed; never hand-edit generated SQL.
@@ -66,11 +67,14 @@ where visitors **copy it to use** (`src/adopt`).
   `config_versions.generated_content` plus tags. Inspect the stored result before publishing and
   regenerate when source changes. The agent-agnostic workflow launches no second agent and creates
   no request/response files; use staging first, then prod. Run it again after approving an update:
-  the newly live version starts with no generated content, and `--all --prepare` lists it.
+  the newly live version starts with no generated content, and `--all --prepare` lists it. Mods use
+  the same commands with `--mod` added; `--all --prepare --mod` lists draft and published mods whose
+  current version has no content.
 - **Front-end:** see `docs/frontend-guidelines.md` for the three rules: tokens define-once in `src/styles/app.css`; `src/ui` components are closed (no `className` prop — variants only); zero `className=` outside `src/ui` (only `Box UNSAFE_className` with a `// REASON:` comment). Every rule in that doc's enforcement table is gate-enforced at edit / Stop / commit / push.
 - **Commits:** Conventional Commits (`feat` / `fix` / `chore` / `docs` / `refactor`); small and focused; only on green gates.
 - **Deploy:** staging → production runbook in `docs/deploy.md`. Same image, three environments; deploy staging with `bun run deploy:staging`, then promote with the gated `bun run deploy:prod` (smokes staging in a real browser, promotes the validated image by digest). Submitted scripts only reach the review queue after the always-on `worker` process renders them — if it isn't running, render jobs sit `queued` and nothing appears for review.
 - **Emergency takedown:** to pull a live config from the gallery, `scripts/remove-config.ts <slug>` flips its status `published → removed` (reversible: add `--restore`). Every read path filters `status='published'`, so it disappears from the gallery list, the page count, and its detail page at once — no migration. The `<slug>` is the last segment of `statuslin.es/c/<slug>`. Run against prod with `fly ssh console --app statuslines --command "bun run scripts/remove-config.ts <slug>"`. Full usage is in the script's header comment.
+- **Mods:** the launch runbook (template build, import, render, page copy, publish), the emergency delist and the pinned-commit check are in the mods section of `docs/deploy.md`.
 
 ## Enforcement (the guardrails)
 

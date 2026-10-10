@@ -59,19 +59,47 @@ const EMOJI_FETCH_TIMEOUT_MS = 2000
 // an exact release tag (not @latest) so emoji rendering is reproducible and can't drift under us.
 const TWEMOJI_BASE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg'
 
-/** satori loadAdditionalAsset: for an emoji segment, return a twemoji SVG as a data URL; otherwise
- * null (let satori fall back / skip). Bounded by a timeout and fail-soft — a CDN hiccup must never
- * hang or fail the card render. */
-export async function loadEmojiAsset(code: string, segment: string): Promise<string | null> {
-  if (code !== 'emoji') return null
-  try {
-    const res = await fetch(`${TWEMOJI_BASE}/${emojiCodepoint(segment)}.svg`, {
-      signal: AbortSignal.timeout(EMOJI_FETCH_TIMEOUT_MS),
+/** A preview holds hundreds of cells, so an emoji-packed one could otherwise fetch hundreds of SVGs
+ * per uncached card on a public GET. Past the cap the loader returns null, satori's skip value, as
+ * it does for a failed fetch. */
+export const MAX_EMOJI_FETCHES_PER_RENDER = 16
+const MAX_CACHED_EMOJI = 512
+
+/** Codepoint to data URL (null for a codepoint twemoji lacks), shared by every render. */
+const emojiCache = new Map<string, Promise<string | null>>()
+
+/** Null when twemoji has no SVG for the codepoint; throws on anything worth retrying. */
+async function fetchTwemoji(codepoint: string): Promise<string | null> {
+  const res = await fetch(`${TWEMOJI_BASE}/${codepoint}.svg`, {
+    signal: AbortSignal.timeout(EMOJI_FETCH_TIMEOUT_MS),
+  })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`twemoji ${res.status} for ${codepoint}`)
+  const svg = await res.text()
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
+/** satori loadAdditionalAsset for one render: for an emoji segment, a twemoji SVG as a data URL;
+ * otherwise null (satori falls back to the fonts). Bounded by a timeout and fail-soft, so a CDN
+ * hiccup never hangs or fails the card, and a failed fetch is retried by a later render. */
+export function createEmojiLoader(): (code: string, segment: string) => Promise<string | null> {
+  let fetches = 0
+  return (code, segment) => {
+    if (code !== 'emoji') return Promise.resolve(null)
+    const codepoint = emojiCodepoint(segment)
+    const cached = emojiCache.get(codepoint)
+    if (cached) return cached
+    if (fetches >= MAX_EMOJI_FETCHES_PER_RENDER) return Promise.resolve(null)
+    fetches++
+    if (emojiCache.size >= MAX_CACHED_EMOJI) {
+      const firstInserted = emojiCache.keys().next().value
+      if (firstInserted !== undefined) emojiCache.delete(firstInserted)
+    }
+    const pending = fetchTwemoji(codepoint).catch(() => {
+      emojiCache.delete(codepoint)
+      return null
     })
-    if (!res.ok) return null
-    const svg = await res.text()
-    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
-  } catch {
-    return null
+    emojiCache.set(codepoint, pending)
+    return pending
   }
 }

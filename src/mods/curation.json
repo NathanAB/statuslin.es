@@ -1,0 +1,131 @@
+[
+  {
+    "repoUrl": "https://github.com/anthropics/claude-code-playground",
+    "path": "claude-code/mods/token-weather",
+    "commitSha": "569c5283d9a0a7ee7938df85bb32e4f48cbb8c86",
+    "pluginName": "token-weather",
+    "title": "Token Weather"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/context-bar",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "context-bar",
+    "title": "Context Bar"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/usage-meter",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "usage-meter",
+    "title": "Usage Meter"
+  },
+  {
+    "repoUrl": "https://github.com/jarrodwatts/claude-image-view",
+    "path": "",
+    "commitSha": "b3c412bb6d167cafade79148e95f9114ee1aad7c",
+    "pluginName": "image-view",
+    "title": "Image View",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "look at [Image #1]",
+        "submit": false
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hellosverre/claude-skins",
+    "path": "",
+    "commitSha": "0abe0f34ea9e351c529151f6729e018d7e4a2648",
+    "pluginName": "skins",
+    "title": "Skins"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/next-steps",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "next-steps",
+    "title": "Next Steps"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/agent-radar",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "agent-radar",
+    "title": "Agent Radar",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/radar"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/md-preview",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "md-preview",
+    "title": "Markdown Preview",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/md README.md"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/mission-control",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "mission-control",
+    "title": "Mission Control",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/mission"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/switchboard",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "switchboard",
+    "title": "Switchboard",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/route"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/snake",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "snake",
+    "title": "Snake",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/snake"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/openai-balance",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "openai-balance",
+    "title": "OpenAI Balance"
+  },
+  {
+    "repoUrl": "https://github.com/NathanAB/statusline-anywhere",
+    "path": "",
+    "commitSha": "93fb965863571fca8140aca0d17277d121a2f9df",
+    "pluginName": "statusline-anywhere",
+    "title": "Status Line Anywhere",
+    "desktopScreenshot": "/mods/statusline-anywhere-desktop.png"
+  }
+]

@@ -15,7 +15,8 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     { property: 'og:title', content: HOME_TITLE_BASE },
     {
       property: 'og:description',
-      content: 'Browse rendered Claude Code status lines and copy one to use.',
+      content:
+        'Browse rendered Claude Code status lines and mods. Copy a status line or install a mod.',
     },
     { property: 'og:image', content: `${base}/og/home.png` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
@@ -43,6 +44,18 @@ export function configSocialMeta(input: {
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
+    { name: 'twitter:image', content: image },
+  ]
+}
+
+/** The mod page's card; `base` is the loader's origin. */
+export function modSocialMeta(base: string, slug: string): Array<Record<string, string>> {
+  const image = `${base}/og/mods/${slug}.png`
+  return [
+    { property: 'og:image', content: image },
+    { property: 'og:image:width', content: String(CARD_WIDTH) },
+    { property: 'og:image:height', content: String(CARD_HEIGHT) },
+    { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:image', content: image },
   ]
 }

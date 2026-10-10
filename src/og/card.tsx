@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { HOME_HEADING } from '@/lib/page-title'
 import { OG_PALETTE } from '@/og/palette'
 import { orderByScenario } from '@/render/scenarios'
 import type { AnsiSegment } from '@/render/types'
@@ -49,8 +50,12 @@ export function splitSegmentsIntoLines(segments: AnsiSegment[]): AnsiSegment[][]
 
 // A status line: colored spans, stacked into one row per visual line (satori won't break on `\n`
 // inside a flex row). fg is an ANSI 'rgb(...)' string or null (use foreground).
-function drawStatusLine(segments: AnsiSegment[], fontSize: number): ReactElement {
-  const lines = splitSegmentsIntoLines(segments)
+function drawStatusLine(
+  segments: AnsiSegment[],
+  fontSize: number,
+  maxLines = Number.POSITIVE_INFINITY,
+): ReactElement {
+  const lines = splitSegmentsIntoLines(segments).slice(0, maxLines)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', fontFamily: FONT, fontSize }}>
       {lines.map((line, li) => (
@@ -141,21 +146,43 @@ export function homeCard(): ReactElement {
           fontSize: 30,
         }}
       >
-        A community gallery of Claude Code status lines
+        {HOME_HEADING}
       </div>
     </div>
   )
 }
 
-export function configCard(input: {
-  title: string
-  author: string | null
-  previews: { scenarioKey: string; segments: AnsiSegment[] }[]
-}): ReactElement {
-  const rows = orderByScenario(input.previews).slice(0, 3)
-  const byline = input.author
-    ? `by ${input.author} · adapts to your session`
-    : 'adapts to your session'
+function cardHeader(title: string, byline: string): ReactElement {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', marginBottom: 14 }}>{drawWordmark(30)}</div>
+      <div
+        style={{
+          display: 'flex',
+          fontFamily: FONT,
+          fontWeight: 700,
+          fontSize: 54,
+          color: OG_PALETTE.foreground,
+        }}
+      >
+        {title}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          fontFamily: FONT,
+          fontSize: 24,
+          color: OG_PALETTE.mutedForeground,
+          marginTop: 10,
+        }}
+      >
+        {byline}
+      </div>
+    </div>
+  )
+}
+
+function detailCard(header: ReactElement, body: ReactElement): ReactElement {
   return (
     <div
       style={{
@@ -169,38 +196,58 @@ export function configCard(input: {
         padding: '60px 72px',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', marginBottom: 14 }}>{drawWordmark(30)}</div>
-        <div
-          style={{
-            display: 'flex',
-            fontFamily: FONT,
-            fontWeight: 700,
-            fontSize: 54,
-            color: OG_PALETTE.foreground,
-          }}
-        >
-          {input.title}
+      {header}
+      {body}
+    </div>
+  )
+}
+
+export function configCard(input: {
+  title: string
+  author: string | null
+  previews: { scenarioKey: string; segments: AnsiSegment[] }[]
+}): ReactElement {
+  const rows = orderByScenario(input.previews).slice(0, 3)
+  const byline = input.author
+    ? `by ${input.author} · adapts to your session`
+    : 'adapts to your session'
+  return detailCard(
+    cardHeader(input.title, byline),
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
+      {rows.map((p) => (
+        <div key={p.scenarioKey} style={{ display: 'flex' }}>
+          {well(drawStatusLine(p.segments, 19), '13px 20px')}
         </div>
+      ))}
+    </div>,
+  )
+}
+
+// Enough rows of a pane mod's preview to fill the card below the header without overflowing it.
+const MOD_PREVIEW_MAX_LINES = 9
+
+export function modCard(input: {
+  title: string
+  authorGithub: string
+  preview: AnsiSegment[] | null
+}): ReactElement {
+  const body = input.preview
+    ? well(drawStatusLine(input.preview, 19, MOD_PREVIEW_MAX_LINES), '13px 20px')
+    : well(
         <div
           style={{
             display: 'flex',
             fontFamily: FONT,
             fontSize: 24,
-            color: OG_PALETTE.mutedForeground,
-            marginTop: 10,
+            color: OG_PALETTE.foreground,
           }}
         >
-          {byline}
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
-        {rows.map((p) => (
-          <div key={p.scenarioKey} style={{ display: 'flex' }}>
-            {well(drawStatusLine(p.segments, 19), '13px 20px')}
-          </div>
-        ))}
-      </div>
-    </div>
+          Claude Desktop
+        </div>,
+        '10px 18px',
+      )
+  return detailCard(
+    cardHeader(input.title, `by @${input.authorGithub}`),
+    <div style={{ display: 'flex', alignItems: 'flex-start' }}>{body}</div>,
   )
 }

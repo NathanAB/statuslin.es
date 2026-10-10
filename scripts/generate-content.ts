@@ -10,6 +10,14 @@ import {
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
+import {
+  applyModContentGenerationResponses,
+  listModSlugsMissingContent,
+  type ModReadmeSource,
+  parseModContentGenerationResponses,
+  prepareModContentGenerationRequest,
+} from '@/mods/content-generation'
+import { createGitHub, type GitHubSource, README_MAX_CHARS } from '@/mods/github'
 
 /**
  * Agent-agnostic generated-content workflow.
@@ -26,30 +34,46 @@ import { requireEnv } from '@/lib/env'
  *
  * Apply validates the complete batch and writes content plus tags transactionally. The command
  * launches no agent CLI and creates no request, response, or temporary files.
+ *
+ * Mods are behind `--mod`, in every mode, so the configs flow above is unchanged. `--all --mod`
+ * lists draft and published mods whose current version has no content, so drafts get copy before
+ * they are published. A mod request is pinned to the version id and commit SHA, embeds the mod's
+ * README at that commit (fetched from GitHub), and apply refuses it for any other version:
+ *
+ *   bun run generate:content <mod-slug> --prepare --mod
+ *   bun run generate:content --all --prepare --mod
+ *   bun run generate:content --apply --mod
  */
 
 const USAGE = `Usage:
   bun run generate:content <slug> --prepare
   bun run generate:content --all --prepare
-  bun run generate:content --apply`
+  bun run generate:content --apply
+Add --mod to any of these to work on mods instead of configs.`
 
-export type GenerateContentArgs =
+export type GenerateContentArgs = (
   | { mode: 'prepare'; slug: string; all: false }
   | { mode: 'prepare'; slug: null; all: true }
   | { mode: 'apply' }
+) & { mods?: true }
 
 export interface GenerateContentIo {
   readStdin: () => Promise<string>
   writeStdout: (value: string) => void
   writeStderr: (value: string) => void
+  readModReadme?: ModReadmeSource
 }
 
 function usageError(): Error {
   return new Error(USAGE)
 }
 
-export function parseGenerateContentArgs(args: string[]): GenerateContentArgs {
-  if (args.length === 1 && args[0] === '--apply') return { mode: 'apply' }
+export function parseGenerateContentArgs(argv: string[]): GenerateContentArgs {
+  const mods = argv.filter((arg) => arg === '--mod').length
+  if (mods > 1) throw usageError()
+  const args = argv.filter((arg) => arg !== '--mod')
+  const modFlag = mods === 1 ? { mods: true as const } : {}
+  if (args.length === 1 && args[0] === '--apply') return { mode: 'apply', ...modFlag }
   if (!args.includes('--prepare') || args.includes('--apply')) throw usageError()
 
   const unknownFlags = args.filter(
@@ -62,8 +86,42 @@ export function parseGenerateContentArgs(args: string[]): GenerateContentArgs {
   }
   if (args.length !== 2) throw usageError()
   return all
-    ? { mode: 'prepare', slug: null, all: true }
-    : { mode: 'prepare', slug: slugs[0] as string, all: false }
+    ? { mode: 'prepare', slug: null, all: true, ...modFlag }
+    : { mode: 'prepare', slug: slugs[0] as string, all: false, ...modFlag }
+}
+
+/** The README GitHub picks for `path` at `commitSha`, raw, cut to README_MAX_CHARS. */
+export function fetchModReadme(
+  github: Pick<GitHubSource, 'readme'> = createGitHub(),
+): ModReadmeSource {
+  return async (repoUrl, path, commitSha) => {
+    const text = await github.readme(repoUrl, path, commitSha)
+    if (text === null) return null
+    return text.length > README_MAX_CHARS
+      ? `${text.slice(0, README_MAX_CHARS)}\n[README cut off at ${README_MAX_CHARS} characters]`
+      : text
+  }
+}
+
+async function runModCommand(
+  options: GenerateContentArgs,
+  db: ContentGenerationDb,
+  io: GenerateContentIo,
+): Promise<void> {
+  if (options.mode === 'prepare') {
+    const readme = io.readModReadme ?? fetchModReadme()
+    const slugs = options.all ? await listModSlugsMissingContent(db) : [options.slug]
+    const requests = []
+    for (const slug of slugs) {
+      requests.push(await prepareModContentGenerationRequest(db, slug, readme))
+    }
+    io.writeStdout(JSON.stringify(options.all ? requests : requests[0], null, 2))
+    return
+  }
+
+  const responses = parseModContentGenerationResponses(await io.readStdin())
+  await applyModContentGenerationResponses(db, responses)
+  io.writeStderr(`[generate-content] applied ${responses.length} mod response(s)`)
 }
 
 export async function runGenerateContentCommand(
@@ -71,6 +129,7 @@ export async function runGenerateContentCommand(
   db: ContentGenerationDb,
   io: GenerateContentIo,
 ): Promise<void> {
+  if (options.mods) return runModCommand(options, db, io)
   if (options.mode === 'prepare') {
     const slugs = options.all ? await listPublishedSlugsMissingContent(db) : [options.slug]
     const requests = []

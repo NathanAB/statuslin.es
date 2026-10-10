@@ -94,6 +94,17 @@ describe('ConfigBadges', () => {
     }
   })
 
+  it("takes a card's leftover header width but stays at least its widest chip wide", () => {
+    const { container } = render(
+      <TooltipProvider>
+        <ConfigBadges tags={['git', 'minimal']} networkHosts={[]} align="end" />
+      </TooltipProvider>,
+    )
+    const classes = (container.firstChild as HTMLElement).className.split(/\s+/)
+    expect(classes).toContain('flex-1')
+    expect(classes).not.toContain('min-w-0')
+  })
+
   it('lists the declared hosts in the network-access badge accessible label', () => {
     renderBadges({ tags: ['network-access'], networkHosts: ['wttr.in', 'api.frankfurter.app'] })
     expect(screen.getByLabelText('Uses network: wttr.in, api.frankfurter.app')).toBeTruthy()

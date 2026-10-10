@@ -3,15 +3,21 @@
 // Verified 2026-07-02 — don't "fix" this to `import { z } from 'zod'`.
 import z from 'zod'
 
+export const MAX_SECTION_ITEMS = 12
+export const MAX_ITEM_CHARS = 300
+
+/** Capped because source text can steer the copy-writing agent toward long lists of long items. */
+const copySection = z.array(z.string().min(1).max(MAX_ITEM_CHARS)).max(MAX_SECTION_ITEMS)
+
 /**
  * The auto-generated page copy for one config version — exactly three sections, each a list of
  * short plain-English items. Produced by scripts/generate-content.ts (claude -p) and stored in
  * config_versions.generated_content; rendered by src/gallery/generated-content.tsx.
  */
 export const generatedContentSchema = z.object({
-  whatItShows: z.array(z.string().min(1)),
-  requirements: z.array(z.string().min(1)),
-  behaviorNotes: z.array(z.string().min(1)),
+  whatItShows: copySection,
+  requirements: copySection,
+  behaviorNotes: copySection,
 })
 
 export type GeneratedContent = z.infer<typeof generatedContentSchema>
