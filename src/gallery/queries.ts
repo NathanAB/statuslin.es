@@ -13,7 +13,7 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /** Cards per gallery page. */
 export const PAGE_SIZE = 10
-/** The last gallery page served, so one request can fetch at most this many pages of each kind. */
+/** Caps the rows one request loads: each kind is asked for `page * PAGE_SIZE` items. */
 export const MAX_GALLERY_PAGE = 100
 /** The scenario shown on a gallery card; falls back to the first available preview. */
 const CARD_SCENARIO = 'clean-main'
