@@ -13,7 +13,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 1,
           pageCount: 3,
-          cards: [],
+          items: [],
         },
       },
       match: { search: {} },
@@ -38,7 +38,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 2,
           pageCount: 3,
-          cards: [],
+          items: [],
         },
       },
       match: { search: { page: 999 } },
@@ -75,7 +75,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 1,
           pageCount: 1,
-          cards: [{ slug: 'alpha', title: 'Alpha' }],
+          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
         },
       },
       match: { search: {} },
@@ -88,6 +88,41 @@ describe('home search indexing metadata', () => {
       'WebSite',
       'CollectionPage',
     ])
+  })
+
+  it('lists only status lines in the CollectionPage, since its item URLs are config pages', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: {
+        gallery: {
+          page: 1,
+          pageCount: 1,
+          items: [
+            { kind: 'mod', card: { slug: 'meter', title: 'Meter' } },
+            { kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } },
+          ],
+        },
+      },
+      match: { search: {} },
+    } as never)
+
+    const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
+      .map((script) => JSON.parse(script.children) as Record<string, unknown>)
+      .find((node) => node['@type'] === 'CollectionPage') as
+      | { mainEntity: { itemListElement: Array<{ url: string }> } }
+      | undefined
+    expect(collectionPage?.mainEntity.itemListElement.map((item) => item.url)).toEqual([
+      'https://statuslin.es/c/alpha',
+    ])
+  })
+
+  it('marks a kind-filtered gallery view noindex', async () => {
+    const head = await HomeRoute.options.head?.({
+      loaderData: undefined,
+      match: { search: { kind: 'mods' } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
   })
 
   it('marks filtered gallery views noindex while keeping links followable', async () => {
@@ -105,7 +140,7 @@ describe('home search indexing metadata', () => {
         gallery: {
           page: 2,
           pageCount: 3,
-          cards: [{ slug: 'alpha', title: 'Alpha' }],
+          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
         },
       },
       match: { search: { sort: 'new', page: 2 } },

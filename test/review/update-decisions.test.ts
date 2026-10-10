@@ -6,11 +6,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { runCommand } from '@/adopt/install'
 import { listPublishedSlugsMissingContent } from '@/content/generation-workflow'
 import * as schema from '@/db/schema'
+import { getPublishedConfigs } from '@/gallery/config-items'
 import { getFacetPage, llmsTxtResponseForRoute } from '@/gallery/functions'
 import {
   getCardsByCopies,
   getConfigBySlug,
-  getPublishedConfigs,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,
 } from '@/gallery/queries'
@@ -159,11 +159,13 @@ describe('approving an update', () => {
     expect(llms).toContain(update.description)
     expect(llms).not.toContain(live.title)
     const pythonFacet = await getFacetPage({ data: { facet: 'python' } })
-    expect(pythonFacet?.cards.find((card) => card.slug === v1.slug)).toMatchObject({
+    expect(
+      pythonFacet?.configs.items.map(({ item }) => item.card).find((card) => card.slug === v1.slug),
+    ).toMatchObject({
       title: update.title,
     })
     const bashFacet = await getFacetPage({ data: { facet: 'bash' } })
-    expect(bashFacet?.cards.map((card) => card.slug)).not.toContain(v1.slug)
+    expect(bashFacet?.configs.items.map(({ item }) => item.card.slug)).not.toContain(v1.slug)
   })
 
   it('keeps the config in place in the new sort', async () => {

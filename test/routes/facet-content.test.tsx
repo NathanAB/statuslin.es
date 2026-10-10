@@ -36,21 +36,23 @@ vi.mock('@/gallery/config-card', () => ({
 
 const { Route: FacetRoute } = await import('@/routes/status-lines.$facet')
 
-function renderFacet(slug: string) {
+const statusLines = ['a', 'b', 'c', 'd'].map((slug) => ({
+  item: { kind: 'status-line', card: { slug, title: slug.toUpperCase() } },
+  sortKey: 0,
+}))
+
+function renderFacet(slug: string, mods = 0) {
   vi.spyOn(FacetRoute, 'useLoaderData').mockReturnValue({
     user: null,
     page: {
       slug,
-      cards: [
-        { slug: 'a', title: 'A' },
-        { slug: 'b', title: 'B' },
-        { slug: 'c', title: 'C' },
-        { slug: 'd', title: 'D' },
-      ],
+      configs: { items: statusLines, total: statusLines.length },
       indexable: true,
       updated: '2026-09-08',
       otherFacets: [],
     },
+    items: statusLines.map(({ item }) => item),
+    mods,
   })
   const FacetPage = FacetRoute.options.component
   return render(FacetPage ? <FacetPage /> : null)
@@ -62,6 +64,31 @@ describe('facet page content', () => {
 
     expect(screen.getByText(/4 published status lines/i)).toBeTruthy()
     expect(screen.queryByText(/this page lists/i)).toBeNull()
+  })
+
+  it('counts the mods on the page beside the status lines', () => {
+    renderFacet('git', 1)
+
+    expect(screen.getByText('4 published status lines and 1 mod.')).toBeTruthy()
+  })
+
+  it('counts only mods when no status line carries the tag', () => {
+    vi.spyOn(FacetRoute, 'useLoaderData').mockReturnValue({
+      user: null,
+      page: {
+        slug: 'git',
+        configs: { items: [], total: 0 },
+        indexable: false,
+        updated: null,
+        otherFacets: [],
+      },
+      items: [],
+      mods: 2,
+    })
+    const FacetPage = FacetRoute.options.component
+    render(FacetPage ? <FacetPage /> : null)
+
+    expect(screen.getByText('2 published mods.')).toBeTruthy()
   })
 
   it('answers the how-to question and shows common questions on answered facets', () => {
@@ -88,7 +115,13 @@ describe('facet page content', () => {
       const head = await FacetRoute.options.head?.({
         loaderData: {
           user: null,
-          page: { slug, cards: [], indexable: true, updated: null, otherFacets: [] },
+          page: {
+            slug,
+            configs: { items: [], total: 0 },
+            indexable: true,
+            updated: null,
+            otherFacets: [],
+          },
         },
       } as never)
       return ((head?.scripts ?? []) as Array<{ children: string }>).map(

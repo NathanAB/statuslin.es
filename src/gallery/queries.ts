@@ -1,14 +1,12 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
-import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { and, desc, eq, inArray, type SQL, sql } from 'drizzle-orm'
+import type { PgColumn, PgDatabase } from 'drizzle-orm/pg-core'
 import type { GeneratedContent } from '@/content/types'
 import { configs, configVersions, previews, user } from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { compactSegments } from '@/render/compact-segments'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
-import { coerceInterpreter, galleryCardSelection, mapCardRows } from './card-rows'
-import { newestFirstPublished } from './published-at'
-import { trendingScore } from './trending'
+import { coerceInterpreter } from './card-rows'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -75,53 +73,16 @@ export interface GalleryCard {
   tags: string[]
 }
 
-/** Total published configs matching the active tag filter — drives the gallery's page count.
- * Applies the same `allTags @>` filter as getPublishedConfigs so the count and the cards agree. */
+export function hasAllTags(allTags: PgColumn, tags: string[]): SQL | undefined {
+  return tags.length > 0 ? sql`${allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
+}
+
 export async function getPublishedCount(db: Db, tags: string[] = []): Promise<number> {
-  const tagFilter =
-    tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(configs)
-    .where(and(eq(configs.status, 'published'), tagFilter))
+    .where(and(eq(configs.status, 'published'), hasAllTags(configs.allTags, tags)))
   return row?.n ?? 0
-}
-
-export async function getPublishedConfigs(
-  db: Db,
-  sort: GallerySort = 'trending',
-  page = 1,
-  tags: string[] = [],
-): Promise<GalleryCard[]> {
-  const orderBy =
-    sort === 'top'
-      ? [desc(configs.copyCount)]
-      : sort === 'trending'
-        ? [desc(trendingScore(configs.id))]
-        : [newestFirstPublished]
-
-  const tagFilter =
-    tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
-
-  const rows = await db
-    .select(galleryCardSelection)
-    .from(configs)
-    .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
-    .leftJoin(user, eq(user.id, configs.authorId))
-    .where(and(eq(configs.status, 'published'), tagFilter))
-    .orderBy(...orderBy)
-    .limit(PAGE_SIZE)
-    .offset((page - 1) * PAGE_SIZE)
-
-  // One batched query for every card's preview instead of one lookup per card (the N+1). Select
-  // only `segments` — the card never shows rawStdout or the behavior trace, so pulling them (the
-  // big text/jsonb columns) would be wasted bytes on every gallery hit.
-  const cardPreviews = await selectCardPreviews(
-    db,
-    rows.map((r) => r.version.contentSha256),
-  )
-
-  return mapCardRows(rows, cardPreviews)
 }
 
 /**

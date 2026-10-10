@@ -45,23 +45,30 @@ export function mapCardRows(
   rows: GalleryCardRow[],
   cardPreviews: Map<string, AnsiSegment[]>,
 ): GalleryCard[] {
-  return rows.map((r) => ({
-    configId: r.config.id,
-    slug: r.config.slug,
-    title: r.version.title,
-    description: r.version.description,
-    interpreter: coerceInterpreter(r.version.interpreter),
-    copyCount: r.config.copyCount,
-    author: r.author
+  return rows.map((row) => mapCardRow(row, cardPreviews))
+}
+
+export function mapCardRow(
+  row: GalleryCardRow,
+  cardPreviews: Map<string, AnsiSegment[]>,
+): GalleryCard {
+  return {
+    configId: row.config.id,
+    slug: row.config.slug,
+    title: row.version.title,
+    description: row.version.description,
+    interpreter: coerceInterpreter(row.version.interpreter),
+    copyCount: row.config.copyCount,
+    author: row.author
       ? {
-          name: r.author.name,
-          username: r.author.username ?? null,
-          image: r.author.image ?? null,
+          name: row.author.name,
+          username: row.author.username ?? null,
+          image: row.author.image ?? null,
         }
       : null,
-    preview: cardPreviews.get(r.version.contentSha256) ?? null,
-    networkHosts: r.version.networkHosts ?? [],
-    readsClaudeToken: r.version.readsClaudeToken ?? false,
-    tags: r.config.allTags ?? [],
-  }))
+    preview: cardPreviews.get(row.version.contentSha256) ?? null,
+    networkHosts: row.version.networkHosts ?? [],
+    readsClaudeToken: row.version.readsClaudeToken ?? false,
+    tags: row.config.allTags ?? [],
+  }
 }

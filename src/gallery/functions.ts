@@ -8,19 +8,14 @@ import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
 import { sitemapResponse } from '@/lib/sitemap'
+import { getConfigSource, getPublishedConfigs } from './config-items'
+import type { GallerySource } from './gallery-items'
 import { getPublishedInventory } from './inventory'
 import {
-  coercePage,
-  coerceSort,
-  coerceTags,
-  type GallerySort,
-  galleryPageWindow,
   getCardsByCopies,
   getConfigBySlug,
   getFacetCards,
   getFacetStats,
-  getPublishedConfigs,
-  getPublishedCount,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,
   isIndexableFacet,
@@ -29,6 +24,7 @@ import {
   primaryFacet,
   resolveLiveFacet,
 } from './queries'
+import { coerceSourceQuery } from './ranking'
 import { rankedCard } from './why-line'
 
 /**
@@ -86,24 +82,27 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Resp
   )
 })
 
+/** Narrows a caller's per-mod tag lists, since they arrive over the server-fn boundary. */
+function coerceModTags(value: unknown): string[][] {
+  if (!Array.isArray(value)) return []
+  return value.map((tags) =>
+    Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : [],
+  )
+}
+
+export const getGalleryConfigs = createServerFn({ method: 'GET' })
+  .inputValidator(coerceSourceQuery)
+  .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
+
 export const getGallery = createServerFn({ method: 'GET' })
-  .inputValidator((d: { sort?: GallerySort; page?: number; tags?: string }) => d)
+  .inputValidator((d: { modTags: string[][] }) => ({ modTags: coerceModTags(d.modTags) }))
   .handler(({ data }) =>
     withHttpStatus(async () => {
-      const sort = coerceSort(data.sort)
-      const tags = coerceTags(data.tags)
-      const [total, inventory] = await Promise.all([
-        getPublishedCount(db, tags),
+      const [availableTags, inventory] = await Promise.all([
+        getAvailableTags(db, data.modTags),
         getPublishedInventory(db),
       ])
-      const window = galleryPageWindow(coercePage(data.page), total)
-      if (!window) return null
-      const { page, pageCount } = window
-      const availableTags = await getAvailableTags(db)
       return {
-        cards: await getPublishedConfigs(db, sort, page, tags),
-        page,
-        pageCount,
         availableTags,
         publishedCount: inventory.count,
         copyCount: inventory.copyCount,
@@ -139,16 +138,26 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
   )
 
 export const getFacetPage = createServerFn({ method: 'GET' })
-  .inputValidator((d: { facet: string }) => d)
+  .inputValidator((d: { facet: string; modTags?: string[][] }) => ({
+    facet: d.facet,
+    modTags: coerceModTags(d.modTags),
+  }))
   .handler(({ data }) =>
     withHttpStatus(async () => {
-      const stats = await getFacetStats(db)
+      const stats = await getFacetStats(db, data.modTags)
       const facet = resolveLiveFacet(data.facet, stats)
       if (!facet) return null
       const cards = await getFacetCards(db, facet)
+      const configs: GallerySource = {
+        items: cards.map((card) => ({
+          item: { kind: 'status-line', card },
+          sortKey: card.copyCount,
+        })),
+        total: cards.length,
+      }
       return {
         slug: facet.slug,
-        cards,
+        configs,
         indexable: isIndexableFacet(facet.slug, stats),
         // Pre-formatted: a Date through the server-fn RPC boundary is the serialization
         // gamble the sitemapResponseForRoute comment above warns about; the page only
