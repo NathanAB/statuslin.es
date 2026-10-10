@@ -88,11 +88,11 @@ describe('buildMarketplace', () => {
 })
 
 describe('marketplaceFetchedEvent', () => {
-  it('records the fetch with the number of listed plugins', () => {
+  it('records the fetch with the number of listed plugins, without a person profile', () => {
     expect(marketplaceFetchedEvent(3)).toEqual({
       event: 'marketplace_fetched',
       distinctId: 'marketplace',
-      properties: { pluginCount: 3 },
+      properties: { pluginCount: 3, $process_person_profile: false },
     })
   })
 })

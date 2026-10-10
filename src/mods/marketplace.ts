@@ -1,3 +1,4 @@
+import { PERSONLESS } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
 import { CONTACT_EMAIL, modPath } from '@/lib/site'
 
@@ -71,6 +72,6 @@ export function marketplaceFetchedEvent(pluginCount: number): ServerEvent {
   return {
     distinctId: 'marketplace',
     event: 'marketplace_fetched',
-    properties: { pluginCount },
+    properties: { pluginCount, ...PERSONLESS },
   }
 }

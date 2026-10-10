@@ -57,6 +57,7 @@ describe('marketplaceResponseForRoute', () => {
     expect(response.status).toBe(503)
     expect(captureServerEvent).toHaveBeenCalledWith('marketplace_fetched', 'marketplace', {
       pluginCount: 0,
+      $process_person_profile: false,
     })
   })
 
@@ -70,6 +71,7 @@ describe('marketplaceResponseForRoute', () => {
     expect((await response.json()).plugins).toEqual([])
     expect(captureServerEvent).toHaveBeenCalledWith('marketplace_fetched', 'marketplace', {
       pluginCount: 0,
+      $process_person_profile: false,
     })
   })
 
@@ -80,6 +82,7 @@ describe('marketplaceResponseForRoute', () => {
     expect(captureServerEvent).toHaveBeenCalledTimes(2)
     expect(captureServerEvent).toHaveBeenCalledWith('marketplace_fetched', 'marketplace', {
       pluginCount: 1,
+      $process_person_profile: false,
     })
   })
 })
