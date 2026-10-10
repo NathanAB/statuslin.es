@@ -22,7 +22,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/ui' },
       to: {
-        path: '^src/(routes|gallery|submit|review|render|adopt|votes|content|guide|resources|compare)',
+        path: '^src/(routes|gallery|submit|review|render|adopt|votes|mods|content|guide|resources|compare)',
         dependencyTypesNot: ['type-only'],
       },
     },
@@ -39,33 +39,47 @@ module.exports = {
       comment: 'src/submit may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/submit/' },
-      to: { path: '^src/(gallery|review|adopt|votes)/' },
+      to: { path: '^src/(gallery|review|adopt|votes|mods)/' },
     },
     {
       name: 'review-no-cross-feature',
       comment: 'src/review may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/review/' },
-      to: { path: '^src/(gallery|submit|adopt|votes)/' },
+      to: { path: '^src/(gallery|submit|adopt|votes|mods)/' },
     },
     {
       name: 'adopt-no-cross-feature',
       comment: 'src/adopt may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/adopt/' },
-      to: { path: '^src/(gallery|submit|review|votes)/' },
+      to: { path: '^src/(gallery|submit|review|votes|mods)/' },
     },
     {
       name: 'votes-no-cross-feature',
       comment: 'src/votes may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/votes/' },
-      to: { path: '^src/(gallery|submit|review|adopt)/' },
+      to: { path: '^src/(gallery|submit|review|adopt|mods)/' },
+    },
+    {
+      name: 'mods-no-cross-feature',
+      comment:
+        'src/mods may import the shared listing code in src/gallery, but no other feature directory.',
+      severity: 'error',
+      from: { path: '^src/mods/' },
+      to: { path: '^src/(submit|review|adopt|votes)/' },
     },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.json' },
-    tsPreCompilationDeps: true,
+    // TypeScript 7 ships no compiler API, so depcruise can't use it to read .ts/.tsx and silently
+    // cruises 0 modules (issue #68). swc parses the TypeScript source directly and
+    // still marks `import type` as type-only, which ui-stays-presentational relies on.
+    // depcruise still prints a `missing-typescript-transpiler` warning because `tsConfig` is set;
+    // it's expected. `tsConfig` only feeds the `@/` alias, which resolves without the TS API, and
+    // test/scripts/check-boundaries.test.ts fails if any src module goes uncruised.
+    parser: 'swc',
   },
 }
