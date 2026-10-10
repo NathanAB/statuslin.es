@@ -9,8 +9,8 @@ export function HomeGalleryIntro({ page }: { page: number }) {
         {page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
       </Heading>
       <Text size="sm" measure>
-        Status lines are submitted by the community and reviewed by hand. We pick the mods and list
-        them on their authors' behalf. Every card shows real output from the script or mod itself.
+        Status lines are submitted by the community and reviewed by hand. Every card shows real
+        output from the script or mod itself.
       </Text>
     </Stack>
   )

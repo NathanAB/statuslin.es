@@ -61,12 +61,12 @@ function renderHome(overrides: Partial<typeof gallery> = {}) {
 }
 
 describe('home content', () => {
-  it('says how status lines and mods each reach the gallery, and that every card is real output', () => {
+  it('says how status lines reach the gallery, and that every card is real output', () => {
     renderHome()
 
     const page = document.body.textContent ?? ''
     expect(page).toContain(
-      "Status lines are submitted by the community and reviewed by hand. We pick the mods and list them on their authors' behalf. Every card shows real output from the script or mod itself.",
+      'Status lines are submitted by the community and reviewed by hand. Every card shows real output from the script or mod itself.',
     )
     expect(page).not.toMatch(/examples/)
     expect(page).not.toMatch(/templates/)

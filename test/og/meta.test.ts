@@ -22,6 +22,7 @@ describe('social meta', () => {
     const description = meta.find((entry) => entry.property === 'og:description')?.content
     expect(description).toMatch(/cop(?:y|ied|ies)/i)
     expect(description).toMatch(/status lines.*\bmods\b/i)
+    expect(description).not.toMatch(/curat|pick|chose|behalf/i)
     expect(description).not.toMatch(/upvote/i)
   })
   it('config emits a per-slug og:image', () => {
