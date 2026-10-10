@@ -85,7 +85,9 @@ describe('llms.txt with mods', () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
     expect(txt).not.toMatch(/every submission is a shell script/i)
-    expect(txt).toContain('status line shell scripts, and mods, which are Claude Code plugins')
+    expect(txt).toContain(
+      'status line shell scripts, which the community submits, and mods, which are Claude Code plugins',
+    )
   })
 
   it('keeps the llms.txt content type', async () => {
