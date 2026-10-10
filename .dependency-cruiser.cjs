@@ -28,10 +28,11 @@ module.exports = {
     },
     {
       name: 'gallery-no-cross-feature',
-      comment: 'src/gallery may not import from other feature directories.',
+      comment:
+        'src/gallery may not import from other feature directories. src/mods builds on the gallery, never the reverse.',
       severity: 'error',
       from: { path: '^src/gallery/' },
-      to: { path: '^src/(submit|review|adopt|votes)/' },
+      to: { path: '^src/(submit|review|adopt|votes|mods)/' },
     },
     {
       name: 'submit-no-cross-feature',
