@@ -34,8 +34,8 @@ export function iconFor(slug: string): LucideIcon {
  *  `network-access` additionally carries a tooltip listing the hosts the config declares.
  *  `aboveOverlay` lifts the whole row above the card's stretched-link overlay so every
  *  badge link stays clickable. Rendered once here so the card and detail page match.
- *  `align="end"` (gallery card) lets the row take the leftover width beside the title and
- *  wrap right-aligned to more rows; `align="start"` (detail page) packs them left. */
+ *  `align="end"` (gallery card) right-aligns the chips beside the title and wraps them to
+ *  more rows, never narrower than the widest chip; `align="start"` (detail page) packs them left. */
 export function ConfigBadges({
   tags,
   networkHosts,
@@ -46,7 +46,7 @@ export function ConfigBadges({
   align?: 'start' | 'end'
 }) {
   return (
-    <Row gap={2} wrap grow={align === 'end'} justify={align} aboveOverlay>
+    <Row gap={2} wrap justify={align} aboveOverlay>
       {tags.map((slug) => {
         const Icon = iconFor(slug)
         const label = tagLabel(FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)
