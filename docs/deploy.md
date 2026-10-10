@@ -221,13 +221,36 @@ It prints an immutable snapshot ID. Commit that value as `E2B_MOD_TEMPLATE_ID` i
 `src/render/e2b-template.ts` before deploying. Rebuild only when the Claude Code or headless-terminal
 version in `scripts/build-e2b-mod-template.ts` changes. It leaves `E2B_TEMPLATE_ID` alone.
 
+### The Desktop E2B template
+
+Claude Desktop previews render in a third template, with Claude Desktop for Linux and its bundled
+engine on a virtual display (ADR 0004):
+```sh
+bun run scripts/build-e2b-desktop-template.ts
+```
+Commit what it prints as its header comment says. Rebuild it only for a Desktop upgrade (below).
+
+### Desktop upgrade runbook
+
+The Desktop recorder drives the session by clicking fixed screen positions, so a new Claude Desktop
+can move what it clicks. For each Desktop upgrade:
+1. Bump the Desktop version in `scripts/build-e2b-desktop-template.ts`, rebuild the template and
+   commit its new ID.
+2. Check that the scripted clicks still land:
+   ```sh
+   bun run smoke:desktop
+   ```
+3. Re-render every mod (launch runbook step 3) on staging, then production, so each Desktop preview
+   comes from the new Desktop.
+
 ### Launch runbook
 
 Run every step against **staging first, then production**, from your machine. `<env pooled url>` is
 that environment's `DATABASE_URL`. The import and render steps also need `E2B_API_KEY`.
 
-1. Apply the migrations (`0026` to `0028` add the mods tables, plus anything newer). The deploy's
-   `release_command` already applies them, so on a deployed environment this only confirms it:
+1. Apply the migrations (`0026` to `0030` add the mods tables and the Desktop previews, plus anything
+   newer). The deploy's `release_command` already applies them, so on a deployed environment this
+   only confirms it:
    ```sh
    DATABASE_URL='<env pooled url>' bun run db:migrate
    ```
@@ -236,11 +259,17 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```sh
    DATABASE_URL='<env pooled url>' bun run import:mods
    ```
-3. Render each mod's preview. Exit code 1 means a run failed; rerun it, or a single mod with
-   `--slug <slug>`:
+3. Render each mod's previews. One run records every mod in the terminal and in Claude Desktop and
+   prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
+   its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
+   it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
    ```
+   A browser on `bun run dev` shows no stored Desktop image (nor og image): Nitro's dev server hands
+   every image request to Vite's static files. Fetch one past that with
+   `curl -H 'Accept: text/html' <dev origin>/mod-previews/<versionId>/desktop.png` (the dev origin
+   is `BETTER_AUTH_URL`), or look on staging.
 4. Generate the page copy. `--all --prepare --mod` prints a request for every draft and published
    mod without content. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
    the response JSON to apply on stdin, without writing it to a file:
