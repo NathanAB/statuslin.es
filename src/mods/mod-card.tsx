@@ -15,7 +15,7 @@ export function ModCard({ card }: { card: GalleryModCard }) {
     <Card interactive>
       <CardHeader>
         <Row gap={2} align="start" justify="between">
-          <Row gap={2} wrap grow>
+          <Row gap={2} wrap>
             <CardTitle>
               <StretchedLink to={MOD_ROUTE} params={{ slug: card.slug }}>
                 {card.title}

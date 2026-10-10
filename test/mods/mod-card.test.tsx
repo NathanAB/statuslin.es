@@ -36,6 +36,14 @@ describe('ModCard', () => {
     expect(screen.getByRole('link', { name: 'Meter' }).getAttribute('href')).toBe('/mods/meter')
   })
 
+  it('gives the title row its natural width, like the status line card', () => {
+    render(<ModCard card={{ ...card, title: 'A long mod title that wraps on a phone' }} />)
+
+    const title = screen.getByRole('link', { name: 'A long mod title that wraps on a phone' })
+    const titleRow = title.closest('h3')?.parentElement
+    expect(titleRow?.className).not.toContain('flex-1')
+  })
+
   it('shows the author and the terminal preview', () => {
     render(<ModCard card={card} />)
 
