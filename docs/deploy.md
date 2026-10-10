@@ -246,6 +246,12 @@ and staging never emit them — the alerts only have data to act on once the wor
   ping; no DB poll, so it doesn't keep Neon's compute warm). `distinctId: 'render-worker'`.
 - **`render_queue_drained`** — emitted at the end of every drain by the worker, with
   `{ processed, queuedRemaining, oldestQueuedAgeSec }`.
+- **`statusline_render_completed`** — emitted once per render job by the worker, with
+  `{ outcome, errorClass?, durationMs, configId, versionId, slug }`. `outcome` is `'failure'` when the
+  job threw (`errorClass: 'job_failed'`) or any scenario hit a sandbox error, timed out, or exited
+  non-zero (`'sandbox_error'` / `'timeout'` / `'nonzero_exit'`). Never carries script output.
+  `sandbox_error` keys off the runner's infra exit code (125), which a script can also return
+  itself, so don't alert on it as a pure infra signal.
 
 ### PostHog alert facts (verified against the docs, 2026-06-25)
 
