@@ -2,10 +2,11 @@ import { createHmac } from 'node:crypto'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { db } from '@/db'
+import { auth } from '@/lib/auth'
 import { requireStrongSecret } from '@/lib/env'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
-import { recordCopy } from './copy'
+import { findCopiedConfig, recordCopy } from './copy'
 import { type CopyKind, copyEvent } from './copy-event'
 
 // Turn the client IP into a one-way keyed token so the DB never stores a raw IP. HMAC with
@@ -36,15 +37,23 @@ export const recordCopyFn = createServerFn({ method: 'POST' })
   )
   .handler(({ data }) =>
     withHttpStatus(async () => {
-      const ipHash = resolveIpHash(getRequestHeaders().get('fly-client-ip'))
+      const headers = getRequestHeaders()
+      const ipHash = resolveIpHash(headers.get('fly-client-ip'))
       // North Star metric: fire the copy event SERVER-SIDE so ad blockers can't strip it. Prefer the
       // browser's PostHog distinct id (so the copy joins the View→Copy funnel); fall back to the
       // pseudonymous ipHash so an ad-blocked copy is still counted under a stable per-client id. This
       // fires on every copy action, independent of recordCopy's per-IP dedup on the display count.
+      // The session only decides person processing, so a lookup failure must not fail the copy.
+      const [config, session] = await Promise.all([
+        findCopiedConfig(db, data.configId),
+        auth.api.getSession({ headers }).catch(() => null),
+      ])
       const event = copyEvent({
         kind: data.kind,
         configId: data.configId,
+        config,
         distinctId: data.distinctId ?? ipHash,
+        signedInUserId: session?.user.id ?? null,
         sessionId: data.sessionId,
       })
       if (event) getPostHogClient()?.capture(event)

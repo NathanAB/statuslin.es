@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { recordCopy } from '@/adopt/copy'
+import { findCopiedConfig, recordCopy } from '@/adopt/copy'
 import * as schema from '@/db/schema'
 
 let client: PGlite
@@ -98,5 +98,43 @@ describe('recordCopy', () => {
       .from(schema.copyEvents)
       .where(eq(schema.copyEvents.configId, configId))
     expect(events.length).toBe(1)
+  })
+})
+
+describe('findCopiedConfig', () => {
+  async function publishVersion(configId: string): Promise<string> {
+    const [ver] = await db
+      .insert(schema.configVersions)
+      .values({
+        configId,
+        versionNumber: 1,
+        title: 'T',
+        source: '#!/bin/bash\necho hi',
+        interpreter: 'bash',
+        contentSha256: `sha-${randomUUID()}`,
+        status: 'approved',
+      })
+      .returning()
+    if (!ver) throw new Error('insert failed')
+    await db
+      .update(schema.configs)
+      .set({ currentVersionId: ver.id })
+      .where(eq(schema.configs.id, configId))
+    return ver.id
+  }
+
+  it('returns the slug and live version of a published config', async () => {
+    const configId = await makeConfig('copied-live')
+    const versionId = await publishVersion(configId)
+    expect(await findCopiedConfig(db, configId)).toEqual({ slug: 'copied-live', versionId })
+  })
+  it('returns null for a config that is not published', async () => {
+    const configId = await makeConfig('copied-draft', 'draft')
+    await publishVersion(configId)
+    expect(await findCopiedConfig(db, configId)).toBeNull()
+  })
+  it('returns null for a missing config or a malformed id', async () => {
+    expect(await findCopiedConfig(db, randomUUID())).toBeNull()
+    expect(await findCopiedConfig(db, 'not-a-uuid')).toBeNull()
   })
 })

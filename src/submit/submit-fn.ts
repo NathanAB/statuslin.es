@@ -81,7 +81,9 @@ export const submitConfigFn = createServerFn({ method: 'POST' })
       const submitted = submittedEvent({
         userId: session.user.id,
         interpreter: data.interpreter,
-        slug: result.slug,
+        ...result,
+        // An updateSlug always takes the update path: submitConfig throws rather than fall back.
+        isUpdate: data.updateSlug !== undefined,
       })
       captureServerEvent(submitted.event, submitted.distinctId, submitted.properties)
       // Best-effort: wake the worker so it renders now instead of on the next safety drain.

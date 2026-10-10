@@ -3,13 +3,14 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { pingWorkerWake, workerWakeUrl } from '@/lib/wake'
 import { assertAdmin } from './admin'
 import { approveAndEmailVersion, retryApprovalEmail } from './approval-delivery'
+import { decisionEvent, type VersionConfig } from './decision-event'
 import { rejectAndEmailVersion, retryRejectionEmail } from './rejection-delivery'
 
 export {
@@ -48,6 +49,19 @@ export async function setReadsClaudeToken(
   if (!row) throw new HttpError(404, 'version not found')
 }
 
+/** The config a version belongs to, to label its review decision event. */
+export async function findVersionConfig(
+  database: Db,
+  versionId: string,
+): Promise<VersionConfig | undefined> {
+  const [row] = await database
+    .select({ configId: configVersions.configId, slug: configs.slug })
+    .from(configVersions)
+    .innerJoin(configs, eq(configs.id, configVersions.configId))
+    .where(eq(configVersions.id, versionId))
+  return row
+}
+
 /** Re-attempt a render: reset the version's render job to 'queued'. Only a FAILED job may be
  * re-queued — never a 'held' network job (that's runNetworkPreview's job alone), never a still
  * 'queued'/'running' one, and never a 'done' one (already rendered). Clears error + attempts. */
@@ -77,12 +91,17 @@ export const approveVersionFn = createServerFn({ method: 'POST' })
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
+      // Read before deciding, so a failed lookup can't 500 a decision that already committed.
+      const config = await findVersionConfig(db, data.versionId)
       const result = await approveAndEmailVersion(db, data.versionId, admin.id)
-      getPostHogClient()?.capture({
-        distinctId: admin.id,
-        event: 'statusline_approved',
-        properties: { versionId: data.versionId },
-      })
+      getPostHogClient()?.capture(
+        decisionEvent({
+          adminId: admin.id,
+          decision: 'approved',
+          versionId: data.versionId,
+          config,
+        }),
+      )
       return result
     }),
   )
@@ -92,12 +111,16 @@ export const rejectVersionFn = createServerFn({ method: 'POST' })
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
+      const config = await findVersionConfig(db, data.versionId)
       const result = await rejectAndEmailVersion(db, data.versionId, admin.id, data.reason ?? '')
-      getPostHogClient()?.capture({
-        distinctId: admin.id,
-        event: 'statusline_rejected',
-        properties: { versionId: data.versionId },
-      })
+      getPostHogClient()?.capture(
+        decisionEvent({
+          adminId: admin.id,
+          decision: 'rejected',
+          versionId: data.versionId,
+          config,
+        }),
+      )
       return result
     }),
   )
