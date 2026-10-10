@@ -13,10 +13,8 @@ import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { terminalLine } from '@/mods/terminal-line'
 import { boundRecording } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
-import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import { e2bDesktopRecorder } from '@/render/mods/desktop/recorder'
 import type { DesktopRecorder, DesktopRecording } from '@/render/mods/desktop/types'
-import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import {
   e2bModRecorder,
   type ModRecorder,
@@ -39,10 +37,10 @@ import type { AnsiSegment } from '@/render/types'
  *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
  * run fails keeps whatever result it had, and the other surface is still stored; nothing is ever
- * deleted. Uses real E2B for both surfaces when E2B_API_KEY is set, else fake recorders under which
- * every mod draws nothing.
+ * deleted. Refuses to run without E2B_API_KEY: a fake run would store "draws nothing" over every
+ * real preview, and those results would satisfy publish's rendered check.
  *
- * AGENT USAGE (needs DATABASE_URL, and E2B_API_KEY for real renders):
+ * AGENT USAGE (needs DATABASE_URL and E2B_API_KEY):
  *
  *   bun run render:mods                 # every mod's current and newest version
  *   bun run render:mods --slug <slug>   # one mod
@@ -283,17 +281,14 @@ export async function renderMods(
 async function main(): Promise<number> {
   const { values } = parseArgs({ options: { slug: { type: 'string' } }, strict: true })
   const url = requireEnv('DATABASE_URL')
+  requireEnv('E2B_API_KEY')
   const client = postgres(url, isPooledUrl(url) ? { prepare: false } : {})
   const db = drizzle({ client, schema }) as unknown as Db
-  const real = Boolean(process.env.E2B_API_KEY)
-  const recorder = real ? e2bModRecorder : new FakeModRecorder({ baseline: [] })
-  const desktopRecorder = real ? e2bDesktopRecorder() : new FakeDesktopRecorder()
-  if (!real) console.log('E2B_API_KEY is not set: using the fake recorders')
   try {
     return await renderMods(values, {
       db,
-      recorder,
-      desktopRecorder,
+      recorder: e2bModRecorder,
+      desktopRecorder: e2bDesktopRecorder(),
       github: createGitHub(),
       log: (line) => console.log(line),
     })
