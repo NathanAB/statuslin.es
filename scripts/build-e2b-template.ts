@@ -106,6 +106,14 @@ export const renderTemplate = () =>
       { user: 'root' },
     )
 
+/** What every sandbox started from the snapshot gets. */
+export interface SandboxResources {
+  cpuCount: number
+  memoryMB: number
+}
+
+const DEFAULT_RESOURCES: SandboxResources = { cpuCount: 2, memoryMB: 1024 }
+
 /**
  * Builds `template` to the mutable `buildName` alias and prints the immutable snapshot to commit.
  * `harden` runs on the live sandbox before the snapshot, because E2B's build finalize step runs after
@@ -116,12 +124,12 @@ export async function buildSnapshot(
   buildName: string,
   snapshotConstant: string,
   harden?: (sandbox: Sandbox) => Promise<void>,
+  resources: SandboxResources = DEFAULT_RESOURCES,
 ): Promise<void> {
   const apiKey = requireEnv('E2B_API_KEY')
   const build = await Template.build(template, buildName, {
     apiKey,
-    cpuCount: 2,
-    memoryMB: 1024,
+    ...resources,
     onBuildLogs: defaultBuildLogger(),
   })
 

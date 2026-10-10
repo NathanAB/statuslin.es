@@ -18,8 +18,9 @@ export const REPLY_FILE = `${WORK_DIR}/reply.json`
 export const FEED_PLUGIN_DIR = `${SANDBOX_PLUGINS_DIR}/scenario-feed`
 const MODEL_HOST = '127.0.0.1'
 const MODEL_PORT = 8787
-const MODEL_URL = `http://${MODEL_HOST}:${MODEL_PORT}`
-const FAKE_API_KEY = `sk-ant-api03-${'statuslinespreview'.padEnd(80, '0')}-AA`
+/** The canned model server, on loopback inside the sandbox. */
+export const MODEL_URL = `http://${MODEL_HOST}:${MODEL_PORT}`
+export const FAKE_API_KEY = `sk-ant-api03-${'statuslinespreview'.padEnd(80, '0')}-AA`
 const FEED_PLUGIN_ASSETS = ['.claude-plugin/plugin.json', 'hooks/hooks.json', 'hooks/register.ts']
 const FEED_PLUGIN_SRC = join(import.meta.dirname, 'sandbox/scenario-feed')
 

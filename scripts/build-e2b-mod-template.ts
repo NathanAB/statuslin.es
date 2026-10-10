@@ -73,13 +73,25 @@ const MATCHES_CLAUDE_CODE_BINARY_PIN = `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SA
 
 const RUNS_CLAUDE_CODE_VERSION = `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "${CLAUDE_CODE_VERSION}"`
 
+/** Paths a template adds beyond the mod template's, held to the same hardening proofs. */
+export interface HardeningExtras {
+  /** Checked as root for any group- or world-writable file. */
+  protectedRoots: readonly string[]
+  /** Checked as `user` to exist and not be writable. */
+  readOnlyPaths: readonly string[]
+}
+
+const NO_EXTRAS: HardeningExtras = { protectedRoots: [], readOnlyPaths: [] }
+
 /**
  * The built sandbox leaves root reachable from `user` (finalize's passwordless sudo, an empty root
  * password beside a setuid `su`, world-writable paths) and runs root sshd and rpcbind. Root removes
  * each whole category on the live sandbox, then the build proves it as root and as `user`, and
  * proves the tooling still runs. Any failing command aborts the build before the snapshot.
  */
-const SNAPSHOT_HARDENING: ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> = [
+export const snapshotHardening = (
+  extras: HardeningExtras = NO_EXTRAS,
+): ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> => [
   ...[
     "sed -i '/^user ALL=/d' /etc/sudoers",
     'rm -rf /etc/sudoers.d/*',
@@ -94,7 +106,9 @@ const SNAPSHOT_HARDENING: ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> 
     // Unprivileged user namespaces are a kernel-exploit surface, and nothing here needs them.
     'sysctl -w user.max_user_namespaces=0',
     // As root, because `user` cannot list the root-only usage server directory.
-    printsNothing(`find ${PROTECTED_ROOTS} -perm /022 -not -type l`),
+    printsNothing(
+      `find ${[PROTECTED_ROOTS, ...extras.protectedRoots].join(' ')} -perm /022 -not -type l`,
+    ),
     printsNothing('find / -xdev -perm /6000 -type f'),
     printsNothing(
       'find / -xdev -perm -0002 ! -type l ! -type d ! -path "/tmp/*" ! -path "/proc/*"',
@@ -120,14 +134,18 @@ const SNAPSHOT_HARDENING: ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> 
       SANDBOX_REPLAY_DIR,
       dirname(SANDBOX_REPLAY_DIR),
       dirname(dirname(SANDBOX_REPLAY_DIR)),
+      ...extras.readOnlyPaths,
     ].map((path) => `test -e ${path} && test ! -w ${path}`),
     RUNS_CLAUDE_CODE_VERSION,
     `cd ${SANDBOX_REPLAY_DIR} && node -e "require('@xterm/headless')"`,
   ].map((cmd) => ({ user: 'user' as const, cmd })),
 ]
 
-async function hardenSnapshot(sandbox: Sandbox): Promise<void> {
-  for (const { user, cmd } of SNAPSHOT_HARDENING) {
+export async function hardenSnapshot(
+  sandbox: Sandbox,
+  extras: HardeningExtras = NO_EXTRAS,
+): Promise<void> {
+  for (const { user, cmd } of snapshotHardening(extras)) {
     await sandbox.commands.run(cmd, { user })
   }
 }
@@ -172,7 +190,7 @@ export const buildModSnapshot = () =>
     modRenderTemplate(),
     E2B_MOD_TEMPLATE_BUILD_NAME,
     'E2B_MOD_TEMPLATE_ID',
-    hardenSnapshot,
+    (sandbox) => hardenSnapshot(sandbox),
   )
 
 if (import.meta.main) {
