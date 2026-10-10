@@ -104,6 +104,13 @@ describe('mod page', () => {
     expect(screen.queryByText('Claude Desktop, screenshot')).toBeNull()
   })
 
+  it('says so when the mod draws nothing in the terminal', () => {
+    renderPage({ preview: [] })
+
+    expect(screen.getByText('Draws nothing in the terminal.')).toBeTruthy()
+    expect(screen.queryByText('No preview available.')).toBeNull()
+  })
+
   it('shows the labelled Desktop screenshot when that is all the version has', () => {
     renderPage({ preview: null, desktopScreenshot: '/mods/screenshots/anywhere.png' })
 

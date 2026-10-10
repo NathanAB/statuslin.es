@@ -80,4 +80,15 @@ describe('og cards render to PNG', () => {
     expect(twenty.equals(nine)).toBe(true)
     expect(nine.equals(eight)).toBe(false)
   })
+
+  it('modCard draws a mod that draws nothing in the terminal like one with no terminal preview', async () => {
+    const draw = async (preview: AnsiSegment[] | null) =>
+      Buffer.from(
+        await toElementPng(modCard({ title: 'Anywhere', authorGithub: 'octocat', preview })),
+      )
+
+    const [nothing, none] = await Promise.all([draw([]), draw(null)])
+
+    expect(nothing.equals(none)).toBe(true)
+  })
 })

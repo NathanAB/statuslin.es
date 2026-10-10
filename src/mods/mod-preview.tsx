@@ -13,6 +13,13 @@ export function ModPreview({
 }: {
   mod: Pick<ModDetail, 'title' | 'preview' | 'desktopScreenshot'>
 }) {
+  if (mod.preview?.length === 0) {
+    return (
+      <Text muted size="sm">
+        Draws nothing in the terminal.
+      </Text>
+    )
+  }
   if (mod.preview) return <StatuslinePreview segments={mod.preview} />
   if (mod.desktopScreenshot) {
     return (

@@ -154,7 +154,8 @@ export async function prepareModContentGenerationRequest(
     `What the plugin validator says it does (command and tool names are the author's): ${list(footprint.phrases)}`,
     '',
     'Preview (what it drew in a sample session):',
-    preview ? preview.map((s) => s.text).join('') : 'No terminal preview is available.',
+    preview?.map((s) => s.text).join('') ||
+      (preview ? 'It drew nothing in the terminal.' : 'No terminal preview is available.'),
     '',
     'README at the pinned commit:',
     readme ?? 'This mod has no README.',

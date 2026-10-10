@@ -103,6 +103,12 @@ describe('describeModFootprint', () => {
     ).toEqual(['terminal'])
   })
 
+  it('leaves out the terminal for a mod that draws nothing there', () => {
+    expect(
+      describeModFootprint({ footprint: PLAIN, preview: [], desktopScreenshot: null }).surfaces,
+    ).toEqual([])
+  })
+
   it('is Desktop alone for a mod shown only by a Desktop screenshot', () => {
     expect(
       describeModFootprint({ footprint: PLAIN, preview: null, desktopScreenshot: '/shot.png' })

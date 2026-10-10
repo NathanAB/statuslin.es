@@ -231,21 +231,22 @@ export function modCard(input: {
   authorGithub: string
   preview: AnsiSegment[] | null
 }): ReactElement {
-  const body = input.preview
-    ? well(drawStatusLine(input.preview, 19, MOD_PREVIEW_MAX_LINES), '13px 20px')
-    : well(
-        <div
-          style={{
-            display: 'flex',
-            fontFamily: FONT,
-            fontSize: 24,
-            color: OG_PALETTE.foreground,
-          }}
-        >
-          Claude Desktop
-        </div>,
-        '10px 18px',
-      )
+  const body =
+    input.preview && input.preview.length > 0
+      ? well(drawStatusLine(input.preview, 19, MOD_PREVIEW_MAX_LINES), '13px 20px')
+      : well(
+          <div
+            style={{
+              display: 'flex',
+              fontFamily: FONT,
+              fontSize: 24,
+              color: OG_PALETTE.foreground,
+            }}
+          >
+            Claude Desktop
+          </div>,
+          '10px 18px',
+        )
   return detailCard(
     cardHeader(input.title, `by @${input.authorGithub}`),
     <div style={{ display: 'flex', alignItems: 'flex-start' }}>{body}</div>,

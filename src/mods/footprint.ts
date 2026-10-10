@@ -195,7 +195,7 @@ function modSurfaces(
   mentionsDesktop: boolean,
 ): Surface[] {
   const surfaces: Surface[] = []
-  if (version.preview !== null) surfaces.push('terminal')
+  if (version.preview !== null && version.preview.length > 0) surfaces.push('terminal')
   if (version.desktopScreenshot !== null || mentionsDesktop) surfaces.push('desktop')
   return surfaces
 }

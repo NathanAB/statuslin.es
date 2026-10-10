@@ -10,6 +10,7 @@ import {
 } from '@/gallery/ranking'
 import { MOD_COPY_EVENTS } from '@/gallery/trending'
 import { compactSegments } from '@/render/compact-segments'
+import type { AnsiSegment } from '@/render/types'
 import { MOD_SCENARIO_KEY } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -60,9 +61,12 @@ export async function getModSource(db: Db, query: GallerySourceQuery): Promise<G
       .$dynamic(),
     query.limit,
   )
+  // A card has no terminal slot for a mod that drew nothing there.
+  const terminal = (preview: AnsiSegment[] | null) =>
+    preview && preview.length > 0 ? compactSegments(preview) : null
   return {
     items: rows.map(({ sortKey, total: _total, preview, ...card }) => ({
-      item: { kind: 'mod', card: { ...card, preview: preview ? compactSegments(preview) : null } },
+      item: { kind: 'mod', card: { ...card, preview: terminal(preview) } },
       sortKey,
     })),
     total: rows[0]?.total ?? 0,

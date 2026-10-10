@@ -132,6 +132,15 @@ describe('prepareModContentGenerationRequest', () => {
     expect(contentPrompt).toContain('above the prompt')
   })
 
+  it('says when the mod drew nothing in the terminal', async () => {
+    await seedMod('blank')
+    await db.update(schema.modPreviews).set({ segments: [] })
+
+    const { contentPrompt } = await prepareModContentGenerationRequest(db, 'blank', readme)
+
+    expect(contentPrompt).toContain('It drew nothing in the terminal.')
+  })
+
   it('says when there is no README', async () => {
     await seedMod('bare')
 

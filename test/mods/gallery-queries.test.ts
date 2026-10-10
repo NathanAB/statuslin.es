@@ -76,6 +76,15 @@ describe('getModSource', () => {
     })
   })
 
+  it('carries no terminal preview for a mod that draws nothing in the terminal', async () => {
+    const modId = await publishedMod('blank')
+    await db.update(schema.modPreviews).set({ segments: [] })
+
+    const [ranked] = (await getModSource(db, { sort: 'new' })).items
+
+    expect(ranked?.item).toMatchObject({ card: { modId, preview: null } })
+  })
+
   it('lists a mod for a tag only when the mod carries that tag', async () => {
     await publishedMod('tagged', { allTags: ['git', 'cost'] })
     await publishedMod('untagged', { allTags: ['cost'] })

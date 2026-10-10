@@ -150,7 +150,7 @@ describe('renderMods', () => {
     expect(lines).toContain('rendered token-weather')
   })
 
-  it('stores nothing for a crop with no rows of its own and keeps the earlier preview', async () => {
+  it('stores an empty preview for a crop with no rows of its own, replacing the earlier one', async () => {
     const versionId = await seedMod('statusline-anywhere', { rendered: true })
     const recorder = new FakeModRecorder({ baseline })
 
@@ -158,11 +158,9 @@ describe('renderMods', () => {
 
     expect(await exitCode).toBe(0)
     expect(await storedPreviews(versionId)).toEqual([
-      { scenarioKey: MOD_SCENARIO_KEY, ...SEEDED_PREVIEW },
+      { scenarioKey: MOD_SCENARIO_KEY, segments: [], claudeCodeVersion: '0.0.0-fake' },
     ])
-    expect(lines).toContain(
-      'not rendered statusline-anywhere: the recording matches the baseline outside the prompt row',
-    )
+    expect(lines).toContain('drew nothing statusline-anywhere')
   })
 
   it('keeps the earlier preview and exits non-zero when a recording fails', async () => {

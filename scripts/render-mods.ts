@@ -22,9 +22,10 @@ import type { AnsiSegment } from '@/render/types'
  * baseline recording (the same session with no mod), shared across the run while the Claude Code
  * version matches.
  *
- * A rendered version's preview is replaced in one statement. A version that does not render, or
- * whose run fails, keeps whatever preview it had; nothing is ever deleted. Uses real E2B when
- * E2B_API_KEY is set, else a fake recorder under which every mod records as not rendered.
+ * A version's preview is replaced in one statement. A crop with no rows of its own is stored as an
+ * empty preview, which records that the mod draws nothing in the terminal. A version whose run fails
+ * keeps whatever preview it had; nothing is ever deleted. Uses real E2B when E2B_API_KEY is set, else
+ * a fake recorder under which every mod draws nothing.
  *
  * AGENT USAGE (needs DATABASE_URL, and E2B_API_KEY for real renders):
  *
@@ -46,10 +47,7 @@ export interface RenderModsDeps {
 
 const CONCURRENCY = 4
 
-type Outcome =
-  | { kind: 'rendered' }
-  | { kind: 'not rendered'; reason: string }
-  | { kind: 'failed'; reason: string }
+type Outcome = { kind: 'rendered' } | { kind: 'drew nothing' } | { kind: 'failed'; reason: string }
 
 interface Target {
   slug: string
@@ -148,14 +146,9 @@ async function renderTarget(
   )
   const baseline = await baselineFor(recording.claudeCodeVersion)
   const crop = cropModPreview(baseline.rows, recording.rows)
-  if (crop.kind === 'not-rendered') {
-    return {
-      kind: 'not rendered',
-      reason: 'the recording matches the baseline outside the prompt row',
-    }
-  }
-  await storePreview(db, target.versionId, crop.segments, recording.claudeCodeVersion)
-  return { kind: 'rendered' }
+  const segments = crop.kind === 'rendered' ? crop.segments : []
+  await storePreview(db, target.versionId, segments, recording.claudeCodeVersion)
+  return { kind: crop.kind === 'rendered' ? 'rendered' : 'drew nothing' }
 }
 
 async function forEachConcurrently<T>(items: T[], limit: number, work: (item: T) => Promise<void>) {

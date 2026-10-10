@@ -82,6 +82,7 @@ export interface ModDetail {
   license: string | null
   footprint: ModFootprint
   desktopScreenshot: string | null
+  /** The terminal preview: null before it renders, empty when the mod drew nothing there. */
   preview: AnsiSegment[] | null
   generatedContent: GeneratedContent | null
 }
