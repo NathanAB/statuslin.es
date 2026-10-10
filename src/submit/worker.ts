@@ -1,9 +1,10 @@
 import { and, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs } from '@/db/schema'
 import { renderConfig } from '@/render/pipeline'
 import { storePreviews } from '@/render/store'
 import type { Interpreter, SandboxRunner } from '@/render/types'
+import type { RenderJobReport } from '@/submit/render-completed-event'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -24,15 +25,29 @@ export async function requeueStaleJobs(db: Db): Promise<number> {
   return stale.length
 }
 
-export async function processNextRenderJob(db: Db, runner: SandboxRunner): Promise<string | null> {
+/** Called once per finished job (done or failed). Lets the worker report telemetry without the
+ * seed/e2e scripts that also call processNextRenderJob emitting it too. */
+type OnJobFinished = (report: RenderJobReport) => void
+
+export async function processNextRenderJob(
+  db: Db,
+  runner: SandboxRunner,
+  onJobFinished?: OnJobFinished,
+): Promise<string | null> {
   const claimed = await claimNextJob(db)
   if (!claimed) return null
+  const startedMs = Date.now()
+  let config: { configId: string; slug: string } | null = null
+  let scenarios: RenderJobReport['scenarios'] = null
   try {
-    const [ver] = await db
-      .select()
+    const [row] = await db
+      .select({ ver: configVersions, slug: configs.slug })
       .from(configVersions)
+      .innerJoin(configs, eq(configs.id, configVersions.configId))
       .where(eq(configVersions.id, claimed.configVersionId))
-    if (!ver) throw new Error(`config version ${claimed.configVersionId} not found`)
+    if (!row) throw new Error(`config version ${claimed.configVersionId} not found`)
+    const { ver } = row
+    config = { configId: ver.configId, slug: row.slug }
     const previews = await renderConfig(
       {
         script: ver.source,
@@ -47,12 +62,21 @@ export async function processNextRenderJob(db: Db, runner: SandboxRunner): Promi
       .update(renderJobs)
       .set({ status: 'done', finishedAt: new Date() })
       .where(eq(renderJobs.id, claimed.id))
+    // Exit status only — never stdout/stderr, which are untrusted script output.
+    scenarios = previews.map(({ exitCode, timedOut }) => ({ exitCode, timedOut }))
   } catch (error) {
     await db
       .update(renderJobs)
       .set({ status: 'failed', error: String(error).slice(0, 2000), finishedAt: new Date() })
       .where(eq(renderJobs.id, claimed.id))
   }
+  onJobFinished?.({
+    configId: config?.configId ?? null,
+    versionId: claimed.configVersionId,
+    slug: config?.slug ?? null,
+    durationMs: Date.now() - startedMs,
+    scenarios,
+  })
   return claimed.id
 }
 
@@ -60,9 +84,13 @@ export async function processNextRenderJob(db: Db, runner: SandboxRunner): Promi
  * Returns the number processed. Per-job render failures are recorded inside
  * processNextRenderJob, so they don't stop the drain — only an infra error (DB/E2B
  * unreachable) throws out of here, which the caller's drain controller catches. */
-export async function drainRenderJobs(db: Db, runner: SandboxRunner): Promise<number> {
+export async function drainRenderJobs(
+  db: Db,
+  runner: SandboxRunner,
+  onJobFinished?: OnJobFinished,
+): Promise<number> {
   let processed = 0
-  while (await processNextRenderJob(db, runner)) processed++
+  while (await processNextRenderJob(db, runner, onJobFinished)) processed++
   return processed
 }
 

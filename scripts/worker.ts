@@ -10,6 +10,7 @@ import { createDrainController, startWakeServer, WAKE_PORT, wakeServerHostname }
 import { E2BSandboxRunner } from '@/render/e2b-runner'
 import { FakeSandboxRunner } from '@/render/fake-runner'
 import type { SandboxRunner } from '@/render/types'
+import { RENDER_WORKER_DISTINCT_ID, renderCompletedEvent } from '@/submit/render-completed-event'
 import { drainRenderJobs, queueDepthStats, requeueStaleJobs } from '@/submit/worker'
 
 // Fatal, out-of-loop failures (an async resource erroring, a startup rejection). Capture *immediately*
@@ -43,9 +44,12 @@ if (process.env.RENDER_RUNNER === 'fake') {
 const SAFETY_DRAIN_MS = 30 * 60 * 1000
 
 async function drainAndReport(): Promise<number> {
-  const processed = await drainRenderJobs(db, runner)
+  const processed = await drainRenderJobs(db, runner, (report) => {
+    const rendered = renderCompletedEvent(report)
+    captureServerEvent(rendered.event, rendered.distinctId, rendered.properties)
+  })
   const stats = await queueDepthStats(db)
-  captureServerEvent('render_queue_drained', 'render-worker', { processed, ...stats })
+  captureServerEvent('render_queue_drained', RENDER_WORKER_DISTINCT_ID, { processed, ...stats })
   return processed
 }
 
@@ -72,7 +76,7 @@ setInterval(() => controller.trigger(), SAFETY_DRAIN_MS)
 // render is awaited, so a busy-but-alive worker still heartbeats.
 const HEARTBEAT_MS = 5 * 60 * 1000
 function emitHeartbeat() {
-  captureServerEvent('render_worker_heartbeat', 'render-worker')
+  captureServerEvent('render_worker_heartbeat', RENDER_WORKER_DISTINCT_ID)
 }
 emitHeartbeat() // one at startup, then on the interval
 setInterval(emitHeartbeat, HEARTBEAT_MS)
