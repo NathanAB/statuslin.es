@@ -44,4 +44,11 @@ export function modPath(slug: string): string {
   return MOD_ROUTE.replace('$slug', slug)
 }
 
+/** A mod version's Claude Desktop preview image. A new version is a new URL, so it caches forever. */
+export const MOD_DESKTOP_PREVIEW_ROUTE = '/mod-previews/$versionId/desktop.png'
+
+export function modDesktopPreviewPath(versionId: string): string {
+  return MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)
+}
+
 export const MARKETPLACE_PATH = '/marketplace.json'

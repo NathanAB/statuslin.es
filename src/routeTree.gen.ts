@@ -33,6 +33,7 @@ import { Route as AdminReviewRouteImport } from './routes/admin/review'
 import { Route as DotwellKnownSecurityDottxtRouteImport } from './routes/[.]well-known.security[.]txt'
 import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
+import { Route as ModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/mod-previews.$versionId.desktop[.]png'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const TermsRoute = TermsRouteImport.update({
@@ -158,6 +159,12 @@ const OgCChar123slugChar125DotpngRoute =
     path: '/og/c/{$slug}.png',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ModPreviewsVersionIdDesktopDotpngRoute =
+  ModPreviewsVersionIdDesktopDotpngRouteImport.update({
+    id: '/mod-previews/$versionId/desktop.png',
+    path: '/mod-previews/$versionId/desktop.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -188,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
@@ -215,6 +223,7 @@ export interface FileRoutesByTo {
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
@@ -243,6 +252,7 @@ export interface FileRoutesById {
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
 }
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/status-lines/best'
     | '/admin/'
     | '/api/auth/$'
+    | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
   fileRoutesByTo: FileRoutesByTo
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/status-lines/best'
     | '/admin'
     | '/api/auth/$'
+    | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
   id:
@@ -326,6 +338,7 @@ export interface FileRouteTypes {
     | '/status-lines/best'
     | '/admin/'
     | '/api/auth/$'
+    | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
   fileRoutesById: FileRoutesById
@@ -354,6 +367,7 @@ export interface RootRouteChildren {
   StatusLinesBestRoute: typeof StatusLinesBestRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
   OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
 }
@@ -528,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgCChar123slugChar125DotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mod-previews/$versionId/desktop.png': {
+      id: '/mod-previews/$versionId/desktop.png'
+      path: '/mod-previews/$versionId/desktop.png'
+      fullPath: '/mod-previews/$versionId/desktop.png'
+      preLoaderRoute: typeof ModPreviewsVersionIdDesktopDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -562,6 +583,8 @@ const rootRouteChildren: RootRouteChildren = {
   StatusLinesBestRoute: StatusLinesBestRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ModPreviewsVersionIdDesktopDotpngRoute:
+    ModPreviewsVersionIdDesktopDotpngRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
   OgModsChar123slugChar125DotpngRoute: OgModsChar123slugChar125DotpngRoute,
 }

@@ -67,6 +67,29 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
   return versionId
 }
 
+/** The shot `addDesktopPreview` stores. The bytes start with the PNG signature. */
+export const SEEDED_DESKTOP_SHOT = {
+  png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 42]),
+  width: 790,
+  height: 52,
+  cardAnchor: 'bottom' as const,
+}
+
+/** A clean-main Desktop result for the version: a shot, or that it drew nothing. */
+export async function addDesktopPreview(
+  db: TestDb,
+  versionId: string,
+  result: 'shot' | 'nothing' = 'shot',
+) {
+  await db.insert(schema.modDesktopPreviews).values({
+    modVersionId: versionId,
+    scenarioKey: MOD_SCENARIO_KEY,
+    desktopVersion: '1.0.0',
+    engineVersion: '2.1.0',
+    ...(result === 'shot' ? { kind: 'shot', ...SEEDED_DESKTOP_SHOT } : { kind: 'nothing' }),
+  })
+}
+
 export async function setCurrentVersion(db: TestDb, modId: string, versionId: string) {
   await db.update(schema.mods).set({ currentVersionId: versionId }).where(eq(schema.mods.id, modId))
 }

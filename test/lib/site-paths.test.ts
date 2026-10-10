@@ -1,7 +1,14 @@
 import { createRouter } from '@tanstack/react-router'
 import { describe, expect, it } from 'vitest'
-import { MARKETPLACE_PATH, MOD_ROUTE, modPath } from '@/lib/site'
+import {
+  MARKETPLACE_PATH,
+  MOD_DESKTOP_PREVIEW_ROUTE,
+  MOD_ROUTE,
+  modDesktopPreviewPath,
+  modPath,
+} from '@/lib/site'
 import { Route as MarketplaceRoute } from '@/routes/marketplace[.]json'
+import { Route as DesktopPreviewRoute } from '@/routes/mod-previews.$versionId.desktop[.]png'
 import { Route as ModRoute } from '@/routes/mods.$slug'
 import { routeTree } from '@/routeTree.gen'
 
@@ -14,6 +21,14 @@ describe('site paths', () => {
 
   it("fills the mod route's slug", () => {
     expect(modPath('filetree')).toBe('/mods/filetree')
+  })
+
+  it('names the route that serves Desktop preview images', () => {
+    expect(routesByPath[MOD_DESKTOP_PREVIEW_ROUTE]).toBe(DesktopPreviewRoute)
+  })
+
+  it("fills the Desktop preview route's version id", () => {
+    expect(modDesktopPreviewPath('v-1')).toBe('/mod-previews/v-1/desktop.png')
   })
 
   it('names the route that serves the marketplace', () => {
