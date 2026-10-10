@@ -4,6 +4,13 @@ import { INFRA_ERROR_EXIT_CODE } from '@/render/e2b-runner'
 /** PostHog distinct id every render-worker event is attributed to (it's a process, not a person). */
 export const RENDER_WORKER_DISTINCT_ID = 'render-worker'
 
+/** Spread into every render-worker event: the worker isn't a person, so PostHog must not create a
+ * person profile for its distinct id. */
+export const PERSONLESS_EVENT_PROPERTIES = {
+  // biome-ignore lint/style/useNamingConvention: PostHog's reserved property name.
+  $process_person_profile: false,
+} as const
+
 /** How one scenario's sandbox run ended — exit status only, never its output. */
 interface ScenarioOutcome {
   exitCode: number
@@ -50,8 +57,7 @@ export function renderCompletedEvent(report: RenderJobReport): ServerEvent {
       configId: report.configId,
       versionId: report.versionId,
       slug: report.slug,
-      // biome-ignore lint/style/useNamingConvention: PostHog's reserved property name.
-      $process_person_profile: false,
+      ...PERSONLESS_EVENT_PROPERTIES,
     },
   }
 }
