@@ -8,7 +8,8 @@ const SANDBOX_USER = 'user'
 export const SANDBOX_WORK_DIR = '/home/user/.statuslines'
 export const SANDBOX_PLUGINS_DIR = '/home/user/plugins'
 const TARBALL_PATH = `${SANDBOX_WORK_DIR}/mod.tar.gz`
-const PLUGIN_DIR = `${SANDBOX_PLUGINS_DIR}/mod`
+/** Where a mod's plugin folder is unpacked. */
+export const SANDBOX_MOD_PLUGIN_DIR = `${SANDBOX_PLUGINS_DIR}/mod`
 /** Sandbox lifetime ceiling. The `finally` kill is the real teardown; this is a backstop. */
 export const SANDBOX_TIMEOUT_MS = 10 * 60_000
 export const REQUEST_TIMEOUT_MS = 60_000
@@ -79,10 +80,10 @@ function unpackCommand(path: string): string {
   const depth = path === '' ? 0 : path.split('/').length
   const member = path === '' ? '' : ` "$top/${path}"`
   return [
-    `mkdir -p ${PLUGIN_DIR}`,
+    `mkdir -p ${SANDBOX_MOD_PLUGIN_DIR}`,
     `top="$(tar -tzf ${TARBALL_PATH} | head -n 1 | cut -d/ -f1)"`,
-    `tar -xzf ${TARBALL_PATH} -C ${PLUGIN_DIR} --strip-components=${depth + 1}${member}`,
-    `test -f ${PLUGIN_DIR}/.claude-plugin/plugin.json`,
+    `tar -xzf ${TARBALL_PATH} -C ${SANDBOX_MOD_PLUGIN_DIR} --strip-components=${depth + 1}${member}`,
+    `test -f ${SANDBOX_MOD_PLUGIN_DIR}/.claude-plugin/plugin.json`,
   ].join(' && ')
 }
 
@@ -104,7 +105,7 @@ async function run(
   }
 }
 
-async function runBounded(
+export async function runBounded(
   sandbox: Sandbox,
   command: string,
   { timeoutMs, maxOutputBytes }: BoundedRunOptions,
@@ -145,7 +146,7 @@ async function runBounded(
 const arrayBuffer = ({ buffer, byteOffset, byteLength }: Uint8Array) =>
   buffer.slice(byteOffset, byteOffset + byteLength) as ArrayBuffer
 
-async function writeFiles(sandbox: Sandbox, files: SandboxFile[]): Promise<void> {
+export async function writeFiles(sandbox: Sandbox, files: SandboxFile[]): Promise<void> {
   await sandbox.files.write(
     files.map(({ path, data }) => ({
       path,
@@ -155,7 +156,7 @@ async function writeFiles(sandbox: Sandbox, files: SandboxFile[]): Promise<void>
   )
 }
 
-async function unpack(sandbox: Sandbox, source: ModSource): Promise<void> {
+export async function unpack(sandbox: Sandbox, source: ModSource): Promise<void> {
   await writeFiles(sandbox, [{ path: TARBALL_PATH, data: source.tarball }])
   const unpacked = await run(sandbox, unpackCommand(source.path))
   if (unpacked.exitCode !== 0) {
@@ -183,11 +184,13 @@ async function openTerminal(sandbox: Sandbox, options: TerminalOptions): Promise
   }
 }
 
-async function withSandbox<T>(
+/** An offline sandbox from `templateId`, killed once `use` settles. */
+export async function withTemplateSandbox<T>(
+  templateId: string,
   timeoutMs: number,
   use: (sandbox: Sandbox) => Promise<T>,
 ): Promise<T> {
-  const sandbox = await Sandbox.create(E2B_MOD_TEMPLATE_ID, {
+  const sandbox = await Sandbox.create(templateId, {
     apiKey: requireEnv('E2B_API_KEY'),
     ...buildNetworkOption([]),
     timeoutMs,
@@ -206,10 +209,10 @@ export function withRecordingSandbox<T>(
   source: ModSource | null,
   use: (sandbox: RecordingSandbox) => Promise<T>,
 ): Promise<T> {
-  return withSandbox(SANDBOX_TIMEOUT_MS, async (sandbox) => {
+  return withTemplateSandbox(E2B_MOD_TEMPLATE_ID, SANDBOX_TIMEOUT_MS, async (sandbox) => {
     if (source) await unpack(sandbox, source)
     return use({
-      pluginDir: PLUGIN_DIR,
+      pluginDir: SANDBOX_MOD_PLUGIN_DIR,
       run: (command, envs) => run(sandbox, command, envs),
       writeFiles: (files) => writeFiles(sandbox, files),
       openTerminal: (options) => openTerminal(sandbox, options),
@@ -218,7 +221,7 @@ export function withRecordingSandbox<T>(
 }
 
 export function withReplaySandbox<T>(use: (sandbox: ReplaySandbox) => Promise<T>): Promise<T> {
-  return withSandbox(REPLAY_SANDBOX_TIMEOUT_MS, (sandbox) =>
+  return withTemplateSandbox(E2B_MOD_TEMPLATE_ID, REPLAY_SANDBOX_TIMEOUT_MS, (sandbox) =>
     use({
       writeFiles: (files) => writeFiles(sandbox, files),
       runBounded: (command, options) => runBounded(sandbox, command, options),
