@@ -78,7 +78,7 @@ function buildModContentPrompt(
 
 ${pinAndWarn(pin)}
 
-## What the plugin validator says it does (written by statuslin.es, trusted)
+## Where the plugin validator says it draws (written by statuslin.es, trusted)
 ${validatorSummary}
 
 ## From the mod
@@ -146,10 +146,12 @@ export async function prepareModContentGenerationRequest(
   })
   const readme = await readReadme(version.repoUrl, version.path, version.commitSha)
   const pin = { slug, versionId: version.id, commitSha: version.commitSha }
+  const list = (items: string[]) => (items.length > 0 ? items.join(', ') : 'nothing listed')
   const untrusted = [
     `Title: ${mod.title}`,
     `Plugin name: ${mod.pluginName}`,
     `Description: ${mod.description || 'none'}`,
+    `What the plugin validator says it does (command and tool names are the author's): ${list(footprint.phrases)}`,
     '',
     'Preview (what it drew in a sample session):',
     preview ? preview.map((s) => s.text).join('') : 'No terminal preview is available.',
@@ -157,9 +159,7 @@ export async function prepareModContentGenerationRequest(
     'README at the pinned commit:',
     readme ?? 'This mod has no README.',
   ].join('\n')
-  const list = (items: string[]) => (items.length > 0 ? items.join(', ') : 'nothing listed')
   const summary = [
-    `- What it does: ${list(footprint.phrases)}`,
     `- Where it draws: ${list(footprint.draws.map((d) => DRAW_LOCATION_LABEL[d]))}`,
     `- Surfaces: ${list(footprint.surfaces.map((s) => SURFACE_LABEL[s]))}`,
   ].join('\n')
