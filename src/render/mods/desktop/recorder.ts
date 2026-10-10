@@ -1,38 +1,34 @@
 import type { InputStep } from '@/mods/curation'
-import type { DrawLocation } from '@/mods/footprint'
-import { SANDBOX_WORK_DIR } from '../mod-sandbox'
-import { type DesktopSandbox, withDesktopSandbox } from './desktop-sandbox'
+import type { ModSource } from '../mod-sandbox'
+import { analyseShot } from './analyse'
 import {
   type DesktopVersions,
+  E2B_DESKTOP_SANDBOXES,
+  type withAnalysisSandbox,
+  type withRecordingDesktop,
+} from './desktop-sandbox'
+import {
+  type DriveRequest,
   driveSession,
-  FINAL_SHOT,
   MAX_INPUT_STEPS,
   MAX_STEP_CHARS,
+  sessionUploads,
 } from './drive'
-import { type Frame, frameShot, readLayout } from './framing'
-import {
-  changedBoxCommand,
-  cropCommand,
-  parseChangedBox,
-  parseProbes,
-  probeCommand,
-} from './imagemagick'
-import { expectOk } from './interact'
-import { checkedPng, PNG_MAX_BYTES } from './png'
-import { BORDER_PROBES, PROMPT_TEXT, type Rect, SCALE, WINDOW } from './screen'
+import { SCREEN_PNG_COMMAND } from './imagemagick'
+import { checkedPng } from './png'
+import { SCALE, WINDOW } from './screen'
 import type { DesktopRecorder, DesktopRecording } from './types'
 
-const BASELINE_SHOT = `${SANDBOX_WORK_DIR}/baseline.png`
-const CROPPED_SHOT = `${SANDBOX_WORK_DIR}/crop.png`
 const FULL_SHOT = { width: WINDOW.width * SCALE, height: WINDOW.height * SCALE }
 
-export interface DesktopBaseline extends DesktopVersions {
-  /** The full final shot of the session with no mod. */
+/** A session's full final shot as its sandbox printed it, and the versions read before it ran. */
+export interface FullShot extends DesktopVersions {
   png: Uint8Array
 }
 
 interface Sandboxes {
-  withDesktopSandbox: typeof withDesktopSandbox
+  withRecordingDesktop: typeof withRecordingDesktop
+  withAnalysisSandbox: typeof withAnalysisSandbox
 }
 
 /** One shared run of `make` for every caller; a failure is not kept, so the next caller retries. */
@@ -57,41 +53,21 @@ function checkInputSteps(steps: readonly InputStep[]): void {
   if (long) throw new Error(`an input step is over ${MAX_STEP_CHARS} characters`)
 }
 
-async function layoutOf(sandbox: DesktopSandbox): Promise<'chat' | 'pane'> {
-  const regions = [BORDER_PROBES.prompt, BORDER_PROBES.promptBesidePane, BORDER_PROBES.pane]
-  const command = probeCommand(FINAL_SHOT, regions, { capture: false })
-  const { stdout } = expectOk(await sandbox.run(command), 'reading the layout')
-  const [prompt, promptBesidePane, pane] = parseProbes(stdout, regions.length)
-  if (!prompt || !promptBesidePane || !pane) throw new Error('missing layout probes')
-  return readLayout({ prompt, promptBesidePane, pane })
-}
-
-async function recordBaseline({ withDesktopSandbox }: Sandboxes): Promise<DesktopBaseline> {
-  return withDesktopSandbox(null, async (sandbox) => {
-    const versions = await driveSession(sandbox, { target: null, inputSteps: [] })
-    if ((await layoutOf(sandbox)) !== 'chat') throw new Error('the baseline shows a pane')
-    const png = checkedPng(await sandbox.readFile(FINAL_SHOT, PNG_MAX_BYTES), FULL_SHOT)
+/**
+ * Records one session and prints its full final shot out of the sandbox, which is killed before
+ * anything looks at the pixels.
+ */
+function recordFullShot(
+  { withRecordingDesktop }: Sandboxes,
+  source: ModSource | null,
+  request: DriveRequest,
+): Promise<FullShot> {
+  const setup = { source, files: (versions: DesktopVersions) => sessionUploads(request, versions) }
+  return withRecordingDesktop(setup, async (desktop, versions) => {
+    await driveSession(desktop, request.inputSteps)
+    const png = checkedPng(await desktop.readPng(SCREEN_PNG_COMMAND), FULL_SHOT)
     return { ...versions, png }
   })
-}
-
-async function frameInSandbox(
-  sandbox: DesktopSandbox,
-  baseline: DesktopBaseline,
-  draws: readonly DrawLocation[],
-): Promise<Frame> {
-  const paneOpen = (await layoutOf(sandbox)) === 'pane'
-  if (paneOpen) return frameShot({ changed: null, paneOpen, draws })
-  await sandbox.writeFiles([{ path: BASELINE_SHOT, data: baseline.png }])
-  const compare = changedBoxCommand(BASELINE_SHOT, FINAL_SHOT, PROMPT_TEXT)
-  const { stdout } = expectOk(await sandbox.run(compare), 'comparing with the baseline')
-  return frameShot({ changed: parseChangedBox(stdout), paneOpen, draws })
-}
-
-async function croppedPng(sandbox: DesktopSandbox, rect: Rect): Promise<Uint8Array> {
-  expectOk(await sandbox.run(cropCommand(FINAL_SHOT, rect, CROPPED_SHOT)), 'cropping the shot')
-  const bytes = await sandbox.readFile(CROPPED_SHOT, PNG_MAX_BYTES)
-  return checkedPng(bytes, { width: rect.width * SCALE, height: rect.height * SCALE })
 }
 
 const sameVersions = (a: DesktopVersions, b: DesktopVersions) =>
@@ -99,12 +75,15 @@ const sameVersions = (a: DesktopVersions, b: DesktopVersions) =>
 
 /**
  * Records mods in the real Claude Desktop, each in its own cold-booted sandbox, and frames each
- * final shot against one no-mod baseline shared by every record on this instance.
+ * final shot against one no-mod baseline shared by every record on this instance. The framing and
+ * crop run in a second, fresh sandbox, as the terminal recorder's replay does.
  */
 export function desktopRecorder(
   sandboxes: Sandboxes,
-): DesktopRecorder & { baseline(): Promise<DesktopBaseline> } {
-  const baseline = sharedOnce(() => recordBaseline(sandboxes))
+): DesktopRecorder & { baseline(): Promise<FullShot> } {
+  const baseline = sharedOnce(() =>
+    recordFullShot(sandboxes, null, { target: null, inputSteps: [] }),
+  )
   return {
     baseline,
     record: async ({ mod, inputSteps, draws }): Promise<DesktopRecording> => {
@@ -112,22 +91,23 @@ export function desktopRecorder(
       // Started now, alongside the mod's session; awaited only to frame its shot.
       const pendingBaseline = baseline()
       pendingBaseline.catch(() => {})
-      return sandboxes.withDesktopSandbox(mod.source, async (sandbox) => {
-        const versions = await driveSession(sandbox, { target: mod.pluginName, inputSteps })
-        const base = await pendingBaseline
-        if (!sameVersions(versions, base)) {
-          throw new Error(
-            `the baseline ran Desktop ${base.desktopVersion} (engine ${base.engineVersion}) but the mod ran ${versions.desktopVersion} (engine ${versions.engineVersion})`,
-          )
-        }
-        const frame = await frameInSandbox(sandbox, base, draws)
-        if (frame.kind === 'nothing') return { kind: 'nothing', ...versions }
-        const png = await croppedPng(sandbox, frame.rect)
-        const { width, height } = frame.rect
-        return { kind: 'shot', png, width, height, cardAnchor: frame.cardAnchor, ...versions }
+      const shot = await recordFullShot(sandboxes, mod.source, {
+        target: mod.pluginName,
+        inputSteps,
       })
+      const base = await pendingBaseline
+      const versions = { desktopVersion: shot.desktopVersion, engineVersion: shot.engineVersion }
+      if (!sameVersions(versions, base)) {
+        throw new Error(
+          `the baseline ran Desktop ${base.desktopVersion} (engine ${base.engineVersion}) but the mod ran ${versions.desktopVersion} (engine ${versions.engineVersion})`,
+        )
+      }
+      const analysis = await sandboxes.withAnalysisSandbox((sandbox) =>
+        analyseShot(sandbox, { shot: shot.png, baseline: base.png, draws }),
+      )
+      return { ...analysis, ...versions }
     },
   }
 }
 
-export const e2bDesktopRecorder = (): DesktopRecorder => desktopRecorder({ withDesktopSandbox })
+export const e2bDesktopRecorder = (): DesktopRecorder => desktopRecorder(E2B_DESKTOP_SANDBOXES)

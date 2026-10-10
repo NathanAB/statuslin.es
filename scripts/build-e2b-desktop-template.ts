@@ -2,6 +2,7 @@ import {
   E2B_DESKTOP_TEMPLATE_BUILD_NAME,
   SANDBOX_DESKTOP_BOOT,
   SANDBOX_DESKTOP_DIR,
+  SANDBOX_DESKTOP_ENGINE_VERSION,
   SANDBOX_DESKTOP_MANAGED_SETTINGS,
 } from '@/render/e2b-template'
 import { feedScenario, feedStdin } from '@/render/mods/scenario-feed'
@@ -107,6 +108,14 @@ export const desktopTemplate = () =>
     )
     .makeDir(SANDBOX_DESKTOP_DIR, { user: 'root', mode: 0o755 })
     .copy(`${ASSETS}/boot.sh`, SANDBOX_DESKTOP_BOOT, { user: 'root', mode: 0o755 })
+    // Read by the recorder before any mod code runs; Desktop installs only the preseed checked above.
+    .runCmd(
+      [
+        `echo ${DESKTOP_ENGINE_VERSION} > ${SANDBOX_DESKTOP_ENGINE_VERSION}`,
+        `chmod 0644 ${SANDBOX_DESKTOP_ENGINE_VERSION}`,
+      ].join(' && '),
+      { user: 'root' },
+    )
     .makeDir(KEYRING_DIR, { user: 'user', mode: 0o700 })
     .copy(`${ASSETS}/keyring/default`, `${KEYRING_DIR}/default`, { user: 'user', mode: 0o600 })
     .copy(`${ASSETS}/keyring/Default_Keyring.keyring`, `${KEYRING_DIR}/Default_Keyring.keyring`, {
@@ -121,6 +130,7 @@ const DESKTOP_HARDENING = {
     PRESEED_FILE,
     SANDBOX_DESKTOP_BOOT,
     SANDBOX_DESKTOP_MANAGED_SETTINGS,
+    SANDBOX_DESKTOP_ENGINE_VERSION,
   ],
 }
 

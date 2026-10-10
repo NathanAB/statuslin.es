@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
   changedBoxCommand,
-  cropCommand,
+  croppedPngCommand,
   parseChangedBox,
+  parsePrintedPng,
   parseProbes,
+  printedPngCommand,
   probeCommand,
   quietScreenCommand,
+  SCREEN_PNG_COMMAND,
 } from '@/render/mods/desktop/imagemagick'
 
 describe('probeCommand', () => {
-  it('screenshots once, then reads each region of that shot at device scale', () => {
+  it('screenshots once, then reads each region of that shot at device scale, as a PNG only', () => {
     const command = probeCommand('/tmp/probe.png', [
       { x: 10, y: 20, width: 30, height: 4 },
       { x: 0, y: 0, width: 1, height: 1 },
@@ -18,19 +21,19 @@ describe('probeCommand', () => {
     expect(command).toBe(
       [
         'import -window root -strip /tmp/probe.png',
-        "convert /tmp/probe.png -crop 60x8+20+40 +repage -colorspace Gray -format '%[fx:mean] %[fx:standard_deviation]\\n' info:",
-        "convert /tmp/probe.png -crop 2x2+0+0 +repage -colorspace Gray -format '%[fx:mean] %[fx:standard_deviation]\\n' info:",
+        "convert 'png:/tmp/probe.png[0]' -crop 60x8+20+40 +repage -colorspace Gray -format '%[fx:mean] %[fx:standard_deviation]\\n' info:",
+        "convert 'png:/tmp/probe.png[0]' -crop 2x2+0+0 +repage -colorspace Gray -format '%[fx:mean] %[fx:standard_deviation]\\n' info:",
       ].join(' && '),
     )
   })
 
-  it('reads an existing shot without taking a new one', () => {
+  it('reads an uploaded shot without taking a new one', () => {
     const command = probeCommand('/tmp/final.png', [{ x: 1, y: 2, width: 3, height: 4 }], {
       capture: false,
     })
 
     expect(command).not.toContain('import')
-    expect(command).toContain('convert /tmp/final.png -crop 6x8+2+4')
+    expect(command).toContain("convert 'png:/tmp/final.png[0]' -crop 6x8+2+4")
   })
 })
 
@@ -57,7 +60,7 @@ describe('parseProbes', () => {
 })
 
 describe('changedBoxCommand', () => {
-  it('compares the shots with the prompt text blanked, padded so the trim box is never empty', () => {
+  it('compares the shots as PNGs with the prompt text blanked, padded so the box is never empty', () => {
     expect(
       changedBoxCommand('/tmp/baseline.png', '/tmp/final.png', {
         x: 168,
@@ -66,7 +69,7 @@ describe('changedBoxCommand', () => {
         height: 36,
       }),
     ).toBe(
-      "convert /tmp/baseline.png /tmp/final.png -compose difference -composite -compose over -fill black -draw 'rectangle 336,1126 1863,1197' -colorspace Gray -threshold 0 -bordercolor black -border 1 -format '%[fx:maxima] %@' info:",
+      "convert 'png:/tmp/baseline.png[0]' 'png:/tmp/final.png[0]' -compose difference -composite -compose over -fill black -draw 'rectangle 336,1126 1863,1197' -colorspace Gray -threshold 0 -bordercolor black -border 1 -format '%[fx:maxima] %@' info:",
     )
   })
 })
@@ -95,11 +98,38 @@ describe('parseChangedBox', () => {
   })
 })
 
-describe('cropCommand', () => {
-  it('crops at device scale and strips metadata so the bytes are stable', () => {
-    expect(
-      cropCommand('/tmp/final.png', { x: 158, y: 507, width: 784, height: 129 }, '/tmp/crop.png'),
-    ).toBe('convert /tmp/final.png -crop 1568x258+316+1014 +repage -strip /tmp/crop.png')
+describe('croppedPngCommand', () => {
+  it('re-encodes the first frame of the crop from its pixels alone, to stdout', () => {
+    expect(croppedPngCommand('/tmp/final.png', { x: 158, y: 507, width: 784, height: 129 })).toBe(
+      "convert 'png:/tmp/final.png[0]' -crop 1568x258+316+1014 +repage -strip -define png:exclude-chunks=all png:-",
+    )
+  })
+})
+
+describe('SCREEN_PNG_COMMAND', () => {
+  it('prints the whole virtual display as a PNG', () => {
+    expect(SCREEN_PNG_COMMAND).toBe('import -window root -strip png:-')
+  })
+})
+
+describe('printed PNGs', () => {
+  it('come out base64-encoded, failing if any stage fails', () => {
+    expect(printedPngCommand('import -window root -strip png:-')).toBe(
+      'set -o pipefail; import -window root -strip png:- | base64 -w0',
+    )
+  })
+
+  it('decode back to the bytes', () => {
+    const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 255])
+
+    expect(parsePrintedPng(`${Buffer.from(bytes).toString('base64')}\n`)).toEqual(bytes)
+  })
+
+  it.each([
+    ['not base64', 'iVBOR w0K!'],
+    ['nothing', ''],
+  ])('refuses %s', (_name, stdout) => {
+    expect(() => parsePrintedPng(stdout)).toThrow(/printed PNG/)
   })
 })
 

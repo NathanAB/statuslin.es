@@ -3,7 +3,7 @@ import type { CommandOutput } from '../mod-sandbox'
 import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import { feedScenario } from '../scenario-feed'
 import { startWatch, type WatchOptions, watchButton } from './button-watch'
-import type { DesktopSandbox } from './desktop-sandbox'
+import type { RecordingDesktop } from './desktop-sandbox'
 import { parseProbes, probeCommand, type QuietOptions, quietScreenCommand } from './imagemagick'
 import { clickCommand, keyCommand } from './input'
 import type { DialogButton } from './screen'
@@ -40,7 +40,7 @@ const pollLoop = (condition: string, maxMs: number) =>
 
 /** Polls `condition` inside the sandbox, so a wait is one round trip. */
 export async function waitFor(
-  sandbox: DesktopSandbox,
+  sandbox: RecordingDesktop,
   what: string,
   condition: string,
   maxMs: number,
@@ -49,7 +49,7 @@ export async function waitFor(
   if (exitCode !== 0) throw new Error(`timed out waiting for ${what}`)
 }
 
-async function isShown(sandbox: DesktopSandbox, button: DialogButton): Promise<boolean> {
+async function isShown(sandbox: RecordingDesktop, button: DialogButton): Promise<boolean> {
   const { exitCode, stdout } = await sandbox.run(probeCommand(PROBE_SHOT, [button.probe]))
   if (exitCode !== 0) return false
   const [probe] = parseProbes(stdout, 1)
@@ -58,7 +58,7 @@ async function isShown(sandbox: DesktopSandbox, button: DialogButton): Promise<b
 
 /** Clicks `button` once it is steadily shown; true once it is gone after a click. */
 export async function pressButton(
-  sandbox: DesktopSandbox,
+  sandbox: RecordingDesktop,
   button: DialogButton,
   { maxMs, ...options }: ButtonWait,
 ): Promise<boolean> {
@@ -76,7 +76,7 @@ export async function pressButton(
   return watch.clicks > 0 && !shown
 }
 
-async function transcriptLines(sandbox: DesktopSandbox): Promise<number> {
+async function transcriptLines(sandbox: RecordingDesktop): Promise<number> {
   const { stdout } = expectOk(
     await sandbox.run(transcriptLinesCommand(feedScenario())),
     'counting the transcript',
@@ -87,7 +87,7 @@ async function transcriptLines(sandbox: DesktopSandbox): Promise<number> {
 }
 
 /** Presses Enter until the transcript grows, which is when Desktop has sent the prompt. */
-export async function sendPrompt(sandbox: DesktopSandbox): Promise<void> {
+export async function sendPrompt(sandbox: RecordingDesktop): Promise<void> {
   const before = await transcriptLines(sandbox)
   const grown = `test "$(${transcriptLinesCommand(feedScenario())})" -gt ${before}`
   for (let attempt = 0; attempt < SEND_ATTEMPTS; attempt++) {
@@ -102,7 +102,7 @@ export async function sendPrompt(sandbox: DesktopSandbox): Promise<void> {
 }
 
 /** Waits until the screen stops changing, or takes it as it stands after `maxMs`. */
-export async function settle(sandbox: DesktopSandbox, options: QuietOptions): Promise<void> {
+export async function settle(sandbox: RecordingDesktop, options: QuietOptions): Promise<void> {
   expectOk(
     await sandbox.run(quietScreenCommand(QUIET_SHOT, options), options.maxMs + COMMAND_SLACK_MS),
     'waiting for the screen to settle',

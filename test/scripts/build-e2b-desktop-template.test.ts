@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   E2B_DESKTOP_TEMPLATE_BUILD_NAME,
   SANDBOX_DESKTOP_BOOT,
+  SANDBOX_DESKTOP_ENGINE_VERSION,
   SANDBOX_DESKTOP_MANAGED_SETTINGS,
 } from '@/render/e2b-template'
 import { feedScenario, feedStdin } from '@/render/mods/scenario-feed'
@@ -82,6 +83,15 @@ describe('desktop template definition', () => {
       (s) => s.type === 'COPY' && s.args.includes(SANDBOX_DESKTOP_BOOT),
     )
     expect(copy).toBeDefined()
+  })
+
+  it('records the preseeded engine version root-owned, to be read before any mod code runs', async () => {
+    const commands = await runCommands(desktopTemplate())
+    const write = commands.indexOf(
+      `echo ${DESKTOP_ENGINE_VERSION} > ${SANDBOX_DESKTOP_ENGINE_VERSION}`,
+    )
+    const check = commands.findIndex((c) => c.startsWith(`echo "${DESKTOP_ENGINE_SHA256}  `))
+    expect(write).toBeGreaterThan(check)
   })
 
   it('writes managed settings that point Desktop at the canned model server', async () => {
@@ -167,6 +177,7 @@ describe('desktop snapshot', () => {
       expect.arrayContaining([
         `test -e ${SANDBOX_DESKTOP_BOOT} && test ! -w ${SANDBOX_DESKTOP_BOOT}`,
         `test -e ${SANDBOX_DESKTOP_MANAGED_SETTINGS} && test ! -w ${SANDBOX_DESKTOP_MANAGED_SETTINGS}`,
+        `test -e ${SANDBOX_DESKTOP_ENGINE_VERSION} && test ! -w ${SANDBOX_DESKTOP_ENGINE_VERSION}`,
         'test -e /usr/lib/claude-desktop/claude-desktop && test ! -w /usr/lib/claude-desktop/claude-desktop',
       ]),
     )

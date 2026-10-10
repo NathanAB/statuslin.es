@@ -58,9 +58,11 @@ export const E2B_DESKTOP_TEMPLATE_BUILD_NAME = 'statuslines-desktop-render-build
  * Immutable E2B snapshot selected by every Desktop recording. Updated only after a reviewed build.
  * Created with `secure: true` like the mod template, for the same reason.
  */
-export const E2B_DESKTOP_TEMPLATE_ID = 'ieap5wnwkqccoa2bzxpu:default'
+export const E2B_DESKTOP_TEMPLATE_ID = 'q0fljxtraslw7qr04jt6:default'
 
 /** Root-owned files the Desktop template adds: the boot script and Desktop's managed settings. */
 export const SANDBOX_DESKTOP_DIR = '/opt/statuslines/desktop'
 export const SANDBOX_DESKTOP_BOOT = `${SANDBOX_DESKTOP_DIR}/boot.sh`
 export const SANDBOX_DESKTOP_MANAGED_SETTINGS = '/etc/claude-desktop/managed-settings.json'
+/** The engine version Desktop installs from its preseed, written when the build verifies it. */
+export const SANDBOX_DESKTOP_ENGINE_VERSION = `${SANDBOX_DESKTOP_DIR}/engine-version`
