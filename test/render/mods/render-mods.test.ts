@@ -246,6 +246,36 @@ describe('renderMods', () => {
     ])
   })
 
+  it("renders a mod's newest version beside its current one and leaves the current one live", async () => {
+    const currentId = await seedMod('skins', { status: 'published', rendered: true })
+    const [mod] = await db.select({ id: schema.mods.id }).from(schema.mods)
+    const modId = mod?.id as string
+    const skippedId = await addVersion(db, modId, {
+      commitSha: sha('e'),
+      versionNumber: 2,
+      rendered: false,
+    })
+    const newestId = await addVersion(db, modId, {
+      commitSha: sha('f'),
+      versionNumber: 3,
+      rendered: false,
+    })
+    const recorder = new FakeModRecorder({ baseline, mods: { skins } })
+
+    const { exitCode, lines, tarballs } = run(recorder)
+
+    expect(await exitCode).toBe(0)
+    expect(tarballs).toHaveLength(2)
+    expect(tarballs).toContain(`${REPO_URL}@${sha('f')}`)
+    expect(tarballs).not.toContain(`${REPO_URL}@${sha('e')}`)
+    expect(lines).toContain('rendered skins in the terminal')
+    expect(lines).toContain('rendered skins v3 (not current) in the terminal')
+    expect(await storedPreviews(newestId)).toHaveLength(1)
+    expect(await storedPreviews(skippedId)).toEqual([])
+    const [after] = await db.select().from(schema.mods)
+    expect(after?.currentVersionId).toBe(currentId)
+  })
+
   it('records the baseline once for a run of several mods', async () => {
     await seedMod('skins')
     await seedMod('token-weather')

@@ -2,9 +2,16 @@ import { readFileSync } from 'node:fs'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import type { RepoInfo } from '@/mods/github'
+import { getMarketplaceRows } from '@/mods/queries'
+import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
+import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
 import { type ImportDeps, importMods } from '../../scripts/import-mods'
-import { addMod, openTestDb, type TestDb } from './seed-mods'
+import { runPublish } from '../../scripts/publish-mod'
+import { renderMods } from '../../scripts/render-mods'
+import baseline from '../render/mods/fixtures/baseline.json'
+import skins from '../render/mods/fixtures/skins.json'
+import { fakeGitHub, openTestDb, type TestDb } from './seed-mods'
 
 const SHA = 'c'.repeat(40)
 const TARBALL = new Uint8Array([31, 139, 8, 0])
@@ -147,15 +154,75 @@ describe('importMods', () => {
     expect({ mods: await allMods(), versions: await allVersions() }).toEqual(before)
   })
 
-  it('refuses a plugin name an existing mod already uses', async () => {
-    const existingId = await addMod(db, 'skins', 'published')
+  it('adds a re-pinned entry as the next version of its mod and leaves the current one live', async () => {
+    await run([entry()])
+    await db.update(schema.mods).set({ status: 'published' })
+    const [before] = await allMods()
+    const newSha = 'd'.repeat(40)
+    const inputSteps = [{ type: 'text', text: '/skin dark', submit: false }]
+
+    const { exitCode, output, calls } = await run(
+      [entry({ commitSha: newSha, inputSteps })],
+      fakes({ manifest: { name: 'skins', version: '1.5.0', description: 'Reskins it all.' } }),
+    )
+
+    expect(exitCode).toBe(0)
+    expect(output).toMatch(new RegExp(`^imported skins v2 at ${newSha}: plugin 1\\.5\\.0`))
+    expect(calls).toEqual([
+      'repoInfo:https://github.com/hellosverre/claude-skins',
+      `tarball:https://github.com/hellosverre/claude-skins@${newSha}`,
+      'sandbox:(root):4',
+    ])
+    expect(await allMods()).toEqual([before])
+    const versions = await allVersions()
+    expect(versions.map((v) => [v.versionNumber, v.commitSha])).toEqual([
+      [1, SHA],
+      [2, newSha],
+    ])
+    expect(versions[1]).toMatchObject({ modId: before?.id, pluginVersion: '1.5.0', inputSteps })
+  })
+
+  it('refuses a re-pin whose plugin.json names another plugin and adds no version', async () => {
+    await run([entry()])
+
+    const { exitCode, output } = await run(
+      [entry({ commitSha: 'd'.repeat(40) })],
+      fakes({ manifest: { name: 'skin-pack' } }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/plugin\.json names the plugin "skin-pack", not "skins"/)
+    expect((await allVersions()).map((v) => v.commitSha)).toEqual([SHA])
+  })
+
+  it('refuses a re-pin to another repository without fetching anything', async () => {
+    await run([entry()])
+
+    const { exitCode, output, calls } = await run([
+      entry({ repoUrl: 'https://github.com/mallory/skins', commitSha: 'd'.repeat(40) }),
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(
+      /"skins" is pinned to https:\/\/github\.com\/hellosverre\/claude-skins; a re-pin must be a commit of that repository/,
+    )
+    expect(calls).toEqual([])
+    expect((await allVersions()).map((v) => v.commitSha)).toEqual([SHA])
+  })
+
+  it('refuses a plugin name that is already the slug of another mod', async () => {
+    await db.insert(schema.mods).values({
+      slug: 'skins',
+      pluginName: 'skin-pack',
+      title: 'Skin Pack',
+      authorGithub: 'octocat',
+    })
 
     const { exitCode, output, calls } = await run([entry()])
 
     expect(exitCode).toBe(1)
     expect(output).toMatch(/"skins" is already used by mod "skins"/)
     expect(calls).toEqual([])
-    expect((await allMods()).map((m) => m.id)).toEqual([existingId])
     expect(await allVersions()).toEqual([])
   })
 
@@ -200,6 +267,37 @@ describe('importMods', () => {
     expect(output).toMatch(/entry 2 \(meter\) commitSha/)
     expect(calls).toEqual([])
     expect(await allMods()).toEqual([])
+  })
+
+  it('takes a re-pinned commit live only once it has rendered and been published', async () => {
+    const newSha = 'd'.repeat(40)
+    const deps = fakes()
+    const silent = { db, log: () => {} }
+    const render = () =>
+      renderMods(
+        {},
+        {
+          ...silent,
+          github: deps.github,
+          recorder: new FakeModRecorder({ baseline, mods: { skins } }),
+          desktopRecorder: new FakeDesktopRecorder(),
+        },
+      )
+    const publish = (sha: string, ...flags: string[]) =>
+      runPublish(['skins', sha, ...flags], { ...silent, github: fakeGitHub() })
+    const liveCommit = async () => (await getMarketplaceRows(db)).map((row) => row.commitSha)
+    await run([entry()], deps)
+    await render()
+    await publish(SHA, '--apply', '--confirm=skins')
+
+    await run([entry({ commitSha: newSha })], deps)
+    expect(await publish(newSha)).toBe(1)
+    expect(await liveCommit()).toEqual([SHA])
+
+    expect(await render()).toBe(0)
+    expect(await liveCommit()).toEqual([SHA])
+    expect(await publish(newSha, '--apply', '--confirm=skins')).toBe(0)
+    expect(await liveCommit()).toEqual([newSha])
   })
 
   describe('prints what a mod controls escaped, one line per entry', () => {

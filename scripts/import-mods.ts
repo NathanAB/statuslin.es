@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, max } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -19,10 +19,15 @@ import { withModSandbox } from '@/render/mods/mod-sandbox'
  * `claude plugin validate --json` for the footprint, reads plugin.json, and writes a draft mod with
  * its first version, one transaction per mod. Publishing is separate (scripts/publish-mod.ts).
  *
+ * An entry re-pinned to a new commit of an existing mod (same plugin name and repository) adds that
+ * commit as the mod's next version and changes nothing else: the current version stays live until
+ * publish-mod.ts makes the new one current, after render:mods has rendered it. A re-pin to another
+ * repository is refused, since publish would have no diff to show and the mod would keep crediting
+ * the first author.
+ *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
  * request, so rerunning the same file changes nothing. The whole file's format is checked before
  * anything is fetched or written; an entry refused later is reported and the others still import.
- * It only creates mods: an entry re-pinned to a new commit of an existing mod is refused.
  *
  * AGENT USAGE (needs E2B_API_KEY and DATABASE_URL):
  *
@@ -56,11 +61,30 @@ async function importedSlug(db: Db, entry: CurationEntry): Promise<string | unde
   return row?.slug
 }
 
+/** The mod an entry re-pins, with the repository its current version comes from. */
+async function modWithPluginName(
+  db: Db,
+  name: string,
+): Promise<{ id: string; repoUrl: string | null } | undefined> {
+  const [row] = await db
+    .select({ id: schema.mods.id, repoUrl: schema.modVersions.repoUrl })
+    .from(schema.mods)
+    .leftJoin(
+      schema.modVersions,
+      and(
+        eq(schema.modVersions.id, schema.mods.currentVersionId),
+        eq(schema.modVersions.modId, schema.mods.id),
+      ),
+    )
+    .where(eq(schema.mods.pluginName, name))
+  return row
+}
+
 async function slugUsingName(db: Db, name: string): Promise<string | undefined> {
   const [row] = await db
     .select({ slug: schema.mods.slug })
     .from(schema.mods)
-    .where(or(eq(schema.mods.pluginName, name), eq(schema.mods.slug, name)))
+    .where(eq(schema.mods.slug, name))
   return row?.slug
 }
 
@@ -71,12 +95,14 @@ async function importEntry(
   const name = entry.pluginName
   const imported = await importedSlug(db, entry)
   if (imported) return `unchanged ${imported}: already imported at ${entry.commitSha}`
-  const taken = await slugUsingName(db, name)
-  if (taken) {
+  const existing = await modWithPluginName(db, name)
+  if (existing && existing.repoUrl !== entry.repoUrl) {
     throw new Error(
-      `plugin name "${name}" is already used by mod "${taken}"; the import only creates new mods`,
+      `"${name}" is pinned to ${existing.repoUrl}; a re-pin must be a commit of that repository`,
     )
   }
+  const taken = existing ? undefined : await slugUsingName(db, name)
+  if (taken) throw new Error(`plugin name "${name}" is already used by mod "${taken}"`)
 
   const repo = await github.repoInfo(entry.repoUrl)
   const canonical = `https://github.com/${repo.fullName}`
@@ -89,23 +115,30 @@ async function importEntry(
     throw new Error(`plugin.json names the plugin "${facts.manifest.name}", not "${name}"`)
   }
 
-  const modId = randomUUID()
   const versionId = randomUUID()
-  await db.transaction(async (tx) => {
-    await tx.insert(schema.mods).values({
-      id: modId,
-      slug: name,
-      pluginName: name,
-      title: entry.title,
-      description: facts.manifest.description,
-      authorGithub: repo.fullName.slice(0, repo.fullName.indexOf('/')),
-      status: 'draft',
-      currentVersionId: versionId,
-    })
+  const versionNumber = await db.transaction(async (tx) => {
+    const modId = existing?.id ?? randomUUID()
+    if (!existing) {
+      await tx.insert(schema.mods).values({
+        id: modId,
+        slug: name,
+        pluginName: name,
+        title: entry.title,
+        description: facts.manifest.description,
+        authorGithub: repo.fullName.slice(0, repo.fullName.indexOf('/')),
+        status: 'draft',
+        currentVersionId: versionId,
+      })
+    }
+    const [latest] = await tx
+      .select({ versionNumber: max(schema.modVersions.versionNumber) })
+      .from(schema.modVersions)
+      .where(eq(schema.modVersions.modId, modId))
+    const next = (latest?.versionNumber ?? 0) + 1
     await tx.insert(schema.modVersions).values({
       id: versionId,
       modId,
-      versionNumber: 1,
+      versionNumber: next,
       repoUrl: entry.repoUrl,
       path: entry.path,
       commitSha: entry.commitSha,
@@ -115,9 +148,10 @@ async function importEntry(
       validatedWith: facts.claudeCodeVersion,
       inputSteps: entry.inputSteps,
     })
+    return next
   })
   const { events, calls } = facts.footprint
-  return `imported ${name} v1 at ${entry.commitSha}: plugin ${facts.manifest.version ?? 'unversioned'}, license ${repo.license ?? 'none'}, ${events.length} events, ${calls.length} calls`
+  return `imported ${name} v${versionNumber} at ${entry.commitSha}: plugin ${facts.manifest.version ?? 'unversioned'}, license ${repo.license ?? 'none'}, ${events.length} events, ${calls.length} calls`
 }
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error))

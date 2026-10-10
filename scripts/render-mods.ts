@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
-import { and, eq, ne, sql } from 'drizzle-orm'
-import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { and, eq, gt, ne, notExists, or, sql } from 'drizzle-orm'
+import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
@@ -27,7 +27,9 @@ import type { AnsiSegment } from '@/render/types'
 
 /**
  * Render the current version of each mod that is not removed against the `clean-main` scenario and
- * store its preview on both surfaces, the terminal and Claude Desktop.
+ * store its preview on both surfaces, the terminal and Claude Desktop, plus the mod's newest version
+ * when that is not the current one, so a re-pinned version (import:mods) has previews before
+ * publish-mod.ts makes it current.
  *
  * Terminal: every mod is recorded in its own offline E2B sandbox and cropped against one baseline
  * recording (the same session with no mod), shared across the run while the Claude Code version
@@ -42,7 +44,7 @@ import type { AnsiSegment } from '@/render/types'
  *
  * AGENT USAGE (needs DATABASE_URL, and E2B_API_KEY for real renders):
  *
- *   bun run render:mods                 # every mod's current version
+ *   bun run render:mods                 # every mod's current and newest version
  *   bun run render:mods --slug <slug>   # one mod
  *
  * Prints one outcome per mod per surface. Exit code 0 when every surface rendered or drew nothing,
@@ -73,6 +75,8 @@ interface Target {
   slug: string
   pluginName: string
   versionId: string
+  versionNumber: number
+  currentVersionId: string | null
   repoUrl: string
   path: string
   commitSha: string
@@ -82,11 +86,14 @@ interface Target {
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
+  const newer = alias(schema.modVersions, 'newer')
   const rows = await db
     .select({
       slug: schema.mods.slug,
       pluginName: schema.mods.pluginName,
       versionId: schema.modVersions.id,
+      versionNumber: schema.modVersions.versionNumber,
+      currentVersionId: schema.mods.currentVersionId,
       repoUrl: schema.modVersions.repoUrl,
       path: schema.modVersions.path,
       commitSha: schema.modVersions.commitSha,
@@ -94,21 +101,35 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       footprint: schema.modVersions.footprint,
     })
     .from(schema.mods)
-    .innerJoin(
-      schema.modVersions,
-      and(
-        eq(schema.modVersions.id, schema.mods.currentVersionId),
-        eq(schema.modVersions.modId, schema.mods.id),
-      ),
-    )
+    .innerJoin(schema.modVersions, eq(schema.modVersions.modId, schema.mods.id))
     .where(
       and(
         ne(schema.mods.status, 'removed'),
         slug === undefined ? undefined : eq(schema.mods.slug, slug),
+        or(
+          eq(schema.modVersions.id, schema.mods.currentVersionId),
+          notExists(
+            db
+              .select({ id: newer.id })
+              .from(newer)
+              .where(
+                and(
+                  eq(newer.modId, schema.mods.id),
+                  gt(newer.versionNumber, schema.modVersions.versionNumber),
+                ),
+              ),
+          ),
+        ),
       ),
     )
-    .orderBy(schema.mods.slug)
+    .orderBy(schema.mods.slug, schema.modVersions.versionNumber)
   return rows
+}
+
+/** The slug alone for the current version; a newer one is named by its number. */
+function label(target: Target): string {
+  if (target.versionId === target.currentVersionId) return target.slug
+  return `${target.slug} v${target.versionNumber} (not current)`
 }
 
 /** One baseline per Claude Code version, recorded the first time a mod's recording asks for it. */
@@ -253,7 +274,7 @@ export async function renderMods(
       const outcome = outcomes[surface]
       if (outcome.kind === 'failed') failed++
       const reason = 'reason' in outcome ? `: ${outcome.reason}` : ''
-      log(`${outcome.kind} ${target.slug} ${IN_SURFACE[surface]}${reason}`)
+      log(`${outcome.kind} ${label(target)} ${IN_SURFACE[surface]}${reason}`)
     }
   })
   return failed === 0 ? 0 : 1

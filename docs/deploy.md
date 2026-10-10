@@ -283,7 +283,35 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
    ```
-   The same command re-pins a published mod to a newer commit.
+   To move a published mod to a newer commit, follow "Re-pin a mod" below.
+
+### Re-pin a mod
+
+An update is a new version of the mod. The current version stays live until you publish the new
+one. Run every step against staging first, then production.
+
+1. In `src/mods/curation.json`, change the entry's `commitSha` (and `inputSteps` if the new version
+   needs them). Keep `pluginName` and `repoUrl`: the import refuses a re-pin to another repository.
+   The mod's title and description stay as they were first imported.
+2. Import it. The import adds the commit as the mod's next version and leaves the current one live:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run import:mods
+   ```
+3. Render it. `render:mods` renders each mod's current version and, when there is a newer one, its
+   newest version, printed as `<slug> v<n> (not current)`, in the terminal and in Claude Desktop.
+   Publishing refuses a version without a result on both:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
+   ```
+4. Publish it with the new `commitSha`. The dry run lists the files changed since the live commit
+   and warns when the footprint grows or plugin.json's `version` is unchanged (existing installs
+   then won't update). Read it, then apply:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
+   ```
+5. Generate the page copy again, as in step 4 of the launch runbook: the newly current version
+   starts with none, so the mod page shows no generated sections until you do.
 
 ### Emergency delist
 
@@ -303,7 +331,7 @@ longer serves, and exits 1 when any is missing:
 ```sh
 fly ssh console --app statuslines --command "bun run scripts/check-mods.ts"
 ```
-Re-pin a listed mod to a fetchable commit with `publish-mod.ts`, or delist it.
+Re-pin a listed mod to a fetchable commit (see "Re-pin a mod"), or delist it.
 
 ## DNS (Cloudflare, after the first Fly deploy)
 
