@@ -1,5 +1,6 @@
 import { ConfigBadges } from '@/gallery/config-badges'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+import { MOD_ROUTE } from '@/lib/site'
 import { AuthorChip } from '@/ui/author-chip'
 import { Badge } from '@/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
@@ -16,7 +17,7 @@ export function ModCard({ card }: { card: GalleryModCard }) {
         <Row gap={2} align="start" justify="between">
           <Row gap={2} wrap grow>
             <CardTitle>
-              <StretchedLink to="/mods/$slug" params={{ slug: card.slug }}>
+              <StretchedLink to={MOD_ROUTE} params={{ slug: card.slug }}>
                 {card.title}
               </StretchedLink>
             </CardTitle>

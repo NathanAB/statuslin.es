@@ -3,7 +3,7 @@ import { GeneratedContentSections } from '@/gallery/generated-content'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
-import { siteUrl } from '@/lib/site'
+import { modPath, siteUrl } from '@/lib/site'
 import { FootprintSection } from '@/mods/footprint-section'
 import { getModDetailFn } from '@/mods/functions'
 import { installCommands } from '@/mods/install'
@@ -32,7 +32,7 @@ export const Route = createFileRoute('/mods/$slug')({
         { name: 'description', content: modMetaDescription(mod.description) },
         ...modSocialMeta(loaderData.origin, mod.slug),
       ],
-      links: [canonicalLink(`/mods/${mod.slug}`)],
+      links: [canonicalLink(modPath(mod.slug))],
     }
   },
   notFoundComponent: () => (

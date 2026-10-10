@@ -1,4 +1,5 @@
 import { DESKTOP_GUIDE_PATH } from '@/lib/page-title'
+import { modPath } from '@/lib/site'
 
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
@@ -101,6 +102,6 @@ export async function withModLinks(
   const body =
     mods.length === 0
       ? txt
-      : `${txt}\n${['## Mods', '', ...mods.map((m) => summaryLink(`${base}/mods/${m.slug}`, m))].join('\n')}\n`
+      : `${txt}\n${['## Mods', '', ...mods.map((m) => summaryLink(`${base}${modPath(m.slug)}`, m))].join('\n')}\n`
   return new Response(body, { status: llms.status, headers: llms.headers })
 }

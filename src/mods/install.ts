@@ -1,4 +1,5 @@
 import type { CopyCaptureMessage } from '@/adopt/copy-event'
+import { MARKETPLACE_PATH } from '@/lib/site'
 
 export type InstallCommandKind = 'session' | 'shell'
 
@@ -8,8 +9,6 @@ export interface InstallCommand {
   minVersion: string
   command: string
 }
-
-const MARKETPLACE_PATH = '/marketplace.json'
 
 /** The mod's folder on GitHub at its pinned commit. */
 export function modSourceUrl(pin: { repoUrl: string; path: string; commitSha: string }): string {

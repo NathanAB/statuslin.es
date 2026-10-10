@@ -1,4 +1,5 @@
 import { DESKTOP_GUIDE_DATES, DESKTOP_GUIDE_PATH, GUIDE_DATES } from '@/lib/page-title'
+import { modPath } from '@/lib/site'
 
 /**
  * The `/sitemap.xml` builder. Lists the static public pages plus one `<url>` per published config
@@ -111,7 +112,7 @@ export async function withModUrls(
 ): Promise<Response> {
   const xml = await sitemap.text()
   const entries = mods.map((m) =>
-    urlEntry(`${base}/mods/${m.slug}`, m.updatedAt.toISOString().slice(0, 10)),
+    urlEntry(`${base}${modPath(m.slug)}`, m.updatedAt.toISOString().slice(0, 10)),
   )
   const body =
     entries.length === 0 ? xml : xml.replace('\n</urlset>', `\n${entries.join('\n')}\n</urlset>`)

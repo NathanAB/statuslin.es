@@ -1,5 +1,5 @@
 import type { ServerEvent } from '@/lib/posthog-server'
-import { CONTACT_EMAIL } from '@/lib/site'
+import { CONTACT_EMAIL, modPath } from '@/lib/site'
 
 export interface MarketplaceModRow {
   slug: string
@@ -49,7 +49,7 @@ function marketplacePlugin(origin: string, row: MarketplaceModRow): MarketplaceP
     source: pluginSource(row),
     description: row.description,
     author: { name: row.authorGithub },
-    homepage: `${origin}/mods/${row.slug}`,
+    homepage: `${origin}${modPath(row.slug)}`,
     ...(row.license === null ? {} : { license: row.license }),
     keywords: row.tags,
   }

@@ -37,3 +37,14 @@ export function siteUrl(): string {
   if (typeof window !== 'undefined') return window.location.origin
   return requireEnv('BETTER_AUTH_URL').replace(/\/+$/, '')
 }
+
+/** The mod page route, served by `src/routes/mods.$slug.tsx`. */
+export const MOD_ROUTE = '/mods/$slug'
+
+/** A mod page's path, e.g. `/mods/filetree`. */
+export function modPath(slug: string): string {
+  return MOD_ROUTE.replace('$slug', slug)
+}
+
+/** The Claude Code plugin marketplace, served by `src/routes/marketplace[.]json.ts`. */
+export const MARKETPLACE_PATH = '/marketplace.json'
