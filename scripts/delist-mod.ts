@@ -13,8 +13,8 @@ import {
   loadCurrentVersion,
   refuses,
   sourceLabel,
-  terminalLine,
 } from '@/mods/publish'
+import { terminalLine } from '@/mods/terminal-line'
 
 /**
  * Delist a published mod (status 'published' → 'removed'), or restore one with `--restore`. The

@@ -197,39 +197,6 @@ export function refuses(guards: Guard[]): boolean {
   return guards.some((g) => g.level === 'refuse')
 }
 
-const UNPRINTABLE = /[\\\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
-
-function escapeCode(char: string): string {
-  const code = char.codePointAt(0) ?? 0
-  return code > 0xffff ? `\\u{${code.toString(16)}}` : `\\u${code.toString(16).padStart(4, '0')}`
-}
-
-/**
- * Filenames, plugin.json's version and the footprint come from the mod's repository, so an author
- * controls them. Escaping control and format characters keeps a newline or ANSI escape in one from
- * forging or erasing the lines the operator reads before --apply; escaping the backslash keeps an
- * author from typing a fake escape.
- */
-export function printable(line: string): string {
-  return line.replace(UNPRINTABLE, escapeCode)
-}
-
-const MAX_LINE_CHARS = 500
-
-/**
- * Every line the mod scripts print goes through here: escaped (an ESC or OSC 52 sequence could
- * rewrite the log or the operator's clipboard) and capped, without cutting an escape in half.
- */
-export function terminalLine(line: string): string {
-  const escaped = printable(line)
-  if (escaped.length <= MAX_LINE_CHARS) return escaped
-  const suffix = (rest: number) => `… (${rest} more characters)`
-  const head = escaped
-    .slice(0, MAX_LINE_CHARS - suffix(escaped.length).length)
-    .replace(/\\(u(\{[0-9a-f]*|[0-9a-f]{0,3}))?$/, '')
-  return `${head}${suffix(escaped.length - head.length)}`
-}
-
 function footprintLine(label: string, footprint: ModFootprint | null): string {
   if (!footprint) return `footprint ${label}: none (first publish)`
   return `footprint ${label}: events ${bracketed(footprint.events)} calls ${bracketed(footprint.calls)}`

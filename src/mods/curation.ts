@@ -4,7 +4,6 @@ import { z } from 'zod'
 export const CURATION_FILE = 'src/mods/curation.json'
 
 const REPO_URL = /^https:\/\/github\.com\/[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/
-/** A full commit SHA as GitHub prints it: 40 lowercase hex characters. */
 export const COMMIT_SHA = /^[0-9a-f]{40}$/
 /** Claude Code's rule for a plugin id. */
 const PLUGIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/

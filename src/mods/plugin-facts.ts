@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { ModFootprint } from '@/db/schema'
 import { SANDBOX_CLAUDE_CODE_BIN } from '@/render/e2b-template'
 import type { ModSandbox } from '@/render/mods/mod-sandbox'
+import { CONTROL_OR_FORMAT } from './terminal-line'
 
 export interface PluginManifest {
   name: string
@@ -19,8 +20,6 @@ export interface PluginFacts {
 
 /** A plugin.json past this is truncated, fails to parse, and the entry is refused. */
 const MANIFEST_MAX_BYTES = 64 * 1024
-
-const CONTROL_OR_FORMAT = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u
 
 const codePoint = (char: string) =>
   `U+${(char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`

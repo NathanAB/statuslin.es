@@ -18,7 +18,7 @@ export interface GitHubSource {
   repoInfo(repoUrl: string): Promise<RepoInfo>
   /**
    * The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. Downloaded
-   * once per repository and commit for the life of this source.
+   * once per repository and commit for the life of this source; a failed download stays failed.
    */
   tarball(repoUrl: string, sha: string): Promise<Uint8Array>
   /** The raw README GitHub picks for `path` at `sha`, or null when the folder has none. */

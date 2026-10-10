@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { printable, terminalLine } from '@/mods/publish'
+import { printable, terminalLine } from '@/mods/terminal-line'
 
 describe('printable', () => {
   it('escapes control and format characters and the backslash', () => {

@@ -20,8 +20,8 @@ import {
   refuses,
   removedGuard,
   shaGuards,
-  terminalLine,
 } from '@/mods/publish'
+import { terminalLine } from '@/mods/terminal-line'
 
 /**
  * Publish a mod version, or re-pin a published mod to a newer one. The version must already exist

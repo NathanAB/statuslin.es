@@ -10,7 +10,7 @@ import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { inspectPlugin } from '@/mods/plugin-facts'
-import { terminalLine } from '@/mods/publish'
+import { terminalLine } from '@/mods/terminal-line'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
 
 /**

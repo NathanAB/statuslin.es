@@ -6,7 +6,7 @@ import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { createGitHub, type GitHub } from '@/mods/github'
-import { terminalLine } from '@/mods/publish'
+import { terminalLine } from '@/mods/terminal-line'
 
 /**
  * Confirm that every published mod's current commit can still be fetched from GitHub. Claude Code
