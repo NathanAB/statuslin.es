@@ -66,6 +66,7 @@ async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
     .select({
       id: schema.mods.id,
       status: schema.mods.status,
+      description: schema.mods.description,
       currentVersionId: schema.mods.currentVersionId,
     })
     .from(schema.mods)
@@ -87,6 +88,7 @@ async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
   const facts: PublishFacts = {
     slug,
     modStatus: mod.status,
+    description: mod.description,
     target,
     current,
     onDefaultBranch: await github.commitIsOnDefaultBranch(target.repoUrl, sha),

@@ -66,16 +66,25 @@ function summaryLink(
   url: string,
   item: { title: string; description: string; copyCount: number },
 ): string {
-  const summary = oneLine(item.description)
+  const summary = inertMarkdown(oneLine(item.description))
   const copies = `Copied ${item.copyCount} ${item.copyCount === 1 ? 'time' : 'times'}.`
-  return `- [${item.title}](${url}): ${summary ? `${summary} ` : ''}${copies}`
+  return `- [${inertMarkdown(flat(item.title))}](${url}): ${summary ? `${summary} ` : ''}${copies}`
+}
+
+/** Authors write titles and descriptions, so a `](` or `<url>` in them must not forge a link. */
+function inertMarkdown(text: string): string {
+  return text.replace(/[\\[\]<>]/g, (c) => `\\${c}`)
+}
+
+function flat(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
 }
 
 function oneLine(text: string): string {
-  const flat = text.replace(/\s+/g, ' ').trim()
-  if (flat.length <= MAX_SUMMARY_CHARS)
-    return flat === '' || /[.!?]$/.test(flat) ? flat : `${flat}.`
-  const cut = flat.slice(0, MAX_SUMMARY_CHARS - 1)
+  const line = flat(text)
+  if (line.length <= MAX_SUMMARY_CHARS)
+    return line === '' || /[.!?]$/.test(line) ? line : `${line}.`
+  const cut = line.slice(0, MAX_SUMMARY_CHARS - 1)
   return `${cut.slice(0, cut.lastIndexOf(' '))}…`
 }
 

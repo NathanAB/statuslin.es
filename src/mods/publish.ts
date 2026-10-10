@@ -70,6 +70,8 @@ export interface ListingFacts {
 export interface PublishFacts extends ListingFacts {
   slug: string
   modStatus: ModStatus
+  /** From plugin.json at import; the marketplace and llms.txt show it once the mod is published. */
+  description: string
   current: PublishVersion | null
   /** Files changed since `compareBase`; null when there is no base to compare against. */
   filesChanged: string[] | null
@@ -215,9 +217,11 @@ function filesLines({ current, filesChanged }: PublishFacts): string[] {
   ]
 }
 
+/** The lines carry author text unescaped; print each through `terminalLine`. */
 export function publishReport(facts: PublishFacts): string[] {
   return [
     `${facts.slug}: ${facts.current?.commitSha ?? 'unpublished'} → ${facts.target.commitSha}`,
+    `description: ${facts.description || 'none'}`,
     sourceLine('before', facts.current),
     sourceLine('after', facts.target),
     ...filesLines(facts),

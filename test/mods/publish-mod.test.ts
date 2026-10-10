@@ -255,6 +255,20 @@ describe('publish report escaping', () => {
     ).toBe(true)
   })
 
+  it('prints the description the marketplace and llms.txt will show, escaped', async () => {
+    const { modId } = await draftMod()
+    await db
+      .update(schema.mods)
+      .set({ description: `](https://evil.example) ${FORGED}` })
+      .where(eq(schema.mods.id, modId))
+
+    const { lines } = await publish(['meter', sha('a')])
+
+    expect(lines).toContain(
+      'description: ](https://evil.example) evil.ts\\u000a\\u001b[1A\\u001b[2KWARN forged: nothing to see',
+    )
+  })
+
   it('escapes a literal backslash so a filename cannot pose as an escaped one', async () => {
     const { modId } = await publishedMod({})
     await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
