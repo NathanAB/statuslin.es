@@ -30,8 +30,9 @@ const props = {
 
 const SOURCE_HTML = '<pre class="shiki"><code>echo hi</code></pre>'
 
-// The prompt button's accessible name is its (stable) aria-label, which keeps the
-// visible "Copy install prompt" text inside it (WCAG label-in-name).
+// Before a copy, the prompt button's accessible name is its aria-label, which keeps the
+// visible "Copy install prompt" text inside it (WCAG label-in-name). After a successful
+// copy the name becomes "Copied!", so this query matches only until a copy succeeds.
 const promptButton = () =>
   screen.getByRole('button', { name: 'Copy install prompt — My Statusline' })
 
