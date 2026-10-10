@@ -123,4 +123,17 @@ describe('withModUrls', () => {
 
     expect(await (await withModUrls(sitemapResponse(BASE, [], []), BASE, [])).text()).toBe(original)
   })
+
+  it("keeps $' and $` in a mod url literal instead of splicing the sitemap into it", async () => {
+    const base = "https://a$'b.example/c$`d"
+    const xml = await (
+      await withModUrls(sitemapResponse(BASE, [], []), base, [
+        { slug: 'meter', updatedAt: new Date('2026-10-01T00:00:00Z') },
+      ])
+    ).text()
+
+    expect(xml).toContain('<loc>https://a$&apos;b.example/c$`d/mods/meter</loc>')
+    expect(xml.match(/<urlset/g)).toHaveLength(1)
+    expect(xml.endsWith('</urlset>\n')).toBe(true)
+  })
 })

@@ -115,6 +115,8 @@ export async function withModUrls(
     urlEntry(`${base}${modPath(m.slug)}`, m.updatedAt.toISOString().slice(0, 10)),
   )
   const body =
-    entries.length === 0 ? xml : xml.replace('\n</urlset>', `\n${entries.join('\n')}\n</urlset>`)
+    entries.length === 0
+      ? xml
+      : xml.replace('\n</urlset>', () => `\n${entries.join('\n')}\n</urlset>`)
   return new Response(body, { status: sitemap.status, headers: sitemap.headers })
 }
