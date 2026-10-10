@@ -32,6 +32,7 @@ export interface MarketplacePlugin {
 /** The `marketplace.json` document, per https://code.claude.com/docs/en/plugins/marketplace-reference. */
 export interface Marketplace {
   name: 'statuslines'
+  description: string
   owner: { name: string; email: string }
   forceRemoveDeletedPlugins: true
   plugins: MarketplacePlugin[]
@@ -58,6 +59,7 @@ function marketplacePlugin(origin: string, row: MarketplaceModRow): MarketplaceP
 export function buildMarketplace(origin: string, rows: MarketplaceModRow[]): Marketplace {
   return {
     name: 'statuslines',
+    description: 'Claude Code mods from the statuslin.es gallery, each pinned to a commit.',
     owner: { name: 'statuslin.es', email: CONTACT_EMAIL },
     forceRemoveDeletedPlugins: true,
     plugins: rows.map((row) => marketplacePlugin(origin, row)),

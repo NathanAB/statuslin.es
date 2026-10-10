@@ -24,11 +24,12 @@ function row(overrides: Partial<MarketplaceModRow> = {}): MarketplaceModRow {
 }
 
 describe('buildMarketplace', () => {
-  it('names the marketplace statuslines, names an owner, and force-removes delisted plugins', () => {
+  it('names and describes the marketplace, names an owner, and force-removes delisted plugins', () => {
     const marketplace = buildMarketplace(ORIGIN, [])
 
     expect(marketplace).toEqual({
       name: 'statuslines',
+      description: 'Claude Code mods from the statuslin.es gallery, each pinned to a commit.',
       owner: { name: 'statuslin.es', email: 'hello@statuslin.es' },
       forceRemoveDeletedPlugins: true,
       plugins: [],
