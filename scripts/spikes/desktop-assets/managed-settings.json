@@ -1,0 +1,14 @@
+{
+  "inferenceProvider": "gateway",
+  "inferenceGatewayBaseUrl": "http://127.0.0.1:8787",
+  "inferenceGatewayApiKey": "sk-ant-api03-statuslinespreview",
+  "inferenceGatewayAuthScheme": "x-api-key",
+  "inferenceModels": ["claude-opus-4-8"],
+  "disableEssentialTelemetry": true,
+  "disableNonessentialTelemetry": true,
+  "disableNonessentialServices": true,
+  "disableAutoUpdates": true,
+  "disableFeatureDiscovery": true,
+  "disableDeploymentModeChooser": true,
+  "modelCatalogEnabled": false
+}
