@@ -42,6 +42,31 @@ function binaryArrayBuffer(): Plugin {
   }
 }
 
+// Dev only. Nitro's dev server hands a request to the app only when it matches a Nitro route, and
+// every TanStack route sits behind Nitro's `/**` catch-all. So it guesses: a browser's <img> request
+// (Sec-Fetch-Dest: image, or a .png path without Accept: text/html) is taken for a static file and
+// 404s before the app sees it. These are the app's image routes (src/routes/og.*[.]png.ts and
+// mod-previews.$versionId.desktop[.]png.ts); dressing their requests as page loads makes Nitro pass
+// them on. The production server has no such guess: its static middleware falls through on a miss.
+const DEV_IMAGE_ROUTE_PREFIXES = ['/og/', '/mod-previews/']
+
+function devImageRoutes(): Plugin {
+  return {
+    name: 'dev-image-routes',
+    apply: 'serve',
+    enforce: 'pre',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (DEV_IMAGE_ROUTE_PREFIXES.some((prefix) => req.url?.startsWith(prefix))) {
+          delete req.headers['sec-fetch-dest']
+          req.headers.accept = 'text/html'
+        }
+        next()
+      })
+    },
+  }
+}
+
 // Single source of truth for the dev origin: BETTER_AUTH_URL (.env). The dev server
 // binds the port from that URL so the GitHub OAuth callback always matches.
 const DEFAULT_DEV_PORT = 3100
@@ -130,6 +155,8 @@ export default defineConfig(({ mode }) => ({
     ...(isTest
       ? []
       : [
+          // Before nitro(), so its middleware sees the image requests first.
+          devImageRoutes(),
           tailwindcss(),
           tanstackStart({
             srcDirectory: 'src',

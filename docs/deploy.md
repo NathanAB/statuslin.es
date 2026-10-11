@@ -266,11 +266,7 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
    ```
-   A browser on `bun run dev` shows no stored Desktop image (nor og image): Nitro's dev server hands
-   every image request to Vite's static files. Fetch one past that with
-   `curl -H 'Accept: text/html' '<dev origin>/mod-previews/<versionId>/desktop.png?r=<render>'`,
-   copying the path from the mod page's HTML (the dev origin is `BETTER_AUTH_URL`), or look on
-   staging.
+   `bun run dev` shows the stored Desktop images on mod pages and cards, like staging and production.
 4. Generate the page copy. `--all --prepare --mod` prints a request for every draft and published
    mod without content. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
    the response JSON to apply on stdin, without writing it to a file:
