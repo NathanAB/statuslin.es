@@ -2,7 +2,6 @@ import { CommandExitError, type CommandStartOpts, TimeoutError } from 'e2b'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAX_RENDER_STDOUT_BYTES } from '@/render/pipeline'
 import { SCENARIOS } from '@/render/scenarios'
-import { MAX_TRACE_BYTES } from '@/render/strace'
 
 const fakeSandbox = vi.hoisted(() => ({
   files: { write: vi.fn(), read: vi.fn() },
@@ -100,22 +99,12 @@ describe('E2BSandboxRunner output cap', () => {
     expect(await render()).toMatchObject({ exitCode: 3, stdout: 'out', timedOut: false })
   })
 
-  it('reads at most the trace cap from the script-writable trace file', async () => {
+  it('never reads back the trace file, which only the script itself can write', async () => {
     runScript(() => Promise.resolve({ exitCode: 0, stdout: 'ok', stderr: '' }))
-    let pulled = 0
-    const line = new TextEncoder().encode('connect(3, {sa_family=AF_INET}) = 0\n'.repeat(100))
-    fakeSandbox.files.read.mockResolvedValue(
-      new ReadableStream<Uint8Array>({
-        pull(controller) {
-          pulled += line.byteLength
-          controller.enqueue(line)
-        },
-      }),
-    )
 
     const result = await render()
 
-    expect(pulled).toBeLessThanOrEqual(MAX_TRACE_BYTES + 2 * line.byteLength)
-    expect(result.trace.networkAttempts.length).toBeGreaterThan(0)
+    expect(fakeSandbox.files.read).not.toHaveBeenCalled()
+    expect(result.trace).toEqual({ networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] })
   })
 })

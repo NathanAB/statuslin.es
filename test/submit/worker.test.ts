@@ -246,6 +246,48 @@ describe('processNextRenderJob', () => {
     expect(job?.finishedAt).toBeNull()
   })
 
+  it('renders a script that prints a NUL byte, which Postgres cannot store', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Nul',
+      description: '',
+      interpreter: 'bash',
+      source: "#!/bin/bash\nprintf 'shown\\0'",
+    })
+
+    await processNextRenderJob(
+      db,
+      new FakeSandboxRunner({ 'clean-main': { stdout: 'shown\u0000' } }),
+    )
+
+    expect(await jobStatus(versionId)).toBe('done')
+    const [ver] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.id, versionId))
+    const previews = await getPreviews(db, ver?.contentSha256 ?? '')
+    expect(previews.find((p) => p.scenarioKey === 'clean-main')?.rawStdout).toBe('shown')
+  })
+
+  it('records a failed database write without the script output it carried', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Leaky',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho leaky',
+    })
+    const runner = new FakeSandboxRunner({
+      'clean-main': { trace: { networkAttempts: ['SCRIPT-SECRET\u0000'] } },
+    })
+
+    await processNextRenderJob(db, runner)
+
+    const job = await jobRow(versionId)
+    expect(job?.status).toBe('failed')
+    expect(job?.error).not.toContain('SCRIPT-SECRET')
+  })
+
   it('returns null when there are no queued jobs', async () => {
     while (await processNextRenderJob(db, new FakeSandboxRunner())) {
       /* drain */

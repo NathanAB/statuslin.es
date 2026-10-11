@@ -26,24 +26,3 @@ export class CappedOutput {
     this.onExceeded()
   }
 }
-
-/** Read at most `maxBytes` from a stream, then cancel it. */
-export async function readCapped(
-  stream: ReadableStream<Uint8Array>,
-  maxBytes: number,
-): Promise<string> {
-  const reader = stream.getReader()
-  const chunks: Uint8Array[] = []
-  let bytes = 0
-  try {
-    while (bytes < maxBytes) {
-      const { done, value } = await reader.read()
-      if (done) break
-      chunks.push(value)
-      bytes += value.byteLength
-    }
-  } finally {
-    await reader.cancel().catch(() => {})
-  }
-  return Buffer.concat(chunks).toString('utf8', 0, Math.min(bytes, maxBytes))
-}

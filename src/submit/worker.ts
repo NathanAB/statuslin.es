@@ -1,4 +1,4 @@
-import { and, eq, inArray, type SQL, sql } from 'drizzle-orm'
+import { and, DrizzleQueryError, eq, inArray, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { isCutOff, rerenderStatus } from '@/render/job-state'
@@ -125,7 +125,7 @@ export async function processNextRenderJob(
     }
     await db
       .update(renderJobs)
-      .set({ status: 'failed', error: String(error).slice(0, 2000), finishedAt: new Date() })
+      .set({ status: 'failed', error: failureMessage(error), finishedAt: new Date() })
       .where(isStillClaimed(claimed))
   }
   onJobFinished?.({
@@ -154,6 +154,13 @@ export async function drainRenderJobs(
 }
 
 class DrainStopped extends Error {}
+
+/** What the admin sees on a failed job. A failed query's message lists its parameters, which hold
+ * the script's output, so record only the database's own error. Postgres can't store a NUL. */
+function failureMessage(error: unknown): string {
+  const message = String(error instanceof DrizzleQueryError ? error.cause : error)
+  return message.replaceAll('\u0000', '').slice(0, 2000)
+}
 
 /** `work`, unless `stop` aborts first: then reject with DrainStopped. The work itself carries on
  * until the process exits; its result is dropped. */

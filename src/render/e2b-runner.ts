@@ -8,10 +8,9 @@ import {
 } from './anthropic-usage-sandbox'
 import { buildNetworkOption } from './e2b-network'
 import { E2B_TEMPLATE_ID } from './e2b-template'
-import { readCapped } from './output-cap'
 import { INFRA_ERROR_EXIT_CODE, runScript } from './run-script'
 import { scriptExtension } from './script-extension'
-import { MAX_TRACE_BYTES, parseStrace } from './strace'
+import { parseStrace } from './strace'
 import type { Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
 
 /** Hard per-command wall-clock cap. Untrusted scripts get single-digit seconds. */
@@ -48,7 +47,6 @@ const RUN_CMD: Record<Interpreter, string> = { bash: 'bash', node: 'node', pytho
 
 const SCRIPT_DIR = '/home/user'
 const INPUT_PATH = `${SCRIPT_DIR}/input.json`
-const TRACE_PATH = '/tmp/trace.log'
 const SANDBOX_USER = 'user'
 
 /** Fixed renderer-owned env is merged after scenario filtering, so scenarios cannot override it. */
@@ -149,18 +147,14 @@ export class E2BSandboxRunner implements SandboxRunner {
         user: SANDBOX_USER,
       })
 
-      // A missing or empty file comes back as '' rather than a stream, and lands in the catch.
-      const traceLog = await sandbox.files
-        .read(TRACE_PATH, { format: 'stream' })
-        .then((stream) => readCapped(stream, MAX_TRACE_BYTES))
-        .catch(() => '')
-
+      // No strace runs yet (scripts/build-e2b-template.ts), so /tmp/trace.log could only hold what
+      // the script wrote itself: no signal, and a read the script controls. Report no trace.
       return {
         stdout: result.stdout,
         stderr: result.stderr,
         exitCode: result.exitCode,
         timedOut: result.timedOut,
-        trace: parseStrace(traceLog),
+        trace: parseStrace(''),
       }
     } finally {
       // Teardown is best-effort: a kill RPC failure must not mask the real result or error.
