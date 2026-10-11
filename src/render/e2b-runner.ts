@@ -1,4 +1,4 @@
-import { CommandExitError, type CommandResult, Sandbox, TimeoutError } from 'e2b'
+import { CommandExitError, Sandbox } from 'e2b'
 import { requireEnv } from '@/lib/env'
 import { externalNetworkHosts, shouldMockAnthropicUsage } from './anthropic-usage-mock'
 import {
@@ -8,6 +8,7 @@ import {
 } from './anthropic-usage-sandbox'
 import { buildNetworkOption } from './e2b-network'
 import { E2B_TEMPLATE_ID } from './e2b-template'
+import { INFRA_ERROR_EXIT_CODE, runScript } from './run-script'
 import { scriptExtension } from './script-extension'
 import { parseStrace } from './strace'
 import type { Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
@@ -20,11 +21,6 @@ const SANDBOX_TIMEOUT_MS = 30_000
  * offline budget. The `finally` kill still bounds a stuck network sandbox. */
 const NETWORK_COMMAND_TIMEOUT_MS = 15_000 // per-command cap when hosts are declared
 const NETWORK_SANDBOX_TIMEOUT_MS = 45_000 // sandbox lifetime cap when hosts are declared
-
-/** Exit code we report when the script is killed by the timeout. */
-const TIMEOUT_EXIT_CODE = 124
-/** Exit code we report when our own infra (RPC, sandbox) failed — NOT a script timeout. */
-export const INFRA_ERROR_EXIT_CODE = 125
 
 /** Scenario-derived working dir must look like this (absolute, under /home/user). */
 const SAFE_DIR_PATTERN = /^\/home\/user\/[A-Za-z0-9._/-]+$/
@@ -51,7 +47,6 @@ const RUN_CMD: Record<Interpreter, string> = { bash: 'bash', node: 'node', pytho
 
 const SCRIPT_DIR = '/home/user'
 const INPUT_PATH = `${SCRIPT_DIR}/input.json`
-const TRACE_PATH = '/tmp/trace.log'
 const SANDBOX_USER = 'user'
 
 /** Fixed renderer-owned env is merged after scenario filtering, so scenarios cannot override it. */
@@ -145,37 +140,21 @@ export class E2BSandboxRunner implements SandboxRunner {
 
       const runCmd = `${RUN_CMD[input.interpreter]} ${scriptPath} < ${INPUT_PATH}`
 
-      let timedOut = false
-      const result = await sandbox.commands
-        .run(runCmd, {
-          cwd: dir,
-          envs: buildRunEnv(input.scenario.env, mockAnthropicUsage),
-          timeoutMs: commandTimeoutMs,
-          user: SANDBOX_USER,
-        })
-        .catch((error: unknown): CommandResult => {
-          // A non-zero exit from the script is a legitimate result, not a failure of ours.
-          if (error instanceof CommandExitError) {
-            return { exitCode: error.exitCode, stdout: error.stdout, stderr: error.stderr }
-          }
-          // The hard timeout fired: the script ran too long.
-          if (error instanceof TimeoutError) {
-            timedOut = true
-            return { exitCode: TIMEOUT_EXIT_CODE, stdout: '', stderr: error.message }
-          }
-          // Anything else (RPC failure, sandbox infra, etc.) is OUR failure, not a timeout.
-          // Distinct sentinel exit code; leave timedOut false so we don't mislabel infra as slow scripts.
-          return { exitCode: INFRA_ERROR_EXIT_CODE, stdout: '', stderr: String(error) }
-        })
+      const result = await runScript(sandbox, runCmd, {
+        cwd: dir,
+        envs: buildRunEnv(input.scenario.env, mockAnthropicUsage),
+        timeoutMs: commandTimeoutMs,
+        user: SANDBOX_USER,
+      })
 
-      const traceLog = await sandbox.files.read(TRACE_PATH).catch(() => '')
-
+      // No strace runs yet (scripts/build-e2b-template.ts), so /tmp/trace.log could only hold what
+      // the script wrote itself: no signal, and a read the script controls. Report no trace.
       return {
         stdout: result.stdout,
         stderr: result.stderr,
         exitCode: result.exitCode,
-        timedOut,
-        trace: parseStrace(traceLog),
+        timedOut: result.timedOut,
+        trace: parseStrace(''),
       }
     } finally {
       // Teardown is best-effort: a kill RPC failure must not mask the real result or error.

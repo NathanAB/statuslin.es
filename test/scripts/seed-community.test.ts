@@ -177,11 +177,11 @@ describe('seedCommunityConfig', () => {
       .select()
       .from(configsTable)
       .where(eq(configsTable.id, outcome.configId as string))
-    // Submit-only: the config is a draft awaiting the worker + admin review, never auto-published.
+    // Submit-only: the config is a draft awaiting its render + admin review, never auto-published.
     expect(cfg?.status).toBe('draft')
     expect(cfg?.authorId).toBe(authorId)
 
-    // A render job was queued for THIS config (scoped to its version) for the worker to pick up.
+    // A render job was queued for THIS config (scoped to its version) for the web server's drain.
     const [ver] = await db
       .select()
       .from(configVersionsTable)

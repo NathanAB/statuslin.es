@@ -10,5 +10,5 @@ Status line previews render in the web server, in the background, started by a s
 ## Consequences
 
 - Several web machines can render at once, so a job is claimed with a conditional update, and a job left `running` is re-queued after a time limit rather than at startup.
-- Staging stops idle web machines, which can cut a render off; the job is re-queued the next time a machine starts.
+- Staging stops idle web machines, and a deploy stops every machine, which can cut a render off. The stopping machine puts the job back, so the next machine to drain renders it. A job cut off by a crash waits for the time limit (15 minutes): then the next drain, or the admin's re-queue, puts it back.
 - A Desktop recording can take 15 minutes, so mods never render in production.

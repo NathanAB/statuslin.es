@@ -1,5 +1,5 @@
 import type { ServerEvent } from '@/lib/posthog-server'
-import { INFRA_ERROR_EXIT_CODE } from '@/render/e2b-runner'
+import { INFRA_ERROR_EXIT_CODE } from '@/render/run-script'
 
 /** PostHog distinct id every render event is attributed to (it's a process, not a person). Named
  * for the old always-on worker; kept so the PostHog history stays one series. */

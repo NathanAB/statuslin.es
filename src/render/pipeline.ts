@@ -58,8 +58,9 @@ export async function renderConfig(
     ].filter((f): f is { path: string; content: string } => f !== null)
     const result = await runner.render({ ...config, scenario: { ...scenario, stdin }, fixtures })
     // Single choke point: capping here bounds BOTH `rawStdout` and the derived `segments`, for
-    // BOTH runners (real e2b + fake) — every render flows through this loop.
-    const stdout = capStdout(result.stdout)
+    // BOTH runners (real e2b + fake) — every render flows through this loop. Postgres can't store
+    // a NUL byte in text or jsonb, so drop those first.
+    const stdout = capStdout(result.stdout.replaceAll('\u0000', ''))
     previews.push({
       scenarioKey: scenario.key,
       segments: parseAnsi(stdout),

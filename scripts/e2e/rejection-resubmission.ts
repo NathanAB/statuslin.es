@@ -4,8 +4,6 @@ import { and, asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/db'
 import { user } from '@/db/auth-schema'
 import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
-import { FakeSandboxRunner } from '@/render/fake-runner'
-import { processNextRenderJob } from '@/submit/worker'
 import {
   assertAllowedE2ETarget,
   assertDisposableUserCleanup,
@@ -17,14 +15,12 @@ import {
   describeBrowserCommand,
   isTerminalDecisionEmailStatus,
   parseSessionCookie,
-  renderStrategy,
   runDisposableUserCleanup,
   type VersionHistoryRow,
 } from './rejection-resubmission-helpers'
 
 const BASE = process.env.BETTER_AUTH_URL ?? 'http://localhost:3100'
 assertAllowedE2ETarget(BASE)
-const RENDER_STRATEGY = renderStrategy(BASE)
 const AUTHOR_ID = 'e2e-rejection-author'
 const ADMIN_ID = 'e2e-rejection-admin'
 const AUTHOR_EMAIL = 'e2e-rejection-author@test.invalid'
@@ -110,30 +106,23 @@ async function openReady(session: string, path: string, readySelector: string) {
   if (failures.length > 0) throw new Error(`${path} browser errors: ${failures.join(' | ')}`)
 }
 
-async function renderVersion(versionId: string) {
-  if (RENDER_STRATEGY === 'external') {
-    await waitFor(
-      `render job ${versionId}`,
-      async () => {
-        const [job] = await db
-          .select({ status: renderJobs.status })
-          .from(renderJobs)
-          .where(eq(renderJobs.configVersionId, versionId))
-        if (job?.status === 'failed') {
-          throw new Error(`render job ${versionId} failed`)
-        }
-        return job?.status === 'done' ? job : undefined
-      },
-      120,
-      1000,
-    )
-    return
-  }
-  const processed = await processNextRenderJob(
-    db,
-    new FakeSandboxRunner({ 'clean-main': { stdout: 'e2e-preview' } }),
+/** The dev or deployed server renders the job itself after submit (ADR 0006); wait for it. */
+async function waitForRender(versionId: string) {
+  await waitFor(
+    `render job ${versionId}`,
+    async () => {
+      const [job] = await db
+        .select({ status: renderJobs.status })
+        .from(renderJobs)
+        .where(eq(renderJobs.configVersionId, versionId))
+      if (job?.status === 'failed') {
+        throw new Error(`render job ${versionId} failed`)
+      }
+      return job?.status === 'done' ? job : undefined
+    },
+    120,
+    1000,
   )
-  if (!processed) throw new Error('expected a queued render job')
 }
 
 async function versionRows(configId: string): Promise<VersionHistoryRow[]> {
@@ -203,7 +192,7 @@ async function main() {
     .from(configVersions)
     .where(eq(configVersions.configId, submitted.id))
   if (!v1) throw new Error('submitted version not found')
-  await renderVersion(v1.id)
+  await waitForRender(v1.id)
 
   await openReady(ADMIN_SESSION, '/admin', 'main')
   await clickButtonInCard(ADMIN_SESSION, marker, 'Reject')
@@ -268,7 +257,7 @@ async function main() {
 
   await openReady(ADMIN_SESSION, '/admin', 'main')
   await clickButtonInCard(ADMIN_SESSION, `${marker} corrected`, 'Run network preview')
-  await renderVersion(v2Record.id)
+  await waitForRender(v2Record.id)
   await browser(ADMIN_SESSION, 'reload')
   await browser(ADMIN_SESSION, 'wait', '500')
   await clickButtonInCard(ADMIN_SESSION, `${marker} corrected`, 'Approve')

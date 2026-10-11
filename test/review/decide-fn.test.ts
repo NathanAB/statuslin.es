@@ -16,6 +16,7 @@ vi.mock('@/review/admin', () => ({ assertAdmin: vi.fn(async () => ({ id: 'admin'
 const updatedJobs = vi.hoisted(() => ({ rows: [{ id: 'job-1' }] as { id: string }[] }))
 vi.mock('@/db', () => ({
   db: {
+    select: () => ({ from: () => ({ where: async () => [] }) }),
     update: () => ({
       set: () => ({ where: () => ({ returning: async () => updatedJobs.rows }) }),
     }),

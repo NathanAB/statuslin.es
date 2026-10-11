@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
+import { STALE_RUNNING_JOB_MS } from '@/render/job-state'
 import {
   approveAndEmailVersion,
   approveVersion,
@@ -670,6 +671,50 @@ describe('requeueRenderJob', () => {
       .from(schema.renderJobs)
       .where(eq(schema.renderJobs.configVersionId, versionId))
     expect(job?.status).toBe('done')
+  })
+})
+
+describe('requeueRenderJob on a cut-off render', () => {
+  async function seedRunning(networkHosts: string[], startedAt: Date): Promise<string> {
+    const versionId = await seedVersionWithJob(db, { status: 'running', networkHosts })
+    await db
+      .update(schema.renderJobs)
+      .set({ startedAt, attempts: 2 })
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+    return versionId
+  }
+  const cutOff = () => new Date(Date.now() - STALE_RUNNING_JOB_MS - 1000)
+
+  async function job(versionId: string) {
+    const [row] = await db
+      .select()
+      .from(schema.renderJobs)
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+    return row
+  }
+
+  it('re-queues an offline job running longer than the time limit', async () => {
+    const versionId = await seedRunning([], cutOff())
+
+    await requeueRenderJob(db, versionId)
+
+    expect(await job(versionId)).toMatchObject({ status: 'queued', attempts: 0 })
+  })
+
+  it('sends a network job running longer than the time limit to held, never queued', async () => {
+    const versionId = await seedRunning(['wttr.in'], cutOff())
+
+    await requeueRenderJob(db, versionId)
+
+    expect(await job(versionId)).toMatchObject({ status: 'held', attempts: 0 })
+  })
+
+  it('refuses a job that may still be rendering on another machine', async () => {
+    const versionId = await seedRunning([], new Date(Date.now() - 60_000))
+
+    await expect(requeueRenderJob(db, versionId)).rejects.toThrow(/15 minutes/)
+
+    expect(await job(versionId)).toMatchObject({ status: 'running', attempts: 2 })
   })
 })
 

@@ -1,10 +1,11 @@
 import { PGlite } from '@electric-sql/pglite'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
+import { STALE_RUNNING_JOB_MS } from '@/render/job-state'
 import { getPreviews } from '@/render/store'
 import type { RenderInput, RenderResult, SandboxRunner } from '@/render/types'
 import { runNetworkPreview } from '@/review/decide'
@@ -12,9 +13,9 @@ import type { RenderJobReport } from '@/submit/render-completed-event'
 import { submitConfig } from '@/submit/submit'
 import {
   drainRenderJobs,
+  MAX_RENDER_ATTEMPTS,
   processNextRenderJob,
   requeueStaleJobs,
-  STALE_RUNNING_JOB_MS,
 } from '@/submit/worker'
 
 let client: PGlite
@@ -45,12 +46,16 @@ beforeEach(async () => {
   await db.delete(schema.configs)
 })
 
-async function jobStatus(versionId: string): Promise<string | undefined> {
+async function jobRow(versionId: string) {
   const [job] = await db
     .select()
     .from(schema.renderJobs)
     .where(eq(schema.renderJobs.configVersionId, versionId))
-  return job?.status
+  return job
+}
+
+async function jobStatus(versionId: string): Promise<string | undefined> {
+  return (await jobRow(versionId))?.status
 }
 
 /** Older than the time limit: the machine that claimed the job was cut off. */
@@ -101,6 +106,54 @@ describe('requeueStaleJobs', () => {
     const versionId = await submitRunning('Net stale', staleStart(), ['wttr.in'])
     expect(await requeueStaleJobs(db)).toBe(1)
     expect(await jobStatus(versionId)).toBe('held')
+  })
+
+  it('fails a stale job that has used up its attempts instead of re-queueing it', async () => {
+    const offline = await submitRunning('Crashes offline', staleStart())
+    const network = await submitRunning('Crashes online', staleStart(), ['wttr.in'])
+    await db
+      .update(schema.renderJobs)
+      .set({ attempts: MAX_RENDER_ATTEMPTS })
+      .where(eq(schema.renderJobs.status, 'running'))
+
+    expect(await requeueStaleJobs(db)).toBe(2)
+
+    for (const versionId of [offline, network]) {
+      const job = await jobRow(versionId)
+      expect(job?.status).toBe('failed')
+      expect(job?.error).toContain(`${MAX_RENDER_ATTEMPTS} times`)
+      expect(job?.finishedAt).not.toBeNull()
+    }
+  })
+
+  it('re-queues a stale job that still has attempts left', async () => {
+    const versionId = await submitRunning('One more try', staleStart())
+    await db
+      .update(schema.renderJobs)
+      .set({ attempts: MAX_RENDER_ATTEMPTS - 1 })
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+
+    await requeueStaleJobs(db)
+
+    expect(await jobStatus(versionId)).toBe('queued')
+  })
+
+  it.each([
+    'approved',
+    'rejected',
+    'superseded',
+  ] as const)('fails a stale job whose submission is %s instead of rendering it again', async (decided) => {
+    const offline = await submitRunning(`Decided offline ${decided}`, staleStart())
+    const network = await submitRunning(`Decided online ${decided}`, staleStart(), ['wttr.in'])
+    await db
+      .update(schema.submissions)
+      .set({ status: decided })
+      .where(inArray(schema.submissions.id, [offline, network]))
+
+    expect(await requeueStaleJobs(db)).toBe(2)
+
+    expect(await jobStatus(offline)).toBe('failed')
+    expect(await jobStatus(network)).toBe('failed')
   })
 
   it('leaves done jobs untouched', async () => {
@@ -162,6 +215,79 @@ describe('processNextRenderJob', () => {
     expect(requeuedMidRender).toHaveLength(8)
     expect(requeuedMidRender.filter((count) => count > 0)).toEqual([])
   })
+  it.each([
+    ['finishes', () => new FakeSandboxRunner().render],
+    ['fails', () => () => Promise.reject(new Error('sandbox down'))],
+  ] as const)('leaves a job another machine re-claimed alone when the first run %s', async (_outcome, makeRender) => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Slow but live',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho slow',
+    })
+    const finish = makeRender()
+    const reclaimedAt = new Date(Date.now() + 60_000)
+    const runner: SandboxRunner = {
+      async render(input) {
+        // Another machine re-queued this job as cut off, then claimed it again.
+        await db
+          .update(schema.renderJobs)
+          .set({ status: 'running', startedAt: reclaimedAt })
+          .where(eq(schema.renderJobs.configVersionId, versionId))
+        return finish(input)
+      },
+    }
+
+    await processNextRenderJob(db, runner)
+
+    const job = await jobRow(versionId)
+    expect(job).toMatchObject({ status: 'running', startedAt: reclaimedAt, error: null })
+    expect(job?.finishedAt).toBeNull()
+  })
+
+  it('renders a script that prints a NUL byte, which Postgres cannot store', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Nul',
+      description: '',
+      interpreter: 'bash',
+      source: "#!/bin/bash\nprintf 'shown\\0'",
+    })
+
+    await processNextRenderJob(
+      db,
+      new FakeSandboxRunner({ 'clean-main': { stdout: 'shown\u0000' } }),
+    )
+
+    expect(await jobStatus(versionId)).toBe('done')
+    const [ver] = await db
+      .select()
+      .from(schema.configVersions)
+      .where(eq(schema.configVersions.id, versionId))
+    const previews = await getPreviews(db, ver?.contentSha256 ?? '')
+    expect(previews.find((p) => p.scenarioKey === 'clean-main')?.rawStdout).toBe('shown')
+  })
+
+  it('records a failed database write without the script output it carried', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Leaky',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho leaky',
+    })
+    const runner = new FakeSandboxRunner({
+      'clean-main': { trace: { networkAttempts: ['SCRIPT-SECRET\u0000'] } },
+    })
+
+    await processNextRenderJob(db, runner)
+
+    const job = await jobRow(versionId)
+    expect(job?.status).toBe('failed')
+    expect(job?.error).not.toContain('SCRIPT-SECRET')
+  })
+
   it('returns null when there are no queued jobs', async () => {
     while (await processNextRenderJob(db, new FakeSandboxRunner())) {
       /* drain */
@@ -198,7 +324,7 @@ describe('processNextRenderJob', () => {
     })
     const reports: RenderJobReport[] = []
     const runner = new FakeSandboxRunner({ 'clean-main': { exitCode: 2, stdout: 'out' } })
-    await processNextRenderJob(db, runner, (r) => reports.push(r))
+    await processNextRenderJob(db, runner, { onJobFinished: (r) => reports.push(r) })
     expect(reports).toHaveLength(1)
     const [report] = reports
     expect(report).toMatchObject({ configId, versionId, slug })
@@ -217,7 +343,7 @@ describe('processNextRenderJob', () => {
     })
     const reports: RenderJobReport[] = []
     const runner = { render: () => Promise.reject(new Error('sandbox down')) }
-    await processNextRenderJob(db, runner, (r) => reports.push(r))
+    await processNextRenderJob(db, runner, { onJobFinished: (r) => reports.push(r) })
     expect(reports).toEqual([expect.objectContaining({ versionId, scenarios: null })])
   })
 
@@ -266,7 +392,7 @@ describe('drainRenderJobs', () => {
       })
     }
     const runner = new FakeSandboxRunner({ 'clean-main': { stdout: '\x1b[35mOpus\x1b[0m' } })
-    const processed = await drainRenderJobs(db, runner)
+    const { processed } = await drainRenderJobs(db, runner)
     expect(processed).toBe(3)
     const remaining = await db
       .select()
@@ -286,7 +412,7 @@ describe('drainRenderJobs', () => {
       })
     }
     const reports: RenderJobReport[] = []
-    await drainRenderJobs(db, new FakeSandboxRunner(), (r) => reports.push(r))
+    await drainRenderJobs(db, new FakeSandboxRunner(), { onJobFinished: (r) => reports.push(r) })
     expect(reports).toHaveLength(2)
   })
 
@@ -302,11 +428,65 @@ describe('drainRenderJobs', () => {
       .update(schema.renderJobs)
       .set({ status: 'running', startedAt: staleStart() })
       .where(eq(schema.renderJobs.configVersionId, versionId))
-    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toBe(1)
+    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toEqual({ processed: 1, cutOff: 1 })
     expect(await jobStatus(versionId)).toBe('done')
   })
 
+  it('claims the next queued job when another drain wins the race for the first', async () => {
+    for (const title of ['First', 'Second']) {
+      await submitConfig(db, {
+        authorId: 'u1',
+        title,
+        description: '',
+        interpreter: 'bash',
+        source: `#!/bin/bash\necho ${title}`,
+      })
+    }
+
+    const processed = await Promise.all([
+      drainRenderJobs(db, new FakeSandboxRunner()),
+      drainRenderJobs(db, new FakeSandboxRunner()),
+    ])
+
+    expect(processed.map((drain) => drain.processed)).toEqual([1, 1])
+  })
+
+  it.each([
+    [[], 'queued'],
+    [['wttr.in'], 'held'],
+  ] as const)('once stopped, puts a job with hosts %j back as %s and claims no more', async (networkHosts, putBackAs) => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Cut off by a deploy',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho deploy',
+      networkHosts: [...networkHosts],
+    })
+    if (networkHosts.length > 0) await runNetworkPreview(db, versionId)
+    const { versionId: waiting } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Still waiting',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho waiting',
+    })
+    const stop = new AbortController()
+    const runner: SandboxRunner = {
+      // The machine is shutting down: this render never gets to finish.
+      render() {
+        stop.abort()
+        return new Promise(() => {})
+      },
+    }
+
+    expect((await drainRenderJobs(db, runner, { stop: stop.signal })).processed).toBe(0)
+
+    expect(await jobStatus(versionId)).toBe(putBackAs)
+    expect(await jobStatus(waiting)).toBe('queued')
+  })
+
   it('returns 0 when nothing is queued', async () => {
-    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toBe(0)
+    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toEqual({ processed: 0, cutOff: 0 })
   })
 })

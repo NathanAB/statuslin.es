@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { INFRA_ERROR_EXIT_CODE } from '@/render/e2b-runner'
+import { INFRA_ERROR_EXIT_CODE } from '@/render/run-script'
 import {
   RENDER_WORKER_DISTINCT_ID,
   type RenderJobReport,

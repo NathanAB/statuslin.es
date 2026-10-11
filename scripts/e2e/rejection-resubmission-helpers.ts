@@ -72,10 +72,6 @@ export function browserCookieCommand(baseUrl: string, cookie: string): string[] 
   return command
 }
 
-export function renderStrategy(baseUrl: string): 'inline' | 'external' {
-  return new URL(baseUrl).hostname === 'localhost' ? 'inline' : 'external'
-}
-
 export function commandFailureMessage(
   label: string,
   output: string,
