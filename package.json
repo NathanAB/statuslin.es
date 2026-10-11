@@ -28,7 +28,6 @@
     "render": "bun run scripts/render.ts",
     "rerender:previews": "bun run scripts/rerender-previews.ts",
     "render:mods": "bun run scripts/render-mods.ts",
-    "worker": "bun run scripts/worker.ts",
     "build:e2b-template": "bun run scripts/build-e2b-template.ts",
     "build:e2b-mod-template": "bun run scripts/build-e2b-mod-template.ts",
     "build:e2b-desktop-template": "bun run scripts/build-e2b-desktop-template.ts",

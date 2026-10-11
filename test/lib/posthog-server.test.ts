@@ -1,18 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock posthog-node so no real client or network is built. captureException /
-// captureExceptionImmediate are spies we assert against; vi.resetModules() between
+// Mock posthog-node so no real client or network is built. captureException is the spy we
+// assert against; vi.resetModules() between
 // tests gives each one a fresh getPostHogClient() singleton. PostHog is mocked as a
 // class so `new PostHog(...)` returns an instance carrying the spies (a vi.fn factory
 // used with `new` would hand back an empty `this`, not the returned object).
-const { captureException, captureExceptionImmediate } = vi.hoisted(() => ({
-  captureException: vi.fn(),
-  captureExceptionImmediate: vi.fn(),
-}))
+const { captureException } = vi.hoisted(() => ({ captureException: vi.fn() }))
 vi.mock('posthog-node', () => ({
   PostHog: class {
     captureException = captureException
-    captureExceptionImmediate = captureExceptionImmediate
   },
 }))
 
@@ -25,7 +21,6 @@ describe('captureServerException', () => {
     original = process.env[TOKEN]
     vi.resetModules()
     captureException.mockReset()
-    captureExceptionImmediate.mockReset()
   })
 
   afterEach(() => {
@@ -44,12 +39,12 @@ describe('captureServerException', () => {
     process.env[TOKEN] = 'phc_test'
     const { captureServerException } = await import('@/lib/posthog-server')
     const err = new Error('boom')
-    captureServerException(err, { source: 'worker' })
+    captureServerException(err, { source: 'render-drain' })
     expect(captureException).toHaveBeenCalledTimes(1)
     expect(captureException).toHaveBeenCalledWith(
       err,
       'server',
-      expect.objectContaining({ serverException: true, source: 'worker' }),
+      expect.objectContaining({ serverException: true, source: 'render-drain' }),
     )
   })
 
@@ -106,52 +101,5 @@ describe('captureServerException', () => {
     captureServerException(err)
     captureServerException(err)
     expect(captureException).toHaveBeenCalledTimes(1)
-  })
-})
-
-describe('captureServerExceptionImmediate', () => {
-  let original: string | undefined
-
-  beforeEach(() => {
-    original = process.env[TOKEN]
-    vi.resetModules()
-    captureException.mockReset()
-    captureExceptionImmediate.mockReset().mockResolvedValue(undefined)
-  })
-
-  afterEach(() => {
-    if (original === undefined) delete process.env[TOKEN]
-    else process.env[TOKEN] = original
-  })
-
-  it('awaits the immediate send with the server defaults', async () => {
-    process.env[TOKEN] = 'phc_test'
-    const { captureServerExceptionImmediate } = await import('@/lib/posthog-server')
-    const err = new Error('fatal')
-    await captureServerExceptionImmediate(err, { source: 'uncaught' })
-    expect(captureExceptionImmediate).toHaveBeenCalledTimes(1)
-    expect(captureExceptionImmediate).toHaveBeenCalledWith(
-      err,
-      'server',
-      expect.objectContaining({
-        serverException: true,
-        source: 'uncaught',
-        $process_person_profile: false,
-      }),
-    )
-  })
-
-  it('resolves (never rejects) when the client throws', async () => {
-    captureExceptionImmediate.mockRejectedValue(new Error('send failed'))
-    process.env[TOKEN] = 'phc_test'
-    const { captureServerExceptionImmediate } = await import('@/lib/posthog-server')
-    await expect(captureServerExceptionImmediate(new Error('x'))).resolves.toBeUndefined()
-  })
-
-  it('no-ops when the token is unset', async () => {
-    delete process.env[TOKEN]
-    const { captureServerExceptionImmediate } = await import('@/lib/posthog-server')
-    await captureServerExceptionImmediate(new Error('x'))
-    expect(captureExceptionImmediate).not.toHaveBeenCalled()
   })
 })

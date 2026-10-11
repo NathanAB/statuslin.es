@@ -6,7 +6,7 @@ import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { captureServerEvent } from '@/lib/posthog-server'
 import { isUuid } from '@/lib/uuid'
-import { pingWorkerWake, workerWakeUrl } from '@/lib/wake'
+import { triggerRenderDrain } from '@/server/render-drain'
 import {
   getResubmissionDraft,
   getUpdateDraft,
@@ -86,9 +86,9 @@ export const submitConfigFn = createServerFn({ method: 'POST' })
         isUpdate: data.updateSlug !== undefined,
       })
       captureServerEvent(submitted.event, submitted.distinctId, submitted.properties)
-      // Best-effort: wake the worker so it renders now instead of on the next safety drain.
-      // pingWorkerWake never throws; a miss is recovered by the worker's drains.
-      void pingWorkerWake(workerWakeUrl(process.env))
+      // Renders in the background, after this response: a network submission's job is 'held', so
+      // the drain skips it until an admin clicks "Run network preview".
+      triggerRenderDrain()
       return result
     }),
   )

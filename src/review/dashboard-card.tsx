@@ -153,7 +153,7 @@ export function SubmissionCard({
   const requeue = () =>
     run(
       () => requeueRenderJobFn({ data: { versionId: version.id } }),
-      "Sent back to the render queue — it'll render when the worker picks it up.",
+      "Sent back to the render queue — it's rendering now.",
       'Could not re-queue.',
     )
   const runNetworkPreview = () =>

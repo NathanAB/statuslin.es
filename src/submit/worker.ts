@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, isNull, lt, or, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs } from '@/db/schema'
 import { renderConfig } from '@/render/pipeline'
@@ -9,24 +9,43 @@ import type { RenderJobReport } from '@/submit/render-completed-event'
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
-/** Reset jobs left 'running' by a crashed worker. An OFFLINE job goes back to 'queued'. A NETWORK
- * job (networkHosts non-empty) goes back to 'held' — a network render must never re-run without a
- * fresh admin click (the held-job invariant). Run at worker startup. */
+/** How long a job may stay 'running' before it counts as cut off. A render is 8 scenarios, each in
+ * its own sandbox capped at 45 seconds, so a live render never gets near this. */
+export const STALE_RUNNING_JOB_MS = 15 * 60 * 1000
+
+/** Reset jobs that have been 'running' longer than STALE_RUNNING_JOB_MS: the machine rendering
+ * them was stopped or crashed. Several web machines render at once, so a younger 'running' job may
+ * be live on another machine and is left alone. A job with no start time was left by the old
+ * always-on worker. An OFFLINE job goes back to 'queued'. A NETWORK job (networkHosts non-empty)
+ * goes back to 'held' — a network render must never re-run without a fresh admin click (the
+ * held-job invariant). */
 export async function requeueStaleJobs(db: Db): Promise<number> {
+  const startedBefore = new Date(Date.now() - STALE_RUNNING_JOB_MS)
+  const isStale = and(
+    eq(renderJobs.status, 'running'),
+    or(isNull(renderJobs.startedAt), lt(renderJobs.startedAt, startedBefore)),
+  )
   const stale = await db
     .select({ id: renderJobs.id, networkHosts: configVersions.networkHosts })
     .from(renderJobs)
     .innerJoin(configVersions, eq(configVersions.id, renderJobs.configVersionId))
-    .where(eq(renderJobs.status, 'running'))
+    .where(isStale)
+  let requeued = 0
   for (const job of stale) {
     const next = (job.networkHosts ?? []).length > 0 ? 'held' : 'queued'
-    await db.update(renderJobs).set({ status: next }).where(eq(renderJobs.id, job.id))
+    // Conditional, so a job that finished since the read above keeps its result.
+    const updated = await db
+      .update(renderJobs)
+      .set({ status: next })
+      .where(and(eq(renderJobs.id, job.id), isStale))
+      .returning({ id: renderJobs.id })
+    requeued += updated.length
   }
-  return stale.length
+  return requeued
 }
 
-/** Called once per finished job (done or failed). Lets the worker report telemetry without the
- * seed/e2e scripts that also call processNextRenderJob emitting it too. */
+/** Called once per finished job (done or failed). Lets the web server's drain report telemetry
+ * without the seed/e2e scripts that also call processNextRenderJob emitting it too. */
 type OnJobFinished = (report: RenderJobReport) => void
 
 export async function processNextRenderJob(
@@ -80,8 +99,8 @@ export async function processNextRenderJob(
   return claimed.id
 }
 
-/** Drain the queue: render every queued job, one at a time, until none remain.
- * Returns the number processed. Per-job render failures are recorded inside
+/** Drain the queue: re-queue stale jobs, then render every queued job, one at a time, until none
+ * remain. Returns the number processed. Per-job render failures are recorded inside
  * processNextRenderJob, so they don't stop the drain — only an infra error (DB/E2B
  * unreachable) throws out of here, which the caller's drain controller catches. */
 export async function drainRenderJobs(
@@ -89,6 +108,7 @@ export async function drainRenderJobs(
   runner: SandboxRunner,
   onJobFinished?: OnJobFinished,
 ): Promise<number> {
+  await requeueStaleJobs(db)
   let processed = 0
   while (await processNextRenderJob(db, runner, onJobFinished)) processed++
   return processed
@@ -123,7 +143,7 @@ async function claimNextJob(db: Db): Promise<{ id: string; configVersionId: stri
   if (!next) return null
   const updated = await db
     .update(renderJobs)
-    .set({ status: 'running', attempts: sql`${renderJobs.attempts} + 1` })
+    .set({ status: 'running', startedAt: new Date(), attempts: sql`${renderJobs.attempts} + 1` })
     .where(and(eq(renderJobs.id, next.id), eq(renderJobs.status, 'queued')))
     .returning({ id: renderJobs.id })
   if (updated.length === 0) return null

@@ -106,8 +106,8 @@ export interface SeedOutcome {
 }
 
 /** Seeds ONE config: ensure the author exists, then submit it through the normal pipeline.
- *  Submit-only by design — no render, no publish here. The always-on worker renders the
- *  queued job and an admin approves it in the review queue, so seeded (untrusted) community
+ *  Submit-only by design — no render, no publish here. The web server renders the queued job
+ *  at its next drain (a submission, an admin action or a machine start), and an admin approves it in the review queue, so seeded (untrusted) community
  *  scripts get the same human-review gate as every other submission. */
 export async function seedCommunityConfig(
   db: Db,
@@ -182,7 +182,7 @@ async function resolveAdminId(db: Db): Promise<string> {
 }
 
 /** Promotes every 'held' render job belonging to a seed-authored submission (parked by
- *  seedCommunityConfig for a network-using seed) to 'queued' so the always-on worker renders it —
+ *  seedCommunityConfig for a network-using seed) to 'queued' so the web server's next drain renders it —
  *  the same explicit admin action as the review queue's "run network preview" button, just
  *  batched across every seeded held job. Scoped to seed authors (shadow users created by
  *  ensureSeededAuthor, whose email is `seed+<login>@statuslin.es`) via a join from renderJobs to
@@ -206,8 +206,8 @@ export async function releaseHeldSeeds(db: Db): Promise<number> {
 /** Approves (and thereby publishes) every seed-authored version whose render job finished
  *  successfully and whose config is still a draft — the batched equivalent of clicking "approve"
  *  in the review queue for each seeded submission. Versions whose render isn't done are left
- *  alone and counted as skipped so a re-run of `publish-rendered` picks them up once the worker
- *  catches up. Scoped to seed authors (shadow users created by ensureSeededAuthor, whose email is
+ *  alone and counted as skipped so a re-run of `publish-rendered` picks them up once the web
+ *  server has rendered them. Scoped to seed authors (shadow users created by ensureSeededAuthor, whose email is
  *  `seed+<login>@statuslin.es`) via the same innerJoin-to-user pattern as releaseHeldSeeds: a
  *  pending version from a real web submission must NOT be swept up and auto-approved by this
  *  batch tool — prod's human review gate must stay untouchable by it. Filters on
