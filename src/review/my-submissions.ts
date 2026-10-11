@@ -3,7 +3,7 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { desc, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs, user } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions, user } from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
@@ -26,6 +26,7 @@ export type MySubmissionRow = DashboardRow & { update: UpdateSummary | null }
 const joinedRow = {
   config: configs,
   version: configVersions,
+  submission: submissions,
   job: renderJobs,
   author: user,
 }
@@ -39,6 +40,7 @@ export async function getMySubmissionRows(
   const latestRows = await database
     .selectDistinctOn([configVersions.configId], joinedRow)
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .innerJoin(configs, eq(configs.id, configVersions.configId))
     .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
     .leftJoin(user, eq(user.id, configs.authorId))
@@ -57,6 +59,7 @@ export async function getMySubmissionRows(
       ? await database
           .select(joinedRow)
           .from(configVersions)
+          .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
           .innerJoin(configs, eq(configs.id, configVersions.configId))
           // Left join: legacy or seeded live versions may have no render_jobs row.
           .leftJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
@@ -88,9 +91,9 @@ export async function getMySubmissionRows(
       liveRow && latest.version.versionNumber > liveRow.version.versionNumber
         ? {
             versionNumber: latest.version.versionNumber,
-            status: latest.version.status,
+            status: latest.submission.status,
             renderStatus: latest.job.status,
-            rejectionReason: latest.version.rejectionReason,
+            rejectionReason: latest.submission.rejectionReason,
           }
         : null
     out.push({ ...(await mapRow(database, liveRow ?? latest, false)), update })

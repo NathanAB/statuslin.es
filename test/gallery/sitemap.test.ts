@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getPublishedSlugsForSitemap } from '@/gallery/queries'
+import { insertSubmission } from '../fixtures/submission'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -40,17 +41,24 @@ describe('getPublishedSlugsForSitemap', () => {
         source: 'echo reviewed',
         interpreter: 'bash',
         contentSha256: 'reviewed-current'.padEnd(64, '0'),
-        status: 'approved',
-        reviewedAt: new Date('2026-04-05T12:00:00Z'),
       })
       .returning()
-    await db.insert(schema.configVersions).values({
-      configId: reviewed.id,
-      versionNumber: 2,
-      title: 'reviewed-current',
-      source: 'echo not current',
-      interpreter: 'bash',
-      contentSha256: 'reviewed-not-current'.padEnd(64, '0'),
+    await insertSubmission(db, reviewedVersion!.id, 'u1', {
+      status: 'approved',
+      reviewedAt: new Date('2026-04-05T12:00:00Z'),
+    })
+    const [notCurrent] = await db
+      .insert(schema.configVersions)
+      .values({
+        configId: reviewed.id,
+        versionNumber: 2,
+        title: 'reviewed-current',
+        source: 'echo not current',
+        interpreter: 'bash',
+        contentSha256: 'reviewed-not-current'.padEnd(64, '0'),
+      })
+      .returning()
+    await insertSubmission(db, notCurrent!.id, 'u1', {
       status: 'approved',
       reviewedAt: new Date('2026-12-31T00:00:00Z'),
     })
@@ -66,9 +74,9 @@ describe('getPublishedSlugsForSitemap', () => {
         source: 'echo fallback',
         interpreter: 'bash',
         contentSha256: 'created-fallback'.padEnd(64, '0'),
-        status: 'approved',
       })
       .returning()
+    await insertSubmission(db, fallbackVersion!.id, 'u1', { status: 'approved' })
     await setCurrentVersion(fallback.id, fallbackVersion!.id)
 
     const draft = await insertConfig('draft-hidden', 'draft', '2026-06-01')
@@ -81,10 +89,12 @@ describe('getPublishedSlugsForSitemap', () => {
         source: 'echo draft',
         interpreter: 'bash',
         contentSha256: 'draft-hidden'.padEnd(64, '0'),
-        status: 'approved',
-        reviewedAt: new Date('2026-06-02T00:00:00Z'),
       })
       .returning()
+    await insertSubmission(db, draftVersion!.id, 'u1', {
+      status: 'approved',
+      reviewedAt: new Date('2026-06-02T00:00:00Z'),
+    })
     await setCurrentVersion(draft.id, draftVersion!.id)
 
     await insertConfig('orphan-hidden', 'published', '2026-07-01')

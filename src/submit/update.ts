@@ -1,9 +1,14 @@
 import { and, desc, eq, inArray, lte, max, ne } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
-import { type PreparedVersion, supersedeRejectionDelivery } from './resubmit'
+import {
+  insertPendingSubmission,
+  supersedePending,
+  supersedeRejectionEmail,
+} from '@/submissions/record'
+import type { PreparedVersion } from './resubmit'
 import type { SubmitResult } from './submit'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -123,34 +128,35 @@ export async function createUpdateVersion(
         .for('update')
       if (config?.status !== 'published') throw new HttpError(409, NOT_PUBLISHED)
       const [latest] = await tx
-        .select()
+        .select({ submission: submissions })
         .from(configVersions)
+        .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
         .where(eq(configVersions.configId, base.config.id))
         .orderBy(desc(configVersions.versionNumber))
         .limit(1)
       // A rejected update's email can only go out while it is the latest version.
-      if (latest?.status === 'rejected') await supersedeRejectionDelivery(tx, latest)
-      const superseded = await tx
-        .update(configVersions)
-        .set({ status: 'superseded' })
+      if (latest?.submission.status === 'rejected') {
+        await supersedeRejectionEmail(tx, latest.submission)
+      }
+      const earlier = await tx
+        .select({ id: configVersions.id })
+        .from(configVersions)
         .where(
           and(
             eq(configVersions.configId, base.config.id),
-            eq(configVersions.status, 'pending'),
             lte(configVersions.versionNumber, base.latestVersionNumber),
           ),
         )
-        .returning({ id: configVersions.id })
+      const superseded = await supersedePending(
+        tx,
+        earlier.map((version) => version.id),
+      )
       if (superseded.length > 0) {
-        await tx.delete(renderJobs).where(
-          and(
-            inArray(
-              renderJobs.configVersionId,
-              superseded.map((version) => version.id),
-            ),
-            ne(renderJobs.status, 'done'),
-          ),
-        )
+        await tx
+          .delete(renderJobs)
+          .where(
+            and(inArray(renderJobs.configVersionId, superseded), ne(renderJobs.status, 'done')),
+          )
       }
       const [version] = await tx
         .insert(configVersions)
@@ -163,7 +169,6 @@ export async function createUpdateVersion(
           interpreter: input.interpreter,
           contentSha256: input.contentSha256,
           sourceHtml: input.sourceHtml,
-          status: 'pending',
           networkHosts: input.networkHosts,
           readsClaudeToken: input.readsClaudeToken,
           license: base.live.license,
@@ -171,6 +176,11 @@ export async function createUpdateVersion(
         })
         .returning()
       if (!version) throw new Error('insert configVersions returned no row')
+      await insertPendingSubmission(tx, {
+        kind: 'status_line',
+        versionId: version.id,
+        submittedBy: input.authorId,
+      })
       await tx.insert(renderJobs).values({
         configVersionId: version.id,
         status: input.networkHosts.length > 0 ? 'held' : 'queued',

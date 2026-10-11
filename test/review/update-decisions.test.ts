@@ -27,6 +27,7 @@ import { getDashboardRows } from '@/review/queue'
 import { type SubmitInput, submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
 import { removeConfig } from '../../scripts/remove-config'
+import { selectVersionsWithReview } from '../fixtures/submission'
 
 const configCard = vi.hoisted(() => vi.fn(() => null))
 vi.mock('@/og/card', () => ({ configCard, homeCard: vi.fn(() => null) }))
@@ -121,7 +122,7 @@ async function submitUpdate(slug: string, input: SubmitInput = update) {
 const configRow = async (configId: string) =>
   (await db.select().from(schema.configs).where(eq(schema.configs.id, configId)))[0]
 const versionRow = async (versionId: string) =>
-  (await db.select().from(schema.configVersions).where(eq(schema.configVersions.id, versionId)))[0]
+  (await selectVersionsWithReview(db).where(eq(schema.configVersions.id, versionId)))[0]
 
 describe('approving an update', () => {
   it('switches every public read to the new version at the same slug', async () => {

@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { approveVersion } from '@/review/decide'
+import { insertSubmission } from '../fixtures/submission'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -48,12 +49,12 @@ beforeAll(async () => {
       source: 'console.log("hi")',
       interpreter: 'node',
       contentSha256: 'sha-all-tags-recompute',
-      status: 'pending',
       networkHosts: ['api.example.com'],
       readsClaudeToken: true,
     })
     .returning()
   if (!ver) throw new Error('no version')
+  await insertSubmission(db, ver.id, 'u1')
   versionId = ver.id
 
   await db.insert(schema.renderJobs).values({ configVersionId: ver.id, status: 'done' })

@@ -3,7 +3,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { db } from '@/db'
 import { user } from '@/db/auth-schema'
-import { configs, configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
 import { processNextRenderJob } from '@/submit/worker'
 import {
@@ -142,10 +142,11 @@ async function versionRows(configId: string): Promise<VersionHistoryRow[]> {
       configId: configs.id,
       slug: configs.slug,
       versionNumber: configVersions.versionNumber,
-      status: configVersions.status,
+      status: submissions.status,
       source: configVersions.source,
     })
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .innerJoin(configs, eq(configs.id, configVersions.configId))
     .where(eq(configVersions.configId, configId))
     .orderBy(asc(configVersions.versionNumber))
@@ -210,9 +211,9 @@ async function main() {
   await clickButtonInCard(ADMIN_SESSION, marker, 'Reject and email author')
   await waitFor('terminal rejection email delivery', async () => {
     const [row] = await db
-      .select({ emailStatus: configVersions.rejectionEmailStatus })
-      .from(configVersions)
-      .where(eq(configVersions.id, v1.id))
+      .select({ emailStatus: submissions.rejectionEmailStatus })
+      .from(submissions)
+      .where(eq(submissions.id, v1.id))
     return isTerminalDecisionEmailStatus(row?.emailStatus) ? row : undefined
   })
 
@@ -276,10 +277,11 @@ async function main() {
       .select({
         configStatus: configs.status,
         currentVersionId: configs.currentVersionId,
-        versionStatus: configVersions.status,
-        approvalEmailStatus: configVersions.approvalEmailStatus,
+        versionStatus: submissions.status,
+        approvalEmailStatus: submissions.approvalEmailStatus,
       })
       .from(configVersions)
+      .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
       .innerJoin(configs, eq(configs.id, configVersions.configId))
       .where(and(eq(configs.id, submitted.id), eq(configVersions.id, v2Record.id)))
     return isTerminalDecisionEmailStatus(row?.approvalEmailStatus) ? row : undefined

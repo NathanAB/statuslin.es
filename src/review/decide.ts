@@ -3,7 +3,7 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
@@ -41,12 +41,18 @@ export async function setReadsClaudeToken(
   value: boolean,
   reviewerId: string,
 ): Promise<void> {
-  const [row] = await database
-    .update(configVersions)
-    .set({ readsClaudeToken: value, reviewedBy: reviewerId, reviewedAt: new Date() })
-    .where(eq(configVersions.id, versionId))
-    .returning()
-  if (!row) throw new HttpError(404, 'version not found')
+  await database.transaction(async (tx) => {
+    const [row] = await tx
+      .update(configVersions)
+      .set({ readsClaudeToken: value })
+      .where(eq(configVersions.id, versionId))
+      .returning({ id: configVersions.id })
+    if (!row) throw new HttpError(404, 'version not found')
+    await tx
+      .update(submissions)
+      .set({ reviewedBy: reviewerId, reviewedAt: new Date() })
+      .where(eq(submissions.id, versionId))
+  })
 }
 
 /** The config a version belongs to, to label its review decision event. */

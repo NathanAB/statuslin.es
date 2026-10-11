@@ -19,6 +19,7 @@ import {
 } from '@/review/decide'
 import { submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
+import { insertSubmission } from '../fixtures/submission'
 
 async function seedVersionWithJob(
   db: ReturnType<typeof drizzle<typeof schema>>,
@@ -43,11 +44,11 @@ async function seedVersionWithJob(
       source: '#!/bin/bash\necho hi',
       interpreter: 'bash',
       contentSha256: `sha-${Math.random()}`,
-      status: 'pending',
       networkHosts: opts.networkHosts,
     })
     .returning()
   if (!ver) throw new Error('no version')
+  await insertSubmission(db, ver.id, 'u1')
   await db.insert(schema.renderJobs).values({ configVersionId: ver.id, status: opts.status })
   return ver.id
 }
@@ -93,8 +94,8 @@ describe('approveVersion', () => {
     await approveVersion(db, versionId, 'admin1')
     const vRows = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     const v = vRows[0]
     expect(v?.status).toBe('approved')
     expect(v?.reviewedBy).toBe('admin1')
@@ -142,8 +143,8 @@ describe('approval email delivery', () => {
     )
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(version).toMatchObject({
       status: 'approved',
       approvalEmailStatus: 'sent',
@@ -177,8 +178,8 @@ describe('approval email delivery', () => {
     expect(result).toEqual({ delivery: 'ambiguous' })
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(version).toMatchObject({
       status: 'approved',
       approvalEmailStatus: 'ambiguous',
@@ -224,9 +225,9 @@ describe('approval email delivery', () => {
       vi.fn().mockRejectedValue(new Error('offline')),
     )
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ approvalEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
     const send = vi.fn().mockResolvedValue({ id: 'email_retry_approved' })
 
     const result = await retryApprovalEmail(db, versionId, send)
@@ -257,9 +258,9 @@ describe('approval email delivery', () => {
       source: 'x',
     })
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ status: 'approved', approvalEmailStatus: null })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
     const send = vi.fn()
 
     await expect(retryApprovalEmail(db, versionId, send)).rejects.toMatchObject({ status: 409 })
@@ -278,9 +279,9 @@ describe('approval email delivery', () => {
     await processNextRenderJob(db, new FakeSandboxRunner())
     await approveVersion(db, versionId, 'admin1')
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ approvalEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
 
     let resolveSuccess!: (value: { id: string }) => void
     let markSuccessStarted!: () => void
@@ -306,8 +307,8 @@ describe('approval email delivery', () => {
 
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(version).toMatchObject({
       approvalEmailStatus: 'sent',
       approvalEmailId: 'email_approval_won',
@@ -328,8 +329,8 @@ describe('rejectVersion', () => {
     await rejectVersion(db, versionId, 'admin1', 'The script needs changes.')
     const vRows = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     const v = vRows[0]
     expect(v?.status).toBe('rejected')
     const cRows = await db.select().from(schema.configs).where(eq(schema.configs.id, configId))
@@ -378,8 +379,8 @@ describe('rejectVersion', () => {
 
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(version).toMatchObject({
       status: 'rejected',
       rejectionReason: 'Remove the updater.',
@@ -420,8 +421,8 @@ describe('rejection email delivery', () => {
     )
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(version).toMatchObject({
       status: 'rejected',
       rejectionEmailStatus: 'sent',
@@ -447,8 +448,8 @@ describe('rejection email delivery', () => {
     expect(result).toEqual({ delivery: 'ambiguous' })
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(version).toMatchObject({
       status: 'rejected',
       rejectionReason: 'Fix it.',
@@ -491,9 +492,9 @@ describe('rejection email delivery', () => {
       vi.fn().mockRejectedValue(new Error('offline')),
     )
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
     const send = vi.fn().mockResolvedValue({ id: 'email_retry' })
 
     const result = await retryRejectionEmail(db, versionId, send)
@@ -515,9 +516,9 @@ describe('rejection email delivery', () => {
     })
     await rejectVersion(db, versionId, 'admin1', 'Use a pinned source.')
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
 
     let resolveSuccess!: (value: { id: string }) => void
     let markSuccessStarted!: () => void
@@ -543,8 +544,8 @@ describe('rejection email delivery', () => {
 
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(version).toMatchObject({
       rejectionEmailStatus: 'sent',
       rejectionEmailId: 'email_won',
@@ -611,9 +612,9 @@ describe('rejection email delivery', () => {
     })
     await rejectVersion(db, rejected.versionId, 'admin1', 'Change the script.')
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, rejected.versionId))
+      .where(eq(schema.submissions.id, rejected.versionId))
     await submitConfig(
       db,
       {
@@ -734,8 +735,12 @@ describe('setReadsClaudeToken', () => {
       .select()
       .from(schema.configVersions)
       .where(eq(schema.configVersions.id, versionId))
+    const [submission] = await db
+      .select()
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, versionId))
     expect(ver?.readsClaudeToken).toBe(true)
-    expect(ver?.reviewedBy).toBe('u1')
+    expect(submission?.reviewedBy).toBe('u1')
   })
 })
 

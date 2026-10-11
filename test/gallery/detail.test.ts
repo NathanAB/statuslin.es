@@ -1,11 +1,12 @@
 import { PGlite } from '@electric-sql/pglite'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigBySlug } from '@/gallery/queries'
 import { storePreviews } from '@/render/store'
+import { insertSubmission } from '../fixtures/submission'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -59,10 +60,10 @@ async function seed(status: string, slug = 'detail-one', sha = SHA, tags: string
       source: SOURCE,
       interpreter: 'bash',
       contentSha256: sha,
-      status: 'approved',
     })
     .returning()
   const ver = verRows[0]!
+  await insertSubmission(db, ver.id, 'u1', { status: 'approved' })
   await db
     .update(schema.configs)
     .set({ currentVersionId: ver.id })
@@ -212,9 +213,17 @@ describe('getConfigBySlug', () => {
   it('updatedAt is the version reviewedAt as a YYYY-MM-DD date', async () => {
     const cfg = await seed('published', 'detail-updated', '2222'.repeat(16))
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ reviewedAt: new Date('2026-07-06T12:00:00Z') })
-      .where(eq(schema.configVersions.configId, cfg.id))
+      .where(
+        inArray(
+          schema.submissions.configVersionId,
+          db
+            .select({ id: schema.configVersions.id })
+            .from(schema.configVersions)
+            .where(eq(schema.configVersions.configId, cfg.id)),
+        ),
+      )
     const detail = await getConfigBySlug(db, 'detail-updated')
     expect(detail?.updatedAt).toBe('2026-07-06')
   })

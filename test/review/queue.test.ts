@@ -9,6 +9,7 @@ import { getMySubmissionRows } from '@/review/my-submissions'
 import { getDashboardRows } from '@/review/queue'
 import { submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
+import { insertSubmission } from '../fixtures/submission'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -103,9 +104,9 @@ describe('getDashboardRows', () => {
     })
     expect(findByVersion(await getDashboardRows(db), versionId)).toBeDefined()
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ status: 'approved' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
     expect(findByVersion(await getDashboardRows(db), versionId)).toBeUndefined()
   })
 
@@ -118,13 +119,13 @@ describe('getDashboardRows', () => {
       source: 'x',
     })
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({
         status: 'rejected',
         rejectionReason: 'Remove the updater.',
         rejectionEmailStatus: 'failed',
       })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
 
     const row = findByVersion(await getDashboardRows(db), versionId)
     expect(row?.version).toMatchObject({
@@ -154,17 +155,17 @@ describe('getDashboardRows', () => {
           source: 'echo pending',
           interpreter: 'bash',
           contentSha256: `backlog-${versionId}-${index}`,
-          status: 'pending',
         })
         .returning()
+      await insertSubmission(db, version!.id, 'u1')
       await db.insert(schema.renderJobs).values({ configVersionId: version!.id, status: 'queued' })
     }
     expect(findByVersion(await getDashboardRows(db), versionId)).toBeDefined()
 
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ rejectionEmailStatus: 'sent' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
     expect(findByVersion(await getDashboardRows(db), versionId)).toBeUndefined()
   })
 
@@ -185,9 +186,9 @@ describe('getDashboardRows', () => {
       source: 'x',
     })
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ status: 'approved', approvalEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
 
     const row = findByVersion(await getDashboardRows(db), versionId)
     expect(row?.version).toMatchObject({
@@ -196,9 +197,9 @@ describe('getDashboardRows', () => {
     })
 
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ approvalEmailStatus: 'sent' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
     expect(findByVersion(await getDashboardRows(db), versionId)).toBeUndefined()
   })
 
@@ -212,13 +213,13 @@ describe('getDashboardRows', () => {
       source: 'x',
     })
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({
         status: 'rejected',
         rejectionReason: 'Change it.',
         rejectionEmailStatus: 'ambiguous',
       })
-      .where(eq(schema.configVersions.id, rejection.versionId))
+      .where(eq(schema.submissions.id, rejection.versionId))
     const approval = await submitConfig(db, {
       authorId: 'u2',
       title: 'Ambiguous approval',
@@ -227,9 +228,9 @@ describe('getDashboardRows', () => {
       source: 'x',
     })
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ status: 'approved', approvalEmailStatus: 'ambiguous' })
-      .where(eq(schema.configVersions.id, approval.versionId))
+      .where(eq(schema.submissions.id, approval.versionId))
 
     const rows = await getDashboardRows(db)
     expect(findByVersion(rows, rejection.versionId)?.version.rejectionEmailStatus).toBe('ambiguous')
@@ -314,9 +315,9 @@ describe('getMySubmissionRows', () => {
         source: 'v2',
         interpreter: 'bash',
         contentSha256: 'sha-v2-aaaaaaaa',
-        status: 'pending',
       })
       .returning()
+    await insertSubmission(db, v2!.id, 'me1')
     await db.insert(schema.renderJobs).values({ configVersionId: v2!.id })
     const row = (await getMySubmissionRows(db, 'me1')).find((r) => r.config.id === configId)
     expect(row?.version.versionNumber).toBe(2)
@@ -340,13 +341,13 @@ describe('getMySubmissionRows', () => {
       source: 'echo rejected',
     })
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({
         status: 'rejected',
         rejectionReason: 'Remove the updater.',
         rejectionEmailStatus: 'failed',
       })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
 
     const row = (await getMySubmissionRows(db, 'me-rejected')).find(
       (candidate) => candidate.version.id === versionId,
@@ -373,9 +374,9 @@ describe('getMySubmissionRows', () => {
       source: 'echo approved',
     })
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ status: 'approved', approvalEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, versionId))
+      .where(eq(schema.submissions.id, versionId))
 
     const row = (await getMySubmissionRows(db, 'me-approved')).find(
       (candidate) => candidate.version.id === versionId,

@@ -1,6 +1,6 @@
 import { and, eq, inArray, lt } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, renderJobs, user } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions, user } from '@/db/schema'
 import { computeAllTags } from '@/lib/derived-tags'
 import { HttpError } from '@/lib/http'
 import {
@@ -50,9 +50,14 @@ export async function approveVersion(
       .where(eq(configs.id, target.configId))
       .for('update')
     if (!cfg) throw new HttpError(409, 'config not found')
-    const reviewedAt = new Date()
     const [ver] = await tx
-      .update(configVersions)
+      .select()
+      .from(configVersions)
+      .where(eq(configVersions.id, versionId))
+      .for('update')
+    const reviewedAt = new Date()
+    const [approved] = await tx
+      .update(submissions)
       .set({
         status: 'approved',
         reviewedBy: reviewerId,
@@ -62,9 +67,9 @@ export async function approveVersion(
         approvalEmailError: null,
         approvalEmailSentAt: null,
       })
-      .where(and(eq(configVersions.id, versionId), eq(configVersions.status, 'pending')))
-      .returning()
-    if (!ver) throw new HttpError(409, 'version not in a reviewable (pending) state')
+      .where(and(eq(submissions.id, versionId), eq(submissions.status, 'pending')))
+      .returning({ id: submissions.id })
+    if (!ver || !approved) throw new HttpError(409, 'version not in a reviewable (pending) state')
     const allTags = computeAllTags({
       curatedTags: cfg.tags,
       interpreter: ver.interpreter,
@@ -92,10 +97,11 @@ async function approvedChange(
   const [earlier] = await database
     .select({ id: configVersions.id })
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .where(
       and(
         eq(configVersions.configId, configId),
-        eq(configVersions.status, 'approved'),
+        eq(submissions.status, 'approved'),
         lt(configVersions.versionNumber, versionNumber),
       ),
     )
@@ -110,8 +116,8 @@ async function deliverApprovalEmail(
 ): Promise<ApprovalEmailStatus> {
   const [row] = await database
     .select({
-      versionStatus: configVersions.status,
-      emailStatus: configVersions.approvalEmailStatus,
+      versionStatus: submissions.status,
+      emailStatus: submissions.approvalEmailStatus,
       authorName: user.name,
       authorEmail: user.email,
       emailVerified: user.emailVerified,
@@ -122,6 +128,7 @@ async function deliverApprovalEmail(
       versionNumber: configVersions.versionNumber,
     })
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .innerJoin(configs, eq(configs.id, configVersions.configId))
     .innerJoin(user, eq(user.id, configs.authorId))
     .where(eq(configVersions.id, versionId))
@@ -138,30 +145,30 @@ async function deliverApprovalEmail(
   // A config taken down while its update waited isn't live, so the email would be false.
   if (!row.emailVerified || row.configStatus !== 'published') {
     const [updated] = await database
-      .update(configVersions)
+      .update(submissions)
       .set({ approvalEmailStatus: 'unavailable', approvalEmailError: null })
       .where(
         and(
-          eq(configVersions.id, versionId),
-          eq(configVersions.status, 'approved'),
-          inArray(configVersions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
+          eq(submissions.id, versionId),
+          eq(submissions.status, 'approved'),
+          inArray(submissions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
         ),
       )
-      .returning({ id: configVersions.id })
+      .returning({ id: submissions.id })
     return updated ? 'unavailable' : 'sent'
   }
 
   const [claimed] = await database
-    .update(configVersions)
+    .update(submissions)
     .set({ approvalEmailStatus: 'sending', approvalEmailError: null })
     .where(
       and(
-        eq(configVersions.id, versionId),
-        eq(configVersions.status, 'approved'),
-        inArray(configVersions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
+        eq(submissions.id, versionId),
+        eq(submissions.status, 'approved'),
+        inArray(submissions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
       ),
     )
-    .returning({ id: configVersions.id })
+    .returning({ id: submissions.id })
   if (!claimed) throw new HttpError(409, 'approval email delivery is already in progress')
 
   const input: ApprovalEmailInput = {
@@ -175,7 +182,7 @@ async function deliverApprovalEmail(
   try {
     const result = await send(input)
     await database
-      .update(configVersions)
+      .update(submissions)
       .set({
         approvalEmailStatus: 'sent',
         approvalEmailId: result.id,
@@ -184,16 +191,16 @@ async function deliverApprovalEmail(
       })
       .where(
         and(
-          eq(configVersions.id, versionId),
-          eq(configVersions.status, 'approved'),
-          eq(configVersions.approvalEmailStatus, 'sending'),
+          eq(submissions.id, versionId),
+          eq(submissions.status, 'approved'),
+          eq(submissions.approvalEmailStatus, 'sending'),
         ),
       )
     return 'sent'
   } catch (error) {
     const delivery = error instanceof ReviewEmailProviderError ? 'failed' : 'ambiguous'
     const [updated] = await database
-      .update(configVersions)
+      .update(submissions)
       .set({
         approvalEmailStatus: delivery,
         approvalEmailError:
@@ -202,12 +209,12 @@ async function deliverApprovalEmail(
       })
       .where(
         and(
-          eq(configVersions.id, versionId),
-          eq(configVersions.status, 'approved'),
-          eq(configVersions.approvalEmailStatus, 'sending'),
+          eq(submissions.id, versionId),
+          eq(submissions.status, 'approved'),
+          eq(submissions.approvalEmailStatus, 'sending'),
         ),
       )
-      .returning({ id: configVersions.id })
+      .returning({ id: submissions.id })
     return updated ? delivery : 'sent'
   }
 }

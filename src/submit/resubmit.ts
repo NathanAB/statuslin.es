@@ -1,9 +1,10 @@
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
 import type { Interpreter } from '@/render/types'
+import { insertPendingSubmission, supersedeRejectionEmail } from '@/submissions/record'
 import type { SubmitResult } from './submit'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -11,13 +12,8 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 type ResubmissionTarget = {
   config: typeof configs.$inferSelect
   version: typeof configVersions.$inferSelect
+  submission: typeof submissions.$inferSelect
 }
-const SUPERSEDABLE_REJECTION_EMAIL_STATUSES = [
-  'pending',
-  'failed',
-  'unavailable',
-  'ambiguous',
-] as const
 
 export interface ResubmissionDraft {
   kind: 'resubmission'
@@ -55,35 +51,8 @@ function assertResubmissionTarget(
   if (target.config.status !== 'draft' || target.config.currentVersionId !== null) {
     throw new HttpError(409, 'published or removed configs cannot be resubmitted')
   }
-  if (target.version.status !== 'rejected' || latestVersionId !== target.version.id) {
+  if (target.submission.status !== 'rejected' || latestVersionId !== target.version.id) {
     throw new HttpError(409, 'only the latest rejected version can be resubmitted')
-  }
-}
-
-export async function supersedeRejectionDelivery(
-  database: Pick<Db, 'update'>,
-  version: typeof configVersions.$inferSelect,
-): Promise<void> {
-  if (version.rejectionEmailStatus === 'sending') {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
-  }
-  if (
-    !SUPERSEDABLE_REJECTION_EMAIL_STATUSES.some((status) => status === version.rejectionEmailStatus)
-  ) {
-    return
-  }
-  const [superseded] = await database
-    .update(configVersions)
-    .set({ rejectionEmailStatus: 'superseded', rejectionEmailError: null })
-    .where(
-      and(
-        eq(configVersions.id, version.id),
-        inArray(configVersions.rejectionEmailStatus, SUPERSEDABLE_REJECTION_EMAIL_STATUSES),
-      ),
-    )
-    .returning({ id: configVersions.id })
-  if (!superseded) {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
   }
 }
 
@@ -93,9 +62,10 @@ export async function getResubmissionDraft(
   authorId: string,
 ): Promise<ResubmissionDraft> {
   const [row] = await database
-    .select({ config: configs, version: configVersions })
+    .select({ config: configs, version: configVersions, status: submissions.status })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.configId, configs.id))
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .where(and(eq(configs.slug, slug), eq(configs.authorId, authorId)))
     .orderBy(desc(configVersions.versionNumber))
     .limit(1)
@@ -103,7 +73,7 @@ export async function getResubmissionDraft(
   if (row.config.status !== 'draft' || row.config.currentVersionId !== null) {
     throw new HttpError(409, 'published or removed configs cannot be resubmitted')
   }
-  if (row.version.status !== 'rejected') {
+  if (row.status !== 'rejected') {
     throw new HttpError(409, 'only the latest rejected version can be resubmitted')
   }
   return {
@@ -126,9 +96,10 @@ export async function createResubmissionVersion(
   try {
     return await database.transaction(async (tx) => {
       const [target] = await tx
-        .select({ config: configs, version: configVersions })
+        .select({ config: configs, version: configVersions, submission: submissions })
         .from(configVersions)
         .innerJoin(configs, eq(configs.id, configVersions.configId))
+        .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
         .where(eq(configVersions.id, rejectedVersionId))
       if (!target) throw new HttpError(409, 'rejected version not found')
       const [latest] = await tx
@@ -138,7 +109,7 @@ export async function createResubmissionVersion(
         .orderBy(desc(configVersions.versionNumber))
         .limit(1)
       assertResubmissionTarget(target, latest?.id, input.authorId)
-      await supersedeRejectionDelivery(tx, target.version)
+      await supersedeRejectionEmail(tx, target.submission)
       const [version] = await tx
         .insert(configVersions)
         .values({
@@ -150,7 +121,6 @@ export async function createResubmissionVersion(
           interpreter: input.interpreter,
           contentSha256: input.contentSha256,
           sourceHtml: input.sourceHtml,
-          status: 'pending',
           networkHosts: input.networkHosts,
           readsClaudeToken: input.readsClaudeToken,
           license: input.license,
@@ -158,6 +128,11 @@ export async function createResubmissionVersion(
         })
         .returning()
       if (!version) throw new Error('insert configVersions returned no row')
+      await insertPendingSubmission(tx, {
+        kind: 'status_line',
+        versionId: version.id,
+        submittedBy: input.authorId,
+      })
       await tx.insert(renderJobs).values({
         configVersionId: version.id,
         status: input.networkHosts.length > 0 ? 'held' : 'queued',
