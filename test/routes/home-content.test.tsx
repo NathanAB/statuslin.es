@@ -60,13 +60,11 @@ function renderHome(overrides: Partial<typeof gallery> = {}) {
 }
 
 describe('home content', () => {
-  it('says how status lines reach the gallery, and that every card is real output', () => {
+  it('says everything is made by the community and reviewed by hand', () => {
     renderHome()
 
     const page = document.body.textContent ?? ''
-    expect(page).toContain(
-      'Status lines are submitted by the community and reviewed by hand. Every card shows real output from the script or mod itself.',
-    )
+    expect(page).toContain('Everything here is made by the community and reviewed by hand.')
     expect(page).not.toMatch(/examples/)
     expect(page).not.toMatch(/templates/)
     expect(page).not.toMatch(/TUI installer/)
@@ -81,7 +79,7 @@ describe('home content', () => {
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
     expect(h1s[0]?.textContent).toBe(HOME_HEADING)
-    expect(HOME_HEADING).toBe('A gallery of Claude Code status lines and mods')
+    expect(HOME_HEADING).toBe('Claude Code status lines and mods')
   })
 
   it('names the page number in the h1 past page 1', () => {
@@ -89,7 +87,7 @@ describe('home content', () => {
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    expect(h1s[0]?.textContent).toBe('A gallery of Claude Code status lines and mods, page 2')
+    expect(h1s[0]?.textContent).toBe('Claude Code status lines and mods, page 2')
   })
 
   it('sits the heading beside the wordmark, with no browse-by-feature row', () => {
