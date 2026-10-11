@@ -132,7 +132,8 @@ const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
 
 const MEANING_RANK = new Map([...FOOTPRINT_MEANINGS.keys()].map((key, i) => [key, i]))
 
-function parseEntry(entry: string): { name: string; args: MatcherArgs } {
+/** A footprint entry split into its name and its matcher arguments. */
+export function parseEntry(entry: string): { name: string; args: MatcherArgs } {
   const match = /^([^{]+)(?:\{(.*)\})?$/.exec(entry)
   const name = match?.[1] ?? entry
   const args: MatcherArgs = {}
@@ -161,17 +162,14 @@ export interface FootprintDescription {
   phrases: string[]
   unknown: string[]
   draws: DrawLocation[]
-  mentionsDesktop: boolean
 }
 
 export function describeFootprint(footprint: ModFootprint): FootprintDescription {
   const ranked = new Map<string, number>()
   const unknown: string[] = []
   const draws = new Set<DrawLocation>()
-  let mentionsDesktop = false
   for (const entry of [...footprint.events, ...footprint.calls]) {
     const { name, args } = parseEntry(entry)
-    if (args.surface === 'desktop') mentionsDesktop = true
     const found = meaningOf(name, args)
     if (!found) {
       unknown.push(entry)
@@ -187,7 +185,6 @@ export function describeFootprint(footprint: ModFootprint): FootprintDescription
     phrases: [...ranked].sort((a, b) => a[1] - b[1]).map(([phrase]) => phrase),
     unknown,
     draws: DRAW_LOCATIONS.filter((location) => draws.has(location)),
-    mentionsDesktop,
   }
 }
 
@@ -197,10 +194,11 @@ interface RecordedSurfaces {
   desktop: Pick<DesktopPreview, 'kind'> | null
 }
 
-function modSurfaces(version: RecordedSurfaces, mentionsDesktop: boolean): Surface[] {
+/** The surfaces the recorded previews show it drawing on; one where it drew nothing is left out. */
+function modSurfaces(version: RecordedSurfaces): Surface[] {
   const surfaces: Surface[] = []
   if (version.preview !== null && version.preview.length > 0) surfaces.push('terminal')
-  if (version.desktop?.kind === 'shot' || mentionsDesktop) surfaces.push('desktop')
+  if (version.desktop?.kind === 'shot') surfaces.push('desktop')
   return surfaces
 }
 
@@ -212,6 +210,5 @@ export interface ModFootprintDescription extends FootprintDescription {
 export function describeModFootprint(
   version: RecordedSurfaces & { footprint: ModFootprint },
 ): ModFootprintDescription {
-  const footprint = describeFootprint(version.footprint)
-  return { ...footprint, surfaces: modSurfaces(version, footprint.mentionsDesktop) }
+  return { ...describeFootprint(version.footprint), surfaces: modSurfaces(version) }
 }
