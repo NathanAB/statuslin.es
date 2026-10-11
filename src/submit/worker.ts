@@ -22,11 +22,7 @@ export const MAX_RENDER_ATTEMPTS = 3
  * be live on another machine and is left alone. A job with no start time was left by the old
  * always-on worker. Each goes where `afterCutOff` sends it. Returns how many it moved. */
 export async function requeueStaleJobs(db: Db): Promise<number> {
-  const startedBefore = new Date(Date.now() - STALE_RUNNING_JOB_MS)
-  const isStale = and(
-    eq(renderJobs.status, 'running'),
-    or(isNull(renderJobs.startedAt), lt(renderJobs.startedAt, startedBefore)),
-  )
+  const isStale = isCutOff()
   const stale = await db
     .select({
       id: renderJobs.id,
@@ -51,10 +47,25 @@ export async function requeueStaleJobs(db: Db): Promise<number> {
   return moved
 }
 
+/** A job 'running' longer than STALE_RUNNING_JOB_MS, or with no start time (left by the old
+ * always-on worker): the machine rendering it was stopped or crashed. */
+export function isCutOff() {
+  const startedBefore = new Date(Date.now() - STALE_RUNNING_JOB_MS)
+  return and(
+    eq(renderJobs.status, 'running'),
+    or(isNull(renderJobs.startedAt), lt(renderJobs.startedAt, startedBefore)),
+  )
+}
+
+/** Where a cut-off job goes to render again: 'queued', or 'held' for a NETWORK job (networkHosts
+ * non-empty), because a network render must never re-run without a fresh admin click (the
+ * held-job invariant). */
+export function rerenderStatus(networkHosts: string[] | null): 'queued' | 'held' {
+  return (networkHosts ?? []).length > 0 ? 'held' : 'queued'
+}
+
 /** Where a job cut off mid-render goes. It fails once its submission is decided (nothing left to
- * review) or it has used MAX_RENDER_ATTEMPTS. Otherwise an OFFLINE job goes back to 'queued' and a
- * NETWORK job (networkHosts non-empty) to 'held': a network render must never re-run without a
- * fresh admin click (the held-job invariant). */
+ * review) or it has used MAX_RENDER_ATTEMPTS, and otherwise goes to its `rerenderStatus`. */
 function afterCutOff(job: {
   attempts: number
   networkHosts: string[] | null
@@ -70,7 +81,7 @@ function afterCutOff(job: {
   if (job.attempts >= MAX_RENDER_ATTEMPTS) {
     return { status: 'failed', error: `cut off ${job.attempts} times`, finishedAt: new Date() }
   }
-  return { status: (job.networkHosts ?? []).length > 0 ? 'held' : 'queued' }
+  return { status: rerenderStatus(job.networkHosts) }
 }
 
 /** Called once per finished job (done or failed). Lets the web server's drain report telemetry

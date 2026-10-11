@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
 import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
@@ -8,6 +8,7 @@ import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { triggerRenderDrain } from '@/server/render-drain'
+import { isCutOff, rerenderStatus, STALE_RUNNING_JOB_MS } from '@/submit/worker'
 import { assertAdmin } from './admin'
 import { approveAndEmailVersion, retryApprovalEmail } from './approval-delivery'
 import { decisionEvent, type VersionConfig } from './decision-event'
@@ -68,16 +69,34 @@ export async function findVersionConfig(
   return row
 }
 
-/** Re-attempt a render: reset the version's render job to 'queued'. Only a FAILED job may be
- * re-queued — never a 'held' network job (that's runNetworkPreview's job alone), never a still
- * 'queued'/'running' one, and never a 'done' one (already rendered). Clears error + attempts. */
+/** Re-attempt a render. A FAILED job goes back to 'queued'. A job cut off mid-render (running
+ * longer than STALE_RUNNING_JOB_MS) goes to its `rerenderStatus`, so a network one still waits
+ * for "Run network preview". Never a 'held' network job (that's runNetworkPreview's job alone),
+ * a 'queued' or live 'running' one, or a 'done' one (already rendered). Clears error + attempts. */
 export async function requeueRenderJob(database: Db, versionId: string): Promise<void> {
-  const [job] = await database
+  const reset = { error: null, attempts: 0, finishedAt: null }
+  const forVersion = eq(renderJobs.configVersionId, versionId)
+  const [failed] = await database
     .update(renderJobs)
-    .set({ status: 'queued', error: null, attempts: 0, finishedAt: null })
-    .where(and(eq(renderJobs.configVersionId, versionId), inArray(renderJobs.status, ['failed'])))
-    .returning()
-  if (!job) throw new HttpError(409, 'no re-queueable render job for that version (must be failed)')
+    .set({ ...reset, status: 'queued' })
+    .where(and(forVersion, eq(renderJobs.status, 'failed')))
+    .returning({ id: renderJobs.id })
+  if (failed) return
+  const [version] = await database
+    .select({ networkHosts: configVersions.networkHosts })
+    .from(configVersions)
+    .where(eq(configVersions.id, versionId))
+  const [cutOff] = await database
+    .update(renderJobs)
+    .set({ ...reset, status: rerenderStatus(version?.networkHosts ?? null) })
+    .where(and(forVersion, isCutOff()))
+    .returning({ id: renderJobs.id })
+  if (!cutOff) {
+    throw new HttpError(
+      409,
+      `no re-queueable render job for that version (must be failed, or running for over ${STALE_RUNNING_JOB_MS / 60_000} minutes)`,
+    )
+  }
 }
 
 /** Admin-gated: run the network preview for a held network version. Promotes the render job
