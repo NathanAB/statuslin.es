@@ -359,6 +359,25 @@ describe('drainRenderJobs', () => {
     expect(await jobStatus(versionId)).toBe('done')
   })
 
+  it('claims the next queued job when another drain wins the race for the first', async () => {
+    for (const title of ['First', 'Second']) {
+      await submitConfig(db, {
+        authorId: 'u1',
+        title,
+        description: '',
+        interpreter: 'bash',
+        source: `#!/bin/bash\necho ${title}`,
+      })
+    }
+
+    const processed = await Promise.all([
+      drainRenderJobs(db, new FakeSandboxRunner()),
+      drainRenderJobs(db, new FakeSandboxRunner()),
+    ])
+
+    expect(processed).toEqual([1, 1])
+  })
+
   it('returns 0 when nothing is queued', async () => {
     expect(await drainRenderJobs(db, new FakeSandboxRunner())).toBe(0)
   })

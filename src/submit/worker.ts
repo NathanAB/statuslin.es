@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { renderConfig } from '@/render/pipeline'
@@ -162,19 +162,20 @@ export async function queueDepthStats(
   return { queuedRemaining: count, oldestQueuedAgeSec }
 }
 
+/** Claim the oldest queued job. Several drains claim at once, so the pick skips a job another
+ * drain is claiming right now and takes the next one, rather than losing the race and stopping. */
 async function claimNextJob(db: Db): Promise<{ id: string; configVersionId: string } | null> {
-  const [next] = await db
-    .select({ id: renderJobs.id, configVersionId: renderJobs.configVersionId })
+  const oldestQueued = db
+    .select({ id: renderJobs.id })
     .from(renderJobs)
     .where(eq(renderJobs.status, 'queued'))
     .orderBy(renderJobs.createdAt)
     .limit(1)
-  if (!next) return null
-  const updated = await db
+    .for('update', { skipLocked: true })
+  const [claimed] = await db
     .update(renderJobs)
     .set({ status: 'running', startedAt: new Date(), attempts: sql`${renderJobs.attempts} + 1` })
-    .where(and(eq(renderJobs.id, next.id), eq(renderJobs.status, 'queued')))
-    .returning({ id: renderJobs.id })
-  if (updated.length === 0) return null
-  return next
+    .where(and(inArray(renderJobs.id, oldestQueued), eq(renderJobs.status, 'queued')))
+    .returning({ id: renderJobs.id, configVersionId: renderJobs.configVersionId })
+  return claimed ?? null
 }
