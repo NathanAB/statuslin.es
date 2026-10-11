@@ -19,7 +19,7 @@ import {
 } from '@/review/decide'
 import { submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
-import { insertSubmission } from '../fixtures/submission'
+import { insertSubmission, setReviewState } from '../fixtures/submission'
 
 async function seedVersionWithJob(
   db: ReturnType<typeof drizzle<typeof schema>>,
@@ -224,10 +224,7 @@ describe('approval email delivery', () => {
       'admin1',
       vi.fn().mockRejectedValue(new Error('offline')),
     )
-    await db
-      .update(schema.submissions)
-      .set({ approvalEmailStatus: 'failed' })
-      .where(eq(schema.submissions.id, versionId))
+    await setReviewState(db, versionId, { approvalEmailStatus: 'failed' })
     const send = vi.fn().mockResolvedValue({ id: 'email_retry_approved' })
 
     const result = await retryApprovalEmail(db, versionId, send)
@@ -278,10 +275,7 @@ describe('approval email delivery', () => {
     })
     await processNextRenderJob(db, new FakeSandboxRunner())
     await approveVersion(db, versionId, 'admin1')
-    await db
-      .update(schema.submissions)
-      .set({ approvalEmailStatus: 'failed' })
-      .where(eq(schema.submissions.id, versionId))
+    await setReviewState(db, versionId, { approvalEmailStatus: 'failed' })
 
     let resolveSuccess!: (value: { id: string }) => void
     let markSuccessStarted!: () => void
@@ -491,10 +485,7 @@ describe('rejection email delivery', () => {
       'Use a pinned source.',
       vi.fn().mockRejectedValue(new Error('offline')),
     )
-    await db
-      .update(schema.submissions)
-      .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.submissions.id, versionId))
+    await setReviewState(db, versionId, { rejectionEmailStatus: 'failed' })
     const send = vi.fn().mockResolvedValue({ id: 'email_retry' })
 
     const result = await retryRejectionEmail(db, versionId, send)
@@ -515,10 +506,7 @@ describe('rejection email delivery', () => {
       source: 'x',
     })
     await rejectVersion(db, versionId, 'admin1', 'Use a pinned source.')
-    await db
-      .update(schema.submissions)
-      .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.submissions.id, versionId))
+    await setReviewState(db, versionId, { rejectionEmailStatus: 'failed' })
 
     let resolveSuccess!: (value: { id: string }) => void
     let markSuccessStarted!: () => void
@@ -611,10 +599,7 @@ describe('rejection email delivery', () => {
       source: 'echo original',
     })
     await rejectVersion(db, rejected.versionId, 'admin1', 'Change the script.')
-    await db
-      .update(schema.submissions)
-      .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.submissions.id, rejected.versionId))
+    await setReviewState(db, rejected.versionId, { rejectionEmailStatus: 'failed' })
     await submitConfig(
       db,
       {

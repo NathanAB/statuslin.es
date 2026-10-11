@@ -1,8 +1,9 @@
 -- Custom SQL migration file, put your code below! --
 -- Review state moves off config_versions into submissions (ADR 0007). Every status line version
 -- gets the submission it was reviewed as, keyed by its own id, submitted by its config's author.
--- Safe to run again: the release that drops the old columns re-runs it to copy versions written
--- by machines still on the old code during this deploy.
+-- It runs in the release_command, while machines on the old code still serve and write review
+-- state to config_versions only. Nothing re-runs it: scripts/reconcile-submissions.ts copies what
+-- they wrote once the deploy has replaced them (docs/deploy.md).
 INSERT INTO "submissions" (
   "id", "kind", "config_version_id", "submitted_by", "status", "reviewed_by", "reviewed_at",
   "rejection_reason", "rejection_email_status", "rejection_email_id", "rejection_email_error",

@@ -155,6 +155,13 @@ use the `drizzle-kit` CLI. So the only things the image must keep are `drizzle-o
 dependency, never pruned) and the `drizzle/` folder (copied in) — verify the `drizzle/` copy
 survives when editing the generated Dockerfile.
 
+**Rolling back past the `submissions` table (#83) keeps review state correct.** Until the release
+that drops them, every review write lands on `submissions` and on the old review columns of
+`config_versions`, in one transaction, so an image from before #83 reads correct review state. After
+rolling forward again, run `scripts/reconcile-submissions.ts` as in step 1 of the mods launch runbook
+below, to copy what the older image reviewed. Once a release drops those columns, nothing older than
+it can run.
+
 **One-time backfill for the `configs.all_tags` release (migration `0018`):** the migration adds the
 column with a `'[]'` default, so **existing** published configs start with an empty `all_tags` until
 it's populated. Every read path (facet pages, the home tag filter, the sitemap/llms facet list) now
@@ -280,6 +287,19 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```sh
    DATABASE_URL='<env pooled url>' bun run db:migrate
    ```
+   `0035` and `0036` move status line review state from `config_versions` into the new `submissions`
+   table. The `release_command` copies it while machines on the old code are still serving, and they
+   write review state only to `config_versions` until the deploy replaces them. Once `fly deploy` has
+   finished, copy what they wrote, dry run first:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/reconcile-submissions.ts
+   DATABASE_URL='<env pooled url>' bun run scripts/reconcile-submissions.ts --apply
+   ```
+   Until it has run, /admin is missing submissions the old machines took and shows their decisions
+   as pending. A review action on any version they changed is refused (409), so nothing is decided
+   twice. A `CONFLICT` line is a difference the old code can't cause: a submission decided
+   differently from `config_versions`, or with email state ahead of it. The script leaves it alone
+   and exits 1, so settle it by hand.
 2. Import the curated mods in `src/mods/curation.json` as drafts. Rerunning skips mods already
    imported at the same commit:
    ```sh
