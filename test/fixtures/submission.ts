@@ -1,12 +1,13 @@
 import { eq, getTableColumns } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
+import { REVIEW_STATE_COLUMNS, type ReviewState } from '@/submissions/review-state'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof schema>
 
 /** The submission a status line version is reviewed as. Pending, as submit writes it, unless
- * `review` says otherwise. */
+ * `review` says otherwise, which also lands on the version's old review columns, as the app writes it. */
 export async function insertSubmission(
   db: Db,
   versionId: string,
@@ -20,6 +21,22 @@ export async function insertSubmission(
     submittedBy,
     ...review,
   })
+  const state = Object.fromEntries(
+    REVIEW_STATE_COLUMNS.filter((column) => column in review).map((column) => [
+      column,
+      review[column],
+    ]),
+  )
+  if (Object.keys(state).length > 0) {
+    await db.update(schema.configVersions).set(state).where(eq(schema.configVersions.id, versionId))
+  }
+}
+
+/** Sets a status line version's review state on its submission and its old review columns, as the
+ * app writes it. */
+export async function setReviewState(db: Db, versionId: string, state: ReviewState): Promise<void> {
+  await db.update(schema.submissions).set(state).where(eq(schema.submissions.id, versionId))
+  await db.update(schema.configVersions).set(state).where(eq(schema.configVersions.id, versionId))
 }
 
 const { submissions } = schema

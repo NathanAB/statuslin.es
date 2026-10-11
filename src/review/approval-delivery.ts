@@ -3,6 +3,7 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs, submissions, user } from '@/db/schema'
 import { computeAllTags } from '@/lib/derived-tags'
 import { HttpError } from '@/lib/http'
+import { updateReviewState } from '@/submissions/review-state'
 import {
   type ApprovalEmailInput,
   type SendApprovalEmail,
@@ -56,9 +57,9 @@ export async function approveVersion(
       .where(eq(configVersions.id, versionId))
       .for('update')
     const reviewedAt = new Date()
-    const [approved] = await tx
-      .update(submissions)
-      .set({
+    const [approved] = await updateReviewState(
+      tx,
+      {
         status: 'approved',
         reviewedBy: reviewerId,
         reviewedAt,
@@ -66,9 +67,9 @@ export async function approveVersion(
         approvalEmailId: null,
         approvalEmailError: null,
         approvalEmailSentAt: null,
-      })
-      .where(and(eq(submissions.id, versionId), eq(submissions.status, 'pending')))
-      .returning({ id: submissions.id })
+      },
+      (t) => and(eq(t.id, versionId), eq(t.status, 'pending')),
+    )
     if (!ver || !approved) throw new HttpError(409, 'version not in a reviewable (pending) state')
     const allTags = computeAllTags({
       curatedTags: cfg.tags,
@@ -144,31 +145,29 @@ async function deliverApprovalEmail(
   const kind = await approvedChange(database, row.configId, row.versionNumber)
   // A config taken down while its update waited isn't live, so the email would be false.
   if (!row.emailVerified || row.configStatus !== 'published') {
-    const [updated] = await database
-      .update(submissions)
-      .set({ approvalEmailStatus: 'unavailable', approvalEmailError: null })
-      .where(
+    const [updated] = await updateReviewState(
+      database,
+      { approvalEmailStatus: 'unavailable', approvalEmailError: null },
+      (t) =>
         and(
-          eq(submissions.id, versionId),
-          eq(submissions.status, 'approved'),
-          inArray(submissions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
+          eq(t.id, versionId),
+          eq(t.status, 'approved'),
+          inArray(t.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
         ),
-      )
-      .returning({ id: submissions.id })
+    )
     return updated ? 'unavailable' : 'sent'
   }
 
-  const [claimed] = await database
-    .update(submissions)
-    .set({ approvalEmailStatus: 'sending', approvalEmailError: null })
-    .where(
+  const [claimed] = await updateReviewState(
+    database,
+    { approvalEmailStatus: 'sending', approvalEmailError: null },
+    (t) =>
       and(
-        eq(submissions.id, versionId),
-        eq(submissions.status, 'approved'),
-        inArray(submissions.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
+        eq(t.id, versionId),
+        eq(t.status, 'approved'),
+        inArray(t.approvalEmailStatus, UNSENT_APPROVAL_EMAIL_STATUSES),
       ),
-    )
-    .returning({ id: submissions.id })
+  )
   if (!claimed) throw new HttpError(409, 'approval email delivery is already in progress')
 
   const input: ApprovalEmailInput = {
@@ -181,40 +180,31 @@ async function deliverApprovalEmail(
   }
   try {
     const result = await send(input)
-    await database
-      .update(submissions)
-      .set({
+    await updateReviewState(
+      database,
+      {
         approvalEmailStatus: 'sent',
         approvalEmailId: result.id,
         approvalEmailError: null,
         approvalEmailSentAt: new Date(),
-      })
-      .where(
-        and(
-          eq(submissions.id, versionId),
-          eq(submissions.status, 'approved'),
-          eq(submissions.approvalEmailStatus, 'sending'),
-        ),
-      )
+      },
+      (t) =>
+        and(eq(t.id, versionId), eq(t.status, 'approved'), eq(t.approvalEmailStatus, 'sending')),
+    )
     return 'sent'
   } catch (error) {
     const delivery = error instanceof ReviewEmailProviderError ? 'failed' : 'ambiguous'
-    const [updated] = await database
-      .update(submissions)
-      .set({
+    const [updated] = await updateReviewState(
+      database,
+      {
         approvalEmailStatus: delivery,
         approvalEmailError:
           delivery === 'failed' ? 'Email delivery failed' : 'Email delivery could not be confirmed',
         approvalEmailSentAt: null,
-      })
-      .where(
-        and(
-          eq(submissions.id, versionId),
-          eq(submissions.status, 'approved'),
-          eq(submissions.approvalEmailStatus, 'sending'),
-        ),
-      )
-      .returning({ id: submissions.id })
+      },
+      (t) =>
+        and(eq(t.id, versionId), eq(t.status, 'approved'), eq(t.approvalEmailStatus, 'sending')),
+    )
     return updated ? delivery : 'sent'
   }
 }

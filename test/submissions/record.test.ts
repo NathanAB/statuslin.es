@@ -11,6 +11,7 @@ import {
   supersedePending,
   supersedeRejectionEmail,
 } from '@/submissions/record'
+import { insertSubmission, setReviewState } from '../fixtures/submission'
 
 const AUTHOR = 'record-author'
 const OTHER = 'record-other'
@@ -71,6 +72,14 @@ async function modVersion(): Promise<string> {
     })
     .returning()
   return version!.id
+}
+
+async function oldStatus(id: string) {
+  const [row] = await db
+    .select({ status: schema.configVersions.status })
+    .from(schema.configVersions)
+    .where(eq(schema.configVersions.id, id))
+  return row?.status
 }
 
 async function submission(id: string) {
@@ -141,27 +150,39 @@ describe('supersedePending', () => {
     for (const versionId of [pending, rejected, untouched]) {
       await insertPendingSubmission(db, { kind: 'status_line', versionId, submittedBy: AUTHOR })
     }
-    await db
-      .update(schema.submissions)
-      .set({ status: 'rejected' })
-      .where(eq(schema.submissions.id, rejected))
+    await setReviewState(db, rejected, { status: 'rejected' })
 
     expect(await supersedePending(db, [pending, rejected])).toEqual([pending])
     expect((await submission(pending))?.status).toBe('superseded')
     expect((await submission(rejected))?.status).toBe('rejected')
     expect((await submission(untouched))?.status).toBe('pending')
     expect(await supersedePending(db, [])).toEqual([])
+    expect(await oldStatus(pending)).toBe('superseded')
+  })
+
+  it('refuses, superseding nothing, once a machine on the old code approved one of them', async () => {
+    const pending = await statusLineVersion(AUTHOR, 1)
+    const approvedOnOldCode = await statusLineVersion(AUTHOR, 1)
+    for (const versionId of [pending, approvedOnOldCode]) {
+      await insertPendingSubmission(db, { kind: 'status_line', versionId, submittedBy: AUTHOR })
+    }
+    await db
+      .update(schema.configVersions)
+      .set({ status: 'approved' })
+      .where(eq(schema.configVersions.id, approvedOnOldCode))
+
+    await expect(supersedePending(db, [pending, approvedOnOldCode])).rejects.toMatchObject({
+      status: 409,
+    })
+    expect((await submission(pending))?.status).toBe('pending')
+    expect(await oldStatus(approvedOnOldCode)).toBe('approved')
   })
 })
 
 describe('supersedeRejectionEmail', () => {
   async function rejectedWithEmail(rejectionEmailStatus: string) {
     const versionId = await statusLineVersion()
-    await db.insert(schema.submissions).values({
-      id: versionId,
-      kind: 'status_line',
-      configVersionId: versionId,
-      submittedBy: AUTHOR,
+    await insertSubmission(db, versionId, AUTHOR, {
       status: 'rejected',
       rejectionEmailStatus,
       rejectionEmailError: 'Email delivery failed',

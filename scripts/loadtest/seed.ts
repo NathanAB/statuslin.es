@@ -183,15 +183,16 @@ export async function seedLoadConfigs(db: Db, opts: { count: number }): Promise<
       })
       .returning()
     if (!ver) throw new Error(`insert configVersions returned no row for ${slug}`)
+    const review = { status: 'approved' as const, reviewedBy: author.id, reviewedAt: createdAt }
     await db.insert(submissions).values({
       id: ver.id,
       kind: 'status_line',
       configVersionId: ver.id,
       submittedBy: author.id,
-      status: 'approved',
-      reviewedBy: author.id,
-      reviewedAt: createdAt,
+      ...review,
     })
+    // The old review columns too, as every review write does until the release that drops them.
+    await db.update(configVersions).set(review).where(eq(configVersions.id, ver.id))
 
     await db.update(configs).set({ currentVersionId: ver.id }).where(eq(configs.id, cfg.id))
     await storePreviews(db, contentSha256, buildPreviews(i))

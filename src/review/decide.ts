@@ -3,11 +3,12 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
+import { configs, configVersions, renderJobs } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { triggerRenderDrain } from '@/server/render-drain'
+import { updateReviewState } from '@/submissions/review-state'
 import { assertAdmin } from './admin'
 import { approveAndEmailVersion, retryApprovalEmail } from './approval-delivery'
 import { decisionEvent, type VersionConfig } from './decision-event'
@@ -48,10 +49,12 @@ export async function setReadsClaudeToken(
       .where(eq(configVersions.id, versionId))
       .returning({ id: configVersions.id })
     if (!row) throw new HttpError(404, 'version not found')
-    await tx
-      .update(submissions)
-      .set({ reviewedBy: reviewerId, reviewedAt: new Date() })
-      .where(eq(submissions.id, versionId))
+    const [reviewed] = await updateReviewState(
+      tx,
+      { reviewedBy: reviewerId, reviewedAt: new Date() },
+      (t) => and(eq(t.id, versionId), eq(t.status, 'pending')),
+    )
+    if (!reviewed) throw new HttpError(409, 'version not in a reviewable (pending) state')
   })
 }
 

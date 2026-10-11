@@ -2,6 +2,7 @@ import { and, count, eq, gt, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type SubmissionKind, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
+import { updateReviewState } from './review-state'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -43,21 +44,18 @@ export async function insertPendingSubmission(
 
 /** Marks the still-pending submissions among `versionIds` superseded, returning their ids. */
 export async function supersedePending(
-  database: Pick<Db, 'update'>,
+  database: Pick<Db, 'transaction'>,
   versionIds: string[],
 ): Promise<string[]> {
   if (versionIds.length === 0) return []
-  const superseded = await database
-    .update(submissions)
-    .set({ status: 'superseded' })
-    .where(and(inArray(submissions.id, versionIds), eq(submissions.status, 'pending')))
-    .returning({ id: submissions.id })
-  return superseded.map((row) => row.id)
+  return updateReviewState(database, { status: 'superseded' }, (t) =>
+    and(inArray(t.id, versionIds), eq(t.status, 'pending')),
+  )
 }
 
 /** Withdraws a rejection email that hasn't gone out, once a newer submission replaces it. */
 export async function supersedeRejectionEmail(
-  database: Pick<Db, 'update'>,
+  database: Pick<Db, 'transaction'>,
   submission: { id: string; rejectionEmailStatus: string | null },
 ): Promise<void> {
   if (submission.rejectionEmailStatus === 'sending') {
@@ -70,16 +68,15 @@ export async function supersedeRejectionEmail(
   ) {
     return
   }
-  const [superseded] = await database
-    .update(submissions)
-    .set({ rejectionEmailStatus: 'superseded', rejectionEmailError: null })
-    .where(
+  const [superseded] = await updateReviewState(
+    database,
+    { rejectionEmailStatus: 'superseded', rejectionEmailError: null },
+    (t) =>
       and(
-        eq(submissions.id, submission.id),
-        inArray(submissions.rejectionEmailStatus, SUPERSEDABLE_REJECTION_EMAIL_STATUSES),
+        eq(t.id, submission.id),
+        inArray(t.rejectionEmailStatus, SUPERSEDABLE_REJECTION_EMAIL_STATUSES),
       ),
-    )
-    .returning({ id: submissions.id })
+  )
   if (!superseded) {
     throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
   }

@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getMySubmissionRows } from '@/review/my-submissions'
 import { getResubmissionDraft, submitConfig } from '@/submit/submit'
-import { insertSubmission, selectVersionsWithReview } from '../fixtures/submission'
+import { insertSubmission, selectVersionsWithReview, setReviewState } from '../fixtures/submission'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -46,14 +46,11 @@ const original = {
 
 async function rejectedSubmission() {
   const result = await submitConfig(db, original)
-  await db
-    .update(schema.submissions)
-    .set({
-      status: 'rejected',
-      rejectionReason: 'Remove the updater.',
-      rejectionEmailStatus: 'sent',
-    })
-    .where(eq(schema.submissions.id, result.versionId))
+  await setReviewState(db, result.versionId, {
+    status: 'rejected',
+    rejectionReason: 'Remove the updater.',
+    rejectionEmailStatus: 'sent',
+  })
   return result
 }
 
@@ -143,10 +140,7 @@ describe('linked resubmission', () => {
 
   it('supersedes an unsent rejection email when the corrected version is created', async () => {
     const rejected = await rejectedSubmission()
-    await db
-      .update(schema.submissions)
-      .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.submissions.id, rejected.versionId))
+    await setReviewState(db, rejected.versionId, { rejectionEmailStatus: 'failed' })
 
     await submitConfig(
       db,
