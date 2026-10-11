@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { Children, cloneElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -93,36 +93,14 @@ afterEach(() => {
 })
 
 describe('GalleryControls analytics', () => {
-  it('captures a tag addition with the resulting filter state', () => {
-    render(<GalleryControls kind="all" sort="trending" tags={[]} available={['git']} />)
+  it('offers no tag filter', () => {
+    render(<GalleryControls kind="all" sort="trending" tags={[]} />)
 
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Git' }))
-
-    expect(capture).toHaveBeenCalledWith('gallery_filter_changed', {
-      action: 'add',
-      tag: 'git',
-      selectedTags: ['git'],
-      sort: 'trending',
-      page: 1,
-    })
+    expect(screen.queryByRole('button', { name: /filter/i })).toBeNull()
   })
 
-  it('captures a tag removal with the resulting filter state', () => {
-    render(<GalleryControls kind="all" sort="new" tags={['git']} available={['git']} />)
-
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Git' }))
-
-    expect(capture).toHaveBeenCalledWith('gallery_filter_changed', {
-      action: 'remove',
-      tag: 'git',
-      selectedTags: [],
-      sort: 'new',
-      page: 1,
-    })
-  })
-
-  it('captures clearing filters', () => {
-    render(<GalleryControls kind="all" sort="top" tags={['git']} available={['git']} />)
+  it('captures clearing a tag filter that arrived in the URL', () => {
+    render(<GalleryControls kind="all" sort="top" tags={['git']} />)
 
     fireEvent.click(screen.getByRole('link', { name: 'Clear filters' }))
 
@@ -135,7 +113,7 @@ describe('GalleryControls analytics', () => {
   })
 
   it('captures sort changes with the active filter state', () => {
-    render(<GalleryControls kind="all" sort="trending" tags={['git']} available={['git']} />)
+    render(<GalleryControls kind="all" sort="trending" tags={['git']} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Top' }))
 
@@ -149,22 +127,28 @@ describe('GalleryControls analytics', () => {
 
 describe('GalleryControls kind filter', () => {
   const searchAfterClicking = (name: string, prev: Record<string, unknown>) => {
-    fireEvent.click(screen.getByRole('button', { name }))
+    fireEvent.click(screen.getByRole('radio', { name }))
     const { search } = navigate.mock.calls[0]?.[0] as {
       search: (prev: Record<string, unknown>) => Record<string, unknown>
     }
     return search(prev)
   }
 
-  it('marks the active kind as pressed', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} available={[]} />)
+  it('is one segmented control, with the active kind checked', () => {
+    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
 
-    expect(screen.getByRole('button', { name: 'Mods' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('false')
+    const group = screen.getByRole('radiogroup', { name: 'Show' })
+    expect(
+      within(group)
+        .getAllByRole('radio')
+        .map((r) => r.textContent),
+    ).toEqual(['All', 'Status lines', 'Mods'])
+    expect(screen.getByRole('radio', { name: 'Mods' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('false')
   })
 
   it('writes the chosen kind to the URL and resets the page', () => {
-    render(<GalleryControls kind="all" sort="new" tags={['git']} available={['git']} />)
+    render(<GalleryControls kind="all" sort="new" tags={['git']} />)
 
     expect(searchAfterClicking('Status lines', { sort: 'new', tags: 'git', page: 3 })).toEqual({
       sort: 'new',
@@ -174,8 +158,16 @@ describe('GalleryControls kind filter', () => {
   })
 
   it('leaves All out of the URL', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} available={[]} />)
+    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
 
     expect(searchAfterClicking('All', { kind: 'mods', page: 2 })).toEqual({})
+  })
+
+  it('keeps the active kind when it is clicked again', () => {
+    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
+
+    expect(navigate).not.toHaveBeenCalled()
   })
 })

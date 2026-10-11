@@ -5,7 +5,6 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigSource, getPublishedConfigs } from '@/gallery/config-items'
-import { getAvailableTags } from '@/gallery/facet-queries'
 import { storePreviews } from '@/render/store'
 
 let client: PGlite
@@ -109,21 +108,5 @@ describe('getConfigSource total tag filter (drives page count)', () => {
   })
   it('a tag no config carries counts zero', async () => {
     expect(await total(['themed'])).toBe(0)
-  })
-})
-
-describe('getAvailableTags (drives the filter dropdown)', () => {
-  it('returns only slugs a published config carries, in registry order', async () => {
-    // seed carries node, quota, python; registry order puts quota before python before node.
-    expect(await getAvailableTags(db)).toEqual(['quota', 'python', 'node'])
-  })
-
-  it('adds the tags only a published mod carries', async () => {
-    expect(await getAvailableTags(db, [['git'], ['node']])).toEqual([
-      'git',
-      'quota',
-      'python',
-      'node',
-    ])
   })
 })

@@ -29,7 +29,7 @@ import {
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
-import { getGalleryModsFn, getPublishedModTagsFn } from '@/mods/gallery-functions'
+import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
 import { Button } from '@/ui/button'
 import { HomeHero, HomeMasthead } from '@/ui/home-hero'
@@ -73,7 +73,7 @@ export const Route = createFileRoute('/')({
           mod: (limit) => getGalleryModsFn({ data: { sort, tags, limit } }),
         },
       ),
-      getPublishedModTagsFn().then((modTags) => getGallery({ data: { modTags } })),
+      getGallery(),
     ])
     if (!listing) throw notFound()
     return { user: await getSession(), gallery: { ...gallery, ...listing } }
@@ -138,12 +138,7 @@ function Home() {
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
-            <GalleryControls
-              kind={kind ?? 'all'}
-              sort={sort}
-              tags={tags ? tags.split(',') : []}
-              available={gallery.availableTags}
-            />
+            <GalleryControls kind={kind ?? 'all'} sort={sort} tags={tags ? tags.split(',') : []} />
             <SubmitCta signedIn={!!user} />
           </Row>
           {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}

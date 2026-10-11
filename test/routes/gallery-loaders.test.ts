@@ -76,7 +76,7 @@ const listed = (items: GalleryItem[]) =>
 
 async function loadHome(search: { kind?: 'status-lines' | 'mods'; tags?: string }) {
   const loader = HomeRoute.options.loader as (ctx: unknown) => Promise<{
-    gallery: { items: GalleryItem[]; availableTags: string[] }
+    gallery: { items: GalleryItem[] }
   }>
   return (await loader({ deps: search })).gallery
 }
@@ -106,22 +106,6 @@ describe('home gallery loader', () => {
 
   it('lists both kinds under All', async () => {
     expect((await loadHome({})).items).toHaveLength(5)
-  })
-
-  it('offers a tag that only a mod carries', async () => {
-    expect((await loadHome({})).availableTags).toEqual(expect.arrayContaining(['git', 'powerline']))
-  })
-})
-
-describe('getGallery input', () => {
-  it('ignores malformed mod tag lists instead of failing the page', async () => {
-    const { getGallery } = await import('@/gallery/functions')
-    const gallery = await getGallery({
-      data: { modTags: [['powerline', 3], 42] },
-    } as never)
-
-    expect(gallery.availableTags).toContain('powerline')
-    expect(gallery.availableTags).not.toContain('cost')
   })
 })
 

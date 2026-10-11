@@ -2,7 +2,7 @@ import { and, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, user } from '@/db/schema'
 import { galleryCardSelection, mapCardRows } from './card-rows'
-import { ALL_TAG_SLUGS, FACET_BY_SLUG, FACETS, type Facet } from './facets'
+import { FACET_BY_SLUG, FACETS, type Facet } from './facets'
 import { type GalleryCard, selectCardPreviews } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -68,13 +68,6 @@ function addModCounts(stats: Map<string, FacetStats>, modTags: string[][]): void
       if (s) s.count += 1
     }
   }
-}
-
-/** The tag slugs at least one published config or mod carries, in registry (display) order.
- * Drives the home filter dropdown so it never offers a tag that would match nothing. */
-export async function getAvailableTags(db: Db, modTags: string[][] = []): Promise<string[]> {
-  const stats = await getFacetStats(db, modTags)
-  return ALL_TAG_SLUGS.filter((slug) => (stats.get(slug)?.count ?? 0) >= 1)
 }
 
 /** A facet page's cards: published matches, most-copied first, newest as the tiebreak. */
