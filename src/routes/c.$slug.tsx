@@ -6,8 +6,8 @@ import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { getViewerIsAuthor } from '@/gallery/authorship'
 import { ConfigHeader } from '@/gallery/config-header'
 import { DesktopNote } from '@/gallery/desktop-note'
+import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getConfigDetail } from '@/gallery/functions'
-import { GeneratedContentSections } from '@/gallery/generated-content'
 import { OwnerUpdateStrip } from '@/gallery/owner-update-strip'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -102,23 +102,22 @@ function ConfigDetail() {
 
   return (
     <PageShell user={user}>
-      <Stack gap={6}>
-        <OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />
-
-        <ConfigHeader detail={detail} />
-
-        <AdoptPrompt
-          source={detail.source}
-          interpreter={detail.interpreter}
-          title={detail.title}
-          controller={copyController}
-        />
-
-        <DesktopNote surface="config_page" />
-
-        {/* All scenarios, stacked */}
-        <SectionCard title="Preview" headingLevel={2}>
-          {orderedPreviews.length > 0 ? (
+      <DetailPageLayout
+        notice={<OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />}
+        header={<ConfigHeader detail={detail} />}
+        install={
+          <>
+            <AdoptPrompt
+              source={detail.source}
+              interpreter={detail.interpreter}
+              title={detail.title}
+              controller={copyController}
+            />
+            <DesktopNote surface="config_page" />
+          </>
+        }
+        preview={
+          orderedPreviews.length > 0 ? (
             <Stack gap={3}>
               {orderedPreviews.map((p) => {
                 const scenario = SCENARIO_BY_KEY.get(p.scenarioKey)
@@ -136,64 +135,65 @@ function ConfigDetail() {
             <Text muted size="sm">
               No preview available.
             </Text>
-          )}
-        </SectionCard>
-
-        {/* Source */}
-        <SectionCard title="Source" headingLevel={2}>
-          <HighlightedCode
-            html={detail.sourceHtml}
-            text={detail.source}
-            copyLabel="Copy script"
-            onCopied={() => copyController.record('script')}
-          />
-        </SectionCard>
-
-        {/* Auto-generated copy — the SEO answer to "what does this status line do?" */}
-        {detail.generatedContent && <GeneratedContentSections content={detail.generatedContent} />}
-
-        {/* Internal links: without these, every config page is a crawl dead end. */}
-        {detail.related.length > 0 && (
-          <SectionCard title="More status lines" headingLevel={2}>
-            <Stack gap={3}>
-              {detail.related.map((r, index) => (
-                <Card key={r.slug} interactive>
-                  <CardHeader>
-                    <Row gap={2}>
-                      <CardTitle>
-                        <StretchedLink
-                          to="/c/$slug"
-                          params={{ slug: r.slug }}
-                          onClick={() =>
-                            posthog.capture('statusline_card_clicked', {
-                              configId: r.configId,
-                              slug: r.slug,
-                              surface: 'related',
-                              position: index + 1,
-                            })
-                          }
-                        >
-                          {r.title}
-                        </StretchedLink>
-                      </CardTitle>
-                      <CopyCount count={r.copyCount} />
-                    </Row>
-                  </CardHeader>
-                  <CardContent>
-                    {r.preview !== null ? (
-                      <StatuslinePreview segments={r.preview} />
-                    ) : (
-                      <Text muted size="sm">
-                        No preview.
-                      </Text>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </Stack>
-          </SectionCard>
-        )}
-      </Stack>
+          )
+        }
+        detail={{
+          title: 'Source',
+          content: (
+            <HighlightedCode
+              html={detail.sourceHtml}
+              text={detail.source}
+              copyLabel="Copy script"
+              onCopied={() => copyController.record('script')}
+            />
+          ),
+        }}
+        // Auto-generated copy — the SEO answer to "what does this status line do?"
+        generatedContent={detail.generatedContent}
+        // Internal links: without these, every config page is a crawl dead end.
+        related={
+          detail.related.length > 0 && (
+            <SectionCard title="More status lines" headingLevel={2}>
+              <Stack gap={3}>
+                {detail.related.map((r, index) => (
+                  <Card key={r.slug} interactive>
+                    <CardHeader>
+                      <Row gap={2}>
+                        <CardTitle>
+                          <StretchedLink
+                            to="/c/$slug"
+                            params={{ slug: r.slug }}
+                            onClick={() =>
+                              posthog.capture('statusline_card_clicked', {
+                                configId: r.configId,
+                                slug: r.slug,
+                                surface: 'related',
+                                position: index + 1,
+                              })
+                            }
+                          >
+                            {r.title}
+                          </StretchedLink>
+                        </CardTitle>
+                        <CopyCount count={r.copyCount} />
+                      </Row>
+                    </CardHeader>
+                    <CardContent>
+                      {r.preview !== null ? (
+                        <StatuslinePreview segments={r.preview} />
+                      ) : (
+                        <Text muted size="sm">
+                          No preview.
+                        </Text>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
+            </SectionCard>
+          )
+        }
+      />
     </PageShell>
   )
 }
