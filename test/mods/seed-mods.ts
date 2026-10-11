@@ -69,12 +69,14 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
   return versionId
 }
 
-/** The shot `addDesktopPreview` stores. The bytes start with the PNG signature. */
+/** The shot `addDesktopPreview` stores, with its card. The bytes start with the PNG signature. */
 export const SEEDED_DESKTOP_SHOT = {
   png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 42]),
   width: 790,
   height: 52,
-  cardAnchor: 'bottom' as const,
+  cardPng: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 43]),
+  cardWidth: 790,
+  cardHeight: 40,
 }
 
 /** Sets the version's clean-main Desktop result: a shot, or that it drew nothing. */
@@ -86,7 +88,15 @@ export async function addDesktopPreview(
   const row =
     result === 'shot'
       ? { kind: 'shot' as const, ...SEEDED_DESKTOP_SHOT }
-      : { kind: 'nothing' as const, png: null, width: null, height: null, cardAnchor: null }
+      : {
+          kind: 'nothing' as const,
+          png: null,
+          width: null,
+          height: null,
+          cardPng: null,
+          cardWidth: null,
+          cardHeight: null,
+        }
   await db
     .insert(schema.modDesktopPreviews)
     .values({

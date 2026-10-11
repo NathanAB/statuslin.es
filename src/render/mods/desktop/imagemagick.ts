@@ -1,5 +1,5 @@
 import { shellQuote } from '../session'
-import { type Rect, SCALE } from './screen'
+import { type Rect, SCALE, WINDOW } from './screen'
 
 /**
  * ImageMagick commands run inside the Desktop sandboxes, and parsers for what they print. Rects
@@ -66,22 +66,61 @@ export function parseProbes(stdout: string, count: number): RegionGrey[] {
   })
 }
 
+/** A pixel's grey difference under this is noise, like the fade Desktop lays over a scrolled chat. */
+const FAINT_CHANGE = '2%'
+
+const rectangle = ({ x, y, width, height }: Rect) =>
+  `-draw 'rectangle ${x * SCALE},${y * SCALE} ${(x + width) * SCALE - 1},${(y + height) * SCALE - 1}'`
+
 /**
- * Prints whether the shots differ anywhere outside `mask`, and the trim box of the difference. The
- * one-pixel black border keeps that box defined when nothing differs.
+ * Prints whether the shots differ anywhere outside `masks`, and the trim box of the difference.
+ * The one-pixel black border keeps that box defined when nothing differs.
  */
-export function changedBoxCommand(baseline: string, shot: string, mask: Rect): string {
-  const left = mask.x * SCALE
-  const top = mask.y * SCALE
-  const right = (mask.x + mask.width) * SCALE - 1
-  const bottom = (mask.y + mask.height) * SCALE - 1
+export function changedBoxCommand(baseline: string, shot: string, masks: readonly Rect[]): string {
   return [
     `convert ${pngInput(baseline)} ${pngInput(shot)}`,
     '-compose difference -composite',
-    `-compose over -fill black -draw 'rectangle ${left},${top} ${right},${bottom}'`,
-    '-colorspace Gray -threshold 0 -bordercolor black -border 1',
+    ['-compose over -fill black', ...masks.map(rectangle)].join(' '),
+    `-colorspace Gray -threshold ${FAINT_CHANGE} -bordercolor black -border 1`,
     `-format '%[fx:maxima] %@' info:`,
   ].join(' ')
+}
+
+/** Desktop's page background in dark theme, around the chat. */
+const PAGE_BACKGROUND = 'gray(21)'
+/** Off the page background by more than this, a pixel is content: the 20/21 grey jitter is not. */
+const NOT_BACKGROUND = '3%'
+
+/**
+ * For each CSS row, the share of `columns` (side by side) that is not page background, as one byte
+ * (0-255) per row: Desktop's band plate fills a row, and a blank row between chat elements is 0.
+ */
+export function rowProfileCommand(
+  path: string,
+  columns: readonly { x: number; width: number }[],
+): string {
+  const strips = columns.map(
+    ({ x, width }) =>
+      `\\( -clone 0 -crop ${geometry({ x, y: 0, width, height: WINDOW.height })} +repage \\)`,
+  )
+  return [
+    `set -o pipefail; convert ${pngInput(path)} ${strips.join(' ')} -delete 0 +append`,
+    `\\( +clone -fill '${PAGE_BACKGROUND}' -colorize 100% \\) -compose difference -composite`,
+    `-colorspace Gray -threshold ${NOT_BACKGROUND} -scale 1x${WINDOW.height}! -depth 8 gray:- | od -An -v -tu1`,
+  ].join(' ')
+}
+
+const BYTE = /^\d{1,3}$/
+
+export function parseRowProfile(stdout: string, rows: number): number[] {
+  const values = stdout.split(/\s+/).filter((v) => v !== '')
+  if (values.length !== rows)
+    throw new Error(`expected a ${rows}-row row profile, got ${values.length}`)
+  return values.map((value) => {
+    const byte = Number(value)
+    if (!BYTE.test(value) || byte > 255) throw new Error('unreadable row profile')
+    return byte / 255
+  })
 }
 
 const CHANGED_BOX = /^([01]) (\d+)x(\d+)\+(\d+)\+(\d+)$/
@@ -117,15 +156,13 @@ export interface QuietOptions {
 
 /** Waits inside the sandbox until the screen stops changing, bounded by `maxMs`. */
 export function quietScreenCommand(path: string, { quietMs, maxMs, pollMs }: QuietOptions): string {
-  const polls = Math.ceil(maxMs / pollMs)
-  const needed = Math.ceil(quietMs / pollMs)
   const poll = [
     `${screenshotCommand(path)} || exit 1`,
     `sum=$(md5sum < ${path})`,
-    'if [ "$sum" = "$last" ]; then same=$((same + 1)); else same=0; fi',
-    'last=$sum',
-    `test $same -ge ${needed} && exit 0`,
+    'now=$(date +%s%3N)',
+    `if [ "$sum" = "$last" ]; then [ $((now - since)) -ge ${quietMs} ] && exit 0; else last=$sum; since=$now; fi`,
     `sleep ${pollMs / 1000}`,
   ].join('; ')
-  return `last=; same=0; for i in $(seq 1 ${polls}); do ${poll}; done`
+  // Wall-clock bounds: a screenshot of a busy screen can take most of a poll.
+  return `end=$(( $(date +%s%3N) + ${maxMs} )); last=; since=0; while [ "$(date +%s%3N)" -lt "$end" ]; do ${poll}; done`
 }

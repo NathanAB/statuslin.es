@@ -5,9 +5,11 @@ import {
   parseChangedBox,
   parsePrintedPng,
   parseProbes,
+  parseRowProfile,
   printedPngCommand,
   probeCommand,
   quietScreenCommand,
+  rowProfileCommand,
   SCREEN_PNG_COMMAND,
 } from '@/render/mods/desktop/imagemagick'
 
@@ -60,17 +62,52 @@ describe('parseProbes', () => {
 })
 
 describe('changedBoxCommand', () => {
-  it('compares the shots as PNGs with the prompt text blanked, padded so the box is never empty', () => {
+  it('compares the shots as PNGs with each mask blanked, padded so the box is never empty', () => {
     expect(
-      changedBoxCommand('/tmp/baseline.png', '/tmp/final.png', {
-        x: 168,
-        y: 563,
-        width: 764,
-        height: 36,
-      }),
+      changedBoxCommand('/tmp/baseline.png', '/tmp/final.png', [
+        { x: 168, y: 563, width: 764, height: 36 },
+        { x: 1084, y: 0, width: 16, height: 900 },
+      ]),
     ).toBe(
-      "convert 'png:/tmp/baseline.png[0]' 'png:/tmp/final.png[0]' -compose difference -composite -compose over -fill black -draw 'rectangle 336,1126 1863,1197' -colorspace Gray -threshold 0 -bordercolor black -border 1 -format '%[fx:maxima] %@' info:",
+      "convert 'png:/tmp/baseline.png[0]' 'png:/tmp/final.png[0]' -compose difference -composite -compose over -fill black -draw 'rectangle 336,1126 1863,1197' -draw 'rectangle 2168,0 2199,1799' -colorspace Gray -threshold 2% -bordercolor black -border 1 -format '%[fx:maxima] %@' info:",
     )
+  })
+
+  it('ignores a change too faint to see, like the fade over a scrolled chat', () => {
+    expect(changedBoxCommand('/a.png', '/b.png', [])).toContain('-threshold 2%')
+  })
+})
+
+describe('rowProfileCommand', () => {
+  it('prints, per CSS row of a column, the share of it that is not page background', () => {
+    expect(rowProfileCommand('/tmp/final.png', [{ x: 166, width: 768 }])).toBe(
+      "set -o pipefail; convert 'png:/tmp/final.png[0]' \\( -clone 0 -crop 1536x1800+332+0 +repage \\) -delete 0 +append \\( +clone -fill 'gray(21)' -colorize 100% \\) -compose difference -composite -colorspace Gray -threshold 3% -scale 1x900! -depth 8 gray:- | od -An -v -tu1",
+    )
+  })
+
+  it('reads several strips side by side, so a row is full only when every strip is', () => {
+    const command = rowProfileCommand('/tmp/final.png', [
+      { x: 168, width: 3 },
+      { x: 929, width: 3 },
+    ])
+
+    expect(command).toContain(
+      '\\( -clone 0 -crop 6x1800+336+0 +repage \\) \\( -clone 0 -crop 6x1800+1858+0 +repage \\) -delete 0 +append',
+    )
+  })
+})
+
+describe('parseRowProfile', () => {
+  it('reads one share per row', () => {
+    expect(parseRowProfile(' 0 255 51\n 0\n', 4)).toEqual([0, 1, 0.2, 0])
+  })
+
+  it.each([
+    ['too few rows', ' 0 255\n', 3],
+    ['a value past a byte', ' 0 256 0\n', 3],
+    ['a stray word', ' 0 x 0\n', 3],
+  ])('refuses %s', (_name, stdout, count) => {
+    expect(() => parseRowProfile(stdout, count)).toThrow(/row profile/)
   })
 })
 
@@ -141,8 +178,19 @@ describe('quietScreenCommand', () => {
       pollMs: 500,
     })
 
-    expect(command).toContain('for i in $(seq 1 20)')
     expect(command).toContain('import -window root -strip /tmp/quiet.png')
-    expect(command).toContain('test $same -ge 4 && exit 0')
+    expect(command).toContain('sleep 0.5')
+  })
+
+  it('counts wall-clock time, so slow screenshots cannot stretch it past its limit', () => {
+    const command = quietScreenCommand('/tmp/quiet.png', {
+      quietMs: 2000,
+      maxMs: 10_000,
+      pollMs: 500,
+    })
+
+    expect(command).toContain('end=$(( $(date +%s%3N) + 10000 ))')
+    expect(command).toContain('while [ "$(date +%s%3N)" -lt "$end" ]')
+    expect(command).toContain('[ $((now - since)) -ge 2000 ] && exit 0')
   })
 })

@@ -10,19 +10,26 @@ import { MOD_SCENARIO_KEY } from './queries'
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /**
- * The Desktop shot of a published mod's current version, as served at MOD_DESKTOP_PREVIEW_ROUTE.
- * It is visible exactly when the mod page that shows it is, and only under the `render` its page
- * names (modDesktopPreviewPath), so a made-up URL can't skip the cache: anything else is a 404. The
- * bytes are untrusted pixels, so nosniff keeps a browser from reading them as anything but a PNG.
+ * The Desktop shot of a published mod's current version, or with `image` 'card' its card image, as
+ * served at MOD_DESKTOP_PREVIEW_ROUTE. It is visible exactly when the mod page that shows it is,
+ * and only under the `render` its page names (modDesktopPreviewPath), so a made-up URL can't skip
+ * the cache: anything else is a 404. The bytes are untrusted pixels, so nosniff keeps a browser
+ * from reading them as anything but a PNG.
  */
 export async function modDesktopPreviewResponse(
   db: Db,
   versionId: string,
   render: string | null,
+  image: string | null,
 ): Promise<Response> {
-  if (!isUuid(versionId)) return new Response('Not found', { status: 404 })
+  if (!isUuid(versionId) || (image !== null && image !== 'card')) {
+    return new Response('Not found', { status: 404 })
+  }
   const [row] = await db
-    .select({ png: modDesktopPreviews.png, renderedAt: modDesktopPreviews.createdAt })
+    .select({
+      png: image === 'card' ? modDesktopPreviews.cardPng : modDesktopPreviews.png,
+      renderedAt: modDesktopPreviews.createdAt,
+    })
     .from(modDesktopPreviews)
     .innerJoin(modVersions, eq(modVersions.id, modDesktopPreviews.modVersionId))
     .innerJoin(mods, and(eq(mods.currentVersionId, modVersions.id), eq(mods.id, modVersions.modId)))
@@ -48,6 +55,6 @@ export async function modDesktopPreviewResponse(
 
 // createServerOnlyFn keeps `db` out of the client bundle, as for the marketplace route.
 export const modDesktopPreviewResponseForRoute = createServerOnlyFn(
-  (versionId: string, render: string | null): Promise<Response> =>
-    modDesktopPreviewResponse(defaultDb, versionId, render),
+  (versionId: string, render: string | null, image: string | null): Promise<Response> =>
+    modDesktopPreviewResponse(defaultDb, versionId, render, image),
 )

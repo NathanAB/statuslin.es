@@ -2,7 +2,7 @@ import type { DesktopRecorder, DesktopRecording, DesktopRecordRequest, DesktopSh
 
 const FAKE_VERSIONS = { desktopVersion: '0.0.0-fake', engineVersion: '0.0.0-fake' }
 
-type FakeShot = Pick<DesktopShot, 'png' | 'width' | 'height' | 'cardAnchor'>
+type FakeShot = Pick<DesktopShot, 'png' | 'width' | 'height' | 'card'>
 
 /** Deterministic in-memory Desktop recorder for tests and key-less runs. */
 export class FakeDesktopRecorder implements DesktopRecorder {

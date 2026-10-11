@@ -10,7 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
-import type { DesktopRecording, DesktopShot } from '../render/mods/desktop/types'
+import type { DesktopRecording } from '../render/mods/desktop/types'
 import type { AnsiSegment } from '../render/types'
 
 export type ModStatus = 'draft' | 'published' | 'removed'
@@ -87,7 +87,10 @@ export const modPreviews = pgTable(
 
 const bytea = customType<{ data: Uint8Array }>({ dataType: () => 'bytea' })
 
-/** A mod's Claude Desktop preview: a PNG shot, or the fact that it drew nothing there. */
+/**
+ * A mod's Claude Desktop preview: a PNG shot for its page and a smaller one for its card, or the
+ * fact that it drew nothing there.
+ */
 export const modDesktopPreviews = pgTable(
   'mod_desktop_previews',
   {
@@ -102,7 +105,10 @@ export const modDesktopPreviews = pgTable(
     /** CSS pixels; the PNG is recorded at a higher device scale. */
     width: integer('width'),
     height: integer('height'),
-    cardAnchor: text('card_anchor').$type<DesktopShot['cardAnchor']>(),
+    /** The card's image: the band the mod draws above the prompt box, or the top of the shot. */
+    cardPng: bytea('card_png'),
+    cardWidth: integer('card_width'),
+    cardHeight: integer('card_height'),
     desktopVersion: text('desktop_version').notNull(),
     engineVersion: text('engine_version').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -111,8 +117,8 @@ export const modDesktopPreviews = pgTable(
     uniqueIndex('mod_desktop_previews_version_scenario_uq').on(t.modVersionId, t.scenarioKey),
     check(
       'mod_desktop_previews_kind_check',
-      // IS TRUE, so a null width or anchor fails the check instead of passing it as unknown.
-      sql`((${t.kind} = 'shot' AND ${t.png} IS NOT NULL AND ${t.width} > 0 AND ${t.height} > 0 AND ${t.cardAnchor} IN ('top', 'bottom')) OR (${t.kind} = 'nothing' AND ${t.png} IS NULL AND ${t.width} IS NULL AND ${t.height} IS NULL AND ${t.cardAnchor} IS NULL)) IS TRUE`,
+      // IS TRUE, so a null size fails the check instead of passing it as unknown.
+      sql`((${t.kind} = 'shot' AND ${t.png} IS NOT NULL AND ${t.width} > 0 AND ${t.height} > 0 AND ${t.cardPng} IS NOT NULL AND ${t.cardWidth} > 0 AND ${t.cardHeight} > 0) OR (${t.kind} = 'nothing' AND ${t.png} IS NULL AND ${t.width} IS NULL AND ${t.height} IS NULL AND ${t.cardPng} IS NULL AND ${t.cardWidth} IS NULL AND ${t.cardHeight} IS NULL)) IS TRUE`,
     ),
   ],
 )

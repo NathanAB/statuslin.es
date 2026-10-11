@@ -4,11 +4,14 @@ import { modDesktopPreviewResponseForRoute } from '@/mods/desktop-preview-image'
 export const Route = createFileRoute('/mod-previews/$versionId/desktop.png')({
   server: {
     handlers: {
-      GET: async ({ params, request }) =>
-        modDesktopPreviewResponseForRoute(
+      GET: async ({ params, request }) => {
+        const query = new URL(request.url).searchParams
+        return modDesktopPreviewResponseForRoute(
           params.versionId,
-          new URL(request.url).searchParams.get('r'),
-        ),
+          query.get('r'),
+          query.get('image'),
+        )
+      },
     },
   },
 })

@@ -218,6 +218,27 @@
       "when": 1791653680796,
       "tag": "0030_drop_mod_versions_desktop_screenshot",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791733858845,
+      "tag": "0031_drop_desktop_shots_without_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791733880419,
+      "tag": "0032_mod_desktop_preview_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791733889626,
+      "tag": "0033_drop_mod_desktop_previews_card_anchor",
+      "breakpoints": true
     }
   ]
 }

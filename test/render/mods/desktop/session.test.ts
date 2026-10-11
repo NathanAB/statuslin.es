@@ -39,7 +39,7 @@ describe('desktopEnv', () => {
   })
 
   it('sizes the virtual display to the window at device scale, in UTC', () => {
-    expect(desktopEnv(scenario, null)).toMatchObject({ SCREEN: '2200x1280x24', TZ: 'UTC' })
+    expect(desktopEnv(scenario, null)).toMatchObject({ SCREEN: '2200x1800x24', TZ: 'UTC' })
   })
 })
 
@@ -56,11 +56,11 @@ describe('bootCommand', () => {
 
 describe('FIT_WINDOW_COMMAND', () => {
   it('succeeds only once the window fills the display, so it can be polled', () => {
-    expect(FIT_WINDOW_COMMAND).toContain('windowsize "$w" 2200 1280')
+    expect(FIT_WINDOW_COMMAND).toContain('windowsize "$w" 2200 1800')
     expect(FIT_WINDOW_COMMAND).toContain(
       `xdotool getwindowgeometry --shell "$w" | grep -E '^(X|Y|WIDTH|HEIGHT)=' | tr '\\n' ' '`,
     )
-    expect(FIT_WINDOW_COMMAND).toMatch(/= "X=0 Y=0 WIDTH=2200 HEIGHT=1280 "$/)
+    expect(FIT_WINDOW_COMMAND).toMatch(/= "X=0 Y=0 WIDTH=2200 HEIGHT=1800 "$/)
   })
 })
 

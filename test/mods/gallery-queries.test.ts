@@ -92,11 +92,10 @@ describe('getModSource', () => {
         preview: null,
         desktopShot: {
           src: expect.stringMatching(
-            new RegExp(`^/mod-previews/${version?.id}/desktop\\.png\\?r=\\d+$`),
+            new RegExp(`^/mod-previews/${version?.id}/desktop\\.png\\?r=\\d+&image=card$`),
           ),
-          width: SEEDED_DESKTOP_SHOT.width,
-          height: SEEDED_DESKTOP_SHOT.height,
-          cardAnchor: SEEDED_DESKTOP_SHOT.cardAnchor,
+          width: SEEDED_DESKTOP_SHOT.cardWidth,
+          height: SEEDED_DESKTOP_SHOT.cardHeight,
         },
       },
     })

@@ -33,6 +33,12 @@ describe('site paths', () => {
     )
   })
 
+  it("names a version's card image on the same route, with the same render", () => {
+    expect(modDesktopPreviewPath('v-1', new Date(1_700_000_000_000), 'card')).toBe(
+      '/mod-previews/v-1/desktop.png?r=1700000000000&image=card',
+    )
+  })
+
   it('names the route that serves the marketplace', () => {
     expect(routesByPath[MARKETPLACE_PATH]).toBe(MarketplaceRoute)
   })

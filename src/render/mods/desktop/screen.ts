@@ -17,7 +17,7 @@ export interface Rect {
 }
 
 /** Desktop's window, which fills the virtual display. */
-export const WINDOW = { width: 1100, height: 640 }
+export const WINDOW = { width: 1100, height: 900 }
 /** Device pixels per CSS pixel: screenshots are sharp on Retina screens. */
 export const SCALE = 2
 
@@ -66,8 +66,8 @@ export const MOUSE_REST: Point = { x: WINDOW.width - 1, y: CENTER.y }
 /** The window's content, inside the light frame Desktop draws on Linux. */
 export const CONTENT = { left: 4, top: 0, right: WINDOW.width - 4, bottom: WINDOW.height - 4 }
 
-/** The prompt box with no pane open; the chat column is its width. */
-export const PROMPT_BOX: Rect = { x: 166, y: 561, width: 768, height: 40 }
+/** The prompt box with no pane open, on the window's bottom; the chat column is its width. */
+export const PROMPT_BOX: Rect = { x: 166, y: WINDOW.height - 79, width: 768, height: 40 }
 /** What the input steps type into: left out of the comparison with the baseline. */
 export const PROMPT_TEXT: Rect = {
   x: PROMPT_BOX.x + 2,
@@ -75,14 +75,51 @@ export const PROMPT_TEXT: Rect = {
   width: PROMPT_BOX.width - 4,
   height: PROMPT_BOX.height - 4,
 }
-/** A docked pane, from its border; the chat column narrows to its left. */
-export const PANE: Rect = { x: 732, y: 44, width: 356, height: 584 }
-/** The chat column's left edge (its prompt box's left border) while a pane is open. */
+/** A docked pane, from its border, down to the window's bottom; the chat column narrows to its left. */
+export const PANE: Rect = { x: 732, y: 44, width: 356, height: WINDOW.height - 56 }
+/** The chat column's left and right edges (its prompt box's borders) while a pane is open. */
 export const PANE_CHAT_LEFT = 45
+export const PANE_CHAT_RIGHT = 693
+
+export interface Column {
+  x: number
+  width: number
+}
+
+/** The chat column, with and without a pane: each layout's prompt box, which a band's plate spans. */
+export const CHAT_COLUMN: Column = { x: PROMPT_BOX.x, width: PROMPT_BOX.width }
+export const PANE_CHAT_COLUMN: Column = {
+  x: PANE_CHAT_LEFT,
+  width: PANE_CHAT_RIGHT - PANE_CHAT_LEFT,
+}
+
+/**
+ * A band's plate pads what a mod draws by 8px, so these strips just inside its left and right
+ * edges are plate on every row of a band, however dark the drawing in it.
+ */
+export const plateStrips = ({ x, width }: Column): Column[] => [
+  { x: x + 2, width: 3 },
+  { x: x + width - 5, width: 3 },
+]
+
+/**
+ * The strip on the right edge where the chat's scrollbar shows once it overflows: left out of the
+ * comparison and of every crop.
+ */
+export const SCROLL_GUTTER: Rect = {
+  x: 1084,
+  y: 0,
+  width: WINDOW.width - 1084,
+  height: WINDOW.height,
+}
+/** The top of the chat's scrolling area, just under the session header. */
+export const CHAT_TOP = 76
 
 /** Space kept around a crop's content so a border is not flush with the edge. */
 export const CROP_MARGIN = 8
 export const PANE_MARGIN = 4
+/** The tallest a card image is when there is no band to show: about two chat messages. */
+export const CARD_MAX_HEIGHT = 150
 
 /**
  * One-pixel columns that are a border's flat grey only in one layout: the prompt box's left border

@@ -30,10 +30,9 @@ const card: GalleryModCard = {
 }
 
 const SHOT = {
-  src: '/mod-previews/v1/desktop.png',
+  src: '/mod-previews/v1/desktop.png?r=1&image=card',
   width: 790,
   height: 52,
-  cardAnchor: 'bottom' as const,
 }
 
 describe('ModCard', () => {

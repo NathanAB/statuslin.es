@@ -7,12 +7,26 @@ import {
   croppedPngCommand,
   parseChangedBox,
   parseProbes,
+  parseRowProfile,
   probeCommand,
+  rowProfileCommand,
 } from './imagemagick'
 import { expectOk } from './interact'
 import { checkedPixelPng } from './png'
-import { BORDER_PROBES, PROMPT_TEXT, SCALE } from './screen'
-import type { DesktopShot } from './types'
+import type { RowProfile } from './rows'
+import {
+  BORDER_PROBES,
+  CHAT_COLUMN,
+  type Column,
+  PANE_CHAT_COLUMN,
+  PROMPT_TEXT,
+  plateStrips,
+  type Rect,
+  SCALE,
+  SCROLL_GUTTER,
+  WINDOW,
+} from './screen'
+import type { DesktopImage, DesktopShot } from './types'
 
 const SHOT = `${SANDBOX_WORK_DIR}/shot.png`
 const BASELINE = `${SANDBOX_WORK_DIR}/baseline.png`
@@ -27,7 +41,7 @@ export interface ShotsToAnalyse {
 
 export type Analysis =
   | { kind: 'nothing' }
-  | ({ kind: 'shot' } & Pick<DesktopShot, 'png' | 'width' | 'height' | 'cardAnchor'>)
+  | ({ kind: 'shot' } & Pick<DesktopShot, 'png' | 'width' | 'height' | 'card'>)
 
 async function layoutOf(analysis: AnalysisSandbox, path: string): Promise<'chat' | 'pane'> {
   const regions = [BORDER_PROBES.prompt, BORDER_PROBES.promptBesidePane, BORDER_PROBES.pane]
@@ -38,9 +52,33 @@ async function layoutOf(analysis: AnalysisSandbox, path: string): Promise<'chat'
   return readLayout({ prompt, promptBesidePane, pane })
 }
 
+async function rowProfile(analysis: AnalysisSandbox, columns: Column[]): Promise<RowProfile> {
+  const { stdout } = expectOk(
+    await analysis.run(rowProfileCommand(SHOT, columns)),
+    'reading the shot row by row',
+  )
+  return parseRowProfile(stdout, WINDOW.height)
+}
+
+async function changedBox(analysis: AnalysisSandbox): Promise<Rect | null> {
+  const compare = changedBoxCommand(BASELINE, SHOT, [PROMPT_TEXT, SCROLL_GUTTER])
+  return parseChangedBox(
+    expectOk(await analysis.run(compare), 'comparing with the baseline').stdout,
+  )
+}
+
+/** The crop, re-encoded from its pixels alone and checked to hold nothing else. */
+async function cropped(analysis: AnalysisSandbox, rect: Rect): Promise<DesktopImage> {
+  const png = checkedPixelPng(await analysis.readPng(croppedPngCommand(SHOT, rect)), {
+    width: rect.width * SCALE,
+    height: rect.height * SCALE,
+  })
+  return { png, width: rect.width, height: rect.height }
+}
+
 /**
  * Frames a mod's final shot against the baseline in a fresh sandbox no mod code has run in, and
- * returns the crop re-encoded from its pixels alone, checked to hold nothing else.
+ * returns the page crop and the card crop, each re-encoded from its pixels alone.
  */
 export async function analyseShot(
   analysis: AnalysisSandbox,
@@ -52,20 +90,17 @@ export async function analyseShot(
   ])
   if ((await layoutOf(analysis, BASELINE)) !== 'chat') throw new Error('the baseline shows a pane')
   const paneOpen = (await layoutOf(analysis, SHOT)) === 'pane'
-  const changed = paneOpen
-    ? null
-    : parseChangedBox(
-        expectOk(
-          await analysis.run(changedBoxCommand(BASELINE, SHOT, PROMPT_TEXT)),
-          'comparing with the baseline',
-        ).stdout,
-      )
-  const frame = frameShot({ changed, paneOpen, draws })
-  if (frame.kind === 'nothing') return { kind: 'nothing' }
-  const { width, height } = frame.rect
-  const png = checkedPixelPng(await analysis.readPng(croppedPngCommand(SHOT, frame.rect)), {
-    width: width * SCALE,
-    height: height * SCALE,
+  const changed = paneOpen ? null : await changedBox(analysis)
+  if (!paneOpen && !changed) return { kind: 'nothing' }
+  const column = paneOpen ? PANE_CHAT_COLUMN : CHAT_COLUMN
+  const frame = frameShot({
+    changed,
+    paneOpen,
+    draws,
+    rows: await rowProfile(analysis, [column]),
+    plate: await rowProfile(analysis, plateStrips(column)),
   })
-  return { kind: 'shot', png, width, height, cardAnchor: frame.cardAnchor }
+  if (frame.kind === 'nothing') return { kind: 'nothing' }
+  const page = await cropped(analysis, frame.rect)
+  return { kind: 'shot', ...page, card: await cropped(analysis, frame.card) }
 }

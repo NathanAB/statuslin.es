@@ -38,22 +38,28 @@ export const desktopPreviewJoin = and(
   eq(modDesktopPreviews.scenarioKey, MOD_SCENARIO_KEY),
 )
 
-/** A version's Claude Desktop result: a shot to show, or that the mod drew nothing there. */
-export type DesktopPreview = { kind: 'shot'; shot: DesktopShotImage } | { kind: 'nothing' }
+/** A version's Claude Desktop result: a shot and its card to show, or that the mod drew nothing. */
+export type DesktopPreview =
+  | { kind: 'shot'; shot: DesktopShotImage; card: DesktopShotImage }
+  | { kind: 'nothing' }
 
-/** What `desktopPreview` reads. Never the PNG, which only the image route sends. */
+/** What `desktopPreview` reads. Never the PNGs, which only the image route sends. */
 export const desktopPreviewColumns = {
   versionId: modDesktopPreviews.modVersionId,
   kind: modDesktopPreviews.kind,
   width: modDesktopPreviews.width,
   height: modDesktopPreviews.height,
-  cardAnchor: modDesktopPreviews.cardAnchor,
+  cardWidth: modDesktopPreviews.cardWidth,
+  cardHeight: modDesktopPreviews.cardHeight,
   renderedAt: modDesktopPreviews.createdAt,
 }
 
 type Nullable<T> = { [K in keyof T]: T[K] | null }
 type DesktopPreviewRow = Nullable<
-  Pick<typeof modDesktopPreviews.$inferSelect, 'kind' | 'width' | 'height' | 'cardAnchor'> & {
+  Pick<
+    typeof modDesktopPreviews.$inferSelect,
+    'kind' | 'width' | 'height' | 'cardWidth' | 'cardHeight'
+  > & {
     versionId: string
     renderedAt: Date
   }
@@ -62,14 +68,18 @@ type DesktopPreviewRow = Nullable<
 /** The left-joined `desktopPreviewColumns`, or null when the version has no Desktop result yet. */
 export function desktopPreview(row: DesktopPreviewRow | null): DesktopPreview | null {
   if (row?.kind === 'nothing') return { kind: 'nothing' }
-  const { versionId, width, height, cardAnchor, renderedAt } = row ?? {}
-  // The table's check constraint gives every shot a size and an anchor.
-  if (row?.kind !== 'shot' || !versionId || !width || !height || !cardAnchor || !renderedAt) {
-    return null
-  }
+  const { versionId, width, height, cardWidth, cardHeight, renderedAt } = row ?? {}
+  // The table's check constraint gives every shot and its card a size.
+  if (row?.kind !== 'shot' || !versionId || !renderedAt) return null
+  if (!width || !height || !cardWidth || !cardHeight) return null
   return {
     kind: 'shot',
-    shot: { src: modDesktopPreviewPath(versionId, renderedAt), width, height, cardAnchor },
+    shot: { src: modDesktopPreviewPath(versionId, renderedAt), width, height },
+    card: {
+      src: modDesktopPreviewPath(versionId, renderedAt, 'card'),
+      width: cardWidth,
+      height: cardHeight,
+    },
   }
 }
 

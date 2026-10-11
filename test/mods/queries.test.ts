@@ -237,7 +237,7 @@ describe('getModDetail', () => {
     })
   })
 
-  it('returns a Desktop shot as its image path, CSS size and card anchor, never its bytes', async () => {
+  it('returns a Desktop shot and its card as image paths and CSS sizes, never their bytes', async () => {
     const { versionId } = await addMod('anywhere', 'published', 'none')
     await addDesktopPreview(db, versionId)
 
@@ -251,11 +251,18 @@ describe('getModDetail', () => {
           ),
           width: SEEDED_DESKTOP_SHOT.width,
           height: SEEDED_DESKTOP_SHOT.height,
-          cardAnchor: SEEDED_DESKTOP_SHOT.cardAnchor,
+        },
+        card: {
+          src: expect.stringMatching(
+            new RegExp(`^/mod-previews/${versionId}/desktop\\.png\\?r=\\d+&image=card$`),
+          ),
+          width: SEEDED_DESKTOP_SHOT.cardWidth,
+          height: SEEDED_DESKTOP_SHOT.cardHeight,
         },
       },
     })
     expect((await getModDetail(db, 'anywhere'))?.desktop).not.toHaveProperty('shot.png')
+    expect((await getModDetail(db, 'anywhere'))?.desktop).not.toHaveProperty('card.png')
   })
 
   it('gives a re-rendered Desktop shot a new image URL', async () => {
