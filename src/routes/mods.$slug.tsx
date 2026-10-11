@@ -9,13 +9,11 @@ import { modPath, siteUrl } from '@/lib/site'
 import { FootprintSection } from '@/mods/footprint-section'
 import { getModDetailFn } from '@/mods/functions'
 import { installCommands } from '@/mods/install'
-import { InstallCommandBlock } from '@/mods/install-command-block'
+import { InstallCommands } from '@/mods/install-commands'
 import { ModHeader } from '@/mods/mod-header'
 import { ModPreview } from '@/mods/mod-preview'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
-import { Stack } from '@/ui/layout'
-import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
 import { Text, TextLink } from '@/ui/text'
 
@@ -56,13 +54,10 @@ function ModPage() {
       <DetailPageLayout
         header={<ModHeader mod={mod} />}
         install={
-          <SectionCard title="Install" headingLevel={2}>
-            <Stack gap={4}>
-              {installCommands(origin, mod.pluginName).map((command) => (
-                <InstallCommandBlock key={command.kind} command={command} onCopied={recordCopy} />
-              ))}
-            </Stack>
-          </SectionCard>
+          <InstallCommands
+            commands={installCommands(origin, mod.pluginName)}
+            onCopied={recordCopy}
+          />
         }
         preview={<ModPreview mod={mod} />}
         detail={{ title: 'What it does', content: <FootprintSection mod={mod} /> }}

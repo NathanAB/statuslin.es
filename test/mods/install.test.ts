@@ -6,7 +6,7 @@ describe('installCommands', () => {
     expect(installCommands('https://staging.example.test', 'filetree')).toEqual([
       {
         kind: 'session',
-        label: 'In a Claude Code session',
+        label: 'In Claude Code',
         minVersion: '2.1.275',
         command:
           '/plugin install filetree --marketplace https://staging.example.test/marketplace.json',

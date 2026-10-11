@@ -22,7 +22,7 @@ export function installCommands(origin: string, pluginName: string): InstallComm
   return [
     {
       kind: 'session',
-      label: 'In a Claude Code session',
+      label: 'In Claude Code',
       minVersion: '2.1.275',
       command: `/plugin ${install}`,
     },

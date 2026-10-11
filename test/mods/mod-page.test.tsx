@@ -270,7 +270,7 @@ describe('mod page', () => {
   })
 
   it.each([
-    ['In a Claude Code session', 'session', '/plugin install'],
+    ['In Claude Code', 'session', '/plugin install'],
     ['From a shell', 'shell', 'claude plugin install'],
   ] as const)('copying the "%s" command copies it and records the copy', async (label, kind, prefix) => {
     renderPage()
@@ -286,14 +286,38 @@ describe('mod page', () => {
   })
 
   it.each([
-    'In a Claude Code session',
+    'In Claude Code',
     'From a shell',
-  ])('makes the "%s" copy button the primary, large call to action', (label) => {
+  ])('makes the "%s" copy button the primary call to action', (label) => {
     renderPage()
 
     const button = screen.getByRole('button', { name: `Copy command: ${label}` })
     expect(button.dataset.variant).toBe('default')
-    expect(button.dataset.size).toBe('lg')
+  })
+
+  it('keeps install compact: one labelled line per command, outside any card', () => {
+    renderPage()
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Install' })
+    expect(heading.closest('[data-slot="card"]')).toBeNull()
+    for (const [label, prefix] of [
+      ['In Claude Code', '/plugin install'],
+      ['From a shell', 'claude plugin install'],
+    ] as const) {
+      const row = screen.getByText(label).closest('[data-slot="command-row"]')
+      expect(row?.textContent).toContain(`${prefix} filetree --marketplace`)
+      expect(
+        within(row as HTMLElement).getByRole('button', { name: `Copy command: ${label}` }),
+      ).toBeTruthy()
+    }
+  })
+
+  it('names the minimum Claude Code version for each command on one line', () => {
+    renderPage()
+
+    expect(
+      screen.getByText('Needs Claude Code 2.1.275 or later, or 2.1.292 from a shell.'),
+    ).toBeTruthy()
   })
 
   it('describes the footprint in plain words, keeping an unknown entry verbatim', () => {
