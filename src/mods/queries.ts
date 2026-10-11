@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { type GeneratedContent, generatedContentSchema } from '@/content/types'
+import { type ModPageCopy, modPageCopySchema, readPageCopy } from '@/content/types'
 import {
   type ModFootprint,
   modCopyEvents,
@@ -154,7 +154,8 @@ export interface ModDetail {
   preview: AnsiSegment[] | null
   /** Null before it renders. */
   desktop: DesktopPreview | null
-  generatedContent: GeneratedContent | null
+  /** Null when no page copy in the current format has been generated for this version. */
+  generatedContent: ModPageCopy | null
 }
 
 /** A published mod by slug with its own current version, or null (draft, removed, unknown). */
@@ -185,11 +186,10 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row) return null
-  const content = generatedContentSchema.safeParse(row.generatedContent)
   return {
     ...row,
     desktop: desktopPreview(row.desktop),
-    generatedContent: content.success ? content.data : null,
+    generatedContent: readPageCopy(modPageCopySchema, row.generatedContent),
   }
 }
 

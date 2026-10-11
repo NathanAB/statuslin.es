@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import z from 'zod'
 import { configs, configVersions } from '@/db/schema'
@@ -6,12 +6,13 @@ import { computeAllTags } from '@/lib/derived-tags'
 import { getPreviews } from '@/render/store'
 import { buildContentPrompt } from './prompt'
 import { buildTagsPrompt, parseSuggestedTags } from './tags'
-import { generatedContentSchema } from './types'
+import { configPageCopySchema, readPageCopy } from './types'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 export type ContentGenerationDb = PgDatabase<any, typeof import('@/db/schema')>
 
-export const CONTENT_GENERATION_SCHEMA_VERSION = 1 as const
+/** 2: the page copy format (summary, howItWorks, goodToKnow, details). */
+export const CONTENT_GENERATION_SCHEMA_VERSION = 2 as const
 
 export interface ContentGenerationRequest {
   schemaVersion: typeof CONTENT_GENERATION_SCHEMA_VERSION
@@ -27,7 +28,7 @@ const contentGenerationResponseSchema = z.object({
   slug: z.string().min(1),
   versionId: z.string().min(1),
   contentSha256: z.string().min(1),
-  generatedContent: generatedContentSchema,
+  generatedContent: configPageCopySchema,
   tags: z.array(z.string()),
 })
 
@@ -70,14 +71,17 @@ export async function prepareContentGenerationRequest(
   }
 }
 
+/** Published configs whose current version has no page copy in the current format. */
 export async function listPublishedSlugsMissingContent(db: ContentGenerationDb): Promise<string[]> {
   const rows = await db
-    .select({ slug: configs.slug })
+    .select({ slug: configs.slug, generatedContent: configVersions.generatedContent })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
-    .where(and(eq(configs.status, 'published'), isNull(configVersions.generatedContent)))
+    .where(eq(configs.status, 'published'))
     .orderBy(asc(configs.createdAt))
-  return rows.map((row) => row.slug)
+  return rows
+    .filter((row) => readPageCopy(configPageCopySchema, row.generatedContent) === null)
+    .map((row) => row.slug)
 }
 
 export function parseContentGenerationResponses(raw: string): ContentGenerationResponse[] {

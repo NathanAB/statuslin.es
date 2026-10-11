@@ -39,6 +39,8 @@
   --destructive: #e5484d; /* danger — a deliberately distinct red (Radix dark-red 9),
                              clearly not the coral; luminance tracks --primary so
                              text-destructive stays readable, white-on-fill ≥ prior pairing. */
+  --warning: #d9a441; /* caution — a muted amber for a cost or a risk (fact tiles), distinct
+                         from the coral accent and the destructive red */
   --sunken: #0c0b0a; /* near-black code/preview wells */
   --field: #211f1b; /* form-control fill — a hair above --card for subtle contrast */
 
@@ -84,6 +86,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { PageCopy } from '@/content/types'
 import {
   configJsonLd,
   facetJsonLd,
@@ -103,14 +104,10 @@ describe('configJsonLd', () => {
     keywords: ['Git', 'Token usage'],
     updatedAt: '2026-07-06',
     generatedContent: {
-      whatItShows: ['The git branch.', 'A context progress bar.'],
-      requirements: ['Bash 4+.', 'A nerd font.'],
-      behaviorNotes: ['Colors fade as context fills.'],
-    } as {
-      whatItShows: string[]
-      requirements: string[]
-      behaviorNotes: string[]
-    } | null,
+      summary: 'Shows the git branch and a context bar.',
+      howItWorks: ['Reads the session JSON on stdin', 'Runs `git` for the branch.'],
+      goodToKnow: ['Needs Bash 4 or newer.', 'Uses Nerd Font glyphs'],
+    } as PageCopy | null,
     primaryFacet: null as { slug: string; heading: string } | null,
   }
 
@@ -212,7 +209,7 @@ describe('configJsonLd', () => {
     expect(code).not.toHaveProperty('keywords')
   })
 
-  it('appends a FAQPage built from the generated content', () => {
+  it('appends a FAQPage built from the summary, the steps and the notes', () => {
     const nodes = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
     const faq = nodes.find((n) => n['@type'] === 'FAQPage')
     expect(faq).toBeDefined()
@@ -221,14 +218,21 @@ describe('configJsonLd', () => {
       name: string
       acceptedAnswer: { text: string }
     }>
-    expect(questions).toHaveLength(3)
+    expect(questions.map((q) => [q.name, q.acceptedAnswer.text])).toEqual([
+      ['What does Powerline Dracula do?', 'Shows the git branch and a context bar.'],
+      [
+        'How does Powerline Dracula work?',
+        'Reads the session JSON on stdin. Runs git for the branch.',
+      ],
+      [
+        'What should I know before using Powerline Dracula?',
+        'Needs Bash 4 or newer. Uses Nerd Font glyphs.',
+      ],
+    ])
     expect(questions[0]).toMatchObject({
       '@type': 'Question',
-      name: 'What does Powerline Dracula show?',
-      acceptedAnswer: { '@type': 'Answer', text: 'The git branch. A context progress bar.' },
+      acceptedAnswer: { '@type': 'Answer' },
     })
-    expect(questions[1]!.name).toBe('What does Powerline Dracula require?')
-    expect(questions[2]!.name).toBe('How does Powerline Dracula behave?')
   })
 
   it('omits the FAQPage when there is no generated content', () => {
@@ -241,19 +245,14 @@ describe('configJsonLd', () => {
     expect(nodes).toHaveLength(2)
   })
 
-  it('drops FAQ questions whose section is empty', () => {
+  it('drops the steps and notes questions when there are none', () => {
     const nodes = configJsonLd('https://statuslin.es', {
       ...base,
-      generatedContent: {
-        whatItShows: ['The git branch.'],
-        requirements: [],
-        behaviorNotes: [],
-      },
+      generatedContent: { summary: 'Shows the git branch.', howItWorks: [], goodToKnow: [] },
     }) as Array<Record<string, unknown>>
     const faq = nodes.find((n) => n['@type'] === 'FAQPage')
     const questions = faq!.mainEntity as Array<{ name: string }>
-    expect(questions).toHaveLength(1)
-    expect(questions[0]!.name).toBe('What does Powerline Dracula show?')
+    expect(questions.map((q) => q.name)).toEqual(['What does Powerline Dracula do?'])
   })
 })
 

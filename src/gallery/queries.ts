@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, type SQL, sql } from 'drizzle-orm'
 import type { PgColumn, PgDatabase } from 'drizzle-orm/pg-core'
-import type { GeneratedContent } from '@/content/types'
+import { type ConfigPageCopy, configPageCopySchema, readPageCopy } from '@/content/types'
 import { configs, configVersions, previews, user } from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { compactSegments } from '@/render/compact-segments'
@@ -127,8 +127,8 @@ export interface ConfigDetail {
   contentSha256: string
   networkHosts: string[]
   readsClaudeToken: boolean
-  /** Auto-generated page copy, or null when scripts/generate-content.ts hasn't run for this version. */
-  generatedContent: GeneratedContent | null
+  /** Generated page copy, or null when scripts/generate-content.ts hasn't written it in the current format. */
+  generatedContent: ConfigPageCopy | null
   previews: ClientSafePreview[]
   /** SPDX license of third-party (seeded) source, e.g. 'MIT'. Null = submitter's own work (CC0 per terms). */
   license: string | null
@@ -172,7 +172,7 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
     contentSha256: row.version.contentSha256,
     networkHosts: row.version.networkHosts ?? [],
     readsClaudeToken: row.version.readsClaudeToken ?? false,
-    generatedContent: row.version.generatedContent ?? null,
+    generatedContent: readPageCopy(configPageCopySchema, row.version.generatedContent),
     previews: previews.map((p) => ({
       scenarioKey: p.scenarioKey,
       segments: compactSegments(p.segments),

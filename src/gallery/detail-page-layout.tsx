@@ -1,30 +1,29 @@
 import type * as React from 'react'
-import type { GeneratedContent } from '@/content/types'
-import { GeneratedContentSections } from '@/gallery/generated-content'
+import { WhatItDoes, type WhatItDoesContent } from '@/gallery/what-it-does'
 import { Stack } from '@/ui/layout'
 import { SectionCard } from '@/ui/section-card'
 
 /**
  * The section order every status line and mod page shares, so the two can't drift: header,
- * install, preview, the detail section, generated copy, then related. `notice` is a strip above it
- * all for one viewer, such as the status line owner's update prompt.
+ * install, preview, the "What it does" card, a status line's source, then related. `notice` is a
+ * strip above it all for one viewer, such as the status line owner's update prompt.
  */
 export function DetailPageLayout({
   notice,
   header,
   install,
   preview,
-  detail,
-  generatedContent,
+  whatItDoes,
+  source,
   related,
 }: {
   notice?: React.ReactNode
   header: React.ReactNode
   install: React.ReactNode
   preview: React.ReactNode
-  /** What the page is made of: a status line's Source, a mod's "What it does". */
-  detail: { title: string; content: React.ReactNode }
-  generatedContent: GeneratedContent | null
+  whatItDoes: WhatItDoesContent
+  /** A status line's script. A mod page has no Source card. */
+  source?: React.ReactNode
   related?: React.ReactNode
 }) {
   return (
@@ -35,10 +34,12 @@ export function DetailPageLayout({
       <SectionCard title="Preview" headingLevel={2}>
         {preview}
       </SectionCard>
-      <SectionCard title={detail.title} headingLevel={2}>
-        {detail.content}
-      </SectionCard>
-      {generatedContent && <GeneratedContentSections content={generatedContent} />}
+      <WhatItDoes {...whatItDoes} />
+      {source && (
+        <SectionCard title="Source" headingLevel={2}>
+          {source}
+        </SectionCard>
+      )}
       {related}
     </Stack>
   )

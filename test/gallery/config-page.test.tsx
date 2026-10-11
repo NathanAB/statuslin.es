@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { getConfigDetail } from '@/gallery/functions'
@@ -50,9 +50,10 @@ const DETAIL: Detail = {
   networkHosts: [],
   readsClaudeToken: false,
   generatedContent: {
-    whatItShows: ['The git branch'],
-    requirements: [],
-    behaviorNotes: [],
+    summary: 'A Powerline bar with the branch and the model.',
+    howItWorks: ['Reads the session JSON on stdin'],
+    goodToKnow: ['Uses Nerd Font glyphs'],
+    details: {},
   },
   previews: [{ scenarioKey: 'clean-main', segments: [{ text: 'main ✓' }] }],
   license: 'MIT',
@@ -97,7 +98,7 @@ function expectInOrder(nodes: Node[]) {
 const h2 = (name: string) => screen.getByRole('heading', { level: 2, name })
 
 describe('status line page', () => {
-  it('runs header, install, preview, source, generated copy, then related', () => {
+  it('runs header, install, preview, what it does, source, then related', () => {
     renderPage()
 
     expectInOrder([
@@ -108,10 +109,22 @@ describe('status line page', () => {
       screen.getByRole('button', { name: 'Copy install prompt — Powerline Dracula' }),
       screen.getByText('Using the Claude desktop app?'),
       h2('Preview'),
+      h2('What it does'),
       h2('Source'),
-      h2('What it shows'),
       h2('More status lines'),
     ])
+  })
+
+  it('states the script’s facts and its page copy in What it does', () => {
+    renderPage()
+
+    const card = h2('What it does').closest('[data-slot="card"]') as HTMLElement
+    const what = within(card)
+    expect(what.getByText('A Powerline bar with the branch and the model.')).toBeTruthy()
+    expect(what.getByText('Runs as')).toBeTruthy()
+    expect(what.getByText('Bash')).toBeTruthy()
+    expect(what.getByText('Uses Nerd Font glyphs')).toBeTruthy()
+    expect(what.queryByText('Reads your Claude login')).toBeNull()
   })
 
   it('puts the owner’s update strip above the header', () => {

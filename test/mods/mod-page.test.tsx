@@ -59,6 +59,13 @@ const MOD: ModDetail = {
   generatedContent: null,
 }
 
+const COPY: NonNullable<ModDetail['generatedContent']> = {
+  summary: 'A file tree of the current folder in a pane.',
+  howItWorks: ['Run `/filetree` to open it', 'Folders open on click'],
+  goodToKnow: [],
+  details: { showsUp: 'A file tree pane on the right' },
+}
+
 function renderPage(mod: Partial<ModDetail> = {}) {
   vi.spyOn(ModRoute, 'useLoaderData').mockReturnValue({
     mod: { ...MOD, ...mod },
@@ -147,18 +154,20 @@ describe('mod page', () => {
     expect(coerceGalleryFilter(url.searchParams.get('kind'))).toBe('mods')
   })
 
-  it('runs header, install, preview, what it does, then generated copy, like a status line page', () => {
-    renderPage({
-      generatedContent: { whatItShows: ['The files'], requirements: [], behaviorNotes: [] },
-    })
+  it('runs header, install, preview, then what it does, like a status line page', () => {
+    renderPage({ generatedContent: COPY })
 
     const order = [
       screen.getByRole('heading', { level: 1, name: 'File Tree' }),
       screen.getByRole('heading', { level: 2, name: 'Install' }),
       screen.getByRole('heading', { level: 2, name: 'Preview' }),
       screen.getByRole('heading', { level: 2, name: 'What it does' }),
-      screen.getByRole('heading', { level: 2, name: 'What it shows' }),
     ]
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Install',
+      'Preview',
+      'What it does',
+    ])
     for (let i = 1; i < order.length; i++) {
       const earlier = order[i - 1] as Node
       expect(
@@ -320,15 +329,17 @@ describe('mod page', () => {
     ).toBeTruthy()
   })
 
-  it('describes the footprint in plain words, keeping an unknown entry verbatim', () => {
+  it('states the footprint’s facts as tiles in What it does', () => {
     renderPage()
 
-    expect(screen.getByText('reads files')).toBeTruthy()
-    expect(screen.getByText('adds the /filetree command')).toBeTruthy()
-    expect(screen.getByText('$.warp.drive')).toBeTruthy()
-    expect(screen.getByText('a pane')).toBeTruthy()
-    expect(screen.getByText('a toast')).toBeTruthy()
-    expect(section('What it does').getByText('Terminal')).toBeTruthy()
+    const what = section('What it does')
+    const tile = (label: string) => what.getByText(label).closest('dt')?.nextElementSibling
+    expect(tile('Shows up')?.textContent).toBe('A pane and a toast')
+    expect(tile('Works in')?.textContent).toBe('Terminal')
+    expect(tile('Commands')?.textContent).toBe('/filetree')
+    expect(tile('Uses your plan')?.textContent).toBe('No')
+    expect(tile('Changes files')?.textContent).toBe('Nothing')
+    expect(tile('Network')?.textContent).toBe('None')
   })
 
   it('credits the author with a link to the source at the pinned commit', () => {
@@ -352,26 +363,22 @@ describe('mod page', () => {
     )
   })
 
-  it('renders the generated page copy when the version has it', () => {
-    renderPage({
-      generatedContent: {
-        whatItShows: ['The files in the current folder'],
-        requirements: [],
-        behaviorNotes: ['Folders open on click'],
-      },
-    })
+  it('renders the page copy in What it does when the version has it', () => {
+    renderPage({ generatedContent: COPY })
 
-    expect(screen.getByRole('heading', { level: 2, name: 'What it shows' })).toBeTruthy()
-    expect(screen.getByText('The files in the current folder')).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 2, name: 'Behavior notes' })).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Requirements' })).toBeNull()
+    const what = section('What it does')
+    expect(what.getByText(COPY.summary)).toBeTruthy()
+    expect(what.getByRole('heading', { level: 3, name: 'How it works' })).toBeTruthy()
+    expect(what.getByText('Folders open on click')).toBeTruthy()
+    expect(what.getByText('A file tree pane on the right')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Good to know' })).toBeNull()
   })
 
-  it('renders no generated copy when the version has none', () => {
+  it('still states the facts, with no page copy, when the version has none', () => {
     renderPage()
 
-    expect(screen.queryByRole('heading', { name: 'What it shows' })).toBeNull()
-    expect(screen.queryByRole('heading', { name: 'Behavior notes' })).toBeNull()
+    expect(section('What it does').getByText('Shows up')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'How it works' })).toBeNull()
   })
 
   it('says so when there is no licence', () => {

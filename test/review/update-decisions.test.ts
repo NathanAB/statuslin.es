@@ -220,7 +220,14 @@ describe('approving an update', () => {
     const firstLive = (await configRow(v1.configId))?.currentVersionId
     await db
       .update(schema.configVersions)
-      .set({ generatedContent: { schemaVersion: 1 } as never })
+      .set({
+        generatedContent: {
+          summary: 'A status line.',
+          howItWorks: [],
+          goodToKnow: [],
+          details: {},
+        },
+      })
       .where(eq(schema.configVersions.id, firstLive!))
     expect(await listPublishedSlugsMissingContent(db)).not.toContain(v1.slug)
     const v2 = await submitUpdate(v1.slug)
