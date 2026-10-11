@@ -43,9 +43,19 @@ without rebuilding.
 
 ## What runs in each Fly app
 
-Two process groups off one image (declared in `fly.toml` for prod and `fly.staging.toml` for staging):
-- **web** — `bun run .output/server/index.mjs` — public, serves site + auth + API.
-- **worker** — `bun run scripts/worker.ts` — always-on poller; renders submitted scripts via E2B. No public port.
+One process group, **web** (`bun run .output/server/index.mjs`, declared in `fly.toml` for prod and
+`fly.staging.toml` for staging): public, serves site + auth + API. It also renders submitted status
+lines through E2B, in the background ([ADR 0006](./adr/0006-renders-run-on-demand.md)):
+
+- A submission, the admin's re-queue and "Run network preview" each start a drain in that machine
+  (`src/server/render-drain.ts`).
+- Each machine drains once at startup (`src/server/render-drain-plugin.ts`), which picks up jobs
+  queued while no machine was running.
+- Several machines can render at once; each job is claimed with a conditional update. A job left
+  `running` for over 15 minutes (`STALE_RUNNING_JOB_MS`) was cut off by a stopped or crashed machine
+  and goes back to `queued` (a network job to `held`) at the next drain.
+
+There is no worker process. Mod previews render from the operator's machine (`render:mods`).
 
 ## The environment variables
 
@@ -109,12 +119,11 @@ push from*, never read by the servers.
 
 Staging and prod use **separate Fly config files** so each sizes its machines independently:
 
-- **`fly.toml`** — production (`app = "statuslines"`): web `shared-cpu-2x` / 2GB, worker
-  `shared-cpu-1x` / 512MB (separate `[[vm]]` blocks — only web needs to absorb a launch spike),
+- **`fly.toml`** — production (`app = "statuslines"`): web `shared-cpu-2x` / 2GB,
   `min_machines_running = 1`. Add web headroom with `fly scale count web=N`.
 - **`fly.staging.toml`** — staging (`app = "statuslines-staging"`): `shared-cpu-1x` / 512MB,
-  `min_machines_running = 0` — the web process scales to zero when idle. (The worker is a separate
-  background machine, not behind the proxy, so it keeps running; `fly scale count worker=0` stops it.)
+  `min_machines_running = 0` — the web process scales to zero when idle. Stopping can cut a render
+  off; the next drain after the 15-minute limit re-queues it.
 
 Fly can't include one file from another, so `[build]`, `[processes]`, `[http_service]` port, and
 `[deploy]` are duplicated in both — a header comment in each lists what must stay in sync. Only the
@@ -368,7 +377,7 @@ run on PGlite against the committed migrations.
 1. Sign up: Fly, E2B. (Neon already exists.)
 2. Neon `staging` branch; build the E2B template; create the staging GitHub OAuth app.
 3. `fly launch --no-deploy` — generates the `Dockerfile` + `fly.toml` and creates the staging app.
-   Then edit `fly.toml` for the two process groups + `release_command`, and the `Dockerfile` for
+   Then edit `fly.toml` for the `web` process group + `release_command`, and the `Dockerfile` for
    the migration caveat above. Add `.dockerignore`.
 4. Set staging secrets (`fly secrets import --app statuslines-staging < .env.staging`).
 5. `fly deploy --config fly.staging.toml`; verify on the `*.fly.dev` URL, then point `staging`
@@ -379,20 +388,22 @@ run on PGlite against the committed migrations.
 
 ## Render-queue alerts (PostHog)
 
-The render worker emits three PostHog events the maintainer can alert on. All are **fail-soft and
-prod-only**: `captureServerEvent` is a no-op when the worker has no `POSTHOG_PROJECT_TOKEN`, so local
-and staging never emit them — the alerts only have data to act on once the worker runs in production.
+The web server's render drain emits two PostHog events the maintainer can alert on. Both are
+**fail-soft and prod-only**: `captureServerEvent` is a no-op without a `POSTHOG_PROJECT_TOKEN`, so
+local and staging never emit them. Both use `distinctId: 'render-worker'`, kept from the old worker
+so the history stays one series.
 
-- **`render_worker_heartbeat`** — emitted every 5 minutes by `scripts/worker.ts`, DB-free (a liveness
-  ping; no DB poll, so it doesn't keep Neon's compute warm). `distinctId: 'render-worker'`.
-- **`render_queue_drained`** — emitted at the end of every drain by the worker, with
+- **`render_queue_drained`** — emitted at the end of every drain, with
   `{ processed, queuedRemaining, oldestQueuedAgeSec }`.
-- **`statusline_render_completed`** — emitted once per render job by the worker, with
+- **`statusline_render_completed`** — emitted once per render job, with
   `{ outcome, errorClass?, durationMs, configId, versionId, slug }`. `outcome` is `'failure'` when the
   job threw (`errorClass: 'job_failed'`) or any scenario hit a sandbox error, timed out, or exited
   non-zero (`'sandbox_error'` / `'timeout'` / `'nonzero_exit'`). Never carries script output.
   `sandbox_error` keys off the runner's infra exit code (125), which a script can also return
   itself, so don't alert on it as a pure infra signal.
+
+A drain that throws (database or E2B unreachable, `E2B_API_KEY` missing) goes to PostHog error
+tracking with `source: 'render-drain'`, and to the server log.
 
 ### PostHog alert facts (verified against the docs, 2026-06-25)
 
@@ -404,22 +415,16 @@ and staging never emit them — the alerts only have data to act on once the wor
   you'd need a different mechanism (e.g. an external uptime check), out of scope here.
 - Notify via email, Slack, Discord, or webhook. These email the maintainer.
 
-### The two alerts (create these AFTER the first prod worker deploy)
+### The alert
 
-Do NOT create them before the worker is live and emitting. The "worker down" alert fires when the
-heartbeat count is below 1; created against a project with no `render_worker_heartbeat` events yet, it
-would fire immediately and email you on a false alarm. Create both once the events appear in PostHog.
+**Queue stuck** — trends insight on `render_queue_drained`, value = **max(`oldestQueuedAgeSec`)**
+over the **last 30 minutes**; alert when **> 900** (15 min of the oldest queued job sitting
+unrendered) → email. Drains run only on submissions, admin actions and machine starts, so this
+catches a drain that leaves old jobs behind, not a queue nothing drains.
 
-1. **Worker down / crashed** — trends insight counting `render_worker_heartbeat` over the **last 15
-   minutes**; alert when the count is **< 1** → email. (At a 5-min heartbeat, two pings must be missed
-   before it fires.)
-2. **Queue stuck** — trends insight on `render_queue_drained`, value = **max(`oldestQueuedAgeSec`)**
-   over the **last 30 minutes**; alert when **> 900** (15 min of the oldest queued job sitting
-   unrendered) → email.
-
-Both can be created in the PostHog UI (insight → Alerts → New alert) or via the PostHog MCP
-(`render_worker_heartbeat` / `render_queue_drained` are the event names). Re-create them from this
-section if the project is ever rebuilt.
+Create it in the PostHog UI (insight → Alerts → New alert) or via the PostHog MCP. Re-create it from
+this section if the project is ever rebuilt. The old **Worker down** alert counted
+`render_worker_heartbeat`, which no longer exists; delete it, or it emails on every check.
 
 ## Not yet (later)
 

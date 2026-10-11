@@ -7,8 +7,9 @@ import * as schema from './schema'
 
 const url = requireEnv('DATABASE_URL')
 // Runtime guard against a plaintext production DB connection. This fails fast at boot only where
-// `@/db` is imported statically (the worker); the SSR bundle imports `@/db` lazily, so the web
-// process fails fast via src/server/db-tls-plugin.ts instead. No-op in dev/test — see assert-tls.ts.
+// `@/db` is imported statically (scripts, the render drain plugin); the SSR bundle imports `@/db`
+// lazily, so the web process also checks in src/server/db-tls-plugin.ts. No-op in dev/test — see
+// assert-tls.ts.
 assertProductionDbTls(url, process.env.NODE_ENV)
 const client = postgres(url, isPooledUrl(url) ? { prepare: false } : {})
 

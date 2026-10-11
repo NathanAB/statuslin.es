@@ -183,7 +183,12 @@ export default defineConfig(({ mode }) => ({
             //   src/db/index.ts alone would throw per request instead of at boot).
             // - posthog-error-plugin: registers a Nitro `error` hook forwarding SSR crashes /
             //   uncaught exceptions / unhandled rejections to PostHog (src/lib/posthog-server).
-            plugins: ['./src/server/db-tls-plugin.ts', './src/server/posthog-error-plugin.ts'],
+            // - render-drain-plugin: renders the status line jobs already queued (ADR 0006).
+            plugins: [
+              './src/server/db-tls-plugin.ts',
+              './src/server/posthog-error-plugin.ts',
+              './src/server/render-drain-plugin.ts',
+            ],
             // Nitro's generated static-asset manifest contains only this build's files. Its static
             // middleware runs first and falls through on a miss; this route then serves retained
             // generations before the catch-all TanStack renderer. Keep it method-agnostic so the

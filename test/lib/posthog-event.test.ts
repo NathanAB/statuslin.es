@@ -24,10 +24,10 @@ afterEach(() => {
 describe('captureServerEvent', () => {
   it('captures the event with the given distinctId and properties', async () => {
     const { captureServerEvent } = await import('@/lib/posthog-server')
-    captureServerEvent('render_worker_heartbeat', 'render-worker', { ok: true })
+    captureServerEvent('render_queue_drained', 'render-worker', { ok: true })
     expect(capture).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'render_worker_heartbeat',
+        event: 'render_queue_drained',
         distinctId: 'render-worker',
         properties: { ok: true },
       }),
@@ -36,7 +36,7 @@ describe('captureServerEvent', () => {
   it('is a no-op (no throw) when the token is unset', async () => {
     process.env.POSTHOG_PROJECT_TOKEN = ''
     const { captureServerEvent } = await import('@/lib/posthog-server')
-    expect(() => captureServerEvent('render_worker_heartbeat', 'render-worker')).not.toThrow()
+    expect(() => captureServerEvent('render_queue_drained', 'render-worker')).not.toThrow()
     expect(capture).not.toHaveBeenCalled()
   })
 })

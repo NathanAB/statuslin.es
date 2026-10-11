@@ -22,7 +22,7 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 export const SUBMISSION_RATE_LIMIT = 3 // max submissions per author per rate window
 const RATE_WINDOW_MS = 60 * 60 * 1000 // 1 hour in milliseconds
 
-// Global cap on pending (queued + running) render_jobs across all authors. The worker drains
+// Global cap on pending (queued + running) render_jobs across all authors. Each web machine drains
 // jobs serially, so this bounds backlog and DB growth, not throughput. 100 is generous headroom
 // for legitimate bursts while stopping a flood of throwaway accounts from growing the queue
 // without bound (H3). Soft cap: the count-then-insert isn't atomic (same as the per-author

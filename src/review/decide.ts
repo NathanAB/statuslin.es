@@ -7,7 +7,7 @@ import { configs, configVersions, renderJobs } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
-import { pingWorkerWake, workerWakeUrl } from '@/lib/wake'
+import { triggerRenderDrain } from '@/server/render-drain'
 import { assertAdmin } from './admin'
 import { approveAndEmailVersion, retryApprovalEmail } from './approval-delivery'
 import { decisionEvent, type VersionConfig } from './decision-event'
@@ -158,6 +158,7 @@ export const requeueRenderJobFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())
       await requeueRenderJob(db, data.versionId)
+      triggerRenderDrain()
     }),
   )
 
@@ -167,7 +168,6 @@ export const runNetworkPreviewFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())
       await runNetworkPreview(db, data.versionId)
-      // Best-effort: wake the worker so it renders now instead of on the next safety drain.
-      void pingWorkerWake(workerWakeUrl(process.env))
+      triggerRenderDrain()
     }),
   )

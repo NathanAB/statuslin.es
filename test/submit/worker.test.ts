@@ -10,7 +10,12 @@ import type { RenderInput, RenderResult, SandboxRunner } from '@/render/types'
 import { runNetworkPreview } from '@/review/decide'
 import type { RenderJobReport } from '@/submit/render-completed-event'
 import { submitConfig } from '@/submit/submit'
-import { drainRenderJobs, processNextRenderJob, requeueStaleJobs } from '@/submit/worker'
+import {
+  drainRenderJobs,
+  processNextRenderJob,
+  requeueStaleJobs,
+  STALE_RUNNING_JOB_MS,
+} from '@/submit/worker'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -40,66 +45,72 @@ beforeEach(async () => {
   await db.delete(schema.configs)
 })
 
+async function jobStatus(versionId: string): Promise<string | undefined> {
+  const [job] = await db
+    .select()
+    .from(schema.renderJobs)
+    .where(eq(schema.renderJobs.configVersionId, versionId))
+  return job?.status
+}
+
+/** Older than the time limit: the machine that claimed the job was cut off. */
+function staleStart(): Date {
+  return new Date(Date.now() - STALE_RUNNING_JOB_MS - 1000)
+}
+
 describe('requeueStaleJobs', () => {
-  it('resets running jobs to queued and returns the count; leaves done jobs untouched', async () => {
-    // Insert a job in 'running' state (simulates a crashed worker)
-    const { versionId: runningVersionId } = await submitConfig(db, {
+  async function submitRunning(
+    title: string,
+    startedAt: Date | null,
+    networkHosts: string[] = [],
+  ): Promise<string> {
+    const { versionId } = await submitConfig(db, {
       authorId: 'u1',
-      title: 'Stale',
+      title,
       description: '',
       interpreter: 'bash',
-      source: '#!/bin/bash\necho stale',
+      source: `#!/bin/bash\necho ${title}`,
+      networkHosts,
     })
-    const runningJobRows = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.configVersionId, runningVersionId))
-    const runningJob = runningJobRows[0]
-    if (!runningJob) throw new Error('render job row not found')
     await db
       .update(schema.renderJobs)
-      .set({ status: 'running' })
-      .where(eq(schema.renderJobs.id, runningJob.id))
+      .set({ status: 'running', startedAt })
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+    return versionId
+  }
 
-    // Insert a job in 'done' state (should be left untouched)
-    const { versionId: doneVersionId } = await submitConfig(db, {
-      authorId: 'u1',
-      title: 'Done',
-      description: '',
-      interpreter: 'bash',
-      source: '#!/bin/bash\necho done',
-    })
-    const doneJobRows = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.configVersionId, doneVersionId))
-    const doneJob = doneJobRows[0]
-    if (!doneJob) throw new Error('render job row not found')
+  it('re-queues an offline job running longer than the time limit', async () => {
+    const versionId = await submitRunning('Stale', staleStart())
+    expect(await requeueStaleJobs(db)).toBe(1)
+    expect(await jobStatus(versionId)).toBe('queued')
+  })
+
+  it('leaves a job running for less than the time limit alone', async () => {
+    const versionId = await submitRunning('Rendering', new Date(Date.now() - 60_000))
+    expect(await requeueStaleJobs(db)).toBe(0)
+    expect(await jobStatus(versionId)).toBe('running')
+  })
+
+  it('re-queues a running job with no start time, left by the old worker', async () => {
+    const versionId = await submitRunning('Orphan', null)
+    expect(await requeueStaleJobs(db)).toBe(1)
+    expect(await jobStatus(versionId)).toBe('queued')
+  })
+
+  it('sends a stale NETWORK job back to held, never queued', async () => {
+    const versionId = await submitRunning('Net stale', staleStart(), ['wttr.in'])
+    expect(await requeueStaleJobs(db)).toBe(1)
+    expect(await jobStatus(versionId)).toBe('held')
+  })
+
+  it('leaves done jobs untouched', async () => {
+    const versionId = await submitRunning('Done', staleStart())
     await db
       .update(schema.renderJobs)
       .set({ status: 'done' })
-      .where(eq(schema.renderJobs.id, doneJob.id))
-
-    const count = await requeueStaleJobs(db)
-    expect(count).toBe(1)
-
-    const requeued = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.id, runningJob.id))
-    expect(requeued[0]?.status).toBe('queued')
-
-    const stillDone = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.id, doneJob.id))
-    expect(stillDone[0]?.status).toBe('done')
-
-    // Clean up: neutralize requeued job so it doesn't pollute later tests
-    await db
-      .update(schema.renderJobs)
-      .set({ status: 'failed' })
-      .where(eq(schema.renderJobs.id, runningJob.id))
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+    expect(await requeueStaleJobs(db)).toBe(0)
+    expect(await jobStatus(versionId)).toBe('done')
   })
 })
 
@@ -130,6 +141,26 @@ describe('processNextRenderJob', () => {
     expect(job.status).toBe('done')
     expect(job.finishedAt).not.toBeNull()
     expect(await getPreviews(db, ver.contentSha256)).toHaveLength(8)
+  })
+  it("keeps the job it is rendering, so another machine's drain doesn't re-queue it", async () => {
+    await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Claimed',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho claimed',
+    })
+    const fake = new FakeSandboxRunner()
+    const requeuedMidRender: number[] = []
+    const runner: SandboxRunner = {
+      async render(input) {
+        requeuedMidRender.push(await requeueStaleJobs(db))
+        return fake.render(input)
+      },
+    }
+    await processNextRenderJob(db, runner)
+    expect(requeuedMidRender).toHaveLength(8)
+    expect(requeuedMidRender.filter((count) => count > 0)).toEqual([])
   })
   it('returns null when there are no queued jobs', async () => {
     while (await processNextRenderJob(db, new FakeSandboxRunner())) {
@@ -259,52 +290,23 @@ describe('drainRenderJobs', () => {
     expect(reports).toHaveLength(2)
   })
 
+  it('re-queues and renders a job that a cut-off machine left running', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Cut off',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho cut off',
+    })
+    await db
+      .update(schema.renderJobs)
+      .set({ status: 'running', startedAt: staleStart() })
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toBe(1)
+    expect(await jobStatus(versionId)).toBe('done')
+  })
+
   it('returns 0 when nothing is queued', async () => {
     expect(await drainRenderJobs(db, new FakeSandboxRunner())).toBe(0)
-  })
-})
-
-describe('requeueStaleJobs network branching', () => {
-  it('resets a stale NETWORK running job to held, not queued', async () => {
-    const { versionId } = await submitConfig(db, {
-      authorId: 'u1',
-      title: 'Net stale',
-      description: '',
-      interpreter: 'bash',
-      source: '#!/bin/bash\ncurl -s wttr.in',
-      networkHosts: ['wttr.in'],
-    })
-    // Simulate a crash mid network-render: force the held job to 'running'.
-    await db
-      .update(schema.renderJobs)
-      .set({ status: 'running' })
-      .where(eq(schema.renderJobs.configVersionId, versionId))
-    await requeueStaleJobs(db)
-    const [job] = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.configVersionId, versionId))
-    expect(job?.status).toBe('held')
-  })
-
-  it('still resets a stale OFFLINE running job to queued', async () => {
-    const { versionId } = await submitConfig(db, {
-      authorId: 'u1',
-      title: 'Offline stale',
-      description: '',
-      interpreter: 'bash',
-      source: '#!/bin/bash\necho hi',
-      networkHosts: [],
-    })
-    await db
-      .update(schema.renderJobs)
-      .set({ status: 'running' })
-      .where(eq(schema.renderJobs.configVersionId, versionId))
-    await requeueStaleJobs(db)
-    const [job] = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.configVersionId, versionId))
-    expect(job?.status).toBe('queued')
   })
 })

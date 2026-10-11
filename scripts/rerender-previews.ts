@@ -20,7 +20,7 @@ import { storePreviews } from '@/render/store'
 import type { Interpreter, SandboxRunner } from '@/render/types'
 
 // Exactly one row per published config: its live version (the one currentVersionId points to).
-// Pending configs are rendered by the worker pipeline, so they don't need a backfill here.
+// Pending configs are rendered by the web server's render drain, so they don't need a backfill here.
 const versions = await db
   .select({
     slug: configs.slug,

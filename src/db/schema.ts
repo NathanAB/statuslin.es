@@ -126,6 +126,9 @@ export const renderJobs = pgTable('render_jobs', {
   attempts: integer('attempts').notNull().default(0),
   error: text('error'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  // When a web machine claimed the job. A 'running' job older than the time limit was cut off
+  // and is re-queued (src/submit/worker.ts requeueStaleJobs).
+  startedAt: timestamp('started_at', { withTimezone: true }),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
 })
 

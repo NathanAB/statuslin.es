@@ -28,7 +28,8 @@ vi.mock('@/db', () => ({ db: { name: 'database' } }))
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession } } }))
 vi.mock('@/lib/http.server', () => ({ withHttpStatus: (run: () => unknown) => run() }))
 vi.mock('@/lib/posthog-server', () => ({ captureServerEvent: vi.fn() }))
-vi.mock('@/lib/wake', () => ({ pingWorkerWake: vi.fn(), workerWakeUrl: vi.fn(() => null) }))
+const triggerRenderDrain = vi.hoisted(() => vi.fn())
+vi.mock('@/server/render-drain', () => ({ triggerRenderDrain }))
 vi.mock('@/submit/submitted-event', () => ({
   submittedEvent: vi.fn(() => ({ event: 'submitted', distinctId: 'owner', properties: {} })),
 }))
@@ -60,6 +61,22 @@ beforeEach(() => {
   })
   getResubmissionDraft.mockReset().mockResolvedValue({ versionId: 'version-1' })
   getUpdateDraft.mockReset().mockResolvedValue({ kind: 'update', slug: 'my-line' })
+  triggerRenderDrain.mockReset()
+})
+
+describe('submitConfigFn rendering', () => {
+  it('starts rendering the submission in this process', async () => {
+    await submitConfigFn({ data: FIELDS } as never)
+
+    expect(triggerRenderDrain).toHaveBeenCalledOnce()
+  })
+
+  it('renders nothing when the submission is refused', async () => {
+    submitConfig.mockRejectedValue(Object.assign(new Error('rate limited'), { status: 429 }))
+
+    await expect(submitConfigFn({ data: FIELDS } as never)).rejects.toThrow('rate limited')
+    expect(triggerRenderDrain).not.toHaveBeenCalled()
+  })
 })
 
 describe('submitConfigFn resubmission boundary', () => {

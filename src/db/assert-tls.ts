@@ -12,7 +12,7 @@ const ENCRYPTING_SSLMODES = new Set(['require', 'verify-ca', 'verify-full'])
  *
  * It throws only where it runs — it does NOT enforce at startup on its own. Call it from a true
  * startup point: the Nitro plugin (`src/server/db-tls-plugin.ts`) for the web process, the static
- * `@/db` import for the worker, and the migrate entrypoint (`src/db/migrate.ts`). The SSR bundle
+ * `@/db` import for scripts, and the migrate entrypoint (`src/db/migrate.ts`). The SSR bundle
  * imports `@/db` lazily, so the module-scope call in `src/db/index.ts` alone runs per request, not
  * at boot — which is why the web process needs the plugin.
  *

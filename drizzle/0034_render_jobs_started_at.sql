@@ -1,0 +1,1 @@
+ALTER TABLE "render_jobs" ADD COLUMN "started_at" timestamp with time zone;
