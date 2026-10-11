@@ -98,7 +98,9 @@ async function storedDesktopPreviews(versionId: string) {
       png: schema.modDesktopPreviews.png,
       width: schema.modDesktopPreviews.width,
       height: schema.modDesktopPreviews.height,
-      cardAnchor: schema.modDesktopPreviews.cardAnchor,
+      cardPng: schema.modDesktopPreviews.cardPng,
+      cardWidth: schema.modDesktopPreviews.cardWidth,
+      cardHeight: schema.modDesktopPreviews.cardHeight,
       desktopVersion: schema.modDesktopPreviews.desktopVersion,
       engineVersion: schema.modDesktopPreviews.engineVersion,
     })
@@ -400,7 +402,17 @@ describe('renderMods', () => {
 })
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7])
-const SHOT = { png: PNG, width: 790, height: 52, cardAnchor: 'bottom' as const }
+const CARD_PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 8])
+const SHOT = { png: PNG, width: 790, height: 52, card: { png: CARD_PNG, width: 790, height: 40 } }
+/** SHOT as its row stores it. */
+const STORED_SHOT = {
+  png: PNG,
+  width: 790,
+  height: 52,
+  cardPng: CARD_PNG,
+  cardWidth: 790,
+  cardHeight: 40,
+}
 const FAKE_DESKTOP = { desktopVersion: '0.0.0-fake', engineVersion: '0.0.0-fake' }
 const STORED_NOTHING = {
   scenarioKey: MOD_SCENARIO_KEY,
@@ -408,7 +420,9 @@ const STORED_NOTHING = {
   png: null,
   width: null,
   height: null,
-  cardAnchor: null,
+  cardPng: null,
+  cardWidth: null,
+  cardHeight: null,
   ...FAKE_DESKTOP,
 }
 
@@ -417,7 +431,7 @@ async function seedDesktopShot(versionId: string) {
     modVersionId: versionId,
     scenarioKey: MOD_SCENARIO_KEY,
     kind: 'shot',
-    ...SHOT,
+    ...STORED_SHOT,
     desktopVersion: '1.0.0',
     engineVersion: '2.1.0',
   })
@@ -437,7 +451,7 @@ describe('renderMods in Claude Desktop', () => {
   const terminal = () =>
     new FakeModRecorder({ baseline, mods: { skins, 'token-weather': tokenWeather } })
 
-  it('stores a shot with its PNG, CSS size, card anchor and versions', async () => {
+  it('stores a shot with its PNG, its card PNG, their CSS sizes and the versions', async () => {
     const versionId = await seedMod('token-weather')
 
     const { exitCode, lines } = run(
@@ -448,7 +462,7 @@ describe('renderMods in Claude Desktop', () => {
 
     expect(await exitCode).toBe(0)
     expect(await storedDesktopPreviews(versionId)).toEqual([
-      { scenarioKey: MOD_SCENARIO_KEY, kind: 'shot', ...SHOT, ...FAKE_DESKTOP },
+      { scenarioKey: MOD_SCENARIO_KEY, kind: 'shot', ...STORED_SHOT, ...FAKE_DESKTOP },
     ])
     expect(lines).toEqual([
       'rendered token-weather in the terminal',
@@ -497,7 +511,7 @@ describe('renderMods in Claude Desktop', () => {
     const { exitCode, lines } = run(terminal(), {}, failingDesktop('skins'))
 
     expect(await exitCode).toBe(1)
-    expect(await storedDesktopPreviews(versionId)).toMatchObject([{ kind: 'shot', ...SHOT }])
+    expect(await storedDesktopPreviews(versionId)).toMatchObject([{ kind: 'shot', ...STORED_SHOT }])
     expect((await storedPreviews(versionId))[0]?.claudeCodeVersion).toBe('0.0.0-fake')
     expect(lines).toEqual([
       'rendered skins in the terminal',

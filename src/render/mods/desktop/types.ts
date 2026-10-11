@@ -15,15 +15,19 @@ interface DesktopVersions {
   engineVersion: string
 }
 
-/** A framed screenshot of the mod in Claude Desktop. The pixels are untrusted. */
-export interface DesktopShot extends DesktopVersions {
-  kind: 'shot'
+/** A PNG of untrusted pixels, re-encoded so it holds nothing else. */
+export interface DesktopImage {
   png: Uint8Array
   /** CSS pixels: the PNG is recorded at a higher device scale. */
   width: number
   height: number
-  /** Which end of the shot a fixed-height card keeps. */
-  cardAnchor: 'top' | 'bottom'
+}
+
+/** A framed screenshot of the mod in Claude Desktop, for its page, and a smaller one for its card. */
+export interface DesktopShot extends DesktopVersions, DesktopImage {
+  kind: 'shot'
+  /** The band the mod draws above the prompt box, or the top of the shot when it draws none. */
+  card: DesktopImage
 }
 
 /** The session looked the same as it does with no mod. */

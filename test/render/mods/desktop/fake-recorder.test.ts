@@ -9,7 +9,7 @@ const SHOT = {
   png: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
   width: 790,
   height: 52,
-  cardAnchor: 'bottom' as const,
+  card: { png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1]), width: 790, height: 40 },
 }
 
 describe('FakeDesktopRecorder', () => {

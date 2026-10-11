@@ -66,7 +66,7 @@ export async function getModSource(db: Db, query: GallerySourceQuery): Promise<G
     preview && preview.length > 0 ? compactSegments(preview) : null
   const desktopShot = (row: (typeof rows)[number]['desktop']) => {
     const desktop = desktopPreview(row)
-    return desktop?.kind === 'shot' ? desktop.shot : null
+    return desktop?.kind === 'shot' ? desktop.card : null
   }
   return {
     items: rows.map(({ sortKey, total: _total, preview, desktop, ...card }) => ({

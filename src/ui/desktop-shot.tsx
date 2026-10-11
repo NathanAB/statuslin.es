@@ -5,22 +5,18 @@ export interface DesktopShotImage {
   src: string
   width: number
   height: number
-  /** Which end a fixed-height card keeps. */
-  cardAnchor: 'top' | 'bottom'
 }
 
-// A card crops instead of shrinking, so the text in the shot stays readable at its natural size:
-// to 150px high (37.5 spacing steps of 4px), and from the right on a card narrower than the shot.
+// A card image is recorded to fit a card: the mod's band, or the top of its shot. It shows whole
+// and at its natural size, so its text stays readable; a card narrower than it crops it from the
+// right, and the 300px cap (75 spacing steps of 4px) is only a safety net.
 const cardFrame = cva(
-  'flex max-h-37.5 w-fit max-w-full flex-col overflow-hidden rounded-md border border-border',
-  {
-    variants: { anchor: { top: 'justify-start', bottom: 'justify-end' } },
-  },
+  'flex max-h-75 w-fit max-w-full flex-col overflow-hidden rounded-md border border-border',
 )
 
 /**
- * `whole` shows the entire shot, at most at its CSS width and scaled down to fit. `card` keeps it at
- * its CSS size and crops it to a fixed height, keeping the end the recorder anchored.
+ * `whole` shows the entire shot, at most at its CSS width and scaled down to fit. `card` shows a
+ * card image at its CSS size.
  */
 export function DesktopShot({
   shot,
@@ -43,7 +39,7 @@ export function DesktopShot({
     )
   }
   return (
-    <div className={cardFrame({ anchor: shot.cardAnchor })}>
+    <div className={cardFrame()}>
       <img
         src={shot.src}
         alt={alt}

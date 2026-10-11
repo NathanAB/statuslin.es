@@ -1,0 +1,5 @@
+ALTER TABLE "mod_desktop_previews" DROP CONSTRAINT "mod_desktop_previews_kind_check";--> statement-breakpoint
+ALTER TABLE "mod_desktop_previews" ADD COLUMN "card_png" "bytea";--> statement-breakpoint
+ALTER TABLE "mod_desktop_previews" ADD COLUMN "card_width" integer;--> statement-breakpoint
+ALTER TABLE "mod_desktop_previews" ADD COLUMN "card_height" integer;--> statement-breakpoint
+ALTER TABLE "mod_desktop_previews" ADD CONSTRAINT "mod_desktop_previews_kind_check" CHECK ((("mod_desktop_previews"."kind" = 'shot' AND "mod_desktop_previews"."png" IS NOT NULL AND "mod_desktop_previews"."width" > 0 AND "mod_desktop_previews"."height" > 0 AND "mod_desktop_previews"."card_png" IS NOT NULL AND "mod_desktop_previews"."card_width" > 0 AND "mod_desktop_previews"."card_height" > 0) OR ("mod_desktop_previews"."kind" = 'nothing' AND "mod_desktop_previews"."png" IS NULL AND "mod_desktop_previews"."width" IS NULL AND "mod_desktop_previews"."height" IS NULL AND "mod_desktop_previews"."card_png" IS NULL AND "mod_desktop_previews"."card_width" IS NULL AND "mod_desktop_previews"."card_height" IS NULL)) IS TRUE);

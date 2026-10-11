@@ -174,7 +174,9 @@ async function storeDesktopPreview(db: Db, versionId: string, recording: Desktop
     png: shot?.png ?? null,
     width: shot?.width ?? null,
     height: shot?.height ?? null,
-    cardAnchor: shot?.cardAnchor ?? null,
+    cardPng: shot?.card.png ?? null,
+    cardWidth: shot?.card.width ?? null,
+    cardHeight: shot?.card.height ?? null,
     desktopVersion: recording.desktopVersion,
     engineVersion: recording.engineVersion,
   }

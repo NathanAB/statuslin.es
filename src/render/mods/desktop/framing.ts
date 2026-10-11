@@ -1,16 +1,20 @@
 import type { DrawLocation } from '@/mods/footprint'
 import type { RegionGrey } from './imagemagick'
+import { bandAbovePrompt, cardBottom, type RowProfile, uncutTop } from './rows'
 import {
   type BORDER_PROBES,
+  CARD_MAX_HEIGHT,
   CONTENT,
   CROP_MARGIN,
   PANE,
   PANE_BORDER_GREY,
   PANE_CHAT_LEFT,
+  PANE_CHAT_RIGHT,
   PANE_MARGIN,
   PROMPT_BORDER_GREY,
   PROMPT_BOX,
   type Rect,
+  SCROLL_GUTTER,
 } from './screen'
 
 /** Two grey levels of a flat border apart, and well under a text column's spread. */
@@ -37,21 +41,38 @@ export function readLayout(greys: Record<keyof typeof BORDER_PROBES, RegionGrey>
 }
 
 export interface ShotFacts {
-  /** The bounding box, in CSS pixels, of what differs from the no-mod baseline; null if nothing. */
+  /**
+   * The bounding box, in CSS pixels, of what differs from the no-mod baseline (outside the prompt
+   * text and the scrollbar gutter); null if nothing.
+   */
   changed: Rect | null
   paneOpen: boolean
   draws: readonly DrawLocation[]
+  /** The final shot, row by row, across its layout's chat column. */
+  rows: RowProfile
+  /** The final shot, row by row, across the plate strips at its chat column's two edges. */
+  plate: RowProfile
 }
 
-export type Frame = { kind: 'nothing' } | { kind: 'crop'; rect: Rect; cardAnchor: 'top' | 'bottom' }
+/** Where to crop the shot for the mod page, and for its card. */
+export type Frame = { kind: 'nothing' } | { kind: 'crop'; rect: Rect; card: Rect }
 
-const clamp = (left: number, top: number, right: number, bottom: number): Rect => {
+/** Above a band's plate, the blank rows a card keeps so the plate's rounded top shows. */
+const CARD_PAD = 6
+
+const clamp = (
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  rightLimit: number = CONTENT.right,
+): Rect => {
   const x = Math.max(CONTENT.left, left)
   const y = Math.max(CONTENT.top, top)
   return {
     x,
     y,
-    width: Math.min(CONTENT.right, right) - x,
+    width: Math.min(rightLimit, right) - x,
     height: Math.min(CONTENT.bottom, bottom) - y,
   }
 }
@@ -70,23 +91,53 @@ const CHAT_AND_PANE = clamp(
   CONTENT.bottom,
 )
 
-/** The chat column from the topmost change, or the prompt box if lower, down through the toolbar. */
-function chatColumn(changed: Rect): Rect {
-  const left = Math.min(PROMPT_BOX.x, changed.x) - CROP_MARGIN
-  const right = Math.max(PROMPT_BOX.x + PROMPT_BOX.width, changed.x + changed.width) + CROP_MARGIN
-  const top = Math.min(PROMPT_BOX.y, changed.y) - CROP_MARGIN
-  return clamp(left, top, right, CONTENT.bottom)
+const PROMPT_RIGHT = PROMPT_BOX.x + PROMPT_BOX.width
+
+/**
+ * The card when the mod draws by the prompt box: its band, from the plate down to the prompt box,
+ * and the prompt box and toolbar too when it writes in the toolbar. Null when it does neither.
+ */
+function promptCard(plate: RowProfile, left: number, right: number, toolbar: boolean): Rect | null {
+  const band = bandAbovePrompt(plate, PROMPT_BOX.y)
+  if (!band && !toolbar) return null
+  const top = band ? band.top - CARD_PAD : PROMPT_BOX.y - CROP_MARGIN
+  return clamp(left, top, right, toolbar ? CONTENT.bottom : PROMPT_BOX.y)
+}
+
+/** The top of the crop, down to about CARD_MAX_HEIGHT. */
+const topCard = (rect: Rect, bottom: number): Rect => ({ ...rect, height: bottom - rect.y })
+
+/**
+ * The chat column from the topmost change, or the prompt box if lower, down through the toolbar,
+ * widened to a change outside it (a toast) but never into the scrollbar gutter, and never starting
+ * halfway through an element.
+ */
+function chatFrame(changed: Rect, rows: RowProfile, plate: RowProfile): Frame {
+  // A change inside the margin, such as an antialiased edge, is already in the crop.
+  const left = Math.min(PROMPT_BOX.x, changed.x + CROP_MARGIN) - CROP_MARGIN
+  const right = Math.max(PROMPT_RIGHT, changed.x + changed.width - CROP_MARGIN) + CROP_MARGIN
+  const top = uncutTop(rows, Math.max(CONTENT.top, Math.min(PROMPT_BOX.y, changed.y) - CROP_MARGIN))
+  const rect = clamp(left, top, right, CONTENT.bottom, SCROLL_GUTTER.x)
+  const toolbar = changed.y + changed.height > PROMPT_BOX.y + PROMPT_BOX.height
+  const card =
+    promptCard(plate, PROMPT_BOX.x - CROP_MARGIN, PROMPT_RIGHT + CROP_MARGIN, toolbar) ??
+    topCard(rect, cardBottom(rows, rect.y, rect.y + rect.height))
+  return { kind: 'crop', rect, card }
 }
 
 /**
  * Where to crop the final shot. With a pane open the chat column narrows, so a comparison with the
  * baseline says nothing and the crop is fixed: the pane alone when the mod draws only there.
  */
-export function frameShot({ changed, paneOpen, draws }: ShotFacts): Frame {
+export function frameShot({ changed, paneOpen, draws, rows, plate }: ShotFacts): Frame {
   if (paneOpen) {
     const paneOnly = draws.length > 0 && draws.every((d) => d === 'pane')
-    return { kind: 'crop', rect: paneOnly ? PANE_ONLY : CHAT_AND_PANE, cardAnchor: 'top' }
+    const rect = paneOnly ? PANE_ONLY : CHAT_AND_PANE
+    const card =
+      promptCard(plate, PANE_CHAT_LEFT - CROP_MARGIN, PANE_CHAT_RIGHT + CROP_MARGIN, false) ??
+      topCard(rect, rect.y + Math.min(CARD_MAX_HEIGHT, rect.height))
+    return { kind: 'crop', rect, card }
   }
   if (!changed) return { kind: 'nothing' }
-  return { kind: 'crop', rect: chatColumn(changed), cardAnchor: 'top' }
+  return chatFrame(changed, rows, plate)
 }

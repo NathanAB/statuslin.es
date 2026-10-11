@@ -48,8 +48,14 @@ export function modPath(slug: string): string {
 export const MOD_DESKTOP_PREVIEW_ROUTE = '/mod-previews/$versionId/desktop.png'
 
 /** Names the render too, so a re-render is a new URL that no cache has seen. */
-export function modDesktopPreviewPath(versionId: string, renderedAt: Date): string {
-  return `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)}?r=${renderedAt.getTime()}`
+/** A version's Desktop shot, or with `image` 'card' its card image, under the render that made it. */
+export function modDesktopPreviewPath(
+  versionId: string,
+  renderedAt: Date,
+  image: 'shot' | 'card' = 'shot',
+): string {
+  const path = `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)}?r=${renderedAt.getTime()}`
+  return image === 'card' ? `${path}&image=card` : path
 }
 
 export const MARKETPLACE_PATH = '/marketplace.json'

@@ -62,7 +62,7 @@ export function ModPreview({ mod }: { mod: Pick<ModDetail, 'title' | 'preview' |
   )
 }
 
-/** A card's previews: only what the mod drew, the terminal on top and Claude Desktop cropped below. */
+/** A card's previews: only what the mod drew, the terminal on top and its Desktop card below. */
 export function ModCardPreview({
   card,
 }: {

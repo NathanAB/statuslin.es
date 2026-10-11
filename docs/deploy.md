@@ -249,8 +249,9 @@ Run every step against **staging first, then production**, from your machine. `<
 that environment's `DATABASE_URL`. The import and render steps also need `E2B_API_KEY`.
 
 1. Apply the migrations (`0026` to `0030` add the mods tables and the Desktop previews, plus anything
-   newer). The deploy's `release_command` already applies them, so on a deployed environment this
-   only confirms it:
+   newer). `0031` deletes Desktop shots recorded before each shot had a card image, so run step 3
+   again after it. The deploy's `release_command` already applies them, so on a deployed environment
+   this only confirms it:
    ```sh
    DATABASE_URL='<env pooled url>' bun run db:migrate
    ```

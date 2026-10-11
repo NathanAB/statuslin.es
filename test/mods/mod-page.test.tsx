@@ -123,12 +123,8 @@ describe('mod page head', () => {
 
 const SHOT = {
   kind: 'shot' as const,
-  shot: {
-    src: '/mod-previews/v1/desktop.png',
-    width: 790,
-    height: 52,
-    cardAnchor: 'bottom' as const,
-  },
+  shot: { src: '/mod-previews/v1/desktop.png?r=1', width: 790, height: 520 },
+  card: { src: '/mod-previews/v1/desktop.png?r=1&image=card', width: 790, height: 52 },
 }
 
 /** The card holding the section whose h2 is `title`. */
@@ -233,7 +229,7 @@ describe('mod page', () => {
     const image = preview.getByRole('img', { name: 'File Tree in Claude Desktop' })
     expect(image.getAttribute('src')).toBe(SHOT.shot.src)
     expect(image.getAttribute('width')).toBe('790')
-    expect(image.getAttribute('height')).toBe('52')
+    expect(image.getAttribute('height')).toBe('520')
     expect(
       terminal.compareDocumentPosition(desktop) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()

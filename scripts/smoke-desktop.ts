@@ -43,7 +43,7 @@ async function forEachConcurrently<T>(items: T[], limit: number, work: (item: T)
 
 function describe(recording: DesktopRecording): string {
   if (recording.kind === 'nothing') return 'nothing'
-  return `shot ${recording.width}x${recording.height} css, anchor ${recording.cardAnchor}`
+  return `shot ${recording.width}x${recording.height} css, card ${recording.card.width}x${recording.card.height} css`
 }
 
 async function main(): Promise<number> {
@@ -78,8 +78,10 @@ async function main(): Promise<number> {
         inputSteps: entry.inputSteps,
         draws: outcome.draws,
       })
-      if (recording.kind === 'shot')
+      if (recording.kind === 'shot') {
         writeFileSync(join(outDir, `${entry.pluginName}.png`), recording.png)
+        writeFileSync(join(outDir, `${entry.pluginName}.card.png`), recording.card.png)
+      }
       outcome.result = `${describe(recording)}, Desktop ${recording.desktopVersion}, engine ${recording.engineVersion}`
     } catch (error) {
       outcome.result = `FAILED: ${error instanceof Error ? error.message : String(error)}`

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { analyseShot } from '@/render/mods/desktop/analyse'
 import type { AnalysisSandbox } from '@/render/mods/desktop/desktop-sandbox'
-import { PANE_BORDER_GREY, PROMPT_BORDER_GREY } from '@/render/mods/desktop/screen'
+import {
+  CONTENT,
+  PANE_BORDER_GREY,
+  PROMPT_BORDER_GREY,
+  PROMPT_BOX,
+  WINDOW,
+} from '@/render/mods/desktop/screen'
 
 const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
@@ -20,16 +26,27 @@ function pngOf(width: number, height: number, types: string[]): Uint8Array {
   return new Uint8Array(Buffer.concat([Buffer.from(SIGNATURE), ...chunks]))
 }
 
+/** od's output for a row profile: 255 on the given rows, 0 elsewhere. */
+function profile(...runs: [number, number][]): string {
+  const bytes = Array<number>(WINDOW.height).fill(0)
+  for (const [from, to] of runs) bytes.fill(255, from, to + 1)
+  return ` ${bytes.join(' ')}\n`
+}
+
 const CHAT = `${PROMPT_BORDER_GREY} 0\n${20 / 255} 0\n0.3 0.2\n`
 const PANE = `0.1 0.05\n${PROMPT_BORDER_GREY} 0\n${PANE_BORDER_GREY} 0\n`
-const BAND = '1 1536x80+333+1031'
-const SAME = '0 0x0+2202+1282'
+const BAND = '1 1536x80+333+1551'
+const SAME = '0 0x0+2202+1802'
+const BAND_ROWS: [number, number] = [775, 814]
+const PROMPT_ROWS: [number, number] = [PROMPT_BOX.y, PROMPT_BOX.y + 39]
 
 /** Answers the analysis commands as ImageMagick would for the given layouts and comparison. */
 function fakeAnalysis(opts: {
   baseline?: string
   shot?: string
   compare?: string
+  content?: string
+  plate?: string
   crop?: (width: number, height: number) => Uint8Array
 }) {
   const uploaded: string[] = []
@@ -40,11 +57,16 @@ function fakeAnalysis(opts: {
     },
     run: async (command) => {
       ran.push(command)
-      if (command.includes('-compose difference')) {
-        return { exitCode: 0, stdout: opts.compare ?? SAME, stderr: '' }
+      const answer = (stdout: string) => ({ exitCode: 0, stdout, stderr: '' })
+      if (command.includes('-compose difference -composite -compose over')) {
+        return answer(opts.compare ?? SAME)
+      }
+      if (command.includes('od -An')) {
+        const plate = command.includes('-crop 6x')
+        return answer(plate ? (opts.plate ?? profile()) : (opts.content ?? profile(PROMPT_ROWS)))
       }
       const layout = command.includes('baseline.png') ? opts.baseline : opts.shot
-      return { exitCode: 0, stdout: layout ?? CHAT, stderr: '' }
+      return answer(layout ?? CHAT)
     },
     readPng: async (command) => {
       ran.push(command)
@@ -58,10 +80,15 @@ function fakeAnalysis(opts: {
 
 const SHOT = new Uint8Array([1])
 const BASELINE = new Uint8Array([2])
+const BAND_SHOT = {
+  compare: BAND,
+  content: profile(BAND_ROWS, PROMPT_ROWS),
+  plate: profile(BAND_ROWS),
+}
 
 describe('analyseShot', () => {
   it('uploads the shot and the baseline into the fresh sandbox', async () => {
-    const { analysis, uploaded } = fakeAnalysis({ compare: BAND })
+    const { analysis, uploaded } = fakeAnalysis(BAND_SHOT)
 
     await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: ['above-prompt'] })
 
@@ -71,17 +98,29 @@ describe('analyseShot', () => {
     ])
   })
 
-  it('crops the changed band with the prompt box, re-encoded, anchored at the top', async () => {
-    const { analysis, ran } = fakeAnalysis({ compare: BAND })
+  it('crops the band with the prompt box, and cards the band alone, both re-encoded', async () => {
+    const { analysis, ran } = fakeAnalysis(BAND_SHOT)
 
-    const result = await analyseShot(analysis, {
-      shot: SHOT,
-      baseline: BASELINE,
-      draws: ['above-prompt'],
+    const result = await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+
+    expect(result).toMatchObject({
+      kind: 'shot',
+      width: 784,
+      height: CONTENT.bottom - 767,
+      card: { width: 784, height: PROMPT_BOX.y - 769 },
     })
+    const crops = ran.filter((c) => c.includes('png:-'))
+    expect(crops).toHaveLength(2)
+    for (const crop of crops) expect(crop).toContain('-strip -define png:exclude-chunks=all')
+  })
 
-    expect(result).toMatchObject({ kind: 'shot', width: 784, height: 129, cardAnchor: 'top' })
-    expect(ran.at(-1)).toContain('-strip -define png:exclude-chunks=all png:-')
+  it('leaves the prompt text and the scrollbar gutter out of the comparison', async () => {
+    const { analysis, ran } = fakeAnalysis(BAND_SHOT)
+
+    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+
+    const compare = ran.find((c) => c.includes('-compose difference -composite -compose over'))
+    expect(compare?.match(/-draw 'rectangle/g)).toHaveLength(2)
   })
 
   it('finds nothing when the shot matches the baseline', async () => {
@@ -101,8 +140,13 @@ describe('analyseShot', () => {
       draws: ['pane', 'toast'],
     })
 
-    expect(result).toMatchObject({ kind: 'shot', width: 1055, height: 596, cardAnchor: 'top' })
-    expect(ran.some((c) => c.includes('-compose difference'))).toBe(false)
+    expect(result).toMatchObject({
+      kind: 'shot',
+      width: 1055,
+      height: CONTENT.bottom - 40,
+      card: { width: 1055, height: 150 },
+    })
+    expect(ran.some((c) => c.includes('-compose difference -composite -compose over'))).toBe(false)
   })
 
   it('refuses a baseline that shows a pane', async () => {
@@ -115,7 +159,7 @@ describe('analyseShot', () => {
 
   it('refuses a crop that carries more than pixels', async () => {
     const { analysis } = fakeAnalysis({
-      compare: BAND,
+      ...BAND_SHOT,
       crop: (w, h) => pngOf(w, h, ['IHDR', 'tEXt', 'IDAT', 'IEND']),
     })
 

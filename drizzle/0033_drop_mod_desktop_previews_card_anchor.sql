@@ -1,0 +1,1 @@
+ALTER TABLE "mod_desktop_previews" DROP COLUMN "card_anchor";
