@@ -23,6 +23,9 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
 
 export const HOME_CRUMB_NAME = 'Status lines'
 
+/** The crumb between home and every mod page: the gallery filtered to mods. */
+export const MODS_CRUMB = { name: 'Mods', search: { kind: 'mods' } } as const
+
 /** A BreadcrumbList from the trail's crumbs, home first, each `item` an absolute URL. */
 export function breadcrumbJsonLd(crumbs: Array<{ name: string; item: string }>): object {
   return {

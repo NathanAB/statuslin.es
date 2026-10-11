@@ -2,6 +2,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { coerceGalleryFilter } from '@/gallery/gallery-items'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import type { ModDetail } from '@/mods/queries'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
@@ -14,6 +15,22 @@ vi.mock('@posthog/react', () => ({
 vi.mock('@/ui/shell', () => ({
   PageShell: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
+vi.mock('@tanstack/react-router', async () => {
+  const actual =
+    await vi.importActual<typeof import('@tanstack/react-router')>('@tanstack/react-router')
+  return {
+    ...actual,
+    Link: ({
+      to,
+      search,
+      children,
+    }: {
+      to: string
+      search?: Record<string, string>
+      children: ReactNode
+    }) => <a href={search ? `${to}?${new URLSearchParams(search)}` : to}>{children}</a>,
+  }
+})
 
 const { Route: ModRoute } = await import('@/routes/mods.$slug')
 
@@ -115,6 +132,27 @@ function section(title: string) {
 }
 
 describe('mod page', () => {
+  it('breadcrumbs home › Mods › the mod, linking Mods to the mods-filtered gallery', () => {
+    renderPage()
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(nav.textContent).toBe('Status lines›Mods›File Tree')
+    const mods = within(nav).getByRole('link', { name: 'Mods' })
+    const url = new URL(mods.getAttribute('href') ?? '', ORIGIN)
+    expect(url.pathname).toBe('/')
+    expect(coerceGalleryFilter(url.searchParams.get('kind'))).toBe('mods')
+  })
+
+  it('puts the breadcrumb above the title, like a status line page', () => {
+    renderPage()
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    const title = screen.getByRole('heading', { level: 1, name: 'File Tree' })
+    expect(
+      breadcrumb.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   it('puts the byline under the title and above the description, like a status line page', () => {
     renderPage()
 

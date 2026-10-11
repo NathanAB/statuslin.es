@@ -8,14 +8,14 @@ import { FootprintSection } from '@/mods/footprint-section'
 import { getModDetailFn } from '@/mods/functions'
 import { installCommands } from '@/mods/install'
 import { InstallCommandBlock } from '@/mods/install-command-block'
-import { ModCredit } from '@/mods/mod-credit'
+import { ModHeader } from '@/mods/mod-header'
 import { ModPreview } from '@/mods/mod-preview'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
 import { Stack } from '@/ui/layout'
 import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
-import { Heading, Text, TextLink } from '@/ui/text'
+import { Text, TextLink } from '@/ui/text'
 
 export const Route = createFileRoute('/mods/$slug')({
   loader: async ({ params }) => {
@@ -51,15 +51,7 @@ function ModPage() {
   return (
     <PageShell user={user}>
       <Stack gap={6}>
-        <Stack gap={3}>
-          <Heading level={1}>{mod.title}</Heading>
-          <ModCredit mod={mod} />
-          {mod.description && (
-            <Text muted size="sm">
-              {mod.description}
-            </Text>
-          )}
-        </Stack>
+        <ModHeader mod={mod} />
 
         <SectionCard title="Preview" headingLevel={2}>
           <ModPreview mod={mod} />
