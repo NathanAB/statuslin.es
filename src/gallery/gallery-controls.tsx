@@ -1,19 +1,18 @@
 import { usePostHog } from '@posthog/react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { X } from 'lucide-react'
-import { ALL_TAG_SLUGS, FACETS, tagLabel } from '@/gallery/facets'
 import type { GalleryFilter } from '@/gallery/gallery-items'
 import type { GallerySort } from '@/gallery/queries'
 import { Button } from '@/ui/button'
 import {
   DropdownMenu,
   DropdownMenuButtonTrigger,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/ui/dropdown-menu'
 import { Row } from '@/ui/layout'
+import { SegmentedControl } from '@/ui/segmented-control'
 
 const SORT_OPTIONS: { label: string; value: GallerySort }[] = [
   { label: 'Trending', value: 'trending' },
@@ -21,35 +20,24 @@ const SORT_OPTIONS: { label: string; value: GallerySort }[] = [
   { label: 'New', value: 'new' },
 ]
 const SORT_LABEL: Record<GallerySort, string> = { trending: 'Trending', top: 'Top', new: 'New' }
-const KIND_OPTIONS: { label: string; value: GalleryFilter }[] = [
+const KIND_OPTIONS: readonly { label: string; value: GalleryFilter }[] = [
   { label: 'All', value: 'all' },
   { label: 'Status lines', value: 'status-lines' },
   { label: 'Mods', value: 'mods' },
 ]
 
-/** Builds the canonical `?tags=` CSV (registry order, de-duped) from the tags a user has toggled on. */
-export function buildTagsCsv(selected: Set<string>): string | undefined {
-  const csv = ALL_TAG_SLUGS.filter((slug) => selected.has(slug)).join(',')
-  return csv === '' ? undefined : csv
-}
-
 export function GalleryControls({
   kind,
   sort,
   tags,
-  available,
 }: {
   kind: GalleryFilter
   sort: GallerySort
   tags: string[]
-  available: string[]
 }) {
   const navigate = useNavigate()
   const posthog = usePostHog()
   const selected = new Set(tags)
-  // Only offer tags at least one published config carries, so the filter never matches nothing.
-  const availableSet = new Set(available)
-  const facets = FACETS.filter((f) => availableSet.has(f.slug))
 
   const setSort = (value: GallerySort) => {
     posthog.capture('gallery_sort_changed', {
@@ -74,45 +62,9 @@ export function GalleryControls({
       },
     })
   }
-  const toggleTag = (slug: string) => {
-    const next = new Set(selected)
-    if (next.has(slug)) {
-      next.delete(slug)
-    } else {
-      next.add(slug)
-    }
-    const csv = buildTagsCsv(next)
-    posthog.capture('gallery_filter_changed', {
-      action: next.has(slug) ? 'add' : 'remove',
-      tag: slug,
-      selectedTags: csv ? csv.split(',') : [],
-      sort,
-      page: 1,
-    })
-    navigate({
-      to: '/',
-      search: (prev) => {
-        const { page: _page, tags: _tags, ...rest } = prev
-        return { ...rest, ...(csv ? { tags: csv } : {}) }
-      },
-    })
-  }
-
   return (
     <Row gap={2} wrap>
-      <Row gap={1}>
-        {KIND_OPTIONS.map((o) => (
-          <Button
-            key={o.value}
-            variant="outline"
-            active={kind === o.value}
-            aria-pressed={kind === o.value}
-            onClick={() => setKind(o.value)}
-          >
-            {o.label}
-          </Button>
-        ))}
-      </Row>
+      <SegmentedControl label="Show" options={KIND_OPTIONS} value={kind} onValueChange={setKind} />
 
       <DropdownMenu>
         <DropdownMenuButtonTrigger label={`Sort: ${SORT_LABEL[sort]}`} />
@@ -124,28 +76,6 @@ export function GalleryControls({
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuButtonTrigger
-          label={selected.size > 0 ? `Filter · ${selected.size}` : 'Filter'}
-          active={selected.size > 0}
-        />
-        <DropdownMenuContent>
-          {facets.map((f) => (
-            <DropdownMenuCheckboxItem
-              key={f.slug}
-              checked={selected.has(f.slug)}
-              // preventDefault keeps the menu open while toggling multiple tags
-              onSelect={(e) => {
-                e.preventDefault()
-                toggleTag(f.slug)
-              }}
-            >
-              {tagLabel(f.chipLabel)}
-            </DropdownMenuCheckboxItem>
-          ))}
         </DropdownMenuContent>
       </DropdownMenu>
 

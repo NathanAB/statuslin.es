@@ -44,7 +44,6 @@ const gallery = {
   items: [],
   page: 1,
   pageCount: 1,
-  availableTags: [],
   publishedCount: 32,
   copyCount: 148,
   asOf: '2026-09-08',

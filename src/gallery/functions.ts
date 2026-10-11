@@ -1,7 +1,6 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { liveComparePaths } from '@/compare/pages'
 import { db } from '@/db'
-import { getAvailableTags } from '@/gallery/facet-queries'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
@@ -94,22 +93,16 @@ export const getGalleryConfigs = createServerFn({ method: 'GET' })
   .inputValidator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
 
-export const getGallery = createServerFn({ method: 'GET' })
-  .inputValidator((d: { modTags: string[][] }) => ({ modTags: coerceModTags(d.modTags) }))
-  .handler(({ data }) =>
-    withHttpStatus(async () => {
-      const [availableTags, inventory] = await Promise.all([
-        getAvailableTags(db, data.modTags),
-        getPublishedInventory(db),
-      ])
-      return {
-        availableTags,
-        publishedCount: inventory.count,
-        copyCount: inventory.copyCount,
-        asOf: new Date().toISOString().slice(0, 10),
-      }
-    }),
-  )
+export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
+  withHttpStatus(async () => {
+    const inventory = await getPublishedInventory(db)
+    return {
+      publishedCount: inventory.count,
+      copyCount: inventory.copyCount,
+      asOf: new Date().toISOString().slice(0, 10),
+    }
+  }),
+)
 
 export const getConfigDetail = createServerFn({ method: 'GET' })
   .inputValidator((d: { slug: string }) => d)
