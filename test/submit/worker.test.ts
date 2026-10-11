@@ -1,5 +1,5 @@
 import { PGlite } from '@electric-sql/pglite'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -12,6 +12,7 @@ import type { RenderJobReport } from '@/submit/render-completed-event'
 import { submitConfig } from '@/submit/submit'
 import {
   drainRenderJobs,
+  MAX_RENDER_ATTEMPTS,
   processNextRenderJob,
   requeueStaleJobs,
   STALE_RUNNING_JOB_MS,
@@ -45,12 +46,16 @@ beforeEach(async () => {
   await db.delete(schema.configs)
 })
 
-async function jobStatus(versionId: string): Promise<string | undefined> {
+async function jobRow(versionId: string) {
   const [job] = await db
     .select()
     .from(schema.renderJobs)
     .where(eq(schema.renderJobs.configVersionId, versionId))
-  return job?.status
+  return job
+}
+
+async function jobStatus(versionId: string): Promise<string | undefined> {
+  return (await jobRow(versionId))?.status
 }
 
 /** Older than the time limit: the machine that claimed the job was cut off. */
@@ -101,6 +106,54 @@ describe('requeueStaleJobs', () => {
     const versionId = await submitRunning('Net stale', staleStart(), ['wttr.in'])
     expect(await requeueStaleJobs(db)).toBe(1)
     expect(await jobStatus(versionId)).toBe('held')
+  })
+
+  it('fails a stale job that has used up its attempts instead of re-queueing it', async () => {
+    const offline = await submitRunning('Crashes offline', staleStart())
+    const network = await submitRunning('Crashes online', staleStart(), ['wttr.in'])
+    await db
+      .update(schema.renderJobs)
+      .set({ attempts: MAX_RENDER_ATTEMPTS })
+      .where(eq(schema.renderJobs.status, 'running'))
+
+    expect(await requeueStaleJobs(db)).toBe(2)
+
+    for (const versionId of [offline, network]) {
+      const job = await jobRow(versionId)
+      expect(job?.status).toBe('failed')
+      expect(job?.error).toContain(`${MAX_RENDER_ATTEMPTS} times`)
+      expect(job?.finishedAt).not.toBeNull()
+    }
+  })
+
+  it('re-queues a stale job that still has attempts left', async () => {
+    const versionId = await submitRunning('One more try', staleStart())
+    await db
+      .update(schema.renderJobs)
+      .set({ attempts: MAX_RENDER_ATTEMPTS - 1 })
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+
+    await requeueStaleJobs(db)
+
+    expect(await jobStatus(versionId)).toBe('queued')
+  })
+
+  it.each([
+    'approved',
+    'rejected',
+    'superseded',
+  ] as const)('fails a stale job whose submission is %s instead of rendering it again', async (decided) => {
+    const offline = await submitRunning(`Decided offline ${decided}`, staleStart())
+    const network = await submitRunning(`Decided online ${decided}`, staleStart(), ['wttr.in'])
+    await db
+      .update(schema.submissions)
+      .set({ status: decided })
+      .where(inArray(schema.submissions.id, [offline, network]))
+
+    expect(await requeueStaleJobs(db)).toBe(2)
+
+    expect(await jobStatus(offline)).toBe('failed')
+    expect(await jobStatus(network)).toBe('failed')
   })
 
   it('leaves done jobs untouched', async () => {

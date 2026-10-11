@@ -1,6 +1,6 @@
 import { and, eq, isNull, lt, or, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { renderConfig } from '@/render/pipeline'
 import { storePreviews } from '@/render/store'
 import type { Interpreter, SandboxRunner } from '@/render/types'
@@ -13,12 +13,14 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
  * its own sandbox capped at 45 seconds, so a live render never gets near this. */
 export const STALE_RUNNING_JOB_MS = 15 * 60 * 1000
 
+/** How many times a job may be claimed. A job cut off on its last attempt fails instead of going
+ * back to the queue, so a render that keeps killing its machine can't loop forever. */
+export const MAX_RENDER_ATTEMPTS = 3
+
 /** Reset jobs that have been 'running' longer than STALE_RUNNING_JOB_MS: the machine rendering
  * them was stopped or crashed. Several web machines render at once, so a younger 'running' job may
  * be live on another machine and is left alone. A job with no start time was left by the old
- * always-on worker. An OFFLINE job goes back to 'queued'. A NETWORK job (networkHosts non-empty)
- * goes back to 'held' — a network render must never re-run without a fresh admin click (the
- * held-job invariant). */
+ * always-on worker. Each goes where `afterCutOff` sends it. Returns how many it moved. */
 export async function requeueStaleJobs(db: Db): Promise<number> {
   const startedBefore = new Date(Date.now() - STALE_RUNNING_JOB_MS)
   const isStale = and(
@@ -26,22 +28,49 @@ export async function requeueStaleJobs(db: Db): Promise<number> {
     or(isNull(renderJobs.startedAt), lt(renderJobs.startedAt, startedBefore)),
   )
   const stale = await db
-    .select({ id: renderJobs.id, networkHosts: configVersions.networkHosts })
+    .select({
+      id: renderJobs.id,
+      attempts: renderJobs.attempts,
+      networkHosts: configVersions.networkHosts,
+      submissionStatus: submissions.status,
+    })
     .from(renderJobs)
     .innerJoin(configVersions, eq(configVersions.id, renderJobs.configVersionId))
+    .leftJoin(submissions, eq(submissions.configVersionId, renderJobs.configVersionId))
     .where(isStale)
-  let requeued = 0
+  let moved = 0
   for (const job of stale) {
-    const next = (job.networkHosts ?? []).length > 0 ? 'held' : 'queued'
     // Conditional, so a job that finished since the read above keeps its result.
     const updated = await db
       .update(renderJobs)
-      .set({ status: next })
+      .set(afterCutOff(job))
       .where(and(eq(renderJobs.id, job.id), isStale))
       .returning({ id: renderJobs.id })
-    requeued += updated.length
+    moved += updated.length
   }
-  return requeued
+  return moved
+}
+
+/** Where a job cut off mid-render goes. It fails once its submission is decided (nothing left to
+ * review) or it has used MAX_RENDER_ATTEMPTS. Otherwise an OFFLINE job goes back to 'queued' and a
+ * NETWORK job (networkHosts non-empty) to 'held': a network render must never re-run without a
+ * fresh admin click (the held-job invariant). */
+function afterCutOff(job: {
+  attempts: number
+  networkHosts: string[] | null
+  submissionStatus: string | null
+}): Partial<typeof renderJobs.$inferInsert> {
+  if (job.submissionStatus !== 'pending') {
+    return {
+      status: 'failed',
+      error: 'cut off after its submission was decided',
+      finishedAt: new Date(),
+    }
+  }
+  if (job.attempts >= MAX_RENDER_ATTEMPTS) {
+    return { status: 'failed', error: `cut off ${job.attempts} times`, finishedAt: new Date() }
+  }
+  return { status: (job.networkHosts ?? []).length > 0 ? 'held' : 'queued' }
 }
 
 /** Called once per finished job (done or failed). Lets the web server's drain report telemetry
