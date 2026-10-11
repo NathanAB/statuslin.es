@@ -1,6 +1,7 @@
 // App tables (configs/votes/etc.) arrive in later slices.
 export * from './auth-schema'
 export * from './mod-schema'
+export * from './submission-schema'
 
 import { sql } from 'drizzle-orm'
 import {
