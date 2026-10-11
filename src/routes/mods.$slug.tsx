@@ -6,10 +6,10 @@ import { canonicalLink } from '@/lib/canonical'
 import { jsonLdScript } from '@/lib/json-ld'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import { modPath, siteUrl } from '@/lib/site'
-import { FootprintSection } from '@/mods/footprint-section'
 import { getModDetailFn } from '@/mods/functions'
 import { installCommands } from '@/mods/install'
 import { InstallCommandBlock } from '@/mods/install-command-block'
+import { modFactTiles } from '@/mods/mod-fact-tiles'
 import { ModHeader } from '@/mods/mod-header'
 import { ModPreview } from '@/mods/mod-preview'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
@@ -65,8 +65,7 @@ function ModPage() {
           </SectionCard>
         }
         preview={<ModPreview mod={mod} />}
-        detail={{ title: 'What it does', content: <FootprintSection mod={mod} /> }}
-        generatedContent={mod.generatedContent}
+        whatItDoes={{ copy: mod.generatedContent, tiles: modFactTiles(mod) }}
       />
     </PageShell>
   )

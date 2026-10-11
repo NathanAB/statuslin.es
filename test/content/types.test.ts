@@ -1,79 +1,117 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_ITEM_CHARS, MAX_SECTION_ITEMS, parseGeneratedContent } from '@/content/types'
+import {
+  configPageCopySchema,
+  MAX_NOTES,
+  MAX_STEPS,
+  modPageCopySchema,
+  NOTE_MAX_CHARS,
+  readPageCopy,
+  STEP_MAX_CHARS,
+  SUMMARY_MAX_CHARS,
+  TILE_DETAIL_MAX_CHARS,
+} from '@/content/types'
 
-const VALID = {
-  whatItShows: ['Current git branch', 'Model name'],
-  requirements: ['bash', 'git on PATH'],
-  behaviorNotes: ['Shows a * suffix when the working tree is dirty'],
+const CONFIG_COPY = {
+  summary: 'Shows the git branch and how full the context window is.',
+  howItWorks: ['Reads the session JSON Claude Code sends', 'Runs `git` for the branch'],
+  goodToKnow: ['Needs `jq` on your PATH'],
+  details: { readsClaudeLogin: 'To fetch your plan usage' },
 }
 
-describe('parseGeneratedContent', () => {
-  it('parses a bare JSON object', () => {
-    expect(parseGeneratedContent(JSON.stringify(VALID))).toEqual(VALID)
+const MOD_COPY = {
+  summary: 'A burn meter above the prompt.',
+  howItWorks: ['Counts tokens after each turn'],
+  goodToKnow: [],
+  details: {
+    showsUp: 'A one-line meter above the prompt',
+    commands: ['/burn'],
+    usesYourPlan: 'Asks the model for a summary',
+    changesFiles: '`CLAUDE.md`, only when you press Save',
+    network: 'Weather from open-meteo.com',
+  },
+}
+
+/** The old three-section format, still stored on versions generated before this one. */
+const OLD_FORMAT = {
+  whatItShows: ['Current git branch'],
+  requirements: ['bash'],
+  behaviorNotes: ['Branch disappears outside a repo'],
+}
+
+const fails = (schema: typeof configPageCopySchema | typeof modPageCopySchema, value: unknown) =>
+  expect(schema.safeParse(value).success).toBe(false)
+
+describe('page copy schemas', () => {
+  it('accept the status line and mod copy', () => {
+    expect(configPageCopySchema.parse(CONFIG_COPY)).toEqual(CONFIG_COPY)
+    expect(modPageCopySchema.parse(MOD_COPY)).toEqual(MOD_COPY)
   })
 
-  it('parses JSON wrapped in a markdown fence', () => {
-    const raw = `\`\`\`json\n${JSON.stringify(VALID)}\n\`\`\``
-    expect(parseGeneratedContent(raw)).toEqual(VALID)
+  it('give copy without tile details an empty set of them', () => {
+    const { details: _details, ...bare } = CONFIG_COPY
+    expect(configPageCopySchema.parse(bare).details).toEqual({})
   })
 
-  it('parses JSON surrounded by stray prose', () => {
-    const raw = `Here is the content you asked for:\n${JSON.stringify(VALID)}\nLet me know!`
-    expect(parseGeneratedContent(raw)).toEqual(VALID)
+  it('refuse the old three-section format', () => {
+    fails(configPageCopySchema, OLD_FORMAT)
+    fails(modPageCopySchema, OLD_FORMAT)
   })
 
-  it('strips unknown keys instead of storing them', () => {
-    const raw = JSON.stringify({ ...VALID, extra: 'nope' })
-    expect(parseGeneratedContent(raw)).toEqual(VALID)
+  it('refuse keys outside the format, at the top and among the tile details', () => {
+    fails(configPageCopySchema, { ...CONFIG_COPY, whatItShows: ['x'] })
+    fails(configPageCopySchema, { ...CONFIG_COPY, details: { changesFiles: 'x' } })
+    fails(modPageCopySchema, { ...MOD_COPY, details: { readsClaudeLogin: 'x' } })
   })
 
-  it('allows an empty section', () => {
-    const empty = { ...VALID, behaviorNotes: [] }
-    expect(parseGeneratedContent(JSON.stringify(empty))).toEqual(empty)
+  it('cap the summary, steps, notes and tile details', () => {
+    const over = (max: number) => 'x'.repeat(max + 1)
+    fails(configPageCopySchema, { ...CONFIG_COPY, summary: over(SUMMARY_MAX_CHARS) })
+    fails(configPageCopySchema, { ...CONFIG_COPY, howItWorks: [over(STEP_MAX_CHARS)] })
+    fails(configPageCopySchema, { ...CONFIG_COPY, goodToKnow: [over(NOTE_MAX_CHARS)] })
+    fails(configPageCopySchema, {
+      ...CONFIG_COPY,
+      details: { readsClaudeLogin: over(TILE_DETAIL_MAX_CHARS) },
+    })
+    fails(configPageCopySchema, {
+      ...CONFIG_COPY,
+      howItWorks: Array.from({ length: MAX_STEPS + 1 }, () => 'step'),
+    })
+    fails(configPageCopySchema, {
+      ...CONFIG_COPY,
+      goodToKnow: Array.from({ length: MAX_NOTES + 1 }, () => 'note'),
+    })
   })
 
-  it('throws when output contains no JSON object', () => {
-    expect(() => parseGeneratedContent('sorry, I cannot do that')).toThrow(/no JSON object/i)
-  })
-
-  it('throws on malformed JSON', () => {
-    // Both braces present so extraction succeeds and JSON.parse is what fails.
-    expect(() => parseGeneratedContent('{ whatItShows: [oops }')).toThrow(/not valid JSON/i)
-  })
-
-  it('throws when a section is missing', () => {
-    const { behaviorNotes: _drop, ...missing } = VALID
-    expect(() => parseGeneratedContent(JSON.stringify(missing))).toThrow(/failed validation/i)
-  })
-
-  it('throws when a section has the wrong type', () => {
-    const bad = { ...VALID, requirements: 'bash' }
-    expect(() => parseGeneratedContent(JSON.stringify(bad))).toThrow(/failed validation/i)
-  })
-
-  it('throws on empty-string items', () => {
-    const bad = { ...VALID, whatItShows: ['', 'Model name'] }
-    expect(() => parseGeneratedContent(JSON.stringify(bad))).toThrow(/failed validation/i)
-  })
-
-  it('refuses a section with more items than the cap', () => {
-    const steered = {
-      ...VALID,
-      requirements: Array.from({ length: MAX_SECTION_ITEMS + 1 }, (_, i) => `need ${i}`),
-    }
-    expect(() => parseGeneratedContent(JSON.stringify(steered))).toThrow(/failed validation/i)
-  })
-
-  it('refuses an item longer than the cap', () => {
-    const steered = { ...VALID, behaviorNotes: ['x'.repeat(MAX_ITEM_CHARS + 1)] }
-    expect(() => parseGeneratedContent(JSON.stringify(steered))).toThrow(/failed validation/i)
-  })
-
-  it('accepts a section at the item and length limits', () => {
+  it('accept copy at every cap', () => {
     const full = {
-      ...VALID,
-      whatItShows: Array.from({ length: MAX_SECTION_ITEMS }, () => 'y'.repeat(MAX_ITEM_CHARS)),
+      summary: 's'.repeat(SUMMARY_MAX_CHARS),
+      howItWorks: Array.from({ length: MAX_STEPS }, () => 'h'.repeat(STEP_MAX_CHARS)),
+      goodToKnow: Array.from({ length: MAX_NOTES }, () => 'g'.repeat(NOTE_MAX_CHARS)),
+      details: { readsClaudeLogin: 'd'.repeat(TILE_DETAIL_MAX_CHARS) },
     }
-    expect(parseGeneratedContent(JSON.stringify(full))).toEqual(full)
+    expect(configPageCopySchema.parse(full)).toEqual(full)
+  })
+
+  it('refuse an empty summary, a line break and an em dash', () => {
+    fails(configPageCopySchema, { ...CONFIG_COPY, summary: '   ' })
+    fails(configPageCopySchema, { ...CONFIG_COPY, howItWorks: ['one\ntwo'] })
+    fails(configPageCopySchema, { ...CONFIG_COPY, goodToKnow: ['fast — and small'] })
+  })
+
+  it('take a mod command only as a slash command', () => {
+    fails(modPageCopySchema, { ...MOD_COPY, details: { commands: ['burn'] } })
+    fails(modPageCopySchema, { ...MOD_COPY, details: { commands: ['/burn now'] } })
+  })
+})
+
+describe('readPageCopy', () => {
+  it('returns stored copy in the current format', () => {
+    expect(readPageCopy(modPageCopySchema, MOD_COPY)).toEqual(MOD_COPY)
+  })
+
+  it('returns null for nothing stored, the old format, or a malformed value', () => {
+    expect(readPageCopy(configPageCopySchema, null)).toBeNull()
+    expect(readPageCopy(configPageCopySchema, OLD_FORMAT)).toBeNull()
+    expect(readPageCopy(modPageCopySchema, { summary: 42 })).toBeNull()
   })
 })

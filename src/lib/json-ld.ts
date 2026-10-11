@@ -1,4 +1,4 @@
-import type { GeneratedContent } from '@/content/types'
+import type { PageCopy } from '@/content/types'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
 import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
@@ -58,8 +58,8 @@ export function homeJsonLd(
 }
 
 /**
- * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the
- * generated copy when present. The SoftwareSourceCode carries `dateModified` (freshness),
+ * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the page copy
+ * the "What it does" card shows, when present. The SoftwareSourceCode carries `dateModified` (freshness),
  * `runtimePlatform`, and facet `keywords`.
  */
 export function configJsonLd(
@@ -73,7 +73,7 @@ export function configJsonLd(
     license: string | null
     keywords: string[]
     updatedAt: string | null
-    generatedContent: GeneratedContent | null
+    generatedContent: PageCopy | null
     primaryFacet: { slug: string; heading: string } | null
   },
 ): object[] {
@@ -130,18 +130,22 @@ export function faqPageJsonLd(entries: FaqEntry[]): object | null {
   }
 }
 
-function configFaqJsonLd(title: string, content: GeneratedContent | null): object | null {
-  if (!content) return null
-  const sections = [
-    { question: `What does ${title} show?`, lines: content.whatItShows },
-    { question: `What does ${title} require?`, lines: content.requirements },
-    { question: `How does ${title} behave?`, lines: content.behaviorNotes },
+/** A step or note as a sentence, so a list joins into a readable answer. */
+const asSentence = (line: string) => (/[.!?]$/.test(line) ? line : `${line}.`)
+
+/** The card's summary, steps and notes, each as one question; an empty list asks nothing. */
+function configFaqJsonLd(title: string, copy: PageCopy | null): object | null {
+  if (!copy) return null
+  const lists = [
+    { question: `How does ${title} work?`, lines: copy.howItWorks },
+    { question: `What should I know before using ${title}?`, lines: copy.goodToKnow },
   ]
-  return faqPageJsonLd(
-    sections
-      .filter((s) => s.lines.length > 0)
-      .map((s) => ({ question: s.question, answer: s.lines.join(' ') })),
-  )
+  return faqPageJsonLd([
+    { question: `What does ${title} do?`, answer: copy.summary },
+    ...lists
+      .filter((list) => list.lines.length > 0)
+      .map((list) => ({ question: list.question, answer: list.lines.map(asSentence).join(' ') })),
+  ])
 }
 
 export function guideJsonLd(origin: string, description: string, faq: FaqEntry[]): object[] {

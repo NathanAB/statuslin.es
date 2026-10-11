@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { getViewerIsAuthor } from '@/gallery/authorship'
+import { configFactTiles } from '@/gallery/config-fact-tiles'
 import { ConfigHeader } from '@/gallery/config-header'
 import { DesktopNote } from '@/gallery/desktop-note'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
@@ -137,19 +138,16 @@ function ConfigDetail() {
             </Text>
           )
         }
-        detail={{
-          title: 'Source',
-          content: (
-            <HighlightedCode
-              html={detail.sourceHtml}
-              text={detail.source}
-              copyLabel="Copy script"
-              onCopied={() => copyController.record('script')}
-            />
-          ),
-        }}
-        // Auto-generated copy — the SEO answer to "what does this status line do?"
-        generatedContent={detail.generatedContent}
+        // Generated copy around the stored facts: the SEO answer to "what does this status line do?"
+        whatItDoes={{ copy: detail.generatedContent, tiles: configFactTiles(detail) }}
+        source={
+          <HighlightedCode
+            html={detail.sourceHtml}
+            text={detail.source}
+            copyLabel="Copy script"
+            onCopied={() => copyController.record('script')}
+          />
+        }
         // Internal links: without these, every config page is a crawl dead end.
         related={
           detail.related.length > 0 && (

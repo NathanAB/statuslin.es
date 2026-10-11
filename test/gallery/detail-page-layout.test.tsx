@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react'
+import { Globe } from 'lucide-react'
 import { describe, expect, it } from 'vitest'
 
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
 
-const CONTENT = {
-  whatItShows: ['The git branch'],
-  requirements: [],
-  behaviorNotes: ['Fades as context fills'],
+const WHAT_IT_DOES = {
+  copy: { summary: 'Shows the git branch.', howItWorks: ['Runs git'], goodToKnow: [] },
+  tiles: [{ icon: Globe, label: 'Network', value: 'None' }],
 }
 
 function renderLayout(overrides: Partial<Parameters<typeof DetailPageLayout>[0]> = {}) {
@@ -17,8 +17,8 @@ function renderLayout(overrides: Partial<Parameters<typeof DetailPageLayout>[0]>
       header={<h1>header</h1>}
       install={<p>install</p>}
       preview={<p>preview</p>}
-      detail={{ title: 'Source', content: <p>source</p> }}
-      generatedContent={CONTENT}
+      whatItDoes={WHAT_IT_DOES}
+      source={<p>source</p>}
       related={<p>related</p>}
       {...overrides}
     />,
@@ -34,7 +34,7 @@ function section(title: string) {
 }
 
 describe('DetailPageLayout', () => {
-  it('runs notice, header, install, preview, detail, generated copy, then related', () => {
+  it('runs notice, header, install, preview, what it does, source, then related', () => {
     renderLayout()
 
     const order = [
@@ -42,9 +42,8 @@ describe('DetailPageLayout', () => {
       screen.getByText('header'),
       screen.getByText('install'),
       screen.getByRole('heading', { level: 2, name: 'Preview' }),
+      screen.getByRole('heading', { level: 2, name: 'What it does' }),
       screen.getByRole('heading', { level: 2, name: 'Source' }),
-      screen.getByRole('heading', { level: 2, name: 'What it shows' }),
-      screen.getByRole('heading', { level: 2, name: 'Behavior notes' }),
       screen.getByText('related'),
     ]
     for (let i = 1; i < order.length; i++) {
@@ -55,17 +54,20 @@ describe('DetailPageLayout', () => {
     }
   })
 
-  it('puts the preview and the detail section in their own titled cards', () => {
-    renderLayout({ detail: { title: 'What it does', content: <p>footprint</p> } })
+  it('puts the preview, what it does and the source in their own titled cards', () => {
+    renderLayout()
 
     expect(section('Preview').getByText('preview')).toBeTruthy()
-    expect(section('What it does').getByText('footprint')).toBeTruthy()
+    expect(section('What it does').getByText('Shows the git branch.')).toBeTruthy()
+    expect(section('What it does').getByText('Network')).toBeTruthy()
+    expect(section('Source').getByText('source')).toBeTruthy()
   })
 
-  it('renders no generated copy when there is none', () => {
-    renderLayout({ generatedContent: null })
+  it('has no Source card for a page without source', () => {
+    renderLayout({ source: undefined })
 
-    expect(screen.queryByRole('heading', { name: 'What it shows' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Source' })).toBeNull()
+    expect(screen.getByRole('heading', { level: 2, name: 'What it does' })).toBeTruthy()
   })
 
   it('needs no notice or related section', () => {

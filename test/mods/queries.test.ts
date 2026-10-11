@@ -287,8 +287,8 @@ describe('getModDetail', () => {
     expect((await getModDetail(db, 'blank'))?.desktop).toEqual({ kind: 'nothing' })
   })
 
-  it('returns the version generated content, and null for a stored value that is not page copy', async () => {
-    const content = { whatItShows: ['A meter'], requirements: [], behaviorNotes: [] }
+  it('returns the version page copy, and null for a stored value in an old format', async () => {
+    const content = { summary: 'A meter.', howItWorks: [], goodToKnow: [], details: {} }
     const { versionId } = await addMod('copy', 'published', 'none')
     const { versionId: badId } = await addMod('bad-copy', 'published', 'none')
     await db
@@ -297,7 +297,7 @@ describe('getModDetail', () => {
       .where(eq(schema.modVersions.id, versionId))
     await db
       .update(schema.modVersions)
-      .set({ generatedContent: { whatItShows: 'not a list' } })
+      .set({ generatedContent: { whatItShows: ['A meter'], requirements: [], behaviorNotes: [] } })
       .where(eq(schema.modVersions.id, badId))
 
     expect((await getModDetail(db, 'copy'))?.generatedContent).toEqual(content)
