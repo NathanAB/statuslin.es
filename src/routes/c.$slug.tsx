@@ -4,12 +4,10 @@ import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { getViewerIsAuthor } from '@/gallery/authorship'
-import { ConfigBadges } from '@/gallery/config-badges'
-import { ConfigBreadcrumb } from '@/gallery/config-breadcrumb'
+import { ConfigHeader } from '@/gallery/config-header'
 import { DesktopNote } from '@/gallery/desktop-note'
 import { getConfigDetail } from '@/gallery/functions'
 import { GeneratedContentSections } from '@/gallery/generated-content'
-import { LicenseLine } from '@/gallery/license-line'
 import { OwnerUpdateStrip } from '@/gallery/owner-update-strip'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -18,7 +16,6 @@ import { configMetaDescription, configPageTitle, NOT_FOUND_TITLE } from '@/lib/p
 import { siteUrl } from '@/lib/site'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
-import { AuthorChip } from '@/ui/author-chip'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { CopyCount } from '@/ui/copy-count'
 import { HighlightedCode } from '@/ui/highlighted-code'
@@ -28,7 +25,7 @@ import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { StretchedLink } from '@/ui/stretched-link'
-import { Heading, Text, TextLink } from '@/ui/text'
+import { Text, TextLink } from '@/ui/text'
 
 export const Route = createFileRoute('/c/$slug')({
   loader: async ({ params }) => {
@@ -108,32 +105,7 @@ function ConfigDetail() {
       <Stack gap={6}>
         <OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />
 
-        <Stack gap={3}>
-          <ConfigBreadcrumb title={detail.title} primaryFacet={detail.primaryFacet} />
-          <Row gap={3} wrap justify="between">
-            <Heading level={1}>{detail.title}</Heading>
-            <ConfigBadges tags={detail.tags} networkHosts={detail.networkHosts} />
-          </Row>
-
-          {(detail.author || detail.description) && (
-            <Stack gap={2}>
-              {detail.author && (
-                <Row gap={1.5}>
-                  <Text muted size="sm">
-                    by
-                  </Text>
-                  <AuthorChip author={detail.author} />
-                </Row>
-              )}
-              {detail.description && (
-                <Text muted size="sm">
-                  {detail.description}
-                </Text>
-              )}
-              <LicenseLine license={detail.license} sourceUrl={detail.sourceUrl} />
-            </Stack>
-          )}
-        </Stack>
+        <ConfigHeader detail={detail} />
 
         <AdoptPrompt
           source={detail.source}
