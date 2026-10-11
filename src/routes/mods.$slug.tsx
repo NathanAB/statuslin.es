@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { GeneratedContentSections } from '@/gallery/generated-content'
+import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getSession } from '@/lib/auth-functions'
 import { modJsonLd } from '@/lib/breadcrumb-json-ld'
 import { canonicalLink } from '@/lib/canonical'
@@ -53,27 +53,21 @@ function ModPage() {
 
   return (
     <PageShell user={user}>
-      <Stack gap={6}>
-        <ModHeader mod={mod} />
-
-        <SectionCard title="Preview" headingLevel={2}>
-          <ModPreview mod={mod} />
-        </SectionCard>
-
-        <SectionCard title="Install" headingLevel={2}>
-          <Stack gap={4}>
-            {installCommands(origin, mod.pluginName).map((command) => (
-              <InstallCommandBlock key={command.kind} command={command} onCopied={recordCopy} />
-            ))}
-          </Stack>
-        </SectionCard>
-
-        <SectionCard title="What it does" headingLevel={2}>
-          <FootprintSection mod={mod} />
-        </SectionCard>
-
-        {mod.generatedContent && <GeneratedContentSections content={mod.generatedContent} />}
-      </Stack>
+      <DetailPageLayout
+        header={<ModHeader mod={mod} />}
+        install={
+          <SectionCard title="Install" headingLevel={2}>
+            <Stack gap={4}>
+              {installCommands(origin, mod.pluginName).map((command) => (
+                <InstallCommandBlock key={command.kind} command={command} onCopied={recordCopy} />
+              ))}
+            </Stack>
+          </SectionCard>
+        }
+        preview={<ModPreview mod={mod} />}
+        detail={{ title: 'What it does', content: <FootprintSection mod={mod} /> }}
+        generatedContent={mod.generatedContent}
+      />
     </PageShell>
   )
 }

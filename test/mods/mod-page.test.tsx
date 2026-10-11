@@ -151,6 +151,26 @@ describe('mod page', () => {
     expect(coerceGalleryFilter(url.searchParams.get('kind'))).toBe('mods')
   })
 
+  it('runs header, install, preview, what it does, then generated copy, like a status line page', () => {
+    renderPage({
+      generatedContent: { whatItShows: ['The files'], requirements: [], behaviorNotes: [] },
+    })
+
+    const order = [
+      screen.getByRole('heading', { level: 1, name: 'File Tree' }),
+      screen.getByRole('heading', { level: 2, name: 'Install' }),
+      screen.getByRole('heading', { level: 2, name: 'Preview' }),
+      screen.getByRole('heading', { level: 2, name: 'What it does' }),
+      screen.getByRole('heading', { level: 2, name: 'What it shows' }),
+    ]
+    for (let i = 1; i < order.length; i++) {
+      const earlier = order[i - 1] as Node
+      expect(
+        earlier.compareDocumentPosition(order[i] as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
+  })
+
   it('puts the breadcrumb above the title, like a status line page', () => {
     renderPage()
 
