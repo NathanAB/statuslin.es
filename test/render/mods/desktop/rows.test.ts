@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { bandAbovePrompt, cardBottom, uncutTop } from '@/render/mods/desktop/rows'
+import {
+  bandAbovePrompt,
+  cardBottom,
+  emptyRows,
+  GAP_COLLAPSE_OVER,
+  gapCuts,
+  KEPT_GAP,
+  uncutTop,
+} from '@/render/mods/desktop/rows'
 import { CARD_MAX_HEIGHT, CHAT_TOP, WINDOW } from '@/render/mods/desktop/screen'
 
 /** A shot's row profile: 0 (page background) everywhere except the given [from, to, share] runs. */
@@ -84,5 +92,53 @@ describe('cardBottom', () => {
 
   it('never runs past the shot', () => {
     expect(cardBottom(rows(), 800, 896)).toBe(896)
+  })
+})
+describe('emptyRows', () => {
+  it('is a row only when it is page background and the same as in the baseline', () => {
+    const content = [0, 0.3, 0, 0]
+    const changed = [0, 0, 0.1, 0]
+
+    expect(emptyRows(content, changed)).toEqual([true, false, false, true])
+  })
+})
+
+describe('gapCuts', () => {
+  /** Empty everywhere except the given [from, to] runs of rows that have something in them. */
+  const empty = (...filled: [number, number][]) => {
+    const flags = Array<boolean>(WINDOW.height).fill(true)
+    for (const [from, to] of filled) flags.fill(false, from, to + 1)
+    return flags
+  }
+
+  it('cuts a long empty stretch down to the gap Desktop leaves between messages', () => {
+    const flags = empty([300, 340], [740, 896])
+
+    expect(gapCuts(flags, 292, 896)).toEqual([
+      { from: 341 + KEPT_GAP / 2, rows: 740 - 341 - KEPT_GAP },
+    ])
+  })
+
+  it('leaves the space between messages alone', () => {
+    expect(gapCuts(empty([300, 340], [392, 430], [740, 896]), 292, 896)).toEqual([
+      { from: 431 + KEPT_GAP / 2, rows: 740 - 431 - KEPT_GAP },
+    ])
+  })
+
+  it('collapses only a stretch longer than the threshold', () => {
+    const at = (length: number) => gapCuts(empty([300, 340], [341 + length, 896]), 292, 896)
+
+    expect(at(GAP_COLLAPSE_OVER)).toEqual([])
+    expect(at(GAP_COLLAPSE_OVER + 1)).toHaveLength(1)
+  })
+
+  it('cuts every long stretch, top to bottom', () => {
+    const cuts = gapCuts(empty([300, 310], [500, 510], [800, 896]), 292, 896)
+
+    expect(cuts.map((c) => c.from)).toEqual([311 + KEPT_GAP / 2, 511 + KEPT_GAP / 2])
+  })
+
+  it('looks only inside the crop', () => {
+    expect(gapCuts(empty([700, 896]), 650, 896)).toEqual([])
   })
 })

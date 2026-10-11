@@ -40,15 +40,29 @@ const SAME = '0 0x0+2202+1802'
 const BAND_ROWS: [number, number] = [775, 814]
 const PROMPT_ROWS: [number, number] = [PROMPT_BOX.y, PROMPT_BOX.y + 39]
 
-/** Answers the analysis commands as ImageMagick would for the given layouts and comparison. */
-function fakeAnalysis(opts: {
+interface FakeShots {
   baseline?: string
   shot?: string
   compare?: string
   content?: string
   plate?: string
+  /** The shot across the whole crop, and how it differs from the baseline there. */
+  cropContent?: string
+  changedRows?: string
   crop?: (width: number, height: number) => Uint8Array
-}) {
+}
+
+/** What a row-profile command prints: by row change, across the crop, the plate or the column. */
+function profileFor(command: string, opts: FakeShots): string {
+  if (command.includes('difference -composite -crop')) return opts.changedRows ?? profile()
+  if (command.includes('-crop 1568x'))
+    return opts.cropContent ?? opts.content ?? profile(PROMPT_ROWS)
+  if (command.includes('-crop 6x')) return opts.plate ?? profile()
+  return opts.content ?? profile(PROMPT_ROWS)
+}
+
+/** Answers the analysis commands as ImageMagick would for the given layouts and comparison. */
+function fakeAnalysis(opts: FakeShots) {
   const uploaded: string[] = []
   const ran: string[] = []
   const analysis: AnalysisSandbox = {
@@ -61,10 +75,7 @@ function fakeAnalysis(opts: {
       if (command.includes('-compose difference -composite -compose over')) {
         return answer(opts.compare ?? SAME)
       }
-      if (command.includes('od -An')) {
-        const plate = command.includes('-crop 6x')
-        return answer(plate ? (opts.plate ?? profile()) : (opts.content ?? profile(PROMPT_ROWS)))
-      }
+      if (command.includes('od -An')) return answer(profileFor(command, opts))
       const layout = command.includes('baseline.png') ? opts.baseline : opts.shot
       return answer(layout ?? CHAT)
     },
@@ -72,7 +83,8 @@ function fakeAnalysis(opts: {
       ran.push(command)
       const [, w, h] = /-crop (\d+)x(\d+)/.exec(command) ?? []
       const make = opts.crop ?? ((width, height) => pngOf(width, height, ['IHDR', 'IDAT', 'IEND']))
-      return make(Number(w), Number(h))
+      const chopped = [...command.matchAll(/-chop 0x(\d+)/g)].reduce((n, m) => n + Number(m[1]), 0)
+      return make(Number(w), Number(h) - chopped)
     },
   }
   return { analysis, uploaded, ran }
@@ -112,6 +124,42 @@ describe('analyseShot', () => {
     const crops = ran.filter((c) => c.includes('png:-'))
     expect(crops).toHaveLength(2)
     for (const crop of crops) expect(crop).toContain('-strip -define png:exclude-chunks=all')
+  })
+
+  it('cuts the empty stretch between the chat and the band down to the gap between messages', async () => {
+    const chat = profile([300, 340], BAND_ROWS, PROMPT_ROWS)
+    const { analysis, ran } = fakeAnalysis({
+      compare: '1 1536x1030+333+601',
+      content: chat,
+      plate: profile(BAND_ROWS),
+      cropContent: chat,
+      changedRows: profile([300, 340], BAND_ROWS),
+    })
+
+    const result = await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+
+    const removed = 775 - 341 - 50
+    expect(result).toMatchObject({
+      kind: 'shot',
+      height: CONTENT.bottom - 292 - removed,
+      card: { height: PROMPT_BOX.y - 769 },
+    })
+    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${removed * 2}+0+`)
+  })
+
+  it('keeps an empty stretch that differs from the baseline, such as where its spinner was', async () => {
+    const chat = profile([300, 340], BAND_ROWS, PROMPT_ROWS)
+    const { analysis, ran } = fakeAnalysis({
+      compare: '1 1536x1030+333+601',
+      content: chat,
+      plate: profile(BAND_ROWS),
+      cropContent: chat,
+      changedRows: profile([300, 600], BAND_ROWS),
+    })
+
+    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+
+    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${(775 - 601 - 50) * 2}+0+`)
   })
 
   it('leaves the prompt text and the scrollbar gutter out of the comparison', async () => {

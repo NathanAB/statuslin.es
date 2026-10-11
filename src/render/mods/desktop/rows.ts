@@ -50,6 +50,44 @@ export function uncutTop(rows: RowProfile, top: number): number {
   return y
 }
 
+/**
+ * Desktop leaves about 50px between chat messages. An empty stretch more than twice that is the
+ * chat ending well above the band and prompt box, and is cut down to that gap.
+ */
+export const KEPT_GAP = 50
+export const GAP_COLLAPSE_OVER = 100
+
+/** Rows of a crop that hold nothing: page background in the shot, and the same as the baseline. */
+export function emptyRows(content: RowProfile, changed: RowProfile): boolean[] {
+  return content.map((share, y) => isBlank(share) && isBlank(changed[y]))
+}
+
+/** Rows `from` to `from + rows` of a shot, left out of its crop. */
+export interface RowCut {
+  from: number
+  rows: number
+}
+
+/**
+ * The cuts that bring every empty stretch inside [top, bottom) longer than GAP_COLLAPSE_OVER down
+ * to KEPT_GAP, keeping half the gap above what it removes and half below. Top to bottom.
+ */
+export function gapCuts(empty: readonly boolean[], top: number, bottom: number): RowCut[] {
+  const cuts: RowCut[] = []
+  let start = -1
+  for (let y = top; y <= bottom; y++) {
+    const isEmpty = y < bottom && empty[y] === true
+    if (isEmpty && start === -1) start = y
+    if (!isEmpty && start !== -1) {
+      if (y - start > GAP_COLLAPSE_OVER) {
+        cuts.push({ from: start + KEPT_GAP / 2, rows: y - start - KEPT_GAP })
+      }
+      start = -1
+    }
+  }
+  return cuts
+}
+
 /** Where a card starting at `top` ends: CARD_MAX_HEIGHT down at most, at a blank row if one is near. */
 export function cardBottom(rows: RowProfile, top: number, limit: number): number {
   const end = Math.min(top + CARD_MAX_HEIGHT, limit)

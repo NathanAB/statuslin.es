@@ -4,6 +4,7 @@ import type { AnalysisSandbox } from './desktop-sandbox'
 import { frameShot, readLayout } from './framing'
 import {
   changedBoxCommand,
+  changedRowProfileCommand,
   croppedPngCommand,
   parseChangedBox,
   parseProbes,
@@ -13,7 +14,7 @@ import {
 } from './imagemagick'
 import { expectOk } from './interact'
 import { checkedPixelPng } from './png'
-import type { RowProfile } from './rows'
+import { emptyRows, gapCuts, type RowCut, type RowProfile } from './rows'
 import {
   BORDER_PROBES,
   CHAT_COLUMN,
@@ -67,13 +68,36 @@ async function changedBox(analysis: AnalysisSandbox): Promise<Rect | null> {
   )
 }
 
-/** The crop, re-encoded from its pixels alone and checked to hold nothing else. */
-async function cropped(analysis: AnalysisSandbox, rect: Rect): Promise<DesktopImage> {
-  const png = checkedPixelPng(await analysis.readPng(croppedPngCommand(SHOT, rect)), {
+/**
+ * The crop with `cuts` left out, re-encoded from its pixels alone and checked to hold nothing
+ * else.
+ */
+async function cropped(
+  analysis: AnalysisSandbox,
+  rect: Rect,
+  cuts: readonly RowCut[] = [],
+): Promise<DesktopImage> {
+  const height = rect.height - cuts.reduce((rows, cut) => rows + cut.rows, 0)
+  const png = checkedPixelPng(await analysis.readPng(croppedPngCommand(SHOT, rect, cuts)), {
     width: rect.width * SCALE,
-    height: rect.height * SCALE,
+    height: height * SCALE,
   })
-  return { png, width: rect.width, height: rect.height }
+  return { png, width: rect.width, height }
+}
+
+/**
+ * The empty stretches to cut out of a chat crop, as the terminal crop drops unchanged rows: rows
+ * of nothing but page background, the same as the baseline, across the crop's whole width.
+ */
+async function chatGapCuts(analysis: AnalysisSandbox, rect: Rect): Promise<RowCut[]> {
+  const column = { x: rect.x, width: rect.width }
+  const compare = changedRowProfileCommand(BASELINE, SHOT, column)
+  const { stdout } = expectOk(await analysis.run(compare), 'comparing with the baseline by row')
+  const empty = emptyRows(
+    await rowProfile(analysis, [column]),
+    parseRowProfile(stdout, WINDOW.height),
+  )
+  return gapCuts(empty, rect.y, rect.y + rect.height)
 }
 
 /**
@@ -101,6 +125,8 @@ export async function analyseShot(
     plate: await rowProfile(analysis, plateStrips(column)),
   })
   if (frame.kind === 'nothing') return { kind: 'nothing' }
-  const page = await cropped(analysis, frame.rect)
+  // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
+  const cuts = paneOpen ? [] : await chatGapCuts(analysis, frame.rect)
+  const page = await cropped(analysis, frame.rect, cuts)
   return { kind: 'shot', ...page, card: await cropped(analysis, frame.card) }
 }

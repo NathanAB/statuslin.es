@@ -1,4 +1,5 @@
 import { shellQuote } from '../session'
+import type { RowCut } from './rows'
 import { type Rect, SCALE, WINDOW } from './screen'
 
 /**
@@ -139,11 +140,38 @@ export function parseChangedBox(stdout: string): Rect | null {
 }
 
 /**
- * The crop, re-encoded from its pixels alone to stdout: no metadata, no text, one frame. It is
- * what gets stored and served, so nothing a mod hid in the shot's file survives it.
+ * The crop, with `cuts` (shot rows) chopped out, re-encoded from its pixels alone to stdout: no
+ * metadata, no text, one frame. It is what gets stored and served, so nothing a mod hid in the
+ * shot's file survives it.
  */
-export function croppedPngCommand(source: string, rect: Rect): string {
-  return `convert ${pngInput(source)} -crop ${geometry(rect)} +repage -strip -define png:exclude-chunks=all png:-`
+export function croppedPngCommand(
+  source: string,
+  rect: Rect,
+  cuts: readonly RowCut[] = [],
+): string {
+  // From the bottom up, so each chop leaves the rows above it where the next one expects them.
+  const chops = [...cuts]
+    .sort((a, b) => b.from - a.from)
+    .map(({ from, rows }) => `-chop 0x${rows * SCALE}+0+${(from - rect.y) * SCALE}`)
+  return [
+    `convert ${pngInput(source)} -crop ${geometry(rect)} +repage`,
+    ...(chops.length > 0 ? [...chops, '+repage'] : []),
+    '-strip -define png:exclude-chunks=all png:-',
+  ].join(' ')
+}
+
+/** For each CSS row of `column`, the share of it that differs from the baseline, as one byte per row. */
+export function changedRowProfileCommand(
+  baseline: string,
+  shot: string,
+  { x, width }: { x: number; width: number },
+): string {
+  const crop = geometry({ x, y: 0, width, height: WINDOW.height })
+  return [
+    `set -o pipefail; convert ${pngInput(baseline)} ${pngInput(shot)} -compose difference -composite`,
+    `-crop ${crop} +repage -colorspace Gray -threshold ${FAINT_CHANGE}`,
+    `-scale 1x${WINDOW.height}! -depth 8 gray:- | od -An -v -tu1`,
+  ].join(' ')
 }
 
 export interface QuietOptions {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   changedBoxCommand,
+  changedRowProfileCommand,
   croppedPngCommand,
   parseChangedBox,
   parsePrintedPng,
@@ -139,6 +140,31 @@ describe('croppedPngCommand', () => {
   it('re-encodes the first frame of the crop from its pixels alone, to stdout', () => {
     expect(croppedPngCommand('/tmp/final.png', { x: 158, y: 507, width: 784, height: 129 })).toBe(
       "convert 'png:/tmp/final.png[0]' -crop 1568x258+316+1014 +repage -strip -define png:exclude-chunks=all png:-",
+    )
+  })
+
+  it('chops out the cut rows, the lowest first so the higher ones stay where they were', () => {
+    const command = croppedPngCommand(
+      '/tmp/final.png',
+      { x: 158, y: 292, width: 784, height: 604 },
+      [
+        { from: 366, rows: 349 },
+        { from: 760, rows: 20 },
+      ],
+    )
+
+    expect(command).toBe(
+      "convert 'png:/tmp/final.png[0]' -crop 1568x1208+316+584 +repage -chop 0x40+0+936 -chop 0x698+0+148 +repage -strip -define png:exclude-chunks=all png:-",
+    )
+  })
+})
+
+describe('changedRowProfileCommand', () => {
+  it('prints, per CSS row of a column, the share of it that differs from the baseline', () => {
+    expect(
+      changedRowProfileCommand('/tmp/baseline.png', '/tmp/final.png', { x: 158, width: 784 }),
+    ).toBe(
+      "set -o pipefail; convert 'png:/tmp/baseline.png[0]' 'png:/tmp/final.png[0]' -compose difference -composite -crop 1568x1800+316+0 +repage -colorspace Gray -threshold 2% -scale 1x900! -depth 8 gray:- | od -An -v -tu1",
     )
   })
 })
