@@ -1,3 +1,4 @@
+import { githubAvatarUrl } from '@/lib/github-avatars'
 import { AuthorChip } from '@/ui/author-chip'
 import { Row } from '@/ui/layout'
 import { Text, TextLink } from '@/ui/text'
@@ -14,7 +15,13 @@ export function ModCredit({ mod }: { mod: ModDetail }) {
         <Text muted size="sm">
           by
         </Text>
-        <AuthorChip author={{ name: mod.authorGithub, username: mod.authorGithub, image: null }} />
+        <AuthorChip
+          author={{
+            name: mod.authorGithub,
+            username: mod.authorGithub,
+            image: githubAvatarUrl(mod.authorGithub),
+          }}
+        />
       </Row>
       <Text muted size="sm">
         source at{' '}

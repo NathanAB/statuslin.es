@@ -1,5 +1,6 @@
 import { ConfigBadges } from '@/gallery/config-badges'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+import { githubAvatarUrl } from '@/lib/github-avatars'
 import { MOD_ROUTE } from '@/lib/site'
 import { AuthorChip } from '@/ui/author-chip'
 import { Badge } from '@/ui/badge'
@@ -36,7 +37,11 @@ export function ModCard({ card }: { card: GalleryModCard }) {
             </Text>
             <Row gap={1}>
               <AuthorChip
-                author={{ name: card.authorGithub, username: card.authorGithub, image: null }}
+                author={{
+                  name: card.authorGithub,
+                  username: card.authorGithub,
+                  image: githubAvatarUrl(card.authorGithub),
+                }}
               />
             </Row>
           </Row>

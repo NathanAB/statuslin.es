@@ -115,6 +115,14 @@ function section(title: string) {
 }
 
 describe('mod page', () => {
+  it('credits the author with their GitHub avatar', () => {
+    renderPage()
+
+    expect(
+      document.querySelector('img[src="https://avatars.githubusercontent.com/octocat?s=40"]'),
+    ).toBeTruthy()
+  })
+
   it('renders the labelled terminal preview, rows and all, and no Desktop slot without a result', () => {
     renderPage()
 

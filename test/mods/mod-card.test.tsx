@@ -51,10 +51,13 @@ describe('ModCard', () => {
     expect(titleRow?.className).not.toContain('flex-1')
   })
 
-  it('shows the author and the terminal preview', () => {
-    render(<ModCard card={card} />)
+  it('shows the author, with their GitHub avatar, and the terminal preview', () => {
+    const { container } = render(<ModCard card={card} />)
 
     expect(screen.getByText('@octocat')).toBeTruthy()
+    expect(
+      container.querySelector('img[src="https://avatars.githubusercontent.com/octocat?s=40"]'),
+    ).toBeTruthy()
     expect(screen.getByText('ctx 42%')).toBeTruthy()
     expect(screen.getByText('Shows the context meter.')).toBeTruthy()
   })

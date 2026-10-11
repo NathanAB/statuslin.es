@@ -7,6 +7,7 @@ import { nitro } from 'nitro/vite'
 import type { Plugin } from 'vite'
 import { loadEnv } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
+import { GITHUB_AVATARS_ORIGIN } from './src/lib/github-avatars'
 import { POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST } from './src/lib/posthog-hosts'
 
 // Vite plugin: import binary files as Buffer via the `?arraybuffer` query suffix.
@@ -91,7 +92,7 @@ const CSP_REPORT_ONLY = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "img-src 'self' data: https://avatars.githubusercontent.com",
+  `img-src 'self' data: ${GITHUB_AVATARS_ORIGIN}`,
   "font-src 'self'",
   "style-src 'self' 'unsafe-inline'", // React inline style attrs (preview colors) + Tailwind
   "script-src 'self' 'unsafe-inline'", // TanStack inline hydration scripts (needs nonces to tighten)
