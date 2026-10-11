@@ -23,6 +23,19 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
 
 export const HOME_CRUMB_NAME = 'Status lines'
 
+/** A BreadcrumbList from the trail's crumbs, home first, each `item` an absolute URL. */
+export function breadcrumbJsonLd(crumbs: Array<{ name: string; item: string }>): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((crumb, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      ...crumb,
+    })),
+  }
+}
+
 /** The site identity plus gallery CollectionPage and its visible configs. */
 export function homeJsonLd(
   origin: string,
@@ -105,15 +118,7 @@ export function configJsonLd(
       ...(config.keywords.length > 0 ? { keywords: config.keywords.join(', ') } : {}),
       ...(config.authorName ? { author: { '@type': 'Person', name: config.authorName } } : {}),
     },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: crumbs.map((crumb, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        ...crumb,
-      })),
-    },
+    breadcrumbJsonLd(crumbs),
   ]
 
   const faq = configFaqJsonLd(config.title, config.generatedContent)
@@ -166,14 +171,10 @@ export function guideJsonLd(origin: string, description: string, faq: FaqEntry[]
       datePublished: GUIDE_DATES.published,
       dateModified: GUIDE_DATES.modified,
     },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
-        { '@type': 'ListItem', position: 2, name: GUIDE_TITLE_BASE, item: url },
-      ],
-    },
+    breadcrumbJsonLd([
+      { name: HOME_CRUMB_NAME, item: origin },
+      { name: GUIDE_TITLE_BASE, item: url },
+    ]),
   ]
   const faqPage = faqPageJsonLd(faq)
   if (faqPage) nodes.push(faqPage)
@@ -227,14 +228,10 @@ export function facetJsonLd(
       })),
     },
   }
-  const breadcrumbs = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
-      { '@type': 'ListItem', position: 2, name: facet.titleBase, item: url },
-    ],
-  }
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: HOME_CRUMB_NAME, item: origin },
+    { name: facet.titleBase, item: url },
+  ])
   const nodes =
     options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]
   const faqPage = faqPageJsonLd(options.faq ?? [])
