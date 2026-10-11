@@ -2,6 +2,9 @@ import type { BehaviorTrace } from './types'
 
 /** Cap how many trace lines we parse, so a flood of syscalls can't exhaust CPU/memory. */
 const MAX_TRACE_LINES = 5000
+/** Cap how many bytes of the trace file we read. The script can write that file itself, so its
+ * size is up to the script. Room for MAX_TRACE_LINES lines of about 200 bytes. */
+export const MAX_TRACE_BYTES = 1024 * 1024
 /** Cap how many entries we keep per trace category. */
 const MAX_TRACE_ENTRIES = 200
 

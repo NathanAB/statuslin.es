@@ -8,8 +8,10 @@ import {
 } from './anthropic-usage-sandbox'
 import { buildNetworkOption } from './e2b-network'
 import { E2B_TEMPLATE_ID } from './e2b-template'
+import { CappedOutput, readCapped } from './output-cap'
+import { MAX_RENDER_STDOUT_BYTES } from './pipeline'
 import { scriptExtension } from './script-extension'
-import { parseStrace } from './strace'
+import { MAX_TRACE_BYTES, parseStrace } from './strace'
 import type { Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
 
 /** Hard per-command wall-clock cap. Untrusted scripts get single-digit seconds. */
@@ -25,6 +27,9 @@ const NETWORK_SANDBOX_TIMEOUT_MS = 45_000 // sandbox lifetime cap when hosts are
 const TIMEOUT_EXIT_CODE = 124
 /** Exit code we report when our own infra (RPC, sandbox) failed — NOT a script timeout. */
 export const INFRA_ERROR_EXIT_CODE = 125
+/** Exit code we report when the script printed past the output cap and we stopped it: a killed
+ * process's status (128 + SIGKILL). */
+export const OUTPUT_LIMIT_EXIT_CODE = 137
 
 /** Scenario-derived working dir must look like this (absolute, under /home/user). */
 const SAFE_DIR_PATTERN = /^\/home\/user\/[A-Za-z0-9._/-]+$/
@@ -146,14 +151,30 @@ export class E2BSandboxRunner implements SandboxRunner {
       const runCmd = `${RUN_CMD[input.interpreter]} ${scriptPath} < ${INPUT_PATH}`
 
       let timedOut = false
+      // The SDK keeps every byte the script prints in memory until it ends, so stop reading once
+      // a stream passes the cap. The pipeline keeps only MAX_RENDER_STDOUT_BYTES anyway, and the
+      // `finally` kill stops the script itself.
+      const stopReading = new AbortController()
+      const output = new CappedOutput(MAX_RENDER_STDOUT_BYTES, () => stopReading.abort())
       const result = await sandbox.commands
         .run(runCmd, {
           cwd: dir,
           envs: buildRunEnv(input.scenario.env, mockAnthropicUsage),
           timeoutMs: commandTimeoutMs,
           user: SANDBOX_USER,
+          signal: stopReading.signal,
+          onStdout: output.onStdout,
+          onStderr: output.onStderr,
         })
         .catch((error: unknown): CommandResult => {
+          // Checked first: the SDK reports our abort as a TimeoutError.
+          if (output.exceeded) {
+            return {
+              exitCode: OUTPUT_LIMIT_EXIT_CODE,
+              stdout: output.stdout,
+              stderr: output.stderr,
+            }
+          }
           // A non-zero exit from the script is a legitimate result, not a failure of ours.
           if (error instanceof CommandExitError) {
             return { exitCode: error.exitCode, stdout: error.stdout, stderr: error.stderr }
@@ -168,7 +189,11 @@ export class E2BSandboxRunner implements SandboxRunner {
           return { exitCode: INFRA_ERROR_EXIT_CODE, stdout: '', stderr: String(error) }
         })
 
-      const traceLog = await sandbox.files.read(TRACE_PATH).catch(() => '')
+      // A missing or empty file comes back as '' rather than a stream, and lands in the catch.
+      const traceLog = await sandbox.files
+        .read(TRACE_PATH, { format: 'stream' })
+        .then((stream) => readCapped(stream, MAX_TRACE_BYTES))
+        .catch(() => '')
 
       return {
         stdout: result.stdout,
