@@ -52,14 +52,6 @@ _Avoid_: client, app, platform
 What a status line or mod showed when statuslin.es rendered it against one scenario, on one surface.
 _Avoid_: screenshot, demo, render
 
-**Install name**:
-The name users type to install a mod from the marketplace: the plugin's own name, or that name with its author added when another mod already has it. It never changes once published.
-_Avoid_: slug, plugin id
-
-**Input step**:
-A line typed into Claude Code's prompt before a mod's preview is taken, so the mod shows what it does.
-_Avoid_: demo script, scenario, command
-
 **Marketplace**:
 statuslin.es's catalog of mods that Claude Code installs from, each entry fixed to an exact commit of the author's code.
 _Avoid_: store, registry
