@@ -215,6 +215,37 @@ describe('processNextRenderJob', () => {
     expect(requeuedMidRender).toHaveLength(8)
     expect(requeuedMidRender.filter((count) => count > 0)).toEqual([])
   })
+  it.each([
+    ['finishes', () => new FakeSandboxRunner().render],
+    ['fails', () => () => Promise.reject(new Error('sandbox down'))],
+  ] as const)('leaves a job another machine re-claimed alone when the first run %s', async (_outcome, makeRender) => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Slow but live',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho slow',
+    })
+    const finish = makeRender()
+    const reclaimedAt = new Date(Date.now() + 60_000)
+    const runner: SandboxRunner = {
+      async render(input) {
+        // Another machine re-queued this job as cut off, then claimed it again.
+        await db
+          .update(schema.renderJobs)
+          .set({ status: 'running', startedAt: reclaimedAt })
+          .where(eq(schema.renderJobs.configVersionId, versionId))
+        return finish(input)
+      },
+    }
+
+    await processNextRenderJob(db, runner)
+
+    const job = await jobRow(versionId)
+    expect(job).toMatchObject({ status: 'running', startedAt: reclaimedAt, error: null })
+    expect(job?.finishedAt).toBeNull()
+  })
+
   it('returns null when there are no queued jobs', async () => {
     while (await processNextRenderJob(db, new FakeSandboxRunner())) {
       /* drain */

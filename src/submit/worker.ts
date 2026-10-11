@@ -109,14 +109,14 @@ export async function processNextRenderJob(
     await db
       .update(renderJobs)
       .set({ status: 'done', finishedAt: new Date() })
-      .where(eq(renderJobs.id, claimed.id))
+      .where(isStillClaimed(claimed))
     // Exit status only — never stdout/stderr, which are untrusted script output.
     scenarios = previews.map(({ exitCode, timedOut }) => ({ exitCode, timedOut }))
   } catch (error) {
     await db
       .update(renderJobs)
       .set({ status: 'failed', error: String(error).slice(0, 2000), finishedAt: new Date() })
-      .where(eq(renderJobs.id, claimed.id))
+      .where(isStillClaimed(claimed))
   }
   onJobFinished?.({
     configId: config?.configId ?? null,
@@ -164,7 +164,7 @@ export async function queueDepthStats(
 
 /** Claim the oldest queued job. Several drains claim at once, so the pick skips a job another
  * drain is claiming right now and takes the next one, rather than losing the race and stopping. */
-async function claimNextJob(db: Db): Promise<{ id: string; configVersionId: string } | null> {
+async function claimNextJob(db: Db): Promise<JobClaim | null> {
   const oldestQueued = db
     .select({ id: renderJobs.id })
     .from(renderJobs)
@@ -172,10 +172,23 @@ async function claimNextJob(db: Db): Promise<{ id: string; configVersionId: stri
     .orderBy(renderJobs.createdAt)
     .limit(1)
     .for('update', { skipLocked: true })
+  const startedAt = new Date()
   const [claimed] = await db
     .update(renderJobs)
-    .set({ status: 'running', startedAt: new Date(), attempts: sql`${renderJobs.attempts} + 1` })
+    .set({ status: 'running', startedAt, attempts: sql`${renderJobs.attempts} + 1` })
     .where(and(inArray(renderJobs.id, oldestQueued), eq(renderJobs.status, 'queued')))
     .returning({ id: renderJobs.id, configVersionId: renderJobs.configVersionId })
-  return claimed ?? null
+  return claimed ? { ...claimed, startedAt } : null
+}
+
+type JobClaim = { id: string; configVersionId: string; startedAt: Date }
+
+/** The job is still the claim this drain made. A slow render can be re-queued as cut off and
+ * claimed again elsewhere; then this run's result must not overwrite that one's. */
+function isStillClaimed(claim: JobClaim) {
+  return and(
+    eq(renderJobs.id, claim.id),
+    eq(renderJobs.status, 'running'),
+    eq(renderJobs.startedAt, claim.startedAt),
+  )
 }
