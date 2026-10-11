@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getMySubmissionRows } from '@/review/my-submissions'
 import { getResubmissionDraft, submitConfig } from '@/submit/submit'
+import { insertSubmission, selectVersionsWithReview } from '../fixtures/submission'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -46,13 +47,13 @@ const original = {
 async function rejectedSubmission() {
   const result = await submitConfig(db, original)
   await db
-    .update(schema.configVersions)
+    .update(schema.submissions)
     .set({
       status: 'rejected',
       rejectionReason: 'Remove the updater.',
       rejectionEmailStatus: 'sent',
     })
-    .where(eq(schema.configVersions.id, result.versionId))
+    .where(eq(schema.submissions.id, result.versionId))
   return result
 }
 
@@ -103,9 +104,7 @@ describe('linked resubmission', () => {
     await expect(
       db.select().from(schema.configs).where(eq(schema.configs.id, rejected.configId)),
     ).resolves.toEqual(configBefore)
-    const versions = await db
-      .select()
-      .from(schema.configVersions)
+    const versions = await selectVersionsWithReview(db)
       .where(eq(schema.configVersions.configId, rejected.configId))
       .orderBy(asc(schema.configVersions.versionNumber))
     expect(versions).toHaveLength(2)
@@ -145,9 +144,9 @@ describe('linked resubmission', () => {
   it('supersedes an unsent rejection email when the corrected version is created', async () => {
     const rejected = await rejectedSubmission()
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ rejectionEmailStatus: 'failed' })
-      .where(eq(schema.configVersions.id, rejected.versionId))
+      .where(eq(schema.submissions.id, rejected.versionId))
 
     await submitConfig(
       db,
@@ -157,8 +156,8 @@ describe('linked resubmission', () => {
 
     const [version] = await db
       .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, rejected.versionId))
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, rejected.versionId))
     expect(version?.rejectionEmailStatus).toBe('superseded')
   })
 
@@ -181,9 +180,9 @@ describe('linked resubmission', () => {
         source: 'echo newer',
         interpreter: 'bash',
         contentSha256: 'newer',
-        status: 'pending',
       })
       .returning()
+    await insertSubmission(db, v2!.id, 'owner')
     await db.insert(schema.renderJobs).values({ configVersionId: v2!.id })
     await expect(
       submitConfig(db, original, { rejectedVersionId: rejected.versionId }),
@@ -215,9 +214,9 @@ describe('linked resubmission', () => {
       },
     )
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ status: 'rejected' })
-      .where(eq(schema.configVersions.id, v2.versionId))
+      .where(eq(schema.submissions.id, v2.versionId))
     const v3 = await submitConfig(
       db,
       { ...original, source: 'echo v3' },
@@ -226,9 +225,9 @@ describe('linked resubmission', () => {
       },
     )
     await db
-      .update(schema.configVersions)
+      .update(schema.submissions)
       .set({ status: 'rejected' })
-      .where(eq(schema.configVersions.id, v3.versionId))
+      .where(eq(schema.submissions.id, v3.versionId))
 
     await expect(
       submitConfig(db, original, { rejectedVersionId: v3.versionId }),

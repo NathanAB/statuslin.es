@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { eq, like } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, copyEvents, user } from '@/db/schema'
+import { configs, configVersions, copyEvents, submissions, user } from '@/db/schema'
 import { assertNotProduction } from '@/lib/env'
 import { highlightSource } from '@/lib/highlight'
 import { SCENARIOS } from '@/render/scenarios'
@@ -180,12 +180,18 @@ export async function seedLoadConfigs(db: Db, opts: { count: number }): Promise<
         contentSha256,
         // Precomputed like a real submission, so the load test exercises the cached detail path.
         sourceHtml: await highlightSource(source, 'bash'),
-        status: 'approved',
-        reviewedBy: author.id,
-        reviewedAt: createdAt,
       })
       .returning()
     if (!ver) throw new Error(`insert configVersions returned no row for ${slug}`)
+    await db.insert(submissions).values({
+      id: ver.id,
+      kind: 'status_line',
+      configVersionId: ver.id,
+      submittedBy: author.id,
+      status: 'approved',
+      reviewedBy: author.id,
+      reviewedAt: createdAt,
+    })
 
     await db.update(configs).set({ currentVersionId: ver.id }).where(eq(configs.id, cfg.id))
     await storePreviews(db, contentSha256, buildPreviews(i))

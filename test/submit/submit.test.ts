@@ -4,12 +4,9 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import {
-  GLOBAL_RENDER_QUEUE_MAX,
-  HELD_RENDER_JOBS_MAX,
-  SUBMISSION_RATE_LIMIT,
-  submitConfig,
-} from '@/submit/submit'
+import { SUBMISSION_RATE_LIMIT } from '@/submissions/record'
+import { GLOBAL_RENDER_QUEUE_MAX, HELD_RENDER_JOBS_MAX, submitConfig } from '@/submit/submit'
+import { insertSubmission } from '../fixtures/submission'
 
 async function seedConfigs(
   db: ReturnType<typeof drizzle<typeof schema>>,
@@ -27,17 +24,20 @@ async function seedConfigs(
         createdAt,
       })
       .returning()
-    await db.insert(schema.configVersions).values({
-      configId: config!.id,
-      versionNumber: 1,
-      title: `Seeded Config ${i}`,
-      description: 'seeded',
-      source: 'echo seeded',
-      interpreter: 'bash',
-      contentSha256: `seed-${authorId}-${i}`,
-      status: 'pending',
-      createdAt,
-    })
+    const [version] = await db
+      .insert(schema.configVersions)
+      .values({
+        configId: config!.id,
+        versionNumber: 1,
+        title: `Seeded Config ${i}`,
+        description: 'seeded',
+        source: 'echo seeded',
+        interpreter: 'bash',
+        contentSha256: `seed-${authorId}-${i}`,
+        createdAt,
+      })
+      .returning()
+    await insertSubmission(db, version!.id, authorId, { createdAt })
   }
 }
 
@@ -69,11 +69,11 @@ async function seedRenderJobs(
       source: '#!/bin/bash\necho seed',
       interpreter: 'bash',
       contentSha256: 'seed',
-      status: 'pending',
     })
     .returning()
   const ver = verRows[0]
   if (!ver) throw new Error('seedRenderJobs: insert configVersions returned no row')
+  await insertSubmission(db, ver.id, authorId)
   for (let i = 0; i < count; i++) {
     await db.insert(schema.renderJobs).values({ configVersionId: ver.id, status })
   }

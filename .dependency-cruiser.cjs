@@ -63,6 +63,14 @@ module.exports = {
       to: { path: '^src/(gallery|submit|review|adopt|mods)/' },
     },
     {
+      name: 'submissions-no-feature-imports',
+      comment:
+        'src/submissions records review state for every kind, so status lines and mods can both use it. It may import only src/db and src/lib.',
+      severity: 'error',
+      from: { path: '^src/submissions/' },
+      to: { path: '^src/', pathNot: '^src/(db|lib|submissions)/' },
+    },
+    {
       name: 'mods-no-cross-feature',
       comment:
         'src/mods may import the shared listing code in src/gallery, but no other feature directory.',

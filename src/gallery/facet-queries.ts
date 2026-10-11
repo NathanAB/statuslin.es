@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, user } from '@/db/schema'
+import { configs, configVersions, submissions, user } from '@/db/schema'
 import { galleryCardSelection, mapCardRows } from './card-rows'
 import { FACET_BY_SLUG, FACETS, type Facet } from './facets'
 import { type GalleryCard, selectCardPreviews } from './queries'
@@ -41,10 +41,11 @@ export async function getFacetStats(
     .select({
       allTags: configs.allTags,
       createdAt: configs.createdAt,
-      reviewedAt: configVersions.reviewedAt,
+      reviewedAt: submissions.reviewedAt,
     })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
+    .leftJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .where(eq(configs.status, 'published'))
   const stats = new Map<string, FacetStats>(FACETS.map((f) => [f.slug, { count: 0, latest: null }]))
   for (const row of rows) {

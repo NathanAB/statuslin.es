@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, type SQL, sql } from 'drizzle-orm'
 import type { PgColumn, PgDatabase } from 'drizzle-orm/pg-core'
 import { type ConfigPageCopy, configPageCopySchema, readPageCopy } from '@/content/types'
-import { configs, configVersions, previews, user } from '@/db/schema'
+import { configs, configVersions, previews, submissions, user } from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { compactSegments } from '@/render/compact-segments'
 import { getPreviews } from '@/render/store'
@@ -135,7 +135,7 @@ export interface ConfigDetail {
   /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
   sourceUrl: string | null
   /**
-   * ISO date (YYYY-MM-DD) this version was published — the version's `reviewedAt`, falling back
+   * ISO date (YYYY-MM-DD) this version was published — its submission's `reviewedAt`, falling back
    * to the config's `createdAt`. A freshness signal for search/AI; pre-formatted to a string to
    * dodge the Date-through-server-fn serialization gamble.
    */
@@ -144,9 +144,15 @@ export interface ConfigDetail {
 
 export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetail | null> {
   const [row] = await db
-    .select({ config: configs, version: configVersions, author: user })
+    .select({
+      config: configs,
+      version: configVersions,
+      author: user,
+      reviewedAt: submissions.reviewedAt,
+    })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
+    .leftJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .leftJoin(user, eq(user.id, configs.authorId))
     .where(and(eq(configs.slug, slug), eq(configs.status, 'published')))
     .limit(1)
@@ -179,7 +185,7 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
     })),
     license: row.version.license ?? null,
     sourceUrl: row.version.sourceUrl ?? null,
-    updatedAt: (row.version.reviewedAt ?? row.config.createdAt).toISOString().slice(0, 10),
+    updatedAt: (row.reviewedAt ?? row.config.createdAt).toISOString().slice(0, 10),
   }
 }
 

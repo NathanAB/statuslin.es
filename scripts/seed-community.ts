@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { account, configs, configVersions, renderJobs, user } from '@/db/schema'
+import { account, configs, configVersions, renderJobs, submissions, user } from '@/db/schema'
 import type { Interpreter } from '@/render/types'
 import { approveVersion, runNetworkPreview } from '@/review/decide'
 import { submitConfig, validateSubmitInput } from '@/submit/submit'
@@ -220,12 +220,13 @@ export async function publishRenderedSeeds(
   const rows = await db
     .select({ versionId: configVersions.id, jobStatus: renderJobs.status })
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .innerJoin(configs, eq(configVersions.configId, configs.id))
     .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
     .innerJoin(user, eq(configs.authorId, user.id))
     .where(
       and(
-        eq(configVersions.status, 'pending'),
+        eq(submissions.status, 'pending'),
         eq(configs.status, 'draft'),
         sql`${user.email} LIKE ${'seed+%'}`,
       ),

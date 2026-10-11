@@ -22,6 +22,7 @@ import {
 } from '@/submit/submit'
 import { createUpdateVersion, findUpdateBase } from '@/submit/update'
 import { processNextRenderJob } from '@/submit/worker'
+import { selectVersionsWithReview } from '../fixtures/submission'
 
 const configCard = vi.hoisted(() => vi.fn(() => null))
 vi.mock('@/og/card', () => ({ configCard, homeCard: vi.fn(() => null) }))
@@ -107,9 +108,7 @@ async function publish(input: SubmitInput = live) {
 }
 
 const versionsOf = (configId: string) =>
-  db
-    .select()
-    .from(schema.configVersions)
+  selectVersionsWithReview(db)
     .where(eq(schema.configVersions.configId, configId))
     .orderBy(asc(schema.configVersions.versionNumber))
 const configRow = async (configId: string) =>
