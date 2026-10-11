@@ -86,16 +86,16 @@ function FacetPage() {
         <Stack gap={3}>
           <Heading level={1}>{facet.heading}</Heading>
           {(facet.intro ?? []).map((paragraph) => (
-            <Text key={paragraph.slice(0, 24)} muted size="sm" measure>
+            <Text key={paragraph.slice(0, 24)} muted size="sm">
               {paragraph}
             </Text>
           ))}
           {facet.answer ? (
-            <Text size="sm" measure>
+            <Text size="sm">
               <InlineCodeText text={facet.answer} />
             </Text>
           ) : null}
-          <Text muted size="sm" measure>
+          <Text muted size="sm">
             {publishedCountLine(page.configs.total, mods)}
           </Text>
           {page.updated ? (

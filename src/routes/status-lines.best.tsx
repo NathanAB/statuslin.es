@@ -41,12 +41,12 @@ function BestPage() {
       <Stack gap={6}>
         <Stack gap={3}>
           <Heading level={1}>Best Claude Code status lines</Heading>
-          <Text muted measure>
+          <Text muted>
             The {page.items.length} status lines copied most often from statuslin.es, as of{' '}
             {page.asOf}. Every preview is rendered from the real script, and every entry was
             reviewed by a person before it was published.
           </Text>
-          <Text muted measure>
+          <Text muted>
             Comparing tools instead?{' '}
             <TextLink to="/compare/$pair" params={{ pair: 'ccstatusline-vs-claude-powerline' }}>
               ccstatusline vs claude-powerline

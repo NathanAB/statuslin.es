@@ -11,9 +11,7 @@ export function CompareContent({ page }: { page: ComparePage }) {
     <Stack gap={9}>
       <Stack gap={3}>
         <Heading level={1}>{page.heading}</Heading>
-        <Text muted measure>
-          {page.intro}
-        </Text>
+        <Text muted>{page.intro}</Text>
       </Stack>
 
       <Stack gap={3}>
