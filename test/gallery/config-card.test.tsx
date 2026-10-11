@@ -38,6 +38,28 @@ const { GalleryConfigCard } = await import('@/gallery/config-card')
 
 afterEach(() => capture.mockClear())
 
+const exampleCard = {
+  configId: 'config-1',
+  slug: 'example',
+  title: 'Example',
+  description: 'An example status line.',
+  interpreter: 'bash' as const,
+  copyCount: 2,
+  author: null,
+  preview: null,
+  networkHosts: [],
+  readsClaudeToken: false,
+  tags: [],
+}
+
+describe('GalleryConfigCard', () => {
+  it('names its kind with a Status line chip, as mod cards say Mod', () => {
+    render(<GalleryConfigCard card={exampleCard} />)
+
+    expect(screen.getByText('Status line')).toBeTruthy()
+  })
+})
+
 describe('GalleryConfigCard analytics', () => {
   it('captures the discovery context when a card opens', () => {
     render(
