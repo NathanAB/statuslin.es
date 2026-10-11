@@ -58,19 +58,6 @@
     ]
   },
   {
-    "repoUrl": "https://github.com/NahumLitvin/prismantis",
-    "path": "",
-    "commitSha": "922bfaa32c838bc0fd02a9d91570f7fb9823dc47",
-    "pluginName": "prismantis",
-    "title": "Prismantis",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "/prismantis demo"
-      }
-    ]
-  },
-  {
     "repoUrl": "https://github.com/matthlh/claude-mods",
     "path": "plugins/pixel-cat",
     "commitSha": "a8fe0f7d2fdaff45f1ab47c6d29a4ec5094b2d1c",
