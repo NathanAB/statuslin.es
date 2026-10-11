@@ -8,7 +8,7 @@ export function HomeGalleryIntro({ page }: { page: number }) {
       <Heading level={1} size="compact">
         {page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
       </Heading>
-      <Text size="sm" measure>
+      <Text size="sm">
         Status lines are submitted by the community and reviewed by hand. Every card shows real
         output from the script or mod itself.
       </Text>

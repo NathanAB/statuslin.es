@@ -33,7 +33,7 @@ export function WhatItDoes({ copy, tiles }: WhatItDoesContent) {
     <SectionCard title="What it does" headingLevel={2}>
       <Stack gap={6}>
         {copy && (
-          <Text measure>
+          <Text>
             <InlineCodeText text={copy.summary} />
           </Text>
         )}

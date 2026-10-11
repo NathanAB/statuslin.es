@@ -98,12 +98,7 @@ describe('Text', () => {
     expect((container.firstChild as HTMLElement).className).toContain('font-mono')
   })
 
-  it('constrains line length with the measure prop', () => {
-    const { container } = render(<Text measure>hello</Text>)
-    expect((container.firstChild as HTMLElement).className).toContain('max-w-2xl')
-  })
-
-  it('does not constrain width by default', () => {
+  it('never caps line length, so text fills its container', () => {
     const { container } = render(<Text>hello</Text>)
     expect((container.firstChild as HTMLElement).className).not.toContain('max-w-2xl')
   })

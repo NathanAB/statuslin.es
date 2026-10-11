@@ -41,7 +41,7 @@ function Submit() {
     <PageShell user={user} narrow>
       <Stack gap={4}>
         <Heading level={1}>{copy.heading}</Heading>
-        <Text muted size="sm" measure>
+        <Text muted size="sm">
           {copy.intro}
         </Text>
         <SubmitForm user={user} initial={initial} />

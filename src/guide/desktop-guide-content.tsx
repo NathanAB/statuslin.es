@@ -13,7 +13,7 @@ export function DesktopGuideContent() {
     <Stack gap={6}>
       <Stack gap={3}>
         <Heading level={1}>Claude Code status line not showing in Claude Desktop</Heading>
-        <Text muted measure>
+        <Text muted>
           Claude Desktop doesn't run the statusLine command, so your status line never appears.{' '}
           <StatuslineAnywhereLink surface="desktop_guide" />, a Claude Code plugin, adds it back.
         </Text>
@@ -28,7 +28,7 @@ export function DesktopGuideContent() {
 
       <Stack gap={3}>
         <Heading level={2}>2. Open a new Code session in Claude Desktop</Heading>
-        <Text muted measure>
+        <Text muted>
           Your status line shows above the prompt, in color. Needs Claude Code{' '}
           {STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE} or later.
         </Text>
@@ -36,7 +36,7 @@ export function DesktopGuideContent() {
 
       <Stack gap={3}>
         <Heading level={2}>No status line yet?</Heading>
-        <Text muted measure>
+        <Text muted>
           <TextLink to="/">Pick one from the gallery</TextLink>, or{' '}
           <TextLink to="/guide">set one up by hand</TextLink>.
         </Text>
