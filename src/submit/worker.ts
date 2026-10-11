@@ -1,6 +1,7 @@
-import { and, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm'
+import { and, eq, inArray, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
+import { isCutOff, rerenderStatus } from '@/render/job-state'
 import { renderConfig } from '@/render/pipeline'
 import { storePreviews } from '@/render/store'
 import type { Interpreter, SandboxRunner } from '@/render/types'
@@ -8,10 +9,6 @@ import type { RenderJobReport } from '@/submit/render-completed-event'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
-
-/** How long a job may stay 'running' before it counts as cut off. A render is 8 scenarios, each in
- * its own sandbox capped at 45 seconds, so a live render never gets near this. */
-export const STALE_RUNNING_JOB_MS = 15 * 60 * 1000
 
 /** How many times a job may be claimed. A job cut off on its last attempt fails instead of going
  * back to the queue, so a render that keeps killing its machine can't loop forever. */
@@ -49,23 +46,6 @@ async function releaseCutOffJobs(db: Db, which: SQL | undefined): Promise<number
     moved += updated.length
   }
   return moved
-}
-
-/** A job 'running' longer than STALE_RUNNING_JOB_MS, or with no start time (left by the old
- * always-on worker): the machine rendering it was stopped or crashed. */
-export function isCutOff() {
-  const startedBefore = new Date(Date.now() - STALE_RUNNING_JOB_MS)
-  return and(
-    eq(renderJobs.status, 'running'),
-    or(isNull(renderJobs.startedAt), lt(renderJobs.startedAt, startedBefore)),
-  )
-}
-
-/** Where a cut-off job goes to render again: 'queued', or 'held' for a NETWORK job (networkHosts
- * non-empty), because a network render must never re-run without a fresh admin click (the
- * held-job invariant). */
-export function rerenderStatus(networkHosts: string[] | null): 'queued' | 'held' {
-  return (networkHosts ?? []).length > 0 ? 'held' : 'queued'
 }
 
 /** Where a job cut off mid-render goes. It fails once its submission is decided (nothing left to

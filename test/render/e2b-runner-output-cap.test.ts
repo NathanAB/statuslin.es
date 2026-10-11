@@ -15,7 +15,8 @@ vi.mock('e2b', async (importOriginal) => {
   return { ...actual, Sandbox: { create: vi.fn().mockResolvedValue(fakeSandbox) } }
 })
 
-import { E2BSandboxRunner, OUTPUT_LIMIT_EXIT_CODE } from '@/render/e2b-runner'
+import { E2BSandboxRunner } from '@/render/e2b-runner'
+import { OUTPUT_LIMIT_EXIT_CODE } from '@/render/run-script'
 
 const CHUNK = 'A'.repeat(4096)
 /** What a script printing nonstop for its 5 s could send, far past any cap. */

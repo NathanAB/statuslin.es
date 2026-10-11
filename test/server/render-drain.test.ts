@@ -35,7 +35,7 @@ vi.mock('@/lib/posthog-server', () => ({ captureServerEvent, captureServerExcept
 const { db } = await import('@/db')
 const schema = await import('@/db/schema')
 const { submitConfig } = await import('@/submit/submit')
-const { STALE_RUNNING_JOB_MS } = await import('@/submit/worker')
+const { STALE_RUNNING_JOB_MS } = await import('@/render/job-state')
 const { stopRenderDrain, triggerRenderDrain } = await import('@/server/render-drain')
 
 beforeAll(async () => {

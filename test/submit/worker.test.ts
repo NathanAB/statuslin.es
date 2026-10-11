@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
+import { STALE_RUNNING_JOB_MS } from '@/render/job-state'
 import { getPreviews } from '@/render/store'
 import type { RenderInput, RenderResult, SandboxRunner } from '@/render/types'
 import { runNetworkPreview } from '@/review/decide'
@@ -15,7 +16,6 @@ import {
   MAX_RENDER_ATTEMPTS,
   processNextRenderJob,
   requeueStaleJobs,
-  STALE_RUNNING_JOB_MS,
 } from '@/submit/worker'
 
 let client: PGlite

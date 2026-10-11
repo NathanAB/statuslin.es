@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
+import { STALE_RUNNING_JOB_MS } from '@/render/job-state'
 import {
   approveAndEmailVersion,
   approveVersion,
@@ -18,7 +19,7 @@ import {
   setReadsClaudeToken,
 } from '@/review/decide'
 import { submitConfig } from '@/submit/submit'
-import { processNextRenderJob, STALE_RUNNING_JOB_MS } from '@/submit/worker'
+import { processNextRenderJob } from '@/submit/worker'
 import { insertSubmission } from '../fixtures/submission'
 
 async function seedVersionWithJob(
