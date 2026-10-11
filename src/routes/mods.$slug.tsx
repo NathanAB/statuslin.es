@@ -1,7 +1,9 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { GeneratedContentSections } from '@/gallery/generated-content'
 import { getSession } from '@/lib/auth-functions'
+import { modJsonLd } from '@/lib/breadcrumb-json-ld'
 import { canonicalLink } from '@/lib/canonical'
+import { jsonLdScript } from '@/lib/json-ld'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import { modPath, siteUrl } from '@/lib/site'
 import { FootprintSection } from '@/mods/footprint-section'
@@ -33,6 +35,7 @@ export const Route = createFileRoute('/mods/$slug')({
         ...modSocialMeta(loaderData.origin, mod.slug),
       ],
       links: [canonicalLink(modPath(mod.slug))],
+      scripts: modJsonLd(loaderData.origin, mod).map(jsonLdScript),
     }
   },
   notFoundComponent: () => (

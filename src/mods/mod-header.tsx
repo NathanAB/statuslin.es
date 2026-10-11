@@ -1,6 +1,6 @@
 import { DetailHeader } from '@/gallery/detail-header'
+import { MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
 import { githubAvatarUrl } from '@/lib/github-avatars'
-import { MODS_CRUMB } from '@/lib/json-ld'
 import { modSourceUrl } from './install'
 import type { ModDetail } from './queries'
 

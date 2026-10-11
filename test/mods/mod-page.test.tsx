@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { coerceGalleryFilter } from '@/gallery/gallery-items'
+import { modJsonLd } from '@/lib/breadcrumb-json-ld'
+import { jsonLdScript } from '@/lib/json-ld'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import type { ModDetail } from '@/mods/queries'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
@@ -83,8 +85,14 @@ describe('mod page head', () => {
     const loaderData = mod ? { mod, user: null, origin: ORIGIN } : undefined
     return ModRoute.options.head?.({ loaderData } as never) as {
       meta: Array<Record<string, string>>
+      scripts?: Array<{ type: string; children: string }>
     }
   }
+
+  it('emits the breadcrumb as JSON-LD on the site origin', () => {
+    expect(head(MOD).scripts).toEqual(modJsonLd(ORIGIN, MOD).map(jsonLdScript))
+    expect(head(MOD).scripts?.[0]?.children).toContain(`${ORIGIN}/?kind=mods`)
+  })
 
   it('titles and describes the mod through the page-title helpers', () => {
     const long = { ...MOD, description: `A file tree pane ${'with details '.repeat(20)}` }

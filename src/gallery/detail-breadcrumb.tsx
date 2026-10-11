@@ -1,5 +1,5 @@
 import type { LinkProps } from '@tanstack/react-router'
-import { HOME_CRUMB_NAME } from '@/lib/json-ld'
+import { HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { Row } from '@/ui/layout'
 import { Text, TextLink } from '@/ui/text'
 

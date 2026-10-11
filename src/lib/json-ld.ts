@@ -1,4 +1,5 @@
 import type { GeneratedContent } from '@/content/types'
+import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
 import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE } from '@/lib/site'
@@ -18,24 +19,6 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
   return {
     type: 'application/ld+json',
     children: JSON.stringify(data).replace(/</g, '\\u003c'),
-  }
-}
-
-export const HOME_CRUMB_NAME = 'Status lines'
-
-/** The crumb between home and every mod page: the gallery filtered to mods. */
-export const MODS_CRUMB = { name: 'Mods', search: { kind: 'mods' } } as const
-
-/** A BreadcrumbList from the trail's crumbs, home first, each `item` an absolute URL. */
-export function breadcrumbJsonLd(crumbs: Array<{ name: string; item: string }>): object {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: crumbs.map((crumb, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      ...crumb,
-    })),
   }
 }
 
