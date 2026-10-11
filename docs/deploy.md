@@ -178,6 +178,21 @@ DATABASE_URL='<env pooled url>' bun run scripts/tag-weather-markets.ts --write  
 Idempotent, matches by title. **Staging first, then production.** New submissions get the tags from
 the classifier, which now knows both criteria.
 
+**One-time copy regeneration for the "What it does" release:** page copy is now one format for
+status lines and mods (summary, steps, notes and tile wording; see "Generated page copy" in
+`CLAUDE.md`). Copy stored in the old three-section format no longer renders, so after deploying,
+every published status line and mod shows only its fact tiles until its copy is regenerated. Run the
+workflow for both kinds against that env's DB; `--all --prepare` lists every version whose copy is
+missing or in the old format:
+```sh
+DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare
+DATABASE_URL='<env pooled url>' bun run generate:content --apply          # response JSON on stdin
+DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare --mod
+DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod    # response JSON on stdin
+```
+**Staging first, then production.** Rerun `--all --prepare` (and `--mod`) afterwards: it prints `[]`
+once nothing is left.
+
 Promote to production with the **gated** command — never promote by hand:
 ```sh
 bun run deploy:prod
@@ -270,7 +285,7 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```
    `bun run dev` shows the stored Desktop images on mod pages and cards, like staging and production.
 4. Generate the page copy. `--all --prepare --mod` prints a request for every draft and published
-   mod without content. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
+   mod without content in the current format. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
    the response JSON to apply on stdin, without writing it to a file:
    ```sh
    DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare --mod
@@ -310,7 +325,7 @@ one. Run every step against staging first, then production.
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
    ```
 5. Generate the page copy again, as in step 4 of the launch runbook: the newly current version
-   starts with none, so the mod page shows no generated sections until you do.
+   starts with none, so the mod page's "What it does" card shows only its fact tiles until you do.
 
 ### Emergency delist
 
