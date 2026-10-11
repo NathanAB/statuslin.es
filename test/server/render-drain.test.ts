@@ -58,6 +58,9 @@ beforeEach(async () => {
 })
 afterEach(() => {
   vi.unstubAllEnvs()
+  // A drain triggered under NODE_ENV=production listens for the stop signals; keep them off the test process.
+  process.off('SIGINT', stopRenderDrain)
+  process.off('SIGTERM', stopRenderDrain)
 })
 
 async function submitQueued(title: string): Promise<string> {
@@ -115,6 +118,18 @@ describe('triggerRenderDrain', () => {
     )
   })
 
+  it('refuses fake previews in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('RENDER_RUNNER', 'fake')
+    const versionId = await submitQueued('Fake in prod')
+
+    triggerRenderDrain()
+
+    await vi.waitFor(() => expect(captureServerException).toHaveBeenCalled())
+    expect(String(captureServerException.mock.calls[0]?.[0])).toContain('RENDER_RUNNER=fake')
+    expect(await jobStatus(versionId)).toBe('queued')
+  })
+
   it('never falls back to fake previews when the E2B key is missing', async () => {
     vi.stubEnv('RENDER_RUNNER', '')
     vi.stubEnv('E2B_API_KEY', '')
@@ -139,9 +154,6 @@ describe('on shutdown', () => {
     triggerRenderDrain()
     expect(process.listeners('SIGINT')).toContain(stopRenderDrain)
     expect(process.listeners('SIGTERM')).toContain(stopRenderDrain)
-
-    process.off('SIGINT', stopRenderDrain)
-    process.off('SIGTERM', stopRenderDrain)
     await vi.waitFor(() =>
       expect(captureServerEvent.mock.calls.length + captureServerException.mock.calls.length).toBe(
         2,

@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { createDrainController } from '@/lib/drain-controller'
-import { requireEnv } from '@/lib/env'
+import { assertNotProduction, requireEnv } from '@/lib/env'
 import { captureServerEvent, captureServerException } from '@/lib/posthog-server'
 import { E2BSandboxRunner } from '@/render/e2b-runner'
 import { FakeSandboxRunner } from '@/render/fake-runner'
@@ -12,10 +12,13 @@ import {
 } from '@/submit/render-completed-event'
 import { drainRenderJobs, queueDepthStats } from '@/submit/worker'
 
-/** The fake runner only on an explicit RENDER_RUNNER=fake, so a server missing its E2B key fails
- * the drain instead of rendering fake previews. */
+/** The fake runner only on an explicit RENDER_RUNNER=fake, and never in production, so a server
+ * missing its E2B key fails the drain instead of rendering fake previews. */
 function sandboxRunner(): SandboxRunner {
-  if (process.env.RENDER_RUNNER === 'fake') return new FakeSandboxRunner()
+  if (process.env.RENDER_RUNNER === 'fake') {
+    assertNotProduction('RENDER_RUNNER=fake')
+    return new FakeSandboxRunner()
+  }
   requireEnv('E2B_API_KEY')
   return new E2BSandboxRunner()
 }
@@ -58,16 +61,14 @@ export function stopRenderDrain(): void {
   shutdown.abort()
 }
 
-let listening = false
-
 /** Fly stops a machine (a deploy, or auto-stop) with SIGINT and kills it 5 s later, so put the
  * job back for the next machine to render now, not after STALE_RUNNING_JOB_MS. Each copy of this
  * module listens for itself (see render-drain-plugin.ts). Only on the deployed images
  * (NODE_ENV=production): locally nothing else handles SIGINT, so listening would keep Ctrl+C from
  * stopping the dev server. */
 function stopOnShutdown(): void {
-  if (listening || process.env.NODE_ENV !== 'production') return
-  listening = true
+  if (process.env.NODE_ENV !== 'production') return
+  if (process.listeners('SIGINT').includes(stopRenderDrain)) return
   process.once('SIGINT', stopRenderDrain)
   process.once('SIGTERM', stopRenderDrain)
 }
