@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createGitHub, README_MAX_BYTES, TARBALL_MAX_BYTES, TARBALL_MAX_FILES } from '@/mods/github'
 
 const REPO = 'https://github.com/octocat/meter'
@@ -273,5 +273,48 @@ describe('readme', () => {
 
     expect(text).toBe('a'.repeat(README_MAX_BYTES))
     expect(pulled).toBeLessThanOrEqual(Math.ceil(README_MAX_BYTES / CHUNK) + 1)
+  })
+})
+
+describe('GITHUB_TOKEN', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  const archiveUrl = `https://codeload.github.com/octocat/meter/tar.gz/${SHA}`
+
+  function recordAuthorization() {
+    const calls: Array<{ url: string; authorization: string | null }> = []
+    const fetchFn = (async (url: string, init?: RequestInit) => {
+      calls.push({ url, authorization: new Headers(init?.headers).get('authorization') })
+      return url === archiveUrl
+        ? new Response(new Uint8Array(4))
+        : Response.json({ truncated: false, tree: [] })
+    }) as unknown as typeof fetch
+    return { calls, fetchFn }
+  }
+
+  it('authenticates API requests with the token, and keeps it off the archive host', async () => {
+    vi.stubEnv('GITHUB_TOKEN', 'ghp_test')
+    const { calls, fetchFn } = recordAuthorization()
+
+    await createGitHub(fetchFn).tarball(REPO, SHA)
+
+    expect(calls).toEqual([
+      { url: api(`/git/trees/${SHA}?recursive=1`), authorization: 'Bearer ghp_test' },
+      { url: archiveUrl, authorization: null },
+    ])
+  })
+
+  it.each([
+    ['unset', undefined],
+    ['empty', ''],
+  ])('sends no Authorization header when the token is %s', async (_name, token) => {
+    vi.stubEnv('GITHUB_TOKEN', token)
+    const { calls, fetchFn } = recordAuthorization()
+
+    await createGitHub(fetchFn).tarball(REPO, SHA)
+
+    expect(calls.map((call) => call.authorization)).toEqual([null, null])
   })
 })
