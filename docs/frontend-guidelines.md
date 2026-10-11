@@ -22,6 +22,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Secondary text | `text-muted-foreground` |
 | Borders | `border-border` |
 | Destructive | `bg-destructive` / `text-destructive` |
+| Caution (a cost or a risk) | `bg-warning/10` / `text-warning` |
 | Monospace (status line output, code) | `font-mono` |
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
@@ -104,6 +105,8 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<Notice tone="info\|error">` | `src/ui/notice.tsx` | Inline status / error notice |
 | `<SelectField options label …>` | `src/ui/select.tsx` | Closed select with `SelectOption[]` |
 | `<Details summary="…">` | `src/ui/details.tsx` | Styled `<details>` / `<summary>` disclosure |
+| `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles; `caution` uses the warning tint |
+| `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
 | `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip |
 | `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header; used by shells |
