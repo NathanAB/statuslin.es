@@ -1,4 +1,4 @@
-import { and, eq, inArray, type SQL, sql } from 'drizzle-orm'
+import { and, eq, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { isCutOff, rerenderStatus } from '@/render/job-state'
@@ -196,22 +196,28 @@ export async function queueDepthStats(
 }
 
 /** Claim the oldest queued job. Several drains claim at once, so the pick skips a job another
- * drain is claiming right now and takes the next one, rather than losing the race and stopping. */
+ * drain is claiming right now and takes the next one, rather than losing the race and stopping.
+ * The pick and the update are two statements: as one `UPDATE … WHERE id IN (SELECT … LIMIT 1 FOR
+ * UPDATE SKIP LOCKED)`, Postgres can run the subquery once per row it scans, and each run skips
+ * the rows this update already took, so one claim took every queued job. */
 async function claimNextJob(db: Db): Promise<JobClaim | null> {
-  const oldestQueued = db
-    .select({ id: renderJobs.id })
-    .from(renderJobs)
-    .where(eq(renderJobs.status, 'queued'))
-    .orderBy(renderJobs.createdAt)
-    .limit(1)
-    .for('update', { skipLocked: true })
-  const startedAt = new Date()
-  const [claimed] = await db
-    .update(renderJobs)
-    .set({ status: 'running', startedAt, attempts: sql`${renderJobs.attempts} + 1` })
-    .where(and(inArray(renderJobs.id, oldestQueued), eq(renderJobs.status, 'queued')))
-    .returning({ id: renderJobs.id, configVersionId: renderJobs.configVersionId })
-  return claimed ? { ...claimed, startedAt } : null
+  return db.transaction(async (tx) => {
+    const [next] = await tx
+      .select({ id: renderJobs.id })
+      .from(renderJobs)
+      .where(eq(renderJobs.status, 'queued'))
+      .orderBy(renderJobs.createdAt)
+      .limit(1)
+      .for('update', { skipLocked: true })
+    if (!next) return null
+    const startedAt = new Date()
+    const [claimed] = await tx
+      .update(renderJobs)
+      .set({ status: 'running', startedAt, attempts: sql`${renderJobs.attempts} + 1` })
+      .where(eq(renderJobs.id, next.id))
+      .returning({ id: renderJobs.id, configVersionId: renderJobs.configVersionId })
+    return claimed ? { ...claimed, startedAt } : null
+  })
 }
 
 type JobClaim = { id: string; configVersionId: string; startedAt: Date }
