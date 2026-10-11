@@ -1,3 +1,4 @@
+import type * as React from 'react'
 import { githubAvatarUrl } from '@/lib/github-avatars'
 import { AuthorChip } from '@/ui/author-chip'
 import { Row } from '@/ui/layout'
@@ -7,7 +8,19 @@ import type { ModDetail } from './queries'
 
 const SHORT_SHA_LENGTH = 7
 
-/** Author, pinned source and licence. Each fact wraps as a unit, so no separator strands a line. */
+/** A later byline fact, led by its separator dot so a wrapped line never ends on a stray dot. */
+function LaterFact({ children }: { children: React.ReactNode }) {
+  return (
+    <Row gap={3}>
+      <Text muted size="sm">
+        ·
+      </Text>
+      {children}
+    </Row>
+  )
+}
+
+/** Author, pinned source and licence, dot-separated. Each fact wraps as a unit with its dot. */
 export function ModCredit({ mod }: { mod: ModDetail }) {
   return (
     <Row gap={3} wrap>
@@ -23,13 +36,17 @@ export function ModCredit({ mod }: { mod: ModDetail }) {
           }}
         />
       </Row>
-      <Text muted size="sm">
-        source at{' '}
-        <TextLink href={modSourceUrl(mod)}>{mod.commitSha.slice(0, SHORT_SHA_LENGTH)}</TextLink>
-      </Text>
-      <Text muted size="sm">
-        {mod.license ? `${mod.license} licence` : 'No licence'}
-      </Text>
+      <LaterFact>
+        <Text muted size="sm">
+          source at{' '}
+          <TextLink href={modSourceUrl(mod)}>{mod.commitSha.slice(0, SHORT_SHA_LENGTH)}</TextLink>
+        </Text>
+      </LaterFact>
+      <LaterFact>
+        <Text muted size="sm">
+          {mod.license ? `${mod.license} licence` : 'No licence'}
+        </Text>
+      </LaterFact>
     </Row>
   )
 }

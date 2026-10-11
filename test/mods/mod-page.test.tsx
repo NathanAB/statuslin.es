@@ -115,6 +115,25 @@ function section(title: string) {
 }
 
 describe('mod page', () => {
+  it('puts the byline under the title and above the description, like a status line page', () => {
+    renderPage()
+
+    const byline = screen.getByText('by')
+    const description = screen.getByText('A file tree pane.')
+    expect(
+      byline.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('separates the byline facts with a dot that starts each later fact', () => {
+    renderPage()
+
+    const dots = screen.getAllByText('·')
+    expect(dots).toHaveLength(2)
+    expect(dots[0]?.parentElement?.textContent).toMatch(/^·\s*source at/)
+    expect(dots[1]?.parentElement?.textContent).toMatch(/^·\s*MIT licence/)
+  })
+
   it('credits the author with their GitHub avatar', () => {
     renderPage()
 

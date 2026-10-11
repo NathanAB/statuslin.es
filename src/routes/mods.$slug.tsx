@@ -53,12 +53,12 @@ function ModPage() {
       <Stack gap={6}>
         <Stack gap={3}>
           <Heading level={1}>{mod.title}</Heading>
+          <ModCredit mod={mod} />
           {mod.description && (
             <Text muted size="sm">
               {mod.description}
             </Text>
           )}
-          <ModCredit mod={mod} />
         </Stack>
 
         <SectionCard title="Preview" headingLevel={2}>
