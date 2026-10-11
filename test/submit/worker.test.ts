@@ -282,7 +282,7 @@ describe('processNextRenderJob', () => {
     })
     const reports: RenderJobReport[] = []
     const runner = new FakeSandboxRunner({ 'clean-main': { exitCode: 2, stdout: 'out' } })
-    await processNextRenderJob(db, runner, (r) => reports.push(r))
+    await processNextRenderJob(db, runner, { onJobFinished: (r) => reports.push(r) })
     expect(reports).toHaveLength(1)
     const [report] = reports
     expect(report).toMatchObject({ configId, versionId, slug })
@@ -301,7 +301,7 @@ describe('processNextRenderJob', () => {
     })
     const reports: RenderJobReport[] = []
     const runner = { render: () => Promise.reject(new Error('sandbox down')) }
-    await processNextRenderJob(db, runner, (r) => reports.push(r))
+    await processNextRenderJob(db, runner, { onJobFinished: (r) => reports.push(r) })
     expect(reports).toEqual([expect.objectContaining({ versionId, scenarios: null })])
   })
 
@@ -370,7 +370,7 @@ describe('drainRenderJobs', () => {
       })
     }
     const reports: RenderJobReport[] = []
-    await drainRenderJobs(db, new FakeSandboxRunner(), (r) => reports.push(r))
+    await drainRenderJobs(db, new FakeSandboxRunner(), { onJobFinished: (r) => reports.push(r) })
     expect(reports).toHaveLength(2)
   })
 
@@ -407,6 +407,41 @@ describe('drainRenderJobs', () => {
     ])
 
     expect(processed).toEqual([1, 1])
+  })
+
+  it.each([
+    [[], 'queued'],
+    [['wttr.in'], 'held'],
+  ] as const)('once stopped, puts a job with hosts %j back as %s and claims no more', async (networkHosts, putBackAs) => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Cut off by a deploy',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho deploy',
+      networkHosts: [...networkHosts],
+    })
+    if (networkHosts.length > 0) await runNetworkPreview(db, versionId)
+    const { versionId: waiting } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'Still waiting',
+      description: '',
+      interpreter: 'bash',
+      source: '#!/bin/bash\necho waiting',
+    })
+    const stop = new AbortController()
+    const runner: SandboxRunner = {
+      // The machine is shutting down: this render never gets to finish.
+      render() {
+        stop.abort()
+        return new Promise(() => {})
+      },
+    }
+
+    expect(await drainRenderJobs(db, runner, { stop: stop.signal })).toBe(0)
+
+    expect(await jobStatus(versionId)).toBe(putBackAs)
+    expect(await jobStatus(waiting)).toBe('queued')
   })
 
   it('returns 0 when nothing is queued', async () => {

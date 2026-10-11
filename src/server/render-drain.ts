@@ -20,10 +20,16 @@ function sandboxRunner(): SandboxRunner {
   return new E2BSandboxRunner()
 }
 
+/** Aborted when the machine shuts down. */
+const shutdown = new AbortController()
+
 async function drainAndReport(): Promise<number> {
-  const processed = await drainRenderJobs(db, sandboxRunner(), (report) => {
-    const rendered = renderCompletedEvent(report)
-    captureServerEvent(rendered.event, rendered.distinctId, rendered.properties)
+  const processed = await drainRenderJobs(db, sandboxRunner(), {
+    onJobFinished: (report) => {
+      const rendered = renderCompletedEvent(report)
+      captureServerEvent(rendered.event, rendered.distinctId, rendered.properties)
+    },
+    stop: shutdown.signal,
   })
   const stats = await queueDepthStats(db)
   captureServerEvent('render_queue_drained', RENDER_WORKER_DISTINCT_ID, {
@@ -43,5 +49,25 @@ const controller = createDrainController(drainAndReport, (error) => {
 /** Render queued status line jobs in this process, in the background (ADR 0006). Returns at once.
  * A trigger during a drain runs one more drain after it, which picks up the new job. */
 export function triggerRenderDrain(): void {
+  stopOnShutdown()
   controller.trigger()
+}
+
+/** Put the job being rendered back in the queue, and claim no more, for good. */
+export function stopRenderDrain(): void {
+  shutdown.abort()
+}
+
+let listening = false
+
+/** Fly stops a machine (a deploy, or auto-stop) with SIGINT and kills it 5 s later, so put the
+ * job back for the next machine to render now, not after STALE_RUNNING_JOB_MS. Each copy of this
+ * module listens for itself (see render-drain-plugin.ts). Only on the deployed images
+ * (NODE_ENV=production): locally nothing else handles SIGINT, so listening would keep Ctrl+C from
+ * stopping the dev server. */
+function stopOnShutdown(): void {
+  if (listening || process.env.NODE_ENV !== 'production') return
+  listening = true
+  process.once('SIGINT', stopRenderDrain)
+  process.once('SIGTERM', stopRenderDrain)
 }

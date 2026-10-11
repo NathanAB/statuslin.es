@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, lt, or, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs, submissions } from '@/db/schema'
 import { renderConfig } from '@/render/pipeline'
@@ -20,10 +20,14 @@ export const MAX_RENDER_ATTEMPTS = 3
 /** Reset jobs that have been 'running' longer than STALE_RUNNING_JOB_MS: the machine rendering
  * them was stopped or crashed. Several web machines render at once, so a younger 'running' job may
  * be live on another machine and is left alone. A job with no start time was left by the old
- * always-on worker. Each goes where `afterCutOff` sends it. Returns how many it moved. */
-export async function requeueStaleJobs(db: Db): Promise<number> {
-  const isStale = isCutOff()
-  const stale = await db
+ * always-on worker. Returns how many it moved. */
+export function requeueStaleJobs(db: Db): Promise<number> {
+  return releaseCutOffJobs(db, isCutOff())
+}
+
+/** Send each job matching `which` where `afterCutOff` says. Returns how many it moved. */
+async function releaseCutOffJobs(db: Db, which: SQL | undefined): Promise<number> {
+  const jobs = await db
     .select({
       id: renderJobs.id,
       attempts: renderJobs.attempts,
@@ -33,14 +37,14 @@ export async function requeueStaleJobs(db: Db): Promise<number> {
     .from(renderJobs)
     .innerJoin(configVersions, eq(configVersions.id, renderJobs.configVersionId))
     .leftJoin(submissions, eq(submissions.configVersionId, renderJobs.configVersionId))
-    .where(isStale)
+    .where(which)
   let moved = 0
-  for (const job of stale) {
+  for (const job of jobs) {
     // Conditional, so a job that finished since the read above keeps its result.
     const updated = await db
       .update(renderJobs)
       .set(afterCutOff(job))
-      .where(and(eq(renderJobs.id, job.id), isStale))
+      .where(and(eq(renderJobs.id, job.id), which))
       .returning({ id: renderJobs.id })
     moved += updated.length
   }
@@ -84,15 +88,23 @@ function afterCutOff(job: {
   return { status: rerenderStatus(job.networkHosts) }
 }
 
-/** Called once per finished job (done or failed). Lets the web server's drain report telemetry
- * without the seed/e2e scripts that also call processNextRenderJob emitting it too. */
-type OnJobFinished = (report: RenderJobReport) => void
+type DrainOptions = {
+  /** Called once per finished job (done or failed). Lets the web server's drain report telemetry
+   * without the seed/e2e scripts that also call processNextRenderJob emitting it too. */
+  onJobFinished?: (report: RenderJobReport) => void
+  /** Aborted when the machine shuts down: the job being rendered goes back as if cut off
+   * (`afterCutOff`), and no other job is claimed. */
+  stop?: AbortSignal
+}
 
+/** Render the oldest queued job. Returns its id, or null when nothing is queued or `stop` ended
+ * the render. */
 export async function processNextRenderJob(
   db: Db,
   runner: SandboxRunner,
-  onJobFinished?: OnJobFinished,
+  { onJobFinished, stop }: DrainOptions = {},
 ): Promise<string | null> {
+  if (stop?.aborted) return null
   const claimed = await claimNextJob(db)
   if (!claimed) return null
   const startedMs = Date.now()
@@ -107,14 +119,17 @@ export async function processNextRenderJob(
     if (!row) throw new Error(`config version ${claimed.configVersionId} not found`)
     const { ver } = row
     config = { configId: ver.configId, slug: row.slug }
-    const previews = await renderConfig(
-      {
-        script: ver.source,
-        interpreter: ver.interpreter as Interpreter,
-        networkHosts: ver.networkHosts ?? [],
-        readsClaudeToken: ver.readsClaudeToken ?? false,
-      },
-      runner,
+    const previews = await untilStopped(
+      renderConfig(
+        {
+          script: ver.source,
+          interpreter: ver.interpreter as Interpreter,
+          networkHosts: ver.networkHosts ?? [],
+          readsClaudeToken: ver.readsClaudeToken ?? false,
+        },
+        runner,
+      ),
+      stop,
     )
     await storePreviews(db, ver.contentSha256, previews)
     await db
@@ -124,6 +139,10 @@ export async function processNextRenderJob(
     // Exit status only — never stdout/stderr, which are untrusted script output.
     scenarios = previews.map(({ exitCode, timedOut }) => ({ exitCode, timedOut }))
   } catch (error) {
+    if (error instanceof DrainStopped) {
+      await releaseCutOffJobs(db, isStillClaimed(claimed))
+      return null
+    }
     await db
       .update(renderJobs)
       .set({ status: 'failed', error: String(error).slice(0, 2000), finishedAt: new Date() })
@@ -146,12 +165,26 @@ export async function processNextRenderJob(
 export async function drainRenderJobs(
   db: Db,
   runner: SandboxRunner,
-  onJobFinished?: OnJobFinished,
+  options: DrainOptions = {},
 ): Promise<number> {
   await requeueStaleJobs(db)
   let processed = 0
-  while (await processNextRenderJob(db, runner, onJobFinished)) processed++
+  while (await processNextRenderJob(db, runner, options)) processed++
   return processed
+}
+
+class DrainStopped extends Error {}
+
+/** `work`, unless `stop` aborts first: then reject with DrainStopped. The work itself carries on
+ * until the process exits; its result is dropped. */
+function untilStopped<T>(work: Promise<T>, stop: AbortSignal | undefined): Promise<T> {
+  if (!stop) return work
+  return new Promise((resolve, reject) => {
+    const onStop = () => reject(new DrainStopped())
+    if (stop.aborted) return onStop()
+    stop.addEventListener('abort', onStop, { once: true })
+    work.then(resolve, reject).finally(() => stop.removeEventListener('abort', onStop))
+  })
 }
 
 /** Cheap queue-depth read for the drain telemetry. Run at drain end, when Neon is already awake —
