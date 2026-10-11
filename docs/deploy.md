@@ -47,7 +47,7 @@ Two process groups off one image (declared in `fly.toml` for prod and `fly.stagi
 - **web** — `bun run .output/server/index.mjs` — public, serves site + auth + API.
 - **worker** — `bun run scripts/worker.ts` — always-on poller; renders submitted scripts via E2B. No public port.
 
-## The seven required environment variables
+## The environment variables
 
 From `.env.example` (the committed contract):
 
@@ -60,6 +60,7 @@ From `.env.example` (the committed contract):
 | `GITHUB_CLIENT_SECRET` | yes | the env's OAuth app |
 | `E2B_API_KEY` | no | one E2B account serves all envs |
 | `RESEND_API_KEY` | yes | server-only key used to email submission review decisions |
+| `GITHUB_TOKEN` | no | **optional**, not set on Fly: only the operator mod scripts read it (`import:mods`, `render:mods`, `publish-mod`, `check-mods`, …), from `.env.local` or the shell. It raises GitHub's API limit from 60 to 5,000 requests an hour, so a long curation run doesn't stall. A fine-grained token with public-repository read access (the default, no extra permissions) is enough |
 
 No R2 keys — preview data is stored in Postgres (`previews` table), and OG card images are rendered on
 the fly by the app (`src/og`), not stored. R2 isn't used.

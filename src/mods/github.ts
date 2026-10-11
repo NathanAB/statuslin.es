@@ -85,14 +85,22 @@ async function readAtMost(res: Response, maxBytes: number, url: string): Promise
   return bytes
 }
 
-/** `fetchFn` is injected so tests never touch the network. */
+/**
+ * `fetchFn` is injected so tests never touch the network. An optional `GITHUB_TOKEN` raises the
+ * API's rate limit from 60 to 5,000 requests an hour; it goes to the API host only.
+ */
 export function createGitHub(
   fetchFn: typeof fetch = fetch,
   timeoutMs = REQUEST_TIMEOUT_MS,
 ): GitHub & GitHubSource {
+  const token = process.env.GITHUB_TOKEN
   const send = (url: string, accept = 'application/vnd.github+json') =>
     fetchFn(url, {
-      headers: { accept, 'user-agent': 'statuslin.es' },
+      headers: {
+        accept,
+        'user-agent': 'statuslin.es',
+        ...(token && url.startsWith(`${GITHUB_API}/`) && { authorization: `Bearer ${token}` }),
+      },
       signal: AbortSignal.timeout(timeoutMs),
     })
 
