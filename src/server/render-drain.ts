@@ -23,8 +23,8 @@ function sandboxRunner(): SandboxRunner {
 /** Aborted when the machine shuts down. */
 const shutdown = new AbortController()
 
-async function drainAndReport(): Promise<number> {
-  const processed = await drainRenderJobs(db, sandboxRunner(), {
+async function drainAndReport(): Promise<void> {
+  const { processed, cutOff } = await drainRenderJobs(db, sandboxRunner(), {
     onJobFinished: (report) => {
       const rendered = renderCompletedEvent(report)
       captureServerEvent(rendered.event, rendered.distinctId, rendered.properties)
@@ -34,10 +34,10 @@ async function drainAndReport(): Promise<number> {
   const stats = await queueDepthStats(db)
   captureServerEvent('render_queue_drained', RENDER_WORKER_DISTINCT_ID, {
     processed,
+    cutOffJobs: cutOff,
     ...stats,
     ...PERSONLESS_EVENT_PROPERTIES,
   })
-  return processed
 }
 
 const controller = createDrainController(drainAndReport, (error) => {

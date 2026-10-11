@@ -158,19 +158,19 @@ export async function processNextRenderJob(
   return claimed.id
 }
 
-/** Drain the queue: re-queue stale jobs, then render every queued job, one at a time, until none
- * remain. Returns the number processed. Per-job render failures are recorded inside
- * processNextRenderJob, so they don't stop the drain — only an infra error (DB/E2B
- * unreachable) throws out of here, which the caller's drain controller catches. */
+/** Drain the queue: reset cut-off jobs, then render every queued job, one at a time, until none
+ * remain. Returns how many jobs it rendered and how many cut-off jobs it reset. Per-job render
+ * failures are recorded inside processNextRenderJob, so they don't stop the drain — only an infra
+ * error (DB/E2B unreachable) throws out of here, which the caller's drain controller catches. */
 export async function drainRenderJobs(
   db: Db,
   runner: SandboxRunner,
   options: DrainOptions = {},
-): Promise<number> {
-  await requeueStaleJobs(db)
+): Promise<{ processed: number; cutOff: number }> {
+  const cutOff = await requeueStaleJobs(db)
   let processed = 0
   while (await processNextRenderJob(db, runner, options)) processed++
-  return processed
+  return { processed, cutOff }
 }
 
 class DrainStopped extends Error {}

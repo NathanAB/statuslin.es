@@ -350,7 +350,7 @@ describe('drainRenderJobs', () => {
       })
     }
     const runner = new FakeSandboxRunner({ 'clean-main': { stdout: '\x1b[35mOpus\x1b[0m' } })
-    const processed = await drainRenderJobs(db, runner)
+    const { processed } = await drainRenderJobs(db, runner)
     expect(processed).toBe(3)
     const remaining = await db
       .select()
@@ -386,7 +386,7 @@ describe('drainRenderJobs', () => {
       .update(schema.renderJobs)
       .set({ status: 'running', startedAt: staleStart() })
       .where(eq(schema.renderJobs.configVersionId, versionId))
-    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toBe(1)
+    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toEqual({ processed: 1, cutOff: 1 })
     expect(await jobStatus(versionId)).toBe('done')
   })
 
@@ -406,7 +406,7 @@ describe('drainRenderJobs', () => {
       drainRenderJobs(db, new FakeSandboxRunner()),
     ])
 
-    expect(processed).toEqual([1, 1])
+    expect(processed.map((drain) => drain.processed)).toEqual([1, 1])
   })
 
   it.each([
@@ -438,13 +438,13 @@ describe('drainRenderJobs', () => {
       },
     }
 
-    expect(await drainRenderJobs(db, runner, { stop: stop.signal })).toBe(0)
+    expect((await drainRenderJobs(db, runner, { stop: stop.signal })).processed).toBe(0)
 
     expect(await jobStatus(versionId)).toBe(putBackAs)
     expect(await jobStatus(waiting)).toBe('queued')
   })
 
   it('returns 0 when nothing is queued', async () => {
-    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toBe(0)
+    expect(await drainRenderJobs(db, new FakeSandboxRunner())).toEqual({ processed: 0, cutOff: 0 })
   })
 })

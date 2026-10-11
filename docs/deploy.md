@@ -51,9 +51,14 @@ lines through E2B, in the background ([ADR 0006](./adr/0006-renders-run-on-deman
   (`src/server/render-drain.ts`).
 - Each machine drains once at startup (`src/server/render-drain-plugin.ts`), which picks up jobs
   queued while no machine was running.
-- Several machines can render at once; each job is claimed with a conditional update. A job left
-  `running` for over 15 minutes (`STALE_RUNNING_JOB_MS`) was cut off by a stopped or crashed machine
-  and goes back to `queued` (a network job to `held`) at the next drain.
+- Several machines can render at once; each job is claimed with a conditional update.
+- A machine that Fly stops (a deploy, or auto-stop) gets SIGINT and puts the job it is rendering
+  back: `queued`, or `held` for a network job. The next machine to drain renders it.
+- A job left `running` for over 15 minutes (`STALE_RUNNING_JOB_MS`) was cut off by a crash. The next
+  drain puts it back the same way, and the admin's re-queue accepts it too. Nothing notices it before
+  then: drains only run on the triggers above.
+- A job cut off on its third attempt (`MAX_RENDER_ATTEMPTS`), or after its submission was decided,
+  fails instead.
 
 There is no worker process. Mod previews render from the operator's machine (`render:mods`).
 
@@ -394,7 +399,8 @@ local and staging never emit them. Both use `distinctId: 'render-worker'`, kept 
 so the history stays one series.
 
 - **`render_queue_drained`** — emitted at the end of every drain, with
-  `{ processed, queuedRemaining, oldestQueuedAgeSec }`.
+  `{ processed, cutOffJobs, queuedRemaining, oldestQueuedAgeSec }`. `cutOffJobs` counts the jobs this
+  drain found `running` past the 15-minute limit and put back.
 - **`statusline_render_completed`** — emitted once per render job, with
   `{ outcome, errorClass?, durationMs, configId, versionId, slug }`. `outcome` is `'failure'` when the
   job threw (`errorClass: 'job_failed'`) or any scenario hit a sandbox error, timed out, or exited
@@ -417,10 +423,16 @@ tracking with `source: 'render-drain'`, and to the server log.
 
 ### The alert
 
-**Queue stuck** — trends insight on `render_queue_drained`, value = **max(`oldestQueuedAgeSec`)**
-over the **last 30 minutes**; alert when **> 900** (15 min of the oldest queued job sitting
-unrendered) → email. Drains run only on submissions, admin actions and machine starts, so this
-catches a drain that leaves old jobs behind, not a queue nothing drains.
+**Queue stuck** — trends insight on `render_queue_drained` with two series, and one alert on each →
+email:
+
+- **max(`oldestQueuedAgeSec`)** over the **last 30 minutes**; alert when **> 900** (15 min of the
+  oldest queued job sitting unrendered).
+- **sum(`cutOffJobs`)** over the **last hour**; alert when **> 0** (a render sat `running` for 15
+  minutes after its machine crashed).
+
+Drains run only on submissions, admin actions and machine starts, so this catches a drain that
+leaves old jobs behind or finds a stuck render, not a queue nothing drains.
 
 Create it in the PostHog UI (insight → Alerts → New alert) or via the PostHog MCP. Re-create it from
 this section if the project is ever rebuilt. The old **Worker down** alert counted

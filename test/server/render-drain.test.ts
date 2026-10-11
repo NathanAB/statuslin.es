@@ -35,6 +35,7 @@ vi.mock('@/lib/posthog-server', () => ({ captureServerEvent, captureServerExcept
 const { db } = await import('@/db')
 const schema = await import('@/db/schema')
 const { submitConfig } = await import('@/submit/submit')
+const { STALE_RUNNING_JOB_MS } = await import('@/submit/worker')
 const { stopRenderDrain, triggerRenderDrain } = await import('@/server/render-drain')
 
 beforeAll(async () => {
@@ -91,6 +92,25 @@ describe('triggerRenderDrain', () => {
         'render_queue_drained',
         'render-worker',
         expect.objectContaining({ processed: 1, queuedRemaining: 0 }),
+      ),
+    )
+  })
+
+  it('reports the cut-off jobs it found, so a stuck render can alert', async () => {
+    vi.stubEnv('RENDER_RUNNER', 'fake')
+    const versionId = await submitQueued('Cut off by a crash')
+    await db
+      .update(schema.renderJobs)
+      .set({ status: 'running', startedAt: new Date(Date.now() - STALE_RUNNING_JOB_MS - 1000) })
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+
+    triggerRenderDrain()
+
+    await vi.waitFor(() =>
+      expect(captureServerEvent).toHaveBeenCalledWith(
+        'render_queue_drained',
+        'render-worker',
+        expect.objectContaining({ processed: 1, cutOffJobs: 1 }),
       ),
     )
   })
