@@ -321,12 +321,17 @@ describe('mod page', () => {
     }
   })
 
-  it('names the minimum Claude Code version for each command on one line', () => {
+  it('names one minimum Claude Code version, the highest either command needs', () => {
     renderPage()
 
-    expect(
-      screen.getByText('Needs Claude Code 2.1.275 or later, or 2.1.292 from a shell.'),
-    ).toBeTruthy()
+    expect(screen.getByText('Needs Claude Code 2.1.292 or later.')).toBeTruthy()
+  })
+
+  it('labels the install section with a visible heading', () => {
+    renderPage()
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Install' })
+    expect(heading.className).not.toContain('sr-only')
   })
 
   it('states the footprint’s facts as tiles in What it does', () => {

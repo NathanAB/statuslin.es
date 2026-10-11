@@ -11,6 +11,22 @@ export interface InstallCommand {
   command: string
 }
 
+const MIN_VERSION: Record<InstallCommandKind, string> = { session: '2.1.275', shell: '2.1.292' }
+
+function compareVersions(a: string, b: string): number {
+  const [x, y] = [a, b].map((v) => v.split('.').map(Number))
+  for (let i = 0; i < Math.max(x?.length ?? 0, y?.length ?? 0); i++) {
+    const d = (x?.[i] ?? 0) - (y?.[i] ?? 0)
+    if (d !== 0) return d
+  }
+  return 0
+}
+
+/** The Claude Code version that installing needs: the highest any install command needs. */
+export const MOD_INSTALL_MIN_VERSION = Object.values(MIN_VERSION).reduce((max, v) =>
+  compareVersions(v, max) > 0 ? v : max,
+)
+
 /** The mod's folder on GitHub at its pinned commit. */
 export function modSourceUrl(pin: { repoUrl: string; path: string; commitSha: string }): string {
   const tree = `${pin.repoUrl}/tree/${pin.commitSha}`
@@ -23,13 +39,13 @@ export function installCommands(origin: string, pluginName: string): InstallComm
     {
       kind: 'session',
       label: 'In Claude Code',
-      minVersion: '2.1.275',
+      minVersion: MIN_VERSION.session,
       command: `/plugin ${install}`,
     },
     {
       kind: 'shell',
       label: 'From a shell',
-      minVersion: '2.1.292',
+      minVersion: MIN_VERSION.shell,
       command: `claude plugin ${install}`,
     },
   ]

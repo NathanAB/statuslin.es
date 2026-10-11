@@ -150,6 +150,16 @@ describe('prepareModContentGenerationRequest', () => {
     expect(contentPrompt).toContain('It drew nothing in the terminal.')
   })
 
+  it('tells the writer the page already states the Claude Code version installing needs', async () => {
+    await seedMod('versioned')
+
+    const { contentPrompt } = await prepareModContentGenerationRequest(db, 'versioned', readme)
+
+    expect(contentPrompt).toContain(
+      'The page already says it needs Claude Code 2.1.292 or later; mention a minimum version only if the mod needs a higher one.',
+    )
+  })
+
   it('lists Claude Desktop as a surface when the mod has a Desktop shot', async () => {
     const { versionId } = await seedMod('anywhere')
     await addDesktopPreview(db, versionId)

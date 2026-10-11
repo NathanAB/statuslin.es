@@ -3,6 +3,7 @@ import { TAG_CRITERIA } from '@/content/tags'
 import { TAG_VOCABULARY } from '@/gallery/facets'
 import { DRAW_LOCATION_LABEL, type ModFootprintDescription, SURFACE_LABEL } from './footprint'
 import type { FootprintFacts } from './footprint-facts'
+import { MOD_INSTALL_MIN_VERSION } from './install'
 
 /** The version a request is for: its answer is applied to that version only. */
 export interface VersionPin {
@@ -90,8 +91,7 @@ export function buildModContentPrompt(
 ): string {
   const task = pageCopyTask({
     steps: 'when it runs in a session, what it reads, and what it draws or changes.',
-    notes:
-      'requirements such as a minimum Claude Code version, an account or API key, or a setting to turn on; then limits and surprises.',
+    notes: `requirements such as an account or API key, or a setting to turn on (The page already says it needs Claude Code ${MOD_INSTALL_MIN_VERSION} or later; mention a minimum version only if the mod needs a higher one.); then limits and surprises.`,
     details: detailAsks(checks),
   })
   return `You are writing factual copy for a gallery page about one Claude Code mod: a plugin that draws in Claude Code, installed from a marketplace.
