@@ -88,5 +88,5 @@ export function frameShot({ changed, paneOpen, draws }: ShotFacts): Frame {
     return { kind: 'crop', rect: paneOnly ? PANE_ONLY : CHAT_AND_PANE, cardAnchor: 'top' }
   }
   if (!changed) return { kind: 'nothing' }
-  return { kind: 'crop', rect: chatColumn(changed), cardAnchor: 'bottom' }
+  return { kind: 'crop', rect: chatColumn(changed), cardAnchor: 'top' }
 }

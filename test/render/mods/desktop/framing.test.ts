@@ -17,11 +17,11 @@ describe('frameShot with no pane open', () => {
     })
   })
 
-  it('crops the chat column from the topmost change down through the toolbar', () => {
+  it('crops the chat column from the topmost change down through the toolbar, and a card keeps its top', () => {
     expect(frameShot({ changed: BAND, paneOpen: false, draws: ['above-prompt'] })).toEqual({
       kind: 'crop',
       rect: { x: 158, y: 507, width: 784, height: CONTENT.bottom - 507 },
-      cardAnchor: 'bottom',
+      cardAnchor: 'top',
     })
   })
 
@@ -41,7 +41,7 @@ describe('frameShot with no pane open', () => {
     expect(frame).toEqual({
       kind: 'crop',
       rect: { x: 158, y: 463, width: CONTENT.right - 158, height: CONTENT.bottom - 463 },
-      cardAnchor: 'bottom',
+      cardAnchor: 'top',
     })
   })
 

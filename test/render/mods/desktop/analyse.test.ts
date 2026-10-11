@@ -71,7 +71,7 @@ describe('analyseShot', () => {
     ])
   })
 
-  it('crops the changed band with the prompt box, re-encoded, anchored at the bottom', async () => {
+  it('crops the changed band with the prompt box, re-encoded, anchored at the top', async () => {
     const { analysis, ran } = fakeAnalysis({ compare: BAND })
 
     const result = await analyseShot(analysis, {
@@ -80,7 +80,7 @@ describe('analyseShot', () => {
       draws: ['above-prompt'],
     })
 
-    expect(result).toMatchObject({ kind: 'shot', width: 784, height: 129, cardAnchor: 'bottom' })
+    expect(result).toMatchObject({ kind: 'shot', width: 784, height: 129, cardAnchor: 'top' })
     expect(ran.at(-1)).toContain('-strip -define png:exclude-chunks=all png:-')
   })
 
