@@ -182,8 +182,9 @@ async function resolveAdminId(db: Db): Promise<string> {
 }
 
 /** Promotes every 'held' render job belonging to a seed-authored submission (parked by
- *  seedCommunityConfig for a network-using seed) to 'queued' so the web server's next drain renders it —
- *  the same explicit admin action as the review queue's "run network preview" button, just
+ *  seedCommunityConfig for a network-using seed) to 'queued' so the web server's next drain renders it.
+ *  This CLI runs in its own process, so it can't start that drain: the jobs wait for a submission,
+ *  an admin action or a machine start. It is the same explicit admin action as the review queue's "run network preview" button, just
  *  batched across every seeded held job. Scoped to seed authors (shadow users created by
  *  ensureSeededAuthor, whose email is `seed+<login>@statuslin.es`) via a join from renderJobs to
  *  configVersions to configs to user: a held job from a real web submission must NOT be swept up

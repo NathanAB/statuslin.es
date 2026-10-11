@@ -24,8 +24,8 @@ primary_region = "iad"
   auto_stop_machines = "stop"
   auto_start_machines = true
   # Scale the web process to zero when idle — no machine kept warm. A cold start on the
-  # first request is fine for staging. Stopping can cut a render off; the next machine to start
-  # re-queues it once it's past the time limit.
+  # first request is fine for staging. Stopping can cut a render off; the stopping machine puts
+  # the job back on SIGINT and the next machine to start renders it (ADR 0006).
   min_machines_running = 0
   processes = ["web"]
   [http_service.concurrency]
