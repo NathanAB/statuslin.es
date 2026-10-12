@@ -54,6 +54,12 @@ describe('parseModLink', () => {
     ['a blob link to another file', `${REPO}/blob/main/README.md`],
     ['a commit link with extra segments', `${REPO}/commit/${SHA}/x`],
     ['a commit link that is not hex', `${REPO}/commit/main`],
+    [
+      'an encoded "/" that walks up the API path',
+      `${REPO}/tree/x%2F..%2F..%2Frepos%2Fvictim%2Fpopular%2Fcommits%2Fmain/plugins/meter`,
+    ],
+    ['an escape character', `${REPO}/tree/main%1B%5D52/plugins`],
+    ['a bidi override', `${REPO}/tree/main%E2%80%AE/plugins`],
   ])('refuses %s', (_name, link) => {
     expect(() => parseModLink(link)).toThrow(/GitHub/)
   })
@@ -145,6 +151,29 @@ describe('resolveModLink', () => {
     })
 
     await expect(result).resolves.toMatchObject({ ref: 'abc1234', commitSha: SHA, path: '' })
+  })
+
+  it('asks GitHub only about names git allows as a ref', async () => {
+    const { result, calls } = resolve(`${REPO}/tree/.hidden/x~1/plugins/meter`, { refs: {} })
+
+    await expect(result).rejects.toMatchObject({ status: 400 })
+    expect(calls.filter((c) => c.startsWith('ref:'))).toEqual([])
+  })
+
+  it('checks the default branch it already read, without reading the repository again', async () => {
+    const fake = fakeGitHub()
+    const branches: (string | undefined)[] = []
+    const github: LinkGitHub = {
+      ...fake.github,
+      async commitIsOnDefaultBranch(repoUrl, sha, defaultBranch) {
+        branches.push(defaultBranch)
+        return fake.github.commitIsOnDefaultBranch(repoUrl, sha, defaultBranch)
+      },
+    }
+
+    await resolveModLink(parseModLink(`${REPO}/tree/main/plugins/meter`), github)
+
+    expect(branches).toEqual(['main'])
   })
 
   it('stops looking for a ref after a few tries', async () => {

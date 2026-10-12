@@ -1,3 +1,5 @@
+import { failure, readAtMost, readUpTo } from './github-response'
+
 const GITHUB_API = 'https://api.github.com'
 const GITHUB_ARCHIVES = 'https://codeload.github.com'
 const REQUEST_TIMEOUT_MS = 10_000
@@ -6,6 +8,10 @@ const PLUGIN_MANIFEST = '.claude-plugin/plugin.json'
 /** Caps on a mod repository's download; every mod the #38 spike rendered fits well inside both. */
 export const TARBALL_MAX_BYTES = 20 * 1024 * 1024
 export const TARBALL_MAX_FILES = 2_000
+/** A JSON answer past this is refused: the largest one read is a compare listing up to 300 files. */
+export const GITHUB_JSON_MAX_BYTES = 10 * 1024 * 1024
+/** A bare commit hash, with room for a newline. */
+const SHA_MAX_BYTES = 64
 
 export interface RepoInfo {
   /** `owner/repo` as GitHub spells it, the canonical form of the repository URL. */
@@ -33,7 +39,8 @@ export interface GitHubSource {
 }
 
 export interface GitHub {
-  commitIsOnDefaultBranch(repoUrl: string, sha: string): Promise<boolean>
+  /** `defaultBranch` saves reading the repository when the caller already has it. */
+  commitIsOnDefaultBranch(repoUrl: string, sha: string, defaultBranch?: string): Promise<boolean>
   filesChanged(repoUrl: string, base: string, head: string): Promise<string[]>
   commitIsFetchable(repoUrl: string, sha: string): Promise<boolean>
 }
@@ -55,44 +62,16 @@ export const README_MAX_BYTES = 4 * README_MAX_CHARS
 
 const repoApiUrl = (repoUrl: string) => `${GITHUB_API}/repos/${repoPath(repoUrl)}`
 
-/** Encodes each part of a "/"-separated ref or path, keeping the "/" GitHub reads between them. */
-const encodeParts = (value: string) => value.split('/').map(encodeURIComponent).join('/')
-
-/** The first `maxBytes` of the body (or all of it), cancelling the rest unread. */
-async function readUpTo(
-  res: Response,
-  maxBytes: number,
-): Promise<{ bytes: Uint8Array; truncated: boolean }> {
-  const reader = res.body?.getReader()
-  const chunks: Uint8Array[] = []
-  let size = 0
-  let truncated = false
-  for (let chunk = await reader?.read(); chunk && !chunk.done; chunk = await reader?.read()) {
-    if (size + chunk.value.byteLength > maxBytes) {
-      chunks.push(chunk.value.subarray(0, maxBytes - size))
-      size = maxBytes
-      truncated = true
-      await reader?.cancel()
-      break
-    }
-    size += chunk.value.byteLength
-    chunks.push(chunk.value)
+/**
+ * Encodes each part of a "/"-separated ref or path, keeping the "/" GitHub reads between them. A
+ * ".", ".." or empty part is refused: fetch would collapse it and walk the request up the API.
+ */
+function encodeParts(value: string): string {
+  const parts = value.split('/')
+  if (parts.some((part) => part === '' || part === '.' || part === '..')) {
+    throw new Error(`"${value}" has an empty, "." or ".." part`)
   }
-  const bytes = new Uint8Array(size)
-  let offset = 0
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return { bytes, truncated }
-}
-
-async function readAtMost(res: Response, maxBytes: number, url: string): Promise<Uint8Array> {
-  const tooLarge = () => new Error(`${url} is larger than ${maxBytes} bytes`)
-  if (Number(res.headers.get('content-length') ?? 0) > maxBytes) throw tooLarge()
-  const { bytes, truncated } = await readUpTo(res, maxBytes)
-  if (truncated) throw tooLarge()
-  return bytes
+  return parts.map(encodeURIComponent).join('/')
 }
 
 /**
@@ -116,9 +95,12 @@ export function createGitHub(
 
   async function request(url: string, missingStatuses: number[] = []): Promise<unknown | null> {
     const res = await send(url)
-    if (missingStatuses.includes(res.status)) return null
-    if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
-    return res.json()
+    if (missingStatuses.includes(res.status)) {
+      await res.body?.cancel()
+      return null
+    }
+    if (!res.ok) throw failure(res, url)
+    return JSON.parse(new TextDecoder().decode(await readAtMost(res, GITHUB_JSON_MAX_BYTES, url)))
   }
 
   async function findRepo(repoUrl: string): Promise<RepoInfo | null> {
@@ -127,8 +109,10 @@ export function createGitHub(
       full_name: string
       default_branch: string
       license: { spdx_id: string | null } | null
+      private: boolean
     } | null
-    if (!repo) return null
+    // A token that can read private repositories must not let a submitter probe them.
+    if (!repo || repo.private) return null
     const spdx = repo.license?.spdx_id
     return {
       fullName: repo.full_name,
@@ -153,7 +137,7 @@ export function createGitHub(
     }
     const url = `${GITHUB_ARCHIVES}/${repoPath(repoUrl)}/tar.gz/${sha}`
     const res = await send(url)
-    if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
+    if (!res.ok) throw failure(res, url)
     return readAtMost(res, TARBALL_MAX_BYTES, url)
   }
 
@@ -165,19 +149,31 @@ export function createGitHub(
 
     async resolveCommit(repoUrl, ref) {
       const url = `${repoApiUrl(repoUrl)}/commits/${encodeParts(ref)}`
-      const commit = (await request(url, [404, 422])) as { sha: string } | null
-      return commit?.sha ?? null
+      // The bare hash, not the commit with every file's patch.
+      const res = await send(url, 'application/vnd.github.sha')
+      if (res.status === 404 || res.status === 422) {
+        await res.body?.cancel()
+        return null
+      }
+      if (!res.ok) throw failure(res, url)
+      return new TextDecoder().decode((await readUpTo(res, SHA_MAX_BYTES)).bytes).trim()
     },
 
     async pluginManifestExists(repoUrl, path, sha) {
       const file = encodeParts(path === '' ? PLUGIN_MANIFEST : `${path}/${PLUGIN_MANIFEST}`)
-      return (await request(`${repoApiUrl(repoUrl)}/contents/${file}?ref=${sha}`, [404])) !== null
+      const url = `${repoApiUrl(repoUrl)}/contents/${file}?ref=${sha}`
+      const res = await send(url)
+      // Only whether it is there matters, so the file itself is never read.
+      await res.body?.cancel()
+      if (res.status === 404) return false
+      if (!res.ok) throw failure(res, url)
+      return true
     },
 
-    async commitIsOnDefaultBranch(repoUrl, sha) {
-      const { defaultBranch } = await repoInfo(repoUrl)
+    async commitIsOnDefaultBranch(repoUrl, sha, defaultBranch) {
+      const branch = defaultBranch ?? (await repoInfo(repoUrl)).defaultBranch
       const comparison = (await request(
-        `${repoApiUrl(repoUrl)}/compare/${sha}...${encodeURIComponent(defaultBranch)}`,
+        `${repoApiUrl(repoUrl)}/compare/${sha}...${encodeURIComponent(branch)}`,
         [404],
       )) as { status: string } | null
       return comparison?.status === 'ahead' || comparison?.status === 'identical'

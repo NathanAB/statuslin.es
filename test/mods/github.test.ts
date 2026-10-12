@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createGitHub, README_MAX_BYTES, TARBALL_MAX_BYTES, TARBALL_MAX_FILES } from '@/mods/github'
+import {
+  createGitHub,
+  GITHUB_JSON_MAX_BYTES,
+  README_MAX_BYTES,
+  TARBALL_MAX_BYTES,
+  TARBALL_MAX_FILES,
+} from '@/mods/github'
 
 const REPO = 'https://github.com/octocat/meter'
 const SHA = 'a'.repeat(40)
@@ -344,7 +350,7 @@ describe('findRepo', () => {
 describe('resolveCommit', () => {
   it('resolves a branch to its full commit hash, keeping a "/" in the name', async () => {
     const { fetchFn } = fakeFetch({
-      [api('/commits/feature/x')]: { status: 200, body: { sha: SHA } },
+      [api('/commits/feature/x')]: { status: 200, body: new TextEncoder().encode(SHA) },
     })
 
     expect(await createGitHub(fetchFn).resolveCommit(REPO, 'feature/x')).toBe(SHA)
@@ -383,5 +389,64 @@ describe('pluginManifestExists', () => {
     const { fetchFn } = fakeFetch({})
 
     expect(await createGitHub(fetchFn).pluginManifestExists(REPO, 'docs', SHA)).toBe(false)
+  })
+})
+
+describe('reading GitHub safely', () => {
+  it('asks for the bare hash when resolving a ref', async () => {
+    const accepts: (string | null)[] = []
+    const fetchFn = (async (_url: string, init?: RequestInit) => {
+      accepts.push(new Headers(init?.headers).get('accept'))
+      return new Response(SHA, { status: 200 })
+    }) as typeof fetch
+
+    expect(await createGitHub(fetchFn).resolveCommit(REPO, 'main')).toBe(SHA)
+    expect(accepts).toEqual(['application/vnd.github.sha'])
+  })
+
+  it.each(['..', '.', ''])('refuses a %j part in a ref without a request', async (part) => {
+    const { fetchFn, requested } = fakeFetch({})
+
+    await expect(createGitHub(fetchFn).resolveCommit(REPO, `main/${part}/x`)).rejects.toThrow()
+    expect(requested).toEqual([])
+  })
+
+  it('refuses a JSON answer larger than it will read', async () => {
+    const huge = new Uint8Array(GITHUB_JSON_MAX_BYTES + 1)
+    const { fetchFn } = fakeFetch({ [api('')]: { status: 200, body: huge } })
+
+    await expect(createGitHub(fetchFn).findRepo(REPO)).rejects.toThrow(/larger than/)
+  })
+
+  it.each([
+    [403, { 'x-ratelimit-remaining': '0' }],
+    [429, {}],
+  ])('turns rate limiting (%i) into a 503 that says to try later', async (status, headers) => {
+    const { fetchFn } = fakeFetch({ [api('')]: { status, headers } })
+
+    await expect(createGitHub(fetchFn).findRepo(REPO)).rejects.toMatchObject({
+      status: 503,
+      message: expect.stringMatching(/try again later/),
+    })
+  })
+
+  it('answers null for a private repository', async () => {
+    const { fetchFn } = fakeFetch({
+      [api('')]: {
+        status: 200,
+        body: { full_name: 'octocat/meter', default_branch: 'main', license: null, private: true },
+      },
+    })
+
+    expect(await createGitHub(fetchFn).findRepo(REPO)).toBeNull()
+  })
+
+  it('compares against a default branch it is given, without reading the repository', async () => {
+    const { fetchFn, requested } = fakeFetch({
+      [api(`/compare/${SHA}...trunk`)]: { status: 200, body: { status: 'ahead' } },
+    })
+
+    expect(await createGitHub(fetchFn).commitIsOnDefaultBranch(REPO, SHA, 'trunk')).toBe(true)
+    expect(requested).toEqual([api(`/compare/${SHA}...trunk`)])
   })
 })

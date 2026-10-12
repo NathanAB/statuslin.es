@@ -1,6 +1,7 @@
 import { HttpError } from '@/lib/http'
 import { COMMIT_SHA, pluginPathSchema } from './curation'
 import type { GitHub, GitHubSource } from './github'
+import { CONTROL_OR_FORMAT } from './terminal-line'
 
 /** A GitHub link to a mod as typed, before GitHub says where its ref ends. */
 export interface ParsedModLink {
@@ -43,12 +44,37 @@ const refuse = (message: string) => new HttpError(400, message)
 const NOT_A_MOD_LINK =
   'Paste a link to a GitHub repository, the plugin’s folder, its .claude-plugin/plugin.json, or a commit.'
 
+/**
+ * One path segment, decoded. An encoded "/" or a "." or ".." would let it walk the GitHub request
+ * up the API, and a control or format character could rewrite a terminal, so each is refused.
+ */
 function decoded(segment: string): string {
+  let value: string
   try {
-    return decodeURIComponent(segment)
+    value = decodeURIComponent(segment)
   } catch {
     throw refuse(NOT_A_MOD_LINK)
   }
+  if (value.includes('/') || value === '.' || value === '..' || CONTROL_OR_FORMAT.test(value)) {
+    throw refuse(NOT_A_MOD_LINK)
+  }
+  return value
+}
+
+/** Git's rule for a ref name (git check-ref-format), so GitHub is asked only about real names. */
+function isRefName(ref: string): boolean {
+  if (ref.includes('..') || ref.includes('@{') || ref === '@') return false
+  return ref
+    .split('/')
+    .every(
+      (part) =>
+        part !== '' &&
+        !part.startsWith('.') &&
+        !part.endsWith('.lock') &&
+        !part.endsWith('.') &&
+        !/[\s~^:?*[\\]/.test(part) &&
+        !CONTROL_OR_FORMAT.test(part),
+    )
 }
 
 /** The ref and folder a link names after its repository, or null for a page that isn't one. */
@@ -102,6 +128,7 @@ async function splitRef(
   const tries = Math.min(refAndPath.length, MAX_REF_TRIES)
   for (let i = 1; i <= tries; i++) {
     const ref = refAndPath.slice(0, i).join('/')
+    if (!isRefName(ref)) continue
     const sha = await github.resolveCommit(repoUrl, ref)
     if (sha !== null) return { ref, path: refAndPath.slice(i).join('/'), sha }
   }
@@ -123,12 +150,12 @@ export async function resolveModLink(
   const named = link.refAndPath.length === 0 ? [repo.defaultBranch] : link.refAndPath
   const { ref, path, sha } = await splitRef(github, repoUrl, named)
   if (!COMMIT_SHA.test(sha)) {
-    throw new Error(`GitHub answered ${ref} with "${sha}", not a full commit hash`)
+    throw new Error(`GitHub answered ${ref} with something other than a full commit hash`)
   }
   if (!pluginPathSchema.safeParse(path).success) {
     throw refuse('The plugin’s folder must be named with letters, digits, ".", "_" and "-" only.')
   }
-  if (!(await github.commitIsOnDefaultBranch(repoUrl, sha))) {
+  if (!(await github.commitIsOnDefaultBranch(repoUrl, sha, repo.defaultBranch))) {
     throw refuse(
       `Commit ${sha.slice(0, 7)} isn’t on the repository’s default branch (${repo.defaultBranch}). Link to a commit on it.`,
     )
