@@ -21,22 +21,24 @@ const inputStepSchema = z.strictObject({
 /** Also parses the steps the import stored, since mod_versions.input_steps is untyped jsonb. */
 export const inputStepsSchema = z.array(inputStepSchema)
 
+/** The folder holding `.claude-plugin/plugin.json`; '' for the repository root. */
+export const pluginPathSchema = z
+  .string()
+  .refine(
+    (path) => segments(path).every((s) => PATH_SEGMENT.test(s) && s !== '.' && s !== '..'),
+    'must be "" or "/"-separated names of letters, digits, ".", "_" and "-", without "." or ".."',
+  )
+  .refine(
+    (path) => !segments(path).some((s) => s.startsWith('-')),
+    'must not have a segment starting with "-"',
+  )
+
 const entrySchema = z.strictObject({
   repoUrl: z
     .string()
     .regex(REPO_URL, 'must be an https://github.com/<owner>/<repo> URL')
     .refine((url) => !/(\.git|\/\.{1,2})$/i.test(url), 'must not end in .git, "." or ".."'),
-  /** The folder holding `.claude-plugin/plugin.json`; '' for the repository root. */
-  path: z
-    .string()
-    .refine(
-      (path) => segments(path).every((s) => PATH_SEGMENT.test(s) && s !== '.' && s !== '..'),
-      'must be "" or "/"-separated names of letters, digits, ".", "_" and "-", without "." or ".."',
-    )
-    .refine(
-      (path) => !segments(path).some((s) => s.startsWith('-')),
-      'must not have a segment starting with "-"',
-    ),
+  path: pluginPathSchema,
   commitSha: z.string().regex(COMMIT_SHA, 'must be a full 40-character lowercase hex commit SHA'),
   pluginName: z
     .string()

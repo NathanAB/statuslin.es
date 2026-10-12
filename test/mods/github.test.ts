@@ -318,3 +318,70 @@ describe('GITHUB_TOKEN', () => {
     expect(calls.map((call) => call.authorization)).toEqual([null, null])
   })
 })
+describe('findRepo', () => {
+  it('reads the repository like repoInfo', async () => {
+    const { fetchFn } = fakeFetch({
+      [api('')]: {
+        status: 200,
+        body: { full_name: 'octocat/meter', default_branch: 'main', license: null },
+      },
+    })
+
+    expect(await createGitHub(fetchFn).findRepo(REPO)).toEqual({
+      fullName: 'octocat/meter',
+      license: null,
+      defaultBranch: 'main',
+    })
+  })
+
+  it('answers null for a repository GitHub does not serve', async () => {
+    const { fetchFn } = fakeFetch({})
+
+    expect(await createGitHub(fetchFn).findRepo(REPO)).toBeNull()
+  })
+})
+
+describe('resolveCommit', () => {
+  it('resolves a branch to its full commit hash, keeping a "/" in the name', async () => {
+    const { fetchFn } = fakeFetch({
+      [api('/commits/feature/x')]: { status: 200, body: { sha: SHA } },
+    })
+
+    expect(await createGitHub(fetchFn).resolveCommit(REPO, 'feature/x')).toBe(SHA)
+  })
+
+  it('encodes each part of the ref, so a # cannot cut the request short', async () => {
+    const { fetchFn, requested } = fakeFetch({})
+
+    await createGitHub(fetchFn).resolveCommit(REPO, 'release#1')
+
+    expect(requested).toEqual([api('/commits/release%231')])
+  })
+
+  it.each([404, 422])('answers null when GitHub has no such ref (%i)', async (status) => {
+    const { fetchFn } = fakeFetch({ [api('/commits/nope')]: { status } })
+
+    expect(await createGitHub(fetchFn).resolveCommit(REPO, 'nope')).toBeNull()
+  })
+})
+
+describe('pluginManifestExists', () => {
+  it.each([
+    [
+      'a folder',
+      'plugins/meter',
+      api(`/contents/plugins/meter/.claude-plugin/plugin.json?ref=${SHA}`),
+    ],
+    ['the root', '', api(`/contents/.claude-plugin/plugin.json?ref=${SHA}`)],
+  ])('looks for .claude-plugin/plugin.json in %s at the commit', async (_name, path, url) => {
+    const { fetchFn } = fakeFetch({ [url]: { status: 200, body: { type: 'file' } } })
+
+    expect(await createGitHub(fetchFn).pluginManifestExists(REPO, path, SHA)).toBe(true)
+  })
+
+  it('answers false when the folder has none', async () => {
+    const { fetchFn } = fakeFetch({})
+
+    expect(await createGitHub(fetchFn).pluginManifestExists(REPO, 'docs', SHA)).toBe(false)
+  })
+})

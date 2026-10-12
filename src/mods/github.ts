@@ -1,6 +1,7 @@
 const GITHUB_API = 'https://api.github.com'
 const GITHUB_ARCHIVES = 'https://codeload.github.com'
 const REQUEST_TIMEOUT_MS = 10_000
+const PLUGIN_MANIFEST = '.claude-plugin/plugin.json'
 
 /** Caps on a mod repository's download; every mod the #38 spike rendered fits well inside both. */
 export const TARBALL_MAX_BYTES = 20 * 1024 * 1024
@@ -16,6 +17,12 @@ export interface RepoInfo {
 
 export interface GitHubSource {
   repoInfo(repoUrl: string): Promise<RepoInfo>
+  /** Null when GitHub serves no such repository, as for a private one. */
+  findRepo(repoUrl: string): Promise<RepoInfo | null>
+  /** The full hash a branch, tag or commit names, or null when the repository has no such ref. */
+  resolveCommit(repoUrl: string, ref: string): Promise<string | null>
+  /** Whether `path` holds `.claude-plugin/plugin.json` at `sha`; '' is the repository root. */
+  pluginManifestExists(repoUrl: string, path: string, sha: string): Promise<boolean>
   /**
    * The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. Downloaded
    * once per repository and commit for the life of this source; a failed download stays failed.
@@ -47,6 +54,9 @@ export const README_MAX_CHARS = 20_000
 export const README_MAX_BYTES = 4 * README_MAX_CHARS
 
 const repoApiUrl = (repoUrl: string) => `${GITHUB_API}/repos/${repoPath(repoUrl)}`
+
+/** Encodes each part of a "/"-separated ref or path, keeping the "/" GitHub reads between them. */
+const encodeParts = (value: string) => value.split('/').map(encodeURIComponent).join('/')
 
 /** The first `maxBytes` of the body (or all of it), cancelling the rest unread. */
 async function readUpTo(
@@ -111,13 +121,14 @@ export function createGitHub(
     return res.json()
   }
 
-  async function repoInfo(repoUrl: string): Promise<RepoInfo> {
+  async function findRepo(repoUrl: string): Promise<RepoInfo | null> {
     // biome-ignore-start lint/style/useNamingConvention: GitHub API response fields.
-    const repo = (await request(repoApiUrl(repoUrl))) as {
+    const repo = (await request(repoApiUrl(repoUrl), [404])) as {
       full_name: string
       default_branch: string
       license: { spdx_id: string | null } | null
-    }
+    } | null
+    if (!repo) return null
     const spdx = repo.license?.spdx_id
     return {
       fullName: repo.full_name,
@@ -125,6 +136,12 @@ export function createGitHub(
       defaultBranch: repo.default_branch,
     }
     // biome-ignore-end lint/style/useNamingConvention: GitHub API response fields.
+  }
+
+  async function repoInfo(repoUrl: string): Promise<RepoInfo> {
+    const repo = await findRepo(repoUrl)
+    if (!repo) throw new Error(`GitHub 404 for ${repoApiUrl(repoUrl)}`)
+    return repo
   }
 
   async function download(repoUrl: string, sha: string): Promise<Uint8Array> {
@@ -144,6 +161,18 @@ export function createGitHub(
 
   return {
     repoInfo,
+    findRepo,
+
+    async resolveCommit(repoUrl, ref) {
+      const url = `${repoApiUrl(repoUrl)}/commits/${encodeParts(ref)}`
+      const commit = (await request(url, [404, 422])) as { sha: string } | null
+      return commit?.sha ?? null
+    },
+
+    async pluginManifestExists(repoUrl, path, sha) {
+      const file = encodeParts(path === '' ? PLUGIN_MANIFEST : `${path}/${PLUGIN_MANIFEST}`)
+      return (await request(`${repoApiUrl(repoUrl)}/contents/${file}?ref=${sha}`, [404])) !== null
+    },
 
     async commitIsOnDefaultBranch(repoUrl, sha) {
       const { defaultBranch } = await repoInfo(repoUrl)
