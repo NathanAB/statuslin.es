@@ -10,6 +10,7 @@ import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import type { DesktopRecorder } from '@/render/mods/desktop/types'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModRecorder, Recording, RecordRequest } from '@/render/mods/recorder'
+import { insertPendingSubmission } from '@/submissions/record'
 import { renderMods } from '../../../scripts/render-mods'
 import {
   addMod,
@@ -338,6 +339,33 @@ describe('renderMods', () => {
 
     expect(modRequests(recorder.requests).map((r) => r.mod?.pluginName)).toEqual(['skins'])
     expect(await storedPreviews(otherId)).toEqual([])
+  })
+
+  it('skips a submitted version that was rejected or replaced, and renders a pending one', async () => {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    const rejected = await seedMod('skins')
+    const pending = await seedMod('token-weather')
+    for (const [versionId, status] of [
+      [rejected, 'rejected'],
+      [pending, 'pending'],
+    ] as const) {
+      await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'ada' })
+      await db
+        .update(schema.submissions)
+        .set({ status })
+        .where(eq(schema.submissions.id, versionId))
+    }
+    const recorder = new FakeModRecorder({
+      baseline,
+      mods: { skins, 'token-weather': tokenWeather },
+    })
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    expect(modRequests(recorder.requests).map((r) => r.mod?.pluginName)).toEqual(['token-weather'])
   })
 
   it('skips a removed mod', async () => {

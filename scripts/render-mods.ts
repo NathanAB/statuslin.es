@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util'
-import { and, eq, gt, ne, notExists, or, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, ne, notExists, or, sql } from 'drizzle-orm'
 import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -27,7 +27,8 @@ import type { AnsiSegment } from '@/render/types'
  * Render the current version of each mod that is not removed against the `clean-main` scenario and
  * store its preview on both surfaces, the terminal and Claude Desktop, plus the mod's newest version
  * when that is not the current one, so a re-pinned version (import:mods) has previews before
- * publish-mod.ts makes it current.
+ * publish-mod.ts makes it current. A submitted version whose submission was rejected or replaced is
+ * skipped: it will never go live.
  *
  * Terminal: every mod is recorded in its own offline E2B sandbox and cropped against one baseline
  * recording (the same session with no mod), shared across the run while the Claude Code version
@@ -104,6 +105,18 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       and(
         ne(schema.mods.status, 'removed'),
         slug === undefined ? undefined : eq(schema.mods.slug, slug),
+        // A submitted version that was rejected or replaced will never be approved.
+        notExists(
+          db
+            .select({ id: schema.submissions.id })
+            .from(schema.submissions)
+            .where(
+              and(
+                eq(schema.submissions.modVersionId, schema.modVersions.id),
+                inArray(schema.submissions.status, ['rejected', 'superseded']),
+              ),
+            ),
+        ),
         or(
           eq(schema.modVersions.id, schema.mods.currentVersionId),
           notExists(
