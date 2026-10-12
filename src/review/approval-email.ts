@@ -12,7 +12,10 @@ export interface ApprovalEmailInput {
   authorEmail: string
   /** The newly live version's title. */
   title: string
-  slug: string
+  /** What was reviewed, as the email names it: 'status line' or 'mod'. */
+  noun: string
+  /** The page the version is live on. */
+  pagePath: string
   kind: ReviewedChange
 }
 
@@ -20,15 +23,15 @@ export type SendApprovalEmail = (input: ApprovalEmailInput) => Promise<{ id: str
 
 const APPROVAL_WORDING: Record<
   ReviewedChange,
-  { subject: string; headline: (t: string) => string }
+  { subject: string; headline: (noun: string, title: string) => string }
 > = {
   submission: {
     subject: 'Your statuslin.es submission was approved',
-    headline: (title) => `Your status line submission “${title}” was approved.`,
+    headline: (noun, title) => `Your ${noun} submission “${title}” was approved.`,
   },
   update: {
     subject: 'Your statuslin.es update is live',
-    headline: (title) => `Your update to “${title}” is live.`,
+    headline: (_noun, title) => `Your update to “${title}” is live.`,
   },
 }
 
@@ -37,9 +40,9 @@ function approvalEmailText(input: ApprovalEmailInput): string {
   return [
     `Hi ${input.authorName},`,
     '',
-    APPROVAL_WORDING[input.kind].headline(input.title),
+    APPROVAL_WORDING[input.kind].headline(input.noun, input.title),
     '',
-    `View it on statuslin.es: ${origin}/c/${encodeURIComponent(input.slug)}`,
+    `View it on statuslin.es: ${origin}${input.pagePath}`,
     `View your submissions: ${origin}/me`,
     '',
     `Questions? Reply to this email or contact ${CONTACT_EMAIL}.`,

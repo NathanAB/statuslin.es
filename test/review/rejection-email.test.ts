@@ -22,7 +22,8 @@ describe('sendRejectionEmail', () => {
         authorEmail: 'ada@example.com',
         title: 'Ada status line',
         reason: 'Remove the network updater.',
-        slug: 'ada-status-line',
+        noun: 'status line',
+        nextStepPath: '/submit?resubmit=ada-status-line',
         kind: 'submission',
       },
       send,
@@ -64,7 +65,8 @@ describe('sendRejectionEmail', () => {
           authorEmail: 'ada@example.com',
           title: 'Ada status line',
           reason: 'Remove the updater.',
-          slug: 'ada-status-line',
+          noun: 'status line',
+          nextStepPath: '/submit?resubmit=ada-status-line',
           kind: 'submission',
         },
         send,
@@ -85,7 +87,8 @@ describe('sendRejectionEmail', () => {
         authorEmail: 'ada@example.com',
         title: 'Ada status line',
         reason: 'Breaks on macOS.',
-        slug: 'ada-status-line',
+        noun: 'status line',
+        nextStepPath: '/submit?update=ada-status-line',
         kind: 'update',
       },
       send,
@@ -115,6 +118,30 @@ describe('sendRejectionEmail', () => {
         '',
         'Questions? Reply to this email or contact hello@statuslin.es.',
       ].join('\n'),
+    )
+  })
+
+  it('names a mod in a rejected submission', async () => {
+    const send = vi.fn().mockResolvedValue({ data: { id: 'email_mod' }, error: null })
+
+    await sendRejectionEmail(
+      {
+        versionId: 'version-4',
+        authorName: 'Ada',
+        authorEmail: 'ada@example.com',
+        title: 'Pixel cat',
+        reason: 'Draws over the prompt.',
+        noun: 'mod',
+        nextStepPath: '/submit?resubmit-mod=pixel-cat',
+        kind: 'submission',
+      },
+      send,
+    )
+
+    const message = send.mock.calls[0]?.[0].text
+    expect(message).toContain('Your mod submission “Pixel cat” was not accepted.')
+    expect(message).toContain(
+      'Fix and resubmit: https://statuslin.es/submit?resubmit-mod=pixel-cat',
     )
   })
 })

@@ -1,14 +1,15 @@
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, submissions, user } from '@/db/schema'
+import { submissions, user } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { updateReviewState } from '@/submissions/review-state'
+import { reviewKind } from './kinds/kind'
 import {
   type RejectionEmailInput,
   type SendRejectionEmail,
   sendRejectionEmail,
 } from './rejection-email'
-import { ReviewEmailProviderError, type ReviewedChange } from './review-email'
+import { ReviewEmailProviderError } from './review-email'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -54,32 +55,6 @@ export async function rejectVersion(
   if (!row) throw new HttpError(409, 'version not in a reviewable (pending) state')
 }
 
-/** What a still-current rejection is about, with the title its email names: the rejected
- * version's own for a never-published config, the live version's for an update. Null when a
- * newer version exists or the config left the state the rejection applies to. */
-async function currentRejection(
-  database: Db,
-  row: { configId: string; configStatus: string; currentVersionId: string | null; title: string },
-  versionId: string,
-): Promise<{ kind: ReviewedChange; title: string } | null> {
-  const [latest] = await database
-    .select({ id: configVersions.id })
-    .from(configVersions)
-    .where(eq(configVersions.configId, row.configId))
-    .orderBy(desc(configVersions.versionNumber))
-    .limit(1)
-  if (latest?.id !== versionId) return null
-  if (row.configStatus === 'draft' && row.currentVersionId === null) {
-    return { kind: 'submission', title: row.title }
-  }
-  if (row.configStatus !== 'published' || row.currentVersionId === null) return null
-  const [live] = await database
-    .select({ title: configVersions.title })
-    .from(configVersions)
-    .where(eq(configVersions.id, row.currentVersionId))
-  return live ? { kind: 'update', title: live.title } : null
-}
-
 function assertRetryableRejectionEmailStatus(status: string | null): void {
   if (UNSENT_REJECTION_EMAIL_STATUSES.some((candidate) => candidate === status)) return
   if (status === 'sent') throw new HttpError(409, 'rejection email already sent')
@@ -93,27 +68,21 @@ async function deliverRejectionEmail(
 ): Promise<RejectionEmailStatus> {
   const [row] = await database
     .select({
-      configId: configs.id,
-      configStatus: configs.status,
-      currentVersionId: configs.currentVersionId,
+      kind: submissions.kind,
       versionStatus: submissions.status,
       emailStatus: submissions.rejectionEmailStatus,
       reason: submissions.rejectionReason,
       authorName: user.name,
       authorEmail: user.email,
       emailVerified: user.emailVerified,
-      title: configVersions.title,
-      slug: configs.slug,
     })
-    .from(configVersions)
-    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
-    .innerJoin(configs, eq(configs.id, configVersions.configId))
-    .innerJoin(user, eq(user.id, configs.authorId))
-    .where(eq(configVersions.id, versionId))
+    .from(submissions)
+    .innerJoin(user, eq(user.id, submissions.submittedBy))
+    .where(eq(submissions.id, versionId))
   if (row?.versionStatus !== 'rejected' || !row.reason) {
     throw new HttpError(409, 'version is not an email-ready rejection')
   }
-  const rejection = await currentRejection(database, row, versionId)
+  const rejection = await reviewKind(row.kind).rejectionContext(database, versionId)
   if (!rejection) {
     throw new HttpError(409, 'rejection email was superseded by a newer submission state')
   }
@@ -150,8 +119,9 @@ async function deliverRejectionEmail(
     authorEmail: row.authorEmail,
     title: rejection.title,
     reason: row.reason,
-    slug: row.slug,
-    kind: rejection.kind,
+    noun: rejection.noun,
+    nextStepPath: rejection.nextStepPath,
+    kind: rejection.change,
   }
   try {
     const result = await send(input)

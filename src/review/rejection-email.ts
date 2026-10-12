@@ -13,7 +13,10 @@ export interface RejectionEmailInput {
   /** The rejected version's title for a submission; the live version's title for an update. */
   title: string
   reason: string
-  slug: string
+  /** What was reviewed, as the email names it: 'status line' or 'mod'. */
+  noun: string
+  /** Where the submitter fixes a rejected submission, or sends a new update. */
+  nextStepPath: string
   kind: ReviewedChange
 }
 
@@ -23,23 +26,24 @@ const REJECTION_WORDING: Record<
   ReviewedChange,
   {
     subject: string
-    headline: (title: string) => string
+    headline: (noun: string, title: string) => string
     /** Lines between the reason and the links, if any. */
     note: string[]
-    nextStep: (origin: string, slug: string) => string
+    /** Labels the link to `nextStepPath`. */
+    nextStep: string
   }
 > = {
   submission: {
     subject: 'Your statuslin.es submission was not accepted',
-    headline: (title) => `Your status line submission “${title}” was not accepted.`,
+    headline: (noun, title) => `Your ${noun} submission “${title}” was not accepted.`,
     note: [],
-    nextStep: (origin, slug) => `Fix and resubmit: ${origin}/submit?resubmit=${slug}`,
+    nextStep: 'Fix and resubmit',
   },
   update: {
     subject: 'Your statuslin.es update was not accepted',
-    headline: (title) => `Your update to “${title}” was not accepted.`,
+    headline: (_noun, title) => `Your update to “${title}” was not accepted.`,
     note: ['Your live version is unaffected and stays in the gallery.', ''],
-    nextStep: (origin, slug) => `Submit a new update: ${origin}/submit?update=${slug}`,
+    nextStep: 'Submit a new update',
   },
 }
 
@@ -49,14 +53,14 @@ function rejectionEmailText(input: RejectionEmailInput): string {
   return [
     `Hi ${input.authorName},`,
     '',
-    wording.headline(input.title),
+    wording.headline(input.noun, input.title),
     '',
     'Reviewer reason:',
     input.reason,
     '',
     ...wording.note,
     `View your submissions: ${origin}/me`,
-    wording.nextStep(origin, encodeURIComponent(input.slug)),
+    `${wording.nextStep}: ${origin}${input.nextStepPath}`,
     '',
     `Questions? Reply to this email or contact ${CONTACT_EMAIL}.`,
   ].join('\n')

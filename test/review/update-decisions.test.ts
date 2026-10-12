@@ -247,7 +247,11 @@ describe('approving an update', () => {
       delivery: 'sent',
     })
     expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'update', title: update.title, slug: v1.slug }),
+      expect.objectContaining({
+        kind: 'update',
+        title: update.title,
+        pagePath: `/c/${v1.slug}`,
+      }),
     )
   })
 
@@ -279,7 +283,7 @@ describe('rejecting an update', () => {
         kind: 'update',
         title: live.title,
         reason: 'Breaks on macOS',
-        slug: v1.slug,
+        nextStepPath: `/submit?update=${v1.slug}`,
       }),
     )
     expect(await getConfigBySlug(db, v1.slug)).toMatchObject({
