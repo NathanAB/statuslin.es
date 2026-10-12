@@ -6,11 +6,14 @@ import { coerceGalleryFilter } from '@/gallery/gallery-items'
 import { modJsonLd } from '@/lib/breadcrumb-json-ld'
 import { jsonLdScript } from '@/lib/json-ld'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
+import { MOD_INSTALL_MIN_VERSION, modInstallPrompt } from '@/mods/install'
 import type { ModDetail } from '@/mods/queries'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 const recordModCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/functions', () => ({ recordModCopyFn, getModDetailFn: vi.fn() }))
+const toast = vi.hoisted(() => vi.fn())
+vi.mock('sonner', () => ({ toast }))
 vi.mock('@posthog/react', () => ({
   usePostHog: () => ({ get_distinct_id: () => 'did-test', get_session_id: () => 'sid-test' }),
 }))
@@ -37,6 +40,7 @@ vi.mock('@tanstack/react-router', async () => {
 const { Route: ModRoute } = await import('@/routes/mods.$slug')
 
 const ORIGIN = 'https://site.example.test'
+const PROMPT_BUTTON = 'Copy install prompt — File Tree'
 const SHA = '0123456789abcdef0123456789abcdef01234567'
 
 const MOD: ModDetail = {
@@ -57,6 +61,8 @@ const MOD: ModDetail = {
   preview: [{ text: 'src/\n  app.ts' }],
   desktop: null,
   generatedContent: null,
+  copyCount: 0,
+  tags: [],
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {
@@ -159,12 +165,11 @@ describe('mod page', () => {
 
     const order = [
       screen.getByRole('heading', { level: 1, name: 'File Tree' }),
-      screen.getByRole('heading', { level: 2, name: 'Install' }),
+      screen.getByRole('button', { name: PROMPT_BUTTON }),
       screen.getByRole('heading', { level: 2, name: 'Preview' }),
       screen.getByRole('heading', { level: 2, name: 'What it does' }),
     ]
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
-      'Install',
       'Preview',
       'What it does',
     ])
@@ -267,79 +272,61 @@ describe('mod page', () => {
     expect(section('Preview').getByText('No preview available.')).toBeTruthy()
   })
 
-  it('shows both install commands against the site origin', () => {
-    renderPage()
+  it('shows the mod’s tag chips in the header, like a status line page', () => {
+    renderPage({ tags: ['cost'] })
 
+    const title = screen.getByRole('heading', { level: 1, name: 'File Tree' })
+    const chip = screen.getByRole('link', { name: 'Cost' })
+    expect(title.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(
-      screen.getByText(`/plugin install filetree --marketplace ${ORIGIN}/marketplace.json`),
-    ).toBeTruthy()
-    expect(
-      screen.getByText(`claude plugin install filetree --marketplace ${ORIGIN}/marketplace.json`),
+      chip.compareDocumentPosition(screen.getByRole('button', { name: PROMPT_BUTTON })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
   })
 
-  it('installs by the mod slug, the marketplace entry name, not the plugin name', () => {
+  it('installs by the mod slug, the marketplace entry name, not the plugin name', async () => {
     renderPage({ slug: 'filetree-ada', pluginName: 'filetree' })
 
-    expect(
-      screen.getByText(`/plugin install filetree-ada --marketplace ${ORIGIN}/marketplace.json`),
-    ).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: PROMPT_BUTTON }))
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    expect(writeText.mock.calls[0]?.[0]).toBe(modInstallPrompt(ORIGIN, 'filetree-ada'))
+    expect(writeText.mock.calls[0]?.[0]).toContain('plugin install filetree-ada@statuslines')
   })
 
-  it.each([
-    ['In Claude Code', 'session', '/plugin install'],
-    ['From a shell', 'shell', 'claude plugin install'],
-  ] as const)('copying the "%s" command copies it and records the copy', async (label, kind, prefix) => {
+  it('copies the install prompt from one primary button, like a status line page', async () => {
     renderPage()
 
-    fireEvent.click(screen.getByRole('button', { name: `Copy command: ${label}` }))
+    const button = screen.getByRole('button', { name: PROMPT_BUTTON })
+    expect(button.dataset.variant).toBe('default')
+    expect(button.textContent).toBe('Copy install prompt')
+    fireEvent.click(button)
 
     await waitFor(() => expect(recordModCopyFn).toHaveBeenCalledTimes(1))
-    expect(writeText.mock.calls[0]?.[0]).toMatch(new RegExp(`^${prefix} filetree `))
+    expect(writeText).toHaveBeenCalledWith(modInstallPrompt(ORIGIN, 'filetree'))
     expect(recordModCopyFn).toHaveBeenCalledWith({
-      data: { modId: MOD.id, kind, distinctId: 'did-test', sessionId: 'sid-test' },
+      data: { modId: MOD.id, kind: 'prompt', distinctId: 'did-test', sessionId: 'sid-test' },
     })
-    expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy()
+    expect(toast).toHaveBeenCalledWith('Prompt copied', {
+      description: `Paste it into Claude Code ${MOD_INSTALL_MIN_VERSION} or later to install this mod.`,
+    })
   })
 
-  it.each([
-    'In Claude Code',
-    'From a shell',
-  ])('makes the "%s" copy button the primary call to action', (label) => {
-    renderPage()
+  it('shows the copy count beside the button and counts a copy, like a status line page', async () => {
+    recordModCopyFn.mockResolvedValue(4)
+    renderPage({ copyCount: 3 })
 
-    const button = screen.getByRole('button', { name: `Copy command: ${label}` })
-    expect(button.dataset.variant).toBe('default')
+    expect(screen.getByText('3 copies')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: PROMPT_BUTTON }))
+
+    expect(await screen.findByText('4 copies')).toBeTruthy()
   })
 
-  it('keeps install compact: one labelled line per command, outside any card', () => {
+  it('shows only the button and its count: no install heading or app links', () => {
     renderPage()
 
-    const heading = screen.getByRole('heading', { level: 2, name: 'Install' })
-    expect(heading.closest('[data-slot="card"]')).toBeNull()
-    for (const [label, prefix] of [
-      ['In Claude Code', '/plugin install'],
-      ['From a shell', 'claude plugin install'],
-    ] as const) {
-      const row = screen.getByText(label).closest('[data-slot="command-row"]')
-      expect(row?.textContent).toContain(`${prefix} filetree --marketplace`)
-      expect(
-        within(row as HTMLElement).getByRole('button', { name: `Copy command: ${label}` }),
-      ).toBeTruthy()
-    }
-  })
-
-  it('names one minimum Claude Code version, the highest either command needs', () => {
-    renderPage()
-
-    expect(screen.getByText('Needs Claude Code 2.1.292 or later.')).toBeTruthy()
-  })
-
-  it('labels the install section with a visible heading', () => {
-    renderPage()
-
-    const heading = screen.getByRole('heading', { level: 2, name: 'Install' })
-    expect(heading.className).not.toContain('sr-only')
+    expect(screen.queryByRole('heading', { name: 'Install' })).toBeNull()
+    expect(document.querySelector('a[href^="claude"]')).toBeNull()
   })
 
   it('states the footprint’s facts as tiles in What it does', () => {

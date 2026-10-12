@@ -9,6 +9,7 @@ import {
   parseModContentGenerationResponses,
   prepareModContentGenerationRequest,
 } from '@/mods/content-generation'
+import { MOD_INSTALL_MIN_VERSION } from '@/mods/install'
 import {
   addDesktopPreview,
   addMod,
@@ -156,7 +157,7 @@ describe('prepareModContentGenerationRequest', () => {
     const { contentPrompt } = await prepareModContentGenerationRequest(db, 'versioned', readme)
 
     expect(contentPrompt).toContain(
-      'The page already says it needs Claude Code 2.1.292 or later; mention a minimum version only if the mod needs a higher one.',
+      `The page already says it needs Claude Code ${MOD_INSTALL_MIN_VERSION} or later; mention a minimum version only if the mod needs a higher one.`,
     )
   })
 

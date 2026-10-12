@@ -155,6 +155,9 @@ export interface ModDetail {
   desktop: DesktopPreview | null
   /** Null when no page copy in the current format has been generated for this version. */
   generatedContent: ModPageCopy | null
+  copyCount: number
+  /** Every tag the gallery card shows, for the header chips. */
+  tags: string[]
 }
 
 /** A published mod by slug with its own current version, or null (draft, removed, unknown). */
@@ -175,6 +178,8 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       preview: modPreviews.segments,
       desktop: desktopPreviewColumns,
       generatedContent: modVersions.generatedContent,
+      copyCount: mods.copyCount,
+      tags: mods.allTags,
     })
     .from(mods)
     .innerJoin(

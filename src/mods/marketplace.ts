@@ -2,6 +2,9 @@ import { PERSONLESS } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
 import { CONTACT_EMAIL, modPath } from '@/lib/site'
 
+/** The name Claude Code registers the marketplace under, so a mod installs as `<plugin>@statuslines`. */
+export const MARKETPLACE_NAME = 'statuslines'
+
 export interface MarketplaceModRow {
   slug: string
   description: string
@@ -31,7 +34,7 @@ export interface MarketplacePlugin {
 
 /** The `marketplace.json` document, per https://code.claude.com/docs/en/plugins/marketplace-reference. */
 export interface Marketplace {
-  name: 'statuslines'
+  name: typeof MARKETPLACE_NAME
   description: string
   owner: { name: string; email: string }
   forceRemoveDeletedPlugins: true
@@ -59,7 +62,7 @@ function marketplacePlugin(origin: string, row: MarketplaceModRow): MarketplaceP
 
 export function buildMarketplace(origin: string, rows: MarketplaceModRow[]): Marketplace {
   return {
-    name: 'statuslines',
+    name: MARKETPLACE_NAME,
     description: 'Claude Code mods from the statuslin.es gallery, each pinned to a commit.',
     owner: { name: 'statuslin.es', email: CONTACT_EMAIL },
     forceRemoveDeletedPlugins: true,

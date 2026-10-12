@@ -7,8 +7,8 @@ import { jsonLdScript } from '@/lib/json-ld'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import { modPath, siteUrl } from '@/lib/site'
 import { getModDetailFn } from '@/mods/functions'
-import { installCommands } from '@/mods/install'
-import { InstallCommands } from '@/mods/install-commands'
+import { modInstallPrompt } from '@/mods/install'
+import { ModInstallPrompt } from '@/mods/install-prompt'
 import { modFactTiles } from '@/mods/mod-fact-tiles'
 import { ModHeader } from '@/mods/mod-header'
 import { ModPreview } from '@/mods/mod-preview'
@@ -47,14 +47,18 @@ export const Route = createFileRoute('/mods/$slug')({
 
 function ModPage() {
   const { mod, user, origin } = Route.useLoaderData()
-  const recordCopy = useRecordModCopy(mod.id)
+  const copyController = useRecordModCopy(mod.id, mod.copyCount)
 
   return (
     <PageShell user={user}>
       <DetailPageLayout
         header={<ModHeader mod={mod} />}
         install={
-          <InstallCommands commands={installCommands(origin, mod.slug)} onCopied={recordCopy} />
+          <ModInstallPrompt
+            prompt={modInstallPrompt(origin, mod.slug)}
+            title={mod.title}
+            controller={copyController}
+          />
         }
         preview={<ModPreview mod={mod} />}
         whatItDoes={{ copy: mod.generatedContent, tiles: modFactTiles(mod) }}

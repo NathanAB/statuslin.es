@@ -114,7 +114,7 @@ describe('config and mod copies', () => {
     fromClientIp('198.51.100.4')
 
     await recordCopyFn({ data: { configId: CONFIG_ID, kind: 'script' } })
-    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'shell' } })
+    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'prompt' } })
 
     const hash = expectedHash('198.51.100.4')
     expect(recordCopy).toHaveBeenCalledWith({ name: 'database' }, CONFIG_ID, hash)
@@ -127,7 +127,7 @@ describe('config and mod copies', () => {
     const browser = { distinctId: 'did', sessionId: 'sid' }
 
     await recordCopyFn({ data: { configId: CONFIG_ID, kind: 'script', ...browser } })
-    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'shell', ...browser } })
+    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'prompt', ...browser } })
 
     for (const [event] of capture.mock.calls) {
       expect(event.distinctId).toBe('did')
@@ -140,7 +140,7 @@ describe('config and mod copies', () => {
     fromClientIp('198.51.100.4')
 
     await recordCopyFn({ data: { configId: CONFIG_ID, kind: 'script', distinctId: 'anon' } })
-    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'shell', distinctId: 'anon' } })
+    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'prompt', distinctId: 'anon' } })
 
     expect(capture.mock.calls.map(([event]) => event.properties.$process_person_profile)).toEqual([
       false,
@@ -153,7 +153,7 @@ describe('config and mod copies', () => {
     getSession.mockResolvedValue({ user: { id: 'u1' } })
 
     await recordCopyFn({ data: { configId: CONFIG_ID, kind: 'script', distinctId: 'u1' } })
-    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'shell', distinctId: 'u1' } })
+    await recordModCopyFn({ data: { modId: MOD_ID, kind: 'prompt', distinctId: 'u1' } })
 
     expect(capture).toHaveBeenCalledTimes(2)
     for (const [event] of capture.mock.calls) {

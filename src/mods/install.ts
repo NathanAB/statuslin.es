@@ -1,31 +1,35 @@
 import { copierPersonProperties } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
 import { MARKETPLACE_PATH } from '@/lib/site'
+import { MARKETPLACE_NAME } from './marketplace'
 
-export type InstallCommandKind = 'session' | 'shell'
+/** How a visitor installed: today only the copied install prompt. */
+export type InstallCommandKind = 'prompt'
 
-export interface InstallCommand {
-  kind: InstallCommandKind
-  label: string
-  minVersion: string
-  command: string
+/**
+ * The Claude Code version mods need: the floor at which the band, hint line and spinner draw in
+ * both the terminal and Desktop, per https://code.claude.com/docs/en/plugins/mods/reference#render-sites
+ * (docs/research/2026-10-02-claude-code-mods.md). The install commands themselves are older.
+ */
+export const MOD_INSTALL_MIN_VERSION = '2.1.287'
+
+/** The Claude Code a session runs on, falling back to the one on PATH. */
+const SESSION_CLAUDE = `"\${CLAUDE_CODE_EXECPATH:-claude}"`
+
+/**
+ * The prompt a visitor pastes into Claude Code or Claude Desktop to install a mod. `/plugin` can't
+ * do it: Desktop has no `/plugin` command. So Claude adds the marketplace (safe to repeat) and
+ * installs from it in the shell, with the Claude Code it runs on: Desktop puts no `claude` on
+ * PATH, but every session sets `CLAUDE_CODE_EXECPATH`. `entryName` is the mod's marketplace entry
+ * name: its slug.
+ */
+export function modInstallPrompt(origin: string, entryName: string): string {
+  const marketplaceUrl = `${origin}${MARKETPLACE_PATH}`
+  return [
+    `Install the ${entryName} mod from ${new URL(origin).host}. Run this in your shell, then tell me to start a new session to load it:`,
+    `${SESSION_CLAUDE} plugin marketplace add ${marketplaceUrl} && ${SESSION_CLAUDE} plugin install ${entryName}@${MARKETPLACE_NAME}`,
+  ].join('\n')
 }
-
-const MIN_VERSION: Record<InstallCommandKind, string> = { session: '2.1.275', shell: '2.1.292' }
-
-function compareVersions(a: string, b: string): number {
-  const [x, y] = [a, b].map((v) => v.split('.').map(Number))
-  for (let i = 0; i < Math.max(x?.length ?? 0, y?.length ?? 0); i++) {
-    const d = (x?.[i] ?? 0) - (y?.[i] ?? 0)
-    if (d !== 0) return d
-  }
-  return 0
-}
-
-/** The Claude Code version that installing needs: the highest any install command needs. */
-export const MOD_INSTALL_MIN_VERSION = Object.values(MIN_VERSION).reduce((max, v) =>
-  compareVersions(v, max) > 0 ? v : max,
-)
 
 /** The mod's folder on GitHub at its pinned commit. */
 export function modSourceUrl(pin: { repoUrl: string; path: string; commitSha: string }): string {
@@ -33,26 +37,7 @@ export function modSourceUrl(pin: { repoUrl: string; path: string; commitSha: st
   return pin.path === '' ? tree : `${tree}/${pin.path}`
 }
 
-/** `entryName` is the mod's marketplace entry name: its slug. */
-export function installCommands(origin: string, entryName: string): InstallCommand[] {
-  const install = `install ${entryName} --marketplace ${origin}${MARKETPLACE_PATH}`
-  return [
-    {
-      kind: 'session',
-      label: 'In Claude Code',
-      minVersion: MIN_VERSION.session,
-      command: `/plugin ${install}`,
-    },
-    {
-      kind: 'shell',
-      label: 'From a shell',
-      minVersion: MIN_VERSION.shell,
-      command: `claude plugin ${install}`,
-    },
-  ]
-}
-
-const COMMAND_KINDS: Record<InstallCommandKind, true> = { session: true, shell: true }
+const COMMAND_KINDS: Record<InstallCommandKind, true> = { prompt: true }
 
 // Assigned through a variable key so the naming lint accepts PostHog's `$`-prefixed property.
 const SESSION_ID_PROP = '$session_id'

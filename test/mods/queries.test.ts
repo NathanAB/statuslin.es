@@ -233,7 +233,26 @@ describe('getModDetail', () => {
       preview: [{ text: 'meter' }],
       desktop: null,
       generatedContent: null,
+      copyCount: 0,
+      tags: [],
     })
+  })
+
+  it('carries every tag the gallery card shows, for the header chips', async () => {
+    const { modId } = await addMod('tagged', 'published', 'scenario-preview')
+    await db
+      .update(schema.mods)
+      .set({ allTags: ['cost', 'limits'] })
+      .where(eq(schema.mods.id, modId))
+
+    expect((await getModDetail(db, 'tagged'))?.tags).toEqual(['cost', 'limits'])
+  })
+
+  it('carries the mod’s copy count, for the count next to the install button', async () => {
+    const { modId } = await addMod('counted', 'published', 'scenario-preview')
+    await db.update(schema.mods).set({ copyCount: 7 }).where(eq(schema.mods.id, modId))
+
+    expect((await getModDetail(db, 'counted'))?.copyCount).toBe(7)
   })
 
   it('returns a Desktop shot and its card as image paths and CSS sizes, never their bytes', async () => {
