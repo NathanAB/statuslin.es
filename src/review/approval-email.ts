@@ -4,6 +4,7 @@ import {
   type ReviewEmailSend,
   type ReviewedChange,
   sendReviewEmail,
+  siteLink,
 } from './review-email'
 
 export interface ApprovalEmailInput {
@@ -42,14 +43,14 @@ function approvalEmailText(input: ApprovalEmailInput): string {
     '',
     APPROVAL_WORDING[input.kind].headline(input.noun, input.title),
     '',
-    `View it on statuslin.es: ${origin}${input.pagePath}`,
+    `View it on statuslin.es: ${siteLink(origin, input.pagePath)}`,
     `View your submissions: ${origin}/me`,
     '',
     `Questions? Reply to this email or contact ${CONTACT_EMAIL}.`,
   ].join('\n')
 }
 
-export function sendApprovalEmail(
+export async function sendApprovalEmail(
   input: ApprovalEmailInput,
   send?: ReviewEmailSend,
 ): Promise<{ id: string }> {

@@ -27,7 +27,11 @@ export interface RejectionContext extends ReviewedVersion {
   nextStepPath: string
 }
 
-/** Makes an approved version live, inside the transaction that marks it approved. */
+/**
+ * Makes an approved version live, inside the transaction that marks it approved. It runs before
+ * the pending check, so it writes only through `tx` and does nothing outside the database: a
+ * refused approval undoes it by rolling back.
+ */
 export type Publish = (tx: Db, reviewedAt: Date) => Promise<void>
 
 /** What differs between status lines and mods in review; the rest is shared (ADR 0007). */

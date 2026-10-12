@@ -132,4 +132,24 @@ describe('sendApprovalEmail', () => {
     expect(message).toContain('Your mod submission “Pixel cat” was approved.')
     expect(message).toContain('View it on statuslin.es: https://statuslin.es/mods/pixel-cat')
   })
+
+  it('refuses a page path that could change the link host, sending nothing', async () => {
+    const send = vi.fn()
+
+    await expect(
+      sendApprovalEmail(
+        {
+          versionId: 'version-5',
+          authorName: 'Ada',
+          authorEmail: 'ada@example.com',
+          title: 'Pixel cat',
+          noun: 'mod',
+          pagePath: '.attacker.example/mods/pixel-cat',
+          kind: 'submission',
+        },
+        send,
+      ),
+    ).rejects.toThrow(/not a path on this site/)
+    expect(send).not.toHaveBeenCalled()
+  })
 })

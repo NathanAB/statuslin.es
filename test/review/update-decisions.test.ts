@@ -169,6 +169,20 @@ describe('approving an update', () => {
     expect(bashFacet?.configs.items.map(({ item }) => item.card.slug)).not.toContain(v1.slug)
   })
 
+  it('refuses a rendered update that a newer one replaced, leaving the live version live', async () => {
+    const v1 = await publish()
+    const v2 = await submitUpdate(v1.slug)
+    await submitUpdate(v1.slug, { ...update, title: 'Newer line' })
+
+    await expect(approveVersion(db, v2.versionId, 'admin')).rejects.toMatchObject({ status: 409 })
+
+    const [config] = await db
+      .select({ currentVersionId: schema.configs.currentVersionId })
+      .from(schema.configs)
+      .where(eq(schema.configs.id, v1.configId))
+    expect(config?.currentVersionId).toBe(v1.versionId)
+  })
+
   it('keeps the config in place in the new sort', async () => {
     const older = await publish()
     const newer = await publish({ ...live, authorId: 'neighbour', title: 'Newer line' })

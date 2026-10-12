@@ -144,4 +144,25 @@ describe('sendRejectionEmail', () => {
       'Fix and resubmit: https://statuslin.es/submit?resubmit-mod=pixel-cat',
     )
   })
+
+  it('refuses a next-step path that could change the link host, sending nothing', async () => {
+    const send = vi.fn()
+
+    await expect(
+      sendRejectionEmail(
+        {
+          versionId: 'version-5',
+          authorName: 'Ada',
+          authorEmail: 'ada@example.com',
+          title: 'Pixel cat',
+          reason: 'No.',
+          noun: 'mod',
+          nextStepPath: '@attacker.example/submit',
+          kind: 'submission',
+        },
+        send,
+      ),
+    ).rejects.toThrow(/not a path on this site/)
+    expect(send).not.toHaveBeenCalled()
+  })
 })

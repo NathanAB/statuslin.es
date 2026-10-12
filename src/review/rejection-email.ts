@@ -4,6 +4,7 @@ import {
   type ReviewEmailSend,
   type ReviewedChange,
   sendReviewEmail,
+  siteLink,
 } from './review-email'
 
 export interface RejectionEmailInput {
@@ -60,7 +61,7 @@ function rejectionEmailText(input: RejectionEmailInput): string {
     '',
     ...wording.note,
     `View your submissions: ${origin}/me`,
-    `${wording.nextStep}: ${origin}${input.nextStepPath}`,
+    `${wording.nextStep}: ${siteLink(origin, input.nextStepPath)}`,
     '',
     `Questions? Reply to this email or contact ${CONTACT_EMAIL}.`,
   ].join('\n')
