@@ -1,7 +1,8 @@
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import type { SubmissionKind } from '@/db/schema'
-import { HttpError } from '@/lib/http'
+import { createGitHub } from '@/mods/github'
 import type { ReviewedChange } from '../review-email'
+import { type ModReviewGitHub, modReview } from './mod'
 import { statusLineReview } from './status-line'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -47,7 +48,10 @@ export interface ReviewKind {
   rejectionContext(db: Db, versionId: string): Promise<RejectionContext | null>
 }
 
-export function reviewKind(kind: SubmissionKind): ReviewKind {
-  if (kind === 'status_line') return statusLineReview
-  throw new HttpError(409, 'mods cannot be reviewed here yet')
+/** `github` is asked only when approving a mod. */
+export function reviewKind(
+  kind: SubmissionKind,
+  github: ModReviewGitHub = createGitHub(),
+): ReviewKind {
+  return kind === 'status_line' ? statusLineReview : modReview(github)
 }

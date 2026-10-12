@@ -29,8 +29,9 @@ export type ReviewState = Partial<
 type ReviewTable = typeof submissions | typeof configVersions
 
 /**
- * Writes a status line version's review state to its submission and to its old `config_versions`
- * columns, in one transaction, so an image from before the move can still be rolled back to. `where`
+ * Writes the review state of the submissions `where` matches. A status line's also goes to its old
+ * `config_versions` columns, in the same transaction, so an image from before the move can still be
+ * rolled back to; mods never had those columns. `where`
  * is built once per table from columns both share. Both must match the same versions; when they
  * don't, a machine on the old code changed the version during a deploy, so the write is refused
  * rather than applied to stale state. `scripts/reconcile-submissions.ts` copies that change over.
@@ -55,10 +56,11 @@ export async function updateReviewState(
       .update(submissions)
       .set(state)
       .where(whereNew)
-      .returning({ id: submissions.id })
+      .returning({ id: submissions.id, kind: submissions.kind })
     const ids = updated.map((row) => row.id).sort()
+    const statusLineIds = updated.filter((row) => row.kind === 'status_line').map((row) => row.id)
     const oldIds = old.map((row) => row.id).sort()
-    if (ids.join() !== oldIds.join()) {
+    if (statusLineIds.sort().join() !== oldIds.join()) {
       throw new HttpError(
         409,
         'this version changed during a deploy; try again once it has finished',

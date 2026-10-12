@@ -9,6 +9,7 @@ import { getPreviews } from '@/render/store'
 import type { RenderedPreview } from '@/render/types'
 import { assertAdmin } from './admin'
 import { getLiveVersions, type LiveVersion } from './live-version'
+import { getModReviewRows } from './mod-queue'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -218,13 +219,13 @@ export interface DashboardUser {
 export const getAdminDashboard = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(async () => {
     const admin = await assertAdmin(getRequestHeaders())
-    const rows = await getDashboardRows(db)
+    const [rows, mods] = await Promise.all([getDashboardRows(db), getModReviewRows(db)])
     const user: DashboardUser = {
       name: admin.name,
       username: admin.username,
       image: admin.image,
       role: admin.role,
     }
-    return { user, rows }
+    return { user, rows, mods }
   }),
 )

@@ -7,7 +7,7 @@ export function ApprovalDetails({
   version,
   showActions,
 }: {
-  version: DashboardRow['version']
+  version: Pick<DashboardRow['version'], 'id' | 'status' | 'approvalEmailStatus'>
   showActions: boolean
 }) {
   if (version.status !== 'approved' || !showActions) return null

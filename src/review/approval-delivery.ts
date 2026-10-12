@@ -9,6 +9,7 @@ import {
   sendApprovalEmail,
 } from './approval-email'
 import { reviewKind } from './kinds/kind'
+import type { ModReviewGitHub } from './kinds/mod'
 import { ReviewEmailProviderError } from './review-email'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -28,13 +29,14 @@ export async function approveVersion(
   database: Db,
   versionId: string,
   reviewerId: string,
+  github?: ModReviewGitHub,
 ): Promise<void> {
   const [submission] = await database
     .select({ kind: submissions.kind })
     .from(submissions)
     .where(eq(submissions.id, versionId))
   if (!submission) throw new HttpError(409, 'version not in a reviewable (pending) state')
-  const publish = await reviewKind(submission.kind).prepareApproval(database, versionId)
+  const publish = await reviewKind(submission.kind, github).prepareApproval(database, versionId)
   await database.transaction(async (tx) => {
     const reviewedAt = new Date()
     // The kind's locks come before the submission's, so a refused approval rolls the publish back.
@@ -154,8 +156,9 @@ export async function approveAndEmailVersion(
   versionId: string,
   reviewerId: string,
   send: SendApprovalEmail = sendApprovalEmail,
+  github?: ModReviewGitHub,
 ): Promise<{ delivery: ApprovalEmailStatus }> {
-  await approveVersion(database, versionId, reviewerId)
+  await approveVersion(database, versionId, reviewerId, github)
   return { delivery: await deliverApprovalEmail(database, versionId, send) }
 }
 

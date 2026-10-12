@@ -9,7 +9,7 @@ import { STALE_RUNNING_JOB_MS } from '@/render/job-state'
 import {
   approveAndEmailVersion,
   approveVersion,
-  findVersionConfig,
+  findReviewedItem,
   rejectAndEmailVersion,
   rejectVersion,
   requeueRenderJob,
@@ -774,7 +774,7 @@ describe('setReadsClaudeToken', () => {
   })
 })
 
-describe('findVersionConfig', () => {
+describe('findReviewedItem', () => {
   it('returns the id and slug of the config a version belongs to', async () => {
     const versionId = await seedVersionWithJob(db, { status: 'done', networkHosts: [] })
     const [ver] = await db
@@ -782,12 +782,13 @@ describe('findVersionConfig', () => {
       .from(schema.configVersions)
       .innerJoin(schema.configs, eq(schema.configs.id, schema.configVersions.configId))
       .where(eq(schema.configVersions.id, versionId))
-    expect(await findVersionConfig(db, versionId)).toEqual({
+    expect(await findReviewedItem(db, versionId)).toEqual({
+      kind: 'status_line',
       configId: ver?.configId,
       slug: ver?.slug,
     })
   })
   it('returns undefined for an unknown version', async () => {
-    expect(await findVersionConfig(db, '00000000-0000-4000-8000-000000000000')).toBeUndefined()
+    expect(await findReviewedItem(db, '00000000-0000-4000-8000-000000000000')).toBeUndefined()
   })
 })

@@ -3,7 +3,7 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, mods, modVersions, renderJobs, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
@@ -12,7 +12,7 @@ import { triggerRenderDrain } from '@/server/render-drain'
 import { updateReviewState } from '@/submissions/review-state'
 import { assertAdmin } from './admin'
 import { approveAndEmailVersion, retryApprovalEmail } from './approval-delivery'
-import { decisionEvent, type VersionConfig } from './decision-event'
+import { decisionEvent, type ReviewedItem } from './decision-event'
 import { rejectAndEmailVersion, retryRejectionEmail } from './rejection-delivery'
 
 export {
@@ -59,17 +59,29 @@ export async function setReadsClaudeToken(
   })
 }
 
-/** The config a version belongs to, to label its review decision event. */
-export async function findVersionConfig(
+/** The config or mod a version belongs to, to label its review decision event. */
+export async function findReviewedItem(
   database: Db,
   versionId: string,
-): Promise<VersionConfig | undefined> {
+): Promise<ReviewedItem | undefined> {
   const [row] = await database
-    .select({ configId: configVersions.configId, slug: configs.slug })
-    .from(configVersions)
-    .innerJoin(configs, eq(configs.id, configVersions.configId))
-    .where(eq(configVersions.id, versionId))
-  return row
+    .select({
+      configId: configVersions.configId,
+      configSlug: configs.slug,
+      modId: modVersions.modId,
+      modSlug: mods.slug,
+    })
+    .from(submissions)
+    .leftJoin(configVersions, eq(configVersions.id, submissions.configVersionId))
+    .leftJoin(configs, eq(configs.id, configVersions.configId))
+    .leftJoin(modVersions, eq(modVersions.id, submissions.modVersionId))
+    .leftJoin(mods, eq(mods.id, modVersions.modId))
+    .where(eq(submissions.id, versionId))
+  if (row?.configId && row.configSlug) {
+    return { kind: 'status_line', configId: row.configId, slug: row.configSlug }
+  }
+  if (row?.modId && row.modSlug) return { kind: 'mod', modId: row.modId, slug: row.modSlug }
+  return undefined
 }
 
 /** Re-attempt a render. A FAILED job goes back to 'queued'. A job cut off mid-render (running
@@ -120,14 +132,14 @@ export const approveVersionFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
       // Read before deciding, so a failed lookup can't 500 a decision that already committed.
-      const config = await findVersionConfig(db, data.versionId)
+      const reviewed = await findReviewedItem(db, data.versionId)
       const result = await approveAndEmailVersion(db, data.versionId, admin.id)
       getPostHogClient()?.capture(
         decisionEvent({
           adminId: admin.id,
           decision: 'approved',
           versionId: data.versionId,
-          config,
+          reviewed,
         }),
       )
       return result
@@ -139,14 +151,14 @@ export const rejectVersionFn = createServerFn({ method: 'POST' })
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
-      const config = await findVersionConfig(db, data.versionId)
+      const reviewed = await findReviewedItem(db, data.versionId)
       const result = await rejectAndEmailVersion(db, data.versionId, admin.id, data.reason ?? '')
       getPostHogClient()?.capture(
         decisionEvent({
           adminId: admin.id,
           decision: 'rejected',
           versionId: data.versionId,
-          config,
+          reviewed,
         }),
       )
       return result

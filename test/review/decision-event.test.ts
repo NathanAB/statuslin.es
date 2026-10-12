@@ -4,7 +4,7 @@ import { decisionEvent } from '@/review/decision-event'
 const decided = {
   adminId: 'admin-1',
   versionId: 'ver-1',
-  config: { configId: 'cfg-1', slug: 'cool-line' },
+  reviewed: { kind: 'status_line' as const, configId: 'cfg-1', slug: 'cool-line' },
 }
 
 describe('decisionEvent', () => {
@@ -29,7 +29,24 @@ describe('decisionEvent', () => {
   })
 
   it('still carries the version id when its config could not be found', () => {
-    const evt = decisionEvent({ ...decided, decision: 'approved', config: undefined })
+    const evt = decisionEvent({ ...decided, decision: 'approved', reviewed: undefined })
     expect(evt.properties).toEqual({ versionId: 'ver-1' })
+  })
+  it.each([
+    ['approved', 'mod_approved'],
+    ['rejected', 'mod_rejected'],
+  ] as const)('names a mod decision (%s) as %s, carrying the mod', (decision, event) => {
+    const evt = decisionEvent({
+      adminId: 'admin-1',
+      versionId: 'ver-2',
+      decision,
+      reviewed: { kind: 'mod', modId: 'mod-1', slug: 'pixel-cat' },
+    })
+
+    expect(evt).toEqual({
+      distinctId: 'admin-1',
+      event,
+      properties: { versionId: 'ver-2', modId: 'mod-1', slug: 'pixel-cat' },
+    })
   })
 })

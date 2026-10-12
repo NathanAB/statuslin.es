@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { HttpError } from '@/lib/http'
+import { insertPendingSubmission } from '@/submissions/record'
 import { updateReviewState } from '@/submissions/review-state'
 import { insertSubmission } from '../fixtures/submission'
 
@@ -111,5 +112,32 @@ describe('updateReviewState', () => {
 
     await expect(reject(versionId)).rejects.toMatchObject({ status: 409 })
     expect((await reviewState(versionId)).version.status).toBe('pending')
+  })
+
+  it('writes a mod submission alone, since mods never had the old columns', async () => {
+    const [mod] = await db
+      .insert(schema.mods)
+      .values({ slug: 'meter', pluginName: 'meter', title: 'Meter', authorGithub: 'octocat' })
+      .returning()
+    const [version] = await db
+      .insert(schema.modVersions)
+      .values({
+        modId: mod!.id,
+        versionNumber: 1,
+        repoUrl: 'https://github.com/octocat/meter',
+        commitSha: 'a'.repeat(40),
+        footprint: { events: [], calls: [] },
+        validatedWith: '2.1.0',
+      })
+      .returning()
+    await insertPendingSubmission(db, { kind: 'mod', versionId: version!.id, submittedBy: AUTHOR })
+
+    expect(await reject(version!.id)).toEqual([version!.id])
+    const [submission] = await db
+      .select()
+      .from(schema.submissions)
+      .where(eq(schema.submissions.id, version!.id))
+    expect(submission).toMatchObject({ status: 'rejected', rejectionReason: 'no' })
+    await db.delete(schema.mods)
   })
 })
