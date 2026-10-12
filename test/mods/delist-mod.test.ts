@@ -142,8 +142,9 @@ describe('delist --restore', () => {
   })
 })
 
-it('escapes and caps each printed line', async () => {
-  const slug = 'meter\u001b[2K\n'
+// A slug is a plugin id (mods_slug_check), so only the long path is hostile here.
+it('caps each printed line', async () => {
+  const slug = 'meter'
   const modId = await addMod(db, slug, 'removed')
   const path = `plugins/${'p'.repeat(1000)}`
   const versionId = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1, path })
@@ -156,8 +157,7 @@ it('escapes and caps each printed line', async () => {
     log: (line) => lines.push(line),
   })
 
-  expect(lines.join('')).not.toMatch(/\p{Cc}/u)
-  expect(lines.some((line) => line.includes('meter\\u001b[2K\\u000a'))).toBe(true)
+  expect(lines.some((line) => line.includes('restoring "meter"'))).toBe(true)
   for (const line of lines) expect(line.length).toBeLessThanOrEqual(500)
 })
 

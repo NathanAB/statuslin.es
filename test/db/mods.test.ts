@@ -17,10 +17,14 @@ afterAll(async () => {
   await client.close()
 })
 
-async function insertMod(name: string) {
+let modCount = 0
+
+/** A mod named after `label`, which may be any text: the name itself is a plugin id. */
+async function insertMod(label: string) {
+  const name = `mod-${++modCount}`
   const [mod] = await db
     .insert(schema.mods)
-    .values({ slug: name, pluginName: name, title: name, authorGithub: 'octocat' })
+    .values({ slug: name, pluginName: name, title: label, authorGithub: 'octocat' })
     .returning()
   return mod?.id as string
 }
@@ -122,6 +126,15 @@ describe('mods schema', () => {
       .from(schema.mods)
       .where(eq(schema.mods.pluginName, 'meter'))
     expect(rows.map((r) => r.slug).sort()).toEqual(['meter', 'meter-ada'])
+  })
+
+  it.each([
+    ['slug', { slug: 'x;sh', pluginName: 'meter' }, 'mods_slug_check'],
+    ['plugin_name', { slug: 'meter-x', pluginName: 'my meter' }, 'mods_plugin_name_check'],
+  ])('rejects a %s outside the plugin id rule', async (_name, names, constraint) => {
+    await expect(
+      db.insert(schema.mods).values({ ...names, title: 'T', authorGithub: 'octocat' }),
+    ).rejects.toMatchObject(violates(constraint))
   })
 
   it('rejects a duplicate slug', async () => {

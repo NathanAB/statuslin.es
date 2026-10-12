@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { ModFootprint } from '@/db/schema'
 import { SANDBOX_CLAUDE_CODE_BIN } from '@/render/e2b-template'
 import type { ModSandbox } from '@/render/mods/mod-sandbox'
+import { PLUGIN_NAME, PLUGIN_NAME_RULE } from './curation'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
 export interface PluginManifest {
@@ -42,7 +43,8 @@ const atMost = (max: number) =>
     })
 
 const manifestSchema = z.object({
-  name: atMost(100).min(1, 'must not be empty'),
+  // It becomes the mod's slug and marketplace entry name.
+  name: atMost(100).min(1, 'must not be empty').regex(PLUGIN_NAME, PLUGIN_NAME_RULE),
   version: atMost(64).optional(),
   description: atMost(1000).optional(),
 })

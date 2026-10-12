@@ -267,6 +267,13 @@
       "when": 1791837594053,
       "tag": "0037_mods_plugin_name_not_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791840039087,
+      "tag": "0038_mods_plugin_id_check",
+      "breakpoints": true
     }
   ]
 }

@@ -5,8 +5,10 @@ export const CURATION_FILE = 'src/mods/curation.json'
 
 const REPO_URL = /^https:\/\/github\.com\/[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/
 export const COMMIT_SHA = /^[0-9a-f]{40}$/
-/** Claude Code's rule for a plugin id. */
-const PLUGIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+/** Claude Code's rule for a plugin id. A mod's slug follows it too: it lands in shell commands. */
+export const PLUGIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+export const PLUGIN_NAME_RULE =
+  'must start with a letter or digit, then letters, digits, ".", "_" or "-"'
 const PATH_SEGMENT = /^[A-Za-z0-9._-]+$/
 
 const segments = (path: string) => (path === '' ? [] : path.split('/'))
@@ -40,9 +42,7 @@ const entrySchema = z.strictObject({
     .refine((url) => !/(\.git|\/\.{1,2})$/i.test(url), 'must not end in .git, "." or ".."'),
   path: pluginPathSchema,
   commitSha: z.string().regex(COMMIT_SHA, 'must be a full 40-character lowercase hex commit SHA'),
-  pluginName: z
-    .string()
-    .regex(PLUGIN_NAME, 'must start with a letter or digit, then letters, digits, ".", "_" or "-"'),
+  pluginName: z.string().regex(PLUGIN_NAME, PLUGIN_NAME_RULE),
   title: z.string().trim().min(1, 'must not be empty'),
   inputSteps: inputStepsSchema.default([]),
 })

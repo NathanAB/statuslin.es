@@ -3,6 +3,8 @@ import type { SubmitDraft } from '@/submit/submit'
 import { getResubmissionDraftFn, getUpdateDraftFn } from '@/submit/submit-fn'
 
 export interface SubmitSearch {
+  /** `mod` picks the mod form; a status line is the default. */
+  kind?: 'mod' | undefined
   resubmit?: string | undefined
   update?: string | undefined
 }
@@ -12,10 +14,11 @@ function searchSlug(value: unknown): string {
 }
 
 export function validateSubmitSearch(search: Record<string, unknown>): SubmitSearch {
+  const kind = search.kind === 'mod' ? { kind: 'mod' as const } : {}
   const resubmit = searchSlug(search.resubmit)
-  if (resubmit) return { resubmit }
+  if (resubmit) return { ...kind, resubmit }
   const update = searchSlug(search.update)
-  return update ? { update } : {}
+  return update ? { ...kind, update } : kind
 }
 
 async function loadDraft({ resubmit, update }: SubmitSearch): Promise<SubmitDraft | null> {

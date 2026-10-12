@@ -30,5 +30,5 @@ function MyPage() {
   if ('signedOut' in data) {
     return <SignInPrompt title="Sign in to see your submissions" />
   }
-  return <MySubmissionsView rows={data.rows} user={data.user} />
+  return <MySubmissionsView rows={data.rows} mods={data.mods} user={data.user} />
 }

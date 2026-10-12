@@ -20,21 +20,31 @@ export type ModFootprint = { events: string[]; calls: string[] }
 
 export type ModInputSteps = unknown[]
 
-export const mods = pgTable('mods', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  slug: text('slug').notNull().unique(),
-  /** plugin.json's name. Two mods can share it; the slug names the marketplace entry (ADR 0005). */
-  pluginName: text('plugin_name').notNull(),
-  title: text('title').notNull(),
-  description: text('description').notNull().default(''),
-  authorGithub: text('author_github').notNull(),
-  status: text('status').$type<ModStatus>().notNull().default('draft'),
-  currentVersionId: uuid('current_version_id'),
-  tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-  allTags: jsonb('all_tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-  copyCount: integer('copy_count').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+/** Claude Code's plugin id rule (src/mods/curation.ts): a slug lands in marketplace entries and shell commands. */
+const PLUGIN_ID = '^[A-Za-z0-9][A-Za-z0-9._-]*$'
+
+export const mods = pgTable(
+  'mods',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    slug: text('slug').notNull().unique(),
+    /** plugin.json's name. Two mods can share it; the slug names the marketplace entry (ADR 0005). */
+    pluginName: text('plugin_name').notNull(),
+    title: text('title').notNull(),
+    description: text('description').notNull().default(''),
+    authorGithub: text('author_github').notNull(),
+    status: text('status').$type<ModStatus>().notNull().default('draft'),
+    currentVersionId: uuid('current_version_id'),
+    tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    allTags: jsonb('all_tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    copyCount: integer('copy_count').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('mods_slug_check', sql`${t.slug} ~ ${sql.raw(`'${PLUGIN_ID}'`)}`),
+    check('mods_plugin_name_check', sql`${t.pluginName} ~ ${sql.raw(`'${PLUGIN_ID}'`)}`),
+  ],
+)
 
 export const modVersions = pgTable(
   'mod_versions',

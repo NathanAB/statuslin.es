@@ -1,7 +1,8 @@
 import { StatusSummary, SubmissionCard } from '@/review/dashboard-card'
 import type { ModReviewRow } from '@/review/mod-queue'
 import { ModReviewCard } from '@/review/mod-review-card'
-import type { MySubmissionRow } from '@/review/my-submissions'
+import { MyModCard } from '@/review/my-mod-card'
+import type { MyModRow, MySubmissionRow } from '@/review/my-submissions'
 import type { DashboardRow, DashboardUser } from '@/review/queue'
 import { Stack } from '@/ui/layout'
 import { CenteredShell, PageShell } from '@/ui/shell'
@@ -87,16 +88,18 @@ export function DashboardView({ data }: { data: DashboardData }) {
 /** The signed-in author's own submissions — same cards as the admin view, read-only (no actions). */
 export function MySubmissionsView({
   rows,
+  mods,
   user,
 }: {
   rows: MySubmissionRow[]
+  mods: MyModRow[]
   user: DashboardUser
 }) {
   return (
     <PageShell user={user}>
       <Stack gap={6}>
         <Heading level={1}>My submissions</Heading>
-        {rows.length === 0 ? (
+        {rows.length === 0 && mods.length === 0 ? (
           <Text muted size="sm">
             You haven't submitted anything yet.
           </Text>
@@ -117,6 +120,9 @@ export function MySubmissionsView({
                 />
               )
             })}
+            {mods.map((row) => (
+              <MyModCard key={row.mod.id} row={row} />
+            ))}
           </Stack>
         )}
       </Stack>

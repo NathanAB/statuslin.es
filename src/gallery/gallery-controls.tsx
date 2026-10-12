@@ -35,7 +35,8 @@ export function GalleryControls({
   sort: GallerySort
   tags: string[]
 }) {
-  const navigate = useNavigate()
+  // From '/', so `prev` is the gallery's search alone, not every route's.
+  const navigate = useNavigate({ from: '/' })
   const posthog = usePostHog()
   const selected = new Set(tags)
 
@@ -82,6 +83,7 @@ export function GalleryControls({
       {selected.size > 0 ? (
         <Button asChild variant="outline" size="icon-lg" aria-label="Clear filters">
           <Link
+            from="/"
             to="/"
             onClick={() => {
               posthog.capture('gallery_filter_changed', {

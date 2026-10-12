@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { and, eq, max } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -9,7 +9,13 @@ import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
-import { inspectPlugin } from '@/mods/plugin-facts'
+import {
+  importedSlug,
+  insertDraftMod,
+  insertNextVersion,
+  inspectSource,
+  pickSlug,
+} from '@/mods/import'
 import { terminalLine } from '@/mods/terminal-line'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
 
@@ -47,21 +53,6 @@ export interface ImportDeps {
   log: (line: string) => void
 }
 
-async function importedSlug(db: Db, entry: CurationEntry): Promise<string | undefined> {
-  const [row] = await db
-    .select({ slug: schema.mods.slug })
-    .from(schema.modVersions)
-    .innerJoin(schema.mods, eq(schema.mods.id, schema.modVersions.modId))
-    .where(
-      and(
-        eq(schema.modVersions.repoUrl, entry.repoUrl),
-        eq(schema.modVersions.path, entry.path),
-        eq(schema.modVersions.commitSha, entry.commitSha),
-      ),
-    )
-  return row?.slug
-}
-
 /** The mod an entry re-pins: the one with its plugin name whose current version is from its repository. */
 async function modToRepin(
   db: Db,
@@ -86,22 +77,6 @@ async function modToRepin(
   return row
 }
 
-async function slugTaken(db: Db, slug: string): Promise<boolean> {
-  const [row] = await db
-    .select({ id: schema.mods.id })
-    .from(schema.mods)
-    .where(eq(schema.mods.slug, slug))
-  return row !== undefined
-}
-
-/** The plugin's own name, or `<name>-<owner>` when another mod has it (ADR 0005). */
-async function pickSlug(db: Db, name: string, owner: string): Promise<string> {
-  if (!(await slugTaken(db, name))) return name
-  const withOwner = `${name}-${owner}`
-  if (!(await slugTaken(db, withOwner))) return withOwner
-  throw new Error(`"${name}" and "${withOwner}" are both taken by other mods`)
-}
-
 async function importEntry(
   entry: CurationEntry,
   { db, github, withSandbox }: ImportDeps,
@@ -116,10 +91,7 @@ async function importEntry(
   if (canonical !== entry.repoUrl) throw new Error(`write the repository URL as ${canonical}`)
   const owner = repo.fullName.slice(0, repo.fullName.indexOf('/'))
   const slug = existing?.slug ?? (await pickSlug(db, name, owner))
-  const facts = await withSandbox(
-    { tarball: await github.tarball(entry.repoUrl, entry.commitSha), path: entry.path },
-    inspectPlugin,
-  )
+  const facts = await inspectSource(entry, { github, withSandbox })
   if (facts.manifest.name !== name) {
     throw new Error(`plugin.json names the plugin "${facts.manifest.name}", not "${name}"`)
   }
@@ -128,36 +100,16 @@ async function importEntry(
   const versionNumber = await db.transaction(async (tx) => {
     const modId = existing?.id ?? randomUUID()
     if (!existing) {
-      await tx.insert(schema.mods).values({
-        id: modId,
-        slug,
-        pluginName: name,
-        title: entry.title,
-        description: facts.manifest.description,
-        authorGithub: owner,
-        status: 'draft',
-        currentVersionId: versionId,
-      })
+      await insertDraftMod(tx, { modId, slug, title: entry.title, owner, facts, versionId })
     }
-    const [latest] = await tx
-      .select({ versionNumber: max(schema.modVersions.versionNumber) })
-      .from(schema.modVersions)
-      .where(eq(schema.modVersions.modId, modId))
-    const next = (latest?.versionNumber ?? 0) + 1
-    await tx.insert(schema.modVersions).values({
-      id: versionId,
+    return insertNextVersion(tx, {
       modId,
-      versionNumber: next,
-      repoUrl: entry.repoUrl,
-      path: entry.path,
-      commitSha: entry.commitSha,
-      pluginVersion: facts.manifest.version,
+      versionId,
+      source: entry,
+      facts,
       license: repo.license,
-      footprint: facts.footprint,
-      validatedWith: facts.claudeCodeVersion,
       inputSteps: entry.inputSteps,
     })
-    return next
   })
   const { events, calls } = facts.footprint
   return `imported ${slug} v${versionNumber} at ${entry.commitSha}: plugin ${facts.manifest.version ?? 'unversioned'}, license ${repo.license ?? 'none'}, ${events.length} events, ${calls.length} calls`

@@ -1,0 +1,2 @@
+ALTER TABLE "mods" ADD CONSTRAINT "mods_slug_check" CHECK ("mods"."slug" ~ '^[A-Za-z0-9][A-Za-z0-9._-]*$');--> statement-breakpoint
+ALTER TABLE "mods" ADD CONSTRAINT "mods_plugin_name_check" CHECK ("mods"."plugin_name" ~ '^[A-Za-z0-9][A-Za-z0-9._-]*$');
