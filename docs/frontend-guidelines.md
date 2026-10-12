@@ -98,6 +98,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | Export | File | What it does |
 | --- | --- | --- |
 | `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control; `Copyable` overlays it on a code well |
+| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: "Copy install prompt" button, copy count, toast |
 | `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display; pass `text` to copy |
 | `<LineDiff lines={…}>` | `src/ui/line-diff.tsx` | Unified line diff in a code well; `DiffLine[]` with +/- markers |
 | `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | Section with header + optional action slot |
