@@ -13,7 +13,6 @@ const { marketplaceResponseForRoute } = await import('@/mods/marketplace-respons
 
 const ROW = {
   slug: 'context-meter',
-  pluginName: 'meter',
   description: 'A context meter',
   authorGithub: 'octocat',
   tags: [],

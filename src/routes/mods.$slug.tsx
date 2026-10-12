@@ -54,10 +54,7 @@ function ModPage() {
       <DetailPageLayout
         header={<ModHeader mod={mod} />}
         install={
-          <InstallCommands
-            commands={installCommands(origin, mod.pluginName)}
-            onCopied={recordCopy}
-          />
+          <InstallCommands commands={installCommands(origin, mod.slug)} onCopied={recordCopy} />
         }
         preview={<ModPreview mod={mod} />}
         whatItDoes={{ copy: mod.generatedContent, tiles: modFactTiles(mod) }}

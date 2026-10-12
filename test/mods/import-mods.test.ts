@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import type { RepoInfo } from '@/mods/github'
@@ -195,22 +196,38 @@ describe('importMods', () => {
     expect((await allVersions()).map((v) => v.commitSha)).toEqual([SHA])
   })
 
-  it('refuses a re-pin to another repository without fetching anything', async () => {
+  it('imports a same-named plugin from another repository as <name>-<owner>', async () => {
     await run([entry()])
+    const other = entry({ repoUrl: 'https://github.com/mallory/skins', commitSha: 'd'.repeat(40) })
 
-    const { exitCode, output, calls } = await run([
-      entry({ repoUrl: 'https://github.com/mallory/skins', commitSha: 'd'.repeat(40) }),
+    const { exitCode, output } = await run([other], fakes({ fullName: 'mallory/skins' }))
+
+    expect(exitCode).toBe(0)
+    expect(output).toMatch(/^imported skins-mallory v1 at d{40}/)
+    const mods = await allMods()
+    expect(mods.map((m) => [m.slug, m.pluginName, m.authorGithub]).sort()).toEqual([
+      ['skins', 'skins', 'hellosverre'],
+      ['skins-mallory', 'skins', 'mallory'],
     ])
-
-    expect(exitCode).toBe(1)
-    expect(output).toMatch(
-      /"skins" is pinned to https:\/\/github\.com\/hellosverre\/claude-skins; a re-pin must be a commit of that repository/,
-    )
-    expect(calls).toEqual([])
-    expect((await allVersions()).map((v) => v.commitSha)).toEqual([SHA])
   })
 
-  it('refuses a plugin name that is already the slug of another mod', async () => {
+  it('re-pins the mod from the same repository when two mods share the plugin name', async () => {
+    const other = entry({ repoUrl: 'https://github.com/mallory/skins' })
+    await run([entry()])
+    await run([other], fakes({ fullName: 'mallory/skins' }))
+    const newSha = 'e'.repeat(40)
+
+    const { exitCode, output } = await run(
+      [{ ...other, commitSha: newSha }],
+      fakes({ fullName: 'mallory/skins' }),
+    )
+
+    expect(exitCode).toBe(0)
+    expect(output).toMatch(/^imported skins-mallory v2 at e{40}/)
+    expect((await allMods()).map((m) => m.slug).sort()).toEqual(['skins', 'skins-mallory'])
+  })
+
+  it('names a new mod <name>-<owner> when another mod already has its name as a slug', async () => {
     await db.insert(schema.mods).values({
       slug: 'skins',
       pluginName: 'skin-pack',
@@ -218,11 +235,30 @@ describe('importMods', () => {
       authorGithub: 'octocat',
     })
 
-    const { exitCode, output, calls } = await run([entry()])
+    const { exitCode } = await run([entry()])
+
+    expect(exitCode).toBe(0)
+    const [mod] = await db
+      .select()
+      .from(schema.mods)
+      .where(eq(schema.mods.slug, 'skins-hellosverre'))
+    expect(mod).toMatchObject({ pluginName: 'skins', authorGithub: 'hellosverre' })
+  })
+
+  it('refuses a plugin whose name and <name>-<owner> are both taken', async () => {
+    for (const slug of ['skins', 'skins-hellosverre']) {
+      await db.insert(schema.mods).values({
+        slug,
+        pluginName: `${slug}-pack`,
+        title: slug,
+        authorGithub: 'octocat',
+      })
+    }
+
+    const { exitCode, output } = await run([entry()])
 
     expect(exitCode).toBe(1)
-    expect(output).toMatch(/"skins" is already used by mod "skins"/)
-    expect(calls).toEqual([])
+    expect(output).toMatch(/"skins" and "skins-hellosverre" are both taken/)
     expect(await allVersions()).toEqual([])
   })
 

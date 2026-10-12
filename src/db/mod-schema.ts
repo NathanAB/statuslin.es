@@ -23,7 +23,8 @@ export type ModInputSteps = unknown[]
 export const mods = pgTable('mods', {
   id: uuid('id').primaryKey().defaultRandom(),
   slug: text('slug').notNull().unique(),
-  pluginName: text('plugin_name').notNull().unique(),
+  /** plugin.json's name. Two mods can share it; the slug names the marketplace entry (ADR 0005). */
+  pluginName: text('plugin_name').notNull(),
   title: text('title').notNull(),
   description: text('description').notNull().default(''),
   authorGithub: text('author_github').notNull(),

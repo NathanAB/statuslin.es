@@ -137,7 +137,7 @@ describe('getMarketplaceRows', () => {
     expect(row?.commitSha).not.toBe(await shaOf(older))
   })
 
-  it('returns the fields the marketplace entry needs, ordered by plugin name', async () => {
+  it('returns the fields the marketplace entry needs, ordered by slug', async () => {
     await addMod('zeta', 'published', 'scenario-preview')
     await addMod('alpha', 'published', 'none')
     await db
@@ -147,10 +147,9 @@ describe('getMarketplaceRows', () => {
 
     const rows = await getMarketplaceRows(db)
 
-    expect(rows.map((r) => r.pluginName)).toEqual(['alpha', 'zeta'])
+    expect(rows.map((r) => r.slug)).toEqual(['alpha', 'zeta'])
     expect(rows[0]).toEqual({
       slug: 'alpha',
-      pluginName: 'alpha',
       description: 'First',
       authorGithub: 'octocat',
       tags: ['minimal'],

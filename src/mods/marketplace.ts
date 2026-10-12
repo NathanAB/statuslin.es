@@ -4,7 +4,6 @@ import { CONTACT_EMAIL, modPath } from '@/lib/site'
 
 export interface MarketplaceModRow {
   slug: string
-  pluginName: string
   description: string
   authorGithub: string
   tags: string[]
@@ -47,7 +46,8 @@ function pluginSource(row: MarketplaceModRow): MarketplaceSource {
 
 function marketplacePlugin(origin: string, row: MarketplaceModRow): MarketplacePlugin {
   return {
-    name: row.pluginName,
+    // The slug, unique where the plugin name may not be (ADR 0005); never changes once published.
+    name: row.slug,
     source: pluginSource(row),
     description: row.description,
     author: { name: row.authorGithub },

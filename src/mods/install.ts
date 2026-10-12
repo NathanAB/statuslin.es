@@ -33,8 +33,9 @@ export function modSourceUrl(pin: { repoUrl: string; path: string; commitSha: st
   return pin.path === '' ? tree : `${tree}/${pin.path}`
 }
 
-export function installCommands(origin: string, pluginName: string): InstallCommand[] {
-  const install = `install ${pluginName} --marketplace ${origin}${MARKETPLACE_PATH}`
+/** `entryName` is the mod's marketplace entry name: its slug. */
+export function installCommands(origin: string, entryName: string): InstallCommand[] {
+  const install = `install ${entryName} --marketplace ${origin}${MARKETPLACE_PATH}`
   return [
     {
       kind: 'session',

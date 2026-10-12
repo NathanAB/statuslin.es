@@ -21,9 +21,10 @@ import { withModSandbox } from '@/render/mods/mod-sandbox'
  *
  * An entry re-pinned to a new commit of an existing mod (same plugin name and repository) adds that
  * commit as the mod's next version and changes nothing else: the current version stays live until
- * publish-mod.ts makes the new one current, after render:mods has rendered it. A re-pin to another
- * repository is refused, since publish would have no diff to show and the mod would keep crediting
- * the first author.
+ * publish-mod.ts makes the new one current, after render:mods has rendered it. A plugin name that
+ * another mod already uses, from another repository, makes a new mod. A mod's slug is its
+ * marketplace entry name: the plugin's own name, or `<name>-<owner>` when another mod has that
+ * (ADR 0005).
  *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
  * request, so rerunning the same file changes nothing. The whole file's format is checked before
@@ -61,31 +62,44 @@ async function importedSlug(db: Db, entry: CurationEntry): Promise<string | unde
   return row?.slug
 }
 
-/** The mod an entry re-pins, with the repository its current version comes from. */
-async function modWithPluginName(
+/** The mod an entry re-pins: the one with its plugin name whose current version is from its repository. */
+async function modToRepin(
   db: Db,
-  name: string,
-): Promise<{ id: string; repoUrl: string | null } | undefined> {
+  entry: CurationEntry,
+): Promise<{ id: string; slug: string } | undefined> {
   const [row] = await db
-    .select({ id: schema.mods.id, repoUrl: schema.modVersions.repoUrl })
+    .select({ id: schema.mods.id, slug: schema.mods.slug })
     .from(schema.mods)
-    .leftJoin(
+    .innerJoin(
       schema.modVersions,
       and(
         eq(schema.modVersions.id, schema.mods.currentVersionId),
         eq(schema.modVersions.modId, schema.mods.id),
       ),
     )
-    .where(eq(schema.mods.pluginName, name))
+    .where(
+      and(
+        eq(schema.mods.pluginName, entry.pluginName),
+        eq(schema.modVersions.repoUrl, entry.repoUrl),
+      ),
+    )
   return row
 }
 
-async function slugUsingName(db: Db, name: string): Promise<string | undefined> {
+async function slugTaken(db: Db, slug: string): Promise<boolean> {
   const [row] = await db
-    .select({ slug: schema.mods.slug })
+    .select({ id: schema.mods.id })
     .from(schema.mods)
-    .where(eq(schema.mods.slug, name))
-  return row?.slug
+    .where(eq(schema.mods.slug, slug))
+  return row !== undefined
+}
+
+/** The plugin's own name, or `<name>-<owner>` when another mod has it (ADR 0005). */
+async function pickSlug(db: Db, name: string, owner: string): Promise<string> {
+  if (!(await slugTaken(db, name))) return name
+  const withOwner = `${name}-${owner}`
+  if (!(await slugTaken(db, withOwner))) return withOwner
+  throw new Error(`"${name}" and "${withOwner}" are both taken by other mods`)
 }
 
 async function importEntry(
@@ -95,18 +109,13 @@ async function importEntry(
   const name = entry.pluginName
   const imported = await importedSlug(db, entry)
   if (imported) return `unchanged ${imported}: already imported at ${entry.commitSha}`
-  const existing = await modWithPluginName(db, name)
-  if (existing && existing.repoUrl !== entry.repoUrl) {
-    throw new Error(
-      `"${name}" is pinned to ${existing.repoUrl}; a re-pin must be a commit of that repository`,
-    )
-  }
-  const taken = existing ? undefined : await slugUsingName(db, name)
-  if (taken) throw new Error(`plugin name "${name}" is already used by mod "${taken}"`)
+  const existing = await modToRepin(db, entry)
 
   const repo = await github.repoInfo(entry.repoUrl)
   const canonical = `https://github.com/${repo.fullName}`
   if (canonical !== entry.repoUrl) throw new Error(`write the repository URL as ${canonical}`)
+  const owner = repo.fullName.slice(0, repo.fullName.indexOf('/'))
+  const slug = existing?.slug ?? (await pickSlug(db, name, owner))
   const facts = await withSandbox(
     { tarball: await github.tarball(entry.repoUrl, entry.commitSha), path: entry.path },
     inspectPlugin,
@@ -121,11 +130,11 @@ async function importEntry(
     if (!existing) {
       await tx.insert(schema.mods).values({
         id: modId,
-        slug: name,
+        slug,
         pluginName: name,
         title: entry.title,
         description: facts.manifest.description,
-        authorGithub: repo.fullName.slice(0, repo.fullName.indexOf('/')),
+        authorGithub: owner,
         status: 'draft',
         currentVersionId: versionId,
       })
@@ -151,7 +160,7 @@ async function importEntry(
     return next
   })
   const { events, calls } = facts.footprint
-  return `imported ${name} v${versionNumber} at ${entry.commitSha}: plugin ${facts.manifest.version ?? 'unversioned'}, license ${repo.license ?? 'none'}, ${events.length} events, ${calls.length} calls`
+  return `imported ${slug} v${versionNumber} at ${entry.commitSha}: plugin ${facts.manifest.version ?? 'unversioned'}, license ${repo.license ?? 'none'}, ${events.length} events, ${calls.length} calls`
 }
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error))

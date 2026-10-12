@@ -87,7 +87,6 @@ export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
   return db
     .select({
       slug: mods.slug,
-      pluginName: mods.pluginName,
       description: mods.description,
       authorGithub: mods.authorGithub,
       tags: mods.tags,
@@ -102,7 +101,7 @@ export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
       and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
     )
     .where(eq(mods.status, 'published'))
-    .orderBy(asc(mods.pluginName))
+    .orderBy(asc(mods.slug))
 }
 
 export interface PublishedModListing {

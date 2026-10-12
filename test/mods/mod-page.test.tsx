@@ -278,6 +278,14 @@ describe('mod page', () => {
     ).toBeTruthy()
   })
 
+  it('installs by the mod slug, the marketplace entry name, not the plugin name', () => {
+    renderPage({ slug: 'filetree-ada', pluginName: 'filetree' })
+
+    expect(
+      screen.getByText(`/plugin install filetree-ada --marketplace ${ORIGIN}/marketplace.json`),
+    ).toBeTruthy()
+  })
+
   it.each([
     ['In Claude Code', 'session', '/plugin install'],
     ['From a shell', 'shell', 'claude plugin install'],

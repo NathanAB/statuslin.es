@@ -11,7 +11,6 @@ const SHA = 'a'.repeat(40)
 function row(overrides: Partial<MarketplaceModRow> = {}): MarketplaceModRow {
   return {
     slug: 'meter',
-    pluginName: 'meter',
     description: 'A context meter',
     authorGithub: 'octocat',
     tags: ['minimal', 'git'],
@@ -63,12 +62,18 @@ describe('buildMarketplace', () => {
     })
   })
 
-  it('builds the homepage from the site origin and the mod slug, not the plugin name', () => {
+  it('builds the homepage from the site origin and the mod slug', () => {
     const [plugin] = buildMarketplace('https://staging.statuslin.es', [
-      row({ slug: 'context-meter', pluginName: 'meter' }),
+      row({ slug: 'context-meter' }),
     ]).plugins
 
     expect(plugin?.homepage).toBe('https://staging.statuslin.es/mods/context-meter')
+  })
+
+  it('names each entry by the mod slug, the name that stays unique when plugin names clash', () => {
+    const [plugin] = buildMarketplace(ORIGIN, [row({ slug: 'meter-ada' })]).plugins
+
+    expect(plugin?.name).toBe('meter-ada')
   })
 
   it('omits license when the version has none', () => {
@@ -78,10 +83,9 @@ describe('buildMarketplace', () => {
   })
 
   it('keeps the rows in the order given', () => {
-    const names = buildMarketplace(ORIGIN, [
-      row({ slug: 'b', pluginName: 'b' }),
-      row({ slug: 'a', pluginName: 'a' }),
-    ]).plugins.map((p) => p.name)
+    const names = buildMarketplace(ORIGIN, [row({ slug: 'b' }), row({ slug: 'a' })]).plugins.map(
+      (p) => p.name,
+    )
 
     expect(names).toEqual(['b', 'a'])
   })

@@ -109,15 +109,19 @@ describe('mods schema', () => {
     )
   })
 
-  it('rejects a duplicate plugin_name', async () => {
+  it('lets two mods share a plugin_name, each under its own slug', async () => {
     await db
       .insert(schema.mods)
-      .values({ slug: 'plugin-a', pluginName: 'meter', title: 'A', authorGithub: 'octocat' })
-    await expect(
-      db
-        .insert(schema.mods)
-        .values({ slug: 'plugin-b', pluginName: 'meter', title: 'B', authorGithub: 'octocat' }),
-    ).rejects.toMatchObject(violates('mods_plugin_name_unique'))
+      .values({ slug: 'meter', pluginName: 'meter', title: 'A', authorGithub: 'octocat' })
+    await db
+      .insert(schema.mods)
+      .values({ slug: 'meter-ada', pluginName: 'meter', title: 'B', authorGithub: 'ada' })
+
+    const rows = await db
+      .select({ slug: schema.mods.slug })
+      .from(schema.mods)
+      .where(eq(schema.mods.pluginName, 'meter'))
+    expect(rows.map((r) => r.slug).sort()).toEqual(['meter', 'meter-ada'])
   })
 
   it('rejects a duplicate slug', async () => {

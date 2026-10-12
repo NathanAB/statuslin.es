@@ -247,7 +247,9 @@ commands by hand and skip the smoke — that's the hole that let the crash ship.
 ## Mods
 
 Mods are Claude Code plugins listed in `/marketplace.json` and shown at `/mods/<slug>`. The slug is
-the curated `pluginName`. Every script below prints its full usage in its header comment.
+also the mod's marketplace entry name: the plugin's own name, or `<name>-<owner>` when another mod
+already has that name (ADR 0005). It never changes once published. Every script below prints its
+full usage in its header comment.
 
 ### The mods E2B template
 
@@ -340,7 +342,8 @@ An update is a new version of the mod. The current version stays live until you 
 one. Run every step against staging first, then production.
 
 1. In `src/mods/curation.json`, change the entry's `commitSha` (and `inputSteps` if the new version
-   needs them). Keep `pluginName` and `repoUrl`: the import refuses a re-pin to another repository.
+   needs them). Keep `pluginName` and `repoUrl`: an entry from another repository imports as a new
+   mod, named `<name>-<owner>`.
    The mod's title and description stay as they were first imported.
 2. Import it. The import adds the commit as the mod's next version and leaves the current one live:
    ```sh
