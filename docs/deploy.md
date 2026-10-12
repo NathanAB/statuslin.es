@@ -76,7 +76,7 @@ From `.env.example` (the committed contract):
 | `E2B_API_KEY` | no | one E2B account serves all envs |
 | `RENDER_RUNNER` | — | **local only**: `fake` renders submissions without E2B. Leave unset on staging and production, which refuse it (`NODE_ENV=production`) |
 | `RESEND_API_KEY` | yes | server-only key used to email submission review decisions |
-| `GITHUB_TOKEN` | no | **optional**, not set on Fly: only the operator mod scripts read it (`import:mods`, `render:mods`, `publish-mod`, `check-mods`, …), from `.env.local` or the shell. It raises GitHub's API limit from 60 to 5,000 requests an hour, so a long curation run doesn't stall. A fine-grained token with public-repository read access (the default, no extra permissions) is enough |
+| `GITHUB_TOKEN` | yes, for mod submissions | the web server calls GitHub when a user submits a mod and when an admin approves one; without it those calls share GitHub's 60-requests-an-hour anonymous limit per IP, and run out after a handful of submissions. The operator mod scripts (`import:mods`, `render:mods`, `input-steps:mods`, `publish-mod`, `check-mods`, …) read it from `.env.local` or the shell too. A fine-grained token with public-repository read access (the default, no extra permissions) is enough: never one that can read private repositories |
 
 No R2 keys — preview data is stored in Postgres (`previews` table), and OG card images are rendered on
 the fly by the app (`src/og`), not stored. R2 isn't used.
@@ -364,6 +364,48 @@ one. Run every step against staging first, then production.
    ```
 5. Generate the page copy again, as in step 4 of the launch runbook: the newly current version
    starts with none, so the mod page's "What it does" card shows only its fact tiles until you do.
+
+### Process a submitted mod
+
+Any signed-in user can submit a mod on `/submit` (the **Mod** choice) by pasting a GitHub link
+(ADR 0005). The web server pins the link to a commit on the default branch, checks the plugin in the
+offline sandbox, and writes a draft mod credited to the repository's owner (or a new version of the
+submitter's own mod) with a pending submission. Nothing renders until you do: mods render from your
+machine (ADR 0006). Run each step against the environment the submission came in on.
+`<env pooled url>` is its `DATABASE_URL`; rendering also needs `E2B_API_KEY`.
+
+1. **See what is waiting.** `/admin` lists submitted mods under **Mods**. One that hasn't rendered
+   shows `needs render` and the exact command for step 3.
+2. **Pick its input steps** with your coding agent. Prepare prints a request per pending mod
+   submission, pinned to its version and commit, with the README, description and footprint fenced
+   as hostile data. The agent answers without following anything inside the fence; send the answer
+   to apply on stdin, without writing it to a file. A mod that draws without any input needs no
+   steps (`[]`):
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run input-steps:mods --prepare <slug>
+   DATABASE_URL='<env pooled url>' bun run input-steps:mods --apply   # response JSON on stdin
+   ```
+3. **Render it** in the terminal and in Claude Desktop (up to 15 minutes):
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
+   ```
+   Check both previews on `/admin`. If a surface drew nothing and should, revise the steps (step 2)
+   and render again. `render:mods` skips versions whose submission was rejected or replaced.
+4. **Review it on `/admin`.** Read the footprint, the source at its commit and, for an update, the
+   warnings and the compare link against the live commit. **Approve** checks again that both
+   surfaces rendered, that the commit is on the default branch, that the mod isn't delisted and that
+   the version isn't older than the live one, then publishes it to the gallery and
+   `/marketplace.json` and emails the submitter. **Reject** takes a reason and emails the submitter
+   a link to fix and resubmit, or to send a new update; a published mod's live version stays up.
+5. **Generate its page copy** after approving, as in step 4 of the launch runbook, for the one mod:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run generate:content <slug> --prepare --mod
+   DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod   # response JSON on stdin
+   ```
+
+The submitter follows the mod on `/me` and sends fixes and updates from there; each is a new
+version, reviewed again, while the live one keeps serving. Curated mods have no submitter and keep
+the command-line re-pin. To take a submitted mod down, use the emergency delist below.
 
 ### Emergency delist
 

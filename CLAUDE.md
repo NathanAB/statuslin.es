@@ -15,13 +15,19 @@ web server renders it in the background in the E2B sandbox (`src/render`, `src/s
 (`src/review`) → an admin publishes → it appears in the **gallery** (`src/gallery`),
 where visitors **copy it to use** (`src/adopt`).
 
+A mod's lifecycle: **submit** by GitHub link (`src/mods/submit.ts`) → the operator picks its input
+steps and **renders** it from their machine → the same **review queue** (`src/review/kinds/mod.ts`)
+→ published to the gallery and `/marketplace.json`, where visitors **install** it. Both kinds'
+review state lives in one `submissions` table (`src/submissions`, ADR 0007).
+
 `src/` map (one responsibility each):
 - `routes/` — TanStack Start file-based routes: pages + API handlers
 - `submit/` — submission form + flow (slug, obfuscation checks, allowed network hosts)
 - `render/` — render pipeline: real E2B runner, fake runner (tests/no key), ANSI parsing, scenarios; mod recording and cropping in `render/mods/`
 - `review/` — admin review queue and publish/reject decisions
 - `gallery/` — gallery list queries
-- `mods/` — mods marketplace, pages, import, publish and gallery source
+- `mods/` — mods marketplace, pages, import, submit (GitHub link → pinned commit), publish and gallery source
+- `submissions/` — review state shared by status lines and mods: rate limit, pending rows, supersede
 - `votes/` — retained legacy voting code · `adopt/` — copy/install a config
 - `og/` — Open Graph card images · `legal/` — terms page
 - `db/` — Drizzle schema + migration client · `lib/` — shared utils (`env.ts`)
@@ -79,7 +85,7 @@ where visitors **copy it to use** (`src/adopt`).
 - **Commits:** Conventional Commits (`feat` / `fix` / `chore` / `docs` / `refactor`); small and focused; only on green gates.
 - **Deploy:** staging → production runbook in `docs/deploy.md`. Same image, three environments; deploy staging with `bun run deploy:staging`, then promote with the gated `bun run deploy:prod` (smokes staging in a real browser, promotes the validated image by digest). There is no worker process: each web machine renders status line jobs on submit, on the admin's re-queue and "Run network preview", and at startup (`src/server/render-drain.ts`). A job cut off mid-render is re-queued once it has been `running` for 15 minutes.
 - **Emergency takedown:** to pull a live config from the gallery, `scripts/remove-config.ts <slug>` flips its status `published → removed` (reversible: add `--restore`). Every read path filters `status='published'`, so it disappears from the gallery list, the page count, and its detail page at once — no migration. The `<slug>` is the last segment of `statuslin.es/c/<slug>`. Run against prod with `fly ssh console --app statuslines --command "bun run scripts/remove-config.ts <slug>"`. Full usage is in the script's header comment.
-- **Mods:** the launch runbook (template build, import, render, page copy, publish), the emergency delist and the pinned-commit check are in the mods section of `docs/deploy.md`.
+- **Mods:** the launch runbook (template build, import, render, page copy, publish), processing a submitted mod (input steps, render, review on `/admin`, page copy), the emergency delist and the pinned-commit check are in the mods section of `docs/deploy.md`. Production never renders a mod. A mod's slug is its marketplace entry name and never changes once published (ADR 0005).
 
 ## Enforcement (the guardrails)
 
