@@ -106,6 +106,52 @@ describe('approving a mod', () => {
     expect(send).toHaveBeenCalledWith(expect.objectContaining({ kind: 'update' }))
   })
 
+  it('derives the network tag from the approved version, keeping the curated tags', async () => {
+    const { modId, versionId: first } = await submitMod()
+    await db
+      .update(schema.mods)
+      .set({ tags: ['minimal'] })
+      .where(eq(schema.mods.id, modId))
+    await approveVersion(db, first, 'admin', fakeGitHub())
+    const update = await addVersion(db, modId, {
+      commitSha: sha('b'),
+      versionNumber: 2,
+      footprint: { events: [], calls: ['$.http.fetch'] },
+    })
+    await insertPendingSubmission(db, { kind: 'mod', versionId: update, submittedBy: 'submitter' })
+
+    await approveVersion(db, update, 'admin', fakeGitHub())
+
+    const [mod] = await db.select().from(schema.mods).where(eq(schema.mods.id, modId))
+    expect(mod?.allTags).toEqual(['minimal', 'network-access'])
+  })
+
+  it('refuses a version older than the live one', async () => {
+    const { modId, versionId: first } = await submitMod()
+    const newer = await addVersion(db, modId, { commitSha: sha('c'), versionNumber: 2 })
+    await db
+      .update(schema.mods)
+      .set({ status: 'published', currentVersionId: newer })
+      .where(eq(schema.mods.id, modId))
+
+    await expect(approveVersion(db, first, 'admin', fakeGitHub())).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringMatching(/older than the live/),
+    })
+    expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: newer })
+  })
+
+  it('asks GitHub only whether the commit is on the default branch', async () => {
+    const { modId, versionId: first } = await submitMod()
+    await approveVersion(db, first, 'admin', fakeGitHub())
+    const update = await submitUpdate(modId)
+    const github = fakeGitHub()
+
+    await approveVersion(db, update, 'admin', github)
+
+    expect(github.calls).toEqual([`on-default:${sha('b')}`])
+  })
+
   it.each([
     [
       'not rendered',

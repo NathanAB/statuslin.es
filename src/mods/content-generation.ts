@@ -4,10 +4,10 @@ import z from 'zod'
 import { modPageCopySchema, readPageCopy } from '@/content/types'
 import { modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
 import { TAG_VOCABULARY } from '@/gallery/facets'
-import { mergeTags } from '@/lib/derived-tags'
 import { buildModContentPrompt, buildModTagsPrompt } from './content-prompt'
 import { describeModFootprint } from './footprint'
 import { footprintFacts } from './footprint-facts'
+import { modAllTags } from './publish'
 import { desktopPreviewJoin, terminalPreviewJoin } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -172,14 +172,13 @@ export async function applyModContentGenerationResponses(
           `mod "${response.slug}" is at a different version than the response (changed after its request was prepared)`,
         )
       }
-      const derived = row.footprint.calls.includes('$.http.fetch') ? ['network-access'] : []
       await tx
         .update(modVersions)
         .set({ generatedContent: response.generatedContent })
         .where(eq(modVersions.id, response.versionId))
       const [updated] = await tx
         .update(mods)
-        .set({ tags: response.tags, allTags: mergeTags(response.tags, derived) })
+        .set({ tags: response.tags, allTags: modAllTags(response.tags, row.footprint) })
         .where(and(eq(mods.id, row.modId), eq(mods.currentVersionId, response.versionId)))
         .returning({ id: mods.id })
       if (!updated) throw new Error(`mod "${response.slug}" changed while applying its content`)

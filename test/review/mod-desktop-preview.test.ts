@@ -53,7 +53,9 @@ describe('adminModDesktopPreviewResponse', () => {
   ])('refuses with %i when the viewer is not an admin', async (status, message) => {
     assertAdmin.mockRejectedValue(new HttpError(status, message))
 
-    expect((await get(ids.draft as string)).status).toBe(status)
+    const res = await get(ids.draft as string)
+    expect(res.status).toBe(status)
+    expect(res.headers.get('cache-control')).toBe('private, no-store')
   })
 
   it.each([
@@ -61,7 +63,9 @@ describe('adminModDesktopPreviewResponse', () => {
     ['an id that is not a uuid', () => 'not-a-uuid'],
     ['an unknown version', () => '00000000-0000-4000-8000-000000000000'],
   ])('answers 404 for %s', async (_name, versionId) => {
-    expect((await get(versionId())).status).toBe(404)
+    const res = await get(versionId())
+    expect(res.status).toBe(404)
+    expect(res.headers.get('cache-control')).toBe('private, no-store')
   })
 
   it('names the admin route for a version', () => {

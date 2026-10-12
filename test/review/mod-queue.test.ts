@@ -38,9 +38,13 @@ afterAll(async () => {
   await close()
 })
 
-async function submitMod(slug: string, rendered = true) {
+async function submitMod(slug: string, rendered = true, commit = 'a') {
   const modId = await addMod(db, slug, 'draft')
-  const versionId = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1, rendered })
+  const versionId = await addVersion(db, modId, {
+    commitSha: sha(commit),
+    versionNumber: 1,
+    rendered,
+  })
   await setCurrentVersion(db, modId, versionId)
   await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'submitter' })
   return { modId, versionId }
@@ -92,6 +96,19 @@ describe('getModReviewRows', () => {
 
     expect(rows.map((r) => r.version.id)).toEqual([update, first])
     expect(rows[0]?.live).toMatchObject({ id: first, commitSha: sha('a') })
+  })
+
+  it("shows no live version when the pointer names another mod's version", async () => {
+    const { modId } = await submitMod('meter')
+    const other = await submitMod('gauge', true, 'f')
+    await db
+      .update(schema.mods)
+      .set({ status: 'published', currentVersionId: other.versionId })
+      .where(eq(schema.mods.id, modId))
+
+    const row = (await getModReviewRows(db)).find((r) => r.mod.slug === 'meter')
+
+    expect(row).not.toHaveProperty('live')
   })
 
   it('keeps a decided mod listed until its email is delivered', async () => {

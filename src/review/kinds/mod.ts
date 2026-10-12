@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, lt } from 'drizzle-orm'
+import { and, desc, eq, lt } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModStatus, mods, modVersions, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
@@ -6,10 +6,11 @@ import { modPath } from '@/lib/site'
 import type { GitHub } from '@/mods/github'
 import {
   alreadyCurrentGuard,
-  compareBase,
   currentChangedGuard,
   loadCurrentVersion,
   loadVersions,
+  modAllTags,
+  type PublishVersion,
   publishGuards,
   removedGuard,
 } from '@/mods/publish'
@@ -19,8 +20,8 @@ import type { ApprovalContext, Publish, RejectionContext, ReviewKind } from './k
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
-/** What approving a mod asks GitHub, as publish-mod.ts does. */
-export type ModReviewGitHub = Pick<GitHub, 'commitIsOnDefaultBranch' | 'filesChanged'>
+/** What approving a mod asks GitHub. */
+export type ModReviewGitHub = Pick<GitHub, 'commitIsOnDefaultBranch'>
 
 const NOUN = 'mod'
 const NOT_PENDING = 'version not in a reviewable (pending) state'
@@ -43,35 +44,43 @@ async function versionMod(database: Db, versionId: string) {
 }
 
 /**
- * Moves the mod's live pointer to the version, publishing a draft, but only while the mod's status
- * and pointer are what the approval checked against; otherwise a 409 says what changed. Writes only
- * through `tx`.
+ * Moves the mod's live pointer to the version, publishing a draft, and derives its tags from the
+ * version's footprint, as approving a status line does. Only while the mod's status and pointer are
+ * what the approval checked against; otherwise a 409 says what changed. Writes only through `tx`.
  */
 function publishStep(
   slug: string,
-  modId: string,
-  versionId: string,
-  read: { status: ModStatus; currentVersionId: string | null },
+  target: PublishVersion,
+  read: { id: string; status: ModStatus; currentVersionId: string | null },
 ): Publish {
   return async (tx) => {
-    const moved = await tx
+    const [mod] = await tx
+      .select({ status: mods.status, currentVersionId: mods.currentVersionId, tags: mods.tags })
+      .from(mods)
+      .where(eq(mods.id, read.id))
+      .for('update')
+    if (mod?.status !== read.status || mod.currentVersionId !== read.currentVersionId) {
+      const guard = mod?.status === 'removed' ? removedGuard(slug) : currentChangedGuard(slug)
+      throw new HttpError(409, guard.message)
+    }
+    await tx
       .update(mods)
-      .set({ currentVersionId: versionId, status: 'published' })
-      .where(
-        and(
-          eq(mods.id, modId),
-          eq(mods.status, read.status),
-          read.currentVersionId
-            ? eq(mods.currentVersionId, read.currentVersionId)
-            : isNull(mods.currentVersionId),
-        ),
-      )
-      .returning({ id: mods.id })
-    if (moved.length > 0) return
-    const [mod] = await tx.select({ status: mods.status }).from(mods).where(eq(mods.id, modId))
-    const guard = mod?.status === 'removed' ? removedGuard(slug) : currentChangedGuard(slug)
-    throw new HttpError(409, guard.message)
+      .set({
+        currentVersionId: target.id,
+        status: 'published',
+        allTags: modAllTags(mod.tags, target.footprint),
+      })
+      .where(eq(mods.id, read.id))
   }
+}
+
+/** The live version's number, to refuse rolling the mod back to an older one. */
+async function liveVersionNumber(database: Db, liveId: string): Promise<number | undefined> {
+  const [live] = await database
+    .select({ versionNumber: modVersions.versionNumber })
+    .from(modVersions)
+    .where(eq(modVersions.id, liveId))
+  return live?.versionNumber
 }
 
 /** An approval is an update when an earlier version of the mod was approved, so went live. */
@@ -106,7 +115,13 @@ export function modReview(github: ModReviewGitHub): ReviewKind {
       if (current?.id === target.id) {
         throw new HttpError(409, alreadyCurrentGuard(mod.slug, target.commitSha).message)
       }
-      const base = compareBase(current, target)
+      const live = current ? await liveVersionNumber(database, current.id) : undefined
+      if (live !== undefined && live > mod.versionNumber) {
+        throw new HttpError(
+          409,
+          `"${mod.slug}" v${mod.versionNumber} is older than the live v${live}; approve a newer version`,
+        )
+      }
       const guards = publishGuards({
         slug: mod.slug,
         modStatus: mod.status,
@@ -114,15 +129,14 @@ export function modReview(github: ModReviewGitHub): ReviewKind {
         target,
         current,
         onDefaultBranch: await github.commitIsOnDefaultBranch(target.repoUrl, target.commitSha),
-        filesChanged: base
-          ? await github.filesChanged(target.repoUrl, base.commitSha, target.commitSha)
-          : null,
+        // The file list feeds only a warning, which the /admin card shows with a compare link.
+        filesChanged: null,
       })
       const refusals = guards.filter((guard) => guard.level === 'refuse')
       if (refusals.length > 0) {
         throw new HttpError(409, refusals.map((guard) => guard.message).join('; '))
       }
-      return publishStep(mod.slug, mod.id, versionId, mod)
+      return publishStep(mod.slug, target, mod)
     },
 
     async approvalContext(database, versionId): Promise<ApprovalContext> {

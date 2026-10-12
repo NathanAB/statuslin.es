@@ -100,7 +100,7 @@ describe('check:boundaries', () => {
     TIMEOUT_MS,
   )
   test(
-    'lets src/review import the mod publish, query, GitHub and install code, and nothing else in src/mods',
+    'lets src/review import the mod publish, query and GitHub code, and nothing else in src/mods',
     async () => {
       const root = await fixture({
         'tsconfig.json': JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }),
@@ -108,15 +108,13 @@ describe('check:boundaries', () => {
           "import { guards } from '@/mods/publish'",
           "import { rows } from '@/mods/queries'",
           "import { github } from '@/mods/github'",
-          "import { install } from '@/mods/install'",
           "import { submit } from '@/mods/submit'",
-          'export const all = [guards, rows, github, install, submit]',
+          'export const all = [guards, rows, github, submit]',
           '',
         ].join('\n'),
         'src/mods/publish.ts': 'export const guards = 1\n',
         'src/mods/queries.ts': 'export const rows = 1\n',
         'src/mods/github.ts': 'export const github = 1\n',
-        'src/mods/install.ts': 'export const install = 1\n',
         'src/mods/submit.ts': 'export const submit = 1\n',
       })
 

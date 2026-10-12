@@ -1,11 +1,17 @@
 import { and, eq, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, type ModStatus, modVersions } from '@/db/schema'
+import { mergeTags } from '@/lib/derived-tags'
 import { COMMIT_SHA } from './curation'
 import { MOD_SCENARIO_KEY, versionIsRendered } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
+
+/** A mod's tags plus the one its footprint implies, as the gallery's badges and filters read them. */
+export function modAllTags(tags: string[], footprint: ModFootprint): string[] {
+  return mergeTags(tags, footprint.calls.includes('$.http.fetch') ? ['network-access'] : [])
+}
 
 export interface Guard {
   level: 'refuse' | 'warn'

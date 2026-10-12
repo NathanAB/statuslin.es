@@ -14,6 +14,9 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 /** Where /admin shows a mod version's Desktop shot before it is published. */
 export const ADMIN_MOD_DESKTOP_PREVIEW_ROUTE = '/admin/mod-previews/$versionId/desktop.png'
 
+/** Nothing here may be cached: not the image, and not a refusal a later admin would get. */
+const UNCACHED = { 'Cache-Control': 'private, no-store' }
+
 export function adminModDesktopPreviewPath(versionId: string): string {
   return ADMIN_MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)
 }
@@ -32,9 +35,9 @@ export async function adminModDesktopPreviewResponse(
     await assertAdmin(headers)
   } catch (error) {
     const status = error instanceof HttpError ? error.status : 500
-    return new Response('Forbidden', { status })
+    return new Response('Forbidden', { status, headers: UNCACHED })
   }
-  if (!isUuid(versionId)) return new Response('Not found', { status: 404 })
+  if (!isUuid(versionId)) return new Response('Not found', { status: 404, headers: UNCACHED })
   const [row] = await database
     .select({ png: modDesktopPreviews.png })
     .from(modDesktopPreviews)
@@ -44,12 +47,14 @@ export async function adminModDesktopPreviewResponse(
         eq(modDesktopPreviews.scenarioKey, MOD_SCENARIO_KEY),
       ),
     )
-  if (!row?.png) return new Response('Not found', { status: 404 })
+  if (!row?.png) return new Response('Not found', { status: 404, headers: UNCACHED })
   return new Response(new Blob([row.png as BufferSource]), {
     headers: {
+      ...UNCACHED,
       'Content-Type': 'image/png',
       'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': 'private, no-store',
+      // Opened on its own, the bytes still can't run as a page.
+      'Content-Security-Policy': "default-src 'none'; sandbox",
     },
   })
 }
