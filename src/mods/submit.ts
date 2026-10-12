@@ -19,12 +19,11 @@ import { type LinkGitHub, parseModLink, resolveModLink } from './link'
 import { addOwnVersion, findOwnMod, NO_NEW_VERSION, newVersionKind, type OwnMod } from './own-mod'
 import { PluginRefusal } from './plugin-facts'
 import type { SubmitGuard } from './submit-guard'
+import { MOD_TITLE_MAX } from './submit-input'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
-
-export const MOD_TITLE_MAX = 200
 
 export type ModSubmitDeps = InspectDeps & {
   github: LinkGitHub & InspectDeps['github']

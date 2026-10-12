@@ -46,10 +46,11 @@ function binaryArrayBuffer(): Plugin {
 // Dev only. Nitro's dev server hands a request to the app only when it matches a Nitro route, and
 // every TanStack route sits behind Nitro's `/**` catch-all. So it guesses: a browser's <img> request
 // (Sec-Fetch-Dest: image, or a .png path without Accept: text/html) is taken for a static file and
-// 404s before the app sees it. These are the app's image routes (src/routes/og.*[.]png.ts and
-// mod-previews.$versionId.desktop[.]png.ts); dressing their requests as page loads makes Nitro pass
-// them on. The production server has no such guess: its static middleware falls through on a miss.
-const DEV_IMAGE_ROUTE_PREFIXES = ['/og/', '/mod-previews/']
+// 404s before the app sees it. These are the app's image routes (src/routes/og.*[.]png.ts,
+// mod-previews.$versionId.desktop[.]png.ts and its admin twin under admin/); dressing their requests
+// as page loads makes Nitro pass them on. The production server has no such guess: its static
+// middleware falls through on a miss.
+const DEV_IMAGE_ROUTE_PREFIXES = ['/og/', '/mod-previews/', '/admin/mod-previews/']
 
 function devImageRoutes(): Plugin {
   return {

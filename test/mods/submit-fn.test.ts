@@ -24,7 +24,8 @@ vi.mock('@/mods/submit', async (orig) => ({
   submitMod,
 }))
 
-const { submitModFn, validateModSubmitRequest } = await import('@/mods/submit-fn')
+const { submitModFn } = await import('@/mods/submit-fn')
+const { validateModSubmitRequest } = await import('@/mods/submit-input')
 const LINK = 'https://github.com/octocat/mods/tree/main/plugins/meter'
 
 beforeEach(() => {
