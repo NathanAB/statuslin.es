@@ -1,10 +1,14 @@
+import { Link } from '@tanstack/react-router'
+import { FilePen } from 'lucide-react'
 import type { BadgeVariant } from '@/review/dashboard-card-parts'
 import type { MyModRow } from '@/review/my-submissions'
 import { AnalyticsPrivate } from '@/ui/analytics-private'
 import { Badge } from '@/ui/badge'
+import { Button } from '@/ui/button'
 import { Row, Stack } from '@/ui/layout'
 import { Notice } from '@/ui/notice'
 import { SectionCard } from '@/ui/section-card'
+import { StretchedLink } from '@/ui/stretched-link'
 import { Text, TextLink } from '@/ui/text'
 
 type View = { variant: BadgeVariant; label: string; text: string }
@@ -33,8 +37,15 @@ export function MyModCard({ row }: { row: MyModRow }) {
   const v = view(row)
   const published = mod.status === 'published'
   const update = published && latest.versionNumber !== row.liveVersionNumber ? latest : null
+  const title = published ? (
+    <StretchedLink to="/mods/$slug" params={{ slug: mod.slug }}>
+      {mod.title}
+    </StretchedLink>
+  ) : (
+    mod.title
+  )
   return (
-    <SectionCard title={mod.title}>
+    <SectionCard interactive={published} title={title}>
       <Stack gap={3}>
         <Row gap={2} align="center" wrap>
           <Badge variant="outline">Mod</Badge>
@@ -54,22 +65,24 @@ export function MyModCard({ row }: { row: MyModRow }) {
             </Stack>
           </AnalyticsPrivate>
         ) : null}
-        <Row gap={3} wrap>
-          {published ? (
-            <>
-              <TextLink to="/mods/$slug" params={{ slug: mod.slug }}>
-                View page
-              </TextLink>
-              <TextLink to="/submit" search={{ kind: 'mod', update: mod.slug }}>
-                {latest.status === 'rejected' ? 'Submit a new update' : 'Submit update'}
-              </TextLink>
-            </>
-          ) : latest.status === 'rejected' ? (
-            <TextLink to="/submit" search={{ kind: 'mod', resubmit: mod.slug }}>
-              Fix and resubmit
-            </TextLink>
-          ) : null}
-        </Row>
+        {published ? (
+          // The outer row shrink-wraps the lifted one, so only the button covers the card link.
+          <Row gap={2}>
+            <Row gap={2} aboveOverlay>
+              <Button asChild>
+                <Link to="/submit" search={{ kind: 'mod', update: mod.slug }}>
+                  <FilePen />
+                  {latest.status === 'rejected' ? 'Submit a new update' : 'Submit update'}
+                </Link>
+              </Button>
+            </Row>
+          </Row>
+        ) : null}
+        {mod.status === 'draft' && latest.status === 'rejected' ? (
+          <TextLink to="/submit" search={{ kind: 'mod', resubmit: mod.slug }}>
+            Fix and resubmit
+          </TextLink>
+        ) : null}
       </Stack>
     </SectionCard>
   )

@@ -7,6 +7,7 @@ import { getMarketplaceRows } from '@/mods/queries'
 import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
+import { insertPendingSubmission } from '@/submissions/record'
 import { type ImportDeps, importMods } from '../../scripts/import-mods'
 import { runPublish } from '../../scripts/publish-mod'
 import { renderMods } from '../../scripts/render-mods'
@@ -225,6 +226,26 @@ describe('importMods', () => {
     expect(exitCode).toBe(0)
     expect(output).toMatch(/^imported skins-mallory v2 at e{40}/)
     expect((await allMods()).map((m) => m.slug).sort()).toEqual(['skins', 'skins-mallory'])
+  })
+
+  it('never re-pins a mod a user submitted, even from the same repository', async () => {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    await run([entry()])
+    const [submitted] = await allMods()
+    const [version] = await allVersions()
+    await insertPendingSubmission(db, {
+      kind: 'mod',
+      versionId: version!.id,
+      submittedBy: 'ada',
+    })
+
+    const { output } = await run([entry({ commitSha: 'e'.repeat(40) })])
+
+    expect(output).toMatch(/^imported skins-hellosverre v1/)
+    expect((await allVersions()).filter((v) => v.modId === submitted?.id)).toHaveLength(1)
   })
 
   it('names a new mod <name>-<owner> when another mod already has its name as a slug', async () => {

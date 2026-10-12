@@ -19,8 +19,10 @@ vi.mock('e2b', async (importOriginal) => {
 })
 
 import {
+  COMMAND_TIMEOUT_MS,
   REPLAY_TIMEOUT_MS,
   REQUEST_TIMEOUT_MS,
+  withModSandbox,
   withRecordingSandbox,
   withReplaySandbox,
 } from '@/render/mods/mod-sandbox'
@@ -56,6 +58,20 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllEnvs()
   vi.clearAllMocks()
+})
+
+describe('withModSandbox', () => {
+  it('opens the sandbox that reads a plugin for less time than a recording, but long enough to read it', async () => {
+    fake.sandbox.commands.run.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' })
+    await withRecordingSandbox(null, async () => {})
+    await withModSandbox({ tarball: new Uint8Array([31, 139]), path: '' }, async () => {})
+
+    const [recording, inspection] = fake.create.mock.calls.map(([, options]) => options)
+    expect(inspection.timeoutMs).toBeLessThan(recording.timeoutMs)
+    expect(inspection.timeoutMs).toBeGreaterThanOrEqual(
+      2 * REQUEST_TIMEOUT_MS + 3 * COMMAND_TIMEOUT_MS,
+    )
+  })
 })
 
 describe('withReplaySandbox', () => {

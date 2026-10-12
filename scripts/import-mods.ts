@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { and, eq } from 'drizzle-orm'
-import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { and, eq, notExists } from 'drizzle-orm'
+import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
@@ -53,12 +53,16 @@ export interface ImportDeps {
   log: (line: string) => void
 }
 
-/** The mod an entry re-pins: the one with its plugin name whose current version is from its repository. */
+/**
+ * The curated mod an entry re-pins: the one with its plugin name whose current version is from its
+ * repository. A mod a user submitted is theirs to update (ADR 0005), so it is never re-pinned here.
+ */
 async function modToRepin(
   db: Db,
   entry: CurationEntry,
 ): Promise<{ id: string; slug: string } | undefined> {
-  const [row] = await db
+  const submitted = alias(schema.modVersions, 'submitted')
+  const rows = await db
     .select({ id: schema.mods.id, slug: schema.mods.slug })
     .from(schema.mods)
     .innerJoin(
@@ -72,9 +76,21 @@ async function modToRepin(
       and(
         eq(schema.mods.pluginName, entry.pluginName),
         eq(schema.modVersions.repoUrl, entry.repoUrl),
+        notExists(
+          db
+            .select({ id: schema.submissions.id })
+            .from(schema.submissions)
+            .innerJoin(submitted, eq(submitted.id, schema.submissions.modVersionId))
+            .where(eq(submitted.modId, schema.mods.id)),
+        ),
       ),
     )
-  return row
+  if (rows.length > 1) {
+    throw new Error(
+      `${rows.length} curated mods are "${entry.pluginName}" from ${entry.repoUrl}: ${rows.map((r) => r.slug).join(', ')}`,
+    )
+  }
+  return rows[0]
 }
 
 async function importEntry(

@@ -32,6 +32,7 @@ describe('ModSubmitForm', () => {
       expect(submitModFn).toHaveBeenCalledWith({ data: { link: LINK, title: 'Context meter' } }),
     )
     expect(await screen.findByText('Pinned meter to main at abcdef1.')).toBeTruthy()
+    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('')
   })
 
   it('sends an update for the mod it was opened for, keeping the live title', async () => {

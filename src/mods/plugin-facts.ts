@@ -19,6 +19,18 @@ export interface PluginFacts {
   claudeCodeVersion: string
 }
 
+/**
+ * What is wrong with the plugin itself, said to whoever submitted it. Anything else that fails while
+ * reading a plugin (the sandbox, the network) is a failure of ours.
+ */
+export class PluginRefusal extends Error {
+  override name = 'PluginRefusal'
+}
+
+/** What `claude plugin validate` may print; a plugin's own files decide how long its report is. */
+const VALIDATE_MAX_BYTES = 1024 * 1024
+const VALIDATE_STDERR_MAX_BYTES = 4096
+
 /** A plugin.json past this is truncated, fails to parse, and the entry is refused. */
 const MANIFEST_MAX_BYTES = 64 * 1024
 
@@ -54,13 +66,21 @@ const FOOTPRINT_ENTRY_MAX_CHARS = 200
 
 function footprintList(kind: 'event' | 'call', entries: Set<string>): string[] {
   if (entries.size > FOOTPRINT_MAX_ENTRIES) {
-    throw new Error(
+    throw new PluginRefusal(
       `claude plugin validate reports ${entries.size} ${kind}s; at most ${FOOTPRINT_MAX_ENTRIES} are stored`,
     )
   }
   if ([...entries].some((entry) => entry.length > FOOTPRINT_ENTRY_MAX_CHARS)) {
-    throw new Error(
+    throw new PluginRefusal(
       `claude plugin validate reports ${kind}s longer than ${FOOTPRINT_ENTRY_MAX_CHARS} characters`,
+    )
+  }
+  // Shown verbatim to the reviewer, where a zero-width or bidi character could disguise a call.
+  const hidden = [...entries].find((entry) => CONTROL_OR_FORMAT.test(entry))
+  if (hidden !== undefined) {
+    const char = CONTROL_OR_FORMAT.exec(hidden)?.[0] ?? ''
+    throw new PluginRefusal(
+      `claude plugin validate reports a ${kind} with control or format characters (${codePoint(char)})`,
     )
   }
   return [...entries].sort()
@@ -115,11 +135,11 @@ export function parseFootprint(validateJson: unknown): ModFootprint {
 
 export function parseManifest(text: string): PluginManifest {
   const json = parseJson(text)
-  if (json === undefined) throw new Error('.claude-plugin/plugin.json is not valid JSON')
+  if (json === undefined) throw new PluginRefusal('.claude-plugin/plugin.json is not valid JSON')
   const parsed = manifestSchema.safeParse(json)
   if (!parsed.success) {
     const problems = parsed.error.issues.map((issue) => `${issue.path.join('.')} ${issue.message}`)
-    throw new Error(`.claude-plugin/plugin.json: ${problems.join('; ')}`)
+    throw new PluginRefusal(`.claude-plugin/plugin.json: ${problems.join('; ')}`)
   }
   const { name, version, description } = parsed.data
   return { name, version: version ?? null, description: description ?? '' }
@@ -150,20 +170,22 @@ export async function inspectPlugin(sandbox: ModSandbox): Promise<PluginFacts> {
     throw new Error(`claude --version failed: ${(version.stderr || version.stdout).trim()}`)
   }
 
+  // Each stream to a file first, so neither can grow without bound in this process.
+  const out = `${sandbox.pluginDir}/../validate`
   const validate = await sandbox.run(
-    `${SANDBOX_CLAUDE_CODE_BIN} plugin validate --json ${sandbox.pluginDir}`,
+    `${SANDBOX_CLAUDE_CODE_BIN} plugin validate --json ${sandbox.pluginDir} >${out}.json 2>${out}.err; code=$?; head -c ${VALIDATE_MAX_BYTES} ${out}.json; head -c ${VALIDATE_STDERR_MAX_BYTES} ${out}.err >&2; exit $code`,
   )
   const validateJson = parseJson(validate.stdout)
   const errors = validateErrors(validateJson)
   if (validate.exitCode !== 0 || errors.length > 0) {
     const detail = errors.length > 0 ? errors : [validate.stderr.trim()]
-    throw new Error(`claude plugin validate failed: ${detail.join('; ')}`)
+    throw new PluginRefusal(`claude plugin validate failed: ${detail.join('; ')}`)
   }
 
   const manifest = await sandbox.run(
     `head -c ${MANIFEST_MAX_BYTES} ${sandbox.pluginDir}/.claude-plugin/plugin.json`,
   )
-  if (manifest.exitCode !== 0) throw new Error('could not read .claude-plugin/plugin.json')
+  if (manifest.exitCode !== 0) throw new PluginRefusal('could not read .claude-plugin/plugin.json')
   return {
     manifest: parseManifest(manifest.stdout),
     footprint: parseFootprint(validateJson),

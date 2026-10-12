@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { PluginRefusal } from '@/mods/plugin-facts'
 import { type ModSubmitDeps, submitMod } from '@/mods/submit'
+import { createSubmitGuard } from '@/mods/submit-guard'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
 import { openTestDb, sha, type TestDb } from './seed-mods'
 
@@ -54,6 +56,7 @@ function deps({
   }
   return {
     calls,
+    guard: createSubmitGuard({ perUserPerHour: 100, inFlight: 10 }),
     github: {
       async findRepo() {
         calls.push('repo')
@@ -163,7 +166,8 @@ describe('submitMod', () => {
 
   it('refuses past the rate limit before asking GitHub anything', async () => {
     for (const [i, char] of ['b', 'c', 'd'].entries()) {
-      await submit({}, deps({ head: sha(char), manifest: { name: `meter-${i}` } }))
+      const link = `${REPO}/tree/main/plugins/meter-${i}`
+      await submit({ link }, deps({ head: sha(char), manifest: { name: `meter-${i}` } }))
     }
     const d = deps({ head: sha('e') })
 
@@ -190,13 +194,66 @@ describe('submitMod', () => {
   })
 
   it('refuses a plugin that fails validation', async () => {
-    const d = deps({ sandboxError: new Error('claude plugin validate failed: bad hook') })
+    const d = deps({ sandboxError: new PluginRefusal('claude plugin validate failed: bad hook') })
 
     await expect(submit({}, d)).rejects.toMatchObject({
       status: 400,
       message: expect.stringMatching(/bad hook/),
     })
     expect(await db.select().from(schema.mods)).toEqual([])
+  })
+
+  it('cuts a long refusal short', async () => {
+    const d = deps({ sandboxError: new PluginRefusal(`validate failed: ${'x'.repeat(5000)}`) })
+
+    const refused = await submit({}, d).catch((error: unknown) => error)
+    expect(refused).toMatchObject({ status: 400 })
+    expect((refused as Error).message.length).toBeLessThanOrEqual(1100)
+  })
+
+  it('reports a failure of its own, such as the sandbox not starting, as a 500, not a refusal', async () => {
+    const d = deps({ sandboxError: new Error('E2B: 502 Bad Gateway') })
+
+    const failed = await submit({}, d).catch((error: unknown) => error)
+    expect(failed).toBeInstanceOf(Error)
+    expect(failed).not.toHaveProperty('status')
+  })
+
+  it('refuses a second listing of a folder that is already a mod, without downloading it', async () => {
+    const [mod] = await db
+      .insert(schema.mods)
+      .values({
+        slug: 'curated',
+        pluginName: 'meter',
+        title: 'Meter',
+        authorGithub: 'octocat',
+        status: 'published',
+      })
+      .returning()
+    await db.insert(schema.modVersions).values({
+      modId: mod!.id,
+      versionNumber: 1,
+      repoUrl: REPO,
+      path: 'plugins/meter',
+      commitSha: sha('f'),
+      footprint: { events: [], calls: [] },
+      validatedWith: '2.1.0',
+    })
+    const d = deps()
+
+    await expect(submit({}, d)).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringMatching(/already listed as "curated"/),
+    })
+    expect(d.calls.filter((c) => c.startsWith('tarball'))).toEqual([])
+  })
+
+  it('refuses through the guard when the submitter already has a check running', async () => {
+    const d = deps()
+    d.guard = { run: async () => Promise.reject(Object.assign(new Error('busy'), { status: 429 })) }
+
+    await expect(submit({}, d)).rejects.toMatchObject({ status: 429 })
+    expect(d.calls).toEqual([])
   })
 })
 
@@ -265,12 +322,12 @@ describe('a new version of your own mod', () => {
     ])
   })
 
-  it('refuses a new version while the first is still in review', async () => {
+  it('refuses a new version while the first is still in review, before asking GitHub', async () => {
     await submit()
+    const d = deps({ head: sha('b') })
 
-    await expect(submit({ slug: 'meter' }, deps({ head: sha('b') }))).rejects.toMatchObject({
-      status: 409,
-    })
+    await expect(submit({ slug: 'meter' }, d)).rejects.toMatchObject({ status: 409 })
+    expect(d.calls).toEqual([])
   })
 
   it.each([

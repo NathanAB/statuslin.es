@@ -77,6 +77,15 @@ describe('parseFootprint', () => {
     expect(() => parseFootprint(validateWith(notes))).toThrow(message)
   })
 
+  it('refuses an entry carrying a format character, which could disguise a call', () => {
+    const report = {
+      success: true,
+      contents: [{ notes: ['./a.ts calls: $.fs.re\u200bad'] }],
+    }
+
+    expect(() => parseFootprint(report)).toThrow(/control or format characters/)
+  })
+
   it('is empty for a plugin with no hook modules', () => {
     expect(parseFootprint({ success: true, contents: [] })).toEqual({ events: [], calls: [] })
   })

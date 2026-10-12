@@ -70,6 +70,7 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
       setPinned(`Pinned ${result.slug} to ${result.ref} at ${result.commitSha.slice(0, 7)}.`)
       toast.success("Submitted — we'll render it and review it.")
       setLink('')
+      setTitle(draft?.title ?? '')
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
       // Only the status: the message can carry the plugin's own validation output.
@@ -88,7 +89,13 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
         {pinned ? <Notice tone="info">{pinned}</Notice> : null}
         <Stack gap={1.5}>
           <Label htmlFor="mod-link">GitHub link</Label>
-          <Input id="mod-link" value={link} onChange={(e) => setLink(e.target.value)} required />
+          <Input
+            id="mod-link"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="https://github.com/owner/repo/tree/main/plugins/my-mod"
+            required
+          />
           <Text muted size="sm">
             The plugin’s folder, its .claude-plugin/plugin.json, or a commit. A branch is pinned to
             its newest commit, which must be on the default branch.

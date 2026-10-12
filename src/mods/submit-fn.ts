@@ -10,6 +10,7 @@ import { PLUGIN_NAME } from './curation'
 import { createGitHub } from './github'
 import { getOwnModDraft } from './own-mod'
 import { MOD_TITLE_MAX, submitMod } from './submit'
+import { modSubmitGuard } from './submit-guard'
 import { modSubmittedEvent } from './submitted-event'
 
 const DRAFT_KINDS = ['update', 'resubmission'] as const
@@ -53,7 +54,7 @@ export const submitModFn = createServerFn({ method: 'POST' })
       const result = await submitMod(
         db,
         { ...data, submittedBy: session.user.id },
-        { github: createGitHub(), withSandbox: withModSandbox },
+        { github: createGitHub(), withSandbox: withModSandbox, guard: modSubmitGuard },
       )
       const event = modSubmittedEvent({
         userId: session.user.id,

@@ -67,6 +67,17 @@ describe('a submitted mod on /me', () => {
     expect(markup).toContain('Update v2 in review')
   })
 
+  it('offers no fix for a removed mod, which cannot be resubmitted', () => {
+    const markup = html([
+      row({
+        mod: { id: 'm1', slug: 'meter', title: 'Context meter', status: 'removed' },
+        latest: { status: 'rejected', rejectionReason: 'No' },
+      }),
+    ])
+    expect(markup).toContain('removed')
+    expect(markup).not.toContain('resubmit=meter')
+  })
+
   it('says it has nothing only when there are no status lines and no mods', () => {
     expect(html([])).toContain('submitted anything yet.')
     expect(html([row()])).not.toContain('submitted anything yet.')

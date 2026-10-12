@@ -1,25 +1,24 @@
 import { randomUUID } from 'node:crypto'
-import { desc, eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { mods, modVersions, submissions } from '@/db/schema'
+import { mods, modVersions } from '@/db/schema'
 import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
-import {
-  assertUnderRateLimit,
-  insertPendingSubmission,
-  supersedePending,
-  supersedeRejectionEmail,
-} from '@/submissions/record'
+import { assertUnderRateLimit, insertPendingSubmission } from '@/submissions/record'
 import {
   type InspectDeps,
   importedSlug,
   insertDraftMod,
   insertNextVersion,
   inspectSource,
+  type NewVersion,
+  type PinnedSource,
   pickSlug,
 } from './import'
 import { type LinkGitHub, parseModLink, resolveModLink } from './link'
-import { findOwnMod, type OwnMod } from './own-mod'
+import { addOwnVersion, findOwnMod, NO_NEW_VERSION, newVersionKind, type OwnMod } from './own-mod'
+import { PluginRefusal } from './plugin-facts'
+import type { SubmitGuard } from './submit-guard'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -27,7 +26,10 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export const MOD_TITLE_MAX = 200
 
-export type ModSubmitDeps = InspectDeps & { github: LinkGitHub & InspectDeps['github'] }
+export type ModSubmitDeps = InspectDeps & {
+  github: LinkGitHub & InspectDeps['github']
+  guard: SubmitGuard
+}
 
 export interface ModSubmitInput {
   submittedBy: string
@@ -49,18 +51,39 @@ export interface ModSubmitResult {
 }
 
 const TOO_LARGE = /has more than \d+ files|is larger than \d+ bytes/
+/** A refusal quotes the validator; past this it is cut short. */
+const REFUSAL_MAX_CHARS = 1000
 
-/** What reading the plugin failed on, said to the submitter; GitHub's rate limit passes through. */
+/**
+ * What is wrong with the plugin, said to the submitter. Our own failures (the sandbox, the
+ * network) stay errors, so they reach the error tracker as 500s instead of reading as refusals.
+ */
 function refuseInspection(error: unknown): never {
-  if (error instanceof HttpError) throw error
-  const message = error instanceof Error ? error.message : String(error)
-  if (TOO_LARGE.test(message)) {
+  if (error instanceof PluginRefusal) {
+    const message =
+      error.message.length > REFUSAL_MAX_CHARS
+        ? `${error.message.slice(0, REFUSAL_MAX_CHARS)}…`
+        : error.message
+    throw new HttpError(400, `The plugin didn't pass its check: ${message}`)
+  }
+  if (error instanceof Error && TOO_LARGE.test(error.message)) {
     throw new HttpError(
       400,
       'The repository is over 2,000 files or 20 MB: put the mod in its own repository.',
     )
   }
-  throw new HttpError(400, `Checking the plugin failed: ${message}`)
+  throw error
+}
+
+/** A mod already built from this folder: a second listing of one plugin is refused. */
+async function modAtFolder(db: Db, repoUrl: string, path: string) {
+  const [mod] = await db
+    .select({ slug: mods.slug, status: mods.status })
+    .from(modVersions)
+    .innerJoin(mods, eq(mods.id, modVersions.modId))
+    .where(and(eq(modVersions.repoUrl, repoUrl), eq(modVersions.path, path)))
+    .limit(1)
+  return mod
 }
 
 function checkedTitle(title: string): string {
@@ -74,55 +97,65 @@ function checkedTitle(title: string): string {
   return trimmed
 }
 
-/**
- * A new version of the submitter's own mod, in one transaction. A published mod gets an update,
- * reviewed again while the live version keeps serving; a newer pending update replaces an older one
- * (ADR 0001). A draft whose last version was rejected gets the fix, and may take a new title.
- */
-async function addOwnVersion(
-  db: Db,
-  own: OwnMod,
-  version: Parameters<typeof insertNextVersion>[1],
-  submittedBy: string,
-  title: string | undefined,
-): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    // The mod first, the order approval takes its locks in.
-    const [mod] = await tx
-      .select({ status: mods.status })
-      .from(mods)
-      .where(eq(mods.id, own.id))
-      .for('update')
-    const [latest] = await tx
-      .select({ submission: submissions })
-      .from(modVersions)
-      .innerJoin(submissions, eq(submissions.modVersionId, modVersions.id))
-      .where(eq(modVersions.modId, own.id))
-      .orderBy(desc(modVersions.versionNumber))
-      .limit(1)
-    const isUpdate = mod?.status === 'published'
-    if (!isUpdate && (mod?.status !== 'draft' || latest?.submission.status !== 'rejected')) {
-      throw new HttpError(
-        409,
-        'only a published mod, or one whose last version was rejected, takes a new version',
-      )
+/** Pins the link, and refuses what can't become this submission before anything is downloaded. */
+async function pinSource(db: Db, input: ModSubmitInput, own: OwnMod | null, github: LinkGitHub) {
+  const link = await resolveModLink(parseModLink(input.link), github)
+  const source = { repoUrl: link.repoUrl, path: link.path, commitSha: link.commitSha }
+  if (own) {
+    if (link.repoUrl !== own.repoUrl || link.path !== own.path) {
+      const folder = own.path === '' ? 'its root' : own.path
+      throw new HttpError(400, `Link to a newer commit of ${own.repoUrl}, at ${folder}.`)
     }
-    if (latest?.submission.status === 'rejected') {
-      await supersedeRejectionEmail(tx, latest.submission)
-    }
-    const earlier = await tx
-      .select({ id: modVersions.id })
-      .from(modVersions)
-      .where(eq(modVersions.modId, own.id))
-    await supersedePending(
-      tx,
-      earlier.map((row) => row.id),
+    if (await importedSlug(db, source))
+      throw new HttpError(409, 'That commit is already submitted.')
+    return { link, source }
+  }
+  const listed = await modAtFolder(db, source.repoUrl, source.path)
+  if (listed) {
+    throw new HttpError(
+      409,
+      listed.status === 'published'
+        ? `That plugin is already listed as "${listed.slug}".`
+        : 'That plugin is already submitted. To change your own submission, open it from /me.',
     )
-    await insertNextVersion(tx, version)
-    await insertPendingSubmission(tx, { kind: 'mod', versionId: version.versionId, submittedBy })
-    if (!isUpdate && title) await tx.update(mods).set({ title }).where(eq(mods.id, own.id))
-    return isUpdate
+  }
+  return { link, source }
+}
+
+/** Reads the plugin in the sandbox; an update must keep the plugin's name. */
+async function inspectFor(own: OwnMod | null, source: PinnedSource, deps: InspectDeps) {
+  const facts = await inspectSource(source, deps).catch(refuseInspection)
+  if (own && facts.manifest.name !== own.pluginName) {
+    throw new HttpError(
+      400,
+      `plugin.json names the plugin "${facts.manifest.name}", not "${own.pluginName}".`,
+    )
+  }
+  return facts
+}
+
+/** A draft mod credited to the repository owner, with its first version and pending submission. */
+async function addNewMod(
+  db: Db,
+  version: Omit<NewVersion, 'modId'>,
+  { title, owner, submittedBy }: { title: string | undefined; owner: string; submittedBy: string },
+): Promise<{ modId: string; slug: string }> {
+  const modId = randomUUID()
+  const { facts, versionId } = version
+  const slug = await pickSlug(db, facts.manifest.name, owner)
+  await db.transaction(async (tx) => {
+    await insertDraftMod(tx, {
+      modId,
+      slug,
+      title: title || facts.manifest.name,
+      owner,
+      facts,
+      versionId,
+    })
+    await insertNextVersion(tx, { ...version, modId })
+    await insertPendingSubmission(tx, { kind: 'mod', versionId, submittedBy })
   })
+  return { modId, slug }
 }
 
 /**
@@ -135,63 +168,32 @@ export async function submitMod(
   input: ModSubmitInput,
   deps: ModSubmitDeps,
 ): Promise<ModSubmitResult> {
-  await assertUnderRateLimit(db, input.submittedBy)
+  const { submittedBy } = input
+  await assertUnderRateLimit(db, submittedBy)
   const title = input.title === undefined ? undefined : checkedTitle(input.title)
-  const own = input.slug ? await findOwnMod(db, input.slug, input.submittedBy) : null
-  const link = await resolveModLink(parseModLink(input.link), deps.github)
-  if (own && (link.repoUrl !== own.repoUrl || link.path !== own.path)) {
-    const folder = own.path === '' ? 'its root' : own.path
-    throw new HttpError(400, `Link to a newer commit of ${own.repoUrl}, at ${folder}.`)
-  }
-  const source = { repoUrl: link.repoUrl, path: link.path, commitSha: link.commitSha }
-  const taken = await importedSlug(db, source)
-  if (taken) throw new HttpError(409, `That commit is already submitted, as "${taken}".`)
-  const facts = await inspectSource(source, deps).catch(refuseInspection)
-  if (own && facts.manifest.name !== own.pluginName) {
-    throw new HttpError(
-      400,
-      `plugin.json names the plugin "${facts.manifest.name}", not "${own.pluginName}".`,
-    )
-  }
-  const versionId = randomUUID()
-  const version = { versionId, source, facts, license: link.license, inputSteps: [] }
-  try {
-    if (own) {
-      const isUpdate = await addOwnVersion(
-        db,
-        own,
-        { ...version, modId: own.id },
-        input.submittedBy,
-        title || undefined,
-      )
-      return {
-        modId: own.id,
-        versionId,
-        slug: own.slug,
-        commitSha: link.commitSha,
-        ref: link.ref,
-        isUpdate,
+  const own = input.slug ? await findOwnMod(db, input.slug, submittedBy) : null
+  if (own && !(await newVersionKind(db, own))) throw new HttpError(409, NO_NEW_VERSION)
+  // The submission rate limit counts stored submissions; the guard bounds the work before that.
+  return deps.guard.run(submittedBy, async () => {
+    const { link, source } = await pinSource(db, input, own, deps.github)
+    const facts = await inspectFor(own, source, deps)
+    const versionId = randomUUID()
+    const version = { versionId, source, facts, license: link.license, inputSteps: [] }
+    const pinned = { versionId, commitSha: link.commitSha, ref: link.ref }
+    try {
+      if (own) {
+        const newVersion = { ...version, modId: own.id }
+        const isUpdate = await addOwnVersion(db, own, newVersion, submittedBy, title || undefined)
+        return { ...pinned, modId: own.id, slug: own.slug, isUpdate }
       }
+      const added = await addNewMod(db, version, { title, owner: link.owner, submittedBy })
+      return { ...pinned, ...added, isUpdate: false }
+    } catch (error) {
+      // Two submissions of the same commit, or of two plugins taking one name, raced each other.
+      if (isUniqueViolation(error)) {
+        throw new HttpError(409, 'That mod was just submitted; try again.')
+      }
+      throw error
     }
-    const modId = randomUUID()
-    const slug = await pickSlug(db, facts.manifest.name, link.owner)
-    await db.transaction(async (tx) => {
-      await insertDraftMod(tx, {
-        modId,
-        slug,
-        title: title || facts.manifest.name,
-        owner: link.owner,
-        facts,
-        versionId,
-      })
-      await insertNextVersion(tx, { ...version, modId })
-      await insertPendingSubmission(tx, { kind: 'mod', versionId, submittedBy: input.submittedBy })
-    })
-    return { modId, versionId, slug, commitSha: link.commitSha, ref: link.ref, isUpdate: false }
-  } catch (error) {
-    // Two submissions of the same commit, or of two plugins taking one name, raced each other.
-    if (isUniqueViolation(error))
-      throw new HttpError(409, 'That mod was just submitted; try again.')
-    throw error
-  }
+  })
 }
