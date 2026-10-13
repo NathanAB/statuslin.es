@@ -11,6 +11,7 @@ import { modJsonLd } from '@/mods/json-ld'
 import { modFactTiles } from '@/mods/mod-fact-tiles'
 import { ModHeader } from '@/mods/mod-header'
 import { ModPreview } from '@/mods/mod-preview'
+import { ModRelated } from '@/mods/mod-related'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
 import { PageShell } from '@/ui/shell'
@@ -62,6 +63,7 @@ function ModPage() {
         }
         preview={<ModPreview mod={mod} />}
         whatItDoes={{ copy: mod.generatedContent, tiles: modFactTiles(mod) }}
+        related={<ModRelated items={mod.related} />}
       />
     </PageShell>
   )

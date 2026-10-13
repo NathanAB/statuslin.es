@@ -2,6 +2,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { GalleryItem } from '@/gallery/gallery-items'
 import {
   HOME_TITLE_BASE,
   MOD_NOT_FOUND_TITLE,
@@ -28,13 +29,18 @@ vi.mock('@tanstack/react-router', async () => {
     ...actual,
     Link: ({
       to,
+      params,
       search,
       children,
     }: {
       to: string
+      params?: Record<string, string>
       search?: Record<string, string>
       children: ReactNode
-    }) => <a href={search ? `${to}?${new URLSearchParams(search)}` : to}>{children}</a>,
+    }) => {
+      const path = params ? to.replace(/\$(\w+)/g, (_, key: string) => params[key] ?? '') : to
+      return <a href={search ? `${path}?${new URLSearchParams(search)}` : path}>{children}</a>
+    },
   }
 })
 
@@ -74,9 +80,42 @@ const COPY: NonNullable<ModDetail['generatedContent']> = {
   details: { showsUp: 'A file tree pane on the right' },
 }
 
-function renderPage(mod: Partial<ModDetail> = {}) {
+const RELATED: GalleryItem[] = [
+  {
+    kind: 'mod',
+    card: {
+      modId: '22222222-2222-4222-8222-222222222222',
+      slug: 'meter',
+      title: 'Meter',
+      description: 'A cost meter.',
+      authorGithub: 'octocat',
+      copyCount: 2,
+      tags: [],
+      preview: [{ text: 'meter' }],
+      desktopShot: null,
+    },
+  },
+  {
+    kind: 'status-line',
+    card: {
+      configId: '33333333-3333-4333-8333-333333333333',
+      slug: 'cost-bar',
+      title: 'Cost Bar',
+      description: 'Session cost.',
+      interpreter: 'bash',
+      copyCount: 5,
+      author: null,
+      preview: [{ text: '$1.20' }],
+      networkHosts: [],
+      readsClaudeToken: false,
+      tags: [],
+    },
+  },
+]
+
+function renderPage(mod: Partial<ModDetail> & { related?: GalleryItem[] } = {}) {
   vi.spyOn(ModRoute, 'useLoaderData').mockReturnValue({
-    mod: { ...MOD, ...mod },
+    mod: { ...MOD, related: [], ...mod },
     user: null,
     origin: ORIGIN,
   })
@@ -412,6 +451,27 @@ describe('mod page', () => {
 
     expect(section('What it does').getByText('Shows up')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'How it works' })).toBeNull()
+  })
+
+  it('ends with more like this: related mods, then status lines, each linking to its page', () => {
+    renderPage({ generatedContent: COPY, related: RELATED })
+
+    const what = screen.getByRole('heading', { level: 2, name: 'What it does' })
+    const more = screen.getByRole('heading', { level: 2, name: 'More like this' })
+    expect(what.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const links = section('More like this')
+      .getAllByRole('link')
+      .filter((link) => ['Meter', 'Cost Bar'].includes(link.textContent ?? ''))
+    expect(links.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['Meter', '/mods/meter'],
+      ['Cost Bar', '/c/cost-bar'],
+    ])
+  })
+
+  it('has no more like this section when nothing shares a tag', () => {
+    renderPage({ related: [] })
+
+    expect(screen.queryByRole('heading', { name: 'More like this' })).toBeNull()
   })
 
   it('says so when there is no licence', () => {

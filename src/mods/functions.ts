@@ -5,10 +5,16 @@ import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { type InstallCommandKind, modCopyEvent } from './install'
 import { getModDetail, recordModCopy } from './queries'
+import { getModRelated } from './related'
 
 export const getModDetailFn = createServerFn({ method: 'GET' })
   .inputValidator((d: { slug: string }) => d)
-  .handler(({ data }) => withHttpStatus(() => getModDetail(db, data.slug)))
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      const mod = await getModDetail(db, data.slug)
+      return mod && { ...mod, related: await getModRelated(db, mod) }
+    }),
+  )
 
 /** Anonymous on purpose, like config copies: anyone can copy an install command. */
 export const recordModCopyFn = createServerFn({ method: 'POST' })

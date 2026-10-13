@@ -205,4 +205,4 @@ export { getPublishedSlugsForSitemap } from './published-at'
 // Re-exported so @/gallery/queries stays the single import surface for gallery
 // queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
-export { getRelatedConfigs, RELATED_LIMIT } from './related'
+export { bySharedTags, getConfigsSharingTags, getRelatedConfigs, RELATED_LIMIT } from './related'
