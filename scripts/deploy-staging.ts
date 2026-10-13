@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process'
+import { assertBuildContextClean } from './check-docker-context'
 
 const PRODUCTION_APP = 'statuslines'
 
@@ -65,6 +66,7 @@ function run(command: string[]): Promise<number> {
 }
 
 export async function main(): Promise<void> {
+  await assertBuildContextClean(process.cwd())
   const productionImage = readFlyImageReference(PRODUCTION_APP, 'production')
   console.log(`building staging with retained assets from ${productionImage}`)
   const code = await run(buildStagingDeployCommand(productionImage))
