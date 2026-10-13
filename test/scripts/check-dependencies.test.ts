@@ -89,6 +89,7 @@ const CI = `
 describe('findBunVersionDrift', () => {
   it('passes when the Dockerfile, CI and @types/bun name the same exact version', () => {
     const dockerfile =
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: a Dockerfile build arg, not JS
       'FROM oven/bun:1.4.3 AS a\nFROM ${PREVIOUS_IMAGE} AS b\nFROM oven/bun:1.4.3 AS base\nFROM base AS build'
     const pkg = { devDependencies: { '@types/bun': '1.4.3' } }
     expect(findBunVersionDrift({ dockerfile, ciWorkflow: CI, pkg })).toEqual([])
