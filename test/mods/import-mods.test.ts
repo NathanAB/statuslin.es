@@ -13,7 +13,14 @@ import { runPublish } from '../../scripts/publish-mod'
 import { renderMods } from '../../scripts/render-mods'
 import baseline from '../render/mods/fixtures/baseline.json'
 import skins from '../render/mods/fixtures/skins.json'
-import { fakeGitHub, MODULES_ONLY_LISTING, openTestDb, type TestDb } from './seed-mods'
+import {
+  addMod,
+  addVersion,
+  fakeGitHub,
+  MODULES_ONLY_LISTING,
+  openTestDb,
+  type TestDb,
+} from './seed-mods'
 
 const SHA = 'c'.repeat(40)
 const TARBALL = new Uint8Array([31, 139, 8, 0])
@@ -247,6 +254,26 @@ describe('importMods', () => {
 
     expect(output).toMatch(/^imported skins-hellosverre v1/)
     expect((await allVersions()).filter((v) => v.modId === submitted?.id)).toHaveLength(1)
+  })
+
+  it("imports a curated entry whose commit a user's submission already pins, as its own mod", async () => {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    const submittedId = await addMod(db, 'skins-3f9a2c', 'draft')
+    await db.update(schema.mods).set({ pluginName: 'skins' }).where(eq(schema.mods.id, submittedId))
+    const versionId = await addVersion(db, submittedId, {
+      commitSha: SHA,
+      versionNumber: 1,
+      repoUrl: entry().repoUrl,
+    })
+    await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'ada' })
+
+    const { output } = await run([entry()])
+
+    expect(output).toMatch(/^imported skins v1/)
+    expect((await allMods()).map((m) => m.slug).sort()).toEqual(['skins', 'skins-3f9a2c'])
   })
 
   it('names a new mod <name>-<owner> when another mod already has its name as a slug', async () => {

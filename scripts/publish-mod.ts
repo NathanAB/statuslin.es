@@ -6,6 +6,7 @@ import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { createGitHub, type GitHub } from '@/mods/github'
+import { hasSubmission } from '@/mods/import'
 import {
   alreadyCurrentGuard,
   compareBase,
@@ -31,7 +32,8 @@ import { terminalLine } from '@/mods/terminal-line'
  *
  * Guards. It refuses a SHA that is not 40 lowercase hex, a SHA that matches more than one version of
  * the mod, a commit not on the repo's default branch, a version that has not rendered, a delisted
- * mod (use delist-mod.ts --restore), and the version a published mod already points at. A draft's
+ * mod (use delist-mod.ts --restore), the version a published mod already points at, and a mod a user
+ * submitted (approve it on /admin, which names it and checks its folder). A draft's
  * publish is a first publish, with nothing to compare against. It prints the repository and
  * path, the files changed since the current commit, and the footprint, before and after. It warns
  * when the repository or path changes, when GitHub truncates the file list, when the footprint adds
@@ -64,6 +66,12 @@ const USAGE = `Usage: bun run scripts/publish-mod.ts <slug> <sha> [--apply --con
   --apply            make the version current and the mod published
   --confirm=<slug>   required with --apply: type the slug back`
 
+const submittedGuard = (slug: string): Guard => ({
+  level: 'refuse',
+  name: 'submitted',
+  message: `"${slug}" was submitted by a user: approve it on /admin`,
+})
+
 async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
   const [mod] = await db
     .select({
@@ -75,6 +83,11 @@ async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
     .from(schema.mods)
     .where(eq(schema.mods.slug, slug))
   if (!mod) throw new Error(`no mod found with slug "${slug}"`)
+  const [submitted] = await db
+    .select({ id: schema.mods.id })
+    .from(schema.mods)
+    .where(and(eq(schema.mods.id, mod.id), hasSubmission(db)))
+  if (submitted) return { refusal: submittedGuard(slug) }
 
   const targets = await loadVersions(
     db,

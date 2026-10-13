@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import type { GitHub } from '@/mods/github'
+import { insertPendingSubmission } from '@/submissions/record'
 import { runPublish } from '../../scripts/publish-mod'
 import {
   addMod,
@@ -199,6 +200,26 @@ describe('first publish of an imported draft', () => {
 })
 
 describe('publish refusals', () => {
+  it('refuses a mod a user submitted, before asking GitHub: it is approved on /admin', async () => {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    const { versionId } = await draftMod('meter-3f9a2c')
+    await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'ada' })
+    const github = fakeGitHub()
+
+    const { exitCode, output } = await publish(
+      ['meter-3f9a2c', sha('a'), '--apply', '--confirm=meter-3f9a2c'],
+      github,
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/approve it on \/admin/)
+    expect(github.calls).toEqual([])
+    expect(await modState(db, 'meter-3f9a2c')).toEqual({ status: 'draft', currentVersionId: null })
+  })
+
   it.each([
     ['uppercase hex', 'A'.repeat(40)],
     ['39 characters', 'a'.repeat(39)],

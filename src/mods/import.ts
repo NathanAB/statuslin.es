@@ -1,5 +1,5 @@
-import { and, eq, max } from 'drizzle-orm'
-import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { and, eq, exists, max, not, type SQL } from 'drizzle-orm'
+import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
@@ -24,6 +24,23 @@ export interface InspectDeps {
 }
 
 /** The slug of the mod that already has a version at this repository, folder and commit. */
+const submittedVersion = alias(schema.modVersions, 'submitted_version')
+
+/**
+ * The mod was submitted by a user: one of its versions has a submission. Curated mods have none,
+ * and the curated scripts leave submitted ones to review on /admin.
+ */
+export function hasSubmission(db: Db): SQL {
+  return exists(
+    db
+      .select({ id: schema.submissions.id })
+      .from(schema.submissions)
+      .innerJoin(submittedVersion, eq(submittedVersion.id, schema.submissions.modVersionId))
+      .where(eq(submittedVersion.modId, schema.mods.id)),
+  )
+}
+
+/** The curated mod already built from this commit; a user's submission of it doesn't count. */
 export async function importedSlug(db: Db, source: PinnedSource): Promise<string | undefined> {
   const [row] = await db
     .select({ slug: schema.mods.slug })
@@ -34,6 +51,7 @@ export async function importedSlug(db: Db, source: PinnedSource): Promise<string
         eq(schema.modVersions.repoUrl, source.repoUrl),
         eq(schema.modVersions.path, source.path),
         eq(schema.modVersions.commitSha, source.commitSha),
+        not(hasSubmission(db)),
       ),
     )
   return row?.slug

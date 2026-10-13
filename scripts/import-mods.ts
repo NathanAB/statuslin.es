@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { and, eq, notExists } from 'drizzle-orm'
-import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
+import { and, eq, not } from 'drizzle-orm'
+import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
@@ -10,6 +10,7 @@ import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import {
+  hasSubmission,
   importedSlug,
   insertDraftMod,
   insertNextVersion,
@@ -61,7 +62,6 @@ async function modToRepin(
   db: Db,
   entry: CurationEntry,
 ): Promise<{ id: string; slug: string } | undefined> {
-  const submitted = alias(schema.modVersions, 'submitted')
   const rows = await db
     .select({ id: schema.mods.id, slug: schema.mods.slug })
     .from(schema.mods)
@@ -76,13 +76,7 @@ async function modToRepin(
       and(
         eq(schema.mods.pluginName, entry.pluginName),
         eq(schema.modVersions.repoUrl, entry.repoUrl),
-        notExists(
-          db
-            .select({ id: schema.submissions.id })
-            .from(schema.submissions)
-            .innerJoin(submitted, eq(submitted.id, schema.submissions.modVersionId))
-            .where(eq(submitted.modId, schema.mods.id)),
-        ),
+        not(hasSubmission(db)),
       ),
     )
   if (rows.length > 1) {
