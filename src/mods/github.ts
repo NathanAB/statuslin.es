@@ -1,4 +1,5 @@
 import { failure, readAtMost, readUpTo } from './github-response'
+import { PluginRefusal } from './plugin-facts'
 
 const GITHUB_API = 'https://api.github.com'
 const GITHUB_ARCHIVES = 'https://codeload.github.com'
@@ -12,6 +13,10 @@ export const TARBALL_MAX_FILES = 2_000
 export const GITHUB_JSON_MAX_BYTES = 10 * 1024 * 1024
 /** A bare commit hash, with room for a newline. */
 const SHA_MAX_BYTES = 64
+/** A .gitattributes past this is refused unread. */
+const GITATTRIBUTES_MAX_BYTES = 64 * 1024
+/** The attributes that drop or rewrite files in GitHub's archive but not in a git checkout. */
+const ARCHIVE_ONLY_ATTRIBUTES = /export-(ignore|subst)/i
 
 export interface RepoInfo {
   /** `owner/repo` as GitHub spells it, the canonical form of the repository URL. */
@@ -43,6 +48,12 @@ export interface GitHub {
   commitIsOnDefaultBranch(repoUrl: string, sha: string, defaultBranch?: string): Promise<boolean>
   filesChanged(repoUrl: string, base: string, head: string): Promise<string[]>
   commitIsFetchable(repoUrl: string, sha: string): Promise<boolean>
+}
+
+interface TreeEntry {
+  path: string
+  type: string
+  sha: string
 }
 
 function repoPath(repoUrl: string): string {
@@ -128,13 +139,40 @@ export function createGitHub(
     return repo
   }
 
+  /**
+   * The sandbox inspects GitHub's archive of the commit, but Claude Code installs a git checkout of
+   * it. So refuse what makes the two differ: submodules, and a .gitattributes that drops or rewrites
+   * files in the archive only. One that sets line endings, say, is fine.
+   */
+  async function refuseArchiveDifferences(repoUrl: string, tree: TreeEntry[]): Promise<void> {
+    const named = (entry: TreeEntry, name: string) =>
+      entry.path.split('/').at(-1)?.toLowerCase() === name
+    if (tree.some((entry) => entry.type === 'commit' || named(entry, '.gitmodules'))) {
+      throw new PluginRefusal(
+        'the repository has git submodules, which statuslin.es cannot inspect',
+      )
+    }
+    for (const entry of tree.filter((e) => e.type === 'blob' && named(e, '.gitattributes'))) {
+      const url = `${repoApiUrl(repoUrl)}/git/blobs/${entry.sha}`
+      const res = await send(url, 'application/vnd.github.raw+json')
+      if (!res.ok) throw failure(res, url)
+      const { bytes, truncated } = await readUpTo(res, GITATTRIBUTES_MAX_BYTES)
+      if (truncated || ARCHIVE_ONLY_ATTRIBUTES.test(new TextDecoder().decode(bytes))) {
+        throw new PluginRefusal(
+          `${entry.path} uses export-ignore or export-subst, so GitHub's archive of the repository differs from what Claude Code installs`,
+        )
+      }
+    }
+  }
+
   async function download(repoUrl: string, sha: string): Promise<Uint8Array> {
     const { truncated, tree } = (await request(
       `${repoApiUrl(repoUrl)}/git/trees/${sha}?recursive=1`,
-    )) as { truncated: boolean; tree: unknown[] }
+    )) as { truncated: boolean; tree: TreeEntry[] }
     if (truncated || tree.length > TARBALL_MAX_FILES) {
       throw new Error(`${repoUrl} at ${sha} has more than ${TARBALL_MAX_FILES} files`)
     }
+    await refuseArchiveDifferences(repoUrl, tree)
     const url = `${GITHUB_ARCHIVES}/${repoPath(repoUrl)}/tar.gz/${sha}`
     const res = await send(url)
     if (!res.ok) throw failure(res, url)
