@@ -122,6 +122,20 @@ describe('withModUrls', () => {
     const original = await sitemapResponse(BASE, [], []).text()
 
     expect(await (await withModUrls(sitemapResponse(BASE, [], []), BASE, [])).text()).toBe(original)
+    expect(original).not.toContain(`<loc>${BASE}/mods</loc>`)
+  })
+
+  it('lists the mods page, dated by its newest mod, ahead of the mod pages', async () => {
+    const xml = await (
+      await withModUrls(sitemapResponse(BASE, [], []), BASE, [
+        { slug: 'meter', updatedAt: new Date('2026-09-01T00:00:00Z') },
+        { slug: 'tree', updatedAt: new Date('2026-10-02T00:00:00Z') },
+      ])
+    ).text()
+
+    expect(xml).toContain(
+      `<url>\n    <loc>${BASE}/mods</loc>\n    <lastmod>2026-10-02</lastmod>\n  </url>\n  <url>\n    <loc>${BASE}/mods/meter</loc>`,
+    )
   })
 
   it("keeps $' and $` in a mod url literal instead of splicing the sitemap into it", async () => {
