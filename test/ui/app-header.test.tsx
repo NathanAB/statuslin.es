@@ -67,6 +67,14 @@ describe('AppHeader', () => {
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
+  it('links to the mods page ahead of the guide', () => {
+    render(<AppHeader user={null} />)
+    const mods = screen.getByRole('link', { name: 'Mods' })
+    expect(mods.getAttribute('href')).toBe('/mods')
+    const guide = screen.getByRole('link', { name: 'Guide' })
+    expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('links to the guide page when signed out', () => {
     const { container } = render(<AppHeader user={null} />)
     const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement

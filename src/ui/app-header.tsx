@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { FileText, LogOut, ShieldCheck } from 'lucide-react'
 import type { PostHog } from 'posthog-js'
 import { authClient } from '@/lib/auth-client'
+import { MODS_PATH } from '@/lib/site'
 import { Button } from '@/ui/button'
 import {
   DropdownMenu,
@@ -38,7 +39,7 @@ async function handleSignOut(posthog: PostHog) {
 }
 
 /**
- * Shared top header: wordmark home-link + nav (Guide, Resources, Star on GitHub).
+ * Shared top header: wordmark home-link + nav (Mods, Guide, Resources, Star on GitHub).
  * Signed in: avatar + @username dropdown (Log out, plus Review for admins).
  * Signed out: GitHub sign-in. Submitting lives on the home page CTA, not here.
  */
@@ -50,6 +51,9 @@ export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
           <Wordmark />
         </Link>
         <nav className="ml-auto flex items-center sm:gap-2">
+          <Button asChild variant="ghost" size="nav">
+            <Link to={MODS_PATH}>Mods</Link>
+          </Button>
           <Button asChild variant="ghost" size="nav">
             <Link to="/guide">Guide</Link>
           </Button>
