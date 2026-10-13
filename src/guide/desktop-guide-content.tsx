@@ -5,12 +5,16 @@ import {
   STATUSLINE_ANYWHERE_MOD_SLUG,
 } from '@/lib/statusline-anywhere'
 import { CodeBlock } from '@/ui/code-block'
+import { DesktopShot, type DesktopShotImage } from '@/ui/desktop-shot'
 import { Stack } from '@/ui/layout'
 import { StatuslineAnywhereLink } from '@/ui/statusline-anywhere-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 
-/** The /guide/claude-desktop page body: the plugin fix first, then where to get a status line. */
-export function DesktopGuideContent() {
+/**
+ * The /guide/claude-desktop page body: the plugin fix first, then where to get a status line.
+ * `shot` is statusline-anywhere's recorded Claude Desktop preview, or null while there is none.
+ */
+export function DesktopGuideContent({ shot }: { shot: DesktopShotImage | null }) {
   return (
     <Stack gap={6}>
       <Stack gap={3}>
@@ -32,12 +36,29 @@ export function DesktopGuideContent() {
         <Heading level={2}>2. Open a new Code session in Claude Desktop</Heading>
         <Text muted>
           Your status line shows above the prompt, in color. Needs Claude Code{' '}
-          {STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE} or later.{' '}
-          <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
-            See a screenshot
-          </TextLink>
-          .
+          {STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE} or later.
+          {shot === null && (
+            <>
+              {' '}
+              <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
+                See a screenshot
+              </TextLink>
+              .
+            </>
+          )}
         </Text>
+        {shot !== null && (
+          <>
+            <DesktopShot shot={shot} alt="statusline-anywhere in Claude Desktop" fit="whole" />
+            <Text muted size="sm">
+              statusline-anywhere in a real Claude Desktop session, recorded by statuslin.es.{' '}
+              <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
+                See its mod page
+              </TextLink>
+              .
+            </Text>
+          </>
+        )}
       </Stack>
 
       <Stack gap={3}>

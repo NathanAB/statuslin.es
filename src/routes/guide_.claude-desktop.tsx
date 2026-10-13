@@ -10,12 +10,20 @@ import {
   DESKTOP_GUIDE_TITLE_BASE,
 } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
+import { getModDetailFn } from '@/mods/functions'
 import { staticPageSocialMeta } from '@/og/meta'
 import { PageShell } from '@/ui/shell'
 
 // `guide_` keeps this page out of the /guide route's layout: it's a sibling page, not a child.
 export const Route = createFileRoute('/guide_/claude-desktop')({
-  loader: async () => ({ user: await getSession() }),
+  loader: async () => {
+    const [user, mod] = await Promise.all([
+      getSession(),
+      getModDetailFn({ data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG } }),
+    ])
+    return { user, desktopShot: mod?.desktop?.kind === 'shot' ? mod.desktop.shot : null }
+  },
   head: () => ({
     meta: [
       { title: `${DESKTOP_GUIDE_TITLE_BASE} | statuslin.es` },
@@ -38,10 +46,10 @@ export const Route = createFileRoute('/guide_/claude-desktop')({
 })
 
 function DesktopGuide() {
-  const { user } = Route.useLoaderData()
+  const { user, desktopShot } = Route.useLoaderData()
   return (
     <PageShell user={user}>
-      <DesktopGuideContent />
+      <DesktopGuideContent shot={desktopShot} />
     </PageShell>
   )
 }

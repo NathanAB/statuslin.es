@@ -107,7 +107,7 @@ export const DESKTOP_GUIDE_PATH = '/guide/claude-desktop'
 /** /guide/claude-desktop title base — shared by the <title> tag and its JSON-LD headline. */
 export const DESKTOP_GUIDE_TITLE_BASE = 'Claude Code Status Line Not Showing in Claude Desktop'
 
-export const DESKTOP_GUIDE_DATES = { published: '2026-10-02', modified: '2026-10-02' } as const
+export const DESKTOP_GUIDE_DATES = { published: '2026-10-02', modified: '2026-10-13' } as const
 
 /** /guide/claude-desktop meta description — shared by the description tag, OG, and JSON-LD. */
 export const DESKTOP_GUIDE_DESCRIPTION =
