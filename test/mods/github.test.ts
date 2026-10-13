@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createGitHub,
@@ -208,54 +209,111 @@ describe('tarball', () => {
   })
 
   describe("what makes GitHub's archive differ from the checkout Claude Code installs", () => {
-    const ATTRIBUTES_SHA = 'c'.repeat(40)
+    /** Git's id for a file holding `text`, which GitHub's tree lists it by. */
+    const blobSha = (text: string) =>
+      createHash('sha1')
+        .update(`blob ${Buffer.byteLength(text)}\0${text}`)
+        .digest('hex')
     const entries = (...extra: object[]) => ({
       status: 200,
       body: { truncated: false, tree: [{ path: 'hooks/register.ts', type: 'blob' }, ...extra] },
     })
-    const attributes = (path: string) => ({ path, type: 'blob', sha: ATTRIBUTES_SHA })
-    const text = (body: string) => ({ status: 200, body: new TextEncoder().encode(body) })
-
-    it.each([
-      ['a submodule', entries({ path: 'lib', type: 'commit' }), null, /submodules/],
-      ['a .gitmodules', entries({ path: '.gitmodules', type: 'blob' }), null, /submodules/],
-      [
-        'export-ignore in .gitattributes',
-        entries(attributes('.gitattributes')),
-        '/mod/monitors export-ignore\n',
-        /\.gitattributes uses export-ignore or export-subst/,
-      ],
-      [
-        'export-subst in a nested .GitAttributes',
-        entries(attributes('mod/.GitAttributes')),
-        'hooks/*.ts export-subst\n',
-        /mod\/\.GitAttributes uses export-ignore or export-subst/,
-      ],
-    ])('refuses a repository with %s before downloading it', async (_name, tree, blob, message) => {
+    const attributes = (path: string, text: string) => ({ path, type: 'blob', sha: blobSha(text) })
+    const blobRoutes = (...texts: string[]) =>
+      Object.fromEntries(
+        texts.map((text) => [
+          api(`/git/blobs/${blobSha(text)}`),
+          { status: 200, body: new TextEncoder().encode(text) },
+        ]),
+      )
+    const download = async (tree: Route, blobs: Record<string, Route> = {}) => {
+      const bytes = new Uint8Array([31, 139, 8, 0])
       const { fetchFn, requested } = fakeFetch({
         [api(`/git/trees/${SHA}?recursive=1`)]: tree,
-        ...(blob === null ? {} : { [api(`/git/blobs/${ATTRIBUTES_SHA}`)]: text(blob) }),
-        [archiveUrl]: { status: 200, body: new Uint8Array(4) },
+        ...blobs,
+        [archiveUrl]: { status: 200, body: bytes },
       })
-
-      const refused = await createGitHub(fetchFn)
+      const result = await createGitHub(fetchFn)
         .tarball(REPO, SHA)
-        .catch((error) => error)
+        .catch((error: unknown) => error)
+      return { result, bytes, requested }
+    }
 
-      expect(refused).toBeInstanceOf(PluginRefusal)
-      expect((refused as Error).message).toMatch(message)
+    it.each([
+      ['a submodule', { path: 'lib', type: 'commit' }, null],
+      ['a .gitmodules', { path: '.gitmodules', type: 'blob' }, null],
+    ])('refuses a repository with %s before downloading it', async (_name, entry) => {
+      const { result, requested } = await download(entries(entry))
+
+      expect(result).toBeInstanceOf(PluginRefusal)
+      expect((result as Error).message).toMatch(/submodules/)
       expect(requested).not.toContain(archiveUrl)
     })
 
-    it('downloads a repository whose .gitattributes only sets line endings', async () => {
-      const bytes = new Uint8Array([31, 139, 8, 0])
-      const { fetchFn } = fakeFetch({
-        [api(`/git/trees/${SHA}?recursive=1`)]: entries(attributes('.gitattributes')),
-        [api(`/git/blobs/${ATTRIBUTES_SHA}`)]: text('* text=auto eol=lf\n*.png binary\n'),
-        [archiveUrl]: { status: 200, body: bytes },
+    it.each([
+      ['export-ignore', '/mod/monitors export-ignore\n'],
+      ['export-subst', 'hooks/*.ts export-subst\n'],
+      [
+        'working-tree-encoding, which a Mac checkout converts',
+        'hooks/register.ts working-tree-encoding=SHIFT_JIS\n',
+      ],
+      ['ident', '*.ts ident\n'],
+      ['filter=lfs', '*.ts filter=lfs diff=lfs merge=lfs -text\n'],
+      ['a macro', '[attr]plain text\n*.ts plain\n'],
+    ])('refuses a .gitattributes using %s, before downloading', async (_name, text) => {
+      const { result, requested } = await download(
+        entries(attributes('mod/.GitAttributes', text)),
+        blobRoutes(text),
+      )
+
+      expect(result).toBeInstanceOf(PluginRefusal)
+      expect((result as Error).message).toMatch(/mod\/\.GitAttributes sets more than line endings/)
+      expect(requested).not.toContain(archiveUrl)
+    })
+
+    it('downloads a repository whose .gitattributes only sets line endings and how git diffs', async () => {
+      const text =
+        '# endings\r\n* text=auto eol=lf\n\n*.png binary\n*.md linguist-documentation -diff\n'
+      const { result, bytes } = await download(
+        entries(attributes('.gitattributes', text)),
+        blobRoutes(text),
+      )
+
+      expect(result).toEqual(bytes)
+    })
+
+    it('reads a .gitattributes shared by many paths once', async () => {
+      const text = '* text=auto\n'
+      const { requested } = await download(
+        entries(attributes('.gitattributes', text), attributes('a/.gitattributes', text)),
+        blobRoutes(text),
+      )
+
+      expect(requested.filter((url) => url.includes('/git/blobs/'))).toHaveLength(1)
+    })
+
+    it('refuses more than 10 .gitattributes without reading any', async () => {
+      const many = Array.from({ length: 11 }, (_, i) =>
+        attributes(`d${i}/.gitattributes`, `${i}\n`),
+      )
+
+      const { result, requested } = await download(entries(...many))
+
+      expect(result).toBeInstanceOf(PluginRefusal)
+      expect(requested.filter((url) => url.includes('/git/blobs/'))).toEqual([])
+    })
+
+    it('fails as our own error when the bytes GitHub sends are not the blob the tree names', async () => {
+      const text = '* text=auto\n'
+      const { result } = await download(entries(attributes('.gitattributes', text)), {
+        [api(`/git/blobs/${blobSha(text)}`)]: {
+          status: 200,
+          body: new TextEncoder().encode('* t'),
+        },
       })
 
-      expect(await createGitHub(fetchFn).tarball(REPO, SHA)).toEqual(bytes)
+      expect(result).toBeInstanceOf(Error)
+      expect(result).not.toBeInstanceOf(PluginRefusal)
     })
   })
 
