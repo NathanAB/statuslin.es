@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 import { auth } from './auth'
+import { CLIENT_IP_HEADER } from './client-ip'
 import { requireStrongSecret } from './env'
 
 /** The browser's PostHog ids, passed through so a server-fired copy event joins its funnel. */
@@ -29,10 +30,9 @@ function hashIp(ip: string): string {
     .digest('hex')
 }
 
-// Fly's proxy sets Fly-Client-IP from the real edge connection and clients can't forge it (unlike
-// X-Forwarded-For). If it's absent — which shouldn't happen behind Fly's proxy — count nothing in
-// production (null) rather than collapse every such request into one shared bucket; locally, use a
-// dev bucket so the flow still works.
+// The client IP comes from CLIENT_IP_HEADER, which clients can't forge. If it's absent — which
+// shouldn't happen behind Fly's proxy — count nothing in production (null) rather than collapse
+// every such request into one shared bucket; locally, use a dev bucket so the flow still works.
 function resolveIpHash(ip: string | null): string | null {
   if (ip !== null) return hashIp(ip)
   return process.env.NODE_ENV === 'production' ? null : hashIp('local-dev')
@@ -44,7 +44,7 @@ function resolveIpHash(ip: string | null): string | null {
  */
 export async function requestCopyIdentity(browser: BrowserCopyTracking): Promise<CopyIdentity> {
   const headers = getRequestHeaders()
-  const ipHash = resolveIpHash(headers.get('fly-client-ip'))
+  const ipHash = resolveIpHash(headers.get(CLIENT_IP_HEADER))
   // The session only decides person processing, so a lookup failure must not fail the copy.
   const session = await auth.api.getSession({ headers }).catch(() => null)
   return {

@@ -13,3 +13,11 @@ updates:
         patterns:
           - vitest
           - '@vitest/*'
+      # react-dom throws at load unless react is the exact same version, so a lone
+      # react bump crashes every render.
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'

@@ -41,7 +41,7 @@ There's no hosted dev database. Local dev runs against its own throwaway Postgre
 ```sh
 docker run -d --name statuslines-postgres \
   -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=statuslines \
-  -p 5433:5432 postgres:17
+  -p 5433:5432 postgres:18
 ```
 
 Later, start/stop it with `docker start statuslines-postgres` / `docker stop statuslines-postgres`.

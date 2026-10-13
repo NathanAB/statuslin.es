@@ -3,6 +3,7 @@ import { betterAuth } from 'better-auth'
 import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { db } from '@/db'
+import { CLIENT_IP_HEADER } from '@/lib/client-ip'
 import { requireEnv, requireStrongSecret } from '@/lib/env'
 
 export const auth = betterAuth({
@@ -46,5 +47,9 @@ export const auth = betterAuth({
       }
     }),
   },
+  // Rate limiting keys on the client IP. The default X-Forwarded-For always has 2+ hops behind Fly
+  // (it appends the app's own IP), which Better Auth refuses, collapsing every visitor into one
+  // shared per-path bucket. Read Fly's single-value header instead, and only that one.
+  advanced: { ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] } },
   plugins: [tanstackStartCookies()], // MUST be last
 })
