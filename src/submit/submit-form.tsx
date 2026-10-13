@@ -155,9 +155,6 @@ function SubmitFormFields({
         />
         <Stack gap={2}>
           <Text muted size="sm">
-            Everything's open source, runs sandboxed, and gets a human review before it goes live.
-          </Text>
-          <Text muted size="sm">
             By submitting, you confirm you have the right to share this script and release it under{' '}
             <TextLink href={CONTENT_LICENSE.url}>{CONTENT_LICENSE.name}</TextLink>.
           </Text>
