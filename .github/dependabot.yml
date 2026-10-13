@@ -45,8 +45,8 @@ updates:
         patterns:
           - better-auth
           - '@better-auth/*'
-      # Every other minor and patch update, in one PR. Majors and the packages excluded below
-      # still come one PR each.
+      # Every other minor and patch update, in one PR. Majors of packages outside the groups
+      # above, and the packages excluded below, come one PR each.
       everything-else:
         patterns:
           - '*'
@@ -65,3 +65,13 @@ updates:
           - vitest-axe
           # The sandbox that runs untrusted scripts. Every e2b update needs `bun run test:e2b`.
           - e2b
+
+  # The Bun image the Dockerfile builds production on. A new Bun release opens a PR here, and
+  # `bun run check:deps` fails on it until ci.yml and @types/bun move to the same version.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope

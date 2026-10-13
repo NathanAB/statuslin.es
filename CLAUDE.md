@@ -71,12 +71,12 @@ where visitors **copy it to use** (`src/adopt`).
 - **Commits:** Conventional Commits (`feat` / `fix` / `chore` / `docs` / `refactor`); small and focused; only on green gates.
 - **Deploy:** staging → production runbook in `docs/deploy.md`. Same image, three environments; deploy staging with `bun run deploy:staging`, then promote with the gated `bun run deploy:prod` (smokes staging in a real browser, promotes the validated image by digest). Submitted scripts only reach the review queue after the always-on `worker` process renders them — if it isn't running, render jobs sit `queued` and nothing appears for review.
 - **Emergency takedown:** to pull a live config from the gallery, `scripts/remove-config.ts <slug>` flips its status `published → removed` (reversible: add `--restore`). Every read path filters `status='published'`, so it disappears from the gallery list, the page count, and its detail page at once — no migration. The `<slug>` is the last segment of `statuslin.es/c/<slug>`. Run against prod with `fly ssh console --app statuslines --command "bun run scripts/remove-config.ts <slug>"`. Full usage is in the script's header comment.
-- **Dependency updates:** `.github/dependabot.yml` batches minor and patch updates into one weekly PR and sends majors, 0.x packages and `e2b` one PR each. To land them:
-  - Check a batch once on the combined result: merge the PR branches into one scratch branch and run the gate there. The machine is shared, so run one gate at a time.
+- **Dependency updates:** `.github/dependabot.yml` opens one PR a week per group: the packages that must share a version, and an `everything-else` batch of minor and patch updates. Majors outside those groups, 0.x packages, `e2b` and the Bun Docker image come one PR each, and CI runs on every one. To land them:
+  - When merging several, check the combined result once: merge the PR branches into one scratch branch and run the gate there. The machine is shared, so run one gate at a time.
   - An `e2b` update also needs `bun run test:e2b`, since e2b is the sandbox. Note the result on the PR.
   - For a major or 0.x update, read the changelog and look at what it renders (the OG cards render through satori).
   - Put any fix in your own PR. A commit pushed to a Dependabot branch stops Dependabot rebasing it.
-  - A Bun upgrade moves the Dockerfile, `ci.yml` and `@types/bun` together; `check:deps` fails when they disagree.
+  - A Bun upgrade (Dependabot's docker PR) moves the Dockerfile, both `ci.yml` jobs and `@types/bun` together; `check:deps` fails when they disagree.
 
 ## Enforcement (the guardrails)
 
@@ -87,7 +87,7 @@ where visitors **copy it to use** (`src/adopt`).
 - **Git hooks — simple-git-hooks:** `pre-commit` runs lint + typecheck and blocks bad commits — **never** bypass with `git commit --no-verify`. There is no pre-push hook: run `bun run check` once yourself before pushing.
 - **Claude Code self-hook** (`.claude/settings.json`): runs the fast gate when an agent finishes work, so an agent can't quietly wrap up on red.
 - **No magic-string regressions:** config (URLs, ports, secrets) comes from env via one source; reading required env vars goes through `requireEnv()` (`src/lib/env.ts`), never `process.env.X!`.
-- **CI** (`.github/workflows/ci.yml`): GitHub Actions runs the full `bun run check:ci` + coverage on every push and PR. **Currently disabled on GitHub** (too slow); re-enable with `gh workflow enable CI`. Forked PRs run without secrets (`pull_request`, all-dummy env). Branch protection: not yet (solo, agent-first) — add as contributors grow.
+- **CI** (`.github/workflows/ci.yml`): runs on every pull request, Dependabot's included, and on demand from the Actions tab: `bun run check:ci` on Bun and the coverage run on Node, as parallel jobs. Forked PRs run without secrets (`pull_request`, all-dummy env). Branch protection: not yet (solo, agent-first) — add as contributors grow.
 
 ## Agent skills
 
