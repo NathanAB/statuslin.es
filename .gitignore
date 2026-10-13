@@ -52,3 +52,6 @@ docs/research/
 
 # Misc / scratch docs — personal notes, playbooks, drafts that shouldn't ship
 docs/local/
+
+# Verification skill (.claude/skills/verify): per-run instance state and proof artifacts
+.verify/
