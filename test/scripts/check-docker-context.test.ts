@@ -2,12 +2,13 @@ import { spawnSync } from 'node:child_process'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
-import { describeLeaks, findGitIgnored } from '../../scripts/check-docker-context'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describeLeaks, findGitIgnored, listArchive } from '../../scripts/check-docker-context'
 
 const fixtureRoots = new Set<string>()
 
 afterEach(async () => {
+  vi.unstubAllEnvs()
   await Promise.all([...fixtureRoots].map((root) => rm(root, { recursive: true, force: true })))
   fixtureRoots.clear()
 })
@@ -60,6 +61,23 @@ describe('findGitIgnored', () => {
     const root = await repo('.env.*\n', ['src/app.ts'])
 
     expect(findGitIgnored(root, ['src/app.ts'])).toEqual([])
+  })
+})
+
+describe('listArchive', () => {
+  it('lists files by their real names under a C locale', async () => {
+    vi.stubEnv('LC_ALL', 'C')
+    const root = await mkdtemp(join(tmpdir(), 'docker-context-'))
+    fixtureRoots.add(root)
+    await mkdir(join(root, 'src', 'café'), { recursive: true })
+    await writeFile(join(root, 'src', 'café', 'plain.txt'), 'x')
+    const archive = join(root, 'context.tar')
+    const tar = spawnSync('tar', ['-cf', archive, '-C', join(root, 'src'), 'café'])
+    if (tar.status !== 0) throw new Error(String(tar.stderr))
+
+    const files = listArchive(archive)
+
+    expect(files.map((file) => file.normalize('NFC'))).toEqual(['café/plain.txt'])
   })
 })
 

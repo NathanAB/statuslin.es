@@ -30,15 +30,23 @@ export async function listBuildContext(dir: string): Promise<string[]> {
       { input: LISTING_DOCKERFILE, encoding: 'utf8' },
     )
     if (build.status !== 0) throw new Error(`docker build failed: ${build.stderr || build.error}`)
-    const listing = spawnSync('tar', ['-tf', archive], {
-      encoding: 'utf8',
-      maxBuffer: MAX_LISTING_BYTES,
-    })
-    if (listing.status !== 0) throw new Error(`tar failed: ${listing.stderr || listing.error}`)
-    return listing.stdout.split('\n').filter((entry) => entry !== '' && !entry.endsWith('/'))
+    return listArchive(archive)
   } finally {
     await rm(out, { recursive: true, force: true })
   }
+}
+
+/** The file paths inside a tar archive. */
+export function listArchive(archive: string): string[] {
+  const listing = spawnSync('tar', ['-tf', archive], {
+    // Without a UTF-8 locale tar prints non-ASCII names as octal escapes, which git can't match.
+    // biome-ignore lint/style/useNamingConvention: environment variable name.
+    env: { ...process.env, LC_ALL: 'C.UTF-8' },
+    encoding: 'utf8',
+    maxBuffer: MAX_LISTING_BYTES,
+  })
+  if (listing.status !== 0) throw new Error(`tar failed: ${listing.stderr || listing.error}`)
+  return listing.stdout.split('\n').filter((entry) => entry !== '' && !entry.endsWith('/'))
 }
 
 /** The subset of `files` (relative to the git repo at `dir`) that git ignores. Tracked files never count. */
