@@ -2,6 +2,7 @@
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { renderToString } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
+import { serverResult } from './server-result'
 
 const queuePostHogClientError = vi.fn()
 
@@ -31,7 +32,7 @@ describe('router error boundary', () => {
     await router.load()
     const html = renderToString(<RouterProvider router={router} />)
 
-    expect(router.stores.statusCode.get()).toBe(500)
+    expect(serverResult(router)).toMatchObject({ type: 'render', status: 500 })
     expect(html).toContain('<html')
     expect(html).toContain('<head>')
     expect(html).toContain('<body>')
