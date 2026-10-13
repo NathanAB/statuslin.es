@@ -235,7 +235,18 @@ describe('getModDetail', () => {
       generatedContent: null,
       copyCount: 0,
       tags: [],
+      updatedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     })
+  })
+
+  it('dates the mod by its current version, as an ISO date', async () => {
+    const { versionId } = await addMod('dated', 'published', 'scenario-preview')
+    await db
+      .update(schema.modVersions)
+      .set({ createdAt: new Date('2026-09-30T12:00:00Z') })
+      .where(eq(schema.modVersions.id, versionId))
+
+    expect((await getModDetail(db, 'dated'))?.updatedAt).toBe('2026-09-30')
   })
 
   it('carries every tag the gallery card shows, for the header chips', async () => {

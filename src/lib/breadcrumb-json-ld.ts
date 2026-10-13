@@ -1,4 +1,4 @@
-import { MODS_PATH, modPath } from '@/lib/site'
+import { MODS_PATH } from '@/lib/site'
 
 /** The first crumb of every breadcrumb, on the page and in its JSON-LD. */
 export const HOME_CRUMB_NAME = 'Status lines'
@@ -17,15 +17,4 @@ export function breadcrumbJsonLd(crumbs: Array<{ name: string; item: string }>):
       ...crumb,
     })),
   }
-}
-
-/** A mod page's breadcrumb, matching the one it shows: home › Mods › the mod. */
-export function modJsonLd(origin: string, mod: { slug: string; title: string }): object[] {
-  return [
-    breadcrumbJsonLd([
-      { name: HOME_CRUMB_NAME, item: origin },
-      { name: MODS_CRUMB.name, item: `${origin}${MODS_PATH}` },
-      { name: mod.title, item: `${origin}${modPath(mod.slug)}` },
-    ]),
-  ]
 }

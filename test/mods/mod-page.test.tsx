@@ -2,8 +2,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { modJsonLd } from '@/lib/breadcrumb-json-ld'
-import { jsonLdScript } from '@/lib/json-ld'
 import {
   HOME_TITLE_BASE,
   MOD_NOT_FOUND_TITLE,
@@ -66,6 +64,7 @@ const MOD: ModDetail = {
   generatedContent: null,
   copyCount: 0,
   tags: [],
+  updatedAt: '2026-09-30',
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {
@@ -105,9 +104,28 @@ describe('mod page head', () => {
     }
   }
 
-  it('emits the breadcrumb as JSON-LD on the site origin', () => {
-    expect(head(MOD).scripts).toEqual(modJsonLd(ORIGIN, MOD).map(jsonLdScript))
-    expect(head(MOD).scripts?.[0]?.children).toContain(`"item":"${ORIGIN}/mods"`)
+  const jsonLd = (mod: ModDetail) =>
+    (head(mod).scripts ?? []).map(
+      (script) => JSON.parse(script.children) as Record<string, unknown>,
+    )
+
+  it('emits the mod as source code and its breadcrumb as JSON-LD on the site origin', () => {
+    const nodes = jsonLd(MOD)
+
+    expect(nodes.map((node) => node['@type'])).toEqual(['SoftwareSourceCode', 'BreadcrumbList'])
+    expect(nodes[0]).toMatchObject({
+      url: `${ORIGIN}/mods/filetree`,
+      codeRepository: `https://github.com/octocat/mods/tree/${SHA}/plugins/filetree`,
+    })
+    expect(JSON.stringify(nodes[1])).toContain(`"item":"${ORIGIN}/mods"`)
+  })
+
+  it('adds a FAQPage when the version has page copy', () => {
+    expect(jsonLd({ ...MOD, generatedContent: COPY }).map((node) => node['@type'])).toEqual([
+      'SoftwareSourceCode',
+      'BreadcrumbList',
+      'FAQPage',
+    ])
   })
 
   it('titles and describes the mod through the page-title helpers', () => {

@@ -1,7 +1,7 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
 import { liveComparePaths } from '@/compare/pages'
 import { db } from '@/db'
-import { FACET_BY_SLUG } from '@/gallery/facets'
+import { FACET_BY_SLUG, tagKeywords } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
 import { llmsResponse } from '@/lib/llms'
@@ -118,13 +118,11 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
         getRelatedConfigs(db, data.slug),
         getFacetStats(db),
       ])
-      // Human-readable tag names for the page's JSON-LD keywords.
-      const facetLabels = detail.tags.map((slug) => FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)
       return {
         ...detail,
         sourceHtml: await resolveSourceHtml(detail.sourceHtml, detail.source, detail.interpreter),
         related,
-        facetLabels,
+        facetLabels: tagKeywords(detail.tags),
         primaryFacet: primaryFacet(detail.tags, stats),
       }
     }),

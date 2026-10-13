@@ -57,6 +57,9 @@ export function homeJsonLd(
   ]
 }
 
+/** The `runtimePlatform` of every status line and mod. */
+export const RUNTIME_PLATFORM = 'Claude Code'
+
 /**
  * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the page copy
  * the "What it does" card shows, when present. The SoftwareSourceCode carries `dateModified` (freshness),
@@ -98,7 +101,7 @@ export function configJsonLd(
       description: config.description,
       url,
       programmingLanguage: config.interpreter,
-      runtimePlatform: 'Claude Code',
+      runtimePlatform: RUNTIME_PLATFORM,
       license: config.license ?? CONTENT_LICENSE.url,
       ...(config.updatedAt ? { dateModified: config.updatedAt } : {}),
       ...(config.keywords.length > 0 ? { keywords: config.keywords.join(', ') } : {}),
@@ -107,7 +110,7 @@ export function configJsonLd(
     breadcrumbJsonLd(crumbs),
   ]
 
-  const faq = configFaqJsonLd(config.title, config.generatedContent)
+  const faq = pageCopyFaqJsonLd(config.title, config.generatedContent)
   if (faq) nodes.push(faq)
   return nodes
 }
@@ -133,8 +136,11 @@ export function faqPageJsonLd(entries: FaqEntry[]): object | null {
 /** A step or note as a sentence, so a list joins into a readable answer. */
 const asSentence = (line: string) => (/[.!?]$/.test(line) ? line : `${line}.`)
 
-/** The card's summary, steps and notes, each as one question; an empty list asks nothing. */
-function configFaqJsonLd(title: string, copy: PageCopy | null): object | null {
+/**
+ * A status line or mod page's "What it does" copy as a FAQPage: the summary, steps and notes,
+ * each as one question; an empty list asks nothing.
+ */
+export function pageCopyFaqJsonLd(title: string, copy: PageCopy | null): object | null {
   if (!copy) return null
   const lists = [
     { question: `How does ${title} work?`, lines: copy.howItWorks },

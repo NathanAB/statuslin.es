@@ -158,6 +158,8 @@ export interface ModDetail {
   copyCount: number
   /** Every tag the gallery card shows, for the header chips. */
   tags: string[]
+  /** ISO date (YYYY-MM-DD) of the current version, pre-formatted to dodge Date serialization. */
+  updatedAt: string
 }
 
 /** A published mod by slug with its own current version, or null (draft, removed, unknown). */
@@ -180,6 +182,7 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       generatedContent: modVersions.generatedContent,
       copyCount: mods.copyCount,
       tags: mods.allTags,
+      updatedAt: modVersions.createdAt,
     })
     .from(mods)
     .innerJoin(
@@ -194,6 +197,7 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
     ...row,
     desktop: desktopPreview(row.desktop),
     generatedContent: readPageCopy(modPageCopySchema, row.generatedContent),
+    updatedAt: row.updatedAt.toISOString().slice(0, 10),
   }
 }
 
