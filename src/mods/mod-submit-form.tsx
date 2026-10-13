@@ -112,8 +112,7 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
         )}
         <Stack gap={2}>
           <Text muted size="sm">
-            The mod is credited to the repository’s owner, and a person reviews it before it goes
-            live.
+            The mod is credited to the repository’s owner.
           </Text>
           <div>
             <Button type="submit" disabled={submitting} size="lg">
