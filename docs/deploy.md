@@ -53,7 +53,9 @@ lines through E2B, in the background ([ADR 0006](./adr/0006-renders-run-on-deman
   queued while no machine was running.
 - Several machines can render at once; each job is claimed with a conditional update.
 - A machine that Fly stops (a deploy, or auto-stop) gets SIGINT and puts the job it is rendering
-  back: `queued`, or `held` for a network job. The next machine to drain renders it.
+  back: `queued`, or `held` for a network job. The next drain renders it: the next submission, a
+  machine start, or the admin's re-queue, which accepts a job that is already queued and starts a
+  drain for it.
 - A job left `running` for over 15 minutes (`STALE_RUNNING_JOB_MS`) was cut off by a crash. The next
   drain puts it back the same way, and the admin's re-queue accepts it too. Nothing notices it before
   then: drains only run on the triggers above.

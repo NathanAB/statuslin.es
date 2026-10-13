@@ -647,6 +647,28 @@ describe('requeueRenderJob', () => {
     expect(job?.finishedAt).toBeNull()
   })
 
+  it('accepts a job already queued, such as one a stopping machine put back, so a drain starts it', async () => {
+    const { versionId } = await submitConfig(db, {
+      authorId: 'u1',
+      title: 'PutBack',
+      description: '',
+      interpreter: 'bash',
+      source: 'x',
+    })
+    await db
+      .update(schema.renderJobs)
+      .set({ attempts: 1 })
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+
+    await expect(requeueRenderJob(db, versionId)).resolves.toBeUndefined()
+
+    const [job] = await db
+      .select()
+      .from(schema.renderJobs)
+      .where(eq(schema.renderJobs.configVersionId, versionId))
+    expect(job).toMatchObject({ status: 'queued', attempts: 1 })
+  })
+
   it('throws when there is no render job for the version', async () => {
     await expect(requeueRenderJob(db, '00000000-0000-0000-0000-000000000000')).rejects.toThrow()
   })

@@ -86,8 +86,10 @@ export async function findReviewedItem(
 
 /** Re-attempt a render. A FAILED job goes back to 'queued'. A job cut off mid-render (running
  * longer than STALE_RUNNING_JOB_MS) goes to its `rerenderStatus`, so a network one still waits
- * for "Run network preview". Never a 'held' network job (that's runNetworkPreview's job alone),
- * a 'queued' or live 'running' one, or a 'done' one (already rendered). Clears error + attempts. */
+ * for "Run network preview". A job already 'queued' (a stopping machine puts its job back, and
+ * only a submission, an admin action or a machine start drains) is left as it is, for the drain
+ * the caller starts. Never a 'held' network job (that's runNetworkPreview's job alone), a live
+ * 'running' one, or a 'done' one (already rendered). Clears error + attempts. */
 export async function requeueRenderJob(database: Db, versionId: string): Promise<void> {
   const reset = { error: null, attempts: 0, finishedAt: null }
   const forVersion = eq(renderJobs.configVersionId, versionId)
@@ -97,6 +99,11 @@ export async function requeueRenderJob(database: Db, versionId: string): Promise
     .where(and(forVersion, eq(renderJobs.status, 'failed')))
     .returning({ id: renderJobs.id })
   if (failed) return
+  const [queued] = await database
+    .select({ id: renderJobs.id })
+    .from(renderJobs)
+    .where(and(forVersion, eq(renderJobs.status, 'queued')))
+  if (queued) return
   const [version] = await database
     .select({ networkHosts: configVersions.networkHosts })
     .from(configVersions)
@@ -109,7 +116,7 @@ export async function requeueRenderJob(database: Db, versionId: string): Promise
   if (!cutOff) {
     throw new HttpError(
       409,
-      `no re-queueable render job for that version (must be failed, or running for over ${STALE_RUNNING_JOB_MS / 60_000} minutes)`,
+      `no re-queueable render job for that version (must be failed, queued, or running for over ${STALE_RUNNING_JOB_MS / 60_000} minutes)`,
     )
   }
 }
