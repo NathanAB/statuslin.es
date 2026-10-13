@@ -14,7 +14,7 @@ is asked to sign in instead of seeing the form.
 
 ## How to get to it (user POV)
 
-- Choose `Submit a status line` on the home page: a link when signed in, a button that starts GitHub sign-in when signed out.
+- Choose `Submit` (the + button) on the home page: a link when signed in, a button that starts GitHub sign-in when signed out.
 - Open `http://localhost:3110/submit` directly.
 - Follow up on `/me` from the `@verify-author` user menu, or open `http://localhost:3110/me`.
 
@@ -31,14 +31,14 @@ Preconditions:
 - **Check the rows.** Run `H sql "select c.slug, c.status, s.status, j.status from configs c join config_versions v on v.config_id = c.id join submissions s on s.config_version_id = v.id join render_jobs j on j.config_version_id = v.id"`. Within a few seconds it prints `verify-probe-<8 hex>|draft|pending|done`.
 - **See it on /me.** Run `H ab author open http://localhost:3110/me`, wait, then `H ab author get text main`. It shows `My submissions`, `Verify Probe`, `in review`, `Waiting for a reviewer`, a `Version` row reading `v1` (label and value print on separate lines), the slug, and `Render output — 8 scenarios`.
 - **Declare network hosts.** On the form, fill `Title`, `Description` and `Source code` as above, then run `H ab <role> find role switch click --name "My status line needs network access"`, `H ab <role> find placeholder "api.github.com" fill "api.github.com"` (the host input has no label) and `H ab <role> find role button click --name "Add host" --exact`. A button `Remove api.github.com` appears. Submit and `wait --text "Queued for review"`. `H sql "select j.status, v.network_hosts from render_jobs j join config_versions v on v.id = j.config_version_id where v.title = '<title>'"` prints `held|["api.github.com"]`, and `/admin` badges the card `needs network review`.
-- **From the home page.** Run `H ab author open http://localhost:3110/`, wait, then `H ab author find role link click --name "Submit a status line" --exact` and `H ab author wait --url "**/submit"`. The submit form loads.
-- **Signed out.** Run `H ab anon open http://localhost:3110/submit`. The page shows heading `Sign in to submit a status line` and two buttons named `Sign in with GitHub` (the header's and the prompt's), and no form fields. `/me` signed out shows heading `Sign in to see your submissions`. On the home page the signed-out `Submit a status line` is a button, not a link.
+- **From the home page.** Run `H ab author open http://localhost:3110/`, wait, then `H ab author find role link click --name "Submit" --exact` and `H ab author wait --url "**/submit"`. The submit form loads.
+- **Signed out.** Run `H ab anon open http://localhost:3110/submit`. The page shows heading `Sign in to submit a status line` and two buttons named `Sign in with GitHub` (the header's and the prompt's), and no form fields. `/me` signed out shows heading `Sign in to see your submissions`. On the home page the signed-out `Submit` is a button, not a link.
 - **Proof.** Save `snapshot` and a screenshot of the filled form, the toast, and `/me` into the `H evidence submit-status-line` directory, with the `sql` output, `H errors author` output, and `NOTES.md`.
 
 ## Gotchas
 
 - Submitting doesn't navigate, and the click returns before the server answers. The toast is the only on-page signal and it fades after a few seconds: `wait --text "Queued for review"`, then snapshot at once.
-- Don't click a signed-out `Sign in with GitHub` or `Submit a status line` button: it leaves for github.com's OAuth login, which no local run can finish. Assert the button is there instead.
+- Don't click a signed-out `Sign in with GitHub` or home-page `Submit` button: it leaves for github.com's OAuth login, which no local run can finish. Assert the button is there instead.
 - Multi-line source typed with `$'…'` quoting is refused by the worktree-session command checker. A one-line script is enough to prove the flow.
 - The fake runner renders every scenario as an empty line, so `/me`'s render output is blank. That proves the job ran, not what the script draws.
 - Turning on network access holds the render job (`render_jobs.status` is `held`, not `done`) until an admin runs the network preview behind an egress allowlist; with the fake runner nothing is fetched either way. `config_versions.network_hosts` is JSON, so it reads back as `["api.github.com"]`.
