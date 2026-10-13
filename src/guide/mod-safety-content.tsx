@@ -24,7 +24,7 @@ const TILES: FactTableRow[] = [
 
 const CHECK_IT_YOURSELF = [
   "Clone the mod's repository and check out the commit its page links.",
-  'Run `claude plugin validate <path>` on the plugin folder. Add `--json` for the full report.',
+  'Run `claude plugin validate <path>` on the plugin folder. Add `--json` for a JSON report.',
   'Open `hooks/hooks.json` to find the module it loads, then read the hooks in that module.',
   'Search the code for `$.process`, `$.fs`, `$.http` and `$.model` calls.',
   "Look for `eval` and a global `fetch` too. Validate doesn't list either one as a call.",
@@ -89,8 +89,8 @@ export function ModSafetyContent() {
         </Text>
         <Text muted>
           If the author force-pushes over that commit or deletes it, new installs fail. An update is
-          a new version at a new commit. A person reviews it, with a diff against the live commit,
-          before it replaces the live version.
+          a new version at a new commit. A person reviews it, including the changes since the live
+          commit, before it replaces the live version.
         </Text>
       </Stack>
 
