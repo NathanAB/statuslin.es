@@ -346,7 +346,7 @@ describe('facetJsonLd', () => {
   const [page, crumbs] = facetJsonLd(
     'https://example.test',
     facet,
-    [{ slug: 'a', title: 'A' }],
+    [{ kind: 'status-line', slug: 'a', title: 'A' }],
     '2026-07-06',
   ) as [Record<string, unknown>, Record<string, unknown>]
 
@@ -355,6 +355,22 @@ describe('facetJsonLd', () => {
     expect(page.url).toBe('https://example.test/status-lines/git')
     const list = page.mainEntity as { itemListElement: Array<{ url: string }> }
     expect(list.itemListElement[0]?.url).toBe('https://example.test/c/a')
+  })
+  it('lists a mod at its mod page, in the order given', () => {
+    const [withMod] = facetJsonLd(
+      'https://example.test',
+      facet,
+      [
+        { kind: 'mod', slug: 'meter', title: 'Meter' },
+        { kind: 'status-line', slug: 'a', title: 'A' },
+      ],
+      null,
+    ) as [Record<string, unknown>]
+    const list = withMod.mainEntity as { itemListElement: Array<Record<string, unknown>> }
+    expect(list.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Meter', url: 'https://example.test/mods/meter' },
+      { '@type': 'ListItem', position: 2, name: 'A', url: 'https://example.test/c/a' },
+    ])
   })
   it('carries a breadcrumb trail back to the gallery', () => {
     expect(crumbs['@type']).toBe('BreadcrumbList')
@@ -366,9 +382,12 @@ describe('facetJsonLd', () => {
     expect(page.dateModified).toBe('2026-07-06')
   })
   it('omits dateModified when there is no updated date', () => {
-    const [p] = facetJsonLd('https://example.test', facet, [{ slug: 'a', title: 'A' }], null) as [
-      Record<string, unknown>,
-    ]
+    const [p] = facetJsonLd(
+      'https://example.test',
+      facet,
+      [{ kind: 'status-line', slug: 'a', title: 'A' }],
+      null,
+    ) as [Record<string, unknown>]
     expect(p).not.toHaveProperty('dateModified')
   })
 })

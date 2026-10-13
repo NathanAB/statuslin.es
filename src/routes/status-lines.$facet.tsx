@@ -58,10 +58,7 @@ export const Route = createFileRoute('/status-lines/$facet')({
       scripts: facetJsonLd(
         siteUrl(),
         { slug: facet.slug, titleBase },
-        loaderData.page.configs.items.map(({ item }) => ({
-          slug: item.card.slug,
-          title: item.card.title,
-        })),
+        loaderData.items.map(({ kind, card }) => ({ kind, slug: card.slug, title: card.title })),
         loaderData.page.updated,
         { includeCollectionPage: loaderData.page.indexable, faq: facet.faq },
       ).map(jsonLdScript),

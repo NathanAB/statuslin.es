@@ -110,25 +110,43 @@ describe('facet page content', () => {
     expect(screen.queryByRole('heading', { name: 'Common questions' })).toBeNull()
   })
 
-  it('emits FAQPage JSON-LD only for facets with an FAQ', async () => {
-    const headFor = async (slug: string) => {
-      const head = await FacetRoute.options.head?.({
-        loaderData: {
-          user: null,
-          page: {
-            slug,
-            configs: { items: [], total: 0 },
-            indexable: true,
-            updated: null,
-            otherFacets: [],
-          },
+  const headFor = async (slug: string, items: unknown[] = []) => {
+    const head = await FacetRoute.options.head?.({
+      loaderData: {
+        user: null,
+        page: {
+          slug,
+          configs: { items: [], total: 0 },
+          indexable: true,
+          updated: null,
+          otherFacets: [],
         },
-      } as never)
-      return ((head?.scripts ?? []) as Array<{ children: string }>).map(
-        (script) => JSON.parse(script.children) as Record<string, unknown>,
-      )
-    }
+        items,
+      },
+    } as never)
+    return ((head?.scripts ?? []) as Array<{ children: string }>).map(
+      (script) => JSON.parse(script.children) as Record<string, unknown>,
+    )
+  }
 
+  it('lists the page’s status lines and mods in its ItemList, in the order it shows them', async () => {
+    const collection = (
+      await headFor('cost', [
+        { kind: 'status-line', card: { slug: 'a', title: 'A' } },
+        { kind: 'mod', card: { slug: 'meter', title: 'Meter' } },
+        { kind: 'status-line', card: { slug: 'b', title: 'B' } },
+      ])
+    ).find((node) => node['@type'] === 'CollectionPage')
+
+    const list = collection?.mainEntity as { itemListElement: Array<{ url: string }> }
+    expect(list.itemListElement.map((item) => item.url)).toEqual([
+      expect.stringMatching(/\/c\/a$/),
+      expect.stringMatching(/\/mods\/meter$/),
+      expect.stringMatching(/\/c\/b$/),
+    ])
+  })
+
+  it('emits FAQPage JSON-LD only for facets with an FAQ', async () => {
     const faqPage = (await headFor('quota')).find((node) => node['@type'] === 'FAQPage')
     expect((faqPage?.mainEntity as Array<{ name: string }>).map((q) => q.name)).toEqual([
       'Why is rate_limits missing from my status line input?',

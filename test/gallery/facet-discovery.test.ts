@@ -103,7 +103,9 @@ async function seedPublished(slug: string, allTags: string[]) {
 async function headFor(facet: string) {
   const page = await getFacetPage({ data: { facet } } as never)
   const head = await FacetRoute.options.head?.({
-    loaderData: page ? { page, user: null } : undefined,
+    loaderData: page
+      ? { page, items: page.configs.items.map(({ item }) => item), user: null }
+      : undefined,
   } as never)
   return { page, head }
 }

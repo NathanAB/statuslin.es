@@ -1,8 +1,9 @@
 import type { PageCopy } from '@/content/types'
+import type { GalleryKind } from '@/gallery/gallery-items'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
 import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
-import { CONTENT_LICENSE } from '@/lib/site'
+import { CONTENT_LICENSE, modPath } from '@/lib/site'
 
 /**
  * JSON-LD structured data for search engines. Server-rendered via TanStack
@@ -202,7 +203,8 @@ export function resourcesJsonLd(
 export function facetJsonLd(
   origin: string,
   facet: { slug: string; titleBase: string },
-  items: Array<{ slug: string; title: string }>,
+  /** The page's status lines and mods, in the order it shows them. */
+  items: Array<{ kind: GalleryKind; slug: string; title: string }>,
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
   updated: string | null,
   options: { includeCollectionPage?: boolean; faq?: FaqEntry[] | undefined } = {},
@@ -220,7 +222,7 @@ export function facetJsonLd(
         '@type': 'ListItem',
         position: i + 1,
         name: item.title,
-        url: `${origin}/c/${item.slug}`,
+        url: `${origin}${item.kind === 'mod' ? modPath(item.slug) : `/c/${item.slug}`}`,
       })),
     },
   }
