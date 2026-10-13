@@ -4,6 +4,8 @@ Any signed-in user can submit a mod by pasting a link to it on GitHub. The mod i
 
 A mod's name is the plugin's own name, or `<name>-<owner>` when another mod already has that name. It never changes once published: the marketplace sets `forceRemoveDeletedPlugins`, so renaming an entry uninstalls the mod for everyone who has it.
 
+The name is picked when the mod is approved. Until then a submission has a provisional slug (`<name>-<6 hex>`) and holds neither the name nor the plugin's folder against anyone but its submitter, so submitting someone's plugin first, or leaving a rejected submission behind, gains nothing. Approval refuses a draft whose folder a listed mod already holds.
+
 ## Considered Options
 
 - **Only the repository owner may submit**: `user.username` holds the GitHub login, so this is easy to check for personal repositories. Organisation repositories would need the `read:org` scope, and most mod authors don't use the site.
