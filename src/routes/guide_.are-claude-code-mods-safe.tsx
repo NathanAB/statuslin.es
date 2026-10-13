@@ -3,7 +3,8 @@ import { ModSafetyContent } from '@/guide/mod-safety-content'
 import { MOD_SAFETY_FAQ } from '@/guide/mod-safety-faq'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
-import { guideJsonLd, jsonLdScript } from '@/lib/json-ld'
+import { guideJsonLd } from '@/lib/guide-json-ld'
+import { jsonLdScript } from '@/lib/json-ld'
 import {
   MOD_SAFETY_GUIDE_DATES,
   MOD_SAFETY_GUIDE_DESCRIPTION,

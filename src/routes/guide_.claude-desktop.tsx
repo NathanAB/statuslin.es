@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { DesktopGuideContent } from '@/guide/desktop-guide-content'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
-import { guideJsonLd, jsonLdScript } from '@/lib/json-ld'
+import { guideJsonLd } from '@/lib/guide-json-ld'
+import { jsonLdScript } from '@/lib/json-ld'
 import {
   DESKTOP_GUIDE_DATES,
   DESKTOP_GUIDE_DESCRIPTION,

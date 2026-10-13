@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { PageCopy } from '@/content/types'
+import { guideJsonLd } from '@/lib/guide-json-ld'
 import {
   configJsonLd,
   facetJsonLd,
   faqPageJsonLd,
-  guideJsonLd,
   homeJsonLd,
   jsonLdScript,
   resourcesJsonLd,

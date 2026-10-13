@@ -3,7 +3,8 @@ import { StatusLinesVsModsContent } from '@/guide/status-lines-vs-mods-content'
 import { STATUS_LINES_VS_MODS_FAQ } from '@/guide/status-lines-vs-mods-faq'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
-import { guideJsonLd, jsonLdScript } from '@/lib/json-ld'
+import { guideJsonLd } from '@/lib/guide-json-ld'
+import { jsonLdScript } from '@/lib/json-ld'
 import {
   STATUS_LINES_VS_MODS_GUIDE_DATES,
   STATUS_LINES_VS_MODS_GUIDE_DESCRIPTION,
