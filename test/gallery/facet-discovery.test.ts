@@ -119,22 +119,22 @@ describe('facet discovery threshold', () => {
     expect(three).toMatchObject({ slug: 'git', indexable: true })
   })
 
-  it.each([
-    'python',
-    'cost',
-  ])('makes the thin %s facet self-canonical and noindex without CollectionPage JSON-LD', async (facet) => {
-    const { head } = await headFor(facet)
+  it.each(['python', 'cost'])(
+    'makes the thin %s facet self-canonical and noindex without CollectionPage JSON-LD',
+    async (facet) => {
+      const { head } = await headFor(facet)
 
-    expect(head?.links).toContainEqual({
-      rel: 'canonical',
-      href: `https://statuslin.es/status-lines/${facet}`,
-    })
-    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
-    const types = (head?.scripts ?? []).map(
-      (script) => JSON.parse(String(script?.children))['@type'] as string,
-    )
-    expect(types).toEqual(['BreadcrumbList'])
-  })
+      expect(head?.links).toContainEqual({
+        rel: 'canonical',
+        href: `https://statuslin.es/status-lines/${facet}`,
+      })
+      expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+      const types = (head?.scripts ?? []).map(
+        (script) => JSON.parse(String(script?.children))['@type'] as string,
+      )
+      expect(types).toEqual(['BreadcrumbList'])
+    },
+  )
 
   it('keeps the 3-config facet indexable with collection, breadcrumb, and FAQ JSON-LD', async () => {
     const { head } = await headFor('git')

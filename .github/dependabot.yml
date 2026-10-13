@@ -65,6 +65,9 @@ updates:
           - vitest-axe
           # The sandbox that runs untrusted scripts. Every e2b update needs `bun run test:e2b`.
           - e2b
+          # Biome minors change formatting and add lint rules, so an update needs `biome migrate`
+          # and `bun run format`. Alone, it can't hold up the rest of the batch.
+          - '@biomejs/biome'
 
   # The Bun image the Dockerfile builds production on. A new Bun release opens a PR here, and
   # `bun run check:deps` fails on it until ci.yml and @types/bun move to the same version.
