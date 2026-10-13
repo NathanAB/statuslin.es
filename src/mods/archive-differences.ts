@@ -24,11 +24,23 @@ export type ReadBlob = (
   maxBytes: number,
 ) => Promise<{ bytes: Uint8Array; truncated: boolean }>
 
+/**
+ * Git skips only these blanks before deciding a line is a comment, so a line starting with any
+ * other character (a vertical tab, a non-ASCII space, a byte-order mark) has a pattern. Splitting
+ * on a few more is safe: it checks more tokens, never fewer.
+ */
+const LEADING_BLANKS = /^[ \t\r]+/
+const BLANKS = /[ \t\r\f\v]+/
+
 function setsOnlyLineEndings(text: string): boolean {
-  return text.split('\n').every((line) => {
-    const [pattern, ...attributes] = line.trim().split(/\s+/)
-    if (!pattern || pattern.startsWith('#')) return true
-    return !pattern.startsWith('[attr]') && attributes.every((a) => LINE_ENDINGS_ATTRIBUTE.test(a))
+  return text.split('\n').every((raw) => {
+    const line = raw.replace(LEADING_BLANKS, '').trimEnd()
+    if (line === '' || line.startsWith('#')) return true
+    const [pattern = '', ...attributes] = line.split(BLANKS)
+    // A quoted pattern runs straight into its attributes, with no blank to split on; a macro
+    // defines attributes of its own.
+    if (pattern.startsWith('"') || pattern.startsWith('[attr]')) return false
+    return attributes.every((attribute) => LINE_ENDINGS_ATTRIBUTE.test(attribute))
   })
 }
 
@@ -47,7 +59,9 @@ async function refuseAttributes(sha: string, path: string, readBlob: ReadBlob): 
   if (!truncated && (await blobSha(bytes)) !== sha) {
     throw new Error(`GitHub sent other bytes than blob ${sha}`)
   }
-  if (truncated || !setsOnlyLineEndings(new TextDecoder().decode(bytes))) {
+  // A byte-order mark stays: git reads it as the start of a pattern.
+  const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes)
+  if (truncated || !setsOnlyLineEndings(text)) {
     throw new PluginRefusal(
       `${path} sets more than line endings, so GitHub's archive of the repository can differ from what Claude Code installs`,
     )

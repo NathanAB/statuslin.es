@@ -260,6 +260,12 @@ describe('tarball', () => {
       ['ident', '*.ts ident\n'],
       ['filter=lfs', '*.ts filter=lfs diff=lfs merge=lfs -text\n'],
       ['a macro', '[attr]plain text\n*.ts plain\n'],
+      ['a quoted pattern glued to its attribute', '"*"working-tree-encoding=SHIFT_JIS\n'],
+      ['a quoted macro', '"[attr]x"working-tree-encoding=SHIFT_JIS\n'],
+      ['a quoted pattern with a space', '"my file.ts" text\n'],
+      ['a pattern that is a non-ASCII space', '\u00a0 working-tree-encoding=SHIFT_JIS\n'],
+      ['a pattern git reads where JS sees a comment', '\v#x/** working-tree-encoding=SHIFT_JIS\n'],
+      ['a byte-order mark before a pattern', '\ufeff#x working-tree-encoding=SHIFT_JIS\n'],
     ])('refuses a .gitattributes using %s, before downloading', async (_name, text) => {
       const { result, requested } = await download(
         entries(attributes('mod/.GitAttributes', text)),
