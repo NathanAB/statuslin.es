@@ -138,6 +138,11 @@ on the registry, repository, and digest. It then passes that exact reference to 
 replace this command with a direct staging deploy, because doing so drops the previous generation
 that the Docker build uses to retain hashed assets.
 
+Before any of that, it runs `scripts/check-docker-context.ts`, which needs a running Docker daemon.
+The Dockerfile copies the whole build context into the image, so the check builds the context
+locally and aborts if any file in it is git-ignored (a nested worktree's `.env.local`, private
+notes). Fix a failure by adding the listed paths to `.dockerignore`, using `**/` for anything nested.
+
 The `release_command` in the Fly config runs `bun run src/db/migrate.ts` against that env's DB before
 the new version goes live. That script applies migrations via `drizzle-orm`'s runtime migrator
 (`drizzle-orm/postgres-js/migrator`) reading the committed `drizzle/` SQL folder — it does **not**

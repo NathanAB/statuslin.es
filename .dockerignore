@@ -2,9 +2,11 @@
 # tracks. `Dockerfile COPY . .` would otherwise copy local-only artifacts —
 # heap snapshots and cpuprofiles capture process memory (env secrets included),
 # so an un-ignored profiling run would bake credentials straight into an image layer.
+# A pattern without **/ matches only at the context root, unlike .gitignore.
+# scripts/check-docker-context.ts (run by deploy:staging) fails on any git-ignored file that slips through.
 
 # Dependencies
-node_modules
+**/node_modules
 bun.lockb.bak
 
 # Build output
@@ -15,8 +17,8 @@ dist
 .nitro
 
 # Env / secrets
-.env
-.env.*
+**/.env
+**/.env.*
 
 # Tooling
 .wrangler
@@ -35,6 +37,8 @@ scripts/profiling/results
 Dockerfile*
 .superpowers
 .claude
+.worktrees
+.agents
 .github
 .vscode
 docs
