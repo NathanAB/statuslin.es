@@ -91,6 +91,8 @@ export function homeMetaDescription(page: number, pageCount: number): string {
   return `${HOME_DESCRIPTION_BASE}${page > 1 ? ` Page ${page} of ${pageCount}.` : ''}`
 }
 
+export const GUIDE_PATH = '/guide'
+
 /** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 

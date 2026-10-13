@@ -9,7 +9,7 @@ import {
   jsonLdScript,
   resourcesJsonLd,
 } from '@/lib/json-ld'
-import { GUIDE_DESCRIPTION, GUIDE_TITLE_BASE } from '@/lib/page-title'
+import { GUIDE_DATES, GUIDE_DESCRIPTION, GUIDE_PATH, GUIDE_TITLE_BASE } from '@/lib/page-title'
 
 describe('jsonLdScript', () => {
   it('serializes to an application/ld+json script descriptor', () => {
@@ -277,7 +277,13 @@ describe('faqPageJsonLd', () => {
 })
 
 describe('guideJsonLd', () => {
-  const nodes = guideJsonLd('https://statuslin.es', GUIDE_DESCRIPTION, [
+  const guide = {
+    path: GUIDE_PATH,
+    headline: GUIDE_TITLE_BASE,
+    description: GUIDE_DESCRIPTION,
+    dates: GUIDE_DATES,
+  }
+  const nodes = guideJsonLd('https://statuslin.es', guide, [
     { question: 'Why?', answer: 'Because.' },
   ]) as Array<Record<string, unknown>>
 
@@ -320,6 +326,29 @@ describe('guideJsonLd', () => {
         },
       ],
     })
+  })
+
+  it('runs a subpage breadcrumb through /guide and leaves out an empty FAQ', () => {
+    const subpage = guideJsonLd('https://statuslin.es', {
+      path: '/guide/sub',
+      headline: 'A Subpage',
+      description: 'About it.',
+      dates: { published: '2026-10-01', modified: '2026-10-02' },
+    }) as Array<Record<string, unknown>>
+
+    expect(subpage.map((node) => node['@type'])).toEqual(['TechArticle', 'BreadcrumbList'])
+    expect(subpage[0]).toMatchObject({
+      headline: 'A Subpage',
+      url: 'https://statuslin.es/guide/sub',
+      datePublished: '2026-10-01',
+      dateModified: '2026-10-02',
+    })
+    const crumbs = subpage[1] as { itemListElement: Array<{ name: string; item: string }> }
+    expect(crumbs.itemListElement.map(({ name, item }) => ({ name, item }))).toEqual([
+      { name: 'Status lines', item: 'https://statuslin.es' },
+      { name: GUIDE_TITLE_BASE, item: 'https://statuslin.es/guide' },
+      { name: 'A Subpage', item: 'https://statuslin.es/guide/sub' },
+    ])
   })
 })
 

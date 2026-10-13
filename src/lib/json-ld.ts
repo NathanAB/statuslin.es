@@ -2,7 +2,7 @@ import type { PageCopy } from '@/content/types'
 import type { GalleryKind } from '@/gallery/gallery-items'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
-import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { GUIDE_PATH, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { CONTENT_LICENSE, modPath } from '@/lib/site'
 
 /**
@@ -155,22 +155,36 @@ export function pageCopyFaqJsonLd(title: string, copy: PageCopy | null): object 
   ])
 }
 
-export function guideJsonLd(origin: string, description: string, faq: FaqEntry[]): object[] {
-  const url = `${origin}/guide`
+/** A /guide page as its TechArticle states it; `headline` is the page's title base. */
+export interface GuideArticle {
+  path: string
+  headline: string
+  description: string
+  dates: { published: string; modified: string }
+}
+
+/**
+ * A /guide page as a dated TechArticle authored by the site, a breadcrumb that runs through /guide,
+ * and its questions as a FAQPage when it has any. Never HowTo.
+ */
+export function guideJsonLd(origin: string, article: GuideArticle, faq: FaqEntry[] = []): object[] {
+  const url = `${origin}${article.path}`
+  const ownCrumb = article.path === GUIDE_PATH ? [] : [{ name: article.headline, item: url }]
   const nodes: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'TechArticle',
-      headline: GUIDE_TITLE_BASE,
+      headline: article.headline,
       url,
-      description,
+      description: article.description,
       author: { '@type': 'Organization', name: 'statuslin.es', url: origin },
-      datePublished: GUIDE_DATES.published,
-      dateModified: GUIDE_DATES.modified,
+      datePublished: article.dates.published,
+      dateModified: article.dates.modified,
     },
     breadcrumbJsonLd([
       { name: HOME_CRUMB_NAME, item: origin },
-      { name: GUIDE_TITLE_BASE, item: url },
+      { name: GUIDE_TITLE_BASE, item: `${origin}${GUIDE_PATH}` },
+      ...ownCrumb,
     ]),
   ]
   const faqPage = faqPageJsonLd(faq)
