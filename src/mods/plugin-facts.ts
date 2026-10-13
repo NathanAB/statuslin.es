@@ -86,8 +86,14 @@ function footprintList(kind: 'event' | 'call', entries: Set<string>): string[] {
   return [...entries].sort()
 }
 
+/** Validate reports each error as `{ path, message, code }`; only the message is for the submitter. */
+const reportErrorSchema = z.union([
+  z.string(),
+  z.object({ message: z.string() }).transform((error) => error.message),
+])
+
 const reportSectionSchema = z.object({
-  errors: z.array(z.string()).optional(),
+  errors: z.array(reportErrorSchema).optional(),
   notes: z.array(z.string()).optional(),
 })
 

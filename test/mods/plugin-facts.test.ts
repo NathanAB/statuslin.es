@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { parseFootprint, parseManifest } from '@/mods/plugin-facts'
+import { inspectPlugin, PluginRefusal, parseFootprint, parseManifest } from '@/mods/plugin-facts'
 
 /** `claude plugin validate --json` for hellosverre/claude-skins, captured in the #38 spike. */
 const skinsValidate = JSON.parse(
@@ -182,5 +182,34 @@ describe('parseManifest', () => {
     ['no name', '{"version":"1.0.0"}'],
   ])('refuses a plugin.json that is %s', (_name, text) => {
     expect(() => parseManifest(text)).toThrow(/plugin\.json/)
+  })
+})
+
+describe('inspectPlugin', () => {
+  const fixture = (name: string) =>
+    readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')
+
+  function sandbox(validate: { exitCode: number; stdout: string }, manifest = '{"name":"meter"}') {
+    return {
+      pluginDir: '/home/user/plugins/mod',
+      async run(command: string) {
+        if (command.endsWith('--version')) {
+          return { exitCode: 0, stdout: '2.1.296 (Claude Code)\n', stderr: '' }
+        }
+        if (command.includes(' plugin validate --json ')) return { ...validate, stderr: '' }
+        return { exitCode: 0, stdout: manifest, stderr: '' }
+      },
+    }
+  }
+
+  it("tells the submitter each of validate's errors, which it reports as objects", async () => {
+    const refused = await inspectPlugin(
+      sandbox({ exitCode: 1, stdout: fixture('validate-failing.json') }),
+    ).catch((error: unknown) => error)
+
+    expect(refused).toBeInstanceOf(PluginRefusal)
+    expect((refused as Error).message).toBe(
+      'claude plugin validate failed: failing: cannot import "node:fs" (from hooks/register.ts): a hooks module imports its own files by relative path and "claude-code", nothing else',
+    )
   })
 })
