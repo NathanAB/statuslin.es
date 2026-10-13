@@ -9,62 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SubmitRouteImport } from './routes/submit'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as ResourcesRouteImport } from './routes/resources'
-import { Route as MeRouteImport } from './routes/me'
-import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
-import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
-import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
-import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
-import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
-import { Route as ComparePairRouteImport } from './routes/compare.$pair'
-import { Route as CSlugRouteImport } from './routes/c.$slug'
-import { Route as ApiHealthRouteImport } from './routes/api/health'
-import { Route as AlternativesToolRouteImport } from './routes/alternatives.$tool'
-import { Route as AdminReviewRouteImport } from './routes/admin/review'
+import { Route as GuideRouteImport } from './routes/guide'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as MeRouteImport } from './routes/me'
+import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as DotwellKnownSecurityDottxtRouteImport } from './routes/[.]well-known.security[.]txt'
-import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminReviewRouteImport } from './routes/admin/review'
+import { Route as AlternativesToolRouteImport } from './routes/alternatives.$tool'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as ComparePairRouteImport } from './routes/compare.$pair'
+import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
+import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
+import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
+import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SubmitRoute = SubmitRouteImport.update({
-  id: '/submit',
-  path: '/submit',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
-  id: '/robots.txt',
-  path: '/robots.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResourcesRoute = ResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeRoute = MeRouteImport.update({
-  id: '/me',
-  path: '/me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
-  id: '/llms.txt',
-  path: '/llms.txt',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuideRoute = GuideRouteImport.update({
@@ -72,59 +42,39 @@ const GuideRoute = GuideRouteImport.update({
   path: '/guide',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StatusLinesBestRoute = StatusLinesBestRouteImport.update({
-  id: '/status-lines/best',
-  path: '/status-lines/best',
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StatusLinesFacetRoute = StatusLinesFacetRouteImport.update({
-  id: '/status-lines/$facet',
-  path: '/status-lines/$facet',
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
-  id: '/og/home.png',
-  path: '/og/home.png',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
-  id: '/guide_/claude-desktop',
-  path: '/guide/claude-desktop',
+const SubmitRoute = SubmitRouteImport.update({
+  id: '/submit',
+  path: '/submit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ComparePairRoute = ComparePairRouteImport.update({
-  id: '/compare/$pair',
-  path: '/compare/$pair',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CSlugRoute = CSlugRouteImport.update({
-  id: '/c/$slug',
-  path: '/c/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHealthRoute = ApiHealthRouteImport.update({
-  id: '/api/health',
-  path: '/api/health',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AlternativesToolRoute = AlternativesToolRouteImport.update({
-  id: '/alternatives/$tool',
-  path: '/alternatives/$tool',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminReviewRoute = AdminReviewRouteImport.update({
-  id: '/admin/review',
-  path: '/admin/review',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DotwellKnownSecurityDottxtRoute =
@@ -133,17 +83,67 @@ const DotwellKnownSecurityDottxtRoute =
     path: '/.well-known/security.txt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReviewRoute = AdminReviewRouteImport.update({
+  id: '/admin/review',
+  path: '/admin/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlternativesToolRoute = AlternativesToolRouteImport.update({
+  id: '/alternatives/$tool',
+  path: '/alternatives/$tool',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComparePairRoute = ComparePairRouteImport.update({
+  id: '/compare/$pair',
+  path: '/compare/$pair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
+  id: '/guide_/claude-desktop',
+  path: '/guide/claude-desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
+  id: '/og/home.png',
+  path: '/og/home.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusLinesFacetRoute = StatusLinesFacetRouteImport.update({
+  id: '/status-lines/$facet',
+  path: '/status-lines/$facet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusLinesBestRoute = StatusLinesBestRouteImport.update({
+  id: '/status-lines/best',
+  path: '/status-lines/best',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OgCChar123slugChar125DotpngRoute =
   OgCChar123slugChar125DotpngRouteImport.update({
     id: '/og/c/{$slug}.png',
     path: '/og/c/{$slug}.png',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -320,53 +320,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/submit': {
-      id: '/submit'
-      path: '/submit'
-      fullPath: '/submit'
-      preLoaderRoute: typeof SubmitRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/robots.txt': {
-      id: '/robots.txt'
-      path: '/robots.txt'
-      fullPath: '/robots.txt'
-      preLoaderRoute: typeof RobotsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resources': {
-      id: '/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof ResourcesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/me': {
-      id: '/me'
-      path: '/me'
-      fullPath: '/me'
-      preLoaderRoute: typeof MeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/llms.txt': {
-      id: '/llms.txt'
-      path: '/llms.txt'
-      fullPath: '/llms.txt'
-      preLoaderRoute: typeof LlmsDottxtRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guide': {
@@ -376,81 +334,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuideRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/status-lines/best': {
-      id: '/status-lines/best'
-      path: '/status-lines/best'
-      fullPath: '/status-lines/best'
-      preLoaderRoute: typeof StatusLinesBestRouteImport
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/status-lines/$facet': {
-      id: '/status-lines/$facet'
-      path: '/status-lines/$facet'
-      fullPath: '/status-lines/$facet'
-      preLoaderRoute: typeof StatusLinesFacetRouteImport
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/og/home.png': {
-      id: '/og/home.png'
-      path: '/og/home.png'
-      fullPath: '/og/home.png'
-      preLoaderRoute: typeof OgHomeDotpngRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/guide_/claude-desktop': {
-      id: '/guide_/claude-desktop'
-      path: '/guide/claude-desktop'
-      fullPath: '/guide/claude-desktop'
-      preLoaderRoute: typeof GuideClaudeDesktopRouteImport
+    '/submit': {
+      id: '/submit'
+      path: '/submit'
+      fullPath: '/submit'
+      preLoaderRoute: typeof SubmitRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/compare/$pair': {
-      id: '/compare/$pair'
-      path: '/compare/$pair'
-      fullPath: '/compare/$pair'
-      preLoaderRoute: typeof ComparePairRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/c/$slug': {
-      id: '/c/$slug'
-      path: '/c/$slug'
-      fullPath: '/c/$slug'
-      preLoaderRoute: typeof CSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/health': {
-      id: '/api/health'
-      path: '/api/health'
-      fullPath: '/api/health'
-      preLoaderRoute: typeof ApiHealthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/alternatives/$tool': {
-      id: '/alternatives/$tool'
-      path: '/alternatives/$tool'
-      fullPath: '/alternatives/$tool'
-      preLoaderRoute: typeof AlternativesToolRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/review': {
-      id: '/admin/review'
-      path: '/admin/review'
-      fullPath: '/admin/review'
-      preLoaderRoute: typeof AdminReviewRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/security.txt': {
@@ -460,11 +390,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownSecurityDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/og/c/{$slug}.png': {
-      id: '/og/c/{$slug}.png'
-      path: '/og/c/{$slug}.png'
-      fullPath: '/og/c/{$slug}.png'
-      preLoaderRoute: typeof OgCChar123slugChar125DotpngRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/review': {
+      id: '/admin/review'
+      path: '/admin/review'
+      fullPath: '/admin/review'
+      preLoaderRoute: typeof AdminReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alternatives/$tool': {
+      id: '/alternatives/$tool'
+      path: '/alternatives/$tool'
+      fullPath: '/alternatives/$tool'
+      preLoaderRoute: typeof AlternativesToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare/$pair': {
+      id: '/compare/$pair'
+      path: '/compare/$pair'
+      fullPath: '/compare/$pair'
+      preLoaderRoute: typeof ComparePairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide_/claude-desktop': {
+      id: '/guide_/claude-desktop'
+      path: '/guide/claude-desktop'
+      fullPath: '/guide/claude-desktop'
+      preLoaderRoute: typeof GuideClaudeDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/og/home.png': {
+      id: '/og/home.png'
+      path: '/og/home.png'
+      fullPath: '/og/home.png'
+      preLoaderRoute: typeof OgHomeDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status-lines/$facet': {
+      id: '/status-lines/$facet'
+      path: '/status-lines/$facet'
+      fullPath: '/status-lines/$facet'
+      preLoaderRoute: typeof StatusLinesFacetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status-lines/best': {
+      id: '/status-lines/best'
+      path: '/status-lines/best'
+      fullPath: '/status-lines/best'
+      preLoaderRoute: typeof StatusLinesBestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -472,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/og/c/{$slug}.png': {
+      id: '/og/c/{$slug}.png'
+      path: '/og/c/{$slug}.png'
+      fullPath: '/og/c/{$slug}.png'
+      preLoaderRoute: typeof OgCChar123slugChar125DotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
