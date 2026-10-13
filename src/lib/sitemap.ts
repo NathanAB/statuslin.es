@@ -1,4 +1,4 @@
-import { DESKTOP_GUIDE_DATES, DESKTOP_GUIDE_PATH, GUIDE_DATES } from '@/lib/page-title'
+import { GUIDE_DATES, GUIDE_PATH, GUIDE_SUBPAGES } from '@/lib/page-title'
 import { MODS_PATH, modPath } from '@/lib/site'
 
 /**
@@ -30,8 +30,8 @@ export interface SitemapFacet {
 
 const STATIC_PAGES: Array<{ path: string; lastmod?: string }> = [
   { path: '/status-lines/best' },
-  { path: '/guide', lastmod: GUIDE_DATES.modified },
-  { path: DESKTOP_GUIDE_PATH, lastmod: DESKTOP_GUIDE_DATES.modified },
+  { path: GUIDE_PATH, lastmod: GUIDE_DATES.modified },
+  ...GUIDE_SUBPAGES.map(({ path, modified }) => ({ path, lastmod: modified })),
   { path: '/resources' },
   { path: '/terms' },
 ]
