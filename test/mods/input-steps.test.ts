@@ -62,7 +62,8 @@ describe('prepareInputStepsRequests', () => {
 
     expect(rest).toEqual([])
     expect(request).toMatchObject({ slug: 'meter', versionId })
-    expect(request?.prompt).toContain(`BEGIN UNTRUSTED ${versionId}`)
+    expect(request?.prompt).toMatch(/\nBEGIN UNTRUSTED \S+\n/)
+    expect(request?.prompt).not.toContain(`UNTRUSTED ${versionId}`)
     expect(request?.prompt).toContain('Run /meter to open it.')
     expect(request?.prompt).toContain('adds the /meter command')
     expect(request?.prompt).toContain(`at most ${INPUT_STEPS_MAX} steps`)

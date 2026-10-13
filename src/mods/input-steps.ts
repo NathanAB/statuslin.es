@@ -5,7 +5,7 @@ import { mods, modVersions, submissions } from '@/db/schema'
 import { MAX_INPUT_STEPS as DESKTOP_MAX_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { MAX_INPUT_STEPS as TERMINAL_MAX_STEPS } from '@/render/mods/recorder'
 import type { ModReadmeSource } from './content-generation'
-import { pinAndWarn, untrustedBlock, type VersionPin } from './content-prompt'
+import { fenceUntrusted, type VersionPin } from './content-prompt'
 import { describeFootprint } from './footprint'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -34,15 +34,16 @@ const responseSchema = z.strictObject({
 export type InputStepsResponse = z.infer<typeof responseSchema>
 
 function prompt(pin: VersionPin, untrusted: string): string {
+  const fenced = fenceUntrusted(pin, untrusted)
   return `You choose what to type into Claude Code so a sample session shows what one mod draws.
 
-${pinAndWarn(pin)}
+${fenced.warning}
 
 ## How the preview is recorded
 A scripted session starts with the mod installed, sends one prompt and waits for the reply. Then each step's text is typed into the prompt box, and sent with Enter unless "submit" is false. The terminal and Claude Desktop are recorded after the last step. Steps can run the mod's slash commands, or type text it reacts to. Many mods draw without any step: then answer with no steps.
 
 ## From the mod
-${untrustedBlock(pin, untrusted)}
+${fenced.block}
 
 ## Your task
 Reply with ONLY a JSON object, no prose and no fences:

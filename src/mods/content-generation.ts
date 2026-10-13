@@ -1,8 +1,8 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
-import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { and, asc, eq, exists, not, or } from 'drizzle-orm'
+import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import z from 'zod'
 import { modPageCopySchema, readPageCopy } from '@/content/types'
-import { modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
+import { modDesktopPreviews, modPreviews, mods, modVersions, submissions } from '@/db/schema'
 import { TAG_VOCABULARY } from '@/gallery/facets'
 import { buildModContentPrompt, buildModTagsPrompt } from './content-prompt'
 import { describeModFootprint } from './footprint'
@@ -58,6 +58,19 @@ const currentVersion = and(
   eq(modVersions.modId, mods.id),
 )
 
+const submittedVersion = alias(modVersions, 'submitted_version')
+
+/** A mod someone submitted, rather than one curated: one of its versions has a submission. */
+function hasSubmission(db: Db) {
+  return exists(
+    db
+      .select({ id: submissions.id })
+      .from(submissions)
+      .innerJoin(submittedVersion, eq(submittedVersion.id, submissions.modVersionId))
+      .where(eq(submittedVersion.modId, mods.id)),
+  )
+}
+
 export async function prepareModContentGenerationRequest(
   db: Db,
   slug: string,
@@ -77,6 +90,14 @@ export async function prepareModContentGenerationRequest(
     .where(eq(mods.slug, slug))
   if (!row) throw new Error(`no mod found with slug "${slug}"`)
   const { mod, version, preview, desktop } = row
+  // A submitted draft is still in review. Its current version is its first, which a fix replaces.
+  const [inReview] = await db
+    .select({ id: mods.id })
+    .from(mods)
+    .where(and(eq(mods.id, mod.id), eq(mods.status, 'draft'), hasSubmission(db)))
+  if (inReview) {
+    throw new Error(`mod "${slug}" is still in review: generate its copy after it is approved`)
+  }
 
   const described = describeModFootprint({
     footprint: version.footprint,
@@ -110,13 +131,13 @@ export async function prepareModContentGenerationRequest(
   }
 }
 
-/** Draft and published mods whose current version has no page copy in the current format. */
+/** Published mods and curated drafts whose current version has no page copy in the current format. */
 export async function listModSlugsMissingContent(db: Db): Promise<string[]> {
   const rows = await db
     .select({ slug: mods.slug, generatedContent: modVersions.generatedContent })
     .from(mods)
     .innerJoin(modVersions, currentVersion)
-    .where(inArray(mods.status, ['draft', 'published']))
+    .where(or(eq(mods.status, 'published'), and(eq(mods.status, 'draft'), not(hasSubmission(db)))))
     .orderBy(asc(mods.createdAt), asc(mods.slug))
   return rows
     .filter((row) => readPageCopy(modPageCopySchema, row.generatedContent) === null)
