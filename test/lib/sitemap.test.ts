@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { DESKTOP_GUIDE_DATES, STATUS_LINES_VS_MODS_GUIDE_DATES } from '@/lib/page-title'
+import {
+  DESKTOP_GUIDE_DATES,
+  MOD_SAFETY_GUIDE_DATES,
+  STATUS_LINES_VS_MODS_GUIDE_DATES,
+} from '@/lib/page-title'
 import { sitemapResponse, withModUrls } from '@/lib/sitemap'
 
 const BASE = 'https://statuslin.es'
@@ -48,6 +52,13 @@ describe('sitemapResponse', () => {
     const xml = await sitemapResponse(BASE, [], []).text()
     expect(entryFor(xml, `${BASE}/guide/status-lines-vs-mods`)).toContain(
       `<lastmod>${STATUS_LINES_VS_MODS_GUIDE_DATES.modified}</lastmod>`,
+    )
+  })
+
+  it('lists the mod safety guide with its modified date', async () => {
+    const xml = await sitemapResponse(BASE, [], []).text()
+    expect(entryFor(xml, `${BASE}/guide/are-claude-code-mods-safe`)).toContain(
+      `<lastmod>${MOD_SAFETY_GUIDE_DATES.modified}</lastmod>`,
     )
   })
 

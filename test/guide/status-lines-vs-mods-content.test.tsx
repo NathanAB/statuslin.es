@@ -53,7 +53,7 @@ describe('StatusLinesVsModsContent', () => {
     )
   })
 
-  it('links the mods, the gallery, both guides and statusline-anywhere', () => {
+  it('links the mods, the gallery, the other guides and statusline-anywhere', () => {
     const { container } = render(<StatusLinesVsModsContent />)
     for (const href of [
       '/mods',
@@ -61,6 +61,7 @@ describe('StatusLinesVsModsContent', () => {
       '/guide',
       '/guide/claude-desktop',
       '/mods/statusline-anywhere',
+      '/guide/are-claude-code-mods-safe',
     ]) {
       expect(container.querySelector(`a[href="${href}"]`), href).not.toBeNull()
     }

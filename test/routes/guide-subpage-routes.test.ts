@@ -1,13 +1,18 @@
 // @vitest-environment node
 import { createMemoryHistory } from '@tanstack/react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { MOD_SAFETY_FAQ } from '@/guide/mod-safety-faq'
 import { STATUS_LINES_VS_MODS_FAQ } from '@/guide/status-lines-vs-mods-faq'
 import {
   GUIDE_TITLE_BASE,
+  MOD_SAFETY_GUIDE_DESCRIPTION,
+  MOD_SAFETY_GUIDE_PATH,
+  MOD_SAFETY_GUIDE_TITLE,
   STATUS_LINES_VS_MODS_GUIDE_DESCRIPTION,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
+import { Route as ModSafetyRoute } from '@/routes/guide_.are-claude-code-mods-safe'
 import { Route as StatusLinesVsModsRoute } from '@/routes/guide_.status-lines-vs-mods'
 
 vi.mock('@/lib/analytics-config', () => ({
@@ -32,6 +37,14 @@ const GUIDES = [
     description: STATUS_LINES_VS_MODS_GUIDE_DESCRIPTION,
     faq: STATUS_LINES_VS_MODS_FAQ,
     route: StatusLinesVsModsRoute,
+  },
+  {
+    routeId: '/guide_/are-claude-code-mods-safe',
+    path: MOD_SAFETY_GUIDE_PATH,
+    title: MOD_SAFETY_GUIDE_TITLE,
+    description: MOD_SAFETY_GUIDE_DESCRIPTION,
+    faq: MOD_SAFETY_FAQ,
+    route: ModSafetyRoute,
   },
 ]
 

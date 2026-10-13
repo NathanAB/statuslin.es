@@ -27,6 +27,7 @@ import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
 import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
 import { Route as GuideStatusLinesVsModsRouteImport } from './routes/guide_.status-lines-vs-mods'
 import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
+import { Route as GuideAreClaudeCodeModsSafeRouteImport } from './routes/guide_.are-claude-code-mods-safe'
 import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
@@ -129,6 +130,12 @@ const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
   path: '/guide/claude-desktop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideAreClaudeCodeModsSafeRoute =
+  GuideAreClaudeCodeModsSafeRouteImport.update({
+    id: '/guide_/are-claude-code-mods-safe',
+    path: '/guide/are-claude-code-mods-safe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ComparePairRoute = ComparePairRouteImport.update({
   id: '/compare/$pair',
   path: '/compare/$pair',
@@ -207,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
@@ -238,6 +246,7 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
@@ -270,6 +279,7 @@ export interface FileRoutesById {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide_/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
   '/guide_/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-desktop'
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-desktop'
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
@@ -365,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide_/are-claude-code-mods-safe'
     | '/guide_/claude-desktop'
     | '/guide_/status-lines-vs-mods'
     | '/mods/$slug'
@@ -397,6 +410,7 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   CSlugRoute: typeof CSlugRoute
   ComparePairRoute: typeof ComparePairRoute
+  GuideAreClaudeCodeModsSafeRoute: typeof GuideAreClaudeCodeModsSafeRoute
   GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
   GuideStatusLinesVsModsRoute: typeof GuideStatusLinesVsModsRoute
   ModsSlugRoute: typeof ModsSlugRoute
@@ -540,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuideClaudeDesktopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide_/are-claude-code-mods-safe': {
+      id: '/guide_/are-claude-code-mods-safe'
+      path: '/guide/are-claude-code-mods-safe'
+      fullPath: '/guide/are-claude-code-mods-safe'
+      preLoaderRoute: typeof GuideAreClaudeCodeModsSafeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compare/$pair': {
       id: '/compare/$pair'
       path: '/compare/$pair'
@@ -637,6 +658,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   CSlugRoute: CSlugRoute,
   ComparePairRoute: ComparePairRoute,
+  GuideAreClaudeCodeModsSafeRoute: GuideAreClaudeCodeModsSafeRoute,
   GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
   GuideStatusLinesVsModsRoute: GuideStatusLinesVsModsRoute,
   ModsSlugRoute: ModsSlugRoute,

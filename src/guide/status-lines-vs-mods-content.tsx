@@ -1,5 +1,5 @@
 import { STATUS_LINES_VS_MODS_FAQ } from '@/guide/status-lines-vs-mods-faq'
-import { DESKTOP_GUIDE_PATH, GUIDE_PATH } from '@/lib/page-title'
+import { DESKTOP_GUIDE_PATH, GUIDE_PATH, MOD_SAFETY_GUIDE_PATH } from '@/lib/page-title'
 import { MOD_ROUTE, MODS_PATH } from '@/lib/site'
 import {
   STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE,
@@ -85,7 +85,8 @@ export function StatusLinesVsModsContent() {
         <Text muted>
           Both run on your machine with your permissions, so read the code before you install
           either. A status line is one script. A mod is a plugin folder with a manifest, a hooks
-          file and the code that file loads.
+          file and the code that file loads. The{' '}
+          <TextLink to={MOD_SAFETY_GUIDE_PATH}>mod safety guide</TextLink> covers what to check.
         </Text>
       </Stack>
 
