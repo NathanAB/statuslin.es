@@ -24,11 +24,18 @@ const SESSION_CLAUDE = `"\${CLAUDE_CODE_EXECPATH:-claude}"`
  * name: its slug.
  */
 export function modInstallPrompt(origin: string, entryName: string): string {
-  const marketplaceUrl = `${origin}${MARKETPLACE_PATH}`
   return [
     `Install the ${entryName} mod from ${new URL(origin).host}. Run this in your shell, then tell me to start a new session to load it:`,
-    `${SESSION_CLAUDE} plugin marketplace add ${marketplaceUrl} && ${SESSION_CLAUDE} plugin install ${entryName}@${MARKETPLACE_NAME}`,
+    modInstallCommands(origin, entryName, SESSION_CLAUDE).join(' && '),
   ].join('\n')
+}
+
+/** The shell commands that add the site's marketplace (safe to repeat), then install a mod from it. */
+export function modInstallCommands(origin: string, entryName: string, claude = 'claude'): string[] {
+  return [
+    `${claude} plugin marketplace add ${origin}${MARKETPLACE_PATH}`,
+    `${claude} plugin install ${entryName}@${MARKETPLACE_NAME}`,
+  ]
 }
 
 /** The mod's folder on GitHub at its pinned commit. */

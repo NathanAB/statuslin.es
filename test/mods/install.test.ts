@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { modCopyEvent, modInstallPrompt } from '@/mods/install'
+import { modCopyEvent, modInstallCommands, modInstallPrompt } from '@/mods/install'
 
 describe('modInstallPrompt', () => {
   it('asks Claude to add the marketplace and install with the Claude Code it runs on, then to start a new session', () => {
@@ -9,6 +9,15 @@ describe('modInstallPrompt', () => {
         `"\${CLAUDE_CODE_EXECPATH:-claude}" plugin marketplace add https://staging.example.test/marketplace.json && "\${CLAUDE_CODE_EXECPATH:-claude}" plugin install filetree@statuslines`,
       ].join('\n'),
     )
+  })
+})
+
+describe('modInstallCommands', () => {
+  it('adds the site marketplace, then installs the mod from it, with plain claude', () => {
+    expect(modInstallCommands('https://staging.example.test', 'filetree')).toEqual([
+      'claude plugin marketplace add https://staging.example.test/marketplace.json',
+      'claude plugin install filetree@statuslines',
+    ])
   })
 })
 

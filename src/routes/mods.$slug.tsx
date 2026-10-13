@@ -7,7 +7,6 @@ import { jsonLdScript } from '@/lib/json-ld'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import { modPath, siteUrl } from '@/lib/site'
 import { getModDetailFn } from '@/mods/functions'
-import { modInstallPrompt } from '@/mods/install'
 import { ModInstallPrompt } from '@/mods/install-prompt'
 import { modFactTiles } from '@/mods/mod-fact-tiles'
 import { ModHeader } from '@/mods/mod-header'
@@ -55,7 +54,8 @@ function ModPage() {
         header={<ModHeader mod={mod} />}
         install={
           <ModInstallPrompt
-            prompt={modInstallPrompt(origin, mod.slug)}
+            origin={origin}
+            slug={mod.slug}
             title={mod.title}
             controller={copyController}
           />
