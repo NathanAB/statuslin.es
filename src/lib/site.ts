@@ -38,6 +38,8 @@ export function siteUrl(): string {
   return requireEnv('BETTER_AUTH_URL').replace(/\/+$/, '')
 }
 
+export const MODS_PATH = '/mods'
+
 export const MOD_ROUTE = '/mods/$slug'
 
 export function modPath(slug: string): string {

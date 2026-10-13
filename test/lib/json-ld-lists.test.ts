@@ -41,4 +41,27 @@ describe('configListPageJsonLd', () => {
       },
     ])
   })
+
+  it('builds each item URL from the given path, for a list of mods', () => {
+    const [collection] = configListPageJsonLd(
+      'https://statuslin.es',
+      { path: '/mods', name: 'Claude Code Mods' },
+      [{ slug: 'meter', title: 'Meter' }],
+      (slug) => `/mods/${slug}`,
+    )
+
+    expect(collection).toMatchObject({
+      url: 'https://statuslin.es/mods',
+      mainEntity: {
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Meter',
+            url: 'https://statuslin.es/mods/meter',
+          },
+        ],
+      },
+    })
+  })
 })

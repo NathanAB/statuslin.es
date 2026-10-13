@@ -19,6 +19,7 @@ import { Route as MarketplaceDotjsonRouteImport } from './routes/marketplace[.]j
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ModsIndexRouteImport } from './routes/mods.index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
@@ -85,6 +86,11 @@ const GuideRoute = GuideRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModsIndexRoute = ModsIndexRouteImport.update({
+  id: '/mods/',
+  path: '/mods/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
+  '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin': typeof AdminIndexRoute
+  '/mods': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
+  '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
+    | '/mods/'
     | '/api/auth/$'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin'
+    | '/mods'
     | '/api/auth/$'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
@@ -349,6 +360,7 @@ export interface FileRouteTypes {
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
+    | '/mods/'
     | '/api/auth/$'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
@@ -379,6 +391,7 @@ export interface RootRouteChildren {
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   StatusLinesBestRoute: typeof StatusLinesBestRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ModsIndexRoute: typeof ModsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
@@ -456,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mods/': {
+      id: '/mods/'
+      path: '/mods'
+      fullPath: '/mods/'
+      preLoaderRoute: typeof ModsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -603,6 +623,7 @@ const rootRouteChildren: RootRouteChildren = {
   StatusLinesFacetRoute: StatusLinesFacetRoute,
   StatusLinesBestRoute: StatusLinesBestRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ModsIndexRoute: ModsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ModPreviewsVersionIdDesktopDotpngRoute:
     ModPreviewsVersionIdDesktopDotpngRoute,
