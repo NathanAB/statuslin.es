@@ -85,6 +85,12 @@ where visitors **copy it to use** (`src/adopt`).
 
 ## Agent skills
 
+### Workflow: Matt Pocock to plan, pstack to build
+
+- **Spec and plan with Matt Pocock's skills.** The human starts the planning steps: `/grill-with-docs` to sharpen a plan (it records terms and ADRs as it goes), `/to-spec` to publish the spec as an issue, `/to-tickets` to split it into tracer-bullet tickets, `/wayfinder` for work larger than one session, and `/triage` for incoming issues. Agents load `grilling`, `domain-modeling`, `codebase-design`, `prototype` and `research` themselves when a plan needs them.
+- **Implement with pstack.** Load `/poteto-mode` before writing code for a spec or ticket, and follow its playbooks and principle triggers through to verified work.
+- **This file wins on conflict.** The quality bar and scope control above override both skill sets: TDD stays mandatory, `bun run check` gates every "done", and new infrastructure still needs approval.
+
 ### Issue tracker
 
 Issues live in GitHub Issues on `NathanAB/statuslin.es` (via `gh`). See `docs/agents/issue-tracker.md`.
