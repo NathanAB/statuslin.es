@@ -79,8 +79,8 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
   regenerate when source changes. The agent-agnostic workflow launches no second agent and creates
   no request/response files; use staging first, then prod. Run it again after approving an update:
   the newly live version starts with no generated content, and `--all --prepare` lists it. Mods use
-  the same commands with `--mod` added; `--all --prepare --mod` lists draft and published mods whose
-  current version has no content.
+  the same commands with `--mod` added; `--all --prepare --mod` lists published mods and curated
+  drafts whose current version has no content (a submitted mod gets its copy once approved).
 - **Front-end:** see `docs/frontend-guidelines.md` for the three rules: tokens define-once in `src/styles/app.css`; `src/ui` components are closed (no `className` prop — variants only); zero `className=` outside `src/ui` (only `Box UNSAFE_className` with a `// REASON:` comment). Every rule in that doc's enforcement table is gate-enforced at edit / Stop / commit / push.
 - **Commits:** Conventional Commits (`feat` / `fix` / `chore` / `docs` / `refactor`); small and focused; only on green gates.
 - **Deploy:** staging → production runbook in `docs/deploy.md`. Same image, three environments; deploy staging with `bun run deploy:staging`, then promote with the gated `bun run deploy:prod` (smokes staging in a real browser, promotes the validated image by digest). There is no worker process: each web machine renders status line jobs on submit, on the admin's re-queue and "Run network preview", and at startup (`src/server/render-drain.ts`). A job cut off mid-render is re-queued once it has been `running` for 15 minutes.

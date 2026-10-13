@@ -37,8 +37,9 @@ import { createGitHub, type GitHubSource, README_MAX_CHARS } from '@/mods/github
  *
  * `--all` lists every published config whose current version has no copy in the current format
  * (src/content/types.ts); copy in an older format counts as none. Mods are behind `--mod`, in every
- * mode, so the configs flow above is unchanged. `--all --mod` lists draft and published mods the
- * same way, so drafts get copy before they are published. A mod request is pinned to the version id and commit SHA, embeds the mod's
+ * mode, so the configs flow above is unchanged. `--all --mod` lists published mods and curated
+ * drafts the same way, so a curated draft gets copy before it is published; a submitted mod gets it
+ * once it is approved. A mod request is pinned to the version id and commit SHA, embeds the mod's
  * README at that commit (fetched from GitHub), and apply refuses it for any other version:
  *
  *   bun run generate:content <mod-slug> --prepare --mod

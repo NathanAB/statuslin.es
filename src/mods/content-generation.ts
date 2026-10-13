@@ -1,4 +1,4 @@
-import { and, asc, eq, exists, not, or } from 'drizzle-orm'
+import { and, asc, eq, exists, inArray, not, type SQL, sql } from 'drizzle-orm'
 import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import z from 'zod'
 import { modPageCopySchema, readPageCopy } from '@/content/types'
@@ -60,15 +60,19 @@ const currentVersion = and(
 
 const submittedVersion = alias(modVersions, 'submitted_version')
 
-/** A mod someone submitted, rather than one curated: one of its versions has a submission. */
-function hasSubmission(db: Db) {
-  return exists(
+/**
+ * A submitted mod still in review: a draft with a submission (curated drafts have none). Its
+ * current version is its first, which a fix replaces, so its copy is written once it is approved.
+ */
+function inReview(db: Db): SQL {
+  const submitted = exists(
     db
       .select({ id: submissions.id })
       .from(submissions)
       .innerJoin(submittedVersion, eq(submittedVersion.id, submissions.modVersionId))
       .where(eq(submittedVersion.modId, mods.id)),
   )
+  return sql`(${eq(mods.status, 'draft')} and ${submitted})`
 }
 
 export async function prepareModContentGenerationRequest(
@@ -90,12 +94,11 @@ export async function prepareModContentGenerationRequest(
     .where(eq(mods.slug, slug))
   if (!row) throw new Error(`no mod found with slug "${slug}"`)
   const { mod, version, preview, desktop } = row
-  // A submitted draft is still in review. Its current version is its first, which a fix replaces.
-  const [inReview] = await db
+  const [waiting] = await db
     .select({ id: mods.id })
     .from(mods)
-    .where(and(eq(mods.id, mod.id), eq(mods.status, 'draft'), hasSubmission(db)))
-  if (inReview) {
+    .where(and(eq(mods.id, mod.id), inReview(db)))
+  if (waiting) {
     throw new Error(`mod "${slug}" is still in review: generate its copy after it is approved`)
   }
 
@@ -137,7 +140,7 @@ export async function listModSlugsMissingContent(db: Db): Promise<string[]> {
     .select({ slug: mods.slug, generatedContent: modVersions.generatedContent })
     .from(mods)
     .innerJoin(modVersions, currentVersion)
-    .where(or(eq(mods.status, 'published'), and(eq(mods.status, 'draft'), not(hasSubmission(db)))))
+    .where(and(inArray(mods.status, ['draft', 'published']), not(inReview(db))))
     .orderBy(asc(mods.createdAt), asc(mods.slug))
   return rows
     .filter((row) => readPageCopy(modPageCopySchema, row.generatedContent) === null)
@@ -170,7 +173,10 @@ export function parseModContentGenerationResponses(raw: string): ModContentGener
   return result.data
 }
 
-/** Writes every response or none: a response for any version but the current one aborts the batch. */
+/**
+ * Writes every response or none: a response for any version but the current one, or for a mod
+ * still in review, aborts the batch.
+ */
 export async function applyModContentGenerationResponses(
   db: Db,
   responses: ModContentGenerationResponse[],
@@ -186,11 +192,12 @@ export async function applyModContentGenerationResponses(
             eq(mods.slug, response.slug),
             eq(modVersions.id, response.versionId),
             eq(modVersions.commitSha, response.commitSha),
+            not(inReview(tx)),
           ),
         )
       if (!row) {
         throw new Error(
-          `mod "${response.slug}" is at a different version than the response (changed after its request was prepared)`,
+          `mod "${response.slug}" is in review or at a different version than the response (changed after its request was prepared)`,
         )
       }
       await tx

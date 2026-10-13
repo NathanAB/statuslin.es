@@ -358,6 +358,25 @@ describe('mod content generation responses', () => {
     })
   })
 
+  it('refuses a response for a submitted mod still in review and writes nothing', async () => {
+    const waiting = await seedMod('waiting')
+    await insertPendingSubmission(db, {
+      kind: 'mod',
+      versionId: waiting.versionId,
+      submittedBy: 'ada',
+    })
+
+    await expect(
+      applyModContentGenerationResponses(
+        db,
+        parseModContentGenerationResponses(
+          JSON.stringify(response('waiting', waiting.versionId, waiting.commitSha, ['cost'])),
+        ),
+      ),
+    ).rejects.toThrow(/in review/)
+    expect(await stored('waiting')).toMatchObject({ generatedContent: null, tags: [] })
+  })
+
   it('refuses a response for a different version and writes nothing in its batch', async () => {
     const good = await seedMod('good')
     const stale = await seedMod('stale', { commit: sha('e') })
