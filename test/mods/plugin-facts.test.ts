@@ -277,6 +277,20 @@ describe('inspectPlugin', () => {
       'validate-mixed.json',
     ],
     [
+      'a SKILL.md at its root, which Claude Code loads as a skill',
+      '{"name":"m"}',
+      listing(['f 300 SKILL.md']),
+      'This plugin also has SKILL.md.',
+      'validate-mixed.json',
+    ],
+    [
+      'a lockfile at its root, which makes Claude Code install packages',
+      '{"name":"m"}',
+      listing(['f 40 package.json', 'f 900 package-lock.json', 'f 900 bun.lock']),
+      'This plugin also has package-lock.json, bun.lock.',
+      'validate-mixed.json',
+    ],
+    [
       'a hooks folder spelled in other case',
       '{"name":"m"}',
       listing(['d 4096 HOOKS']),

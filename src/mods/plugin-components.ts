@@ -11,12 +11,15 @@ const MANIFEST_KEYS = new Set([
   ...['privacyPolicyUrl', 'termsOfServiceUrl', 'types', 'userConfig'],
 ])
 /**
- * Where Claude Code 2.1.296 loads a plugin's other parts from without plugin.json naming them.
- * Compared ignoring case, as macOS and Windows open `Monitors/` for `monitors/`.
+ * Where Claude Code 2.1.296 loads a plugin's other parts from without plugin.json naming them (a
+ * root skill.md is a skill), and the lockfiles that make it install packages. Lowercase, compared
+ * ignoring case, as macOS and Windows open `Monitors/` for `monitors/`.
  */
 const LOADED_PATHS = [
-  ...['.mcp.json', '.lsp.json', 'settings.json', 'commands', 'agents', 'skills'],
+  ...['.mcp.json', '.lsp.json', 'settings.json', 'skill.md', 'commands', 'agents', 'skills'],
   ...['output-styles', 'themes', 'monitors', 'workflows', 'bin', 'hljs'],
+  ...['package-lock.json', 'npm-shrinkwrap.json', 'bun.lock', 'bun.lockb', 'yarn.lock'],
+  'pnpm-lock.yaml',
 ]
 /** The paths a mod needs, which must be spelled exactly as Claude Code looks them up. */
 const OWN_PATHS = ['.claude-plugin', '.claude-plugin/plugin.json', 'hooks', 'hooks/hooks.json']
