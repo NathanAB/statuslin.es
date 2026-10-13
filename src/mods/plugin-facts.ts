@@ -3,6 +3,7 @@ import type { ModFootprint } from '@/db/schema'
 import { SANDBOX_CLAUDE_CODE_BIN } from '@/render/e2b-template'
 import type { ModSandbox } from '@/render/mods/mod-sandbox'
 import { PLUGIN_NAME, PLUGIN_NAME_RULE } from './curation'
+import { componentsCommand, extraComponents, MODULE_PATH } from './plugin-components'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
 export interface PluginManifest {
@@ -130,13 +131,34 @@ export function parseFootprint(validateJson: unknown): ModFootprint {
   const events = new Set<string>()
   const calls = new Set<string>()
   for (const note of contents.flatMap((section) => section.notes ?? [])) {
-    const hooks = / hooks: (.*)$/.exec(note)?.[1]
-    const called = / calls: (.*)$/.exec(note)?.[1]
-    for (const event of hooks ? splitTopLevel(hooks) : []) events.add(event)
-    for (const call of called ? splitTopLevel(called) : [])
-      calls.add(call.replace(/\s*\(.*\)$/, ''))
+    const labelled = moduleNote(note)
+    if (labelled?.label === 'hooks')
+      for (const event of splitTopLevel(labelled.list)) events.add(event)
+    if (labelled?.label === 'calls' && labelled.list !== NO_CALLS) {
+      for (const call of splitTopLevel(labelled.list)) calls.add(call.replace(/\s*\(.*\)$/, ''))
+    }
   }
   return { events: footprintList('event', events), calls: footprintList('call', calls) }
+}
+
+/** What validate notes for a hooks module that calls nothing on `$`. */
+const NO_CALLS = 'nothing on $'
+const LABEL = / (hooks|calls): /
+
+/**
+ * A `<module path> hooks: …` or `<module path> calls: …` note, or null for any other note. The
+ * module path comes from the plugin, so a path with spaces could carry a label of its own (a file
+ * named `m calls: $.ui.toast.ts` hides its real calls); such a note is refused.
+ */
+function moduleNote(note: string): { label: 'hooks' | 'calls'; list: string } | null {
+  if (!LABEL.test(note)) return null
+  const match = /^(\S+) (hooks|calls): (.*)$/.exec(note)
+  if (!match || !MODULE_PATH.test(match[1] ?? '') || LABEL.test(` ${match[3]}`)) {
+    throw new PluginRefusal(
+      'claude plugin validate reports a hooks module whose path holds characters other than letters, digits, ".", "_", "-" and "/"',
+    )
+  }
+  return { label: match[2] as 'hooks' | 'calls', list: match[3] ?? '' }
 }
 
 export function parseManifest(text: string): PluginManifest {
@@ -192,9 +214,27 @@ export async function inspectPlugin(sandbox: ModSandbox): Promise<PluginFacts> {
     `head -c ${MANIFEST_MAX_BYTES} ${sandbox.pluginDir}/.claude-plugin/plugin.json`,
   )
   if (manifest.exitCode !== 0) throw new PluginRefusal('could not read .claude-plugin/plugin.json')
-  return {
+  const facts = {
     manifest: parseManifest(manifest.stdout),
     footprint: parseFootprint(validateJson),
     claudeCodeVersion,
+  }
+  await refuseOtherComponents(sandbox, parseJson(manifest.stdout))
+  return facts
+}
+
+/**
+ * A mod page states what a mod does from its hooks modules' footprint, which validate reports. It
+ * reports nothing about shell hooks, MCP or LSP servers, commands, agents, skills or output styles,
+ * so a plugin holding any of them is refused rather than listed with facts that leave them out.
+ */
+async function refuseOtherComponents(sandbox: ModSandbox, manifest: unknown): Promise<void> {
+  const listing = await sandbox.run(componentsCommand(sandbox.pluginDir))
+  const extras = listing.exitCode === 0 ? extraComponents(listing.stdout, manifest) : null
+  if (extras === null) throw new Error("could not list the plugin's components")
+  if (extras.length > 0) {
+    throw new PluginRefusal(
+      `statuslin.es lists a mod by what its hooks modules do, so it takes hooks modules only. This plugin also has ${extras.join(', ')}.`,
+    )
   }
 }

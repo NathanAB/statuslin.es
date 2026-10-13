@@ -6,7 +6,7 @@ import { PluginRefusal } from '@/mods/plugin-facts'
 import { type ModSubmitDeps, submitMod } from '@/mods/submit'
 import { createSubmitGuard } from '@/mods/submit-guard'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
-import { openTestDb, sha, type TestDb } from './seed-mods'
+import { MODULES_ONLY_LISTING, openTestDb, sha, type TestDb } from './seed-mods'
 
 const REPO = 'https://github.com/octocat/mods'
 const LINK = `${REPO}/tree/main/plugins/meter`
@@ -50,7 +50,9 @@ function deps({
         ? '2.1.296 (Claude Code)\n'
         : command.includes(' plugin validate --json ')
           ? VALIDATE
-          : JSON.stringify(manifest)
+          : command.includes('hooks/hooks.json')
+            ? MODULES_ONLY_LISTING
+            : JSON.stringify(manifest)
       return { exitCode: 0, stdout, stderr: '' }
     },
   }

@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "strict": false,
+  "target": "/home/user/plugins/mod/.claude-plugin/plugin.json",
+  "manifest": {
+    "file": "/home/user/plugins/mod/.claude-plugin/plugin.json",
+    "type": "plugin",
+    "errors": [],
+    "warnings": [
+      {
+        "path": "author",
+        "message": "No author information provided. Consider adding author details for plugin attribution",
+        "code": null
+      }
+    ],
+    "notes": [],
+    "gatingHooks": []
+  },
+  "contents": [
+    {
+      "file": "/home/user/plugins/mod/hooks/hooks.json",
+      "type": "hooks",
+      "errors": [],
+      "warnings": [],
+      "notes": [
+        "./m calls: $.ui.toast.ts hooks: ui.render",
+        "./m calls: $.ui.toast.ts calls: $.http.fetch"
+      ],
+      "gatingHooks": []
+    }
+  ],
+  "advice": []
+}

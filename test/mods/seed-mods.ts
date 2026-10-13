@@ -171,3 +171,6 @@ export function fakeGitHub(opts: FakeGitHubOptions = {}): FakeGitHub {
     },
   }
 }
+
+/** What the inspect sandbox lists for a plugin made of hooks modules alone (src/mods/plugin-components.ts). */
+export const MODULES_ONLY_LISTING = '--- hooks/hooks.json ---\n{ "modules": ["./register.tsx"] }'

@@ -13,7 +13,7 @@ import { runPublish } from '../../scripts/publish-mod'
 import { renderMods } from '../../scripts/render-mods'
 import baseline from '../render/mods/fixtures/baseline.json'
 import skins from '../render/mods/fixtures/skins.json'
-import { fakeGitHub, openTestDb, type TestDb } from './seed-mods'
+import { fakeGitHub, MODULES_ONLY_LISTING, openTestDb, type TestDb } from './seed-mods'
 
 const SHA = 'c'.repeat(40)
 const TARBALL = new Uint8Array([31, 139, 8, 0])
@@ -71,16 +71,17 @@ function fakes({
       return TARBALL
     },
   }
+  // What each sandbox command prints, matched in order; anything else is "command not found".
+  const answers: [(command: string) => boolean, string][] = [
+    [(c) => c.endsWith('--version'), '2.1.296 (Claude Code)\n'],
+    [(c) => c.includes(' plugin validate --json '), validate],
+    [(c) => c.endsWith('/.claude-plugin/plugin.json'), JSON.stringify(manifest)],
+    [(c) => c.includes('hooks/hooks.json'), MODULES_ONLY_LISTING],
+  ]
   const sandbox: ModSandbox = {
     pluginDir: '/home/user/plugins/mod',
     async run(command) {
-      const stdout = command.endsWith('--version')
-        ? '2.1.296 (Claude Code)\n'
-        : command.includes(' plugin validate --json ')
-          ? validate
-          : command.endsWith('/.claude-plugin/plugin.json')
-            ? JSON.stringify(manifest)
-            : ''
+      const stdout = answers.find(([matches]) => matches(command))?.[1] ?? ''
       return { exitCode: stdout ? 0 : 127, stdout, stderr: '' }
     },
   }
