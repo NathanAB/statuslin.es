@@ -274,6 +274,13 @@
       "when": 1791840039087,
       "tag": "0038_mods_plugin_id_check",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791852077598,
+      "tag": "0039_mod_versions_source_per_mod",
+      "breakpoints": true
     }
   ]
 }

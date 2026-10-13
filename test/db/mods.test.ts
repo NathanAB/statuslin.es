@@ -104,13 +104,20 @@ describe('mods schema', () => {
     ).resolves.toEqual(expect.any(String))
   })
 
-  it('rejects a second version at the same repo, path and commit', async () => {
-    const first = await insertMod('dup-commit-a')
-    const second = await insertMod('dup-commit-b')
+  it('rejects a second version of one mod at the same repo, path and commit', async () => {
+    const mod = await insertMod('dup-commit')
+    await insertVersion(mod, { path: 'plugins/meter' })
+    await expect(
+      insertVersion(mod, { path: 'plugins/meter', versionNumber: 2 }),
+    ).rejects.toMatchObject(violates('mod_versions_mod_source_uq'))
+  })
+
+  it("lets two mods pin the same commit, as two users' submissions of one folder do", async () => {
+    const first = await insertMod('same-commit-a')
+    const second = await insertMod('same-commit-b')
     await insertVersion(first, { path: 'plugins/meter' })
-    await expect(insertVersion(second, { path: 'plugins/meter' })).rejects.toMatchObject(
-      violates('mod_versions_repo_path_commit_uq'),
-    )
+
+    await expect(insertVersion(second, { path: 'plugins/meter' })).resolves.toBeDefined()
   })
 
   it('lets two mods share a plugin_name, each under its own slug', async () => {

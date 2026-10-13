@@ -44,12 +44,12 @@ module.exports = {
     {
       name: 'review-no-cross-feature',
       comment:
-        'src/review may not import from other feature directories, except the mod code that approving and showing a mod needs: its publish guards, queries and GitHub client (ADR 0007).',
+        'src/review may not import from other feature directories, except the mod code that approving and showing a mod needs: its publish guards, the folder and name a listing takes, queries and GitHub client (ADR 0007).',
       severity: 'error',
       from: { path: '^src/review/' },
       to: {
         path: '^src/(gallery|submit|adopt|votes|mods)/',
-        pathNot: '^src/mods/(publish|queries|github)\\.ts$',
+        pathNot: '^src/mods/(publish|listing|queries|github)\\.ts$',
       },
     },
     {

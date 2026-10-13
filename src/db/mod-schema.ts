@@ -67,7 +67,8 @@ export const modVersions = pgTable(
   },
   (t) => [
     uniqueIndex('mod_versions_mod_version_uq').on(t.modId, t.versionNumber),
-    uniqueIndex('mod_versions_repo_path_commit_uq').on(t.repoUrl, t.path, t.commitSha),
+    // Per mod: until one is approved, two users' submissions may pin the same commit of a folder.
+    uniqueIndex('mod_versions_mod_source_uq').on(t.modId, t.repoUrl, t.path, t.commitSha),
     check('mod_versions_commit_sha_check', sql`${t.commitSha} ~ '^[0-9a-f]{40}$'`),
     check(
       'mod_versions_repo_url_check',

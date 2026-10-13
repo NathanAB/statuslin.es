@@ -93,7 +93,8 @@ export const NO_NEW_VERSION =
 /**
  * A new version of the submitter's own mod, in one transaction. A published mod gets an update,
  * reviewed again while the live version keeps serving; a newer pending update replaces an older one
- * (ADR 0001). A draft whose last version was rejected gets the fix, and may take a new title.
+ * (ADR 0001). A draft whose last version was rejected gets the fix, which may take a new title
+ * and rename the plugin.
  */
 export async function addOwnVersion(
   db: Db,
@@ -133,7 +134,13 @@ export async function addOwnVersion(
     )
     await insertNextVersion(tx, version)
     await insertPendingSubmission(tx, { kind: 'mod', versionId: version.versionId, submittedBy })
-    if (!isUpdate && title) await tx.update(mods).set({ title }).where(eq(mods.id, own.id))
+    if (!isUpdate) {
+      // A fix may rename the plugin; its marketplace name is picked when it is approved.
+      await tx
+        .update(mods)
+        .set({ pluginName: version.facts.manifest.name, ...(title ? { title } : {}) })
+        .where(eq(mods.id, own.id))
+    }
     return isUpdate
   })
 }

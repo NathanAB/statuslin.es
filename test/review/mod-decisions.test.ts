@@ -217,6 +217,51 @@ describe('approving a mod', () => {
   })
 })
 
+describe('naming a submitted mod at approval', () => {
+  /** A submitted draft as submit leaves it: a provisional slug, named for its plugin on approval. */
+  async function provisional(path = '') {
+    const modId = await addMod(db, 'meter-3f9a2c', 'draft')
+    await db.update(schema.mods).set({ pluginName: 'meter' }).where(eq(schema.mods.id, modId))
+    const versionId = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1, path })
+    await setCurrentVersion(db, modId, versionId)
+    await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'submitter' })
+    return { modId, versionId }
+  }
+
+  it('publishes it under its plugin name and links the email there', async () => {
+    const { versionId } = await provisional()
+    const send = sentEmail()
+
+    await approveAndEmailVersion(db, versionId, 'admin', send, fakeGitHub())
+
+    expect(await modState(db, 'meter')).toMatchObject({ status: 'published' })
+    expect((await getMarketplaceRows(db)).map((row) => row.slug)).toEqual(['meter'])
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ pagePath: '/mods/meter' }))
+  })
+
+  it('takes <name>-<owner> when another mod has the name', async () => {
+    const other = await addMod(db, 'meter', 'published')
+    await addVersion(db, other, { commitSha: sha('f'), versionNumber: 1, path: 'elsewhere' })
+    const { versionId } = await provisional()
+
+    await approveVersion(db, versionId, 'admin', fakeGitHub())
+
+    expect(await modState(db, 'meter-octocat')).toMatchObject({ status: 'published' })
+  })
+
+  it('refuses when a listed mod already holds the plugin folder', async () => {
+    const other = await addMod(db, 'gauge', 'published')
+    await addVersion(db, other, { commitSha: sha('f'), versionNumber: 1 })
+    const { versionId } = await provisional()
+
+    await expect(approveVersion(db, versionId, 'admin', fakeGitHub())).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringMatching(/already listed as "gauge"/),
+    })
+    expect(await modState(db, 'meter-3f9a2c')).toMatchObject({ status: 'draft' })
+  })
+})
+
 describe('rejecting a mod', () => {
   it('rejects a submission and emails a link to fix and resubmit it', async () => {
     const { versionId } = await submitMod()

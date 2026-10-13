@@ -4,6 +4,7 @@ import { type ModStatus, mods, modVersions, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { modPath } from '@/lib/site'
 import type { GitHub } from '@/mods/github'
+import { marketplaceName } from '@/mods/listing'
 import {
   alreadyCurrentGuard,
   currentChangedGuard,
@@ -31,6 +32,8 @@ async function versionMod(database: Db, versionId: string) {
     .select({
       id: mods.id,
       slug: mods.slug,
+      pluginName: mods.pluginName,
+      authorGithub: mods.authorGithub,
       title: mods.title,
       status: mods.status,
       description: mods.description,
@@ -43,16 +46,22 @@ async function versionMod(database: Db, versionId: string) {
   return row
 }
 
+interface ReadMod {
+  id: string
+  slug: string
+  pluginName: string
+  authorGithub: string
+  status: ModStatus
+  currentVersionId: string | null
+}
+
 /**
- * Moves the mod's live pointer to the version, publishing a draft, and derives its tags from the
- * version's footprint, as approving a status line does. Only while the mod's status and pointer are
- * what the approval checked against; otherwise a 409 says what changed. Writes only through `tx`.
+ * Moves the mod's live pointer to the version, publishing a draft under its marketplace name, and
+ * derives its tags from the version's footprint, as approving a status line does. Only while the
+ * mod's status and pointer are what the approval checked against; otherwise a 409 says what
+ * changed. Writes only through `tx`.
  */
-function publishStep(
-  slug: string,
-  target: PublishVersion,
-  read: { id: string; status: ModStatus; currentVersionId: string | null },
-): Publish {
+function publishStep(target: PublishVersion, read: ReadMod): Publish {
   return async (tx) => {
     const [mod] = await tx
       .select({ status: mods.status, currentVersionId: mods.currentVersionId, tags: mods.tags })
@@ -60,12 +69,15 @@ function publishStep(
       .where(eq(mods.id, read.id))
       .for('update')
     if (mod?.status !== read.status || mod.currentVersionId !== read.currentVersionId) {
-      const guard = mod?.status === 'removed' ? removedGuard(slug) : currentChangedGuard(slug)
+      const guard =
+        mod?.status === 'removed' ? removedGuard(read.slug) : currentChangedGuard(read.slug)
       throw new HttpError(409, guard.message)
     }
+    const slug = read.status === 'draft' ? await marketplaceName(tx, read, target) : read.slug
     await tx
       .update(mods)
       .set({
+        slug,
         currentVersionId: target.id,
         status: 'published',
         allTags: modAllTags(mod.tags, target.footprint),
@@ -136,7 +148,7 @@ export function modReview(github: ModReviewGitHub): ReviewKind {
       if (refusals.length > 0) {
         throw new HttpError(409, refusals.map((guard) => guard.message).join('; '))
       }
-      return publishStep(mod.slug, target, mod)
+      return publishStep(target, mod)
     },
 
     async approvalContext(database, versionId): Promise<ApprovalContext> {

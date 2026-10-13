@@ -373,8 +373,10 @@ one. Run every step against staging first, then production.
 Any signed-in user can submit a mod on `/submit` (the **Mod** choice) by pasting a GitHub link
 (ADR 0005). The web server pins the link to a commit on the default branch, checks the plugin in the
 offline sandbox, and writes a draft mod credited to the repository's owner (or a new version of the
-submitter's own mod) with a pending submission. Nothing renders until you do: mods render from your
-machine (ADR 0006). Run each step against the environment the submission came in on.
+submitter's own mod) with a pending submission. A new draft's slug is provisional
+(`<plugin name>-<6 hex>`): until approval a submission holds no marketplace name, and holds its
+folder only against its own submitter, so submitting someone's plugin first cannot lock its author
+out. Nothing renders until you do: mods render from your machine (ADR 0006). Run each step against the environment the submission came in on.
 `<env pooled url>` is its `DATABASE_URL`; rendering also needs `E2B_API_KEY`.
 
 1. **See what is waiting.** `/admin` lists submitted mods under **Mods**. One that hasn't rendered
@@ -397,8 +399,10 @@ machine (ADR 0006). Run each step against the environment the submission came in
 4. **Review it on `/admin`.** Read the footprint, the source at its commit and, for an update, the
    warnings and the compare link against the live commit. **Approve** checks again that both
    surfaces rendered, that the commit is on the default branch, that the mod isn't delisted and that
-   the version isn't older than the live one, then publishes it to the gallery and
-   `/marketplace.json` and emails the submitter. **Reject** takes a reason and emails the submitter
+   the version isn't older than the live one. A draft is refused when a listed mod already holds its
+   folder; otherwise it takes its marketplace name, the plugin name or `<name>-<owner>` when another
+   mod has it (ADR 0005). Approve then publishes it to the gallery and `/marketplace.json` and emails
+   the submitter. **Reject** takes a reason and emails the submitter
    a link to fix and resubmit, or to send a new update; a published mod's live version stays up.
 5. **Generate its page copy** after approving, as in step 4 of the launch runbook, for the one mod:
    ```sh
@@ -409,6 +413,14 @@ machine (ADR 0006). Run each step against the environment the submission came in
 The submitter follows the mod on `/me` and sends fixes and updates from there; each is a new
 version, reviewed again, while the live one keeps serving. Curated mods have no submitter and keep
 the command-line re-pin. To take a submitted mod down, use the emergency delist below.
+
+To delete a draft that will never be approved (spam, or a submission its author abandoned), with
+its versions and submissions, run the dry run first, then type the slug back. A published or
+removed mod is refused:
+```sh
+DATABASE_URL='<env pooled url>' bun run scripts/delete-mod-draft.ts <slug>
+DATABASE_URL='<env pooled url>' bun run scripts/delete-mod-draft.ts <slug> --confirm=<slug>
+```
 
 ### Emergency delist
 

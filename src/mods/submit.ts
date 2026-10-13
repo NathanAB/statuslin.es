@@ -1,21 +1,20 @@
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { mods, modVersions } from '@/db/schema'
+import { modVersions } from '@/db/schema'
 import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
 import { assertUnderRateLimit, insertPendingSubmission } from '@/submissions/record'
 import {
   type InspectDeps,
-  importedSlug,
   insertDraftMod,
   insertNextVersion,
   inspectSource,
   type NewVersion,
   type PinnedSource,
-  pickSlug,
 } from './import'
 import { type LinkGitHub, parseModLink, resolveModLink } from './link'
+import { folderHolder } from './listing'
 import { addOwnVersion, findOwnMod, NO_NEW_VERSION, newVersionKind, type OwnMod } from './own-mod'
 import { PluginRefusal } from './plugin-facts'
 import type { SubmitGuard } from './submit-guard'
@@ -74,15 +73,9 @@ function refuseInspection(error: unknown): never {
   throw error
 }
 
-/** A mod already built from this folder: a second listing of one plugin is refused. */
-async function modAtFolder(db: Db, repoUrl: string, path: string) {
-  const [mod] = await db
-    .select({ slug: mods.slug, status: mods.status })
-    .from(modVersions)
-    .innerJoin(mods, eq(mods.id, modVersions.modId))
-    .where(and(eq(modVersions.repoUrl, repoUrl), eq(modVersions.path, path)))
-    .limit(1)
-  return mod
+/** A submitted draft's slug until approval gives it its marketplace name (ADR 0005). */
+function provisionalSlug(pluginName: string): string {
+  return `${pluginName}-${randomBytes(3).toString('hex')}`
 }
 
 function checkedTitle(title: string): string {
@@ -105,26 +98,29 @@ async function pinSource(db: Db, input: ModSubmitInput, own: OwnMod | null, gith
       const folder = own.path === '' ? 'its root' : own.path
       throw new HttpError(400, `Link to a newer commit of ${own.repoUrl}, at ${folder}.`)
     }
-    if (await importedSlug(db, source))
-      throw new HttpError(409, 'That commit is already submitted.')
+    const [same] = await db
+      .select({ id: modVersions.id })
+      .from(modVersions)
+      .where(and(eq(modVersions.modId, own.id), eq(modVersions.commitSha, source.commitSha)))
+    if (same) throw new HttpError(409, 'That commit is already submitted.')
     return { link, source }
   }
-  const listed = await modAtFolder(db, source.repoUrl, source.path)
-  if (listed) {
+  const holder = await folderHolder(db, source, { userId: input.submittedBy })
+  if (holder) {
     throw new HttpError(
       409,
-      listed.status === 'published'
-        ? `That plugin is already listed as "${listed.slug}".`
-        : 'That plugin is already submitted. To change your own submission, open it from /me.',
+      holder.status === 'draft' && holder.submittedBy === input.submittedBy
+        ? 'That plugin is already submitted. To change your own submission, open it from /me.'
+        : `That plugin is already listed as "${holder.slug}".`,
     )
   }
   return { link, source }
 }
 
-/** Reads the plugin in the sandbox; an update must keep the plugin's name. */
+/** Reads the plugin in the sandbox; an update must keep the published plugin's name. */
 async function inspectFor(own: OwnMod | null, source: PinnedSource, deps: InspectDeps) {
   const facts = await inspectSource(source, deps).catch(refuseInspection)
-  if (own && facts.manifest.name !== own.pluginName) {
+  if (own?.status === 'published' && facts.manifest.name !== own.pluginName) {
     throw new HttpError(
       400,
       `plugin.json names the plugin "${facts.manifest.name}", not "${own.pluginName}".`,
@@ -141,7 +137,7 @@ async function addNewMod(
 ): Promise<{ modId: string; slug: string }> {
   const modId = randomUUID()
   const { facts, versionId } = version
-  const slug = await pickSlug(db, facts.manifest.name, owner)
+  const slug = provisionalSlug(facts.manifest.name)
   await db.transaction(async (tx) => {
     await insertDraftMod(tx, {
       modId,

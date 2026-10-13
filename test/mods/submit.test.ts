@@ -101,6 +101,13 @@ async function modBySlug(slug: string) {
   return mod
 }
 
+async function modById(id: string) {
+  const [mod] = await db.select().from(schema.mods).where(eq(schema.mods.id, id))
+  return mod
+}
+
+const PROVISIONAL = /^meter-[0-9a-f]{6}$/
+
 async function submissionsOf(modId: string) {
   return db
     .select({
@@ -119,13 +126,14 @@ describe('submitMod', () => {
     const result = await submit()
 
     expect(result).toMatchObject({
-      slug: 'meter',
+      slug: expect.stringMatching(PROVISIONAL),
       commitSha: sha('a'),
       ref: 'main',
       isUpdate: false,
     })
-    const mod = await modBySlug('meter')
+    const mod = await modById(result.modId)
     expect(mod).toMatchObject({
+      slug: result.slug,
       pluginName: 'meter',
       title: 'meter',
       description: 'A context meter.',
@@ -153,17 +161,35 @@ describe('submitMod', () => {
   })
 
   it('takes the typed title', async () => {
-    await submit({ title: '  Context meter ' })
+    const { modId } = await submit({ title: '  Context meter ' })
 
-    expect((await modBySlug('meter'))?.title).toBe('Context meter')
+    expect((await modById(modId))?.title).toBe('Context meter')
   })
 
-  it('names a mod <name>-<owner> when another mod has the name', async () => {
-    await db
-      .insert(schema.mods)
-      .values({ slug: 'meter', pluginName: 'meter', title: 'Meter', authorGithub: 'someone' })
+  it('names the draft provisionally, so a submission holds no marketplace name until approved', async () => {
+    const first = await submit({ by: 'bob' })
 
-    expect((await submit()).slug).toBe('meter-octocat')
+    const second = await submit({}, deps({ head: sha('b') }))
+
+    expect(first.slug).toMatch(PROVISIONAL)
+    expect(second.slug).toMatch(PROVISIONAL)
+    expect(second.slug).not.toBe(first.slug)
+  })
+
+  it.each([
+    'pending',
+    'rejected',
+  ] as const)("lets the author submit a folder someone else's %s submission names", async (status) => {
+    const other = await submit({ by: 'bob' })
+    await db
+      .update(schema.submissions)
+      .set({ status })
+      .where(eq(schema.submissions.id, other.versionId))
+
+    const own = await submit()
+
+    expect(own).toMatchObject({ commitSha: other.commitSha, isUpdate: false })
+    expect(own.modId).not.toBe(other.modId)
   })
 
   it('refuses past the rate limit before asking GitHub anything', async () => {
@@ -221,7 +247,11 @@ describe('submitMod', () => {
     expect(failed).not.toHaveProperty('status')
   })
 
-  it('refuses a second listing of a folder that is already a mod, without downloading it', async () => {
+  it.each([
+    'published',
+    'removed',
+    'draft',
+  ] as const)('refuses a second listing of a folder a %s curated mod holds, without downloading it', async (status) => {
     const [mod] = await db
       .insert(schema.mods)
       .values({
@@ -229,7 +259,7 @@ describe('submitMod', () => {
         pluginName: 'meter',
         title: 'Meter',
         authorGithub: 'octocat',
-        status: 'published',
+        status,
       })
       .returning()
     await db.insert(schema.modVersions).values({
@@ -262,7 +292,11 @@ describe('submitMod', () => {
 describe('a new version of your own mod', () => {
   async function published() {
     const first = await submit()
-    await db.update(schema.mods).set({ status: 'published' }).where(eq(schema.mods.id, first.modId))
+    // Approval names it.
+    await db
+      .update(schema.mods)
+      .set({ status: 'published', slug: 'meter' })
+      .where(eq(schema.mods.id, first.modId))
     await db
       .update(schema.submissions)
       .set({ status: 'approved' })
@@ -314,10 +348,10 @@ describe('a new version of your own mod', () => {
       .set({ status: 'rejected', rejectionReason: 'No', rejectionEmailStatus: 'failed' })
       .where(eq(schema.submissions.id, first.versionId))
 
-    const fix = await submit({ slug: 'meter', title: 'Meter, fixed' }, deps({ head: sha('b') }))
+    const fix = await submit({ slug: first.slug, title: 'Meter, fixed' }, deps({ head: sha('b') }))
 
     expect(fix.isUpdate).toBe(false)
-    expect((await modBySlug('meter'))?.title).toBe('Meter, fixed')
+    expect((await modById(first.modId))?.title).toBe('Meter, fixed')
     expect(await submissionsOf(first.modId)).toEqual([
       { versionNumber: 1, status: 'rejected', rejectionEmailStatus: 'superseded' },
       { versionNumber: 2, status: 'pending', rejectionEmailStatus: null },
@@ -325,10 +359,10 @@ describe('a new version of your own mod', () => {
   })
 
   it('refuses a new version while the first is still in review, before asking GitHub', async () => {
-    await submit()
+    const first = await submit()
     const d = deps({ head: sha('b') })
 
-    await expect(submit({ slug: 'meter' }, d)).rejects.toMatchObject({ status: 409 })
+    await expect(submit({ slug: first.slug }, d)).rejects.toMatchObject({ status: 409 })
     expect(d.calls).toEqual([])
   })
 
@@ -343,7 +377,19 @@ describe('a new version of your own mod', () => {
     ).rejects.toMatchObject({ status })
   })
 
-  it('refuses a plugin.json that renames the plugin', async () => {
+  it('takes a fix to a rejected draft that renames the plugin', async () => {
+    const first = await submit({}, deps({ manifest: { name: 'claude' } }))
+    await db
+      .update(schema.submissions)
+      .set({ status: 'rejected', rejectionReason: 'Rename the plugin' })
+      .where(eq(schema.submissions.id, first.versionId))
+
+    await submit({ slug: first.slug }, deps({ head: sha('b') }))
+
+    expect((await modById(first.modId))?.pluginName).toBe('meter')
+  })
+
+  it('refuses an update whose plugin.json renames the published plugin', async () => {
     await published()
     const d = deps({ head: sha('b'), manifest: { name: 'gauge' } })
 
