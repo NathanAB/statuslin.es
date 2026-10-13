@@ -46,7 +46,7 @@
     "@number-flow/react": "0.6.0",
     "@posthog/react": "1.11.3",
     "@resvg/resvg-js": "2.6.2",
-    "@tailwindcss/vite": "4.3.0",
+    "@tailwindcss/vite": "4.3.3",
     "@tanstack/react-router": "1.170.9",
     "@tanstack/react-start": "1.168.16",
     "anser": "2.3.5",
