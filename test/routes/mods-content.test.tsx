@@ -71,6 +71,14 @@ describe('/mods page', () => {
     expect(screen.getByRole('link', { name: 'Browse the gallery' }).getAttribute('href')).toBe('/')
   })
 
+  it('links the guides that compare mods with status lines and explain mod safety', () => {
+    const { container } = renderPage(MODS)
+
+    for (const href of ['/guide/status-lines-vs-mods', '/guide/are-claude-code-mods-safe']) {
+      expect(container.querySelector(`a[href="${href}"]`), href).not.toBeNull()
+    }
+  })
+
   it('answers the common questions under the cards', () => {
     renderPage(MODS)
 

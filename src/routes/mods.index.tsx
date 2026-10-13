@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { faqPageJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { configListPageJsonLd } from '@/lib/json-ld-lists'
+import { MOD_SAFETY_GUIDE_PATH, STATUS_LINES_VS_MODS_GUIDE_PATH } from '@/lib/page-title'
 import { MODS_PATH, modPath, siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
@@ -66,6 +67,13 @@ function ModsPage() {
           </Text>
           <Text muted>
             Looking for a status line instead? <TextLink to="/">Browse the gallery</TextLink>.
+          </Text>
+          <Text muted>
+            New to mods? See{' '}
+            <TextLink to={STATUS_LINES_VS_MODS_GUIDE_PATH}>
+              how they compare with status lines
+            </TextLink>{' '}
+            and <TextLink to={MOD_SAFETY_GUIDE_PATH}>what a mod can touch</TextLink>.
           </Text>
         </Stack>
         {mods.length > 0 ? (

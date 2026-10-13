@@ -6,7 +6,7 @@ import {
 } from '@/guide/examples'
 import { GUIDE_FAQ } from '@/guide/guide-faq'
 import { GuideStdinFields } from '@/guide/guide-stdin-fields'
-import { GUIDE_DATES } from '@/lib/page-title'
+import { GUIDE_DATES, STATUS_LINES_VS_MODS_GUIDE_PATH } from '@/lib/page-title'
 import type { AnsiSegment } from '@/render/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { FaqSection } from '@/ui/faq-section'
@@ -220,6 +220,10 @@ export function GuideContent({
           <TextLink to="/resources">tools & resources list</TextLink> has themes, widgets, and usage
           trackers. Or <TextLink to="/">copy a status line from the gallery</TextLink> and tweak it.
           If you build one you like, <TextLink to="/submit">submit it to the gallery</TextLink>.
+        </Text>
+        <Text muted>
+          Want a pane, a slash command or a display in Claude Desktop?{' '}
+          <TextLink to={STATUS_LINES_VS_MODS_GUIDE_PATH}>Compare status lines and mods</TextLink>.
         </Text>
         <Text muted>
           Using Claude Desktop? Its Code tab doesn't show custom status lines.{' '}

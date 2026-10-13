@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildLlmsTxt, llmsResponse, withModLinks } from '@/lib/llms'
+import { MOD_SAFETY_GUIDE_TITLE, STATUS_LINES_VS_MODS_GUIDE_TITLE } from '@/lib/page-title'
 
 const FORGED = {
   title: 'Evil [pick](https://evil.example)',
@@ -43,6 +44,17 @@ describe('buildLlmsTxt', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     expect(txt).toMatch(
       /\[[^\]]*Claude Desktop[^\]]*\]\(https:\/\/statuslin\.es\/guide\/claude-desktop\)/,
+    )
+  })
+
+  it('links the status lines vs mods and mod safety guides under Browse', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))
+    expect(browse).toContain(
+      `[${STATUS_LINES_VS_MODS_GUIDE_TITLE}](https://statuslin.es/guide/status-lines-vs-mods)`,
+    )
+    expect(browse).toContain(
+      `[${MOD_SAFETY_GUIDE_TITLE}](https://statuslin.es/guide/are-claude-code-mods-safe)`,
     )
   })
 
