@@ -85,6 +85,13 @@ where visitors **copy it to use** (`src/adopt`).
 
 ## Agent skills
 
+### Workflow: Matt Pocock to plan, pstack to build
+
+- **Start every task from ask-matt.** Before picking a skill or flow for any situation, read `~/.agents/skills/ask-matt/SKILL.md` (Matt Pocock's router over his skills) and follow the flow it names. It is user-invoked only, so read the file rather than calling the Skill tool.
+- **Spec and plan with Matt Pocock's skills.** When the flow names a user-invoked step (`/grill-with-docs`, `/to-spec`, `/to-tickets`, `/wayfinder`, `/triage`), ask the human to run it. Load the model-invoked ones (`grilling`, `domain-modeling`, `codebase-design`, `prototype`, `research`) yourself.
+- **Implement with pstack.** When the flow reaches building (`/implement`, `/implement-spec`, `/tdd`), load `/poteto-mode` first. Its playbooks and principle triggers govern how you build, through to verified work.
+- **This file wins on conflict.** The quality bar and scope control above override both skill sets: TDD stays mandatory, `bun run check` gates every "done", and new infrastructure still needs approval.
+
 ### Issue tracker
 
 Issues live in GitHub Issues on `NathanAB/statuslin.es` (via `gh`). See `docs/agents/issue-tracker.md`.
