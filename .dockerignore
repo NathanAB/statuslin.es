@@ -22,7 +22,7 @@ dist
 
 # Tooling
 .wrangler
-*.log
+**/*.log
 coverage
 
 # Profiling / load-test run artifacts (capture process memory — never ship).
@@ -44,4 +44,4 @@ Dockerfile*
 docs
 
 # OS
-.DS_Store
+**/.DS_Store
