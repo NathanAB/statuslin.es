@@ -32,7 +32,7 @@ afterEach(() => {
 describe('SubmitCta', () => {
   it('links to the submit form when signed in', () => {
     render(<SubmitCta signedIn />)
-    const link = screen.getByRole('link', { name: /submit a status line/i })
+    const link = screen.getByRole('link', { name: 'Submit' })
     expect(link.getAttribute('href')).toBe('/submit')
     fireEvent.click(link)
     expect(socialSignIn).not.toHaveBeenCalled()
@@ -41,8 +41,8 @@ describe('SubmitCta', () => {
   it('starts GitHub sign-in (returning to /submit) when signed out', () => {
     render(<SubmitCta signedIn={false} />)
     // Signed out it is a button, not a link — clicking starts OAuth straight away.
-    expect(screen.queryByRole('link', { name: /submit a status line/i })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /submit a status line/i }))
+    expect(screen.queryByRole('link', { name: 'Submit' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
     expect(socialSignIn).toHaveBeenCalledWith({ provider: 'github', callbackURL: '/submit' })
     expect(capture).toHaveBeenCalledWith('auth_started', {
       provider: 'github',

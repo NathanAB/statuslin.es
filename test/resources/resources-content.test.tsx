@@ -81,7 +81,7 @@ describe('ResourcesContent', () => {
       expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
     }
     expect(screen.getByRole('heading', { level: 2, name: /get listed/i })).toBeTruthy()
-    expect(screen.getByText('Submit a status line')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeTruthy()
   })
 
   it('compares four setup paths without FAQPage schema', () => {

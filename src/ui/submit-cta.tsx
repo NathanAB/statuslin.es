@@ -5,7 +5,7 @@ import { startGitHubSignIn } from '@/lib/sign-in'
 import { Button } from '@/ui/button'
 
 /**
- * The home-page "Submit a status line" CTA.
+ * The "+ Submit" CTA on the home and resources pages.
  *
  * Signed in: links to the submit form. Signed out: starts GitHub sign-in straight away
  * (the same one-click flow as the header sign-in button) and returns the user to /submit
@@ -19,7 +19,7 @@ export function SubmitCta({ signedIn }: { signedIn: boolean }) {
       <Button asChild size="lg">
         <Link to="/submit">
           <Plus />
-          Submit a status line
+          Submit
         </Link>
       </Button>
     )
@@ -28,7 +28,7 @@ export function SubmitCta({ signedIn }: { signedIn: boolean }) {
   return (
     <Button type="button" size="lg" onClick={() => startGitHubSignIn('/submit', 'submit', posthog)}>
       <Plus />
-      Submit a status line
+      Submit
     </Button>
   )
 }
