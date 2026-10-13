@@ -113,9 +113,27 @@ export const DESKTOP_GUIDE_DATES = { published: '2026-10-02', modified: '2026-10
 export const DESKTOP_GUIDE_DESCRIPTION =
   "Claude Desktop's Code tab doesn't run your statusLine command. Add your status line back in two steps with statusline-anywhere."
 
+export const STATUS_LINES_VS_MODS_GUIDE_PATH = '/guide/status-lines-vs-mods'
+
+/**
+ * /guide/status-lines-vs-mods title — the <title> tag and its JSON-LD headline. It leaves out
+ * ` | statuslin.es`, which would push it past 60 characters.
+ */
+export const STATUS_LINES_VS_MODS_GUIDE_TITLE = 'Claude Code Status Lines vs Mods: Which to Use'
+
+export const STATUS_LINES_VS_MODS_GUIDE_DATES = {
+  published: '2026-10-13',
+  modified: '2026-10-13',
+} as const
+
+/** /guide/status-lines-vs-mods meta description — shared by the description tag, OG, and JSON-LD. */
+export const STATUS_LINES_VS_MODS_GUIDE_DESCRIPTION =
+  'A status line is a script whose output Claude Code prints in the terminal. A mod is a plugin that also draws in Claude Desktop. Here is when to use each.'
+
 /** The live /guide subpages and their last edits. Every other /guide/* path redirects to /guide. */
 export const GUIDE_SUBPAGES: ReadonlyArray<{ path: string; modified: string }> = [
   { path: DESKTOP_GUIDE_PATH, modified: DESKTOP_GUIDE_DATES.modified },
+  { path: STATUS_LINES_VS_MODS_GUIDE_PATH, modified: STATUS_LINES_VS_MODS_GUIDE_DATES.modified },
 ]
 
 export function resourcesTitle(sections: ResourceSection[]): string {

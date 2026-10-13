@@ -25,6 +25,7 @@ import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
 import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
+import { Route as GuideStatusLinesVsModsRouteImport } from './routes/guide_.status-lines-vs-mods'
 import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
 import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
@@ -118,6 +119,11 @@ const ModsSlugRoute = ModsSlugRouteImport.update({
   path: '/mods/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideStatusLinesVsModsRoute = GuideStatusLinesVsModsRouteImport.update({
+  id: '/guide_/status-lines-vs-mods',
+  path: '/guide/status-lines-vs-mods',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
   id: '/guide_/claude-desktop',
   path: '/guide/claude-desktop',
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
   '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide_/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
@@ -295,6 +304,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide/claude-desktop'
+    | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide/claude-desktop'
+    | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/compare/$pair'
     | '/guide_/claude-desktop'
+    | '/guide_/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
@@ -386,6 +398,7 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   ComparePairRoute: typeof ComparePairRoute
   GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
+  GuideStatusLinesVsModsRoute: typeof GuideStatusLinesVsModsRoute
   ModsSlugRoute: typeof ModsSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
@@ -513,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide_/status-lines-vs-mods': {
+      id: '/guide_/status-lines-vs-mods'
+      path: '/guide/status-lines-vs-mods'
+      fullPath: '/guide/status-lines-vs-mods'
+      preLoaderRoute: typeof GuideStatusLinesVsModsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guide_/claude-desktop': {
       id: '/guide_/claude-desktop'
       path: '/guide/claude-desktop'
@@ -618,6 +638,7 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   ComparePairRoute: ComparePairRoute,
   GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
+  GuideStatusLinesVsModsRoute: GuideStatusLinesVsModsRoute,
   ModsSlugRoute: ModsSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
