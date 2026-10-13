@@ -172,5 +172,25 @@ export function fakeGitHub(opts: FakeGitHubOptions = {}): FakeGitHub {
   }
 }
 
-/** What the inspect sandbox lists for a plugin made of hooks modules alone (src/mods/plugin-components.ts). */
-export const MODULES_ONLY_LISTING = '--- hooks/hooks.json ---\n{ "modules": ["./register.tsx"] }'
+/**
+ * What the inspect sandbox's components command prints (src/mods/plugin-components.ts): a NUL-ended
+ * `<type> <size> <path>` record per file, then hooks/hooks.json.
+ */
+export function componentsListing(records: string[], hooksJson: string): string {
+  return `${records.map((record) => `${record}\0`).join('')}\0--- hooks/hooks.json ---\0${hooksJson}`
+}
+
+/** A plugin made of one hooks module, with plugin.json and hooks/hooks.json, plus `records`. */
+export function modulesOnlyListing(
+  module: string,
+  records: string[] = [],
+  hooksJson = `{ "modules": ["${module}"] }`,
+  hooksSize = hooksJson.length,
+): string {
+  const files = ['d 4096 .claude-plugin', 'f 20 .claude-plugin/plugin.json', 'd 4096 hooks']
+  const hooks = [`f ${hooksSize} hooks/hooks.json`, `f 900 hooks/${module.slice(2)}`]
+  return componentsListing([...files, ...hooks, ...records], hooksJson)
+}
+
+/** The listing for the skins validate report's one module (test/mods/fixtures/validate-skins.json). */
+export const MODULES_ONLY_LISTING = modulesOnlyListing('./register.tsx')

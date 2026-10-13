@@ -3,7 +3,7 @@ import type { ModFootprint } from '@/db/schema'
 import { SANDBOX_CLAUDE_CODE_BIN } from '@/render/e2b-template'
 import type { ModSandbox } from '@/render/mods/mod-sandbox'
 import { PLUGIN_NAME, PLUGIN_NAME_RULE } from './curation'
-import { componentsCommand, extraComponents, MODULE_PATH } from './plugin-components'
+import { componentsCommand, MODULE_PATH, otherComponents, parseJson } from './plugin-components'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
 export interface PluginManifest {
@@ -150,7 +150,7 @@ const LABEL = / (hooks|calls): /
  * module path comes from the plugin, so a path with spaces could carry a label of its own (a file
  * named `m calls: $.ui.toast.ts` hides its real calls); such a note is refused.
  */
-function moduleNote(note: string): { label: 'hooks' | 'calls'; list: string } | null {
+function moduleNote(note: string): { path: string; label: 'hooks' | 'calls'; list: string } | null {
   if (!LABEL.test(note)) return null
   const match = /^(\S+) (hooks|calls): (.*)$/.exec(note)
   if (!match || !MODULE_PATH.test(match[1] ?? '') || LABEL.test(` ${match[3]}`)) {
@@ -158,7 +158,17 @@ function moduleNote(note: string): { label: 'hooks' | 'calls'; list: string } | 
       'claude plugin validate reports a hooks module whose path holds characters other than letters, digits, ".", "_", "-" and "/"',
     )
   }
-  return { label: match[2] as 'hooks' | 'calls', list: match[3] ?? '' }
+  return { path: match[1] ?? '', label: match[2] as 'hooks' | 'calls', list: match[3] ?? '' }
+}
+
+/** The hooks modules validate read: it notes both what each hooks and what each calls. */
+function describedModules(validateJson: unknown): Set<string> {
+  const { contents = [] } = validateReportSchema.parse(validateJson)
+  const notes = contents.flatMap((section) => section.notes ?? []).map(moduleNote)
+  const noted = (label: string) =>
+    notes.flatMap((note) => (note?.label === label ? [note.path] : []))
+  const calls = new Set(noted('calls'))
+  return new Set(noted('hooks').filter((path) => calls.has(path)))
 }
 
 export function parseManifest(text: string): PluginManifest {
@@ -171,14 +181,6 @@ export function parseManifest(text: string): PluginManifest {
   }
   const { name, version, description } = parsed.data
   return { name, version: version ?? null, description: description ?? '' }
-}
-
-function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text)
-  } catch {
-    return undefined
-  }
 }
 
 function validateErrors(validateJson: unknown): string[] {
@@ -219,18 +221,22 @@ export async function inspectPlugin(sandbox: ModSandbox): Promise<PluginFacts> {
     footprint: parseFootprint(validateJson),
     claudeCodeVersion,
   }
-  await refuseOtherComponents(sandbox, parseJson(manifest.stdout))
+  await refuseOtherComponents(sandbox, parseJson(manifest.stdout), describedModules(validateJson))
   return facts
 }
 
 /**
- * A mod page states what a mod does from its hooks modules' footprint, which validate reports. It
- * reports nothing about shell hooks, MCP or LSP servers, commands, agents, skills or output styles,
- * so a plugin holding any of them is refused rather than listed with facts that leave them out.
+ * A mod page states what a mod does from what validate reports of its hooks modules: nothing else a
+ * plugin holds, and nothing of a module it skips. So anything else is refused, not left unlisted.
  */
-async function refuseOtherComponents(sandbox: ModSandbox, manifest: unknown): Promise<void> {
+async function refuseOtherComponents(
+  sandbox: ModSandbox,
+  manifest: unknown,
+  described: Set<string>,
+) {
   const listing = await sandbox.run(componentsCommand(sandbox.pluginDir))
-  const extras = listing.exitCode === 0 ? extraComponents(listing.stdout, manifest) : null
+  const extras =
+    listing.exitCode === 0 ? otherComponents(listing.stdout, manifest, described) : null
   if (extras === null) throw new Error("could not list the plugin's components")
   if (extras.length > 0) {
     throw new PluginRefusal(

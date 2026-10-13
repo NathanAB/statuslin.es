@@ -229,8 +229,8 @@ export function withReplaySandbox<T>(use: (sandbox: ReplaySandbox) => Promise<T>
   )
 }
 
-/** Reading a plugin uploads its tarball, unpacks it and runs three commands; nothing more. */
-const INSPECT_SANDBOX_TIMEOUT_MS = 2 * REQUEST_TIMEOUT_MS + 3 * COMMAND_TIMEOUT_MS
+/** Reading a plugin uploads its tarball, unpacks it and runs four commands; nothing more. */
+const INSPECT_SANDBOX_TIMEOUT_MS = 2 * REQUEST_TIMEOUT_MS + 4 * COMMAND_TIMEOUT_MS
 
 /** An offline sandbox holding the unpacked plugin, for reading it (the importer, mod submit). */
 export function withModSandbox<T>(
