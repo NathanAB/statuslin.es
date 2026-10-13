@@ -30,7 +30,7 @@ export const Route = createFileRoute('/mods/$slug')({
       meta: [
         { title: modPageTitle(mod.title) },
         { name: 'description', content: modMetaDescription(mod.description) },
-        ...modSocialMeta(loaderData.origin, mod.slug),
+        ...modSocialMeta(loaderData.origin, mod),
       ],
       links: [canonicalLink(modPath(mod.slug))],
       scripts: modJsonLd(loaderData.origin, mod).map(jsonLdScript),

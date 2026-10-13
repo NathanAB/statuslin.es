@@ -5,10 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { coerceGalleryFilter } from '@/gallery/gallery-items'
 import { modJsonLd } from '@/lib/breadcrumb-json-ld'
 import { jsonLdScript } from '@/lib/json-ld'
-import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
+import {
+  HOME_TITLE_BASE,
+  MOD_NOT_FOUND_TITLE,
+  modMetaDescription,
+  modPageTitle,
+} from '@/lib/page-title'
 import { MOD_INSTALL_MIN_VERSION, modInstallPrompt } from '@/mods/install'
 import type { ModDetail } from '@/mods/queries'
-import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 const recordModCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/functions', () => ({ recordModCopyFn, getModDetailFn: vi.fn() }))
@@ -117,16 +121,15 @@ describe('mod page head', () => {
     expect(modMetaDescription(long.description).length).toBeLessThanOrEqual(160)
   })
 
-  it('points og:image and twitter:image at the mod card on the site origin', () => {
-    const image = `${ORIGIN}/og/mods/filetree.png`
+  it('shares the mod under its own url, title and description, not the home page', () => {
+    const meta = head(MOD).meta
+    const og = (property: string) => meta.find((m) => m.property === property)?.content
 
-    expect(head(MOD).meta.slice(2)).toEqual([
-      { property: 'og:image', content: image },
-      { property: 'og:image:width', content: String(CARD_WIDTH) },
-      { property: 'og:image:height', content: String(CARD_HEIGHT) },
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:image', content: image },
-    ])
+    expect(og('og:url')).toBe(`${ORIGIN}/mods/filetree`)
+    expect(og('og:title')).toBe(modPageTitle(MOD.title))
+    expect(og('og:title')).not.toBe(HOME_TITLE_BASE)
+    expect(og('og:description')).toBe(modMetaDescription(MOD.description))
+    expect(og('og:image')).toBe(`${ORIGIN}/og/mods/filetree.png`)
   })
 
   it('titles a missing mod as not found', () => {

@@ -75,10 +75,21 @@ describe('social meta', () => {
     expect(byProp('og:url')).toMatch(/\/c\/my-config$/)
   })
 
-  it('mod points og:image and twitter:image at its card on the given origin', () => {
-    const image = 'https://staging.statuslin.es/og/mods/file-tree.png'
+  it('mod gives its own url, title and description, with its card on the given origin', () => {
+    const base = 'https://staging.statuslin.es'
+    const image = `${base}/og/mods/file-tree.png`
 
-    expect(modSocialMeta('https://staging.statuslin.es', 'file-tree')).toEqual([
+    expect(
+      modSocialMeta(base, {
+        slug: 'file-tree',
+        title: 'File Tree',
+        description: 'A file tree pane.',
+      }),
+    ).toEqual([
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: `${base}/mods/file-tree` },
+      { property: 'og:title', content: 'File Tree — Claude Code mod | statuslin.es' },
+      { property: 'og:description', content: 'A file tree pane.' },
       { property: 'og:image', content: image },
       { property: 'og:image:width', content: String(CARD_WIDTH) },
       { property: 'og:image:height', content: String(CARD_HEIGHT) },
