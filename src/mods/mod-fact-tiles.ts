@@ -6,7 +6,18 @@ import { DRAW_LOCATION_LABEL, describeModFootprint, SURFACE_LABEL } from './foot
 import { type FootprintCommands, footprintFacts } from './footprint-facts'
 import type { ModDetail } from './queries'
 
-const THROUGH_PROGRAMS = 'Only through programs it runs'
+/** Each tile's label, also named by the guide that explains the tiles. */
+export const MOD_TILE_LABEL = {
+  showsUp: 'Shows up',
+  worksIn: 'Works in',
+  commands: 'Commands',
+  usesYourPlan: 'Uses your plan',
+  changesFiles: 'Changes files',
+  network: 'Network',
+} as const
+
+/** A reach tile's value when the mod has that reach only through the programs it runs. */
+export const THROUGH_PROGRAMS = 'Only through programs it runs'
 
 const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
@@ -48,33 +59,33 @@ export function modFactTiles(
       ? [
           {
             icon: Monitor,
-            label: 'Works in',
+            label: MOD_TILE_LABEL.worksIn,
             value: listPhrase(surfaces.map((s) => SURFACE_LABEL[s])),
           },
         ]
       : []
   return [
-    { icon: PanelTop, label: 'Shows up', value: showsUp },
+    { icon: PanelTop, label: MOD_TILE_LABEL.showsUp, value: showsUp },
     ...worksIn,
     {
       icon: SquareSlash,
-      label: 'Commands',
+      label: MOD_TILE_LABEL.commands,
       value: commandsValue(facts.commands, details.commands),
     },
     {
       icon: Coins,
-      label: 'Uses your plan',
+      label: MOD_TILE_LABEL.usesYourPlan,
       value: facts.callsModel ? (details.usesYourPlan ?? 'Yes') : 'No',
       caution: facts.callsModel,
     },
     {
       icon: FilePen,
-      label: 'Changes files',
+      label: MOD_TILE_LABEL.changesFiles,
       value: reachValue(facts.writesFiles, facts.runsPrograms, details.changesFiles, 'Nothing'),
     },
     {
       icon: Globe,
-      label: 'Network',
+      label: MOD_TILE_LABEL.network,
       value: reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None'),
     },
   ]
