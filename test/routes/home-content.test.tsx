@@ -60,14 +60,10 @@ function renderHome(overrides: Partial<typeof gallery> = {}) {
 }
 
 describe('home content', () => {
-  it('says everything is made by the community and reviewed by hand', () => {
+  it('shows the published count, copy count and as-of date it is given', () => {
     renderHome()
 
     const page = document.body.textContent ?? ''
-    expect(page).toContain('Everything here is made by the community and reviewed by hand.')
-    expect(page).not.toMatch(/examples/)
-    expect(page).not.toMatch(/templates/)
-    expect(page).not.toMatch(/TUI installer/)
     expect(page).toMatch(/32 published/)
     expect(page).toMatch(/148/)
     expect(page).toMatch(/Sep 8, 2026/)

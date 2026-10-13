@@ -8,7 +8,7 @@ export function HomeGalleryIntro({ page }: { page: number }) {
       <Heading level={1} size="compact">
         {page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
       </Heading>
-      <Text size="sm">Everything here is made by the community and reviewed by hand.</Text>
+      <Text size="sm">Community sourced and human reviewed.</Text>
     </Stack>
   )
 }
