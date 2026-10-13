@@ -25,7 +25,7 @@ export function OwnerUpdateStrip({
         </Button>
       }
     >
-      <Text inline>This is your status line.</Text> Updates are reviewed before they go live.
+      <Text inline>This is your status line.</Text>
     </Hint>
   )
 }

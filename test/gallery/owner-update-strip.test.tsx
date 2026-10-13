@@ -22,11 +22,8 @@ vi.mock('@tanstack/react-router', () => ({
 const { OwnerUpdateStrip } = await import('@/gallery/owner-update-strip')
 
 describe('OwnerUpdateStrip', () => {
-  it('tells the author updates are reviewed and links a primary button to the update form', () => {
-    const { container } = render(<OwnerUpdateStrip slug="my-line" viewerIsAuthor />)
-    expect(container.textContent).toContain(
-      'This is your status line. Updates are reviewed before they go live.',
-    )
+  it('links the author to the update form with a primary button', () => {
+    render(<OwnerUpdateStrip slug="my-line" viewerIsAuthor />)
     const link = screen.getByRole('link', { name: 'Submit update' })
     expect(link.getAttribute('href')).toBe('/submit?update=my-line')
     expect(link.getAttribute('data-slot')).toBe('button')
