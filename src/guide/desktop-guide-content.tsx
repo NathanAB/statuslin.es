@@ -1,6 +1,8 @@
+import { MOD_ROUTE } from '@/lib/site'
 import {
   STATUSLINE_ANYWHERE_INSTALL_COMMAND,
   STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE,
+  STATUSLINE_ANYWHERE_MOD_SLUG,
 } from '@/lib/statusline-anywhere'
 import { CodeBlock } from '@/ui/code-block'
 import { Stack } from '@/ui/layout'
@@ -30,7 +32,11 @@ export function DesktopGuideContent() {
         <Heading level={2}>2. Open a new Code session in Claude Desktop</Heading>
         <Text muted>
           Your status line shows above the prompt, in color. Needs Claude Code{' '}
-          {STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE} or later.
+          {STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE} or later.{' '}
+          <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
+            See a screenshot
+          </TextLink>
+          .
         </Text>
       </Stack>
 

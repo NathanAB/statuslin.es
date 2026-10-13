@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   STATUSLINE_ANYWHERE_INSTALL_COMMAND,
@@ -7,9 +7,15 @@ import {
 } from '@/lib/statusline-anywhere'
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
-    <a href={to}>{children}</a>
-  ),
+  Link: ({
+    to,
+    params,
+    children,
+  }: {
+    to: string
+    params?: Record<string, string>
+    children: React.ReactNode
+  }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
 }))
 
 const capture = vi.fn()
@@ -80,6 +86,16 @@ describe('DesktopGuideContent', () => {
     const { container } = render(<DesktopGuideContent />)
     expect(container.querySelector('a[href="/"]')).not.toBeNull()
     expect(container.querySelector('a[href="/guide"]')).not.toBeNull()
+  })
+
+  it('links the new-session step to the mod page for a screenshot', () => {
+    render(<DesktopGuideContent />)
+    const step = screen.getByRole('heading', {
+      level: 2,
+      name: /^2\. open a new code session in claude desktop$/i,
+    }).parentElement as HTMLElement
+    const link = within(step).getByRole('link', { name: 'See a screenshot' })
+    expect(link.getAttribute('href')).toBe('/mods/statusline-anywhere')
   })
 
   it('records plugin link clicks in PostHog with the guide as its surface', () => {
