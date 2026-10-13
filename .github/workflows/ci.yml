@@ -1,12 +1,13 @@
 name: CI
 
 on:
-  push:
-    branches: ['**']
+  # Every pull request, Dependabot's included, plus a manual run from the Actions tab. Pushes alone
+  # don't trigger it, so each PR update runs CI once instead of twice.
   # `pull_request` (NOT `pull_request_target`) runs forked PRs in a restricted context
   # with no access to repo secrets — safe for outside contributions. Don't switch this to
   # `pull_request_target`: it would expose secrets to untrusted PR code.
   pull_request:
+  workflow_dispatch:
 
 # Least privilege: the gate only reads the repo. Public repos default to broader token scopes.
 permissions:
@@ -17,30 +18,43 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Dummy values so modules that requireEnv() at import (e.g. src/db/index.ts) load.
+# Tests use PGlite and never connect via DATABASE_URL; the E2B suite is opt-in (RUN_E2B unset).
+env:
+  DATABASE_URL: postgresql://test:test@localhost:5432/test
+  # Must be >=32 chars and not a placeholder token: requireStrongSecret() (src/lib/env.ts)
+  # throws at import otherwise, which would fail the auth test suites.
+  BETTER_AUTH_SECRET: ci-only-dummy-secret-do-not-use-anywhere-1234
+  BETTER_AUTH_URL: http://localhost:3100
+  GITHUB_CLIENT_ID: ci-dummy
+  GITHUB_CLIENT_SECRET: ci-dummy
+  E2B_API_KEY: ci-dummy
+
+# Two jobs side by side: the tests run once on Bun (the gate) and once on Node (coverage), and the
+# wall time is the slower of the two.
 jobs:
+  # The full quality gate as `bun run check:ci` runs it locally: typecheck, Biome, the design,
+  # boundary and dependency checks, then the tests on Bun, the runtime production uses.
   gate:
     runs-on: ubuntu-latest
-    # Dummy values so modules that requireEnv() at import (e.g. src/db/index.ts) load.
-    # Tests use PGlite and never connect via DATABASE_URL; the E2B suite is opt-in (RUN_E2B unset).
-    env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/test
-      # Must be >=32 chars and not a placeholder token: requireStrongSecret() (src/lib/env.ts)
-      # throws at import otherwise, which would fail the auth test suites.
-      BETTER_AUTH_SECRET: ci-only-dummy-secret-do-not-use-anywhere-1234
-      BETTER_AUTH_URL: http://localhost:3100
-      GITHUB_CLIENT_ID: ci-dummy
-      GITHUB_CLIENT_SECRET: ci-dummy
-      E2B_API_KEY: ci-dummy
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
         with:
-          # Pinned exact (the repo pins every dep exact) so CI can't drift under a contributor.
-          # Bump deliberately alongside the local toolchain.
-          bun-version: 1.3.14
+          # Pinned exact, and the same Bun the Dockerfile builds production with and @types/bun
+          # describes. `bun run check:deps` fails when they disagree, so bump them together.
+          bun-version: 1.4.3
       - run: bun install --frozen-lockfile
-      # The full quality gate: typecheck + Biome + design-system gate + import
-      # boundaries + tests. The E2B integration suite is opt-in (RUN_E2B) and not run here.
       - run: bun run check:ci
-      # Coverage threshold (lines/statements) on the logic directories.
+
+  # The coverage threshold (lines/statements) on the logic directories. `test:cov` runs vitest on
+  # Node, which also proves the tests don't lean on Bun-only APIs.
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile
       - run: bun run test:cov
