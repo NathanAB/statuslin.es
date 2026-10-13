@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { assertNotProduction, requireStrongSecret } from '@/lib/env'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { assertNotProduction, isFlagEnabled, requireStrongSecret } from '@/lib/env'
 
 const NAME = 'TEST_SECRET_VAR'
 
@@ -83,5 +83,28 @@ describe('assertNotProduction', () => {
   it('does nothing when NODE_ENV is unset', () => {
     delete process.env.NODE_ENV
     expect(() => assertNotProduction('A dev CLI')).not.toThrow()
+  })
+})
+
+describe('isFlagEnabled', () => {
+  const FLAG = 'TEST_FLAG_VAR'
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('is on when the variable is exactly "true"', () => {
+    vi.stubEnv(FLAG, 'true')
+    expect(isFlagEnabled(FLAG)).toBe(true)
+  })
+
+  it('is off when the variable is unset', () => {
+    vi.stubEnv(FLAG, undefined)
+    expect(isFlagEnabled(FLAG)).toBe(false)
+  })
+
+  it.each(['', 'false', '0', '1', 'yes', 'TRUE', ' true'])('is off for %j', (value) => {
+    vi.stubEnv(FLAG, value)
+    expect(isFlagEnabled(FLAG)).toBe(false)
   })
 })

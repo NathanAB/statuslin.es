@@ -6,11 +6,16 @@
 # KEEP IN SYNC with fly.toml by hand — Fly can't include one file from another.
 # [build], [processes], [http_service] internal_port/force_https, and [deploy] must match.
 # What differs on purpose: staging runs one small [[vm]] and scales the web process to zero
-# (min_machines_running = 0); prod sizes web up and keeps it warm.
+# (min_machines_running = 0); prod sizes web up and keeps it warm. Staging also sets [env]
+# NOINDEX_SITE; prod must not.
 app = "statuslines-staging"
 primary_region = "iad"
 
 [build]
+
+[env]
+  # Every response carries `X-Robots-Tag: noindex, nofollow`, so search engines never index staging.
+  NOINDEX_SITE = "true"
 
 # One process group: the public web server. It also renders submitted status lines in the
 # background through E2B, on submit and at startup (ADR 0006); there is no separate worker.

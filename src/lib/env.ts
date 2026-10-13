@@ -9,6 +9,14 @@ export function requireEnv(name: string): string {
 }
 
 /**
+ * Read an optional on/off flag. Only the exact value `true` turns it on; unset, empty or any other
+ * value is off, so a missing or mistyped flag leaves the default (off) behavior in place.
+ */
+export function isFlagEnabled(name: string): boolean {
+  return process.env[name] === 'true'
+}
+
+/**
  * Refuse to run in production. Several dev-only CLIs that mutate the DB or forge an admin session
  * (`scripts/dev-login.ts`, `scripts/seed-gallery.ts`, `scripts/loadtest/seed.ts` + `teardown.ts`)
  * ship in the prod image (`COPY . .`), and the runtime image sets `NODE_ENV=production`

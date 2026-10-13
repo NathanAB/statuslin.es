@@ -78,6 +78,7 @@ From `.env.example` (the committed contract):
 | `E2B_API_KEY` | no | one E2B account serves all envs |
 | `RENDER_RUNNER` | — | **local only**: `fake` renders submissions without E2B. Leave unset on staging and production, which refuse it (`NODE_ENV=production`) |
 | `RESEND_API_KEY` | yes | server-only key used to email submission review decisions |
+| `NOINDEX_SITE` | yes | `true` only on staging, set in `fly.staging.toml` `[env]` (not a secret): every response then carries `X-Robots-Tag: noindex, nofollow` so search engines drop staging. Off when unset or any value but `true`, so production (`fly.toml` leaves it out) stays indexable. robots.txt still allows crawling, or crawlers would never see the header |
 | `GITHUB_TOKEN` | yes, for mod submissions | the web server calls GitHub when a user submits a mod and when an admin approves one; without it those calls share GitHub's 60-requests-an-hour anonymous limit per IP, and run out after a handful of submissions. The operator mod scripts (`import:mods`, `render:mods`, `input-steps:mods`, `publish-mod`, `check-mods`, …) read it from `.env.local` or the shell too. A fine-grained token with public-repository read access (the default, no extra permissions) is enough: never one that can read private repositories |
 
 No R2 keys — preview data is stored in Postgres (`previews` table), and OG card images are rendered on
