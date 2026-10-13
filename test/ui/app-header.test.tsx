@@ -116,6 +116,28 @@ describe('AppHeader', () => {
     expect(screen.getByText('Ada Lovelace')).toBeTruthy()
   })
 
+  // Phones hide the text label and show only the avatar, so the trigger names itself.
+  it('names the user menu trigger @username for screen readers', () => {
+    render(
+      <AppHeader
+        user={{
+          name: 'Ada Lovelace',
+          username: 'ada',
+          image: 'https://example.com/a.png',
+          role: 'user',
+        }}
+      />,
+    )
+    const trigger = screen.getByRole('button', { name: '@ada' })
+    expect(trigger.getAttribute('aria-label')).toBe('@ada')
+  })
+
+  it('names the user menu trigger with the display name when username is null', () => {
+    render(<AppHeader user={{ name: 'Ada Lovelace', username: null, image: null, role: 'user' }} />)
+    const trigger = screen.getByRole('button', { name: 'Ada Lovelace' })
+    expect(trigger.getAttribute('aria-label')).toBe('Ada Lovelace')
+  })
+
   it('opens a Log out menu item on trigger click and calls signOut', async () => {
     render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,

@@ -76,7 +76,8 @@ function UserMenu({ user }: { user: AppHeaderUser }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="trigger">
+        {/* Phones show only the avatar, so the label also names the trigger. */}
+        <Button variant="ghost" size="trigger" aria-label={label}>
           {user.image ? (
             <img src={user.image} alt="" className="size-5 shrink-0 rounded-full" />
           ) : (
@@ -87,7 +88,7 @@ function UserMenu({ user }: { user: AppHeaderUser }) {
               {user.name.charAt(0).toUpperCase()}
             </span>
           )}
-          <span className="truncate">{label}</span>
+          <span className="hidden truncate sm:inline">{label}</span>
         </Button>
       </DropdownMenuTrigger>
       {/* Don't refocus the trigger on close — it paints a focus ring after mouse use. */}
