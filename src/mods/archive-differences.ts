@@ -59,9 +59,10 @@ async function refuseAttributes(sha: string, path: string, readBlob: ReadBlob): 
   if (!truncated && (await blobSha(bytes)) !== sha) {
     throw new Error(`GitHub sent other bytes than blob ${sha}`)
   }
-  // A byte-order mark stays: git reads it as the start of a pattern.
+  // Git reads a byte-order mark as the start of a pattern from a commit, and strips it from a file
+  // in the work tree, so both readings must set only line endings.
   const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes)
-  if (truncated || !setsOnlyLineEndings(text)) {
+  if (truncated || ![text, text.replace(/^\uFEFF/, '')].every(setsOnlyLineEndings)) {
     throw new PluginRefusal(
       `${path} sets more than line endings, so GitHub's archive of the repository can differ from what Claude Code installs`,
     )
