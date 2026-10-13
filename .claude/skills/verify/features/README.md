@@ -62,5 +62,6 @@ commands, and observable proof.
 - [Browse the gallery](./gallery.md): home list, Show filter, sort menu, and facet pages.
 - [Copy a status line to use](./copy-status-line.md): the detail page's install prompt and script
   copy, and the copy count.
-- [Mods](./mods.md): submit a mod by GitHub link, the mod page, and `/marketplace.json`. Needs
-  GitHub and E2B access; see its preconditions.
+- [Mods](./mods.md): submit a mod by GitHub link, `/me`, review and approve on `/admin`, the mod
+  page and its install prompt, and `/marketplace.json`. Submit, render and approve need GitHub and
+  E2B access; see its preconditions.

@@ -143,8 +143,10 @@ What counts as proof:
   `no page or console errors`. For server-side failures (SSR, server functions, the render drain),
   read `.verify/run/3110/server.log` for stack traces.
 - Fakes only where production already has a boundary: `RENDER_RUNNER=fake` stands in for the E2B
-  sandbox, and the empty `RESEND_API_KEY` means no email leaves (approval and rejection emails
-  record as undelivered). When the rendered preview itself is the thing under test, the fake runner
+  sandbox for status lines, and the empty `RESEND_API_KEY` means no email leaves (approval and
+  rejection emails record as `ambiguous`). Mods have no fake: submit, render and approve call
+  GitHub and E2B for real, so get the user's OK first (see [mods](features/mods.md)).
+  When the rendered preview itself is the thing under test, the fake runner
   can't prove it; say so instead of claiming it.
 - An entry point you couldn't reach is reported as skipped with the unmet precondition, never as
   verified through another path.
