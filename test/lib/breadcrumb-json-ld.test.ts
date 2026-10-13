@@ -20,7 +20,7 @@ describe('breadcrumbJsonLd', () => {
 })
 
 describe('modJsonLd', () => {
-  it('breadcrumbs from home through the mods-filtered gallery to the mod', () => {
+  it('breadcrumbs from home through the mods page to the mod', () => {
     expect(modJsonLd('https://statuslin.es', { slug: 'filetree', title: 'File Tree' })).toEqual([
       {
         '@context': 'https://schema.org',
@@ -31,7 +31,7 @@ describe('modJsonLd', () => {
             '@type': 'ListItem',
             position: 2,
             name: 'Mods',
-            item: 'https://statuslin.es/?kind=mods',
+            item: 'https://statuslin.es/mods',
           },
           {
             '@type': 'ListItem',

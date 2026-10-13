@@ -8,14 +8,14 @@ import type { ModDetail } from './queries'
 const SHORT_SHA_LENGTH = 7
 
 /**
- * A mod page's header. The breadcrumb runs through the mods-filtered gallery; the tag chips match
+ * A mod page's header. The breadcrumb runs through the mods page; the tag chips match
  * the mod's gallery card; the byline links the source at the pinned commit and always names the
  * licence, or says there is none.
  */
 export function ModHeader({ mod }: { mod: ModDetail }) {
   return (
     <DetailHeader
-      trail={[{ name: MODS_CRUMB.name, to: '/', search: MODS_CRUMB.search }]}
+      trail={[MODS_CRUMB]}
       title={mod.title}
       chips={<ConfigBadges tags={mod.tags} networkHosts={[]} />}
       byline={{

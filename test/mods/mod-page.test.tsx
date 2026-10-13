@@ -2,7 +2,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { coerceGalleryFilter } from '@/gallery/gallery-items'
 import { modJsonLd } from '@/lib/breadcrumb-json-ld'
 import { jsonLdScript } from '@/lib/json-ld'
 import {
@@ -108,7 +107,7 @@ describe('mod page head', () => {
 
   it('emits the breadcrumb as JSON-LD on the site origin', () => {
     expect(head(MOD).scripts).toEqual(modJsonLd(ORIGIN, MOD).map(jsonLdScript))
-    expect(head(MOD).scripts?.[0]?.children).toContain(`${ORIGIN}/?kind=mods`)
+    expect(head(MOD).scripts?.[0]?.children).toContain(`"item":"${ORIGIN}/mods"`)
   })
 
   it('titles and describes the mod through the page-title helpers', () => {
@@ -152,15 +151,12 @@ function section(title: string) {
 }
 
 describe('mod page', () => {
-  it('breadcrumbs home › Mods › the mod, linking Mods to the mods-filtered gallery', () => {
+  it('breadcrumbs home › Mods › the mod, linking Mods to the mods page', () => {
     renderPage()
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
     expect(nav.textContent).toBe('Status lines›Mods›File Tree')
-    const mods = within(nav).getByRole('link', { name: 'Mods' })
-    const url = new URL(mods.getAttribute('href') ?? '', ORIGIN)
-    expect(url.pathname).toBe('/')
-    expect(coerceGalleryFilter(url.searchParams.get('kind'))).toBe('mods')
+    expect(within(nav).getByRole('link', { name: 'Mods' }).getAttribute('href')).toBe('/mods')
   })
 
   it('runs header, install, preview, then what it does, like a status line page', () => {
