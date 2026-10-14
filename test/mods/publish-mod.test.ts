@@ -308,17 +308,24 @@ describe('publish review output', () => {
   it.each([
     ['an event', { events: ['Stop', 'SessionStart'], calls: [] }, /adds events \[SessionStart\]/],
     ['a $ call', { events: ['Stop'], calls: ['$.cost'] }, /adds \$ calls \[\$\.cost\]/],
-  ])('warns when the footprint adds %s, without blocking --apply', async (_name, footprint, warning) => {
-    const { modId } = await publishedMod({ footprint: { events: ['Stop'], calls: [] } })
-    const nextId = await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2, footprint })
+  ])(
+    'warns when the footprint adds %s, without blocking --apply',
+    async (_name, footprint, warning) => {
+      const { modId } = await publishedMod({ footprint: { events: ['Stop'], calls: [] } })
+      const nextId = await addVersion(db, modId, {
+        commitSha: sha('b'),
+        versionNumber: 2,
+        footprint,
+      })
 
-    const { exitCode, output } = await publish(['meter', sha('b'), '--apply', '--confirm=meter'])
+      const { exitCode, output } = await publish(['meter', sha('b'), '--apply', '--confirm=meter'])
 
-    expect(output).toMatch(/WARN/)
-    expect(output).toMatch(warning)
-    expect(exitCode).toBe(0)
-    expect((await modState(db, 'meter'))?.currentVersionId).toBe(nextId)
-  })
+      expect(output).toMatch(/WARN/)
+      expect(output).toMatch(warning)
+      expect(exitCode).toBe(0)
+      expect((await modState(db, 'meter'))?.currentVersionId).toBe(nextId)
+    },
+  )
 
   it('does not warn when the footprint only shrinks', async () => {
     const { modId } = await publishedMod({ footprint: { events: ['Stop'], calls: ['$.cost'] } })

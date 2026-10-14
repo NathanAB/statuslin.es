@@ -176,21 +176,21 @@ describe('submitMod', () => {
     expect(second.slug).not.toBe(first.slug)
   })
 
-  it.each([
-    'pending',
-    'rejected',
-  ] as const)("lets the author submit a folder someone else's %s submission names", async (status) => {
-    const other = await submit({ by: 'bob' })
-    await db
-      .update(schema.submissions)
-      .set({ status })
-      .where(eq(schema.submissions.id, other.versionId))
+  it.each(['pending', 'rejected'] as const)(
+    "lets the author submit a folder someone else's %s submission names",
+    async (status) => {
+      const other = await submit({ by: 'bob' })
+      await db
+        .update(schema.submissions)
+        .set({ status })
+        .where(eq(schema.submissions.id, other.versionId))
 
-    const own = await submit()
+      const own = await submit()
 
-    expect(own).toMatchObject({ commitSha: other.commitSha, isUpdate: false })
-    expect(own.modId).not.toBe(other.modId)
-  })
+      expect(own).toMatchObject({ commitSha: other.commitSha, isUpdate: false })
+      expect(own.modId).not.toBe(other.modId)
+    },
+  )
 
   it('refuses past the rate limit before asking GitHub anything', async () => {
     for (const [i, char] of ['b', 'c', 'd'].entries()) {
@@ -247,38 +247,37 @@ describe('submitMod', () => {
     expect(failed).not.toHaveProperty('status')
   })
 
-  it.each([
-    'published',
-    'removed',
-    'draft',
-  ] as const)('refuses a second listing of a folder a %s curated mod holds, without downloading it', async (status) => {
-    const [mod] = await db
-      .insert(schema.mods)
-      .values({
-        slug: 'curated',
-        pluginName: 'meter',
-        title: 'Meter',
-        authorGithub: 'octocat',
-        status,
+  it.each(['published', 'removed', 'draft'] as const)(
+    'refuses a second listing of a folder a %s curated mod holds, without downloading it',
+    async (status) => {
+      const [mod] = await db
+        .insert(schema.mods)
+        .values({
+          slug: 'curated',
+          pluginName: 'meter',
+          title: 'Meter',
+          authorGithub: 'octocat',
+          status,
+        })
+        .returning()
+      await db.insert(schema.modVersions).values({
+        modId: mod!.id,
+        versionNumber: 1,
+        repoUrl: REPO,
+        path: 'plugins/meter',
+        commitSha: sha('f'),
+        footprint: { events: [], calls: [] },
+        validatedWith: '2.1.0',
       })
-      .returning()
-    await db.insert(schema.modVersions).values({
-      modId: mod!.id,
-      versionNumber: 1,
-      repoUrl: REPO,
-      path: 'plugins/meter',
-      commitSha: sha('f'),
-      footprint: { events: [], calls: [] },
-      validatedWith: '2.1.0',
-    })
-    const d = deps()
+      const d = deps()
 
-    await expect(submit({}, d)).rejects.toMatchObject({
-      status: 409,
-      message: expect.stringMatching(/already listed as "curated"/),
-    })
-    expect(d.calls.filter((c) => c.startsWith('tarball'))).toEqual([])
-  })
+      await expect(submit({}, d)).rejects.toMatchObject({
+        status: 409,
+        message: expect.stringMatching(/already listed as "curated"/),
+      })
+      expect(d.calls.filter((c) => c.startsWith('tarball'))).toEqual([])
+    },
+  )
 
   it('refuses through the guard when the submitter already has a check running', async () => {
     const d = deps()

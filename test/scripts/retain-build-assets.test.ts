@@ -113,18 +113,16 @@ describe('retainBuildAssets', () => {
     await expect(retainBuildAssets(dirs)).rejects.toThrow('missing.js')
   })
 
-  test.each([
-    '../escape.js',
-    '/absolute.js',
-    'nested\\\\escape.js',
-    '',
-  ])('rejects unsafe manifest path %j', async (unsafePath: string) => {
-    const dirs = await fixture()
-    await put(dirs.currentAssetsDir, 'current.js')
-    await manifest(dirs.previousAssetsDir, [[unsafePath]])
+  test.each(['../escape.js', '/absolute.js', 'nested\\\\escape.js', ''])(
+    'rejects unsafe manifest path %j',
+    async (unsafePath: string) => {
+      const dirs = await fixture()
+      await put(dirs.currentAssetsDir, 'current.js')
+      await manifest(dirs.previousAssetsDir, [[unsafePath]])
 
-    await expect(retainBuildAssets(dirs)).rejects.toThrow('unsafe')
-  })
+      await expect(retainBuildAssets(dirs)).rejects.toThrow('unsafe')
+    },
+  )
 
   test('rejects symlinked prior files', async () => {
     const dirs = await fixture()

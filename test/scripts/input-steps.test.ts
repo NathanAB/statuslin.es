@@ -32,14 +32,12 @@ describe('parseInputStepsArgs', () => {
     expect(parseInputStepsArgs(argv)).toEqual(expected)
   })
 
-  it.each([
-    [[]],
-    [['--apply', 'meter']],
-    [['--prepare', 'a', 'b']],
-    [['--nope']],
-  ])('refuses %j with the usage', (argv) => {
-    expect(() => parseInputStepsArgs(argv)).toThrow(/Usage/)
-  })
+  it.each([[[]], [['--apply', 'meter']], [['--prepare', 'a', 'b']], [['--nope']]])(
+    'refuses %j with the usage',
+    (argv) => {
+      expect(() => parseInputStepsArgs(argv)).toThrow(/Usage/)
+    },
+  )
 })
 
 describe('runInputStepsCommand', () => {

@@ -210,17 +210,16 @@ describe('snapshot hardening', () => {
     expect(events.slice(-2)).toEqual(['snapshot', 'kill'])
   })
 
-  it.each([
-    ...HARDENING_STEPS,
-    ...ROOT_ASSERTIONS,
-    ...USER_ASSERTIONS,
-  ])('takes no snapshot when `%s` fails', async (assertion) => {
-    const { sandbox } = fakeE2b((cmd) => cmd === assertion)
+  it.each([...HARDENING_STEPS, ...ROOT_ASSERTIONS, ...USER_ASSERTIONS])(
+    'takes no snapshot when `%s` fails',
+    async (assertion) => {
+      const { sandbox } = fakeE2b((cmd) => cmd === assertion)
 
-    await expect(buildModSnapshot()).rejects.toThrow(assertion)
-    expect(sandbox.createSnapshot).not.toHaveBeenCalled()
-    expect(sandbox.kill).toHaveBeenCalled()
-  })
+      await expect(buildModSnapshot()).rejects.toThrow(assertion)
+      expect(sandbox.createSnapshot).not.toHaveBeenCalled()
+      expect(sandbox.kill).toHaveBeenCalled()
+    },
+  )
 
   it('runs no hardening in the status line build', async () => {
     const { events, sandbox } = fakeE2b()

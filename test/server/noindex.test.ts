@@ -63,19 +63,16 @@ describe('noindexMiddleware', () => {
     expect(response.headers.has('X-Robots-Tag')).toBe(false)
   })
 
-  it.each([
-    '',
-    'false',
-    '1',
-    'yes',
-    'TRUE',
-  ])('leaves responses untagged when the flag is %j', async (value) => {
-    vi.stubEnv(NOINDEX_FLAG, value)
+  it.each(['', 'false', '1', 'yes', 'TRUE'])(
+    'leaves responses untagged when the flag is %j',
+    async (value) => {
+      vi.stubEnv(NOINDEX_FLAG, value)
 
-    const response = await responseThrough('https://statuslin.es/guide', htmlPage())
+      const response = await responseThrough('https://statuslin.es/guide', htmlPage())
 
-    expect(response.headers.has('X-Robots-Tag')).toBe(false)
-  })
+      expect(response.headers.has('X-Robots-Tag')).toBe(false)
+    },
+  )
 
   it('runs first, so it also tags the 404s and redirects the other request middleware return', async () => {
     const { requestMiddleware } = await startInstance.getOptions()

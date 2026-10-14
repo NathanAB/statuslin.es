@@ -3,6 +3,7 @@ import { createMemoryHistory } from '@tanstack/react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GUIDE_DESCRIPTION, GUIDE_TITLE_BASE } from '@/lib/page-title'
 import { Route as GuideRoute } from '@/routes/guide'
+import { serverResult } from './server-result'
 
 vi.mock('@/lib/analytics-config', () => ({
   getAnalyticsToken: vi.fn().mockResolvedValue(null),
@@ -34,8 +35,7 @@ describe('/guide page', () => {
 
     await router.load()
 
-    expect(router.stores.statusCode.get()).not.toBe(301)
-    expect(router.stores.redirect.get()).toBeFalsy()
+    expect(serverResult(router)).toMatchObject({ type: 'render', status: 200 })
     expect(router.state.location.pathname).toBe('/guide')
   })
 

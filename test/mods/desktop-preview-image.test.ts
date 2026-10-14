@@ -113,11 +113,14 @@ describe('modDesktopPreviewResponse', () => {
     ['no render', null],
     ['another render', '1'],
     ['a render that is not a number', 'abc'],
-  ])('is a 404 for the current shot named with %s, so made-up URLs miss every cache', async (_name, render) => {
-    for (const image of [null, 'card']) {
-      expect((await modDesktopPreviewResponse(db, ids.live as string, render, image)).status).toBe(
-        404,
-      )
-    }
-  })
+  ])(
+    'is a 404 for the current shot named with %s, so made-up URLs miss every cache',
+    async (_name, render) => {
+      for (const image of [null, 'card']) {
+        expect(
+          (await modDesktopPreviewResponse(db, ids.live as string, render, image)).status,
+        ).toBe(404)
+      }
+    },
+  )
 })

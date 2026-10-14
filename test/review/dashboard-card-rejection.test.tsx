@@ -187,27 +187,27 @@ describe('SubmissionCard rejection actions', () => {
     )
   })
 
-  it.each([
-    'sending',
-    'ambiguous',
-  ])('shows %s rejection delivery for reconciliation without a retry action', (deliveryStatus) => {
-    render(<SubmissionCard row={row('rejected', deliveryStatus)} />)
+  it.each(['sending', 'ambiguous'])(
+    'shows %s rejection delivery for reconciliation without a retry action',
+    (deliveryStatus) => {
+      render(<SubmissionCard row={row('rejected', deliveryStatus)} />)
 
-    expect(
-      screen.getByText('Email delivery is unconfirmed. Check Resend before taking action.'),
-    ).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Retry email' })).toBeNull()
-  })
+      expect(
+        screen.getByText('Email delivery is unconfirmed. Check Resend before taking action.'),
+      ).toBeTruthy()
+      expect(screen.queryByRole('button', { name: 'Retry email' })).toBeNull()
+    },
+  )
 
-  it.each([
-    'sending',
-    'ambiguous',
-  ])('shows %s approval delivery for reconciliation without a retry action', (deliveryStatus) => {
-    render(<SubmissionCard row={row('approved', null, deliveryStatus)} />)
+  it.each(['sending', 'ambiguous'])(
+    'shows %s approval delivery for reconciliation without a retry action',
+    (deliveryStatus) => {
+      render(<SubmissionCard row={row('approved', null, deliveryStatus)} />)
 
-    expect(
-      screen.getByText('Email delivery is unconfirmed. Check Resend before taking action.'),
-    ).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Retry email' })).toBeNull()
-  })
+      expect(
+        screen.getByText('Email delivery is unconfirmed. Check Resend before taking action.'),
+      ).toBeTruthy()
+      expect(screen.queryByRole('button', { name: 'Retry email' })).toBeNull()
+    },
+  )
 })

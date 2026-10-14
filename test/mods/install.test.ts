@@ -50,21 +50,19 @@ describe('modCopyEvent', () => {
     }
   })
 
-  it.each([
-    'session',
-    'shell',
-    'desktop',
-    'terminal',
-  ])('refuses the retired "%s" command kind', (kind) => {
-    expect(
-      modCopyEvent({
-        kind: kind as 'prompt',
-        modId: 'mod-1',
-        distinctId: 'did',
-        signedInUserId: null,
-      }),
-    ).toBeNull()
-  })
+  it.each(['session', 'shell', 'desktop', 'terminal'])(
+    'refuses the retired "%s" command kind',
+    (kind) => {
+      expect(
+        modCopyEvent({
+          kind: kind as 'prompt',
+          modId: 'mod-1',
+          distinctId: 'did',
+          signedInUserId: null,
+        }),
+      ).toBeNull()
+    },
+  )
 
   it('returns null with no one to attribute the copy to', () => {
     expect(

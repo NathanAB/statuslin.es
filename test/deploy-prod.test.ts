@@ -165,11 +165,12 @@ describe('assertAssetResponse', () => {
       }),
       /immutable/i,
     ],
-  ] satisfies Array<
-    [Response, RegExp]
-  >)('rejects invalid retained asset responses', async (response, message) => {
-    await expect(
-      assertAssetResponse('https://staging.statuslin.es/assets/old.css', response),
-    ).rejects.toThrow(message)
-  })
+  ] satisfies Array<[Response, RegExp]>)(
+    'rejects invalid retained asset responses',
+    async (response, message) => {
+      await expect(
+        assertAssetResponse('https://staging.statuslin.es/assets/old.css', response),
+      ).rejects.toThrow(message)
+    },
+  )
 })

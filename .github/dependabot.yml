@@ -6,18 +6,75 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+    ignore:
+      # Moves with the Bun in the Dockerfile and CI. `bun run check:deps` keeps the three equal.
+      - dependency-name: '@types/bun'
     groups:
-      # vitest and its plugins must share a version: a lone @vitest/coverage-v8 major
-      # bump against an older vitest crashes the coverage run.
+      # Packages that must share a version move together at any update type, majors included.
+      # Dependabot puts a package in the group with its most specific matching pattern, so these
+      # win over everything-else.
+      #
+      # A lone @vitest/coverage-v8 major against an older vitest crashes the coverage run.
       vitest:
         patterns:
           - vitest
           - '@vitest/*'
-      # react-dom throws at load unless react is the exact same version, so a lone
-      # react bump crashes every render.
+      # react-dom throws at load unless react is the exact same version.
       react:
         patterns:
           - react
           - react-dom
           - '@types/react'
           - '@types/react-dom'
+      # @tailwindcss/vite pins tailwindcss exactly. Bumped alone, the plugin keeps compiling with
+      # the old copy.
+      tailwind:
+        patterns:
+          - tailwindcss
+          - '@tailwindcss/*'
+      # @tanstack/react-start pins @tanstack/react-router exactly, and nitro is Start's server.
+      tanstack:
+        patterns:
+          - '@tanstack/*'
+          - nitro
+      # better-auth pins @better-auth/core exactly, which the adapter builds on.
+      better-auth:
+        patterns:
+          - better-auth
+          - '@better-auth/*'
+      # Every other minor and patch update, in one PR. Majors of packages outside the groups
+      # above, and the packages excluded below, come one PR each.
+      everything-else:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          # 0.x packages. Dependabot calls 0.26 → 0.47 "minor", but a 0.x release can break
+          # anything. `bun run check:deps` fails when a 0.x dependency is missing here.
+          - '@electric-sql/pglite'
+          - '@number-flow/react'
+          - class-variance-authority
+          - drizzle-kit
+          - drizzle-orm
+          - satori
+          - vitest-axe
+          # The sandbox that runs untrusted scripts. Every e2b update needs `bun run test:e2b`.
+          - e2b
+          # Biome minors change formatting and add lint rules, so an update needs `biome migrate`
+          # and `bun run format`. Alone, it can't hold up the rest of the batch.
+          - '@biomejs/biome'
+
+  # The Bun image the Dockerfile builds production on. A new Bun release opens a PR here, and
+  # `bun run check:deps` fails on it until ci.yml and @types/bun move to the same version.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
