@@ -167,24 +167,22 @@ better-auth.session_token=token.signature==
     ).not.toThrow()
   })
 
-  it.each([
-    'sent',
-    'failed',
-    'unavailable',
-    'ambiguous',
-  ])('requires a published corrected version after %s approval email delivery', (approvalEmailStatus) => {
-    expect(() =>
-      assertPublishedAfterApprovalDelivery(
-        {
-          configStatus: 'published',
-          currentVersionId: 'version-2',
-          versionStatus: 'approved',
-          approvalEmailStatus,
-        },
-        'version-2',
-      ),
-    ).not.toThrow()
-  })
+  it.each(['sent', 'failed', 'unavailable', 'ambiguous'])(
+    'requires a published corrected version after %s approval email delivery',
+    (approvalEmailStatus) => {
+      expect(() =>
+        assertPublishedAfterApprovalDelivery(
+          {
+            configStatus: 'published',
+            currentVersionId: 'version-2',
+            versionStatus: 'approved',
+            approvalEmailStatus,
+          },
+          'version-2',
+        ),
+      ).not.toThrow()
+    },
+  )
 
   it('rejects a non-terminal approval email status', () => {
     expect(() =>

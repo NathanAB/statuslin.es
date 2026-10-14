@@ -409,14 +409,15 @@ describe('importMods', () => {
       expect(lines[0]).toMatch(/^refused skins: tar: x+… \(\d+ more characters\)$/)
     })
 
-    it.each([
-      0, 1, 2, 3, 4, 5,
-    ])('cuts a long line between escapes, never inside one (offset %i)', async (offset) => {
-      const sandboxError = new Error(`${'x'.repeat(offset)}${'\u0007'.repeat(200)}`)
-      const { lines } = await run([entry()], fakes({ sandboxError }))
+    it.each([0, 1, 2, 3, 4, 5])(
+      'cuts a long line between escapes, never inside one (offset %i)',
+      async (offset) => {
+        const sandboxError = new Error(`${'x'.repeat(offset)}${'\u0007'.repeat(200)}`)
+        const { lines } = await run([entry()], fakes({ sandboxError }))
 
-      expect(lines[0]).toMatch(/^refused skins: x*(\\u0007)+… \(\d+ more characters\)$/)
-    })
+        expect(lines[0]).toMatch(/^refused skins: x*(\\u0007)+… \(\d+ more characters\)$/)
+      },
+    )
   })
 
   describe('refuses plugin facts past the stored limits and writes nothing', () => {

@@ -128,10 +128,10 @@ describe('GalleryControls analytics', () => {
 describe('GalleryControls kind filter', () => {
   const searchAfterClicking = (name: string, prev: Record<string, unknown>) => {
     fireEvent.click(screen.getByRole('radio', { name }))
-    const { search } = navigate.mock.calls[0]?.[0] as {
-      search: (prev: Record<string, unknown>) => Record<string, unknown>
-    }
-    return search(prev)
+    const call = navigate.mock.calls[0]?.[0] as
+      | { search: (prev: Record<string, unknown>) => Record<string, unknown> }
+      | undefined
+    return call?.search(prev)
   }
 
   it('is one segmented control, with the active kind checked', () => {

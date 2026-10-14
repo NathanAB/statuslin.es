@@ -148,7 +148,9 @@ describe('facet page content', () => {
 
   it('emits FAQPage JSON-LD only for facets with an FAQ', async () => {
     const faqPage = (await headFor('quota')).find((node) => node['@type'] === 'FAQPage')
-    expect((faqPage?.mainEntity as Array<{ name: string }>).map((q) => q.name)).toEqual([
+    expect(
+      (faqPage?.mainEntity as Array<{ name: string }> | undefined)?.map((q) => q.name),
+    ).toEqual([
       'Why is rate_limits missing from my status line input?',
       'How do I show when my limit resets?',
       'What is the difference between five_hour and seven_day?',

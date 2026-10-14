@@ -14,6 +14,7 @@ import {
 } from '@/lib/page-title'
 import { Route as ModSafetyRoute } from '@/routes/guide_.are-claude-code-mods-safe'
 import { Route as StatusLinesVsModsRoute } from '@/routes/guide_.status-lines-vs-mods'
+import { serverResult } from './server-result'
 
 vi.mock('@/lib/analytics-config', () => ({
   getAnalyticsToken: vi.fn().mockResolvedValue(null),
@@ -60,7 +61,7 @@ describe.each(GUIDES)('$path page', (guide) => {
 
     await router.load()
 
-    expect(router.stores.redirect.get()).toBeFalsy()
+    expect(serverResult(router)).toMatchObject({ type: 'render', status: 200 })
     expect(router.state.matches.at(-1)?.routeId).toBe(guide.routeId)
   })
 

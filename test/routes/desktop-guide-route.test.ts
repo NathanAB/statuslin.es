@@ -5,6 +5,7 @@ import { DESKTOP_GUIDE_DESCRIPTION, DESKTOP_GUIDE_TITLE_BASE } from '@/lib/page-
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import type { ModDetail } from '@/mods/queries'
 import { Route as DesktopGuideRoute } from '@/routes/guide_.claude-desktop'
+import { serverResult } from './server-result'
 
 vi.mock('@/lib/analytics-config', () => ({
   getAnalyticsToken: vi.fn().mockResolvedValue(null),
@@ -45,7 +46,7 @@ describe('/guide/claude-desktop page', () => {
 
     await router.load()
 
-    expect(router.stores.redirect.get()).toBeFalsy()
+    expect(serverResult(router)).toMatchObject({ type: 'render', status: 200 })
     expect(router.state.matches.at(-1)?.routeId).toBe('/guide_/claude-desktop')
   })
 

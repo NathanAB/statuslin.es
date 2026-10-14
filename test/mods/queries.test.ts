@@ -166,15 +166,15 @@ describe('hasAnyMods', () => {
     expect(await hasAnyMods(db)).toBe(false)
   })
 
-  it.each([
-    'removed',
-    'draft',
-  ] as const)('is true when the only mod is %s, though none is listed', async (status) => {
-    await addMod('lonely', status, 'scenario-preview')
+  it.each(['removed', 'draft'] as const)(
+    'is true when the only mod is %s, though none is listed',
+    async (status) => {
+      await addMod('lonely', status, 'scenario-preview')
 
-    expect(await listedSlugs()).toEqual([])
-    expect(await hasAnyMods(db)).toBe(true)
-  })
+      expect(await listedSlugs()).toEqual([])
+      expect(await hasAnyMods(db)).toBe(true)
+    },
+  )
 })
 
 describe('versionIsRendered', () => {

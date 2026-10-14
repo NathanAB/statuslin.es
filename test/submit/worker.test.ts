@@ -138,23 +138,22 @@ describe('requeueStaleJobs', () => {
     expect(await jobStatus(versionId)).toBe('queued')
   })
 
-  it.each([
-    'approved',
-    'rejected',
-    'superseded',
-  ] as const)('fails a stale job whose submission is %s instead of rendering it again', async (decided) => {
-    const offline = await submitRunning(`Decided offline ${decided}`, staleStart())
-    const network = await submitRunning(`Decided online ${decided}`, staleStart(), ['wttr.in'])
-    await db
-      .update(schema.submissions)
-      .set({ status: decided })
-      .where(inArray(schema.submissions.id, [offline, network]))
+  it.each(['approved', 'rejected', 'superseded'] as const)(
+    'fails a stale job whose submission is %s instead of rendering it again',
+    async (decided) => {
+      const offline = await submitRunning(`Decided offline ${decided}`, staleStart())
+      const network = await submitRunning(`Decided online ${decided}`, staleStart(), ['wttr.in'])
+      await db
+        .update(schema.submissions)
+        .set({ status: decided })
+        .where(inArray(schema.submissions.id, [offline, network]))
 
-    expect(await requeueStaleJobs(db)).toBe(2)
+      expect(await requeueStaleJobs(db)).toBe(2)
 
-    expect(await jobStatus(offline)).toBe('failed')
-    expect(await jobStatus(network)).toBe('failed')
-  })
+      expect(await jobStatus(offline)).toBe('failed')
+      expect(await jobStatus(network)).toBe('failed')
+    },
+  )
 
   it('leaves done jobs untouched', async () => {
     const versionId = await submitRunning('Done', staleStart())
@@ -218,33 +217,36 @@ describe('processNextRenderJob', () => {
   it.each([
     ['finishes', () => new FakeSandboxRunner().render],
     ['fails', () => () => Promise.reject(new Error('sandbox down'))],
-  ] as const)('leaves a job another machine re-claimed alone when the first run %s', async (_outcome, makeRender) => {
-    const { versionId } = await submitConfig(db, {
-      authorId: 'u1',
-      title: 'Slow but live',
-      description: '',
-      interpreter: 'bash',
-      source: '#!/bin/bash\necho slow',
-    })
-    const finish = makeRender()
-    const reclaimedAt = new Date(Date.now() + 60_000)
-    const runner: SandboxRunner = {
-      async render(input) {
-        // Another machine re-queued this job as cut off, then claimed it again.
-        await db
-          .update(schema.renderJobs)
-          .set({ status: 'running', startedAt: reclaimedAt })
-          .where(eq(schema.renderJobs.configVersionId, versionId))
-        return finish(input)
-      },
-    }
+  ] as const)(
+    'leaves a job another machine re-claimed alone when the first run %s',
+    async (_outcome, makeRender) => {
+      const { versionId } = await submitConfig(db, {
+        authorId: 'u1',
+        title: 'Slow but live',
+        description: '',
+        interpreter: 'bash',
+        source: '#!/bin/bash\necho slow',
+      })
+      const finish = makeRender()
+      const reclaimedAt = new Date(Date.now() + 60_000)
+      const runner: SandboxRunner = {
+        async render(input) {
+          // Another machine re-queued this job as cut off, then claimed it again.
+          await db
+            .update(schema.renderJobs)
+            .set({ status: 'running', startedAt: reclaimedAt })
+            .where(eq(schema.renderJobs.configVersionId, versionId))
+          return finish(input)
+        },
+      }
 
-    await processNextRenderJob(db, runner)
+      await processNextRenderJob(db, runner)
 
-    const job = await jobRow(versionId)
-    expect(job).toMatchObject({ status: 'running', startedAt: reclaimedAt, error: null })
-    expect(job?.finishedAt).toBeNull()
-  })
+      const job = await jobRow(versionId)
+      expect(job).toMatchObject({ status: 'running', startedAt: reclaimedAt, error: null })
+      expect(job?.finishedAt).toBeNull()
+    },
+  )
 
   it('renders a script that prints a NUL byte, which Postgres cannot store', async () => {
     const { versionId } = await submitConfig(db, {
@@ -454,37 +456,40 @@ describe('drainRenderJobs', () => {
   it.each([
     [[], 'queued'],
     [['wttr.in'], 'held'],
-  ] as const)('once stopped, puts a job with hosts %j back as %s and claims no more', async (networkHosts, putBackAs) => {
-    const { versionId } = await submitConfig(db, {
-      authorId: 'u1',
-      title: 'Cut off by a deploy',
-      description: '',
-      interpreter: 'bash',
-      source: '#!/bin/bash\necho deploy',
-      networkHosts: [...networkHosts],
-    })
-    if (networkHosts.length > 0) await runNetworkPreview(db, versionId)
-    const { versionId: waiting } = await submitConfig(db, {
-      authorId: 'u1',
-      title: 'Still waiting',
-      description: '',
-      interpreter: 'bash',
-      source: '#!/bin/bash\necho waiting',
-    })
-    const stop = new AbortController()
-    const runner: SandboxRunner = {
-      // The machine is shutting down: this render never gets to finish.
-      render() {
-        stop.abort()
-        return new Promise(() => {})
-      },
-    }
+  ] as const)(
+    'once stopped, puts a job with hosts %j back as %s and claims no more',
+    async (networkHosts, putBackAs) => {
+      const { versionId } = await submitConfig(db, {
+        authorId: 'u1',
+        title: 'Cut off by a deploy',
+        description: '',
+        interpreter: 'bash',
+        source: '#!/bin/bash\necho deploy',
+        networkHosts: [...networkHosts],
+      })
+      if (networkHosts.length > 0) await runNetworkPreview(db, versionId)
+      const { versionId: waiting } = await submitConfig(db, {
+        authorId: 'u1',
+        title: 'Still waiting',
+        description: '',
+        interpreter: 'bash',
+        source: '#!/bin/bash\necho waiting',
+      })
+      const stop = new AbortController()
+      const runner: SandboxRunner = {
+        // The machine is shutting down: this render never gets to finish.
+        render() {
+          stop.abort()
+          return new Promise(() => {})
+        },
+      }
 
-    expect((await drainRenderJobs(db, runner, { stop: stop.signal })).processed).toBe(0)
+      expect((await drainRenderJobs(db, runner, { stop: stop.signal })).processed).toBe(0)
 
-    expect(await jobStatus(versionId)).toBe(putBackAs)
-    expect(await jobStatus(waiting)).toBe('queued')
-  })
+      expect(await jobStatus(versionId)).toBe(putBackAs)
+      expect(await jobStatus(waiting)).toBe('queued')
+    },
+  )
 
   it('returns 0 when nothing is queued', async () => {
     expect(await drainRenderJobs(db, new FakeSandboxRunner())).toEqual({ processed: 0, cutOff: 0 })

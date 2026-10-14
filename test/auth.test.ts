@@ -121,7 +121,7 @@ describe('Better Auth session logic', () => {
     const before = await auth.api.getSession({
       headers: new Headers({ cookie: setCookie }),
     })
-    expect((before?.user as { role?: string }).role).toBe('user')
+    expect((before?.user as { role?: string } | undefined)?.role).toBe('user')
 
     // Promote directly in the DB (as a maintainer would), session unchanged.
     await pgliteDb.update(userTable).set({ role: 'admin' }).where(eq(userTable.id, userId))
@@ -130,7 +130,7 @@ describe('Better Auth session logic', () => {
     const after = await auth.api.getSession({
       headers: new Headers({ cookie: setCookie }),
     })
-    expect((after?.user as { role?: string }).role).toBe('admin')
+    expect((after?.user as { role?: string } | undefined)?.role).toBe('admin')
   })
 })
 

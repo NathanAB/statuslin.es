@@ -147,24 +147,23 @@ run('E2BSandboxRunner (integration, needs E2B_API_KEY)', () => {
         '})',
       ].join('\n'),
     },
-  ])('serves certificate-verified usage data to $interpreter', async ({
-    interpreter,
-    script,
-    scenario,
-    expected,
-  }) => {
-    const result = await new E2BSandboxRunner().render({
-      script,
-      interpreter,
-      scenario,
-      networkHosts: [ANTHROPIC_USAGE_HOST],
-      readsClaudeToken: true,
-    })
+  ])(
+    'serves certificate-verified usage data to $interpreter',
+    async ({ interpreter, script, scenario, expected }) => {
+      const result = await new E2BSandboxRunner().render({
+        script,
+        interpreter,
+        scenario,
+        networkHosts: [ANTHROPIC_USAGE_HOST],
+        readsClaudeToken: true,
+      })
 
-    expect(result.exitCode, result.stderr).toBe(0)
-    expect(result.stderr).toBe('')
-    expect(result.stdout.trim()).toBe(expected)
-  }, 60_000)
+      expect(result.exitCode, result.stderr).toBe(0)
+      expect(result.stderr).toBe('')
+      expect(result.stdout.trim()).toBe(expected)
+    },
+    60_000,
+  )
 
   it('fails closed against bad requests, mutation, process signals, and public-IP bypass', async () => {
     const publicAnthropicIps = await resolve4(ANTHROPIC_USAGE_HOST)
