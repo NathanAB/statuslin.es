@@ -5,11 +5,13 @@ import {
   STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE,
   STATUSLINE_ANYWHERE_MOD_SLUG,
 } from '@/lib/statusline-anywhere'
+import type { ModDesktopShot } from '@/mods/desktop-shot'
 import { MOD_INSTALL_MIN_VERSION } from '@/mods/install'
 import { FactTable, type FactTableRow } from '@/ui/fact-table'
 import { FaqSection } from '@/ui/faq-section'
 import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
+import { StatuslineAnywhereLink } from '@/ui/statusline-anywhere-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 
 const WHERE_EACH_SHOWS_UP: FactTableRow[] = [
@@ -18,8 +20,15 @@ const WHERE_EACH_SHOWS_UP: FactTableRow[] = [
   { label: 'The VS Code extension panel', cells: ['No', 'No'] },
 ]
 
-/** The /guide/status-lines-vs-mods page body: what each one is, where it shows, which to pick. */
-export function StatusLinesVsModsContent() {
+/**
+ * The /guide/status-lines-vs-mods page body: what each one is, where it shows, which to pick.
+ * statusline-anywhere links to its mod page once published, and to GitHub until then.
+ */
+export function StatusLinesVsModsContent({
+  statuslineAnywhere,
+}: {
+  statuslineAnywhere: ModDesktopShot
+}) {
   return (
     <Stack gap={6}>
       <Stack gap={3}>
@@ -94,9 +103,13 @@ export function StatusLinesVsModsContent() {
         <Heading level={2}>Your status line in Claude Desktop</Heading>
         <Text muted>
           You can keep your status line and still see it in Desktop.{' '}
-          <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
-            statusline-anywhere
-          </TextLink>{' '}
+          {statuslineAnywhere.kind === 'unpublished' ? (
+            <StatuslineAnywhereLink surface="status_lines_vs_mods_guide" />
+          ) : (
+            <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
+              statusline-anywhere
+            </TextLink>
+          )}{' '}
           is a mod that runs your{' '}
           <Text inline mono>
             statusLine

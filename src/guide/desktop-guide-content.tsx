@@ -4,17 +4,22 @@ import {
   STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE,
   STATUSLINE_ANYWHERE_MOD_SLUG,
 } from '@/lib/statusline-anywhere'
+import type { ModDesktopShot } from '@/mods/desktop-shot'
 import { CodeBlock } from '@/ui/code-block'
-import { DesktopShot, type DesktopShotImage } from '@/ui/desktop-shot'
+import { DesktopShot } from '@/ui/desktop-shot'
 import { Stack } from '@/ui/layout'
 import { StatuslineAnywhereLink } from '@/ui/statusline-anywhere-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 
 /**
  * The /guide/claude-desktop page body: the plugin fix first, then where to get a status line.
- * `shot` is statusline-anywhere's recorded Claude Desktop preview, or null while there is none.
+ * `statuslineAnywhere` says whether that mod's page exists to link, and its Desktop screenshot.
  */
-export function DesktopGuideContent({ shot }: { shot: DesktopShotImage | null }) {
+export function DesktopGuideContent({
+  statuslineAnywhere,
+}: {
+  statuslineAnywhere: ModDesktopShot
+}) {
   return (
     <Stack gap={6}>
       <Stack gap={3}>
@@ -37,7 +42,7 @@ export function DesktopGuideContent({ shot }: { shot: DesktopShotImage | null })
         <Text muted>
           Your status line shows above the prompt, in color. Needs Claude Code{' '}
           {STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE} or later.
-          {shot === null && (
+          {statuslineAnywhere.kind === 'no-shot' && (
             <>
               {' '}
               <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
@@ -47,9 +52,13 @@ export function DesktopGuideContent({ shot }: { shot: DesktopShotImage | null })
             </>
           )}
         </Text>
-        {shot !== null && (
+        {statuslineAnywhere.kind === 'shot' && (
           <>
-            <DesktopShot shot={shot} alt="statusline-anywhere in Claude Desktop" fit="whole" />
+            <DesktopShot
+              shot={statuslineAnywhere.shot}
+              alt="statusline-anywhere in Claude Desktop"
+              fit="whole"
+            />
             <Text muted size="sm">
               statusline-anywhere in a real Claude Desktop session, recorded by statuslin.es.{' '}
               <TextLink to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>

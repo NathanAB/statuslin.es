@@ -12,6 +12,7 @@ import {
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { Route as ModSafetyRoute } from '@/routes/guide_.are-claude-code-mods-safe'
 import { Route as StatusLinesVsModsRoute } from '@/routes/guide_.status-lines-vs-mods'
 
@@ -21,6 +22,8 @@ vi.mock('@/lib/analytics-config', () => ({
 vi.mock('@/lib/auth-functions', () => ({
   getSession: vi.fn().mockResolvedValue(null),
 }))
+const getModDesktopShotFn = vi.hoisted(() => vi.fn().mockResolvedValue({ kind: 'unpublished' }))
+vi.mock('@/mods/functions', () => ({ getModDesktopShotFn }))
 
 const { getRouter } = await import('@/router')
 
@@ -104,5 +107,19 @@ describe.each(GUIDES)('$path page', (guide) => {
     expect(faq.mainEntity.map((question) => question.name)).toEqual(
       guide.faq.map((entry) => entry.question),
     )
+  })
+})
+
+describe('/guide/status-lines-vs-mods loader', () => {
+  it('loads whether statusline-anywhere is published, through the narrow server function', async () => {
+    getModDesktopShotFn.mockResolvedValueOnce({ kind: 'no-shot' })
+    const loader = StatusLinesVsModsRoute.options.loader as (ctx: unknown) => Promise<{
+      statuslineAnywhere: unknown
+    }>
+
+    expect((await loader({})).statuslineAnywhere).toEqual({ kind: 'no-shot' })
+    expect(getModDesktopShotFn).toHaveBeenCalledWith({
+      data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG },
+    })
   })
 })

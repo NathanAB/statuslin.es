@@ -12,12 +12,20 @@ import {
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
+import { getModDesktopShotFn } from '@/mods/functions'
 import { staticPageSocialMeta } from '@/og/meta'
 import { PageShell } from '@/ui/shell'
 
 // `guide_` keeps this page out of the /guide route's layout: it's a sibling page, not a child.
 export const Route = createFileRoute('/guide_/status-lines-vs-mods')({
-  loader: async () => ({ user: await getSession() }),
+  loader: async () => {
+    const [user, statuslineAnywhere] = await Promise.all([
+      getSession(),
+      getModDesktopShotFn({ data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG } }),
+    ])
+    return { user, statuslineAnywhere }
+  },
   head: () => ({
     meta: [
       { title: STATUS_LINES_VS_MODS_GUIDE_TITLE },
@@ -44,10 +52,10 @@ export const Route = createFileRoute('/guide_/status-lines-vs-mods')({
 })
 
 function StatusLinesVsModsGuide() {
-  const { user } = Route.useLoaderData()
+  const { user, statuslineAnywhere } = Route.useLoaderData()
   return (
     <PageShell user={user}>
-      <StatusLinesVsModsContent />
+      <StatusLinesVsModsContent statuslineAnywhere={statuslineAnywhere} />
     </PageShell>
   )
 }

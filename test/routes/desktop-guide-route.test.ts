@@ -25,13 +25,13 @@ afterEach(() => {
 
 const SHOT = { src: '/mod-previews/v1/desktop.png?v=1', width: 800, height: 500 }
 
-async function loadDesktopShot(state: ModDesktopShot) {
+async function loadStatuslineAnywhere(state: ModDesktopShot) {
   getModDesktopShotFn.mockResolvedValue(state)
   const loader = DesktopGuideRoute.options.loader as (ctx: unknown) => Promise<{
-    desktopShot: unknown
+    statuslineAnywhere: unknown
   }>
   const data = await loader({})
-  return data.desktopShot
+  return data.statuslineAnywhere
 }
 
 describe('/guide/claude-desktop page', () => {
@@ -48,16 +48,17 @@ describe('/guide/claude-desktop page', () => {
     expect(router.state.matches.at(-1)?.routeId).toBe('/guide_/claude-desktop')
   })
 
-  it("loads statusline-anywhere's Desktop screenshot when the mod has one", async () => {
-    expect(await loadDesktopShot({ kind: 'shot', shot: SHOT })).toEqual(SHOT)
+  it('loads whether statusline-anywhere is published, and its Desktop screenshot', async () => {
+    for (const state of [
+      { kind: 'shot', shot: SHOT },
+      { kind: 'no-shot' },
+      { kind: 'unpublished' },
+    ] as const) {
+      expect(await loadStatuslineAnywhere(state)).toEqual(state)
+    }
     expect(getModDesktopShotFn).toHaveBeenCalledWith({
       data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG },
     })
-  })
-
-  it('loads no screenshot when the mod is unpublished or has none', async () => {
-    expect(await loadDesktopShot({ kind: 'unpublished' })).toBeNull()
-    expect(await loadDesktopShot({ kind: 'no-shot' })).toBeNull()
   })
 
   it('emits unique title, description, canonical, and social meta', async () => {

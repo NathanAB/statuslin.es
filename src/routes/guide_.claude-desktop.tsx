@@ -19,11 +19,11 @@ import { PageShell } from '@/ui/shell'
 // `guide_` keeps this page out of the /guide route's layout: it's a sibling page, not a child.
 export const Route = createFileRoute('/guide_/claude-desktop')({
   loader: async () => {
-    const [user, desktop] = await Promise.all([
+    const [user, statuslineAnywhere] = await Promise.all([
       getSession(),
       getModDesktopShotFn({ data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG } }),
     ])
-    return { user, desktopShot: desktop.kind === 'shot' ? desktop.shot : null }
+    return { user, statuslineAnywhere }
   },
   head: () => ({
     meta: [
@@ -47,10 +47,10 @@ export const Route = createFileRoute('/guide_/claude-desktop')({
 })
 
 function DesktopGuide() {
-  const { user, desktopShot } = Route.useLoaderData()
+  const { user, statuslineAnywhere } = Route.useLoaderData()
   return (
     <PageShell user={user}>
-      <DesktopGuideContent shot={desktopShot} />
+      <DesktopGuideContent statuslineAnywhere={statuslineAnywhere} />
     </PageShell>
   )
 }
