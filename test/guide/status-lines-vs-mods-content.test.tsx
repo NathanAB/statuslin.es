@@ -74,6 +74,18 @@ describe('StatusLinesVsModsContent', () => {
     }
   })
 
+  it('says a mod reads most, not all, of the numbers a status line gets', () => {
+    const { container } = render(<StatusLinesVsModsContent />)
+    const answer = screen.getByRole('heading', {
+      level: 3,
+      name: 'Can a mod show the same numbers as my status line?',
+    }).nextElementSibling
+    expect(answer?.textContent).toMatch(/^Mostly\./)
+    expect(container.textContent).toContain(
+      'A few status line fields, such as lines added and removed, have no mod equivalent yet.',
+    )
+  })
+
   it('writes "status line" as two words and uses no em dashes', () => {
     const { container } = render(<StatusLinesVsModsContent />)
     const prose = (container.textContent ?? '').replace(

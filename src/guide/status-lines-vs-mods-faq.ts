@@ -14,6 +14,6 @@ export const STATUS_LINES_VS_MODS_FAQ: FaqEntry[] = [
   {
     question: 'Can a mod show the same numbers as my status line?',
     answer:
-      'Yes. A mod reads session usage through `$.session.usage()`, which returns the same figures Claude Code sends a status line.',
+      'Mostly. A mod reads `$.session.usage()`, which gives it the context window, cost and rate-limit figures a status line gets. A few status line fields, such as lines added and removed, have no mod equivalent yet.',
   },
 ]
