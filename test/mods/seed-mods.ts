@@ -10,11 +10,15 @@ export type TestDb = ReturnType<typeof drizzle<typeof schema>>
 
 export const REPO_URL = 'https://github.com/octocat/meter'
 
-export async function openTestDb(): Promise<{ db: TestDb; close: () => Promise<void> }> {
+export async function openTestDb(): Promise<{
+  db: TestDb
+  client: PGlite
+  close: () => Promise<void>
+}> {
   const client = new PGlite()
   const db = drizzle({ client, schema })
   await migrate(db, { migrationsFolder: './drizzle' })
-  return { db, close: () => client.close() }
+  return { db, client, close: () => client.close() }
 }
 
 export function sha(char: string): string {

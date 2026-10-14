@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, type SQL, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
 import type { PgColumn, PgDatabase } from 'drizzle-orm/pg-core'
 import { type ConfigPageCopy, configPageCopySchema, readPageCopy } from '@/content/types'
 import { configs, configVersions, previews, submissions, user } from '@/db/schema'
@@ -75,8 +75,23 @@ export interface GalleryCard {
   tags: string[]
 }
 
+function holdsTags(allTags: PgColumn, tags: string[]): SQL {
+  return sql`${allTags} @> ${JSON.stringify(tags)}::jsonb`
+}
+
 export function hasAllTags(allTags: PgColumn, tags: string[]): SQL | undefined {
-  return tags.length > 0 ? sql`${allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
+  return tags.length > 0 ? holdsTags(allTags, tags) : undefined
+}
+
+/** Matches a row that holds at least one of `tags`; undefined (no filter) for no tags. */
+export function hasAnyTag(allTags: PgColumn, tags: string[]): SQL | undefined {
+  return or(...tags.map((tag) => holdsTags(allTags, [tag])))
+}
+
+/** How many of `tags` a row holds, to rank the most shared tags first. `tags` must not be empty. */
+export function sharedTagCount(allTags: PgColumn, tags: string[]): SQL<number> {
+  const held = [...new Set(tags)].map((tag) => sql`(${holdsTags(allTags, [tag])})::int`)
+  return sql<number>`(${sql.join(held, sql` + `)})`
 }
 
 /**
@@ -205,4 +220,4 @@ export { getPublishedSlugsForSitemap } from './published-at'
 // Re-exported so @/gallery/queries stays the single import surface for gallery
 // queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
-export { bySharedTags, getConfigsSharingTags, getRelatedConfigs, RELATED_LIMIT } from './related'
+export { getConfigsSharingTags, getRelatedConfigs, RELATED_LIMIT } from './related'

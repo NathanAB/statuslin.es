@@ -1,16 +1,18 @@
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import type { GalleryItem } from '@/gallery/gallery-items'
-import { getModRelated } from '@/mods/related'
+import { getModRelated, MOD_RELATED_LIMIT } from '@/mods/related'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import { addMod, addVersion, openTestDb, setCurrentVersion, sha, type TestDb } from './seed-mods'
 
 let db: TestDb
+let client: PGlite
 let close: () => Promise<void>
 
 beforeAll(async () => {
-  ;({ db, close } = await openTestDb())
+  ;({ db, client, close } = await openTestDb())
 })
 afterAll(async () => {
   await close()
@@ -37,12 +39,16 @@ async function mod(
 async function statusLine(
   slug: string,
   allTags: string[],
-  opts: { status?: 'removed'; copyCount?: number } = {},
+  opts: { status?: 'removed'; copyCount?: number; createdAt?: Date } = {},
 ) {
   const configId = await addPublishedConfig(db, slug, { allTags })
   await db
     .update(schema.configs)
-    .set({ status: opts.status ?? 'published', copyCount: opts.copyCount ?? 0 })
+    .set({
+      status: opts.status ?? 'published',
+      copyCount: opts.copyCount ?? 0,
+      ...(opts.createdAt ? { createdAt: opts.createdAt } : {}),
+    })
     .where(eq(schema.configs.id, configId))
 }
 
@@ -89,6 +95,41 @@ describe('getModRelated', () => {
       'status-line:line-3',
       'status-line:line-2',
     ])
+  })
+
+  it('reads only the top four of each from the database: most shared tags, most copied, then newest', async () => {
+    await mod('viewed', VIEWED.tags)
+    await mod('mod-one-tag', ['cost'], { copyCount: 100 })
+    await mod('mod-a', VIEWED.tags, { copyCount: 5 })
+    await mod('mod-c', VIEWED.tags, { copyCount: 3 })
+    await mod('mod-b', VIEWED.tags, { copyCount: 3 })
+    await mod('mod-d', VIEWED.tags, { copyCount: 1 })
+    await mod('mod-e', VIEWED.tags)
+    await statusLine('line-one-tag', ['cost'], { copyCount: 100 })
+    await statusLine('line-a', VIEWED.tags, { copyCount: 5 })
+    await statusLine('line-old', VIEWED.tags, { copyCount: 3, createdAt: new Date('2025-01-01') })
+    await statusLine('line-new', VIEWED.tags, { copyCount: 3, createdAt: new Date('2026-01-01') })
+    await statusLine('line-d', VIEWED.tags, { copyCount: 1 })
+    await statusLine('line-e', VIEWED.tags)
+
+    const query = vi.spyOn(client, 'query')
+    try {
+      expect(await related()).toEqual([
+        'mod:mod-a',
+        'mod:mod-b',
+        'mod:mod-c',
+        'mod:mod-d',
+        'status-line:line-a',
+        'status-line:line-new',
+        'status-line:line-old',
+        'status-line:line-d',
+      ])
+      const results = await Promise.all(query.mock.results.map((result) => result.value))
+      const rowCounts = results.map((result: { rows: unknown[] }) => result.rows.length)
+      expect(Math.max(...rowCounts)).toBeLessThanOrEqual(MOD_RELATED_LIMIT)
+    } finally {
+      query.mockRestore()
+    }
   })
 
   it('relates nothing to a mod without tags', async () => {

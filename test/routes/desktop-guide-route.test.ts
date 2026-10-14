@@ -3,7 +3,7 @@ import { createMemoryHistory } from '@tanstack/react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DESKTOP_GUIDE_DESCRIPTION, DESKTOP_GUIDE_TITLE_BASE } from '@/lib/page-title'
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
-import type { ModDetail } from '@/mods/queries'
+import type { ModDesktopShot } from '@/mods/desktop-shot'
 import { Route as DesktopGuideRoute } from '@/routes/guide_.claude-desktop'
 
 vi.mock('@/lib/analytics-config', () => ({
@@ -12,22 +12,21 @@ vi.mock('@/lib/analytics-config', () => ({
 vi.mock('@/lib/auth-functions', () => ({
   getSession: vi.fn().mockResolvedValue(null),
 }))
-const getModDetailFn = vi.hoisted(() => vi.fn())
-vi.mock('@/mods/functions', () => ({ getModDetailFn }))
+const getModDesktopShotFn = vi.hoisted(() => vi.fn())
+vi.mock('@/mods/functions', () => ({ getModDesktopShotFn }))
 
 const { getRouter } = await import('@/router')
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
   process.env.BETTER_AUTH_URL = ORIGINAL
-  getModDetailFn.mockReset()
+  getModDesktopShotFn.mockReset()
 })
 
 const SHOT = { src: '/mod-previews/v1/desktop.png?v=1', width: 800, height: 500 }
-const CARD = { src: '/mod-previews/v1/desktop.png?v=1&size=card', width: 400, height: 120 }
 
-async function loadDesktopShot(mod: Pick<ModDetail, 'desktop'> | null) {
-  getModDetailFn.mockResolvedValue(mod)
+async function loadDesktopShot(state: ModDesktopShot) {
+  getModDesktopShotFn.mockResolvedValue(state)
   const loader = DesktopGuideRoute.options.loader as (ctx: unknown) => Promise<{
     desktopShot: unknown
   }>
@@ -37,7 +36,7 @@ async function loadDesktopShot(mod: Pick<ModDetail, 'desktop'> | null) {
 
 describe('/guide/claude-desktop page', () => {
   it('loads through the real router as its own page', async () => {
-    getModDetailFn.mockResolvedValue(null)
+    getModDesktopShotFn.mockResolvedValue({ kind: 'unpublished' })
     const router = getRouter()
     router.update({
       history: createMemoryHistory({ initialEntries: ['/guide/claude-desktop'] }),
@@ -50,16 +49,15 @@ describe('/guide/claude-desktop page', () => {
   })
 
   it("loads statusline-anywhere's Desktop screenshot when the mod has one", async () => {
-    expect(await loadDesktopShot({ desktop: { kind: 'shot', shot: SHOT, card: CARD } })).toEqual(
-      SHOT,
-    )
-    expect(getModDetailFn).toHaveBeenCalledWith({ data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG } })
+    expect(await loadDesktopShot({ kind: 'shot', shot: SHOT })).toEqual(SHOT)
+    expect(getModDesktopShotFn).toHaveBeenCalledWith({
+      data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG },
+    })
   })
 
-  it('loads no screenshot when the mod is unpublished, unrendered, or drew nothing', async () => {
-    expect(await loadDesktopShot(null)).toBeNull()
-    expect(await loadDesktopShot({ desktop: null })).toBeNull()
-    expect(await loadDesktopShot({ desktop: { kind: 'nothing' } })).toBeNull()
+  it('loads no screenshot when the mod is unpublished or has none', async () => {
+    expect(await loadDesktopShot({ kind: 'unpublished' })).toBeNull()
+    expect(await loadDesktopShot({ kind: 'no-shot' })).toBeNull()
   })
 
   it('emits unique title, description, canonical, and social meta', async () => {
