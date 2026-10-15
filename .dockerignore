@@ -38,6 +38,7 @@ Dockerfile*
 .superpowers
 .claude
 .worktrees
+.verify
 .agents
 .github
 .vscode
