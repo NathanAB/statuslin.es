@@ -53,11 +53,22 @@ const JUSTIFY_CLASS = {
   end: 'justify-end',
 } as const
 
+// pointer-events inherits, so `none` on the row reaches every descendant; the controls
+// (and tooltip triggers, which need hover) switch it back on for themselves.
+const ABOVE_OVERLAY_CLASS = [
+  'pointer-events-none relative z-10',
+  '[&_a]:pointer-events-auto [&_button]:pointer-events-auto',
+  '[&_[data-slot=tooltip-trigger]]:pointer-events-auto',
+].join(' ')
+
 /** Horizontal flex row. `align` defaults to center (the common title/footer case).
  *  `grow` lets the row take the leftover width in a flex parent. It never shrinks below
  *  its min-content, so a `wrap` row wraps down to its widest child and no narrower.
  *  `aboveOverlay` stacks the row over a sibling StretchedLink overlay inside an
- *  interactive Card, so its buttons/links stay clickable (relative z-10). */
+ *  interactive Card, so its buttons/links stay clickable (relative z-10). Only `a`,
+ *  `button` and tooltip triggers take the click; anything else in the row (gaps, wrap
+ *  gutters, plain badges) passes it through to the card link, so no part of the card is
+ *  dead. Another control (input, select, label) here would need its own pointer events. */
 export function Row({
   gap,
   align = 'center',
@@ -77,7 +88,7 @@ export function Row({
 }) {
   return (
     <div
-      className={`flex ${wrap ? `flex-wrap ${GAP_CLASS_Y[gap]}` : ''} ${grow ? 'flex-1' : ''} ${aboveOverlay ? 'relative z-10' : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
+      className={`flex ${wrap ? `flex-wrap ${GAP_CLASS_Y[gap]}` : ''} ${grow ? 'flex-1' : ''} ${aboveOverlay ? ABOVE_OVERLAY_CLASS : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
     >
       {children}
     </div>

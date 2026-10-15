@@ -58,6 +58,18 @@ describe('GalleryConfigCard', () => {
 
     expect(screen.getByText('Status line')).toBeTruthy()
   })
+
+  it("keeps the author's GitHub link clickable above the card's overlay", () => {
+    render(
+      <GalleryConfigCard
+        card={{ ...exampleCard, author: { name: 'Octo', username: 'octocat', image: null } }}
+      />,
+    )
+
+    const author = screen.getByRole('link', { name: '@octocat' })
+    expect(author.getAttribute('href')).toBe('https://github.com/octocat')
+    expect(author.closest('.z-10')).toBeTruthy()
+  })
 })
 
 describe('GalleryConfigCard analytics', () => {

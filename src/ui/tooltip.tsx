@@ -23,7 +23,11 @@ export function Tooltip({
 }) {
   return (
     <TooltipPrimitive.Root>
-      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
+      {/* Row's aboveOverlay keys on this slot to keep the trigger hoverable over a card link.
+          With asChild the child's own data-slot wins, so wrap a slotted child in a span. */}
+      <TooltipPrimitive.Trigger asChild data-slot="tooltip-trigger">
+        {children}
+      </TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
           data-slot="tooltip-content"
