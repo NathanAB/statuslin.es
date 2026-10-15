@@ -122,6 +122,14 @@ type TextLinkProps =
       onClick?: () => void
     }
 
+/** Glide to a hash target, or jump when the reader asks for reduced motion. */
+function hashScrollOptions(): ScrollIntoViewOptions {
+  const reduce =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+  return { behavior: reduce ? 'auto' : 'smooth', block: 'start' }
+}
+
 export function TextLink(props: TextLinkProps) {
   const className = cn(
     'text-primary underline-offset-4 hover:underline',
@@ -149,7 +157,9 @@ export function TextLink(props: TextLinkProps) {
       to={props.to}
       {...(props.search !== undefined ? { search: props.search } : {})}
       {...(props.params !== undefined ? { params: props.params } : {})}
-      {...(props.hash !== undefined ? { hash: props.hash } : {})}
+      {...(props.hash !== undefined
+        ? { hash: props.hash, hashScrollIntoView: hashScrollOptions() }
+        : {})}
       className={className}
     >
       {props.children}

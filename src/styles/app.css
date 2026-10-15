@@ -111,6 +111,10 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+  /* A link that scrolls to a section stops a little above it, not flush with the window edge. */
+  section[id] {
+    scroll-margin-top: calc(var(--spacing) * 6);
+  }
 }
 
 /* Shiki source block (src/ui/highlighted-code.tsx): match the site's code wells. The highlighter
