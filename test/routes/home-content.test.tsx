@@ -75,7 +75,7 @@ describe('home content', () => {
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
     expect(h1s[0]?.textContent).toBe(HOME_HEADING)
-    expect(HOME_HEADING).toBe('Claude Code mods and status lines')
+    expect(HOME_HEADING).toBe('Claude Code status lines and mods')
   })
 
   it('names the page number in the h1 past page 1', () => {
@@ -83,7 +83,7 @@ describe('home content', () => {
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    expect(h1s[0]?.textContent).toBe('Claude Code mods and status lines, page 2')
+    expect(h1s[0]?.textContent).toBe('Claude Code status lines and mods, page 2')
   })
 
   it('sits the heading beside the wordmark, with no browse-by-feature row', () => {

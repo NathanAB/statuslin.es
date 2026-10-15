@@ -66,14 +66,15 @@ export const MOD_NOT_FOUND_TITLE = 'Mod not found — statuslin.es'
 export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
 
 /**
- * The home page's title base — shared by the <title> tag, og:title and the home JSON-LD name. Mods
- * lead because they are the larger search since they launched in Claude Code; these are
- * community-submitted, so the title says "mods & status lines" rather than "examples" or "templates".
+ * The home page's title base — shared by the <title> tag, og:title and the home JSON-LD name. Status
+ * lines lead because the site can win that search, while Anthropic's docs and larger directories
+ * hold "Claude Code mods". These are community-submitted, so the title says "status lines & mods"
+ * rather than "examples" or "templates".
  */
-export const HOME_TITLE_BASE = 'Claude Code Mods & Status Lines'
-export const HOME_HEADING = 'Claude Code mods and status lines'
+export const HOME_TITLE_BASE = 'Claude Code Status Lines & Mods'
+export const HOME_HEADING = 'Claude Code status lines and mods'
 export const HOME_DESCRIPTION_BASE =
-  'Browse Claude Code mods and status lines with real previews. Install a mod with one command or copy a status line in one paste.'
+  'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.'
 
 function homePageSuffix(page: number): string {
   return page > 1 ? ` — Page ${page}` : ''

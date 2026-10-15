@@ -41,12 +41,12 @@ describe('configPageTitle', () => {
   })
 
   it('exposes the home title base for the title tag and JSON-LD to share', () => {
-    expect(HOME_TITLE_BASE).toBe('Claude Code Mods & Status Lines')
+    expect(HOME_TITLE_BASE).toBe('Claude Code Status Lines & Mods')
   })
 
-  it('titles the home page mods first, with the page number past page 1', () => {
-    expect(homePageTitle(1)).toBe('Claude Code Mods & Status Lines | statuslin.es')
-    expect(homePageTitle(2)).toBe('Claude Code Mods & Status Lines — Page 2 | statuslin.es')
+  it('titles the home page status lines first, with the page number past page 1', () => {
+    expect(homePageTitle(1)).toBe('Claude Code Status Lines & Mods | statuslin.es')
+    expect(homePageTitle(2)).toBe('Claude Code Status Lines & Mods — Page 2 | statuslin.es')
   })
 
   it('keeps the rendered home title inside the length Google shows', () => {
@@ -54,8 +54,8 @@ describe('configPageTitle', () => {
     expect(homePageTitle(20).length).toBeLessThanOrEqual(60)
   })
 
-  it('describes the home page mods first, inside the length Google shows', () => {
-    expect(homeMetaDescription(1, 1)).toMatch(/\bmods\b.*\bstatus lines\b/)
+  it('describes the home page status lines first, inside the length Google shows', () => {
+    expect(homeMetaDescription(1, 1)).toMatch(/\bstatus lines\b.*\bmods\b/)
     expect(homeMetaDescription(1, 1).length).toBeLessThanOrEqual(160)
     expect(homeMetaDescription(20, 20).length).toBeLessThanOrEqual(160)
   })

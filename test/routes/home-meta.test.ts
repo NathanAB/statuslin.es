@@ -21,11 +21,11 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Mods & Status Lines | statuslin.es' },
+        { title: 'Claude Code Status Lines & Mods | statuslin.es' },
         {
           name: 'description',
           content:
-            'Browse Claude Code mods and status lines with real previews. Install a mod with one command or copy a status line in one paste.',
+            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
         },
       ]),
     )
@@ -46,18 +46,18 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Mods & Status Lines — Page 2 | statuslin.es' },
+        { title: 'Claude Code Status Lines & Mods — Page 2 | statuslin.es' },
         {
           name: 'description',
           content:
-            'Browse Claude Code mods and status lines with real previews. Install a mod with one command or copy a status line in one paste. Page 2 of 3.',
+            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
         { property: 'og:url', content: 'https://statuslin.es/?page=2' },
-        { property: 'og:title', content: 'Claude Code Mods & Status Lines — Page 2' },
+        { property: 'og:title', content: 'Claude Code Status Lines & Mods — Page 2' },
         {
           property: 'og:description',
           content:
-            'Browse Claude Code mods and status lines with real previews. Install a mod with one command or copy a status line in one paste. Page 2 of 3.',
+            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
       ]),
     )
@@ -71,7 +71,7 @@ describe('home search indexing metadata', () => {
       .map((script) => JSON.parse(script.children) as Record<string, unknown>)
       .find((node) => node['@type'] === 'CollectionPage')
     expect(collectionPage).toMatchObject({
-      name: 'Claude Code Mods & Status Lines — Page 2',
+      name: 'Claude Code Status Lines & Mods — Page 2',
       url: 'https://statuslin.es/?page=2',
     })
   })

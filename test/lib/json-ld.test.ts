@@ -45,7 +45,7 @@ describe('homeJsonLd', () => {
     expect(nodes[1]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Claude Code Mods & Status Lines',
+      name: 'Claude Code Status Lines & Mods',
       url: 'https://statuslin.es',
       mainEntity: {
         '@type': 'ItemList',
@@ -83,7 +83,7 @@ describe('homeJsonLd', () => {
     })
     expect(nodes[1]).toMatchObject({
       '@type': 'CollectionPage',
-      name: 'Claude Code Mods & Status Lines — Page 2',
+      name: 'Claude Code Status Lines & Mods — Page 2',
       url: 'https://statuslin.es/?page=2',
       mainEntity: {
         itemListElement: [
