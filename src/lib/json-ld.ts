@@ -46,7 +46,6 @@ export function homeJsonLd(
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: SITE_NAME,
-    alternateName: 'Statuslines',
     url: origin,
   }
   const organization = {

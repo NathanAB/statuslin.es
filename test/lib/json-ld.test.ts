@@ -40,7 +40,6 @@ describe('homeJsonLd', () => {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       name: 'statuslin.es',
-      alternateName: 'Statuslines',
       url: 'https://statuslin.es',
     })
     expect(nodes[1]).toEqual({
