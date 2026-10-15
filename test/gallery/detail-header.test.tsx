@@ -52,4 +52,21 @@ describe('DetailHeader', () => {
     expect(container.textContent).toBe('statuslin.es›SoloSoloby@octocat·MIT licensed')
     expect([...container.querySelectorAll('p')].filter((p) => p.textContent === '')).toEqual([])
   })
+
+  it('puts a subtitle under the title, above the byline', () => {
+    render(
+      <DetailHeader
+        trail={[]}
+        title="Meter"
+        subtitle="A Claude Code mod that shows session cost"
+        chips={<span>chip</span>}
+        byline={BYLINE}
+        description="A meter."
+      />,
+    )
+
+    const subtitle = screen.getByText('A Claude Code mod that shows session cost')
+    expect(follows(screen.getByText('chip'), subtitle)).toBe(true)
+    expect(follows(subtitle, screen.getByText('by'))).toBe(true)
+  })
 })

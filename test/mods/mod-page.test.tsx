@@ -82,6 +82,8 @@ const MOD: ModDetail = {
   copyCount: 0,
   tags: [],
   updatedAt: '2026-09-30',
+  recordedWith: '2.1.0',
+  reviewedAt: null,
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {
@@ -196,6 +198,24 @@ describe('mod page head', () => {
     expect(og('og:title')).not.toBe(HOME_TITLE_BASE)
     expect(og('og:description')).toBe(modMetaDescription(MOD.description))
     expect(og('og:image')).toBe(`${ORIGIN}/og/mods/filetree.png`)
+  })
+
+  const description = (mod: ModDetail) =>
+    head(mod).meta.find((m) => m.name === 'description')?.content
+
+  it('describes the mod by its page summary when the author’s description is short', () => {
+    expect(description({ ...MOD, generatedContent: COPY })).toBe(COPY.summary)
+    expect(description({ ...MOD, description: '', generatedContent: COPY })).toBe(COPY.summary)
+  })
+
+  it('keeps an author’s description of 60 characters or more over the summary', () => {
+    const long = 'A file tree of the current folder, in a pane beside the chat.'
+    expect(long.length).toBeGreaterThanOrEqual(60)
+    expect(description({ ...MOD, description: long, generatedContent: COPY })).toBe(long)
+  })
+
+  it('keeps a short author’s description when the version has no page copy', () => {
+    expect(description(MOD)).toBe(modMetaDescription(MOD.description))
   })
 
   it('titles a missing mod as not found', () => {
@@ -409,6 +429,42 @@ describe('mod page', () => {
 
     expect(screen.queryByRole('heading', { name: 'Install' })).toBeNull()
     expect(document.querySelector('a[href^="claude"]')).toBeNull()
+  })
+
+  it('names the mod’s job under the title from its tags, in tag order', () => {
+    renderPage({ tags: ['quota', 'multi-line', 'cost', 'network-access'] })
+
+    const title = screen.getByRole('heading', { level: 1, name: 'File Tree' })
+    const subtitle = screen.getByText('A Claude Code mod that shows session cost and rate limits')
+    expect(title.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('names one job, or three in a list', () => {
+    const { unmount } = renderPage({ tags: ['token-usage'] })
+    expect(screen.getByText('A Claude Code mod that shows context window usage')).toBeTruthy()
+    unmount()
+
+    renderPage({ tags: ['git', 'weather', 'markets'] })
+    expect(
+      screen.getByText(
+        'A Claude Code mod that shows git state, live weather, and live market prices',
+      ),
+    ).toBeTruthy()
+  })
+
+  it('shows no subtitle when no tag names a job', () => {
+    renderPage({ tags: ['minimal', 'multi-line', 'network-access'] })
+
+    expect(screen.queryByText(/A Claude Code mod that shows/)).toBeNull()
+  })
+
+  it('states the reviewed commit and the recording version as tiles', () => {
+    renderPage({ reviewedAt: '2026-10-02' })
+
+    const what = section('What it does')
+    const tile = (label: string) => what.getByText(label).closest('dt')?.nextElementSibling
+    expect(tile('Reviewed commit')?.textContent).toBe('0123456 on Oct 2, 2026')
+    expect(tile('Recorded with')?.textContent).toBe('Claude Code 2.1.0')
   })
 
   it('states the footprint’s facts as tiles in What it does', () => {

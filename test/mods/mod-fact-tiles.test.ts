@@ -3,7 +3,18 @@ import type { ModPageCopy } from '@/content/types'
 import { modFactTiles } from '@/mods/mod-fact-tiles'
 import type { ModDetail } from '@/mods/queries'
 
-type Mod = Pick<ModDetail, 'footprint' | 'preview' | 'desktop' | 'generatedContent'>
+type Mod = Pick<
+  ModDetail,
+  | 'footprint'
+  | 'preview'
+  | 'desktop'
+  | 'generatedContent'
+  | 'commitSha'
+  | 'reviewedAt'
+  | 'recordedWith'
+>
+
+const SHA = '0123456789abcdef0123456789abcdef01234567'
 
 const ABOVE = 'ui.render{component=AbovePrompt}'
 const IMAGE = { src: '/mod-previews/v1/desktop.png', width: 790, height: 520 }
@@ -14,6 +25,9 @@ const MOD: Mod = {
   preview: [{ text: 'meter' }],
   desktop: { kind: 'nothing' },
   generatedContent: null,
+  commitSha: SHA,
+  reviewedAt: '2026-09-30',
+  recordedWith: '2.1.0',
 }
 
 function withDetails(details: ModPageCopy['details']): ModPageCopy {
@@ -43,12 +57,14 @@ describe('modFactTiles', () => {
       ['Uses your plan', 'No', false],
       ['Changes files', 'Nothing', false],
       ['Network', 'None', false],
+      ['Reviewed commit', '`0123456` on Sep 30, 2026', false],
+      ['Recorded with', 'Claude Code 2.1.0', false],
     ])
   })
 
   it('keeps the footprint’s no whatever the copy claims', () => {
     const tiles = modFactTiles({ ...MOD, generatedContent: CLAIMS })
-    expect(tiles.map((tile) => tile.value).slice(2)).toEqual(['None', 'No', 'Nothing', 'None'])
+    expect(tiles.map((tile) => tile.value).slice(2, 6)).toEqual(['None', 'No', 'Nothing', 'None'])
   })
 
   it('uses the copy’s words where the footprint says yes', () => {
@@ -64,6 +80,8 @@ describe('modFactTiles', () => {
       ['Uses your plan', 'Asks the model to summarize'],
       ['Changes files', '`CLAUDE.md`, when you press Save'],
       ['Network', 'Weather from open-meteo.com'],
+      ['Reviewed commit', '`0123456` on Sep 30, 2026'],
+      ['Recorded with', 'Claude Code 2.1.0'],
     ])
   })
 
@@ -104,5 +122,13 @@ describe('modFactTiles', () => {
     expect(value({ footprint, generatedContent: CLAIMS }, 'Network')).toBe(
       'Weather from open-meteo.com',
     )
+  })
+
+  it('names the reviewed commit without a date when no review date is stored', () => {
+    expect(value({ reviewedAt: null }, 'Reviewed commit')).toBe('`0123456`')
+  })
+
+  it('leaves out the Claude Code version when no terminal preview recorded one', () => {
+    expect(value({ recordedWith: null }, 'Recorded with')).toBeUndefined()
   })
 })
