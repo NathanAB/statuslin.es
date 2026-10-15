@@ -46,13 +46,15 @@ describe('GuideContent', () => {
     for (const heading of [
       /the json your script receives/i,
       /a minimal working script/i,
-      /why isn.t git in the json/i,
+      /why isn.t the git branch in the json/i,
       /why is used_percentage null/i,
-      /how does this site know what a script prints/i,
     ]) {
       expect(screen.getByRole('heading', { level: 3, name: heading })).toBeTruthy()
     }
     expect(screen.queryByRole('heading', { level: 2, name: /the json/i })).toBeNull()
+    expect(
+      screen.queryByRole('heading', { name: /how does this site know what a script prints/i }),
+    ).toBeNull()
     expect(
       screen.getByRole('heading', { name: /why is used_percentage null/i }).nextElementSibling
         ?.textContent,
@@ -129,7 +131,21 @@ describe('GuideContent', () => {
     expect(page).toMatch(/transcript_path/)
     expect(page).toMatch(/context_window/)
     expect(page).toMatch(/rate_limits/)
-    expect(page).toMatch(/not in the payload/)
+  })
+
+  it('says which git facts the JSON has and which a script must get from git', () => {
+    render(<GuideContent highlights={highlights} />)
+    const answer = screen.getByRole('heading', { name: /why isn.t the git branch in the json/i })
+      .nextElementSibling?.textContent
+    expect(answer).toMatch(/workspace\.repo/)
+    expect(answer).toMatch(/run `?git`?/)
+  })
+
+  it('says the status line runs as soon as the settings are saved', () => {
+    const { container } = render(<GuideContent highlights={highlights} />)
+    const page = container.textContent ?? ''
+    expect(page).not.toMatch(/on your next message/i)
+    expect(page).toMatch(/as soon as you save/i)
   })
 
   it('links to the gallery, resources, submit, and the official docs', () => {

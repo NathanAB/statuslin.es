@@ -66,9 +66,7 @@ describe('DesktopGuideContent', () => {
   it('explains the cause and the plugin in the intro', () => {
     const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     expect(container.textContent).toMatch(/doesn.t run the statusLine command/i)
-    expect(container.textContent).toContain(
-      'statusline-anywhere, a Claude Code plugin, adds it back.',
-    )
+    expect(container.textContent).toContain('statusline-anywhere, a Claude Code mod, adds it back.')
   })
 
   it('gives the one-paste install, the new-session step, and the version floor', async () => {

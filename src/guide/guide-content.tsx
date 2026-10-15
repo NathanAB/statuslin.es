@@ -43,9 +43,8 @@ export function GuideContent({
       <Stack gap={3}>
         <Heading level={1}>How to set up a Claude Code status line</Heading>
         <Text muted>
-          The status line is the bar at the bottom of Claude Code. Each time it refreshes, Claude
-          Code runs your shell script, sends it a JSON snapshot on stdin, and shows whatever the
-          script prints. Start with a fast path, or skip to wiring a script by hand.
+          A status line is a bar at the bottom of Claude Code. Claude Code runs your script, pipes
+          it a JSON snapshot of the session, and shows what the script prints.
         </Text>
         <Text muted size="sm">
           Updated {GUIDE_DATES.modified}
@@ -69,7 +68,7 @@ export function GuideContent({
                 <Text inline mono>
                   ~/.claude/
                 </Text>{' '}
-                and updates your settings. Done.
+                and updates your settings.
               </Text>
             </CardContent>
           </Card>
@@ -79,7 +78,7 @@ export function GuideContent({
             </CardHeader>
             <CardContent>
               <Text muted size="sm">
-                Every config shows exactly what it renders before you install it.{' '}
+                Each status line there shows its real output before you copy it.{' '}
                 <TextLink to="/">Browse Claude Code status lines</TextLink>.
               </Text>
             </CardContent>
@@ -95,11 +94,11 @@ export function GuideContent({
               <Text inline mono>
                 ~/.claude/statusline.sh
               </Text>
-              , make it executable (
+              , run{' '}
               <Text inline mono>
                 chmod +x ~/.claude/statusline.sh
               </Text>
-              ), and point the{' '}
+              , and point the{' '}
               <Text inline mono>
                 statusLine
               </Text>{' '}
@@ -115,16 +114,15 @@ export function GuideContent({
               copyLabel="Copy settings"
             />
             <Text muted>
-              Claude Code reloads settings on its own. The status line appears on your next message.
-              Two optional fields:{' '}
+              Claude Code runs the script as soon as you save. Two optional fields:{' '}
               <Text inline mono>
                 padding
               </Text>{' '}
-              adds horizontal space so the line isn't flush with the edge, and{' '}
+              indents the line by N characters, and{' '}
               <Text inline mono>
                 refreshInterval
               </Text>{' '}
-              re-runs the script every N seconds if you show a clock or other live data. The{' '}
+              re-runs the script every N seconds, for a clock or other live data. The{' '}
               <TextLink href={DOCS_URL}>official docs</TextLink> list the rest.
             </Text>
           </Stack>
@@ -132,8 +130,8 @@ export function GuideContent({
           <Stack gap={3}>
             <Heading level={3}>The JSON your script receives</Heading>
             <Text muted>
-              Your script gets one JSON object on stdin per update. This is a real payload, the same
-              one this site uses to render every gallery preview:
+              Your script gets one JSON object on stdin per update. This is one of the payloads the
+              gallery renders previews against:
             </Text>
             <HighlightedCode
               html={highlights.payloadHtml}
@@ -157,23 +155,15 @@ export function GuideContent({
               <Text inline mono>
                 cost.total_cost_usd
               </Text>
-              . Each{' '}
-              <Text inline mono>
-                rate_limits
-              </Text>{' '}
-              window has a usage percentage and a{' '}
-              <Text inline mono>
-                resets_at
-              </Text>{' '}
-              unix timestamp. The gallery collects configs that show{' '}
+              . Browse status lines that show{' '}
               <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
                 token usage
               </TextLink>
               ,{' '}
               <TextLink to="/status-lines/$facet" params={{ facet: 'quota' }}>
                 usage limits
-              </TextLink>
-              , and{' '}
+              </TextLink>{' '}
+              or{' '}
               <TextLink to="/status-lines/$facet" params={{ facet: 'git' }}>
                 git status
               </TextLink>
@@ -201,11 +191,11 @@ export function GuideContent({
             </Text>
             <StatuslinePreview segments={EXAMPLE_SEGMENTS} />
             <Text muted>
-              You can try it without opening Claude Code: save that JSON to a file and run{' '}
+              To try it outside Claude Code, save the JSON above as sample.json and run{' '}
               <Text inline mono>
                 bash statusline.sh &lt; sample.json
               </Text>
-              . This repo's tests run that exact script against real payloads on every commit.
+              . This site's tests run this script on every commit.
             </Text>
           </Stack>
         </Stack>
@@ -216,18 +206,17 @@ export function GuideContent({
       <Stack gap={3}>
         <Heading level={2}>Going further</Heading>
         <Text muted>
-          Want more than a few fields? The{' '}
-          <TextLink to="/resources">tools & resources list</TextLink> has themes, widgets, and usage
-          trackers. Or <TextLink to="/">copy a status line from the gallery</TextLink> and tweak it.
-          If you build one you like, <TextLink to="/submit">submit it to the gallery</TextLink>.
+          The <TextLink to="/resources">tools and resources list</TextLink> has themes and usage
+          trackers. If you build a status line you like,{' '}
+          <TextLink to="/submit">submit it to the gallery</TextLink>.
         </Text>
         <Text muted>
-          Want a pane, a slash command or a display in Claude Desktop?{' '}
+          Claude Desktop's Code tab doesn't run your status line.{' '}
+          <TextLink to="/guide/claude-desktop">Here's how to show it there</TextLink>.
+        </Text>
+        <Text muted>
+          For a pane or a slash command, you need a mod.{' '}
           <TextLink to={STATUS_LINES_VS_MODS_GUIDE_PATH}>Compare status lines and mods</TextLink>.
-        </Text>
-        <Text muted>
-          Using Claude Desktop? Its Code tab doesn't show custom status lines.{' '}
-          <TextLink to="/guide/claude-desktop">Here's how to show yours there</TextLink>.
         </Text>
       </Stack>
     </Stack>
