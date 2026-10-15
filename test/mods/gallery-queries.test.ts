@@ -121,6 +121,16 @@ describe('getModSource', () => {
     expect(source.total).toBe(1)
   })
 
+  it('leaves out the excluded slug and does not count it', async () => {
+    await publishedMod('featured')
+    await publishedMod('other')
+
+    const source = await getModSource(db, { sort: 'new', excludeSlug: 'featured' })
+
+    expect(slugs(source.items.map((ranked) => ranked.item))).toEqual(['mod:other'])
+    expect(source.total).toBe(1)
+  })
+
   it('stops at the limit but still counts every match', async () => {
     await publishedMod('one')
     await publishedMod('two')

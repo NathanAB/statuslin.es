@@ -70,10 +70,17 @@ afterAll(async () => {
 async function loadFeaturedMod(
   search: { page?: number; sort?: 'new'; tags?: string; kind?: 'mods' | 'status-lines' } = {},
 ): Promise<string | null> {
+  return (await loadHome(search)).featuredMod?.slug ?? null
+}
+
+type HomeSearch = { page?: number; sort?: 'new'; tags?: string; kind?: 'mods' | 'status-lines' }
+
+function loadHome(search: HomeSearch) {
   const loader = HomeRoute.options.loader as (ctx: unknown) => Promise<{
     featuredMod: GalleryModCard | null
+    gallery: { items: Array<{ kind: string; card: { slug: string } }> }
   }>
-  return (await loader({ deps: search })).featuredMod?.slug ?? null
+  return loader({ deps: search })
 }
 
 describe('home "Featured mod" row loader', () => {
@@ -87,6 +94,15 @@ describe('home "Featured mod" row loader', () => {
     expect(await loadFeaturedMod({ tags: 'git' })).toBe(FEATURED_MOD_SLUG)
     expect(await loadFeaturedMod({ kind: 'mods' })).toBe(FEATURED_MOD_SLUG)
     expect(await loadFeaturedMod({ kind: 'status-lines' })).toBe(FEATURED_MOD_SLUG)
+  })
+
+  it('never lists the featured mod in the grid, so it shows once', async () => {
+    for (const search of [{}, { kind: 'mods' as const }, { sort: 'new' as const }, { page: 2 }]) {
+      const { gallery } = await loadHome(search)
+      expect(gallery.items.map((item) => item.card.slug)).not.toContain(FEATURED_MOD_SLUG)
+    }
+    const { gallery } = await loadHome({ kind: 'mods' })
+    expect(gallery.items.map((item) => item.card.slug)).toEqual(['other-mod'])
   })
 
   it('features none past page 1', async () => {

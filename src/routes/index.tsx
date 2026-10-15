@@ -17,6 +17,7 @@ import {
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
+import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
 import { FeaturedModRow } from '@/mods/featured-mod-row'
 import { getFeaturedModFn, getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
@@ -62,7 +63,9 @@ export const Route = createFileRoute('/')({
         { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
         {
           'status-line': (limit) => getGalleryConfigs({ data: { sort, tags, limit } }),
-          mod: (limit) => getGalleryModsFn({ data: { sort, tags, limit } }),
+          // The featured mod sits in its own row on page 1, so the grid leaves it out.
+          mod: (limit) =>
+            getGalleryModsFn({ data: { sort, tags, limit, excludeSlug: FEATURED_MOD_SLUG } }),
         },
       ),
       getGallery(),
