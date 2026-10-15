@@ -35,7 +35,7 @@ describe('browserCommandOutput', () => {
 
 describe('assertHomeDocument', () => {
   it('expects the gallery heading as the h1', () => {
-    expect(EXPECTED_HOME.h1).toBe('Claude Code status lines and mods')
+    expect(EXPECTED_HOME.h1).toBe('Claude Code mods and status lines')
   })
 
   it('accepts the expected production homepage shell', () => {

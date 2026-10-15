@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { HOME_TITLE_BASE } from '@/lib/page-title'
+import { HOME_TITLE_BASE, homeMetaDescription, homePageName } from '@/lib/page-title'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
-import { configSocialMeta, modSocialMeta, rootSocialMeta, staticPageSocialMeta } from '@/og/meta'
+import {
+  configSocialMeta,
+  homeSocialMeta,
+  modSocialMeta,
+  rootSocialMeta,
+  staticPageSocialMeta,
+} from '@/og/meta'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -21,9 +27,19 @@ describe('social meta', () => {
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
     const description = meta.find((entry) => entry.property === 'og:description')?.content
     expect(description).toMatch(/cop(?:y|ied|ies)/i)
-    expect(description).toMatch(/status lines.*\bmods\b/i)
+    expect(description).toMatch(/\bmods\b.*status lines/i)
+    const pageDescription = meta.find((entry) => entry.name === 'description')?.content
+    expect(pageDescription).toMatch(/\bmods\b.*status lines/i)
     expect(description).not.toMatch(/curat|pick|chose|behalf/i)
     expect(description).not.toMatch(/upvote/i)
+  })
+  it('home shares its canonical url with the page name and description', () => {
+    const meta = homeSocialMeta({ url: 'https://statuslin.es/?page=2', page: 2, pageCount: 5 })
+    expect(meta).toEqual([
+      { property: 'og:url', content: 'https://statuslin.es/?page=2' },
+      { property: 'og:title', content: homePageName(2) },
+      { property: 'og:description', content: homeMetaDescription(2, 5) },
+    ])
   })
   it('config emits a per-slug og:image', () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'

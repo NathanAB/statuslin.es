@@ -26,12 +26,12 @@ describe('jsonLdScript', () => {
 })
 
 describe('homeJsonLd', () => {
-  it('builds WebSite identity plus a CollectionPage of config URLs', () => {
+  it('builds WebSite identity plus a CollectionPage of the visible cards, mods included', () => {
     const nodes = homeJsonLd(
       'https://statuslin.es',
       [
-        { slug: 'a-1', title: 'Alpha' },
-        { slug: 'b-2', title: 'Beta' },
+        { kind: 'mod', slug: 'file-tree', title: 'File Tree' },
+        { kind: 'status-line', slug: 'a-1', title: 'Alpha' },
       ],
       { page: 1, pageSize: 10 },
     ) as Array<Record<string, unknown>>
@@ -45,7 +45,7 @@ describe('homeJsonLd', () => {
     expect(nodes[1]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Claude Code Status Lines',
+      name: 'Claude Code Mods & Status Lines',
       url: 'https://statuslin.es',
       mainEntity: {
         '@type': 'ItemList',
@@ -53,14 +53,14 @@ describe('homeJsonLd', () => {
           {
             '@type': 'ListItem',
             position: 1,
-            name: 'Alpha',
-            url: 'https://statuslin.es/c/a-1',
+            name: 'File Tree',
+            url: 'https://statuslin.es/mods/file-tree',
           },
           {
             '@type': 'ListItem',
             position: 2,
-            name: 'Beta',
-            url: 'https://statuslin.es/c/b-2',
+            name: 'Alpha',
+            url: 'https://statuslin.es/c/a-1',
           },
         ],
       },
@@ -71,8 +71,8 @@ describe('homeJsonLd', () => {
     const nodes = homeJsonLd(
       'https://statuslin.es',
       [
-        { slug: 'a-1', title: 'Alpha' },
-        { slug: 'b-2', title: 'Beta' },
+        { kind: 'status-line', slug: 'a-1', title: 'Alpha' },
+        { kind: 'mod', slug: 'file-tree', title: 'File Tree' },
       ],
       { page: 2, pageSize: 10 },
     ) as Array<Record<string, unknown>>
@@ -83,10 +83,13 @@ describe('homeJsonLd', () => {
     })
     expect(nodes[1]).toMatchObject({
       '@type': 'CollectionPage',
-      name: 'Claude Code Status Lines — Page 2',
+      name: 'Claude Code Mods & Status Lines — Page 2',
       url: 'https://statuslin.es/?page=2',
       mainEntity: {
-        itemListElement: [{ position: 11 }, { position: 12 }],
+        itemListElement: [
+          { position: 11, url: 'https://statuslin.es/c/a-1' },
+          { position: 12, url: 'https://statuslin.es/mods/file-tree' },
+        ],
       },
     })
   })

@@ -21,11 +21,11 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Status Lines | statuslin.es' },
+        { title: 'Claude Code Mods & Status Lines | statuslin.es' },
         {
           name: 'description',
           content:
-            'Browse a gallery of Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
+            'Browse Claude Code mods and status lines with real previews. Install a mod with one command or copy a status line in one paste.',
         },
       ]),
     )
@@ -46,11 +46,18 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Status Lines — Page 2 | statuslin.es' },
+        { title: 'Claude Code Mods & Status Lines — Page 2 | statuslin.es' },
         {
           name: 'description',
           content:
-            'Browse a gallery of Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
+            'Browse Claude Code mods and status lines with real previews. Install a mod with one command or copy a status line in one paste. Page 2 of 3.',
+        },
+        { property: 'og:url', content: 'https://statuslin.es/?page=2' },
+        { property: 'og:title', content: 'Claude Code Mods & Status Lines — Page 2' },
+        {
+          property: 'og:description',
+          content:
+            'Browse Claude Code mods and status lines with real previews. Install a mod with one command or copy a status line in one paste. Page 2 of 3.',
         },
       ]),
     )
@@ -64,7 +71,7 @@ describe('home search indexing metadata', () => {
       .map((script) => JSON.parse(script.children) as Record<string, unknown>)
       .find((node) => node['@type'] === 'CollectionPage')
     expect(collectionPage).toMatchObject({
-      name: 'Claude Code Status Lines — Page 2',
+      name: 'Claude Code Mods & Status Lines — Page 2',
       url: 'https://statuslin.es/?page=2',
     })
   })
@@ -90,13 +97,13 @@ describe('home search indexing metadata', () => {
     ])
   })
 
-  it('lists only status lines in the CollectionPage, since its item URLs are config pages', async () => {
+  it('lists the mod and status line cards in the CollectionPage in the order the page shows them', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
       loaderData: {
         gallery: {
-          page: 1,
-          pageCount: 1,
+          page: 2,
+          pageCount: 2,
           items: [
             { kind: 'mod', card: { slug: 'meter', title: 'Meter' } },
             { kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } },
@@ -109,10 +116,13 @@ describe('home search indexing metadata', () => {
     const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
       .map((script) => JSON.parse(script.children) as Record<string, unknown>)
       .find((node) => node['@type'] === 'CollectionPage') as
-      | { mainEntity: { itemListElement: Array<{ url: string }> } }
+      | { mainEntity: { itemListElement: Array<{ position: number; url: string }> } }
       | undefined
-    expect(collectionPage?.mainEntity.itemListElement.map((item) => item.url)).toEqual([
-      'https://statuslin.es/c/alpha',
+    expect(
+      collectionPage?.mainEntity.itemListElement.map(({ position, url }) => ({ position, url })),
+    ).toEqual([
+      { position: 11, url: 'https://statuslin.es/mods/meter' },
+      { position: 12, url: 'https://statuslin.es/c/alpha' },
     ])
   })
 
