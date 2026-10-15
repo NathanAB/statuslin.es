@@ -5,6 +5,12 @@ import { requireEnv } from '@/lib/env'
  * environment and aren't secrets — so by the DRY rule they live in code, not env vars.
  */
 
+/** The site's name, as search results and share cards show it. */
+export const SITE_NAME = 'statuslin.es'
+
+/** The square 180x180 brand icon: the iOS home-screen icon and the Organization logo. */
+export const BRAND_ICON_PATH = '/apple-touch-icon.png'
+
 /** Contact + abuse-report address (live, forwarding-verified). Used by the site footer. */
 export const CONTACT_EMAIL = 'hello@statuslin.es'
 

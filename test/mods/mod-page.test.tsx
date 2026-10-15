@@ -170,11 +170,10 @@ describe('mod page head', () => {
     expect(JSON.stringify(nodes[1])).toContain(`"item":"${ORIGIN}/mods"`)
   })
 
-  it('adds a FAQPage when the version has page copy', () => {
+  it('adds no FAQPage when the version has page copy', () => {
     expect(jsonLd({ ...MOD, generatedContent: COPY }).map((node) => node['@type'])).toEqual([
       'SoftwareSourceCode',
       'BreadcrumbList',
-      'FAQPage',
     ])
   })
 
