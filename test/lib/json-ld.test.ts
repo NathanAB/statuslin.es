@@ -35,7 +35,7 @@ describe('homeJsonLd', () => {
       ],
       { page: 1, pageSize: 10 },
     ) as Array<Record<string, unknown>>
-    expect(nodes).toHaveLength(2)
+    expect(nodes).toHaveLength(3)
     expect(nodes[0]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'WebSite',
@@ -43,6 +43,14 @@ describe('homeJsonLd', () => {
       url: 'https://statuslin.es',
     })
     expect(nodes[1]).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'statuslin.es',
+      url: 'https://statuslin.es',
+      logo: 'https://statuslin.es/apple-touch-icon.png',
+      sameAs: ['https://github.com/NathanAB/statuslin.es'],
+    })
+    expect(nodes[2]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
       name: 'Claude Code Status Lines & Mods',
@@ -81,7 +89,7 @@ describe('homeJsonLd', () => {
       '@type': 'WebSite',
       url: 'https://statuslin.es',
     })
-    expect(nodes[1]).toMatchObject({
+    expect(nodes[2]).toMatchObject({
       '@type': 'CollectionPage',
       name: 'Claude Code Status Lines & Mods — Page 2',
       url: 'https://statuslin.es/?page=2',
@@ -212,50 +220,9 @@ describe('configJsonLd', () => {
     expect(code).not.toHaveProperty('keywords')
   })
 
-  it('appends a FAQPage built from the summary, the steps and the notes', () => {
+  it('emits no FAQPage, since the page never shows its copy as questions', () => {
     const nodes = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
-    const faq = nodes.find((n) => n['@type'] === 'FAQPage')
-    expect(faq).toBeDefined()
-    const questions = faq!.mainEntity as Array<{
-      '@type': string
-      name: string
-      acceptedAnswer: { text: string }
-    }>
-    expect(questions.map((q) => [q.name, q.acceptedAnswer.text])).toEqual([
-      ['What does Powerline Dracula do?', 'Shows the git branch and a context bar.'],
-      [
-        'How does Powerline Dracula work?',
-        'Reads the session JSON on stdin. Runs git for the branch.',
-      ],
-      [
-        'What should I know before using Powerline Dracula?',
-        'Needs Bash 4 or newer. Uses Nerd Font glyphs.',
-      ],
-    ])
-    expect(questions[0]).toMatchObject({
-      '@type': 'Question',
-      acceptedAnswer: { '@type': 'Answer' },
-    })
-  })
-
-  it('omits the FAQPage when there is no generated content', () => {
-    const nodes = configJsonLd('https://statuslin.es', {
-      ...base,
-      generatedContent: null,
-    }) as Array<Record<string, unknown>>
-    expect(nodes.some((n) => n['@type'] === 'FAQPage')).toBe(false)
-    // still emits SoftwareSourceCode + BreadcrumbList
-    expect(nodes).toHaveLength(2)
-  })
-
-  it('drops the steps and notes questions when there are none', () => {
-    const nodes = configJsonLd('https://statuslin.es', {
-      ...base,
-      generatedContent: { summary: 'Shows the git branch.', howItWorks: [], goodToKnow: [] },
-    }) as Array<Record<string, unknown>>
-    const faq = nodes.find((n) => n['@type'] === 'FAQPage')
-    const questions = faq!.mainEntity as Array<{ name: string }>
-    expect(questions.map((q) => q.name)).toEqual(['What does Powerline Dracula do?'])
+    expect(nodes.map((n) => n['@type'])).toEqual(['SoftwareSourceCode', 'BreadcrumbList'])
   })
 })
 

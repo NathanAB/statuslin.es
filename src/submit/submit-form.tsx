@@ -82,7 +82,7 @@ function SubmitFormFields({
       })
       // The statusline_submitted event fires server-side in submitConfigFn now (ad blockers can't
       // strip a server event), so the browser only handles the success UX here.
-      toast.success("Queued for review — we'll take a look shortly.")
+      toast.success('Submitted for review.')
       setTitle('')
       setDescription('')
       setInterpreter('bash')

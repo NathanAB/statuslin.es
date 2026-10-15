@@ -8,6 +8,7 @@ import {
   modPreviews,
   mods,
   modVersions,
+  submissions,
 } from '@/db/schema'
 import { modDesktopPreviewPath } from '@/lib/site'
 import { isUuid } from '@/lib/uuid'
@@ -162,7 +163,13 @@ export interface ModDetail {
   tags: string[]
   /** ISO date (YYYY-MM-DD) of the current version, pre-formatted to dodge Date serialization. */
   updatedAt: string
+  /** The Claude Code version the terminal preview was recorded with; null before it renders. */
+  recordedWith: string | null
+  /** ISO date the current version's submission was approved; null for a curated mod (no date). */
+  reviewedAt: string | null
 }
+
+const isoDate = (date: Date) => date.toISOString().slice(0, 10)
 
 /** A published mod by slug with its own current version, or null (draft, removed, unknown). */
 export async function getModDetail(db: Db, slug: string): Promise<ModDetail | null> {
@@ -185,6 +192,8 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       copyCount: mods.copyCount,
       tags: mods.allTags,
       updatedAt: modVersions.createdAt,
+      recordedWith: modPreviews.claudeCodeVersion,
+      reviewedAt: submissions.reviewedAt,
     })
     .from(mods)
     .innerJoin(
@@ -193,13 +202,18 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
     )
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
+    .leftJoin(
+      submissions,
+      and(eq(submissions.modVersionId, modVersions.id), eq(submissions.status, 'approved')),
+    )
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row) return null
   return {
     ...row,
     desktop: desktopPreview(row.desktop),
     generatedContent: readPageCopy(modPageCopySchema, row.generatedContent),
-    updatedAt: row.updatedAt.toISOString().slice(0, 10),
+    updatedAt: isoDate(row.updatedAt),
+    reviewedAt: row.reviewedAt ? isoDate(row.reviewedAt) : null,
   }
 }
 

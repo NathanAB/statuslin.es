@@ -1,8 +1,8 @@
 import { GUIDE_PATH } from '@/lib/page-title'
-import { MODS_PATH } from '@/lib/site'
+import { MODS_PATH, SITE_NAME } from '@/lib/site'
 
 /** The first crumb of every breadcrumb, on the page and in its JSON-LD. */
-export const HOME_CRUMB_NAME = 'statuslin.es'
+export const HOME_CRUMB_NAME = SITE_NAME
 
 /** The crumb between home and every mod page: the mods page. */
 export const MODS_CRUMB = { name: 'Mods', to: MODS_PATH } as const

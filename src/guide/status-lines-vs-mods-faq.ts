@@ -4,12 +4,12 @@ export const STATUS_LINES_VS_MODS_FAQ: FaqEntry[] = [
   {
     question: 'Are mods replacing status lines?',
     answer:
-      'Claude Code still supports both. The `statusLine` setting has no deprecation notice, and the `/statusline` command still writes a status line script.',
+      'No. Claude Code supports both. The `statusLine` setting has no deprecation notice, and `/statusline` still writes a status line script.',
   },
   {
     question: 'Do Claude Code status lines work in Claude Desktop?',
     answer:
-      "No. Claude Desktop's Code tab never runs the `statusLine` command. The statusline-anywhere mod runs that command for you and draws its output above the prompt in Desktop.",
+      "No. Claude Desktop's Code tab never runs the `statusLine` command. The statusline-anywhere mod runs it and draws the output above the prompt.",
   },
   {
     question: 'Can a mod show the same numbers as my status line?',

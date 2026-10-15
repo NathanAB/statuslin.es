@@ -7,13 +7,13 @@ const COPIED_MS = 2000
 
 /**
  * Clipboard control used by code wells and adopt CTAs. Writes `text`, swaps the
- * label to Copied! on success, and calls `onCopied` only after a successful write
+ * label to Copied on success, and calls `onCopied` only after a successful write
  * so callers can record analytics without duplicating clipboard logic.
  */
 export function CopyButton({
   text,
   label = 'Copy',
-  copiedLabel = 'Copied!',
+  copiedLabel = 'Copied',
   size = 'sm',
   variant = 'outline',
   iconOnly = false,
@@ -41,7 +41,7 @@ export function CopyButton({
         onCopied?.()
       })
       .catch(() => {
-        // Clipboard denied/unavailable — don't claim Copied!.
+        // Clipboard denied/unavailable — don't claim Copied.
       })
   }
 

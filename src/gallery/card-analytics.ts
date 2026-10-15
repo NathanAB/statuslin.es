@@ -3,8 +3,19 @@ import type { GallerySort } from '@/gallery/queries'
 
 /** Where a gallery card was clicked, and the gallery state it was clicked in. */
 export interface GalleryCardAnalytics {
-  /** `related` is a status line page's suggestions; `mod_related` is a mod page's "More like this". */
-  surface: 'home' | 'facet' | 'best' | 'compare' | 'mods' | 'related' | 'mod_related'
+  /**
+   * `related` is a status line page's suggestions; `mod_related` is a mod page's "More like this";
+   * `home_featured_mod` is the home page's pinned "Featured mod" row.
+   */
+  surface:
+    | 'home'
+    | 'home_featured_mod'
+    | 'facet'
+    | 'best'
+    | 'compare'
+    | 'mods'
+    | 'related'
+    | 'mod_related'
   position: number
   facet?: string
   sort?: GallerySort

@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
+import { withoutInlineCode } from '@/lib/inline-code'
 import { jsonLdScript } from '@/lib/json-ld'
 import { MOD_NOT_FOUND_TITLE, modMetaDescription, modPageTitle } from '@/lib/page-title'
 import { modPath, siteUrl } from '@/lib/site'
@@ -14,10 +15,25 @@ import { modFactTiles } from '@/mods/mod-fact-tiles'
 import { ModHeader } from '@/mods/mod-header'
 import { ModPreview } from '@/mods/mod-preview'
 import { ModRelated } from '@/mods/mod-related'
+import type { ModDetail } from '@/mods/queries'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
 import { PageShell } from '@/ui/shell'
 import { Text, TextLink } from '@/ui/text'
+
+/** Below this, an author's description says too little for a search snippet. */
+const MIN_DESCRIPTION_CHARS = 60
+
+/**
+ * The author's description, or the reviewed page summary when the author's is short. The summary
+ * marks code with backticks for the page, so they're dropped here: snippets show plain text.
+ */
+function searchDescription(mod: Pick<ModDetail, 'description' | 'generatedContent'>): string {
+  const summary = mod.generatedContent?.summary
+  return summary && mod.description.trim().length < MIN_DESCRIPTION_CHARS
+    ? withoutInlineCode(summary)
+    : mod.description
+}
 
 export const Route = createFileRoute('/mods/$slug')({
   loader: async ({ params }) => {
@@ -31,8 +47,8 @@ export const Route = createFileRoute('/mods/$slug')({
     return {
       meta: [
         { title: modPageTitle(mod.title) },
-        { name: 'description', content: modMetaDescription(mod.description) },
-        ...modSocialMeta(loaderData.origin, mod),
+        { name: 'description', content: modMetaDescription(searchDescription(mod)) },
+        ...modSocialMeta(loaderData.origin, { ...mod, description: searchDescription(mod) }),
       ],
       links: [canonicalLink(modPath(mod.slug))],
       scripts: modJsonLd(loaderData.origin, mod).map(jsonLdScript),

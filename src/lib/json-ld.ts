@@ -1,9 +1,8 @@
-import type { PageCopy } from '@/content/types'
 import type { GalleryKind } from '@/gallery/gallery-items'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
 import { homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
-import { CONTENT_LICENSE, modPath } from '@/lib/site'
+import { BRAND_ICON_PATH, CONTENT_LICENSE, modPath, REPO_URL, SITE_NAME } from '@/lib/site'
 
 /**
  * JSON-LD structured data for search engines. Server-rendered via TanStack
@@ -34,7 +33,10 @@ function galleryEntryUrl(origin: string, item: GalleryListEntry): string {
   return `${origin}${item.kind === 'mod' ? modPath(item.slug) : `/c/${item.slug}`}`
 }
 
-/** The site identity plus gallery CollectionPage and its visible status lines and mods, in order. */
+/**
+ * The site identity (WebSite and Organization, the name signals Google reads from the home page)
+ * plus the gallery CollectionPage and its visible status lines and mods, in order.
+ */
 export function homeJsonLd(
   origin: string,
   items: GalleryListEntry[],
@@ -43,14 +45,23 @@ export function homeJsonLd(
   const website = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'statuslin.es',
+    name: SITE_NAME,
     url: origin,
   }
-  if (options.includeCollectionPage === false) return [website]
+  const organization = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    url: origin,
+    logo: `${origin}${BRAND_ICON_PATH}`,
+    sameAs: [REPO_URL],
+  }
+  if (options.includeCollectionPage === false) return [website, organization]
 
   const positionOffset = (options.page - 1) * options.pageSize
   return [
     website,
+    organization,
     {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
@@ -73,8 +84,8 @@ export function homeJsonLd(
 export const RUNTIME_PLATFORM = 'Claude Code'
 
 /**
- * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the page copy
- * the "What it does" card shows, when present. The SoftwareSourceCode carries `dateModified` (freshness),
+ * A config page as SoftwareSourceCode + breadcrumb. No FAQPage: the page shows its copy as a
+ * summary and lists, never as questions. The SoftwareSourceCode carries `dateModified` (freshness),
  * `runtimePlatform`, and facet `keywords`.
  */
 export function configJsonLd(
@@ -88,7 +99,6 @@ export function configJsonLd(
     license: string | null
     keywords: string[]
     updatedAt: string | null
-    generatedContent: PageCopy | null
     primaryFacet: { slug: string; heading: string } | null
   },
 ): object[] {
@@ -105,7 +115,7 @@ export function configJsonLd(
       : []),
     { name: config.title, item: url },
   ]
-  const nodes: object[] = [
+  return [
     {
       '@context': 'https://schema.org',
       '@type': 'SoftwareSourceCode',
@@ -121,10 +131,6 @@ export function configJsonLd(
     },
     breadcrumbJsonLd(crumbs),
   ]
-
-  const faq = pageCopyFaqJsonLd(config.title, config.generatedContent)
-  if (faq) nodes.push(faq)
-  return nodes
 }
 
 export interface FaqEntry {
@@ -143,27 +149,6 @@ export function faqPageJsonLd(entries: FaqEntry[]): object | null {
       acceptedAnswer: { '@type': 'Answer', text: withoutInlineCode(entry.answer) },
     })),
   }
-}
-
-/** A step or note as a sentence, so a list joins into a readable answer. */
-const asSentence = (line: string) => (/[.!?]$/.test(line) ? line : `${line}.`)
-
-/**
- * A status line or mod page's "What it does" copy as a FAQPage: the summary, steps and notes,
- * each as one question; an empty list asks nothing.
- */
-export function pageCopyFaqJsonLd(title: string, copy: PageCopy | null): object | null {
-  if (!copy) return null
-  const lists = [
-    { question: `How does ${title} work?`, lines: copy.howItWorks },
-    { question: `What should I know before using ${title}?`, lines: copy.goodToKnow },
-  ]
-  return faqPageJsonLd([
-    { question: `What does ${title} do?`, answer: copy.summary },
-    ...lists
-      .filter((list) => list.lines.length > 0)
-      .map((list) => ({ question: list.question, answer: list.lines.map(asSentence).join(' ') })),
-  ])
 }
 
 /** The /resources page as a CollectionPage listing the external tools/resources. */

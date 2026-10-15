@@ -1,15 +1,16 @@
+import { SITE_NAME } from '@/lib/site'
 import { RESOURCE_SECTIONS, type ResourceSection } from '@/resources/data'
 
 const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
 const MOD_PAGE_TITLE_KEYWORD = ' — Claude Code mod'
-const PAGE_TITLE_BRAND = ' | statuslin.es'
+export const PAGE_TITLE_BRAND = ` | ${SITE_NAME}`
 const PAGE_TITLE_MAX_LENGTH = 60
 const META_DESCRIPTION_MAX_LENGTH = 160
 
 export const CONFIG_META_DESCRIPTION_FALLBACK =
-  'A reviewed Claude Code status line — rendered preview, source, and one-paste install.'
+  'A reviewed Claude Code status line. See its preview and source, then copy it in one paste.'
 const MOD_META_DESCRIPTION_FALLBACK =
-  'A Claude Code mod — rendered preview, what it touches, and a one-line install.'
+  'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one command.'
 
 function normalizeWhitespace(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
@@ -32,6 +33,11 @@ function keywordPageTitle(name: string, keyword: string): string {
 
   const nameBudget = PAGE_TITLE_MAX_LENGTH - keyword.length
   return `${truncateAtWordBoundary(normalizedName, nameBudget)}${keyword}`
+}
+
+/** `<name> | statuslin.es` under the same 60-character guard as status line and mod titles. */
+export function brandedPageTitle(name: string): string {
+  return keywordPageTitle(name, '')
 }
 
 function metaDescription(description: string | null | undefined, fallback: string): string {
@@ -61,9 +67,10 @@ export function modMetaDescription(description: string | null | undefined): stri
   return metaDescription(description, MOD_META_DESCRIPTION_FALLBACK)
 }
 
-export const MOD_NOT_FOUND_TITLE = 'Mod not found — statuslin.es'
+export const MOD_NOT_FOUND_TITLE = `Mod not found — ${SITE_NAME}`
 
-export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
+/** The title of any missing page: a status line, a feature page, or a comparison. */
+export const NOT_FOUND_TITLE = `Page not found — ${SITE_NAME}`
 
 /**
  * The home page's title base — shared by the <title> tag, og:title and the home JSON-LD name. Status
@@ -74,7 +81,7 @@ export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
 export const HOME_TITLE_BASE = 'Claude Code Status Lines & Mods'
 export const HOME_HEADING = 'Claude Code status lines and mods'
 export const HOME_DESCRIPTION_BASE =
-  'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.'
+  'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.'
 
 function homePageSuffix(page: number): string {
   return page > 1 ? ` — Page ${page}` : ''
@@ -129,7 +136,7 @@ export const STATUS_LINES_VS_MODS_GUIDE_DATES = {
 
 /** /guide/status-lines-vs-mods meta description — shared by the description tag, OG, and JSON-LD. */
 export const STATUS_LINES_VS_MODS_GUIDE_DESCRIPTION =
-  'A status line is a script whose output Claude Code prints in the terminal. A mod is a plugin that also draws in Claude Desktop. Here is when to use each.'
+  'A status line is a script whose output Claude Code shows under the prompt. A mod is a plugin that can draw in the terminal and in Claude Desktop.'
 
 export const MOD_SAFETY_GUIDE_PATH = '/guide/are-claude-code-mods-safe'
 
@@ -143,7 +150,7 @@ export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026
 
 /** /guide/are-claude-code-mods-safe meta description — the description tag, OG, and JSON-LD. */
 export const MOD_SAFETY_GUIDE_DESCRIPTION =
-  'A Claude Code mod runs with your permissions. What claude plugin validate reports, how statuslin.es pins and reviews each mod, and what to check yourself.'
+  'A Claude Code mod runs with your permissions. See what claude plugin validate reports, how statuslin.es pins and reviews each mod, and what to check yourself.'
 
 /** The live /guide subpages and their last edits. Every other /guide/* path redirects to /guide. */
 export const GUIDE_SUBPAGES: ReadonlyArray<{ path: string; modified: string }> = [

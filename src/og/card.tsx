@@ -6,6 +6,10 @@ import type { AnsiSegment } from '@/render/types'
 
 const FONT = 'StatuslineNerd'
 
+// What a shared card shows, since the gallery holds both kinds.
+const STATUS_LINE_KIND = 'Claude Code status line'
+const MOD_KIND = 'Claude Code mod'
+
 // statuslin + coral dot + es, sized for the target.
 function drawWordmark(fontSize: number): ReactElement {
   return (
@@ -210,9 +214,7 @@ export function configCard(input: {
   previews: { scenarioKey: string; segments: AnsiSegment[] }[]
 }): ReactElement {
   const rows = orderByScenario(input.previews).slice(0, 3)
-  const byline = input.author
-    ? `by ${input.author} · adapts to your session`
-    : 'adapts to your session'
+  const byline = input.author ? `${STATUS_LINE_KIND} · by ${input.author}` : STATUS_LINE_KIND
   return detailCard(
     cardHeader(input.title, byline),
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
@@ -245,12 +247,12 @@ export function modCard(input: {
               color: OG_PALETTE.foreground,
             }}
           >
-            Claude Desktop
+            Draws in Claude Desktop
           </div>,
           '10px 18px',
         )
   return detailCard(
-    cardHeader(input.title, `by @${input.authorGithub}`),
+    cardHeader(input.title, `${MOD_KIND} · by @${input.authorGithub}`),
     <div style={{ display: 'flex', alignItems: 'flex-start' }}>{body}</div>,
   )
 }

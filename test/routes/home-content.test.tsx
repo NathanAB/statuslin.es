@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import type { GalleryModCard } from '@/gallery/gallery-items'
 import { HOME_HEADING } from '@/lib/page-title'
 
 const capture = vi.hoisted(() => vi.fn())
@@ -15,14 +16,23 @@ vi.mock('@tanstack/react-router', async () => {
     Link: ({
       to,
       params,
+      search,
+      hash,
       children,
       ...props
     }: {
       to: string
       params?: Record<string, string>
+      search?: unknown
+      hash?: string
       children: React.ReactNode
     }) => {
-      const href = params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to
+      const path = params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to
+      const query =
+        search && typeof search === 'object'
+          ? new URLSearchParams(search as Record<string, string>).toString()
+          : ''
+      const href = `${query ? `${path}?${query}` : path}${hash ? `#${hash}` : ''}`
       return (
         <a href={href} {...props}>
           {children}
@@ -47,29 +57,57 @@ const gallery = {
   items: [],
   page: 1,
   pageCount: 1,
-  publishedCount: 32,
+  statusLines: 32,
+  mods: 9,
   copyCount: 148,
   asOf: '2026-09-08',
 }
 
-function renderHome(overrides: Partial<typeof gallery> = {}, search: Record<string, string> = {}) {
+const modCard = (slug: string): GalleryModCard => ({
+  modId: `id-${slug}`,
+  slug,
+  title: slug,
+  description: '',
+  authorGithub: 'octocat',
+  copyCount: 0,
+  tags: [],
+  preview: null,
+  desktopShot: null,
+})
+
+function renderHome(
+  overrides: Partial<typeof gallery> = {},
+  search: Record<string, string> = {},
+  featuredMod: GalleryModCard | null = null,
+) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
+    featuredMod,
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
   return render(Home ? <Home /> : null)
 }
 
+/** The dated count paragraph: the one holding a <time>. */
+const inventoryNote = () => document.querySelector('time')?.closest('p')
+
 describe('home content', () => {
-  it('shows the published count, copy count and as-of date it is given', () => {
+  it('counts both kinds, their copies and the as-of date it is given', () => {
     renderHome()
 
-    const page = document.body.textContent ?? ''
-    expect(page).toMatch(/32 published/)
-    expect(page).toMatch(/148/)
-    expect(page).toMatch(/Sep 8, 2026/)
+    expect(inventoryNote()?.textContent).toBe(
+      '32 status lines and 9 mods, copied 148 times as of Sep 8, 2026.',
+    )
+  })
+
+  it('leaves mods out of the count while none is published', () => {
+    renderHome({ mods: 0 })
+
+    expect(inventoryNote()?.textContent).toBe(
+      '32 status lines, copied 148 times as of Sep 8, 2026.',
+    )
   })
 
   it('makes the gallery heading the only h1 on the page', () => {
@@ -95,16 +133,14 @@ describe('home content', () => {
     const masthead = container.querySelector('h1')?.parentElement?.parentElement
     expect(masthead?.className).toContain('sm:grid-cols-2')
     expect(masthead?.textContent).toMatch(/statuslin\.es/)
-    expect(masthead?.textContent).not.toMatch(/32 published/)
+    expect(masthead?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
   })
 
   it('centers the dated inventory note under the gallery', () => {
     renderHome()
 
-    const inventory = screen.getByText(/32 published status lines/)
-    expect(inventory.tagName).toBe('P')
-    expect(inventory.className).toContain('text-center')
+    expect(inventoryNote()?.className).toContain('text-center')
   })
 })
 
@@ -119,6 +155,55 @@ describe('home analytics', () => {
       sort: 'trending',
       selectedTags: [],
       kind: 'mods',
+    })
+  })
+})
+
+describe('home "Featured mod" row', () => {
+  const featured = modCard('context-bar')
+  const row = () =>
+    screen
+      .getByRole('heading', { level: 2, name: 'Featured mod' })
+      .closest('section') as HTMLElement
+
+  // The row sits right above the gallery's filter, so its link switches that filter to mods
+  // instead of leaving for /mods, and scrolls down to the list.
+  it('shows the one mod it is given above the gallery, with a link that filters it to mods', () => {
+    renderHome({}, {}, featured)
+
+    const inRow = within(row())
+    const link = inRow.getByRole('link', { name: 'Browse all mods' })
+    expect(link.getAttribute('href')).toBe('/?kind=mods#gallery')
+    const target = document.getElementById('gallery')
+    expect(target?.contains(screen.getByRole('heading', { name: 'Status lines and mods' }))).toBe(
+      true,
+    )
+    expect(inRow.getByRole('link', { name: 'context-bar' }).getAttribute('href')).toBe(
+      '/mods/context-bar',
+    )
+    expect(row().querySelectorAll('[data-slot="card"]')).toHaveLength(1)
+    const galleryHeading = screen.getByRole('heading', { name: 'Status lines and mods' })
+    expect(
+      row().compareDocumentPosition(galleryHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('is left out when there is no featured mod', () => {
+    renderHome()
+
+    expect(screen.queryByRole('heading', { name: 'Featured mod' })).toBeNull()
+  })
+
+  it('reports a card click with the row as its surface', () => {
+    renderHome({}, {}, featured)
+
+    fireEvent.click(screen.getByRole('link', { name: 'context-bar' }))
+
+    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
+      modId: 'id-context-bar',
+      slug: 'context-bar',
+      surface: 'home_featured_mod',
+      position: 1,
     })
   })
 })

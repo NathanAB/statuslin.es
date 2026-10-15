@@ -39,18 +39,18 @@ export function NetworkSection({
     <Callout
       title="Network access"
       icon={<Globe />}
-      description="Status lines run with no network access by default. If yours fetches data, turn this on and declare the hosts it calls."
+      description="Previews run without network access unless you turn this on and list the hosts your script calls."
     >
       <Stack gap={3}>
         <Row gap={2} align="center">
           <Switch id="network" checked={enabled} onCheckedChange={onEnabledChange} />
-          <Label htmlFor="network">My status line needs network access</Label>
+          <Label htmlFor="network">My script needs network access</Label>
         </Row>
         {enabled ? (
           <Stack gap={2}>
             <Text muted size="sm">
-              Hosts your script calls (max {MAX_NETWORK_HOSTS}). An admin reviews them before a
-              network preview runs. Example: api.github.com or *.example.com.
+              Up to {MAX_NETWORK_HOSTS} hosts, such as api.github.com or *.example.com. We review
+              them before the network preview runs.
             </Text>
             {hosts.length > 0 ? (
               <Row gap={1.5} wrap>

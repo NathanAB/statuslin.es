@@ -3,9 +3,9 @@ import { Stack } from '@/ui/layout'
 import { Heading, Text, TextLink } from '@/ui/text'
 
 /**
- * Terms page body: what the gallery is, the license on submitted configs, the terms for
- * listed mods, and how to report or take down a config or a mod. Kept as a component (not
- * inline in the route) so the key points are unit-testable. Linked from the site footer.
+ * Terms page body: what the gallery is, the license on submitted status lines, the terms for
+ * listed mods, and how to report or take down either. Kept as a component (not inline in the
+ * route) so the key points are unit-testable. Linked from the site footer.
  */
 export function TermsContent() {
   return (
@@ -15,21 +15,21 @@ export function TermsContent() {
       <Stack gap={2}>
         <Heading level={2}>What this is</Heading>
         <Text muted>
-          statuslin.es is a community gallery of Claude Code status lines. Anyone can browse the
-          configs, copy one, and run it on their own machine. Submitted scripts run in a sandbox and
-          get a human review before they appear, but you run any copied script at your own risk.
+          statuslin.es is a community gallery of Claude Code status lines and mods. Submitted status
+          line scripts run in a sandbox and get a human review before they appear. You run anything
+          you copy or install at your own risk.
         </Text>
       </Stack>
 
       <Stack gap={2}>
-        <Heading level={2}>License on submitted configs</Heading>
+        <Heading level={2}>License on submitted status lines</Heading>
         <Text muted>
-          Configs submitted to the gallery are released under{' '}
-          <TextLink href={CONTENT_LICENSE.url}>{CONTENT_LICENSE.name}</TextLink> (public domain) —
-          copy, change, and use them freely, no attribution required. By submitting, you confirm you
-          have the right to share the script and agree to release it this way. A few gallery entries
-          are seeded from open-source projects; those keep their original license (shown on the
-          config page with a link to the source) instead of CC0.
+          Submitted status lines are released under{' '}
+          <TextLink href={CONTENT_LICENSE.url}>{CONTENT_LICENSE.name}</TextLink> (public domain).
+          Anyone may copy, change, and use them freely, with no attribution required. By submitting
+          one, you confirm you have the right to share the script and agree to release it this way.
+          Status lines seeded from open-source projects keep their original license instead, shown
+          on their page with a link to the source.
         </Text>
       </Stack>
 
@@ -44,19 +44,14 @@ export function TermsContent() {
       </Stack>
 
       <Stack gap={2}>
-        <Heading level={2}>Reporting & takedown</Heading>
+        <Heading level={2}>Reporting and takedown</Heading>
         <Text muted>
-          The maintainer may remove any config at its discretion — for example, a malicious script,
-          one that infringes someone's rights, or anything that doesn't belong here. To report a
-          config or request a takedown, email{' '}
+          The maintainer may remove any status line or mod at any time and at their discretion, for
+          example if it is malicious, infringes someone's rights, or doesn't belong here. Anyone can
+          report one or request a takedown by emailing{' '}
           <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>. Security issues go
           through the{' '}
           <TextLink href={`${REPO_URL}/blob/main/SECURITY.md`}>security policy</TextLink>.
-        </Text>
-        <Text muted>
-          The maintainer may remove any listed mod at any time. Anyone can report a mod or ask for
-          its removal by emailing{' '}
-          <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
         </Text>
       </Stack>
     </Stack>

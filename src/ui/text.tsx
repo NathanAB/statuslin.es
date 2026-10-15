@@ -98,6 +98,8 @@ type TextLinkProps =
       to: NonNullable<LinkProps['to']>
       search?: LinkProps['search']
       params?: LinkProps['params']
+      // An element id on the target page; the router scrolls to it after navigating.
+      hash?: string
       href?: never
       children: React.ReactNode
       target?: string
@@ -112,12 +114,21 @@ type TextLinkProps =
       to?: never
       search?: never
       params?: never
+      hash?: never
       children: React.ReactNode
       target?: string
       rel?: string
       size?: 'inherit' | 'sm'
       onClick?: () => void
     }
+
+/** Glide to a hash target, or jump when the reader asks for reduced motion. */
+function hashScrollOptions(): ScrollIntoViewOptions {
+  const reduce =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+  return { behavior: reduce ? 'auto' : 'smooth', block: 'start' }
+}
 
 export function TextLink(props: TextLinkProps) {
   const className = cn(
@@ -146,6 +157,9 @@ export function TextLink(props: TextLinkProps) {
       to={props.to}
       {...(props.search !== undefined ? { search: props.search } : {})}
       {...(props.params !== undefined ? { params: props.params } : {})}
+      {...(props.hash !== undefined
+        ? { hash: props.hash, hashScrollIntoView: hashScrollOptions() }
+        : {})}
       className={className}
     >
       {props.children}

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { FACET_KIND_NOTE, FACET_MOD_COPY } from '@/gallery/facet-copy'
 import { ALL_TAG_SLUGS, FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
+import { brandedPageTitle } from '@/lib/page-title'
+import { JOB_BY_TAG } from '@/mods/mod-header'
 
 describe('tag registry', () => {
   it('includes the capability tags as badge+filter-only (page: false)', () => {
@@ -23,6 +26,35 @@ describe('tag registry', () => {
       expect(f.metaDescription).toBeTruthy()
       expect(f.intro?.length).toBeGreaterThan(0)
     }
+  })
+  it('gives mod copy only to the facets published mods carry, sized for search results', () => {
+    // From production on 2026-10-15: burn-meter, context-bar, pixel-cat and token-weather carry
+    // these tags. A facet gains mod copy only once a mod is tagged for it.
+    expect(Object.keys(FACET_MOD_COPY)).toEqual([
+      'token-usage',
+      'cost',
+      'quota',
+      'minimal',
+      'multi-line',
+    ])
+    for (const copy of Object.values(FACET_MOD_COPY)) {
+      expect(brandedPageTitle(copy.titleBase)).toMatch(/ \| statuslin\.es$/)
+      expect(copy.titleBase).toContain('Status Lines & Mods')
+      expect(copy.heading).toContain('status lines and mods')
+      expect(copy.metaDescription.length).toBeLessThanOrEqual(160)
+    }
+  })
+  it('claims nothing about where mods draw, which varies by mod and is shown on each mod page', () => {
+    // Surfaces and Desktop support come from each mod's recorded facts, never from shared copy.
+    const surfaceClaims = /above the prompt|in a pane|claude desktop shows/i
+    for (const copy of Object.values(FACET_MOD_COPY)) {
+      expect(copy.metaDescription).not.toMatch(surfaceClaims)
+    }
+    expect(FACET_KIND_NOTE).not.toMatch(surfaceClaims)
+  })
+  it('keys mod copy only by real tags, so a typo fails here instead of dropping the copy', () => {
+    for (const slug of Object.keys(FACET_MOD_COPY)) expect(TAG_VOCABULARY).toContain(slug)
+    for (const tag of Object.keys(JOB_BY_TAG)) expect(TAG_VOCABULARY).toContain(tag)
   })
   it('TAG_VOCABULARY is exactly the feature group', () => {
     expect(new Set(TAG_VOCABULARY)).toEqual(

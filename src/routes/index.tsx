@@ -17,7 +17,9 @@ import {
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
-import { getGalleryModsFn } from '@/mods/gallery-functions'
+import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
+import { FeaturedModRow, GALLERY_ID } from '@/mods/featured-mod-row'
+import { getFeaturedModFn, getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
 import { homeSocialMeta } from '@/og/meta'
 import { Button } from '@/ui/button'
@@ -54,18 +56,27 @@ export const Route = createFileRoute('/')({
   loader: async ({ deps }) => {
     const sort = deps.sort ?? 'trending'
     const tags = coerceTags(deps.tags)
-    const [listing, gallery] = await Promise.all([
+    // The "Featured mod" row shows on page 1 whatever the sort, tags or kind, so switching filters
+    // doesn't move the controls under it.
+    const [listing, gallery, featuredMod] = await Promise.all([
       loadGalleryPage(
         { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
         {
           'status-line': (limit) => getGalleryConfigs({ data: { sort, tags, limit } }),
-          mod: (limit) => getGalleryModsFn({ data: { sort, tags, limit } }),
+          // The featured mod sits in its own row on page 1, so the grid leaves it out.
+          mod: (limit) =>
+            getGalleryModsFn({ data: { sort, tags, limit, excludeSlug: FEATURED_MOD_SLUG } }),
         },
       ),
       getGallery(),
+      deps.page === undefined ? getFeaturedModFn() : null,
     ])
     if (!listing) throw notFound()
-    return { user: await getSession(), gallery: { ...gallery, ...listing } }
+    return {
+      user: await getSession(),
+      gallery: { ...gallery, ...listing },
+      featuredMod,
+    }
   },
   head: ({ loaderData, match }) => {
     const page = loaderData?.gallery.page ?? 1
@@ -99,7 +110,7 @@ export const Route = createFileRoute('/')({
   },
   notFoundComponent: () => (
     <PageShell user={null}>
-      <Text>There is no gallery page with that number.</Text>
+      <Text>That gallery page doesn't exist.</Text>
       <TextLink to="/">Back to gallery</TextLink>
     </PageShell>
   ),
@@ -107,8 +118,8 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
-  const { user, gallery } = Route.useLoaderData()
-  const { items, page, pageCount, publishedCount, copyCount, asOf } = gallery
+  const { user, gallery, featuredMod } = Route.useLoaderData()
+  const { items, page, pageCount, statusLines, mods, copyCount, asOf } = gallery
   const { sort: rawSort, tags, kind: rawKind } = Route.useSearch()
   const sort = rawSort ?? 'trending'
   const kind = rawKind ?? 'all'
@@ -143,29 +154,32 @@ function Home() {
           <HomeHero />
           <HomeGalleryIntro page={page} />
         </HomeMasthead>
-        <Stack gap={4}>
-          <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-          <Row gap={4} justify="between" wrap>
-            <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
-            <SubmitCta signedIn={!!user} />
-          </Row>
-          {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
-          {items.map((item, index) =>
-            item.kind === 'mod' ? (
-              <ModCard
-                key={`mod:${item.card.slug}`}
-                card={item.card}
-                analytics={cardAnalytics(index)}
-              />
-            ) : (
-              <GalleryConfigCard
-                key={`status-line:${item.card.slug}`}
-                card={item.card}
-                analytics={cardAnalytics(index)}
-              />
-            ),
-          )}
-        </Stack>
+        <FeaturedModRow mod={featuredMod} />
+        <section id={GALLERY_ID}>
+          <Stack gap={4}>
+            <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
+            <Row gap={4} justify="between" wrap>
+              <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
+              <SubmitCta signedIn={!!user} />
+            </Row>
+            {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
+            {items.map((item, index) =>
+              item.kind === 'mod' ? (
+                <ModCard
+                  key={`mod:${item.card.slug}`}
+                  card={item.card}
+                  analytics={cardAnalytics(index)}
+                />
+              ) : (
+                <GalleryConfigCard
+                  key={`status-line:${item.card.slug}`}
+                  card={item.card}
+                  analytics={cardAnalytics(index)}
+                />
+              ),
+            )}
+          </Stack>
+        </section>
 
         {pageCount > 1 ? (
           <Row gap={4} align="center" justify="center">
@@ -196,7 +210,7 @@ function Home() {
             ) : null}
           </Row>
         ) : null}
-        <HomeIndexNote publishedCount={publishedCount} copyCount={copyCount} asOf={asOf} />
+        <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
       </Stack>
     </PageShell>
   )

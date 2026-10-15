@@ -7,6 +7,7 @@ import { connectPostHogClientErrors } from '@/lib/posthog-client-errors'
 import { dropExtensionExceptions } from '@/lib/posthog-exception-filter'
 import { POSTHOG_INGEST_HOST, POSTHOG_UI_HOST } from '@/lib/posthog-hosts'
 import { identifyPostHogUser } from '@/lib/posthog-identity'
+import { BRAND_ICON_PATH, SITE_NAME } from '@/lib/site'
 import { rootSocialMeta } from '@/og/meta'
 import { Toaster } from '@/ui/sonner'
 
@@ -21,12 +22,14 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'statuslin.es' },
+      { title: SITE_NAME },
       ...rootSocialMeta(),
     ],
     links: [
       { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
-      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+      // Google Search shows no SVG favicon; it takes this PNG (square, over 48px).
+      { rel: 'icon', href: '/favicon.png', type: 'image/png', sizes: '192x192' },
+      { rel: 'apple-touch-icon', href: BRAND_ICON_PATH },
     ],
   }),
   shellComponent: RootDocument,

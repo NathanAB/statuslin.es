@@ -257,7 +257,7 @@ describe('highlighting an update', () => {
 
 describe('gates apply to updates', () => {
   it.each([
-    ['obfuscation', `echo "${'A'.repeat(240)}"`, /looks obfuscated/],
+    ['obfuscation', `echo "${'A'.repeat(240)}"`, /Rejected as obfuscated/],
     ['credential access', 'cat ~/.ssh/id_rsa', /non-Claude credentials/],
   ])('runs the %s check', async (_name, source, message) => {
     const v1 = await publish()

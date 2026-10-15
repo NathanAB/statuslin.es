@@ -7,63 +7,44 @@ import type { FaqEntry } from '@/lib/json-ld'
  */
 export const FACET_INTRO = {
   git: [
-    'Claude Code tells you the model and the directory, but not what git is doing. These status lines add the branch, and some layer on dirty-file counts or ahead and behind markers, so you can see where a session is about to commit before it happens.',
-    'Every preview below is rendered from the real script against the same example sessions, including one in a directory with no git repo, so you can check how each one degrades.',
-    'Pick a one-liner if you only need the branch. Pick dirty-file counts if you commit from the session. Pick ahead and behind markers if you track remotes.',
+    'Pick a branch-only line if that is all you need, one with dirty-file counts if you commit from the session, or one with ahead and behind markers if you track remotes.',
   ],
   'token-usage': [
-    'Running out of context mid-task is the worst way to find out how big your session got. These status lines read the context window numbers Claude Code pipes to every status line script and turn them into a count or a burn bar.',
-    'The previews are rendered from real sessions at different fill levels, so you can see what each one looks like when the window is nearly empty and nearly full.',
-    'Pick a number if you glance. Pick a burn bar if you work near the cap and want to see fill at a distance.',
+    'Pick a number if you only glance at it. Pick a bar if you work near the limit and want to read the fill at a distance.',
   ],
   cost: [
-    'Claude Code reports the running cost of a session in the JSON it sends your status line. These configs surface it in the terminal, some as a plain number, some as thresholds that change color when a session gets expensive.',
-    'If you care about cost because of rate limits rather than dollars, the usage-limit status lines overlap with these; several configs show both.',
+    'Claude Code sends each status line script the running cost of the session. Some show it as a plain number, others change color as the session gets expensive.',
   ],
   quota: [
-    'Claude plans meter usage in five-hour and weekly windows, and Claude Code hands both to your status line as rate limit data. These status lines show how much of each window is gone and when it resets.',
-    'They differ mostly in urgency: some show a quiet percentage, others switch color or warn outright as you approach the cap.',
-    'Pick the five-hour window if you hit limits during a workday. Pick a config that shows both windows if you care about the week.',
+    'Claude plans limit usage in a five-hour window and a weekly one. Pick one that shows the five-hour window if you hit limits during a workday, or both if you watch the week.',
   ],
   'burn-rate': [
-    'Knowing you are at 60 percent of your weekly limit is less useful than knowing whether you are on track to blow through it. These status lines show the rate, not just the total: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window.',
-    'They pair naturally with the usage-limit configs, and several show both a static percentage and a pace signal side by side, so you can see where you stand and where you are heading at once.',
+    'These status lines show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
   ],
   weather: [
-    'Most status lines stay inside the session: model, tokens, cost. A few reach past it and pull the local weather into the same line, so a glance at your terminal doubles as a glance out the window.',
-    'These lean on a weather API, so check each config’s requirements and the network hosts it declares before you paste it — the preview shows exactly what it prints.',
+    'These status lines put the local weather beside your session. They call a weather API, so check the network hosts each one declares before you copy it.',
   ],
   markets: [
-    'A status line is just a line of text your shell refreshes, so it can show anything you can fetch — including live market data. These configs put a crypto price, a stock, or an exchange rate next to your model and usage.',
-    'They call a market data API, so review each config’s requirements and declared network hosts before pasting; the rendered preview shows the real output.',
+    'These status lines show a crypto price, a stock or an exchange rate beside your session. They call a market data API, so check the network hosts each one declares before you copy it.',
   ],
-  minimal: [
-    'A status line does not have to be a dashboard. These configs stay on one line and show a handful of essentials, usually the model, the directory, and one number that matters to you.',
-    'They are also the easiest scripts to read end to end, which makes them good starting points if you plan to customize.',
-  ],
+  minimal: ['These show only the essentials, usually the model, the directory and one number.'],
   'multi-line': [
-    'Claude Code renders every line your script prints, so a status line can be a small dashboard. These configs use two or three lines to fit git state, token usage, cost, and quota without crowding each other out.',
-    'The trade is terminal height. The previews show the full block each one prints, so you can judge the footprint before you copy it.',
+    'Claude Code shows every line a status line script prints, so a status line can stack git, tokens, cost and limits on two or three rows. Each preview shows the full height.',
   ],
   powerline: [
-    'Powerline segments with angled separators are the classic terminal-status look. These status lines bring it to Claude Code, and most rely on a Nerd Font for the glyphs.',
-    'Check the requirements on each config’s page before copying: without the right font installed the separators render as boxes.',
+    "Powerline separators need a Nerd Font. Without one they render as boxes, so check each status line's requirements before you copy it.",
   ],
   themed: [
-    'If your terminal already runs Catppuccin or Dracula, a status line in the same palette stops looking bolted on. These configs commit to a named theme throughout.',
-    'The previews use each script’s real ANSI output, so the palette you see is the palette you get.',
+    "Status lines in one named palette, such as Catppuccin or Dracula, to match your terminal theme. Each preview shows the script's real colors.",
   ],
   bash: [
-    'Bash status lines run anywhere Claude Code does, with jq usually the only dependency. That makes them the default choice when you do not want to install a runtime just for your terminal.',
-    'They range from three-line scripts to full dashboards, and the source on each page is short enough to audit before you paste it.',
+    'Bash status lines run anywhere Claude Code does, usually with jq as the only dependency. Each page shows the full source to read before you paste it.',
   ],
   python: [
-    'Python status lines trade a runtime dependency for readable string formatting and real data structures. If your status line is turning into a program, this is the sensible language for it.',
-    'Each config’s page lists exactly what it needs; most run on a stock python3 with no packages.',
+    'Python suits a status line that has grown into a program. Most run on a stock python3 with no packages, and each page lists what it needs.',
   ],
   node: [
-    'Node status lines parse the JSON payload natively, no jq required, and can lean on npm when a config wants more than the standard library.',
-    'If you installed Claude Code through npm you already have the runtime, so trying one of these costs nothing.',
+    'Node status lines parse the JSON without jq. If you installed Claude Code with npm, you already have Node.',
   ],
 } satisfies Record<string, string[]>
 
@@ -71,21 +52,16 @@ export const FACET_ANSWER = {
   'token-usage':
     'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
   quota:
-    "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing. The configs below differ in how loudly they warn.",
-  git: "Claude Code does not send git state in the status line's stdin JSON. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository. Each preview below includes a directory with no repo.",
+    "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing.",
+  git: "Claude Code does not send git state in the status line's stdin JSON. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
 } satisfies Record<string, string>
 
 export const FACET_FAQ = {
   'token-usage': [
     {
-      question: 'Why does my token count show null?',
-      answer:
-        '`context_window.used_percentage` and `remaining_percentage` are null until the first response of a session. `current_usage` is null then too. Default them in your script, for example with `// 0` in jq.',
-    },
-    {
       question: 'How do I show a context bar instead of a number?',
       answer:
-        'Take `context_window.used_percentage`, scale it to the bar width, and print that many filled blocks followed by empty ones. The burn-bar configs above work this way.',
+        'Take `context_window.used_percentage`, scale it to the bar width, and print that many filled blocks followed by empty ones. The bar-style ones above work this way.',
     },
     {
       question: 'Does the context window size change with the model?',
@@ -104,17 +80,12 @@ export const FACET_FAQ = {
       answer:
         'Subtract the current Unix time from `rate_limits.five_hour.resets_at` to get the seconds remaining, then format them as hours and minutes. The same works for `seven_day`.',
     },
-    {
-      question: 'What is the difference between five_hour and seven_day?',
-      answer:
-        '`five_hour` covers the current five-hour usage window. `seven_day` covers the weekly limit. Each carries its own `used_percentage` and `resets_at`.',
-    },
   ],
   git: [
     {
       question: 'What does the status line show outside a git repository?',
       answer:
-        'Whatever the script prints when git fails. A careful script runs `git rev-parse --is-inside-work-tree` first and skips the git segment when it fails. Each preview includes a directory with no repo, so you can see how a config handles it.',
+        'Whatever the script prints when git fails. A careful script runs `git rev-parse --is-inside-work-tree` first and skips the git segment when it fails. Each preview includes a directory with no repo, so you can see how each one handles it.',
     },
     {
       question: 'Can the status line show the pull request?',
@@ -123,3 +94,49 @@ export const FACET_FAQ = {
     },
   ],
 } satisfies Record<string, FaqEntry[]>
+
+export interface FacetModCopy {
+  titleBase: string
+  heading: string
+  metaDescription: string
+}
+
+/** Shown on a facet page that lists mods: where each kind shows up. */
+export const FACET_KIND_NOTE =
+  "Status lines print under the prompt. Each mod's page shows where it draws."
+
+/**
+ * Title, heading and description for a facet page that lists mods too, keyed by facet slug. Only
+ * facets a published mod carries get an entry (checked against production on 2026-10-15).
+ */
+export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
+  'token-usage': {
+    titleBase: 'Claude Code Token Usage: Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that show token usage',
+    metaDescription:
+      'Claude Code status lines and mods that show context window usage, as token counts or meters.',
+  },
+  cost: {
+    titleBase: 'Claude Code Session Cost: Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that track cost',
+    metaDescription:
+      'Claude Code status lines and mods that show session cost, from dollar figures to burn-rate meters.',
+  },
+  quota: {
+    titleBase: 'Claude Code Usage Limits: Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that track usage limits',
+    metaDescription:
+      'Claude Code status lines and mods that show your 5-hour and weekly usage limits and when they reset.',
+  },
+  minimal: {
+    titleBase: 'Minimal Claude Code Status Lines & Mods',
+    heading: 'Minimal Claude Code status lines and mods',
+    metaDescription: 'Single-line Claude Code status lines and mods that show only the essentials.',
+  },
+  'multi-line': {
+    titleBase: 'Multi-Line Claude Code Status Lines & Mods',
+    heading: 'Multi-line Claude Code status lines and mods',
+    metaDescription:
+      'Claude Code status lines and mods that use two or more lines to show tokens, cost and usage limits.',
+  },
+}

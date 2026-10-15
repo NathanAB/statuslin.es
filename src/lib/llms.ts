@@ -1,5 +1,8 @@
 import {
   DESKTOP_GUIDE_PATH,
+  DESKTOP_GUIDE_TITLE_BASE,
+  GUIDE_PATH,
+  GUIDE_TITLE_BASE,
   MOD_SAFETY_GUIDE_PATH,
   MOD_SAFETY_GUIDE_TITLE,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
@@ -38,8 +41,8 @@ export function buildLlmsTxt(
 ): string {
   const blocks = [
     '# statuslin.es',
-    '> A gallery of Claude Code status lines and mods. Status lines are submitted by the community. Browse real previews, then copy a status line or install a mod.',
-    "statuslin.es is a curated, open gallery of status lines for Anthropic's Claude Code CLI. It holds two kinds of entry: status line shell scripts, which the community submits, and mods, which are Claude Code plugins. The site shows each one's real output, rendered in a sandbox or, for a mod that draws only in Claude Desktop, as a screenshot, plus its copy count and a one-command copy or install. It is a curation-first gallery, not documentation.",
+    '> A gallery of Claude Code status lines and mods, each with a real preview. Copy a status line in one paste or install a mod with one command.',
+    "Status lines are scripts whose output Claude Code shows under the prompt. Mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -59,14 +62,14 @@ export function buildLlmsTxt(
 function corePageLinks(base: string): string[] {
   return [
     `- [Gallery](${base}/): every published status line and mod, sorted by trending, newest, or most copied`,
-    `- [Mods](${base}${MODS_PATH}): every published mod, a Claude Code plugin you install with one command`,
+    `- [Mods](${base}${MODS_PATH}): every published mod`,
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
-    `- [Submit a status line](${base}/submit): add your own`,
-    `- [Guide](${base}/guide): how to wire a Claude Code status line by hand, with a tested example`,
-    `- [Status line not showing in Claude Desktop](${base}${DESKTOP_GUIDE_PATH}): why the Desktop Code tab skips custom status lines, and the plugin that shows them`,
-    `- [${STATUS_LINES_VS_MODS_GUIDE_TITLE}](${base}${STATUS_LINES_VS_MODS_GUIDE_PATH}): what a status line and a mod are, where each shows up, and when to pick which`,
-    `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what an installed mod can do, what claude plugin validate reports, and how statuslin.es pins and reviews each mod`,
-    `- [Resources](${base}/resources): related Claude Code status line tools`,
+    `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
+    `- [${GUIDE_TITLE_BASE}](${base}${GUIDE_PATH}): the statusLine setting, the JSON a script receives, and a tested example`,
+    `- [${DESKTOP_GUIDE_TITLE_BASE}](${base}${DESKTOP_GUIDE_PATH}): why the Code tab skips status lines, and the plugin that shows them`,
+    `- [${STATUS_LINES_VS_MODS_GUIDE_TITLE}](${base}${STATUS_LINES_VS_MODS_GUIDE_PATH}): where each one shows up, and when to pick which`,
+    `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what a mod can do, and how statuslin.es pins and reviews each one`,
+    `- [Resources](${base}/resources): other Claude Code status line tools, generators, and guides`,
   ]
 }
 

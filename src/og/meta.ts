@@ -1,11 +1,14 @@
 import {
+  configMetaDescription,
+  configPageTitle,
+  HOME_DESCRIPTION_BASE,
   HOME_TITLE_BASE,
   homeMetaDescription,
   homePageName,
   modMetaDescription,
   modPageTitle,
 } from '@/lib/page-title'
-import { modPath, siteUrl } from '@/lib/site'
+import { modPath, SITE_NAME, siteUrl } from '@/lib/site'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 export function rootSocialMeta(): Array<Record<string, string>> {
@@ -13,17 +16,13 @@ export function rootSocialMeta(): Array<Record<string, string>> {
   return [
     {
       name: 'description',
-      content:
-        'A community gallery of Claude Code status lines and mods — browse rendered previews, then copy a status line or install a mod.',
+      content: HOME_DESCRIPTION_BASE,
     },
+    { property: 'og:site_name', content: SITE_NAME },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: base },
     { property: 'og:title', content: HOME_TITLE_BASE },
-    {
-      property: 'og:description',
-      content:
-        'Browse rendered Claude Code status lines and mods. Copy a status line or install a mod.',
-    },
+    { property: 'og:description', content: HOME_DESCRIPTION_BASE },
     { property: 'og:image', content: `${base}/og/home.png` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
@@ -55,11 +54,8 @@ export function configSocialMeta(input: {
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}/c/${input.slug}` },
-    { property: 'og:title', content: `${input.title} — statuslin.es` },
-    {
-      property: 'og:description',
-      content: input.description || 'A reviewed Claude Code status line.',
-    },
+    { property: 'og:title', content: configPageTitle(input.title) },
+    { property: 'og:description', content: configMetaDescription(input.description) },
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },

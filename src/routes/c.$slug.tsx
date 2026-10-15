@@ -74,7 +74,6 @@ export const Route = createFileRoute('/c/$slug')({
             license: detail.license,
             keywords: detail.facetLabels,
             updatedAt: detail.updatedAt,
-            generatedContent: detail.generatedContent,
             primaryFacet: detail.primaryFacet,
           }).map(jsonLdScript)
         : [],
@@ -138,7 +137,7 @@ function ConfigDetail() {
             </Stack>
           ) : (
             <Text muted size="sm">
-              No preview available.
+              No preview.
             </Text>
           )
         }
@@ -197,7 +196,7 @@ function ConfigDetail() {
               </SectionCard>
             )}
             {mods.length > 0 && (
-              <SectionCard title="Mods that do the same job" headingLevel={2}>
+              <SectionCard title="Related mods" headingLevel={2}>
                 <Stack gap={3}>
                   {mods.map((card, index) => (
                     <ModCard

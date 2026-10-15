@@ -4,12 +4,27 @@ import { describe, expect, it, vi } from 'vitest'
 
 // TextLink's `to` variant renders TanStack Router's <Link>, which needs a router context;
 // stub it to a plain anchor (same convention as test/ui/stretched-link.test.tsx).
+const linkProps = vi.hoisted(() => ({ last: {} as Record<string, unknown> }))
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
+  Link: ({
+    to,
+    children,
+    hash: _hash,
+    hashScrollIntoView: _hashScroll,
+    ...props
+  }: {
+    to: string
+    children: React.ReactNode
+    hash?: string
+    hashScrollIntoView?: unknown
+  }) => {
+    linkProps.last = { to, hash: _hash, hashScrollIntoView: _hashScroll }
+    return (
+      <a href={to} {...props}>
+        {children}
+      </a>
+    )
+  },
 }))
 
 const { Heading, Text, TextLink } = await import('@/ui/text')
@@ -161,5 +176,38 @@ describe('TextLink size', () => {
     )
     const a = container.querySelector('a') as HTMLAnchorElement
     expect(a.className).toContain('text-sm')
+  })
+})
+
+describe('TextLink hash', () => {
+  function prefersReducedMotion(reduce: boolean) {
+    window.matchMedia = ((query: string) => ({
+      matches: reduce && query.includes('prefers-reduced-motion: reduce'),
+    })) as unknown as typeof window.matchMedia
+  }
+
+  it('scrolls smoothly to the hash target', () => {
+    prefersReducedMotion(false)
+    render(
+      <TextLink to="/" hash="gallery">
+        list
+      </TextLink>,
+    )
+    expect(linkProps.last).toMatchObject({
+      hash: 'gallery',
+      hashScrollIntoView: { behavior: 'smooth', block: 'start' },
+    })
+  })
+
+  it('jumps instead when the reader prefers reduced motion', () => {
+    prefersReducedMotion(true)
+    render(
+      <TextLink to="/" hash="gallery">
+        list
+      </TextLink>,
+    )
+    expect(linkProps.last).toMatchObject({
+      hashScrollIntoView: { behavior: 'auto', block: 'start' },
+    })
   })
 })

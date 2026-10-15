@@ -27,8 +27,7 @@ describe('ModSafetyContent', () => {
     for (const heading of [
       /what a mod can do once installed/i,
       /what claude plugin validate reports/i,
-      /pinned to the commit a person reviewed/i,
-      /read by a person before it's listed/i,
+      /what statuslin\.es checks before listing a mod/i,
       /what's still on you/i,
       /check a mod yourself/i,
       /common questions/i,
@@ -56,6 +55,12 @@ describe('ModSafetyContent', () => {
     const steps = screen.getByRole('list')
     expect(steps.tagName).toBe('OL')
     expect(steps.textContent).toContain('claude plugin validate <path>')
+  })
+
+  it('lists only checks the docs back', () => {
+    const { container } = render(<ModSafetyContent />)
+    expect(container.textContent).not.toMatch(/eval|global `?fetch/)
+    expect(container.textContent).toMatch(/approve/)
   })
 
   it('links the mods', () => {

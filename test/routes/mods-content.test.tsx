@@ -64,13 +64,7 @@ describe('/mods page', () => {
     expect(screen.getByRole('link', { name: 'File Tree' }).getAttribute('href')).toBe(
       '/mods/file-tree',
     )
-    expect(screen.queryByText('No mods are published yet.')).toBeNull()
-  })
-
-  it('points status line visitors at the gallery', () => {
-    renderPage(MODS)
-
-    expect(screen.getByRole('link', { name: 'Browse the gallery' }).getAttribute('href')).toBe('/')
+    expect(screen.queryByText('No mods yet.')).toBeNull()
   })
 
   it('links the guides that compare mods with status lines and explain mod safety', () => {
@@ -134,19 +128,19 @@ describe('/mods page', () => {
     expect(pageText).toContain('claude plugin install <mod>@statuslines')
   })
 
-  it('links the safety guide right after the safety answer', () => {
+  it('links the safety guide once, from the intro', () => {
     renderPage(MODS)
 
-    const link = screen.getByRole('link', { name: 'Read the mod safety guide' })
-    expect(link.getAttribute('href')).toBe('/guide/are-claude-code-mods-safe')
-    const safety = screen.getByRole('heading', { level: 3, name: 'Are Claude Code mods safe?' })
-    expect(safety.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const links = screen.getAllByRole('link', { name: 'what a mod can touch' })
+    expect(links).toHaveLength(1)
+    expect(links[0]?.getAttribute('href')).toBe('/guide/are-claude-code-mods-safe')
+    expect(screen.queryByRole('link', { name: 'Read the mod safety guide' })).toBeNull()
   })
 
   it('says so when no mod is published', () => {
     renderPage([])
 
-    expect(screen.getByText('No mods are published yet.')).toBeTruthy()
+    expect(screen.getByText('No mods yet.')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Meter' })).toBeNull()
     expect(screen.getByRole('heading', { level: 2, name: 'Common questions' })).toBeTruthy()
   })

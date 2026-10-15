@@ -8,7 +8,7 @@ import { type LlmsMod, llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
 import { type SitemapMod, sitemapResponse } from '@/lib/sitemap'
 import { getConfigSource, getPublishedConfigs } from './config-items'
-import type { FacetMod } from './facet-queries'
+import { type FacetMod, getLatestCopyAt } from './facet-queries'
 import type { GallerySource } from './gallery-items'
 import { getPublishedInventory } from './inventory'
 import {
@@ -57,11 +57,19 @@ export const sitemapResponseForRoute = createServerOnlyFn(
 
 const BEST_LIMIT = 10
 
+/** `latestCopy` dates the page by its data, the UTC day of the newest copy, not the request day,
+ * so the page claims no newer month than its ranking reflects. */
 export const getBestPage = createServerFn({ method: 'GET' }).handler(() =>
-  withHttpStatus(async () => ({
-    items: (await getCardsByCopies(db, { limit: BEST_LIMIT })).map(rankedCard),
-    asOf: new Date().toISOString().slice(0, 10),
-  })),
+  withHttpStatus(async () => {
+    const [cards, latestCopyAt] = await Promise.all([
+      getCardsByCopies(db, { limit: BEST_LIMIT }),
+      getLatestCopyAt(db),
+    ])
+    return {
+      items: cards.map(rankedCard),
+      latestCopy: latestCopyAt?.toISOString().slice(0, 10) ?? null,
+    }
+  }),
 )
 
 /**
@@ -109,11 +117,7 @@ export const getGalleryConfigs = createServerFn({ method: 'GET' })
 export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(async () => {
     const inventory = await getPublishedInventory(db)
-    return {
-      publishedCount: inventory.count,
-      copyCount: inventory.copyCount,
-      asOf: new Date().toISOString().slice(0, 10),
-    }
+    return { ...inventory, asOf: new Date().toISOString().slice(0, 10) }
   }),
 )
 

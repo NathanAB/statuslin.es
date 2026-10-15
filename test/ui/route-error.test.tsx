@@ -13,14 +13,12 @@ describe('RouteError', () => {
     const reload = vi.fn()
     vi.stubGlobal('location', { reload })
 
-    render(<RouteError error={new Error('chunk failed')} reset={vi.fn()} />)
+    const { container } = render(<RouteError error={new Error('chunk failed')} reset={vi.fn()} />)
 
     expect(screen.getByRole('heading', { name: 'This page couldn’t load' })).toBeTruthy()
-    expect(
-      screen.getByText('A required file failed to load. Reload the page to try again.'),
-    ).toBeTruthy()
+    expect(container.querySelector('p')).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reload page' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }))
 
     expect(reload).toHaveBeenCalledOnce()
   })

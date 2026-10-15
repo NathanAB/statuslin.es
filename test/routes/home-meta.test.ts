@@ -25,7 +25,7 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
+            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
         },
       ]),
     )
@@ -50,14 +50,14 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
+            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
         { property: 'og:url', content: 'https://statuslin.es/?page=2' },
         { property: 'og:title', content: 'Claude Code Status Lines & Mods — Page 2' },
         {
           property: 'og:description',
           content:
-            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
+            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
       ]),
     )
@@ -76,7 +76,7 @@ describe('home search indexing metadata', () => {
     })
   })
 
-  it('renders WebSite and CollectionPage as separate JSON-LD scripts', async () => {
+  it('renders WebSite, Organization and CollectionPage as separate JSON-LD scripts', async () => {
     const head = await HomeRoute.options.head?.({
       loaderData: {
         gallery: {
@@ -89,10 +89,11 @@ describe('home search indexing metadata', () => {
     } as never)
 
     const scripts = (head?.scripts ?? []) as Array<{ type: string; children: string }>
-    expect(scripts).toHaveLength(2)
+    expect(scripts).toHaveLength(3)
     expect(scripts.every((script) => script.type === 'application/ld+json')).toBe(true)
     expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
       'WebSite',
+      'Organization',
       'CollectionPage',
     ])
   })
@@ -124,6 +125,33 @@ describe('home search indexing metadata', () => {
       { position: 11, url: 'https://statuslin.es/mods/meter' },
       { position: 12, url: 'https://statuslin.es/c/alpha' },
     ])
+  })
+
+  // The ItemList is the ranked gallery, numbered across pages. The "Featured mod" row is a separate
+  // section whose mod also ranks in the gallery, so listing it would shift page 1's numbering and
+  // list that mod twice.
+  it('lists only the ranked gallery in the CollectionPage, not the "Featured mod" row', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: {
+        gallery: {
+          page: 1,
+          pageCount: 2,
+          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
+        },
+        featuredMod: { slug: 'meter', title: 'Meter' },
+      },
+      match: { search: {} },
+    } as never)
+
+    const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
+      .map((script) => JSON.parse(script.children) as Record<string, unknown>)
+      .find((node) => node['@type'] === 'CollectionPage') as
+      | { mainEntity: { itemListElement: Array<{ position: number; url: string }> } }
+      | undefined
+    expect(
+      collectionPage?.mainEntity.itemListElement.map(({ position, url }) => ({ position, url })),
+    ).toEqual([{ position: 1, url: 'https://statuslin.es/c/alpha' }])
   })
 
   it('marks a kind-filtered gallery view noindex', async () => {
@@ -181,7 +209,10 @@ describe('home search indexing metadata', () => {
     } as never)
 
     const scripts = (head?.scripts ?? []) as Array<{ children: string }>
-    expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual(['WebSite'])
+    expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
+      'WebSite',
+      'Organization',
+    ])
   })
 
   it('does not noindex the unfiltered gallery', async () => {

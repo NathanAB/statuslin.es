@@ -19,7 +19,7 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 // and marketplace searches instead. No "best" until mods have install counts to rank by.
 const TITLE_BASE = 'Claude Code Mods Directory & Marketplace'
 const DESCRIPTION =
-  'A directory of Claude Code mods with real previews from the terminal and Claude Desktop. A person reviews each one, and it installs from our marketplace.'
+  'Claude Code mods, previewed in the terminal and Claude Desktop. Reviewed by a person, installed with one command.'
 
 export const Route = createFileRoute('/mods/')({
   loader: async () => {
@@ -61,22 +61,13 @@ function ModsPage() {
         <Stack gap={3}>
           <Heading level={1}>Claude Code mods</Heading>
           <Text muted>
-            Mods are Claude Code plugins that draw in its interface: above the prompt, under it, or
-            in a pane.
+            Mods are plugins that change how Claude Code looks and works. A person reviews each one,
+            and the install pins the reviewed commit.
           </Text>
           <Text muted>
-            Every preview here comes from running the mod in Claude Code. A person reviewed each
-            one, and its install is pinned to the commit they read.
-          </Text>
-          <Text muted>
-            Looking for a status line instead? <TextLink to="/">Browse the gallery</TextLink>.
-          </Text>
-          <Text muted>
-            New to mods? See{' '}
-            <TextLink to={STATUS_LINES_VS_MODS_GUIDE_PATH}>
-              how they compare with status lines
-            </TextLink>{' '}
-            and <TextLink to={MOD_SAFETY_GUIDE_PATH}>what a mod can touch</TextLink>.
+            New to mods?{' '}
+            <TextLink to={STATUS_LINES_VS_MODS_GUIDE_PATH}>Compare them with status lines</TextLink>{' '}
+            or see <TextLink to={MOD_SAFETY_GUIDE_PATH}>what a mod can touch</TextLink>.
           </Text>
         </Stack>
         {mods.length > 0 ? (
@@ -91,15 +82,9 @@ function ModsPage() {
             ))}
           </Stack>
         ) : (
-          <Text muted>No mods are published yet.</Text>
+          <Text muted>No mods yet.</Text>
         )}
-        <Stack gap={3}>
-          <FaqSection entries={modsFaq(origin)} />
-          <Text muted>
-            <TextLink to={MOD_SAFETY_GUIDE_PATH}>Read the mod safety guide</TextLink> for what an
-            installed mod can reach and how to check one yourself.
-          </Text>
-        </Stack>
+        <FaqSection entries={modsFaq(origin)} />
       </Stack>
     </PageShell>
   )
