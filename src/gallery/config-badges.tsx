@@ -71,7 +71,7 @@ export function ConfigBadges({
               key={slug}
               content={
                 <Stack gap={1}>
-                  <Text size="xs">Communicates with these domains over the network:</Text>
+                  <Text size="xs">Contacts these hosts:</Text>
                   {networkHosts.map((host) => (
                     <Text key={host} size="xs" muted>
                       {host}

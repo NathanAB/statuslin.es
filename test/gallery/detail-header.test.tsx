@@ -13,7 +13,7 @@ const { DetailHeader } = await import('@/gallery/detail-header')
 const BYLINE = {
   author: { name: 'Octo Cat', username: 'octocat', image: 'https://example.com/octocat.png' },
   source: null,
-  license: 'MIT licensed',
+  license: 'MIT licence',
 }
 
 function follows(earlier: Node, later: Node): boolean {
@@ -49,7 +49,7 @@ describe('DetailHeader', () => {
       <DetailHeader trail={[]} title="Solo" byline={BYLINE} description="" />,
     )
 
-    expect(container.textContent).toBe('statuslin.es›SoloSoloby@octocat·MIT licensed')
+    expect(container.textContent).toBe('statuslin.es›SoloSoloby@octocat·MIT licence')
     expect([...container.querySelectorAll('p')].filter((p) => p.textContent === '')).toEqual([])
   })
 

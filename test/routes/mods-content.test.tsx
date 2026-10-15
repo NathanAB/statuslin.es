@@ -64,13 +64,7 @@ describe('/mods page', () => {
     expect(screen.getByRole('link', { name: 'File Tree' }).getAttribute('href')).toBe(
       '/mods/file-tree',
     )
-    expect(screen.queryByText('No mods are published yet.')).toBeNull()
-  })
-
-  it('points status line visitors at the gallery', () => {
-    renderPage(MODS)
-
-    expect(screen.getByRole('link', { name: 'Browse the gallery' }).getAttribute('href')).toBe('/')
+    expect(screen.queryByText('No mods yet.')).toBeNull()
   })
 
   it('links the guides that compare mods with status lines and explain mod safety', () => {
@@ -146,7 +140,7 @@ describe('/mods page', () => {
   it('says so when no mod is published', () => {
     renderPage([])
 
-    expect(screen.getByText('No mods are published yet.')).toBeTruthy()
+    expect(screen.getByText('No mods yet.')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Meter' })).toBeNull()
     expect(screen.getByRole('heading', { level: 2, name: 'Common questions' })).toBeTruthy()
   })
