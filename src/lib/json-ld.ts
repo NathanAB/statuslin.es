@@ -1,4 +1,3 @@
-import type { PageCopy } from '@/content/types'
 import type { GalleryKind } from '@/gallery/gallery-items'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
@@ -101,7 +100,6 @@ export function configJsonLd(
     license: string | null
     keywords: string[]
     updatedAt: string | null
-    generatedContent: PageCopy | null
     primaryFacet: { slug: string; heading: string } | null
   },
 ): object[] {

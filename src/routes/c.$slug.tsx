@@ -74,7 +74,6 @@ export const Route = createFileRoute('/c/$slug')({
             license: detail.license,
             keywords: detail.facetLabels,
             updatedAt: detail.updatedAt,
-            generatedContent: detail.generatedContent,
             primaryFacet: detail.primaryFacet,
           }).map(jsonLdScript)
         : [],
