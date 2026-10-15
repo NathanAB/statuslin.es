@@ -10,7 +10,7 @@ export function FaqSection({ entries }: { entries: FaqEntry[] }) {
       {entries.map((entry) => (
         <Stack key={entry.question} gap={1.5}>
           <Heading level={3}>{entry.question}</Heading>
-          <Text muted>
+          <Text muted breakLong>
             <InlineCodeText text={entry.answer} />
           </Text>
         </Stack>
