@@ -1,8 +1,9 @@
+import { SITE_NAME } from '@/lib/site'
 import { RESOURCE_SECTIONS, type ResourceSection } from '@/resources/data'
 
 const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
 const MOD_PAGE_TITLE_KEYWORD = ' — Claude Code mod'
-const PAGE_TITLE_BRAND = ' | statuslin.es'
+export const PAGE_TITLE_BRAND = ` | ${SITE_NAME}`
 const PAGE_TITLE_MAX_LENGTH = 60
 const META_DESCRIPTION_MAX_LENGTH = 160
 
@@ -66,9 +67,9 @@ export function modMetaDescription(description: string | null | undefined): stri
   return metaDescription(description, MOD_META_DESCRIPTION_FALLBACK)
 }
 
-export const MOD_NOT_FOUND_TITLE = 'Mod not found — statuslin.es'
+export const MOD_NOT_FOUND_TITLE = `Mod not found — ${SITE_NAME}`
 
-export const NOT_FOUND_TITLE = 'Status line not found — statuslin.es'
+export const NOT_FOUND_TITLE = `Status line not found — ${SITE_NAME}`
 
 /**
  * The home page's title base — shared by the <title> tag, og:title and the home JSON-LD name. Status

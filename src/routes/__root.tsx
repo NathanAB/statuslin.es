@@ -7,7 +7,7 @@ import { connectPostHogClientErrors } from '@/lib/posthog-client-errors'
 import { dropExtensionExceptions } from '@/lib/posthog-exception-filter'
 import { POSTHOG_INGEST_HOST, POSTHOG_UI_HOST } from '@/lib/posthog-hosts'
 import { identifyPostHogUser } from '@/lib/posthog-identity'
-import { BRAND_ICON_PATH } from '@/lib/site'
+import { BRAND_ICON_PATH, SITE_NAME } from '@/lib/site'
 import { rootSocialMeta } from '@/og/meta'
 import { Toaster } from '@/ui/sonner'
 
@@ -22,7 +22,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'statuslin.es' },
+      { title: SITE_NAME },
       ...rootSocialMeta(),
     ],
     links: [

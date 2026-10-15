@@ -1,10 +1,10 @@
 import { COMPARISONS, FACT_ROWS, type ThirdPartyTool, TOOL_BY_SLUG, TOOLS } from '@/compare/tools'
 import { type GalleryCard, MIN_INDEXABLE_FACET_CONFIGS } from '@/gallery/queries'
 import { listPhrase, type RankedCard, rankedCard } from '@/gallery/why-line'
+import { PAGE_TITLE_BRAND } from '@/lib/page-title'
 
 const MIN_SHARED_JOBS = 3
 const PREVIEWS_PER_PAGE = 6
-const BRAND = ' | statuslin.es'
 const GALLERY_WANTS = 'to read one script and see its real output first'
 
 export type CompareLink =
@@ -102,7 +102,7 @@ function alternativesPage(t: ThirdPartyTool, cards: RankedCard[]): ComparePage {
   const others = TOOLS.filter((o) => o !== t)
   return {
     path: `/alternatives/${t.slug}`,
-    title: `${t.name} Alternatives for Claude Code${BRAND}`,
+    title: `${t.name} Alternatives for Claude Code${PAGE_TITLE_BRAND}`,
     heading: `${t.name} alternatives`,
     description: `Alternatives to ${t.name} for your Claude Code status line: ${listPhrase(others.map((o) => o.name))}, plus scripts with real rendered previews you can compare before you copy.`,
     intro: `Single scripts from the gallery that cover at least ${MIN_SHARED_JOBS} of the same features as ${t.name}, each shown with its real output.`,
@@ -120,7 +120,7 @@ function versusPage(spec: Extract<PageSpec, { kind: 'versus' }>, cards: RankedCa
   const [a, b] = spec.tools
   return {
     path: spec.path,
-    title: `${a.name} vs ${b.name} Compared${BRAND}`,
+    title: `${a.name} vs ${b.name} Compared${PAGE_TITLE_BRAND}`,
     heading: `${a.name} vs ${b.name}`,
     description: `${a.name} vs ${b.name}: install, config, themes, fonts, and usage limits compared, plus rendered Claude Code status lines that do the same job.`,
     intro: spec.intro,
