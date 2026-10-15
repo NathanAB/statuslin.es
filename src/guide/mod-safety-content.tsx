@@ -24,10 +24,9 @@ const TILES: FactTableRow[] = [
 
 const CHECK_IT_YOURSELF = [
   "Clone the mod's repository and check out the commit its page links.",
-  'Run `claude plugin validate <path>` on the plugin folder. Add `--json` for a JSON report.',
+  'Run `claude plugin validate <path>` on the plugin folder and read its `calls:` line.',
   'Open `hooks/hooks.json` to find the module it loads, then read the hooks in that module.',
-  'Search the code for `$.process`, `$.fs`, `$.http` and `$.model` calls.',
-  "Look for `eval` and a global `fetch` too. Validate doesn't list either one as a call.",
+  'Find where the code calls `$.process`, `$.fs`, `$.http`, `$.env` and `$.model`, and read what it does with each.',
 ]
 
 /** The /guide/are-claude-code-mods-safe page body: what a mod can touch and what checks cover. */
@@ -37,84 +36,57 @@ export function ModSafetyContent() {
       <Stack gap={3}>
         <Heading level={1}>Are Claude Code mods safe?</Heading>
         <Text muted>
-          A mod runs inside Claude Code with your permissions, so whether it's safe depends on its
-          code. This page covers what a mod can do once installed, what statuslin.es checks before
-          it lists one, and what is still up to you.
+          A mod runs inside Claude Code with your permissions and no sandbox. Whether it's safe
+          depends on its code, and on who has read that code.
         </Text>
       </Stack>
 
       <Stack gap={3}>
         <Heading level={2}>What a mod can do once installed</Heading>
         <Text muted>
-          Claude Code doesn't sandbox mods. A mod's file and process calls run without asking you
-          first. Its web requests follow only your organization's web-fetch policy, and a program it
-          starts runs outside Claude Code's Bash sandbox.
+          <InlineCodeText text="Through `$`, Claude Code's API for mods, a mod can read and write your files, run programs, make web requests, read your environment variables, call the model on your plan, read the conversation and add slash commands. It can also approve Claude's tool calls for you. None of these asks you first." />
         </Text>
         <Text muted>
-          <InlineCodeText text="Through `$`, Claude Code's API for mods, a mod can read and write files, run programs, make web requests, send its own requests to the model, read the conversation and add slash commands." />
-        </Text>
-        <Text muted>
-          <InlineCodeText text="Claude Code's install step shows a generic trust warning. It doesn't list what the mod calls. That list, called the footprint, appears only when you run `claude plugin validate`." />
+          Claude Code's sandbox covers the commands Claude runs, not a mod or the programs a mod
+          starts.
         </Text>
       </Stack>
 
       <Stack gap={3}>
         <Heading level={2}>What claude plugin validate reports</Heading>
         <Text muted>
-          <InlineCodeText text="`claude plugin validate` reads a mod's code without running it. It prints the footprint: the events the mod hooks and the calls it makes on `$`. It rejects code that hides a call, such as aliasing `$`, reaching it through a computed name, or a dynamic `import()`." />
+          <InlineCodeText text="`claude plugin validate` reads a mod's code without running it and prints its footprint: the events it hooks and the `$` calls it makes. Claude Code won't load a mod whose calls validate can't read." />
         </Text>
         <Text muted>
-          statuslin.es runs it in a sandbox on each mod's pinned commit and turns the footprint into
-          tiles on the mod page:
+          statuslin.es runs it on each mod's pinned commit and shows the footprint as tiles on the
+          mod page:
         </Text>
         <FactTable columns={['What it says']} rows={TILES} />
         <Text muted>
           "{THROUGH_PROGRAMS}" on {MOD_TILE_LABEL.changesFiles} or {MOD_TILE_LABEL.network} means
-          the mod makes no such call itself, but it runs programs. Validate can't see what those
-          programs do.
-        </Text>
-        <Text muted>
-          The page text never decides a tile. It can describe a yes in more detail, but the yes or
-          no comes from the footprint.
+          the mod makes no such call itself but runs programs, and validate can't see what those
+          programs do. The tiles come from the footprint, never from the page's text.
         </Text>
       </Stack>
 
       <Stack gap={3}>
-        <Heading level={2}>Pinned to the commit a person reviewed</Heading>
+        <Heading level={2}>What statuslin.es checks before listing a mod</Heading>
         <Text muted>
-          statuslin.es serves its own marketplace at{' '}
-          <TextLink href={MARKETPLACE_PATH}>{MARKETPLACE_PATH}</TextLink>. Each entry names the
-          author's repository and the commit a person reviewed. Claude Code installs that commit, so
-          a later push to the author's repository doesn't change what you get.
+          A person reads the mod's footprint and source at a single commit. statuslin.es's
+          marketplace, <TextLink href={MARKETPLACE_PATH}>{MARKETPLACE_PATH}</TextLink>, pins that
+          commit, so a later push to the author's repository doesn't change what you install.
         </Text>
         <Text muted>
-          If the author force-pushes over that commit or deletes it, new installs fail. An update is
-          a new version at a new commit. A person reviews it, including the changes since the live
-          commit, before it replaces the live version.
-        </Text>
-      </Stack>
-
-      <Stack gap={3}>
-        <Heading level={2}>Read by a person before it's listed</Heading>
-        <Text muted>
-          Before a mod appears on statuslin.es, a person reads its footprint and its source at the
-          pinned commit. statuslin.es also runs the mod in a sandbox, in the terminal and in Claude
-          Desktop, to record the previews on its page. Each mod page links its source at that
-          commit, next to the author and the licence.
+          An update is a new commit, and a person reviews its changes before it goes live. If the
+          author deletes the pinned commit, new installs fail.
         </Text>
       </Stack>
 
       <Stack gap={3}>
         <Heading level={2}>What's still on you</Heading>
         <Text muted>
-          Review and pinning lower the risk. They don't guarantee anything. A reviewer can miss
-          something, and the sandbox only covers the preview run. Once installed, the mod runs on
-          your machine.
-        </Text>
-        <Text muted>
-          A mod that runs programs can do whatever those programs do. The footprint shows that it
-          runs them, not what they do. Read the source before you install a mod, and again before
-          you update it.
+          Review and pinning lower the risk but guarantee nothing. A reviewer can miss something.
+          Read the source before you install a mod, and again before you update it.
         </Text>
       </Stack>
 
@@ -122,8 +94,8 @@ export function ModSafetyContent() {
         <Heading level={2}>Check a mod yourself</Heading>
         <NumberedList items={CHECK_IT_YOURSELF} />
         <Text muted>
-          Or start from the <TextLink to={MODS_PATH}>reviewed mods on statuslin.es</TextLink>, each
-          with its tiles and a link to its source at the pinned commit.
+          Or start from the <TextLink to={MODS_PATH}>reviewed mods on statuslin.es</TextLink>. Each
+          page shows its tiles and links its source at the pinned commit.
         </Text>
       </Stack>
 

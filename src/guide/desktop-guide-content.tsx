@@ -26,7 +26,7 @@ export function DesktopGuideContent({
         <Heading level={1}>Claude Code status line not showing in Claude Desktop</Heading>
         <Text muted>
           Claude Desktop doesn't run the statusLine command, so your status line never appears.{' '}
-          <StatuslineAnywhereLink surface="desktop_guide" />, a Claude Code plugin, adds it back.
+          <StatuslineAnywhereLink surface="desktop_guide" />, a Claude Code mod, adds it back.
         </Text>
       </Stack>
 
