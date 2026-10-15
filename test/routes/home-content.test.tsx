@@ -48,7 +48,8 @@ const gallery = {
   items: [],
   page: 1,
   pageCount: 1,
-  publishedCount: 32,
+  statusLines: 32,
+  mods: 9,
   copyCount: 148,
   asOf: '2026-09-08',
 }
@@ -80,14 +81,24 @@ function renderHome(
   return render(Home ? <Home /> : null)
 }
 
+/** The dated count paragraph: the one holding a <time>. */
+const inventoryNote = () => document.querySelector('time')?.closest('p')
+
 describe('home content', () => {
-  it('shows the published count, copy count and as-of date it is given', () => {
+  it('counts both kinds, their copies and the as-of date it is given', () => {
     renderHome()
 
-    const page = document.body.textContent ?? ''
-    expect(page).toMatch(/32 published/)
-    expect(page).toMatch(/148/)
-    expect(page).toMatch(/Sep 8, 2026/)
+    expect(inventoryNote()?.textContent).toBe(
+      '32 status lines and 9 mods, copied 148 times as of Sep 8, 2026.',
+    )
+  })
+
+  it('leaves mods out of the count while none is published', () => {
+    renderHome({ mods: 0 })
+
+    expect(inventoryNote()?.textContent).toBe(
+      '32 status lines, copied 148 times as of Sep 8, 2026.',
+    )
   })
 
   it('makes the gallery heading the only h1 on the page', () => {
@@ -113,16 +124,14 @@ describe('home content', () => {
     const masthead = container.querySelector('h1')?.parentElement?.parentElement
     expect(masthead?.className).toContain('sm:grid-cols-2')
     expect(masthead?.textContent).toMatch(/statuslin\.es/)
-    expect(masthead?.textContent).not.toMatch(/32 published/)
+    expect(masthead?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
   })
 
   it('centers the dated inventory note under the gallery', () => {
     renderHome()
 
-    const inventory = screen.getByText(/32 published status lines/)
-    expect(inventory.tagName).toBe('P')
-    expect(inventory.className).toContain('text-center')
+    expect(inventoryNote()?.className).toContain('text-center')
   })
 })
 

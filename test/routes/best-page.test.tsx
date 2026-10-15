@@ -15,9 +15,9 @@ vi.mock('@tanstack/react-router', async () => {
 
 const { Route: BestRoute } = await import('@/routes/status-lines.best')
 
-const loaderData = (latestCopy: string | null) => ({
+const loaderData = (latestCopy: string | null, count = 0) => ({
   user: null,
-  page: { items: [], latestCopy },
+  page: { items: Array.from({ length: count }, () => ({})), latestCopy },
 })
 
 async function titleFor(latestCopy: string | null) {
@@ -53,6 +53,18 @@ describe('/status-lines/best', () => {
     expect(await titleFor('2026-09-30')).toEqual({
       title: 'Best Claude Code Status Lines (September 2026)',
     })
+  })
+
+  it('counts the ranked status lines in the intro, singular for one', () => {
+    vi.spyOn(BestRoute, 'useLoaderData').mockReturnValue(loaderData(null, 1))
+    const BestPage = BestRoute.options.component
+    const { unmount } = render(BestPage ? <BestPage /> : null)
+    expect(screen.getByText(/^The most-copied status line on statuslin\.es\./)).toBeTruthy()
+    unmount()
+
+    vi.spyOn(BestRoute, 'useLoaderData').mockReturnValue(loaderData(null, 10))
+    render(BestPage ? <BestPage /> : null)
+    expect(screen.getByText(/^The 10 most-copied status lines on statuslin\.es\./)).toBeTruthy()
   })
 
   it('leaves the date out before anything has been copied', async () => {

@@ -117,11 +117,7 @@ export const getGalleryConfigs = createServerFn({ method: 'GET' })
 export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(async () => {
     const inventory = await getPublishedInventory(db)
-    return {
-      publishedCount: inventory.count,
-      copyCount: inventory.copyCount,
-      asOf: new Date().toISOString().slice(0, 10),
-    }
+    return { ...inventory, asOf: new Date().toISOString().slice(0, 10) }
   }),
 )
 

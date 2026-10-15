@@ -14,13 +14,17 @@ import { Heading, Text, TextLink } from '@/ui/text'
 
 const PATH = '/status-lines/best'
 const DESCRIPTION =
-  'The most-copied Claude Code status lines in the gallery, ranked by copies. Each one has a real rendered preview, a one-line summary, and a one-paste install.'
+  'The most-copied Claude Code status lines on statuslin.es, ranked by copies, each with a preview rendered from the real script and a one-paste install.'
 
 const MONTH = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 
 /** " (October 2026)" from the newest copy's UTC day, or nothing before the first copy. */
 function monthSuffix(latestCopy: string | null): string {
   return latestCopy ? ` (${MONTH.format(new Date(latestCopy))})` : ''
+}
+
+function rankedLines(count: number): string {
+  return count === 1 ? 'The most-copied status line' : `The ${count} most-copied status lines`
 }
 
 export const Route = createFileRoute('/status-lines/best')({
@@ -52,12 +56,12 @@ function BestPage() {
         <Stack gap={3}>
           <Heading level={1}>Best Claude Code status lines{monthSuffix(page.latestCopy)}</Heading>
           <Text muted>
-            The {page.items.length} status lines copied most often from statuslin.es
-            {page.latestCopy ? `, as of ${page.latestCopy}` : ''}. Every preview is rendered from
-            the real script, and every entry was reviewed by a person before it was published.
+            {rankedLines(page.items.length)} on statuslin.es
+            {page.latestCopy ? ` as of ${page.latestCopy}` : ''}. Each preview is the script's real
+            output.
           </Text>
           <Text muted>
-            Comparing tools instead?{' '}
+            Comparing tools?{' '}
             <TextLink to="/compare/$pair" params={{ pair: 'ccstatusline-vs-claude-powerline' }}>
               ccstatusline vs claude-powerline
             </TextLink>

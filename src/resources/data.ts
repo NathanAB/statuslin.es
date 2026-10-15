@@ -33,13 +33,13 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         name: 'ccstatusline',
         url: 'https://github.com/sirmalloc/ccstatusline',
         description:
-          "The one you'll see recommended most. You configure it from a terminal UI that writes your settings for you, pick a powerline theme, and add widgets for context and usage limits.",
+          'A terminal UI writes your settings, with powerline themes and widgets for context and usage limits.',
       },
       {
         name: 'claude-powerline',
         url: 'https://github.com/Owloops/claude-powerline',
         description:
-          'Vim-style powerline segments, with themes and usage tracking. If you would rather click than edit config, its Powerline Studio (under generators below) builds the setup visually.',
+          'Vim-style powerline segments with themes and usage tracking. Powerline Studio, listed below, builds its config visually.',
       },
       {
         name: 'CCometixLine',
@@ -56,8 +56,7 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
       {
         name: 'claude-statusline (TheoBrigitte)',
         url: 'https://github.com/TheoBrigitte/claude-statusline',
-        description:
-          'Built for speed above all else: its own benchmarks put a full render under 20 microseconds.',
+        description: 'Built for speed. Its own benchmarks put a full render under 20 microseconds.',
       },
       {
         name: 'claude-statusline (felipeelias)',
@@ -68,14 +67,13 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
       {
         name: 'claude-code-statusline (sotayamashita)',
         url: 'https://github.com/sotayamashita/claude-code-statusline',
-        description:
-          'Another Rust option. Borrows its configuration style from starship, so it will feel familiar if you use that.',
+        description: 'Written in Rust and configured like starship.',
       },
       {
         name: 'claude-code-statusline (levz0r)',
         url: 'https://github.com/levz0r/claude-code-statusline',
         description:
-          'Leans into cost visibility: token usage and spend update in real time next to directory, git status, and model.',
+          'Shows token usage and spend live, next to the directory, git status and model.',
       },
     ],
   },
@@ -87,13 +85,13 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         name: 'The built-in /statusline command',
         url: 'https://code.claude.com/docs/en/statusline#use-the-statusline-command',
         description:
-          "Start here if you haven't customized anything yet. Tell Claude Code what you want in plain English and it writes the script and updates your settings itself.",
+          'Describe the status line you want, and Claude Code writes the script and updates your settings.',
       },
       {
         name: 'Powerline Studio',
         url: 'https://powerline.owloops.com/',
         description:
-          'The visual configurator for claude-powerline. Click segments in a live preview, switch themes, copy the config out.',
+          'A visual editor for claude-powerline. Click segments in a live preview, then copy the config.',
       },
       {
         name: "Don't Sleep On AI status line themes",
@@ -111,7 +109,7 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         name: 'ccusage',
         url: 'https://ccusage.com/guide/statusline',
         description:
-          "The standard tool for tracking Claude Code spend. Its status line mode reads the same stdin JSON as any other script and shows session cost, the day's total, burn rate, and when your block resets.",
+          "Tracks Claude Code spend. Its status line mode shows session cost, the day's total, burn rate and when your block resets.",
       },
     ],
   },
@@ -123,7 +121,7 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         name: 'Official docs: Customize your status line',
         url: 'https://code.claude.com/docs/en/statusline',
         description:
-          "Anthropic's own reference. Covers the statusLine setting, every field your script receives, and working example scripts.",
+          "Anthropic's reference for the statusLine setting and every field your script receives, with example scripts.",
       },
       {
         name: 'Complete field reference (AKCodez gist)',
@@ -144,13 +142,12 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
       {
         name: 'Jerad Bitner: Leveling up with a killer status line',
         url: 'https://jeradbitner.com/blog/claude-code-statusline',
-        description: 'A hands-on write-up of replacing the default with something better.',
+        description: 'A write-up of replacing the default status line with a custom one.',
       },
       {
         name: 'ClaudeLog: ccstatusline overview',
         url: 'https://claudelog.com/claude-code-mcps/ccstatusline/',
-        description:
-          "Community documentation for Claude Code. Its ccstatusline page is a decent orientation if you're choosing a tool.",
+        description: 'Community docs for Claude Code, with an overview of ccstatusline.',
       },
     ],
   },
@@ -162,7 +159,7 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         name: 'awesome-claude-code',
         url: 'https://github.com/hesreallyhim/awesome-claude-code',
         description:
-          'The big community list for everything Claude Code, including a status lines section. Useful for spotting tools newer than this page.',
+          'The big community list for Claude Code. Its status lines section may list tools newer than this page.',
       },
     ],
   },

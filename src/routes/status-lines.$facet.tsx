@@ -1,10 +1,11 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { GalleryConfigCard } from '@/gallery/config-card'
-import { FACET_MOD_COPY, type FacetModCopy } from '@/gallery/facet-copy'
+import { FACET_KIND_NOTE, FACET_MOD_COPY, type FacetModCopy } from '@/gallery/facet-copy'
 import { FACET_BY_SLUG, type Facet } from '@/gallery/facets'
 import { getFacetPage } from '@/gallery/functions'
 import { mergeGalleryItems } from '@/gallery/gallery-items'
+import { kindCount } from '@/gallery/kind-count'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { facetJsonLd, jsonLdScript } from '@/lib/json-ld'
@@ -66,7 +67,7 @@ export const Route = createFileRoute('/status-lines/$facet')({
   },
   notFoundComponent: () => (
     <PageShell user={null}>
-      <Text>No status lines here yet.</Text>
+      <Text>Nothing here yet.</Text>
       <TextLink to="/">Back to gallery</TextLink>
     </PageShell>
   ),
@@ -93,13 +94,13 @@ function FacetPage() {
               <InlineCodeText text={facet.answer} />
             </Text>
           ) : null}
-          {copy.kindNote ? (
+          {copy.listsMods ? (
             <Text muted size="sm">
-              {copy.kindNote}
+              {FACET_KIND_NOTE}
             </Text>
           ) : null}
           <Text muted size="sm">
-            {publishedCountLine(page.configs.total, mods)}
+            {kindCount(page.configs.total, mods)}.
           </Text>
           {page.updated ? (
             <Text muted size="sm">
@@ -140,23 +141,13 @@ function FacetPage() {
 }
 
 /** The page's title, heading and description: the mod copy while the page lists a mod. */
-function facetPageCopy(
-  facet: Facet,
-  modCount: number,
-): Omit<FacetModCopy, 'kindNote'> & { kindNote?: string } {
+function facetPageCopy(facet: Facet, modCount: number): FacetModCopy & { listsMods: boolean } {
   const withMods = FACET_MOD_COPY[facet.slug]
-  if (withMods && modCount > 0) return withMods
+  if (withMods && modCount > 0) return { ...withMods, listsMods: true }
   return {
     titleBase: facet.titleBase ?? '',
     heading: facet.heading ?? '',
     metaDescription: facet.metaDescription ?? '',
+    listsMods: false,
   }
-}
-
-function publishedCountLine(statusLines: number, mods: number): string {
-  const statusLineCount = `${statusLines} published ${statusLines === 1 ? 'status line' : 'status lines'}`
-  const modNoun = mods === 1 ? 'mod' : 'mods'
-  if (mods === 0) return `${statusLineCount}.`
-  if (statusLines === 0) return `${mods} published ${modNoun}.`
-  return `${statusLineCount} and ${mods} ${modNoun}.`
 }

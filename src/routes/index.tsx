@@ -109,7 +109,7 @@ export const Route = createFileRoute('/')({
   },
   notFoundComponent: () => (
     <PageShell user={null}>
-      <Text>There is no gallery page with that number.</Text>
+      <Text>That gallery page doesn't exist.</Text>
       <TextLink to="/">Back to gallery</TextLink>
     </PageShell>
   ),
@@ -118,7 +118,7 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   const { user, gallery, newMods } = Route.useLoaderData()
-  const { items, page, pageCount, publishedCount, copyCount, asOf } = gallery
+  const { items, page, pageCount, statusLines, mods, copyCount, asOf } = gallery
   const { sort: rawSort, tags, kind: rawKind } = Route.useSearch()
   const sort = rawSort ?? 'trending'
   const kind = rawKind ?? 'all'
@@ -207,7 +207,7 @@ function Home() {
             ) : null}
           </Row>
         ) : null}
-        <HomeIndexNote publishedCount={publishedCount} copyCount={copyCount} asOf={asOf} />
+        <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
       </Stack>
     </PageShell>
   )
