@@ -521,9 +521,12 @@ email:
 Drains run only on submissions, admin actions and machine starts, so this catches a drain that
 leaves old jobs behind or finds a stuck render, not a queue nothing drains.
 
-Create it in the PostHog UI (insight → Alerts → New alert) or via the PostHog MCP. Re-create it from
+Create it in the PostHog UI (insight → Alerts → New alert) or through Composio, which holds the
+PostHog connection: `composio proxy` against the PostHog API, posting the insight to
+`https://us.posthog.com/api/projects/<project id>/insights/` and then its alert to `.../alerts/`
+(`--toolkit posthog -X POST -H 'content-type: application/json' -d @<file>.json`). Re-create it from
 this section if the project is ever rebuilt. The old **Worker down** alert counted
-`render_worker_heartbeat`, which no longer exists; delete it, or it emails on every check.
+`render_worker_heartbeat`, which no longer exists; it was deleted on 2026-10-15.
 
 ## Not yet (later)
 
