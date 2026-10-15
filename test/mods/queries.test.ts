@@ -236,7 +236,35 @@ describe('getModDetail', () => {
       copyCount: 0,
       tags: [],
       updatedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      recordedWith: '2.1.0',
+      reviewedAt: null,
     })
+  })
+
+  it('carries the Claude Code version its terminal preview was recorded with, or null', async () => {
+    await addMod('recorded', 'published', 'scenario-preview')
+    await addMod('unrecorded', 'published', 'other-scenario')
+
+    expect((await getModDetail(db, 'recorded'))?.recordedWith).toBe('2.1.0')
+    expect((await getModDetail(db, 'unrecorded'))?.recordedWith).toBeNull()
+  })
+
+  it('dates the review of an approved submission of the current version, as an ISO date', async () => {
+    const { versionId } = await addMod('reviewed', 'published', 'scenario-preview')
+    await db
+      .insert(schema.user)
+      .values({ id: 'submitter', name: 'Sub', email: 'sub@test.com', emailVerified: false })
+      .onConflictDoNothing()
+    await db.insert(schema.submissions).values({
+      id: versionId,
+      kind: 'mod',
+      modVersionId: versionId,
+      submittedBy: 'submitter',
+      status: 'approved',
+      reviewedAt: new Date('2026-10-02T23:30:00Z'),
+    })
+
+    expect((await getModDetail(db, 'reviewed'))?.reviewedAt).toBe('2026-10-02')
   })
 
   it('dates the mod by its current version, as an ISO date', async () => {

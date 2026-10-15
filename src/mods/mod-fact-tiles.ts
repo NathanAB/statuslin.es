@@ -1,4 +1,13 @@
-import { Coins, FilePen, Globe, Monitor, PanelTop, SquareSlash } from 'lucide-react'
+import {
+  Coins,
+  FilePen,
+  GitCommitHorizontal,
+  Globe,
+  Monitor,
+  PanelTop,
+  SquareSlash,
+  Terminal,
+} from 'lucide-react'
 import type { ModPageCopy } from '@/content/types'
 import { listPhrase } from '@/gallery/why-line'
 import type { FactTile } from '@/ui/fact-tiles'
@@ -14,7 +23,25 @@ export const MOD_TILE_LABEL = {
   usesYourPlan: 'Uses your plan',
   changesFiles: 'Changes files',
   network: 'Network',
+  reviewedCommit: 'Reviewed commit',
+  recordedWith: 'Recorded with',
 } as const
+
+/** How long a commit sha reads on a mod page: the byline's source link and the tile. */
+export const SHORT_SHA_LENGTH = 7
+
+const REVIEW_DATE = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
+
+/** The pinned commit every published mod was reviewed at, and the date when one is stored. */
+function reviewedCommitValue(commitSha: string, reviewedAt: string | null): string {
+  const commit = `\`${commitSha.slice(0, SHORT_SHA_LENGTH)}\``
+  return reviewedAt ? `${commit} on ${REVIEW_DATE.format(new Date(reviewedAt))}` : commit
+}
 
 /** A reach tile's value when the mod has that reach only through the programs it runs. */
 export const THROUGH_PROGRAMS = 'Only through programs it runs'
@@ -42,10 +69,20 @@ function reachValue(
 
 /**
  * A mod's fact tiles. Each yes or no comes from the validator's footprint or the recorded
- * previews; the page copy only words a tile whose fact is yes.
+ * previews; the page copy only words a tile whose fact is yes. The last tiles name the reviewed
+ * commit and the Claude Code version the preview was recorded with.
  */
 export function modFactTiles(
-  mod: Pick<ModDetail, 'footprint' | 'preview' | 'desktop' | 'generatedContent'>,
+  mod: Pick<
+    ModDetail,
+    | 'footprint'
+    | 'preview'
+    | 'desktop'
+    | 'generatedContent'
+    | 'commitSha'
+    | 'reviewedAt'
+    | 'recordedWith'
+  >,
 ): FactTile[] {
   const { draws, surfaces } = describeModFootprint(mod)
   const facts = footprintFacts(mod.footprint)
@@ -88,5 +125,19 @@ export function modFactTiles(
       label: MOD_TILE_LABEL.network,
       value: reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None'),
     },
+    {
+      icon: GitCommitHorizontal,
+      label: MOD_TILE_LABEL.reviewedCommit,
+      value: reviewedCommitValue(mod.commitSha, mod.reviewedAt),
+    },
+    ...(mod.recordedWith
+      ? [
+          {
+            icon: Terminal,
+            label: MOD_TILE_LABEL.recordedWith,
+            value: `Claude Code ${mod.recordedWith}`,
+          },
+        ]
+      : []),
   ]
 }
