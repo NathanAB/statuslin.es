@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { FACET_MOD_COPY } from '@/gallery/facet-copy'
 import { ALL_TAG_SLUGS, FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
+import { brandedPageTitle } from '@/lib/page-title'
 
 describe('tag registry', () => {
   it('includes the capability tags as badge+filter-only (page: false)', () => {
@@ -22,6 +24,23 @@ describe('tag registry', () => {
       expect(f.titleBase).toBeTruthy()
       expect(f.metaDescription).toBeTruthy()
       expect(f.intro?.length).toBeGreaterThan(0)
+    }
+  })
+  it('gives mod copy only to the facets published mods carry, sized for search results', () => {
+    // From production on 2026-10-15: burn-meter, context-bar, pixel-cat and token-weather carry
+    // these tags. A facet gains mod copy only once a mod is tagged for it.
+    expect(Object.keys(FACET_MOD_COPY)).toEqual([
+      'token-usage',
+      'cost',
+      'quota',
+      'minimal',
+      'multi-line',
+    ])
+    for (const copy of Object.values(FACET_MOD_COPY)) {
+      expect(brandedPageTitle(copy.titleBase)).toMatch(/ \| statuslin\.es$/)
+      expect(copy.titleBase).toContain('Status Lines & Mods')
+      expect(copy.heading).toContain('status lines and mods')
+      expect(copy.metaDescription.length).toBeLessThanOrEqual(160)
     }
   })
   it('TAG_VOCABULARY is exactly the feature group', () => {

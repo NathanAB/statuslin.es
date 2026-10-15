@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { getLatestCopyAt } from '@/gallery/facet-queries'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getCardsByCopies, getFacetCards, getFacetStats, resolveLiveFacet } from '@/gallery/queries'
 import { computeAllTags } from '@/lib/derived-tags'
@@ -212,5 +213,22 @@ describe('facet queries', () => {
   it('a page:false capability tag never resolves to a page', async () => {
     const stats = await getFacetStats(db)
     expect(resolveLiveFacet('reads-token', stats)).toBeNull()
+  })
+
+  it('dates the copy ranking by the newest copy of a published config, or null with none', async () => {
+    expect(await getLatestCopyAt(db)).toBeNull()
+
+    const ids = new Map(
+      (
+        await db.select({ id: schema.configs.id, slug: schema.configs.slug }).from(schema.configs)
+      ).map((row) => [row.slug, row.id]),
+    )
+    await db.insert(schema.copyEvents).values([
+      { configId: ids.get('git-a')!, ipHash: 'a', createdAt: new Date('2026-10-01T09:00:00Z') },
+      { configId: ids.get('git-b')!, ipHash: 'b', createdAt: new Date('2026-10-14T23:30:00Z') },
+      { configId: ids.get('git-draft')!, ipHash: 'c', createdAt: new Date('2026-10-20T12:00:00Z') },
+    ])
+
+    expect(await getLatestCopyAt(db)).toEqual(new Date('2026-10-14T23:30:00Z'))
   })
 })

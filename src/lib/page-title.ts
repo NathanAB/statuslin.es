@@ -34,6 +34,11 @@ function keywordPageTitle(name: string, keyword: string): string {
   return `${truncateAtWordBoundary(normalizedName, nameBudget)}${keyword}`
 }
 
+/** `<name> | statuslin.es` under the same 60-character guard as status line and mod titles. */
+export function brandedPageTitle(name: string): string {
+  return keywordPageTitle(name, '')
+}
+
 function metaDescription(description: string | null | undefined, fallback: string): string {
   const normalizedDescription = normalizeWhitespace(description ?? '')
   return truncateAtWordBoundary(normalizedDescription || fallback, META_DESCRIPTION_MAX_LENGTH)

@@ -1,6 +1,6 @@
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, max, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, submissions, user } from '@/db/schema'
+import { configs, configVersions, copyEvents, submissions, user } from '@/db/schema'
 import { galleryCardSelection, mapCardRows } from './card-rows'
 import { FACET_BY_SLUG, FACETS, type Facet } from './facets'
 import { type GalleryCard, selectCardPreviews } from './queries'
@@ -104,6 +104,16 @@ export async function getCardsByCopies(
     rows.map((r) => r.version.contentSha256),
   )
   return mapCardRows(rows, cardPreviews)
+}
+
+/** When a published config was last copied: the date the copy ranking last changed, or null. */
+export async function getLatestCopyAt(db: Db): Promise<Date | null> {
+  const [row] = await db
+    .select({ latest: max(copyEvents.createdAt) })
+    .from(copyEvents)
+    .innerJoin(configs, eq(configs.id, copyEvents.configId))
+    .where(eq(configs.status, 'published'))
+  return row?.latest ?? null
 }
 
 /** The facet for a URL slug, or null when unknown, page:false, or zero matches (route 404s). */
