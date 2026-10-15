@@ -33,12 +33,11 @@ describe('startGitHubSignIn', () => {
     expect(socialSignIn).toHaveBeenCalledWith({ provider: 'github', callbackURL: '/' })
   })
 
-  it('tracks the entry point and return path when OAuth starts', () => {
+  it('tracks the entry point and return path when OAuth starts, with no kind the path does not name', () => {
     startGitHubSignIn('/submit', 'submit', { capture })
     expect(capture).toHaveBeenCalledWith('auth_started', {
       provider: 'github',
       entryPoint: 'submit',
-      submitKind: 'status_line',
       returnPath: '/submit',
       $current_url: '/submit',
     })

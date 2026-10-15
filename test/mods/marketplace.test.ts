@@ -102,6 +102,8 @@ describe('marketplaceFetchedEvent', () => {
 
   it.each([
     ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'browser'],
+    ['Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', 'bot'],
+    ['Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)', 'bot'],
     ['curl/8.7.1', 'other'],
     [null, 'other'],
   ])('names the client of %s as %s, never the raw user agent', (userAgent, client) => {

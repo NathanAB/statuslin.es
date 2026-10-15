@@ -23,10 +23,13 @@ function analyticsPath(path: string): string {
   return path.split(/[?#]/, 1)[0] || '/'
 }
 
-/** Which submit form a submit sign-in returns to: the mod form only when its path asks for it. */
-function submitKind(returnPath: string): 'mod' | 'status_line' {
+/**
+ * The submit form a sign-in returns to, when its path names one (`/submit?kind=mod`). A bare
+ * `/submit` is left out: the visitor picks the kind on that page, after signing in.
+ */
+function submitKindProperty(returnPath: string): { submitKind?: 'mod' } {
   const query = returnPath.split('#', 1)[0]?.split('?')[1] ?? ''
-  return new URLSearchParams(query).get('kind') === 'mod' ? 'mod' : 'status_line'
+  return new URLSearchParams(query).get('kind') === 'mod' ? { submitKind: 'mod' } : {}
 }
 
 /**
@@ -52,7 +55,7 @@ export function startGitHubSignIn(
   posthog?.capture('auth_started', {
     provider: 'github',
     entryPoint,
-    ...(entryPoint === 'submit' ? { submitKind: submitKind(returnPath) } : {}),
+    ...(entryPoint === 'submit' ? submitKindProperty(returnPath) : {}),
     returnPath: trackedReturnPath,
     [CURRENT_URL_PROPERTY]: trackedReturnPath,
   })

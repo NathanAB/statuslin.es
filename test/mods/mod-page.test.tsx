@@ -17,13 +17,13 @@ vi.mock('@/mods/functions', () => ({ recordModCopyFn, getModDetailFn: vi.fn() })
 const toast = vi.hoisted(() => vi.fn())
 vi.mock('sonner', () => ({ toast }))
 const capture = vi.hoisted(() => vi.fn())
-vi.mock('@posthog/react', () => ({
-  usePostHog: () => ({
-    capture,
-    get_distinct_id: () => 'did-test',
-    get_session_id: () => 'sid-test',
-  }),
+// One client across renders, as the real hook returns.
+const posthog = vi.hoisted(() => ({
+  capture,
+  get_distinct_id: () => 'did-test',
+  get_session_id: () => 'sid-test',
 }))
+vi.mock('@posthog/react', () => ({ usePostHog: () => posthog }))
 vi.mock('@/ui/shell', () => ({
   PageShell: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
@@ -499,7 +499,16 @@ describe('mod page analytics', () => {
     expect(capture).toHaveBeenCalledWith('mod_detail_viewed', { modId: MOD.id, slug: 'filetree' })
   })
 
-  it('captures clicks on more like this as related cards, by position', () => {
+  it('captures the view once, however often the page re-renders', () => {
+    const { rerender } = renderPage()
+    const Page = ModRoute.options.component
+    if (Page) rerender(<Page />)
+
+    const views = capture.mock.calls.filter(([event]) => event === 'mod_detail_viewed')
+    expect(views).toHaveLength(1)
+  })
+
+  it('captures clicks on more like this as mod-page related cards, by position', () => {
     renderPage({ related: RELATED })
 
     fireEvent.click(screen.getByRole('link', { name: 'Meter' }))
@@ -508,13 +517,13 @@ describe('mod page analytics', () => {
     expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
       modId: '22222222-2222-4222-8222-222222222222',
       slug: 'meter',
-      surface: 'related',
+      surface: 'mod_related',
       position: 1,
     })
     expect(capture).toHaveBeenCalledWith('statusline_card_clicked', {
       configId: '33333333-3333-4333-8333-333333333333',
       slug: 'cost-bar',
-      surface: 'related',
+      surface: 'mod_related',
       position: 2,
     })
   })

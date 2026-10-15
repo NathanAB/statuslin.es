@@ -110,12 +110,14 @@ export const Route = createFileRoute('/')({
 function Home() {
   const { user, gallery } = Route.useLoaderData()
   const { items, page, pageCount, publishedCount, copyCount, asOf } = gallery
-  const { sort: rawSort, tags, kind } = Route.useSearch()
+  const { sort: rawSort, tags, kind: rawKind } = Route.useSearch()
   const sort = rawSort ?? 'trending'
+  const kind = rawKind ?? 'all'
   const selectedTags = tags ? tags.split(',') : []
   const posthog = usePostHog()
 
-  const pageSearch = (nextPage: number) => homePaginationSearch(nextPage, { sort, tags, kind })
+  const pageSearch = (nextPage: number) =>
+    homePaginationSearch(nextPage, { sort, tags, kind: rawKind })
 
   const cardAnalytics = (index: number): GalleryCardAnalytics => ({
     surface: 'home',
@@ -123,7 +125,7 @@ function Home() {
     page,
     sort,
     selectedTags,
-    kind: kind ?? 'all',
+    kind,
   })
 
   const trackPageChange = (nextPage: number) => {
@@ -131,7 +133,7 @@ function Home() {
       page: nextPage,
       sort,
       selectedTags,
-      kind: kind ?? 'all',
+      kind,
     })
   }
 
@@ -145,7 +147,7 @@ function Home() {
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
-            <GalleryControls kind={kind ?? 'all'} sort={sort} tags={tags ? tags.split(',') : []} />
+            <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
             <SubmitCta signedIn={!!user} />
           </Row>
           {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}

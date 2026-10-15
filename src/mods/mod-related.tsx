@@ -15,13 +15,13 @@ export function ModRelated({ items }: { items: GalleryItem[] }) {
             <ModCard
               key={`mod:${item.card.slug}`}
               card={item.card}
-              analytics={{ surface: 'related', position: index + 1 }}
+              analytics={{ surface: 'mod_related', position: index + 1 }}
             />
           ) : (
             <GalleryConfigCard
               key={`status-line:${item.card.slug}`}
               card={item.card}
-              analytics={{ surface: 'related', position: index + 1 }}
+              analytics={{ surface: 'mod_related', position: index + 1 }}
             />
           ),
         )}
