@@ -165,6 +165,20 @@ describe('home "New mods" row', () => {
     ).toBeTruthy()
   })
 
+  it('stacks its cards full width in one column, like the mods page', () => {
+    renderHome({}, {}, newMods)
+
+    const row = screen
+      .getByRole('heading', { level: 2, name: 'New mods' })
+      .closest('section') as HTMLElement
+    const cards = row.querySelectorAll('[data-slot="card"]')
+    expect(cards).toHaveLength(2)
+    const column = cards[0]?.parentElement
+    expect(column).toBe(cards[1]?.parentElement)
+    expect(column?.className).toContain('flex-col')
+    expect(column?.className).not.toContain('grid-cols')
+  })
+
   it('is left out when there are no mods to show', () => {
     renderHome()
 

@@ -1,6 +1,6 @@
 import type { GalleryModCard } from '@/gallery/gallery-items'
 import { MODS_PATH } from '@/lib/site'
-import { Grid, Row, Stack } from '@/ui/layout'
+import { Row, Stack } from '@/ui/layout'
 import { Heading, TextLink } from '@/ui/text'
 import { getGalleryModsFn } from './gallery-functions'
 import { ModCard } from './mod-card'
@@ -29,7 +29,7 @@ export function NewModsRow({ mods }: { mods: GalleryModCard[] }) {
           </Heading>
           <TextLink to={MODS_PATH}>Browse all mods</TextLink>
         </Row>
-        <Grid>
+        <Stack gap={4}>
           {mods.map((card, index) => (
             <ModCard
               key={card.slug}
@@ -37,7 +37,7 @@ export function NewModsRow({ mods }: { mods: GalleryModCard[] }) {
               analytics={{ surface: 'home_new_mods', position: index + 1 }}
             />
           ))}
-        </Grid>
+        </Stack>
       </Stack>
     </section>
   )
