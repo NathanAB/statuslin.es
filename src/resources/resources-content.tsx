@@ -16,11 +16,7 @@ import { Heading, Text, TextLink } from '@/ui/text'
 export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
   return (
     <Stack gap={6}>
-      <Stack gap={3}>
-        <Heading level={1}>Claude Code status line tools & resources</Heading>
-
-        <Text muted>Status line tools and reading we recommend, described in our own words.</Text>
-      </Stack>
+      <Heading level={1}>Claude Code status line tools & resources</Heading>
 
       <Stack gap={3}>
         <Heading level={2}>Four ways to get a status line</Heading>
