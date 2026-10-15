@@ -208,6 +208,14 @@ describe('mod page head', () => {
     expect(description({ ...MOD, description: '', generatedContent: COPY })).toBe(COPY.summary)
   })
 
+  it('drops code marks from the summary and shares the same text in og:description', () => {
+    const copy = { ...COPY, summary: 'Run `/burn` to see the session cost in a pane.' }
+    const meta = head({ ...MOD, generatedContent: copy }).meta
+    const expected = 'Run /burn to see the session cost in a pane.'
+    expect(meta.find((m) => m.name === 'description')?.content).toBe(expected)
+    expect(meta.find((m) => m.property === 'og:description')?.content).toBe(expected)
+  })
+
   it('keeps an author’s description of 60 characters or more over the summary', () => {
     const long = 'A file tree of the current folder, in a pane beside the chat.'
     expect(long.length).toBeGreaterThanOrEqual(60)
