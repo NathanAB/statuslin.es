@@ -35,7 +35,7 @@ export function ModCard({ card }: { card: GalleryModCard }) {
             <Text muted size="sm" breakLong>
               {card.description}
             </Text>
-            <Row gap={1}>
+            <Row gap={1} aboveOverlay>
               <AuthorChip
                 author={{
                   name: card.authorGithub,

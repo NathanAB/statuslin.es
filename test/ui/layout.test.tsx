@@ -96,6 +96,23 @@ describe('Row', () => {
     }
   })
 
+  it('passes clicks on its own empty space through to the card link, but not on its controls', () => {
+    const { container } = render(
+      <Row gap={3} aboveOverlay>
+        x
+      </Row>,
+    )
+    const classes = (container.firstChild as HTMLElement).className.split(/\s+/)
+    for (const cls of [
+      'pointer-events-none',
+      '[&_a]:pointer-events-auto',
+      '[&_button]:pointer-events-auto',
+      '[&_[data-slot=tooltip-trigger]]:pointer-events-auto',
+    ]) {
+      expect(classes).toContain(cls)
+    }
+  })
+
   it('takes leftover width but never shrinks below its content when grow is set', () => {
     const { container } = render(
       <Row gap={2} grow>
