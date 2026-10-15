@@ -126,6 +126,33 @@ describe('home search indexing metadata', () => {
     ])
   })
 
+  // The ItemList is the ranked gallery, numbered across pages. The "New mods" row is a separate
+  // section whose mods also rank later in the gallery, so listing it would shift page 1's numbering
+  // and list those mods twice.
+  it('lists only the ranked gallery in the CollectionPage, not the "New mods" row', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: {
+        gallery: {
+          page: 1,
+          pageCount: 2,
+          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
+        },
+        newMods: [{ slug: 'meter', title: 'Meter' }],
+      },
+      match: { search: {} },
+    } as never)
+
+    const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
+      .map((script) => JSON.parse(script.children) as Record<string, unknown>)
+      .find((node) => node['@type'] === 'CollectionPage') as
+      | { mainEntity: { itemListElement: Array<{ position: number; url: string }> } }
+      | undefined
+    expect(
+      collectionPage?.mainEntity.itemListElement.map(({ position, url }) => ({ position, url })),
+    ).toEqual([{ position: 1, url: 'https://statuslin.es/c/alpha' }])
+  })
+
   it('marks a kind-filtered gallery view noindex', async () => {
     const head = await HomeRoute.options.head?.({
       loaderData: undefined,
