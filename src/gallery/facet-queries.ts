@@ -11,6 +11,12 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 /** Minimum published inventory before a facet is surfaced to crawlers and cross-facet discovery. */
 export const MIN_INDEXABLE_FACET_CONFIGS = 3
 
+/** A published mod as facet stats see it. `updatedAt` is its current version's date, when known. */
+export interface FacetMod {
+  tags: string[]
+  updatedAt?: Date
+}
+
 export interface FacetStats {
   count: number
   latest: Date | null
@@ -26,16 +32,21 @@ function facetMatches(row: StatsRow, facet: Facet): boolean {
   return (row.allTags ?? []).includes(facet.slug)
 }
 
+function countMatch(s: FacetStats, updatedAt: Date | undefined): void {
+  s.count += 1
+  if (updatedAt && (!s.latest || updatedAt > s.latest)) s.latest = updatedAt
+}
+
 /**
  * Match counts + newest effective update date for every registry facet, from ONE scan of
  * published configs joined to their current versions. The gallery is small (tens of rows); a
  * per-facet SQL query apiece would be slower and noisier than counting in JS. Drives each facet
- * page's live/404 decision, the sitemap, and count line. `modTags` holds each published mod's
- * tags; src/gallery cannot query mods, so the caller passes them in. They add to the counts only.
+ * page's live/404 decision, the sitemap, and count line. `mods` holds each published mod;
+ * src/gallery cannot query mods, so the caller passes them in. They add to the counts and dates.
  */
 export async function getFacetStats(
   db: Db,
-  modTags: string[][] = [],
+  mods: FacetMod[] = [],
 ): Promise<Map<string, FacetStats>> {
   const rows = await db
     .select({
@@ -52,21 +63,18 @@ export async function getFacetStats(
     for (const facet of FACETS) {
       if (!facetMatches(row, facet)) continue
       const s = stats.get(facet.slug)
-      if (!s) continue
-      s.count += 1
-      const updatedAt = row.reviewedAt ?? row.createdAt
-      if (!s.latest || updatedAt > s.latest) s.latest = updatedAt
+      if (s) countMatch(s, row.reviewedAt ?? row.createdAt)
     }
   }
-  addModCounts(stats, modTags)
+  addModMatches(stats, mods)
   return stats
 }
 
-function addModCounts(stats: Map<string, FacetStats>, modTags: string[][]): void {
-  for (const tags of modTags) {
-    for (const tag of new Set(tags)) {
+function addModMatches(stats: Map<string, FacetStats>, mods: FacetMod[]): void {
+  for (const mod of mods) {
+    for (const tag of new Set(mod.tags)) {
       const s = stats.get(tag)
-      if (s) s.count += 1
+      if (s) countMatch(s, mod.updatedAt)
     }
   }
 }

@@ -109,6 +109,7 @@ export interface PublishedModListing {
   title: string
   description: string
   copyCount: number
+  tags: string[]
   updatedAt: Date
 }
 
@@ -120,6 +121,7 @@ export async function getPublishedModListings(db: Db): Promise<PublishedModListi
       title: mods.title,
       description: mods.description,
       copyCount: mods.copyCount,
+      tags: mods.allTags,
       updatedAt: modVersions.createdAt,
     })
     .from(mods)
