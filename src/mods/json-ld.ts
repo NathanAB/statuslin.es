@@ -1,14 +1,14 @@
 import { tagKeywords } from '@/gallery/facets'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME, MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
-import { pageCopyFaqJsonLd, RUNTIME_PLATFORM } from '@/lib/json-ld'
+import { RUNTIME_PLATFORM } from '@/lib/json-ld'
 import { MODS_PATH, modPath } from '@/lib/site'
 import { modSourceUrl } from './install'
 import type { ModDetail } from './queries'
 
 /**
- * A mod page as SoftwareSourceCode + its breadcrumb (home › Mods › the mod, as the page shows),
- * plus a FAQPage from its page copy when present. The source is the folder at the pinned commit,
- * the one a person reviewed. A mod without a licence claims none.
+ * A mod page as SoftwareSourceCode + its breadcrumb (home › Mods › the mod, as the page shows).
+ * No FAQPage: the page never shows its copy as questions. The source is the folder at the pinned
+ * commit, the one a person reviewed. A mod without a licence claims none.
  */
 export function modJsonLd(
   origin: string,
@@ -24,11 +24,10 @@ export function modJsonLd(
     | 'license'
     | 'tags'
     | 'updatedAt'
-    | 'generatedContent'
   >,
 ): object[] {
   const url = `${origin}${modPath(mod.slug)}`
-  const nodes: object[] = [
+  return [
     {
       '@context': 'https://schema.org',
       '@type': 'SoftwareSourceCode',
@@ -48,7 +47,4 @@ export function modJsonLd(
       { name: mod.title, item: url },
     ]),
   ]
-  const faq = pageCopyFaqJsonLd(mod.title, mod.generatedContent)
-  if (faq) nodes.push(faq)
-  return nodes
 }

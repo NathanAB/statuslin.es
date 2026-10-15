@@ -33,6 +33,24 @@ describe('social meta', () => {
     expect(description).not.toMatch(/curat|pick|chose|behalf/i)
     expect(description).not.toMatch(/upvote/i)
   })
+  it('root names the site in og:site_name, and no page overrides it', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    expect(rootSocialMeta()).toContainEqual({ property: 'og:site_name', content: 'statuslin.es' })
+    // A status line page's share tags carry no og:site_name of their own, so the root's stands.
+    const statusLinePage = configSocialMeta({
+      slug: 'my-line',
+      title: 'My Line',
+      description: 'hi',
+    })
+    const modPage = modSocialMeta('https://statuslin.es', {
+      slug: 'filetree',
+      title: 'File Tree',
+      description: null,
+    })
+    for (const meta of [statusLinePage, modPage]) {
+      expect(meta.some((m) => m.property === 'og:site_name')).toBe(false)
+    }
+  })
   it('home shares its canonical url with the page name and description', () => {
     const meta = homeSocialMeta({ url: 'https://statuslin.es/?page=2', page: 2, pageCount: 5 })
     expect(meta).toEqual([

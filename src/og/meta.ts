@@ -5,7 +5,7 @@ import {
   modMetaDescription,
   modPageTitle,
 } from '@/lib/page-title'
-import { modPath, siteUrl } from '@/lib/site'
+import { modPath, SITE_NAME, siteUrl } from '@/lib/site'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 export function rootSocialMeta(): Array<Record<string, string>> {
@@ -16,6 +16,7 @@ export function rootSocialMeta(): Array<Record<string, string>> {
       content:
         'A community gallery of Claude Code status lines and mods — browse rendered previews, then copy a status line or install a mod.',
     },
+    { property: 'og:site_name', content: SITE_NAME },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: base },
     { property: 'og:title', content: HOME_TITLE_BASE },

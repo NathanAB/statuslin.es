@@ -76,7 +76,7 @@ describe('home search indexing metadata', () => {
     })
   })
 
-  it('renders WebSite and CollectionPage as separate JSON-LD scripts', async () => {
+  it('renders WebSite, Organization and CollectionPage as separate JSON-LD scripts', async () => {
     const head = await HomeRoute.options.head?.({
       loaderData: {
         gallery: {
@@ -89,10 +89,11 @@ describe('home search indexing metadata', () => {
     } as never)
 
     const scripts = (head?.scripts ?? []) as Array<{ type: string; children: string }>
-    expect(scripts).toHaveLength(2)
+    expect(scripts).toHaveLength(3)
     expect(scripts.every((script) => script.type === 'application/ld+json')).toBe(true)
     expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
       'WebSite',
+      'Organization',
       'CollectionPage',
     ])
   })
@@ -181,7 +182,10 @@ describe('home search indexing metadata', () => {
     } as never)
 
     const scripts = (head?.scripts ?? []) as Array<{ children: string }>
-    expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual(['WebSite'])
+    expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
+      'WebSite',
+      'Organization',
+    ])
   })
 
   it('does not noindex the unfiltered gallery', async () => {

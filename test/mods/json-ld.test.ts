@@ -78,28 +78,17 @@ describe('modJsonLd', () => {
     })
   })
 
-  it('asks and answers the page copy as a FAQPage, as a status line page does', () => {
-    const faq = nodeOfType(
-      modJsonLd(ORIGIN, {
-        ...MOD,
-        generatedContent: {
-          summary: 'A file tree of the current folder in a pane.',
-          howItWorks: ['Run `/filetree` to open it', 'Folders open on click'],
-          goodToKnow: [],
-          details: {},
-        },
-      }),
-      'FAQPage',
-    )
-
-    const questions = faq?.mainEntity as Array<{ name: string; acceptedAnswer: { text: string } }>
-    expect(questions.map((q) => [q.name, q.acceptedAnswer.text])).toEqual([
-      ['What does File Tree do?', 'A file tree of the current folder in a pane.'],
-      ['How does File Tree work?', 'Run /filetree to open it. Folders open on click.'],
-    ])
-  })
-
-  it('has no FAQPage without page copy', () => {
-    expect(nodeOfType(modJsonLd(ORIGIN, MOD), 'FAQPage')).toBeUndefined()
+  it('emits no FAQPage, even with page copy, since the page never shows it as questions', () => {
+    // The mod page passes its whole ModDetail, page copy included.
+    const withCopy = {
+      ...MOD,
+      generatedContent: {
+        summary: 'A file tree of the current folder in a pane.',
+        howItWorks: ['Run `/filetree` to open it'],
+        goodToKnow: [],
+        details: {},
+      },
+    }
+    expect(nodeOfType(modJsonLd(ORIGIN, withCopy), 'FAQPage')).toBeUndefined()
   })
 })
