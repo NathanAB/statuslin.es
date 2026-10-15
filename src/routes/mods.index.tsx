@@ -7,7 +7,7 @@ import { MOD_SAFETY_GUIDE_PATH, STATUS_LINES_VS_MODS_GUIDE_PATH } from '@/lib/pa
 import { MODS_PATH, modPath, siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
-import { MODS_FAQ } from '@/mods/mods-page-faq'
+import { modsFaq } from '@/mods/mods-page-faq'
 import { staticPageSocialMeta } from '@/og/meta'
 import { FaqSection } from '@/ui/faq-section'
 import { Stack } from '@/ui/layout'
@@ -15,9 +15,11 @@ import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
-const TITLE_BASE = 'Claude Code Mods with Real Previews'
+// The home page owns the bare "Claude Code mods" search, so this page aims at the list, directory
+// and marketplace searches instead. No "best" until mods have install counts to rank by.
+const TITLE_BASE = 'Claude Code Mods Directory & Marketplace'
 const DESCRIPTION =
-  'Claude Code mods with real previews from the terminal and Claude Desktop. See what each one can touch, then install it at the commit a person reviewed.'
+  'A directory of Claude Code mods with real previews from the terminal and Claude Desktop. A person reviews each one, and it installs from our marketplace.'
 
 export const Route = createFileRoute('/mods/')({
   loader: async () => {
@@ -28,11 +30,12 @@ export const Route = createFileRoute('/mods/')({
     return {
       mods: mods.items.flatMap(({ item }) => (item.kind === 'mod' ? [item.card] : [])),
       user,
+      origin: siteUrl(),
     }
   },
   head: ({ loaderData }) => {
     const mods = loaderData?.mods ?? []
-    const faq = faqPageJsonLd(MODS_FAQ)
+    const faq = faqPageJsonLd(modsFaq(loaderData?.origin ?? siteUrl()))
     return {
       meta: [
         { title: `${TITLE_BASE} | statuslin.es` },
@@ -51,7 +54,7 @@ export const Route = createFileRoute('/mods/')({
 })
 
 function ModsPage() {
-  const { mods, user } = Route.useLoaderData()
+  const { mods, user, origin } = Route.useLoaderData()
   return (
     <PageShell user={user}>
       <Stack gap={6}>
@@ -86,7 +89,13 @@ function ModsPage() {
         ) : (
           <Text muted>No mods are published yet.</Text>
         )}
-        <FaqSection entries={MODS_FAQ} />
+        <Stack gap={3}>
+          <FaqSection entries={modsFaq(origin)} />
+          <Text muted>
+            <TextLink to={MOD_SAFETY_GUIDE_PATH}>Read the mod safety guide</TextLink> for what an
+            installed mod can reach and how to check one yourself.
+          </Text>
+        </Stack>
       </Stack>
     </PageShell>
   )
