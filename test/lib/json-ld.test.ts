@@ -117,7 +117,7 @@ describe('configJsonLd', () => {
       primaryFacet: { slug: 'git', heading: 'Claude Code status lines that show git status' },
     }) as Array<Record<string, unknown>>
     expect(crumbs?.itemListElement).toEqual([
-      { '@type': 'ListItem', position: 1, name: 'Status lines', item: 'https://statuslin.es' },
+      { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://statuslin.es' },
       {
         '@type': 'ListItem',
         position: 2,
@@ -136,7 +136,7 @@ describe('configJsonLd', () => {
   it('breadcrumbs straight from home to the config without a primary facet', () => {
     const [, crumbs] = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
     expect(crumbs?.itemListElement).toEqual([
-      { '@type': 'ListItem', position: 1, name: 'Status lines', item: 'https://statuslin.es' },
+      { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://statuslin.es' },
       {
         '@type': 'ListItem',
         position: 2,
@@ -303,13 +303,8 @@ describe('guideJsonLd', () => {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Status lines', item: 'https://statuslin.es' },
-        {
-          '@type': 'ListItem',
-          position: 2,
-          name: GUIDE_TITLE_BASE,
-          item: 'https://statuslin.es/guide',
-        },
+        { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://statuslin.es' },
+        { '@type': 'ListItem', position: 2, name: 'Guide', item: 'https://statuslin.es/guide' },
       ],
     })
   })
@@ -345,8 +340,8 @@ describe('guideJsonLd', () => {
     })
     const crumbs = subpage[1] as { itemListElement: Array<{ name: string; item: string }> }
     expect(crumbs.itemListElement.map(({ name, item }) => ({ name, item }))).toEqual([
-      { name: 'Status lines', item: 'https://statuslin.es' },
-      { name: GUIDE_TITLE_BASE, item: 'https://statuslin.es/guide' },
+      { name: 'statuslin.es', item: 'https://statuslin.es' },
+      { name: 'Guide', item: 'https://statuslin.es/guide' },
       { name: 'A Subpage', item: 'https://statuslin.es/guide/sub' },
     ])
   })
@@ -403,9 +398,15 @@ describe('facetJsonLd', () => {
   })
   it('carries a breadcrumb trail back to the gallery', () => {
     expect(crumbs['@type']).toBe('BreadcrumbList')
-    const items = crumbs.itemListElement as Array<{ item: string }>
-    expect(items[0]?.item).toBe('https://example.test')
-    expect(items[1]?.item).toBe('https://example.test/status-lines/git')
+    expect(crumbs.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://example.test' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Claude Code Status Lines That Show Git Status',
+        item: 'https://example.test/status-lines/git',
+      },
+    ])
   })
   it('carries dateModified when an updated date is given (freshness signal)', () => {
     expect(page.dateModified).toBe('2026-07-06')

@@ -1,3 +1,5 @@
+import { HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
+
 export function configListPageJsonLd(
   origin: string,
   page: { path: string; name: string },
@@ -26,7 +28,7 @@ export function configListPageJsonLd(
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
+        { '@type': 'ListItem', position: 1, name: HOME_CRUMB_NAME, item: origin },
         { '@type': 'ListItem', position: 2, name: page.name, item: url },
       ],
     },

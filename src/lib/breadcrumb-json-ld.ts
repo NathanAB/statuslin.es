@@ -1,10 +1,14 @@
+import { GUIDE_PATH } from '@/lib/page-title'
 import { MODS_PATH } from '@/lib/site'
 
 /** The first crumb of every breadcrumb, on the page and in its JSON-LD. */
-export const HOME_CRUMB_NAME = 'Status lines'
+export const HOME_CRUMB_NAME = 'statuslin.es'
 
 /** The crumb between home and every mod page: the mods page. */
 export const MODS_CRUMB = { name: 'Mods', to: MODS_PATH } as const
+
+/** The crumb between home and every guide page, named as the header's nav link names it. */
+export const GUIDE_CRUMB = { name: 'Guide', to: GUIDE_PATH } as const
 
 /** A BreadcrumbList from the trail's crumbs, home first, each `item` an absolute URL. */
 export function breadcrumbJsonLd(crumbs: Array<{ name: string; item: string }>): object {

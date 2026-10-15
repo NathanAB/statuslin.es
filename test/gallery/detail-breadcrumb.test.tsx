@@ -44,10 +44,10 @@ describe('DetailBreadcrumb', () => {
     )
 
     expect(trail()).toBe(
-      'Status lines›Claude Code status lines that show git status›Powerline Dracula',
+      'statuslin.es›Claude Code status lines that show git status›Powerline Dracula',
     )
     expect(links()).toEqual([
-      ['Status lines', '/'],
+      ['statuslin.es', '/'],
       ['Claude Code status lines that show git status', '/status-lines/git'],
     ])
   })
@@ -60,9 +60,9 @@ describe('DetailBreadcrumb', () => {
       />,
     )
 
-    expect(trail()).toBe('Status lines›Mods›Token Weather')
+    expect(trail()).toBe('statuslin.es›Mods›Token Weather')
     expect(links()).toEqual([
-      ['Status lines', '/'],
+      ['statuslin.es', '/'],
       ['Mods', '/?kind=mods'],
     ])
   })
@@ -70,6 +70,6 @@ describe('DetailBreadcrumb', () => {
   it('goes straight from home to the title with no parents', () => {
     render(<DetailBreadcrumb title="Solo" trail={[]} />)
 
-    expect(trail()).toBe('Status lines›Solo')
+    expect(trail()).toBe('statuslin.es›Solo')
   })
 })
