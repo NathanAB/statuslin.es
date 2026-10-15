@@ -1,3 +1,4 @@
+import { kindCount } from '@/gallery/kind-count'
 import { HOME_HEADING } from '@/lib/page-title'
 import { Stack } from '@/ui/layout'
 import { Heading, Text } from '@/ui/text'
@@ -24,18 +25,20 @@ function utcDateLabel(isoDate: string): string {
 }
 
 export function HomeIndexNote({
-  publishedCount,
+  statusLines,
+  mods,
   copyCount,
   asOf,
 }: {
-  publishedCount: number
+  statusLines: number
+  mods: number
   copyCount: number
   asOf: string
 }) {
   return (
     <Text muted size="xs" center>
-      {publishedCount} published status lines, copied {copyCount.toLocaleString('en-US')} times as
-      of <time dateTime={asOf}>{utcDateLabel(asOf)}</time>.
+      {kindCount(statusLines, mods)}, copied {copyCount.toLocaleString('en-US')} times as of{' '}
+      <time dateTime={asOf}>{utcDateLabel(asOf)}</time>.
     </Text>
   )
 }

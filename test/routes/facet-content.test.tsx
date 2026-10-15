@@ -62,14 +62,14 @@ describe('facet page content', () => {
   it('states the live published count from the cards on the page', () => {
     renderFacet('git')
 
-    expect(screen.getByText(/4 published status lines/i)).toBeTruthy()
+    expect(screen.getByText('4 status lines.')).toBeTruthy()
     expect(screen.queryByText(/this page lists/i)).toBeNull()
   })
 
   it('counts the mods on the page beside the status lines', () => {
     renderFacet('git', 1)
 
-    expect(screen.getByText('4 published status lines and 1 mod.')).toBeTruthy()
+    expect(screen.getByText('4 status lines and 1 mod.')).toBeTruthy()
   })
 
   it('counts only mods when no status line carries the tag', () => {
@@ -88,7 +88,7 @@ describe('facet page content', () => {
     const FacetPage = FacetRoute.options.component
     render(FacetPage ? <FacetPage /> : null)
 
-    expect(screen.getByText('2 published mods.')).toBeTruthy()
+    expect(screen.getByText('2 mods.')).toBeTruthy()
   })
 
   it('answers the how-to question and shows common questions on answered facets', () => {
@@ -100,7 +100,10 @@ describe('facet page content', () => {
     expect(answer?.querySelector('.font-mono')?.textContent).toBe('context_window')
     expect(screen.getByRole('heading', { level: 2, name: 'Common questions' })).toBeTruthy()
     expect(
-      screen.getByRole('heading', { level: 3, name: 'Why does my token count show null?' }),
+      screen.getByRole('heading', {
+        level: 3,
+        name: 'How do I show a context bar instead of a number?',
+      }),
     ).toBeTruthy()
   })
 
@@ -150,7 +153,11 @@ describe('facet page content', () => {
         name: 'Claude Code status lines and mods that show token usage',
       }),
     ).toBeTruthy()
-    expect(screen.getByText(/Each mod's page shows where it draws\./)).toBeTruthy()
+    expect(
+      screen.getByText(
+        "Status lines print under the prompt. Each mod's page shows where it draws.",
+      ),
+    ).toBeTruthy()
   })
 
   it('keeps status-lines wording on a mod-ready facet while it lists no mods', async () => {
@@ -170,7 +177,7 @@ describe('facet page content', () => {
         name: 'Claude Code status lines that show token usage',
       }),
     ).toBeTruthy()
-    expect(screen.queryByText(/The mods here/)).toBeNull()
+    expect(screen.queryByText(/Each mod's page/)).toBeNull()
   })
 
   it('never claims mods on a facet with no mod copy, even if a mod carries the tag', async () => {
@@ -232,7 +239,6 @@ describe('facet page content', () => {
     ).toEqual([
       'Why is rate_limits missing from my status line input?',
       'How do I show when my limit resets?',
-      'What is the difference between five_hour and seven_day?',
     ])
     expect((await headFor('cost')).map((node) => node['@type'])).toEqual([
       'CollectionPage',

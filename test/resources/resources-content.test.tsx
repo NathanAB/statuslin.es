@@ -80,7 +80,8 @@ describe('ResourcesContent', () => {
     for (const href of ['/', '/guide', '/submit']) {
       expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
     }
-    expect(screen.getByRole('heading', { level: 2, name: /get listed/i })).toBeTruthy()
+    const getListed = screen.getByRole('heading', { level: 2, name: /get listed/i })
+    expect(getListed.parentElement?.textContent).toMatch(/status line or mod/)
     expect(screen.getByRole('button', { name: 'Submit' })).toBeTruthy()
   })
 
