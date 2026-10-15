@@ -325,7 +325,7 @@ describe('mod page', () => {
     renderPage({ preview: [] })
 
     expect(section('Preview').getByText('Draws nothing in the terminal.')).toBeTruthy()
-    expect(screen.queryByText('No preview available.')).toBeNull()
+    expect(screen.queryByText('No preview.')).toBeNull()
   })
 
   it('stacks the Desktop shot under the terminal, whole and at its CSS size', () => {
@@ -363,7 +363,7 @@ describe('mod page', () => {
   it('says there is no preview when neither surface has a result', () => {
     renderPage({ preview: null, desktop: null })
 
-    expect(section('Preview').getByText('No preview available.')).toBeTruthy()
+    expect(section('Preview').getByText('No preview.')).toBeTruthy()
   })
 
   it('shows the mod’s tag chips in the header, like a status line page', () => {
@@ -402,7 +402,7 @@ describe('mod page', () => {
       data: { modId: MOD.id, kind: 'prompt', distinctId: 'did-test', sessionId: 'sid-test' },
     })
     expect(toast).toHaveBeenCalledWith('Prompt copied', {
-      description: `Paste it into Claude Code ${MOD_INSTALL_MIN_VERSION} or later to install this mod.`,
+      description: `Paste it into Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,
     })
   })
 

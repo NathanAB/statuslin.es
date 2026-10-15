@@ -61,19 +61,13 @@ function ModsPage() {
         <Stack gap={3}>
           <Heading level={1}>Claude Code mods</Heading>
           <Text muted>
-            Mods are Claude Code plugins that draw above the prompt, under it, or in a pane. Each
-            preview comes from running the mod in Claude Code, and each install is pinned to the
-            commit a person reviewed.
+            Mods are plugins that change how Claude Code looks and works. A person reviews each one,
+            and the install pins the reviewed commit.
           </Text>
           <Text muted>
-            Looking for a status line instead? <TextLink to="/">Browse the gallery</TextLink>.
-          </Text>
-          <Text muted>
-            New to mods? See{' '}
-            <TextLink to={STATUS_LINES_VS_MODS_GUIDE_PATH}>
-              how they compare with status lines
-            </TextLink>{' '}
-            and <TextLink to={MOD_SAFETY_GUIDE_PATH}>what a mod can touch</TextLink>.
+            New to mods?{' '}
+            <TextLink to={STATUS_LINES_VS_MODS_GUIDE_PATH}>Compare them with status lines</TextLink>{' '}
+            or see <TextLink to={MOD_SAFETY_GUIDE_PATH}>what a mod can touch</TextLink>.
           </Text>
         </Stack>
         {mods.length > 0 ? (
@@ -88,7 +82,7 @@ function ModsPage() {
             ))}
           </Stack>
         ) : (
-          <Text muted>No mods are published yet.</Text>
+          <Text muted>No mods yet.</Text>
         )}
         <FaqSection entries={modsFaq(origin)} />
       </Stack>

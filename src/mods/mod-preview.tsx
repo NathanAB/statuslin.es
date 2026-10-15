@@ -30,7 +30,7 @@ function DrewNothing({ where }: { where: string }) {
 
 const NoPreview = () => (
   <Text muted size="sm">
-    No preview available.
+    No preview.
   </Text>
 )
 

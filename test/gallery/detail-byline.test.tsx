@@ -55,9 +55,9 @@ describe('DetailByline', () => {
   })
 
   it('puts no dot before the first fact when there is no author', () => {
-    render(<DetailByline author={null} source={null} license="MIT licensed" />)
+    render(<DetailByline author={null} source={null} license="MIT licence" />)
 
-    expect(screen.getByText('MIT licensed')).toBeTruthy()
+    expect(screen.getByText('MIT licence')).toBeTruthy()
     expect(screen.queryByText('·')).toBeNull()
   })
 
