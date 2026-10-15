@@ -1,13 +1,14 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { GalleryConfigCard } from '@/gallery/config-card'
-import { FACET_BY_SLUG } from '@/gallery/facets'
+import { FACET_MOD_COPY, type FacetModCopy } from '@/gallery/facet-copy'
+import { FACET_BY_SLUG, type Facet } from '@/gallery/facets'
 import { getFacetPage } from '@/gallery/functions'
 import { mergeGalleryItems } from '@/gallery/gallery-items'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { facetJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { NOT_FOUND_TITLE } from '@/lib/page-title'
+import { brandedPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getGalleryModsFn, getPublishedModTagsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
@@ -39,11 +40,10 @@ export const Route = createFileRoute('/status-lines/$facet')({
     const facet = loaderData ? FACET_BY_SLUG.get(loaderData.page.slug) : undefined
     if (!facet || !loaderData) return { meta: [{ title: NOT_FOUND_TITLE }] }
     const path = `/status-lines/${facet.slug}`
-    const titleBase = facet.titleBase ?? ''
-    const metaDescription = facet.metaDescription ?? ''
+    const { titleBase, metaDescription } = facetPageCopy(facet, loaderData.mods ?? 0)
     return {
       meta: [
-        { title: `${titleBase} | statuslin.es` },
+        { title: brandedPageTitle(titleBase) },
         { name: 'description', content: metaDescription },
         ...(!loaderData.page.indexable
           ? [{ name: 'robots', content: 'noindex, follow' } as const]
@@ -77,11 +77,12 @@ function FacetPage() {
   const { page, items, mods, user } = Route.useLoaderData()
   const facet = FACET_BY_SLUG.get(page.slug)
   if (!facet) return null
+  const copy = facetPageCopy(facet, mods)
   return (
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
-          <Heading level={1}>{facet.heading}</Heading>
+          <Heading level={1}>{copy.heading}</Heading>
           {(facet.intro ?? []).map((paragraph) => (
             <Text key={paragraph.slice(0, 24)} muted size="sm">
               {paragraph}
@@ -90,6 +91,11 @@ function FacetPage() {
           {facet.answer ? (
             <Text size="sm">
               <InlineCodeText text={facet.answer} />
+            </Text>
+          ) : null}
+          {copy.kindNote ? (
+            <Text muted size="sm">
+              {copy.kindNote}
             </Text>
           ) : null}
           <Text muted size="sm">
@@ -131,6 +137,20 @@ function FacetPage() {
       </Stack>
     </PageShell>
   )
+}
+
+/** The page's title, heading and description: the mod copy while the page lists a mod. */
+function facetPageCopy(
+  facet: Facet,
+  modCount: number,
+): Omit<FacetModCopy, 'kindNote'> & { kindNote?: string } {
+  const withMods = FACET_MOD_COPY[facet.slug]
+  if (withMods && modCount > 0) return withMods
+  return {
+    titleBase: facet.titleBase ?? '',
+    heading: facet.heading ?? '',
+    metaDescription: facet.metaDescription ?? '',
+  }
 }
 
 function publishedCountLine(statusLines: number, mods: number): string {
