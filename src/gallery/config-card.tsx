@@ -60,7 +60,7 @@ export function GalleryConfigCard({
             <Text muted size="sm" breakLong>
               {card.description}
             </Text>
-            <Row gap={1}>
+            <Row gap={1} aboveOverlay>
               <AuthorChip author={card.author} />
             </Row>
           </Row>

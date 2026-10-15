@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import type { GalleryModCard } from '@/gallery/gallery-items'
-import { MODS_FAQ } from '@/mods/mods-page-faq'
+import { modsFaq } from '@/mods/mods-page-faq'
 import { Route as ModsRoute } from '@/routes/mods.index'
 
 const ORIGIN = 'https://statuslin.es'
@@ -33,7 +33,9 @@ interface Head {
 
 async function head(mods: GalleryModCard[]): Promise<Head> {
   process.env.BETTER_AUTH_URL = ORIGIN
-  return (await ModsRoute.options.head?.({ loaderData: { mods, user: null } } as never)) as Head
+  return (await ModsRoute.options.head?.({
+    loaderData: { mods, user: null, origin: ORIGIN },
+  } as never)) as Head
 }
 
 function jsonLd(h: Head): Array<Record<string, unknown>> {
@@ -46,16 +48,38 @@ describe('/mods head', () => {
 
     expect(h.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Mods with Real Previews | statuslin.es' },
+        { title: 'Claude Code Mods Directory & Marketplace | statuslin.es' },
         {
           name: 'description',
           content:
-            'Claude Code mods with real previews from the terminal and Claude Desktop. See what each one can touch, then install it at the commit a person reviewed.',
+            'A directory of Claude Code mods with real previews from the terminal and Claude Desktop. A person reviews each one, and it installs from our marketplace.',
         },
         { property: 'og:url', content: `${ORIGIN}/mods` },
       ]),
     )
     expect(h.links).toEqual([{ rel: 'canonical', href: `${ORIGIN}/mods` }])
+  })
+
+  it('keeps the title and description within what search results show', async () => {
+    const h = await head(MODS)
+    const title = h.meta.find((m) => 'title' in m)?.title ?? ''
+    const description = h.meta.find((m) => m.name === 'description')?.content ?? ''
+
+    expect(title.length).toBeLessThanOrEqual(60)
+    expect(description.length).toBeLessThanOrEqual(160)
+    expect(title.startsWith('Claude Code Mods')).toBe(true)
+    expect(title.toLowerCase()).not.toContain('best')
+  })
+
+  it('names the page the same in og:title and the CollectionPage', async () => {
+    const h = await head(MODS)
+    const collection = jsonLd(h).find((n) => n['@type'] === 'CollectionPage')
+
+    expect(h.meta).toContainEqual({
+      property: 'og:title',
+      content: 'Claude Code Mods Directory & Marketplace',
+    })
+    expect(collection?.name).toBe('Claude Code Mods Directory & Marketplace')
   })
 
   it('lets crawlers index the page while it lists mods', async () => {
@@ -79,6 +103,8 @@ describe('/mods head', () => {
     const faq = nodes.find((n) => n['@type'] === 'FAQPage') as {
       mainEntity: Array<{ name: string }>
     }
-    expect(faq.mainEntity.map((q) => q.name)).toEqual(MODS_FAQ.map((entry) => entry.question))
+    expect(faq.mainEntity.map((q) => q.name)).toEqual(
+      modsFaq(ORIGIN).map((entry) => entry.question),
+    )
   })
 })

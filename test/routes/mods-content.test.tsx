@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GalleryModCard } from '@/gallery/gallery-items'
-import { MODS_FAQ } from '@/mods/mods-page-faq'
+import { modsFaq } from '@/mods/mods-page-faq'
 
 vi.mock('@tanstack/react-router', async () => {
   const actual =
@@ -47,8 +47,10 @@ function mod(slug: string, title: string): GalleryModCard {
 
 const MODS = [mod('meter', 'Meter'), mod('file-tree', 'File Tree')]
 
+const ORIGIN = 'https://statuslin.es'
+
 function renderPage(mods: GalleryModCard[]) {
-  vi.spyOn(ModsRoute, 'useLoaderData').mockReturnValue({ mods, user: null })
+  vi.spyOn(ModsRoute, 'useLoaderData').mockReturnValue({ mods, user: null, origin: ORIGIN })
   const Page = ModsRoute.options.component
   return render(Page ? <Page /> : null)
 }
@@ -84,11 +86,61 @@ describe('/mods page', () => {
 
     const faq = screen.getByRole('heading', { level: 2, name: 'Common questions' })
     const section = within(faq.parentElement as HTMLElement)
-    for (const entry of MODS_FAQ) {
+    for (const entry of modsFaq(ORIGIN)) {
       expect(section.getByRole('heading', { level: 3, name: entry.question })).toBeTruthy()
     }
     const lastCard = screen.getByRole('link', { name: 'File Tree' })
     expect(lastCard.compareDocumentPosition(faq) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows every question and answer that the FAQ JSON-LD marks up, in the same words', async () => {
+    const { container } = renderPage(MODS)
+    process.env.BETTER_AUTH_URL = ORIGIN
+    const head = (await ModsRoute.options.head?.({
+      loaderData: { mods: MODS, user: null, origin: ORIGIN },
+    } as never)) as { scripts: Array<{ children: string }> }
+    const faq = head.scripts
+      .map((script) => JSON.parse(script.children))
+      .find((node) => node['@type'] === 'FAQPage') as {
+      mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }>
+    }
+
+    expect(faq.mainEntity.length).toBeGreaterThan(0)
+    const pageText = container.textContent ?? ''
+    for (const question of faq.mainEntity) {
+      expect(screen.getByRole('heading', { level: 3, name: question.name })).toBeTruthy()
+      expect(pageText).toContain(question.acceptedAnswer.text)
+    }
+  })
+
+  it('answers what a mod is, how to install one here and by hand, and whether mods are safe', () => {
+    renderPage(MODS)
+
+    for (const question of [
+      'What is a Claude Code mod?',
+      'How do I install a mod from statuslin.es?',
+      'How do I install a mod by hand?',
+      'Are Claude Code mods safe?',
+    ]) {
+      expect(screen.getByRole('heading', { level: 3, name: question }), question).toBeTruthy()
+    }
+  })
+
+  it('gives the two commands a mod install runs, for this site', () => {
+    const { container } = renderPage(MODS)
+
+    const pageText = container.textContent ?? ''
+    expect(pageText).toContain(`claude plugin marketplace add ${ORIGIN}/marketplace.json`)
+    expect(pageText).toContain('claude plugin install <mod>@statuslines')
+  })
+
+  it('links the safety guide right after the safety answer', () => {
+    renderPage(MODS)
+
+    const link = screen.getByRole('link', { name: 'Read the mod safety guide' })
+    expect(link.getAttribute('href')).toBe('/guide/are-claude-code-mods-safe')
+    const safety = screen.getByRole('heading', { level: 3, name: 'Are Claude Code mods safe?' })
+    expect(safety.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('says so when no mod is published', () => {

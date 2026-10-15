@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import type { GalleryItem } from '@/gallery/gallery-items'
-import { getModRelated, MOD_RELATED_LIMIT } from '@/mods/related'
+import { getModRelated, getStatusLineMods, MOD_RELATED_LIMIT } from '@/mods/related'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import { addMod, addVersion, openTestDb, setCurrentVersion, sha, type TestDb } from './seed-mods'
 
@@ -138,5 +138,34 @@ describe('getModRelated', () => {
     await statusLine('line', [])
 
     expect(await related({ slug: 'viewed', tags: [] })).toEqual([])
+  })
+})
+
+describe('getStatusLineMods', () => {
+  const statusLineMods = async (tags: string[]) =>
+    (await getStatusLineMods(db, { tags })).map((card) => card.slug)
+
+  it('lists published mods sharing a tag with the status line, most shared tags first', async () => {
+    await mod('one-tag', ['quota'], { copyCount: 9 })
+    await mod('both-tags', ['cost', 'quota'])
+    await mod('no-tag', ['git'], { copyCount: 50 })
+    await mod('draft', ['cost'], { status: 'draft' })
+    await mod('removed', ['cost'], { status: 'removed' })
+    await statusLine('line', ['cost', 'quota'])
+
+    expect(await statusLineMods(['cost', 'quota'])).toEqual(['both-tags', 'one-tag'])
+  })
+
+  it('stops at four, the most copied ahead on a tie', async () => {
+    for (const n of [1, 2, 3, 4, 5]) await mod(`mod-${n}`, ['cost'], { copyCount: n })
+
+    expect(await statusLineMods(['cost'])).toEqual(['mod-5', 'mod-4', 'mod-3', 'mod-2'])
+  })
+
+  it('lists nothing for a status line without tags', async () => {
+    await mod('untagged', [])
+    await mod('tagged', ['cost'])
+
+    expect(await statusLineMods([])).toEqual([])
   })
 })

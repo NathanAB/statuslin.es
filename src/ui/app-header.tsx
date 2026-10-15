@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { FileText, LogOut, ShieldCheck } from 'lucide-react'
 import type { PostHog } from 'posthog-js'
 import { authClient } from '@/lib/auth-client'
+import { GUIDE_CRUMB } from '@/lib/breadcrumb-json-ld'
 import { MODS_PATH } from '@/lib/site'
 import { Button } from '@/ui/button'
 import {
@@ -55,7 +56,7 @@ export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
             <Link to={MODS_PATH}>Mods</Link>
           </Button>
           <Button asChild variant="ghost" size="nav">
-            <Link to="/guide">Guide</Link>
+            <Link to={GUIDE_CRUMB.to}>{GUIDE_CRUMB.name}</Link>
           </Button>
           <Button asChild variant="ghost" size="nav">
             <Link to="/resources">Resources</Link>

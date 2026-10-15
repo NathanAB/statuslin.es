@@ -105,6 +105,12 @@ describe('ConfigBadges', () => {
     expect(classes).not.toContain('min-w-0')
   })
 
+  it('marks the network-access hosts badge as a tooltip trigger so it keeps its hover above the overlay', () => {
+    renderBadges({ tags: ['network-access'], networkHosts: ['wttr.in'] })
+    const trigger = screen.getByLabelText('Uses network: wttr.in')
+    expect(trigger.getAttribute('data-slot')).toBe('tooltip-trigger')
+  })
+
   it('lists the declared hosts in the network-access badge accessible label', () => {
     renderBadges({ tags: ['network-access'], networkHosts: ['wttr.in', 'api.frankfurter.app'] })
     expect(screen.getByLabelText('Uses network: wttr.in, api.frankfurter.app')).toBeTruthy()

@@ -4,21 +4,9 @@ import type { GalleryCardAnalytics } from '@/gallery/card-analytics'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery, getGalleryConfigs } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
-import {
-  coerceGalleryFilter,
-  type GalleryFilter,
-  type GalleryItem,
-  loadGalleryPage,
-} from '@/gallery/gallery-items'
+import { coerceGalleryFilter, type GalleryFilter, loadGalleryPage } from '@/gallery/gallery-items'
 import { HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
-import {
-  coercePage,
-  coerceSort,
-  coerceTags,
-  type GalleryCard,
-  type GallerySort,
-  PAGE_SIZE,
-} from '@/gallery/queries'
+import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { getSession } from '@/lib/auth-functions'
 import {
   canonicalLink,
@@ -31,6 +19,7 @@ import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
+import { homeSocialMeta } from '@/og/meta'
 import { Button } from '@/ui/button'
 import { HomeHero, HomeMasthead } from '@/ui/home-hero'
 import { Row, Stack } from '@/ui/layout'
@@ -82,19 +71,29 @@ export const Route = createFileRoute('/')({
     const page = loaderData?.gallery.page ?? 1
     const pageCount = loaderData?.gallery.pageCount ?? 1
     const isFiltered = isFilteredHomeSearch(match.search)
+    const canonical = canonicalLink(homeCanonicalPath(page, match.search))
     return {
       meta: [
         { title: homePageTitle(page) },
         { name: 'description', content: homeMetaDescription(page, pageCount) },
         ...(isFiltered ? [{ name: 'robots', content: 'noindex, follow' }] : []),
+        ...(loaderData ? homeSocialMeta({ url: canonical.href, page, pageCount }) : []),
       ],
-      links: loaderData ? [canonicalLink(homeCanonicalPath(page, match.search))] : [],
+      links: loaderData ? [canonical] : [],
       scripts: loaderData
-        ? homeJsonLd(siteUrl(), statusLineCards(loaderData.gallery.items), {
-            page,
-            pageSize: PAGE_SIZE,
-            includeCollectionPage: !isFiltered,
-          }).map(jsonLdScript)
+        ? homeJsonLd(
+            siteUrl(),
+            loaderData.gallery.items.map(({ kind, card }) => ({
+              kind,
+              slug: card.slug,
+              title: card.title,
+            })),
+            {
+              page,
+              pageSize: PAGE_SIZE,
+              includeCollectionPage: !isFiltered,
+            },
+          ).map(jsonLdScript)
         : [],
     }
   },
@@ -201,9 +200,4 @@ function Home() {
       </Stack>
     </PageShell>
   )
-}
-
-/** JSON-LD lists config pages only; its item URLs are `/c/<slug>`. */
-function statusLineCards(items: GalleryItem[]): GalleryCard[] {
-  return items.flatMap((item) => (item.kind === 'status-line' ? [item.card] : []))
 }

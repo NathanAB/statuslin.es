@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MOD_SAFETY_FAQ } from '@/guide/mod-safety-faq'
 import { STATUS_LINES_VS_MODS_FAQ } from '@/guide/status-lines-vs-mods-faq'
 import {
-  GUIDE_TITLE_BASE,
   MOD_SAFETY_GUIDE_DESCRIPTION,
   MOD_SAFETY_GUIDE_PATH,
   MOD_SAFETY_GUIDE_TITLE,
@@ -100,8 +99,8 @@ describe.each(GUIDES)('$path page', (guide) => {
     })
     const crumbs = ofType('BreadcrumbList') as { itemListElement: Array<{ name: string }> }
     expect(crumbs.itemListElement.map((crumb) => crumb.name)).toEqual([
-      'Status lines',
-      GUIDE_TITLE_BASE,
+      'statuslin.es',
+      'Guide',
       guide.title,
     ])
     const faq = ofType('FAQPage') as { mainEntity: Array<{ name: string }> }

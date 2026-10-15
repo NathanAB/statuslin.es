@@ -32,8 +32,10 @@ export function iconFor(slug: string): LucideIcon {
 /** The chips on a gallery card + the detail page: one per tag in the config's allTags,
  *  each linking to its facet page (or the tag-filtered home for tags with no page).
  *  `network-access` additionally carries a tooltip listing the hosts the config declares.
- *  `aboveOverlay` lifts the whole row above the card's stretched-link overlay so every
- *  badge link stays clickable. Rendered once here so the card and detail page match.
+ *  `aboveOverlay` lifts the badge links (and the network tooltip, whose badge takes hover
+ *  rather than opening the card) above the card's stretched-link overlay so they stay
+ *  clickable; the gaps between them still open the card. Rendered once here so the card and
+ *  detail page match.
  *  `align="end"` (gallery card) takes the leftover width beside the title and wraps the chips
  *  right-aligned to more rows, never narrower than the widest chip; `align="start"` (detail
  *  page) packs them left. */

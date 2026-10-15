@@ -42,7 +42,7 @@ describe('ConfigHeader', () => {
     )
 
     expect(trail()).toBe(
-      'Status lines›Claude Code status lines that show git status›Powerline Dracula',
+      'statuslin.es›Claude Code status lines that show git status›Powerline Dracula',
     )
     expect(
       screen.getByRole('link', { name: 'Claude Code status lines that show git status' }),
@@ -52,7 +52,7 @@ describe('ConfigHeader', () => {
   it('goes straight from home to the status line without a primary facet', () => {
     render(<ConfigHeader detail={DETAIL} />)
 
-    expect(trail()).toBe('Status lines›Powerline Dracula')
+    expect(trail()).toBe('statuslin.es›Powerline Dracula')
   })
 
   it('shows the status line’s chips beside the title', () => {

@@ -223,7 +223,7 @@ describe('mod page', () => {
     renderPage()
 
     const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
-    expect(nav.textContent).toBe('Status lines›Mods›File Tree')
+    expect(nav.textContent).toBe('statuslin.es›Mods›File Tree')
     expect(within(nav).getByRole('link', { name: 'Mods' }).getAttribute('href')).toBe('/mods')
   })
 

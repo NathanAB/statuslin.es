@@ -1,6 +1,6 @@
-import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
+import { breadcrumbJsonLd, GUIDE_CRUMB, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { type FaqEntry, faqPageJsonLd } from '@/lib/json-ld'
-import { GUIDE_PATH, GUIDE_TITLE_BASE } from '@/lib/page-title'
+import { GUIDE_PATH } from '@/lib/page-title'
 
 /** A /guide page as its TechArticle states it; `headline` is the page's title base. */
 export interface GuideArticle {
@@ -30,7 +30,7 @@ export function guideJsonLd(origin: string, article: GuideArticle, faq: FaqEntry
     },
     breadcrumbJsonLd([
       { name: HOME_CRUMB_NAME, item: origin },
-      { name: GUIDE_TITLE_BASE, item: `${origin}${GUIDE_PATH}` },
+      { name: GUIDE_CRUMB.name, item: `${origin}${GUIDE_CRUMB.to}` },
       ...ownCrumb,
     ]),
   ]

@@ -4,7 +4,7 @@ import {
   MOD_SAFETY_GUIDE_DATES,
   STATUS_LINES_VS_MODS_GUIDE_DATES,
 } from '@/lib/page-title'
-import { sitemapResponse, withModUrls } from '@/lib/sitemap'
+import { sitemapResponse } from '@/lib/sitemap'
 
 const BASE = 'https://statuslin.es'
 
@@ -135,20 +135,24 @@ describe('sitemapResponse', () => {
   })
 })
 
-describe('withModUrls', () => {
-  it('leaves the sitemap untouched when no mod is published', async () => {
-    const original = await sitemapResponse(BASE, [], []).text()
+describe('sitemapResponse with mods', () => {
+  it('lists no mods page when no mod is published', async () => {
+    const xml = await sitemapResponse(BASE, [], []).text()
 
-    expect(await (await withModUrls(sitemapResponse(BASE, [], []), BASE, [])).text()).toBe(original)
-    expect(original).not.toContain(`<loc>${BASE}/mods</loc>`)
+    expect(xml).not.toContain(`<loc>${BASE}/mods</loc>`)
   })
 
   it('lists the mods page, dated by its newest mod, ahead of the mod pages', async () => {
-    const xml = await (
-      await withModUrls(sitemapResponse(BASE, [], []), BASE, [
+    const xml = await sitemapResponse(
+      BASE,
+      [],
+      [],
+      1,
+      [],
+      [
         { slug: 'meter', updatedAt: new Date('2026-09-01T00:00:00Z') },
         { slug: 'tree', updatedAt: new Date('2026-10-02T00:00:00Z') },
-      ])
+      ],
     ).text()
 
     expect(xml).toContain(
@@ -156,16 +160,17 @@ describe('withModUrls', () => {
     )
   })
 
-  it("keeps $' and $` in a mod url literal instead of splicing the sitemap into it", async () => {
-    const base = "https://a$'b.example/c$`d"
-    const xml = await (
-      await withModUrls(sitemapResponse(BASE, [], []), base, [
-        { slug: 'meter', updatedAt: new Date('2026-10-01T00:00:00Z') },
-      ])
+  it('dates the homepage and its pages from a mod newer than every status line', async () => {
+    const xml = await sitemapResponse(
+      BASE,
+      [{ slug: 'line', updatedAt: new Date('2026-09-01T00:00:00Z') }],
+      [],
+      2,
+      [],
+      [{ slug: 'meter', updatedAt: new Date('2026-10-02T00:00:00Z') }],
     ).text()
 
-    expect(xml).toContain('<loc>https://a$&apos;b.example/c$`d/mods/meter</loc>')
-    expect(xml.match(/<urlset/g)).toHaveLength(1)
-    expect(xml.endsWith('</urlset>\n')).toBe(true)
+    expect(xml).toContain(`<loc>${BASE}</loc>\n    <lastmod>2026-10-02</lastmod>`)
+    expect(xml).toContain(`<loc>${BASE}/?page=2</loc>\n    <lastmod>2026-10-02</lastmod>`)
   })
 })

@@ -49,7 +49,7 @@ describe('DetailHeader', () => {
       <DetailHeader trail={[]} title="Solo" byline={BYLINE} description="" />,
     )
 
-    expect(container.textContent).toBe('Status lines›SoloSoloby@octocat·MIT licensed')
+    expect(container.textContent).toBe('statuslin.es›SoloSoloby@octocat·MIT licensed')
     expect([...container.querySelectorAll('p')].filter((p) => p.textContent === '')).toEqual([])
   })
 })

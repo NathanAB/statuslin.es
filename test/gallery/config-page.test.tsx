@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { getConfigDetail } from '@/gallery/functions'
+import type { GalleryModCard } from '@/gallery/gallery-items'
 
 vi.mock('@tanstack/react-router', async () => {
   const actual =
@@ -13,16 +14,24 @@ vi.mock('@tanstack/react-router', async () => {
       to,
       params,
       children,
+      onClick,
     }: {
       to: string
       params?: Record<string, string>
       children: React.ReactNode
-    }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
+      onClick?: () => void
+    }) => (
+      <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to} onClick={onClick}>
+        {children}
+      </a>
+    ),
   }
 })
+const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
+
 vi.mock('@posthog/react', () => ({
   usePostHog: () => ({
-    capture: vi.fn(),
+    capture,
     get_distinct_id: () => 'did',
     get_session_id: () => 'sid',
   }),
@@ -73,11 +82,24 @@ const DETAIL: Detail = {
   primaryFacet: { slug: 'bash', heading: 'Claude Code status lines written in bash' },
 }
 
-function renderPage(viewerIsAuthor = false) {
+const COST_MOD: GalleryModCard = {
+  modId: '44444444-4444-4444-8444-444444444444',
+  slug: 'cost-meter',
+  title: 'Cost Meter',
+  description: 'A cost meter.',
+  authorGithub: 'octocat',
+  copyCount: 2,
+  tags: ['bash'],
+  preview: [{ text: 'meter' }],
+  desktopShot: null,
+}
+
+function renderPage(viewerIsAuthor = false, mods: GalleryModCard[] = []) {
   vi.spyOn(ConfigRoute, 'useLoaderData').mockReturnValue({
     detail: DETAIL,
     user: null,
     viewerIsAuthor,
+    mods,
   })
   const Page = ConfigRoute.options.component
   return render(Page ? <Page /> : null)
@@ -147,5 +169,34 @@ describe('status line page', () => {
     expect(dots[0]?.parentElement?.parentElement?.textContent).toBe(
       'by@LindseyB·original source·MIT licensed',
     )
+  })
+
+  it('links the mods that share its tags after the other status lines', () => {
+    renderPage(false, [COST_MOD])
+
+    const card = h2('Mods that do the same job').closest('[data-slot="card"]') as HTMLElement
+    expect(within(card).getByRole('link', { name: 'Cost Meter' }).getAttribute('href')).toBe(
+      '/mods/cost-meter',
+    )
+    expectInOrder([h2('More status lines'), h2('Mods that do the same job')])
+  })
+
+  it('captures clicks on its mods as status line page related cards, by position', () => {
+    renderPage(false, [COST_MOD])
+
+    fireEvent.click(screen.getByRole('link', { name: 'Cost Meter' }))
+
+    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
+      modId: COST_MOD.modId,
+      slug: 'cost-meter',
+      surface: 'related',
+      position: 1,
+    })
+  })
+
+  it('shows no mods block when no mod shares its tags', () => {
+    renderPage()
+
+    expect(screen.queryByRole('heading', { name: 'Mods that do the same job' })).toBeNull()
   })
 })

@@ -5,7 +5,7 @@ import {
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
-import { modPath } from '@/lib/site'
+import { MARKETPLACE_PATH, MODS_PATH, modPath } from '@/lib/site'
 
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
@@ -34,6 +34,7 @@ export function buildLlmsTxt(
   base: string,
   facets: Array<{ slug: string; label: string }>,
   configs: LlmsConfig[] = [],
+  mods: LlmsMod[] = [],
 ): string {
   const blocks = [
     '# statuslin.es',
@@ -47,12 +48,19 @@ export function buildLlmsTxt(
   if (configs.length > 0) {
     blocks.push(['## Top status lines', '', ...configs.map((c) => configLink(base, c))].join('\n'))
   }
+  if (mods.length > 0) {
+    blocks.push(
+      ['## Mods', '', ...mods.map((m) => summaryLink(`${base}${modPath(m.slug)}`, m))].join('\n'),
+    )
+  }
   return `${blocks.join('\n\n')}\n`
 }
 
 function corePageLinks(base: string): string[] {
   return [
-    `- [Gallery](${base}/): every published status line, sorted by trending, newest, or most copied`,
+    `- [Gallery](${base}/): every published status line and mod, sorted by trending, newest, or most copied`,
+    `- [Mods](${base}${MODS_PATH}): every published mod, a Claude Code plugin you install with one command`,
+    `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
     `- [Submit a status line](${base}/submit): add your own`,
     `- [Guide](${base}/guide): how to wire a Claude Code status line by hand, with a tested example`,
     `- [Status line not showing in Claude Desktop](${base}${DESKTOP_GUIDE_PATH}): why the Desktop Code tab skips custom status lines, and the plugin that shows them`,
@@ -75,8 +83,11 @@ function summaryLink(
   item: { title: string; description: string; copyCount: number },
 ): string {
   const summary = escapeMarkdownLinks(oneLine(item.description))
-  const copies = `Copied ${item.copyCount} ${item.copyCount === 1 ? 'time' : 'times'}.`
-  return `- [${escapeMarkdownLinks(flat(item.title))}](${url}): ${summary ? `${summary} ` : ''}${copies}`
+  // A count of 0 tells a reader nothing, so a new entry carries none.
+  const copies =
+    item.copyCount > 0 ? `Copied ${item.copyCount} ${item.copyCount === 1 ? 'time' : 'times'}.` : ''
+  const text = [summary, copies].filter(Boolean).join(' ')
+  return `- [${escapeMarkdownLinks(flat(item.title))}](${url})${text ? `: ${text}` : ''}`
 }
 
 /** Authors write titles and descriptions, so a `](` or `<url>` in them must not forge a link. */
@@ -100,25 +111,12 @@ export function llmsResponse(
   base: string,
   facets: Array<{ slug: string; label: string }>,
   configs: LlmsConfig[] = [],
+  mods: LlmsMod[] = [],
 ): Response {
-  return new Response(buildLlmsTxt(base, facets, configs), {
+  return new Response(buildLlmsTxt(base, facets, configs, mods), {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'max-age=86400',
     },
   })
-}
-
-/** The gallery builds `/llms.txt` without knowing about mods, so they are appended to its response. */
-export async function withModLinks(
-  llms: Response,
-  base: string,
-  mods: LlmsMod[],
-): Promise<Response> {
-  const txt = await llms.text()
-  const body =
-    mods.length === 0
-      ? txt
-      : `${txt}\n${['## Mods', '', ...mods.map((m) => summaryLink(`${base}${modPath(m.slug)}`, m))].join('\n')}\n`
-  return new Response(body, { status: llms.status, headers: llms.headers })
 }

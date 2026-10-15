@@ -4,10 +4,11 @@ import { db } from '@/db'
 import { FACET_BY_SLUG, tagKeywords } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
-import { llmsResponse } from '@/lib/llms'
+import { type LlmsMod, llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
-import { sitemapResponse } from '@/lib/sitemap'
+import { type SitemapMod, sitemapResponse } from '@/lib/sitemap'
 import { getConfigSource, getPublishedConfigs } from './config-items'
+import type { FacetMod } from './facet-queries'
 import type { GallerySource } from './gallery-items'
 import { getPublishedInventory } from './inventory'
 import {
@@ -27,10 +28,12 @@ import { coerceSourceQuery } from './ranking'
 import { rankedCard } from './why-line'
 
 /**
- * The `/sitemap.xml` response. Lives here (not in the route file) because route files can't import
- * the db client directly — they reach gallery data through this module, the same way the og image
- * routes call into `@/og/routes`. Keeps `updatedAt` a real `Date` by avoiding the server-fn RPC
- * boundary that would serialize it to a string.
+ * The `/sitemap.xml` response. src/gallery cannot query mods, so the caller passes the published
+ * ones in; they count toward the gallery pages, the facets and the dates like status lines. Lives
+ * here (not in the route file) because route files can't import the db client directly — they
+ * reach gallery data through this module, the same way the og image routes call into
+ * `@/og/routes`. Keeps `updatedAt` a real `Date` by avoiding the server-fn RPC boundary that would
+ * serialize it to a string.
  */
 // createServerOnlyFn keeps `db` (and the whole postgres driver) out of the CLIENT bundle: this
 // module is imported by client components for the server functions below, and a plain function
@@ -38,17 +41,19 @@ import { rankedCard } from './why-line'
 // `Buffer is not defined` and kills hydration. The server-only wrapper strips the body (and its
 // `db` reference) from the client build. It also avoids the server-fn RPC boundary, so the
 // sitemap's `updatedAt` stays a real `Date` instead of being serialized to a string.
-export const sitemapResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
-  const stats = await getFacetStats(db)
-  const facets = liveFacetLinks(stats).map((facet) => ({
-    slug: facet.slug,
-    latest: stats.get(facet.slug)?.latest ?? null,
-  }))
-  const configs = await getPublishedSlugsForSitemap(db)
-  const pageCount = Math.max(1, Math.ceil(configs.length / PAGE_SIZE))
-  const comparePaths = liveComparePaths(await getCardsByCopies(db))
-  return sitemapResponse(siteUrl(), configs, facets, pageCount, comparePaths)
-})
+export const sitemapResponseForRoute = createServerOnlyFn(
+  async (mods: Array<SitemapMod & FacetMod>): Promise<Response> => {
+    const stats = await getFacetStats(db, mods)
+    const facets = liveFacetLinks(stats).map((facet) => ({
+      slug: facet.slug,
+      latest: stats.get(facet.slug)?.latest ?? null,
+    }))
+    const configs = await getPublishedSlugsForSitemap(db)
+    const pageCount = Math.max(1, Math.ceil((configs.length + mods.length) / PAGE_SIZE))
+    const comparePaths = liveComparePaths(await getCardsByCopies(db))
+    return sitemapResponse(siteUrl(), configs, facets, pageCount, comparePaths, mods)
+  },
+)
 
 const BEST_LIMIT = 10
 
@@ -62,31 +67,39 @@ export const getBestPage = createServerFn({ method: 'GET' }).handler(() =>
 /**
  * The `/llms.txt` response. Server-only for the same reason as the sitemap: it reads live facet
  * counts from `db`, which route files can't import. Lists only indexable page facets that meet the
- * shared inventory threshold.
+ * shared inventory threshold, counting the published mods the caller passes in.
  */
-export const llmsTxtResponseForRoute = createServerOnlyFn(async (): Promise<Response> => {
-  const stats = await getFacetStats(db)
-  const facets = liveFacetLinks(stats).map((link) => {
-    const facet = FACET_BY_SLUG.get(link.slug)
-    return {
-      slug: link.slug,
-      label: facet?.heading ?? link.chipLabel,
-    }
-  })
-  const top = await getPublishedConfigs(db, 'top', 1)
-  return llmsResponse(
-    siteUrl(),
-    facets,
-    top.map(({ slug, title, description, copyCount }) => ({ slug, title, description, copyCount })),
-  )
-})
+export const llmsTxtResponseForRoute = createServerOnlyFn(
+  async (mods: Array<LlmsMod & FacetMod>): Promise<Response> => {
+    const stats = await getFacetStats(db, mods)
+    const facets = liveFacetLinks(stats).map((link) => {
+      const facet = FACET_BY_SLUG.get(link.slug)
+      return {
+        slug: link.slug,
+        label: facet?.heading ?? link.chipLabel,
+      }
+    })
+    const top = await getPublishedConfigs(db, 'top', 1)
+    return llmsResponse(
+      siteUrl(),
+      facets,
+      top.map(({ slug, title, description, copyCount }) => ({
+        slug,
+        title,
+        description,
+        copyCount,
+      })),
+      mods,
+    )
+  },
+)
 
 /** Narrows a caller's per-mod tag lists, since they arrive over the server-fn boundary. */
-function coerceModTags(value: unknown): string[][] {
+function coerceModTags(value: unknown): FacetMod[] {
   if (!Array.isArray(value)) return []
-  return value.map((tags) =>
-    Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : [],
-  )
+  return value.map((tags) => ({
+    tags: Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : [],
+  }))
 }
 
 export const getGalleryConfigs = createServerFn({ method: 'GET' })

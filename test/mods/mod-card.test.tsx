@@ -78,6 +78,14 @@ describe('ModCard', () => {
     expect(screen.getByText('Shows the context meter.')).toBeTruthy()
   })
 
+  it("keeps the author's GitHub link clickable above the card's overlay", () => {
+    render(<ModCard card={card} />)
+
+    const author = screen.getByRole('link', { name: '@octocat' })
+    expect(author.getAttribute('href')).toBe('https://github.com/octocat')
+    expect(author.closest('.z-10')).toBeTruthy()
+  })
+
   it('labels the terminal preview and leaves out a Desktop slot when there is no shot', () => {
     render(<ModCard card={card} />)
 

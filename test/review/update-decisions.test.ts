@@ -155,7 +155,7 @@ describe('approving an update', () => {
     ).toMatchObject({ title: update.title, interpreter: update.interpreter })
     await configCardResponse(db, v1.slug)
     expect(configCard).toHaveBeenLastCalledWith(expect.objectContaining({ title: update.title }))
-    const llms = await (await llmsTxtResponseForRoute()).text()
+    const llms = await (await llmsTxtResponseForRoute([])).text()
     expect(llms).toContain(`[${update.title}]`)
     expect(llms).toContain(update.description)
     expect(llms).not.toContain(live.title)

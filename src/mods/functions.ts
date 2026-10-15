@@ -1,12 +1,13 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
+import { FACET_BY_SLUG } from '@/gallery/facets'
 import { type BrowserCopyTracking, requestCopyIdentity } from '@/lib/copy-identity.server'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { getModDesktopShot } from './desktop-shot'
 import { type InstallCommandKind, modCopyEvent } from './install'
 import { getModDetail, recordModCopy } from './queries'
-import { getModRelated } from './related'
+import { getModRelated, getStatusLineMods } from './related'
 
 export const getModDetailFn = createServerFn({ method: 'GET' })
   .inputValidator((d: { slug: string }) => d)
@@ -16,6 +17,14 @@ export const getModDetailFn = createServerFn({ method: 'GET' })
       return mod && { ...mod, related: await getModRelated(db, mod) }
     }),
   )
+
+/** The mods a status line page links to, from the status line's tags. */
+export const getStatusLineModsFn = createServerFn({ method: 'GET' })
+  // Only registry tags, once each: a caller can't grow the query past the registry's size.
+  .inputValidator((d: { tags: string[] }) => ({
+    tags: Array.isArray(d.tags) ? [...new Set(d.tags)].filter((tag) => FACET_BY_SLUG.has(tag)) : [],
+  }))
+  .handler(({ data }) => withHttpStatus(() => getStatusLineMods(db, data)))
 
 /** Only what a guide needs to link a mod: whether it is published, and its Desktop shot. */
 export const getModDesktopShotFn = createServerFn({ method: 'GET' })
