@@ -1,4 +1,5 @@
 import {
+  HOME_DESCRIPTION_BASE,
   HOME_TITLE_BASE,
   homeMetaDescription,
   homePageName,
@@ -13,8 +14,7 @@ export function rootSocialMeta(): Array<Record<string, string>> {
   return [
     {
       name: 'description',
-      content:
-        'A community gallery of Claude Code status lines and mods — browse rendered previews, then copy a status line or install a mod.',
+      content: HOME_DESCRIPTION_BASE,
     },
     { property: 'og:site_name', content: SITE_NAME },
     { property: 'og:type', content: 'website' },

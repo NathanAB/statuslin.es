@@ -19,7 +19,7 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 // and marketplace searches instead. No "best" until mods have install counts to rank by.
 const TITLE_BASE = 'Claude Code Mods Directory & Marketplace'
 const DESCRIPTION =
-  'A directory of Claude Code mods with real previews from the terminal and Claude Desktop. A person reviews each one, and it installs from our marketplace.'
+  'Claude Code mods, previewed in the terminal and Claude Desktop. Reviewed by a person, installed with one command.'
 
 export const Route = createFileRoute('/mods/')({
   loader: async () => {
@@ -61,12 +61,9 @@ function ModsPage() {
         <Stack gap={3}>
           <Heading level={1}>Claude Code mods</Heading>
           <Text muted>
-            Mods are Claude Code plugins that draw in its interface: above the prompt, under it, or
-            in a pane.
-          </Text>
-          <Text muted>
-            Every preview here comes from running the mod in Claude Code. A person reviewed each
-            one, and its install is pinned to the commit they read.
+            Mods are Claude Code plugins that draw above the prompt, under it, or in a pane. Each
+            preview comes from running the mod in Claude Code, and each install is pinned to the
+            commit a person reviewed.
           </Text>
           <Text muted>
             Looking for a status line instead? <TextLink to="/">Browse the gallery</TextLink>.
@@ -93,13 +90,7 @@ function ModsPage() {
         ) : (
           <Text muted>No mods are published yet.</Text>
         )}
-        <Stack gap={3}>
-          <FaqSection entries={modsFaq(origin)} />
-          <Text muted>
-            <TextLink to={MOD_SAFETY_GUIDE_PATH}>Read the mod safety guide</TextLink> for what an
-            installed mod can reach and how to check one yourself.
-          </Text>
-        </Stack>
+        <FaqSection entries={modsFaq(origin)} />
       </Stack>
     </PageShell>
   )

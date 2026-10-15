@@ -25,7 +25,7 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
+            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
         },
       ]),
     )
@@ -50,14 +50,14 @@ describe('home search indexing metadata', () => {
         {
           name: 'description',
           content:
-            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
+            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
         { property: 'og:url', content: 'https://statuslin.es/?page=2' },
         { property: 'og:title', content: 'Claude Code Status Lines & Mods — Page 2' },
         {
           property: 'og:description',
           content:
-            'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
+            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
         },
       ]),
     )

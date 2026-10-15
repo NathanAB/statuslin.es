@@ -80,7 +80,7 @@ export const NOT_FOUND_TITLE = `Status line not found — ${SITE_NAME}`
 export const HOME_TITLE_BASE = 'Claude Code Status Lines & Mods'
 export const HOME_HEADING = 'Claude Code status lines and mods'
 export const HOME_DESCRIPTION_BASE =
-  'Browse Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.'
+  'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.'
 
 function homePageSuffix(page: number): string {
   return page > 1 ? ` — Page ${page}` : ''

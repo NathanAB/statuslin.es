@@ -141,40 +141,38 @@ export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
     titleBase: 'Claude Code Token Usage: Status Lines & Mods',
     heading: 'Claude Code status lines and mods that show token usage',
     metaDescription:
-      'Status lines and mods that show context window usage in Claude Code, as token counts, burn bars or meters. Rendered previews of each.',
+      'Claude Code status lines and mods that show context window usage, as token counts or meters.',
     kindNote:
-      "The status lines print token counts in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
+      "Status lines print token counts under the prompt. Each mod's page shows where it draws.",
   },
   cost: {
     titleBase: 'Claude Code Session Cost: Status Lines & Mods',
     heading: 'Claude Code status lines and mods that track cost',
     metaDescription:
-      'Status lines and mods that show what a Claude Code session costs as you work, from plain dollar figures to burn-rate meters. Rendered previews of each.',
+      'Claude Code status lines and mods that show session cost, from dollar figures to burn-rate meters.',
     kindNote:
-      "The status lines print the session cost in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
+      "Status lines print the session cost under the prompt. Each mod's page shows where it draws.",
   },
   quota: {
     titleBase: 'Claude Code Usage Limits: Status Lines & Mods',
     heading: 'Claude Code status lines and mods that track usage limits',
     metaDescription:
-      'Status lines and mods that show your Claude Code 5-hour and weekly usage limits: quota percentages, reset countdowns, and overage warnings.',
+      'Claude Code status lines and mods that show your 5-hour and weekly usage limits and when they reset.',
     kindNote:
-      "The status lines print your limits in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
+      "Status lines print your limits under the prompt. Each mod's page shows where it draws.",
   },
   minimal: {
     titleBase: 'Minimal Claude Code Status Lines & Mods',
     heading: 'Minimal Claude Code status lines and mods',
-    metaDescription:
-      'Single-line, low-noise Claude Code status lines and mods that show just the essentials. Rendered previews of each.',
-    kindNote:
-      "The status lines keep to one short line in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
+    metaDescription: 'Single-line Claude Code status lines and mods that show only the essentials.',
+    kindNote: "The status lines here keep to one short line. Each mod's page shows where it draws.",
   },
   'multi-line': {
     titleBase: 'Multi-Line Claude Code Status Lines & Mods',
     heading: 'Multi-line Claude Code status lines and mods',
     metaDescription:
-      'Claude Code status lines and mods that use two or more lines for a fuller view of the session: tokens, cost, usage limits, and more at a glance.',
+      'Claude Code status lines and mods that use two or more lines to show tokens, cost and usage limits.',
     kindNote:
-      "The status lines stack their rows in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
+      "The status lines here stack two or more rows under the prompt. Each mod's page shows where it draws.",
   },
 }

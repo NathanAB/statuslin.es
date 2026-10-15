@@ -136,7 +136,9 @@ describe('facet page content', () => {
         { property: 'og:title', content: 'Claude Code Token Usage: Status Lines & Mods' },
         {
           name: 'description',
-          content: expect.stringMatching(/^Status lines and mods that show context window usage/),
+          content: expect.stringMatching(
+            /^Claude Code status lines and mods that show context window usage/,
+          ),
         },
       ]),
     )
@@ -148,9 +150,7 @@ describe('facet page content', () => {
         name: 'Claude Code status lines and mods that show token usage',
       }),
     ).toBeTruthy()
-    expect(
-      screen.getByText(/The mods here are plugins that draw inside Claude Code itself/),
-    ).toBeTruthy()
+    expect(screen.getByText(/Each mod's page shows where it draws\./)).toBeTruthy()
   })
 
   it('keeps status-lines wording on a mod-ready facet while it lists no mods', async () => {
