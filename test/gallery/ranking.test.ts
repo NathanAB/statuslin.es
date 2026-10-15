@@ -19,6 +19,16 @@ describe('coerceSourceQuery', () => {
     ).toEqual({ sort: 'trending', tags: ['git'], limit: 1 })
   })
 
+  it('keeps a slug to leave out, and drops one that is not a string', () => {
+    expect(coerceSourceQuery({ sort: 'top', excludeSlug: 'context-bar' }).excludeSlug).toBe(
+      'context-bar',
+    )
+    expect(coerceSourceQuery(untrusted({ sort: 'top', excludeSlug: 7 }))).toEqual({
+      sort: 'top',
+      tags: [],
+    })
+  })
+
   it('caps the limit at the last page the gallery serves', () => {
     expect(coerceSourceQuery({ sort: 'top', limit: 1_000_000_000 }).limit).toBe(
       MAX_GALLERY_PAGE * PAGE_SIZE,

@@ -6,7 +6,7 @@ import { Text } from '@/ui/text'
 export function GuideStdinFields() {
   return (
     <Stack gap={3}>
-      <Text muted>The rest of that payload, field by field, as this site sends it:</Text>
+      <Text muted>What each field in that payload holds:</Text>
       <MetaList items={STDIN_FIELD_GUIDE} />
     </Stack>
   )

@@ -80,7 +80,7 @@ describe('ConfigHeader', () => {
     const dots = screen.getAllByText('·')
     expect(dots.map((dot) => dot.parentElement?.textContent)).toEqual([
       '·original source',
-      '·MIT licensed',
+      '·MIT licence',
     ])
     expect(screen.getByRole('link', { name: 'original source' }).getAttribute('href')).toBe(
       'https://example.com/x',
@@ -91,13 +91,13 @@ describe('ConfigHeader', () => {
     render(<ConfigHeader detail={{ ...DETAIL, sourceUrl: 'https://example.com/x' }} />)
 
     expect(screen.getByRole('link', { name: 'original source' })).toBeTruthy()
-    expect(screen.queryByText(/licensed/)).toBeNull()
+    expect(screen.queryByText(/licence/)).toBeNull()
   })
 
   it('names the licence without a source link when the source is unknown', () => {
     render(<ConfigHeader detail={{ ...DETAIL, license: 'MIT' }} />)
 
-    expect(screen.getByText('MIT licensed')).toBeTruthy()
+    expect(screen.getByText('MIT licence')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'original source' })).toBeNull()
   })
 })

@@ -10,7 +10,7 @@ export interface Byline {
   author: ConfigAuthor | null
   /** A link to the source, after optional lead words: "original source", "source at 0123456". */
   source: { lead?: string; label: string; href: string; onClick?: () => void } | null
-  /** The licence fact as the page words it: "MIT licensed", "No licence". */
+  /** The licence fact as the page words it: "MIT licence", "No licence". */
   license: string | null
 }
 

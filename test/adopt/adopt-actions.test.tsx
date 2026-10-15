@@ -30,7 +30,7 @@ const props = {
 
 const SOURCE_HTML = '<pre class="shiki"><code>echo hi</code></pre>'
 
-// The aria-label carries the visible text (WCAG label-in-name) and flips to "Copied!" after a
+// The aria-label carries the visible text (WCAG label-in-name) and flips to "Copied" after a
 // successful copy, so this query only finds the button before one.
 const promptButton = () =>
   screen.getByRole('button', { name: 'Copy install prompt — My Statusline' })
@@ -121,15 +121,15 @@ describe('AdoptPrompt', () => {
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalled())
   })
 
-  it('does not show "Copied!" or record when the clipboard rejects', async () => {
+  it('does not show "Copied" or record when the clipboard rejects', async () => {
     writeText.mockRejectedValue(new Error('denied'))
     render(<PromptHarness />)
 
     fireEvent.click(promptButton())
 
     await waitFor(() => expect(writeText).toHaveBeenCalled())
-    // No "Copied!" feedback and the record call never fires.
-    expect(screen.queryByText('Copied!')).toBeNull()
+    // No "Copied" feedback and the record call never fires.
+    expect(screen.queryByText('Copied')).toBeNull()
     expect(recordCopyFn).not.toHaveBeenCalled()
   })
 

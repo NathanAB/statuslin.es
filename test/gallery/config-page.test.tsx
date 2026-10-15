@@ -129,7 +129,7 @@ describe('status line page', () => {
       screen.getByText('by'),
       screen.getByText('A Powerline-style status line.'),
       screen.getByRole('button', { name: 'Copy install prompt — Powerline Dracula' }),
-      screen.getByText('Using the Claude desktop app?'),
+      screen.getByText('In Claude Desktop?'),
       h2('Preview'),
       h2('What it does'),
       h2('Source'),
@@ -164,21 +164,21 @@ describe('status line page', () => {
     const dots = screen.getAllByText('·')
     expect(dots.map((dot) => dot.parentElement?.textContent)).toEqual([
       '·original source',
-      '·MIT licensed',
+      '·MIT licence',
     ])
     expect(dots[0]?.parentElement?.parentElement?.textContent).toBe(
-      'by@LindseyB·original source·MIT licensed',
+      'by@LindseyB·original source·MIT licence',
     )
   })
 
   it('links the mods that share its tags after the other status lines', () => {
     renderPage(false, [COST_MOD])
 
-    const card = h2('Mods that do the same job').closest('[data-slot="card"]') as HTMLElement
+    const card = h2('Related mods').closest('[data-slot="card"]') as HTMLElement
     expect(within(card).getByRole('link', { name: 'Cost Meter' }).getAttribute('href')).toBe(
       '/mods/cost-meter',
     )
-    expectInOrder([h2('More status lines'), h2('Mods that do the same job')])
+    expectInOrder([h2('More status lines'), h2('Related mods')])
   })
 
   it('captures clicks on its mods as status line page related cards, by position', () => {
@@ -197,6 +197,6 @@ describe('status line page', () => {
   it('shows no mods block when no mod shares its tags', () => {
     renderPage()
 
-    expect(screen.queryByRole('heading', { name: 'Mods that do the same job' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Related mods' })).toBeNull()
   })
 })

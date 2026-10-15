@@ -90,6 +90,16 @@ export async function getModSource(db: Db, query: GallerySourceQuery): Promise<G
   }
 }
 
+/** The card of the published mod with this slug, or null when there is none. */
+export async function getPublishedModCard(db: Db, slug: string): Promise<GalleryModCard | null> {
+  const [row] = await selectModCards(db, {})
+    .where(and(eq(mods.status, 'published'), eq(mods.slug, slug)))
+    .limit(1)
+  if (!row) return null
+  const item = modItem(row)
+  return item.kind === 'mod' ? item.card : null
+}
+
 /**
  * Up to `limit` other published mods carrying any of `mod.tags`: most shared tags first, then the
  * most copied, then by slug.

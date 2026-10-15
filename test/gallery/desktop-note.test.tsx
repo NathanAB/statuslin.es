@@ -16,10 +16,10 @@ afterEach(() => {
 })
 
 describe('DesktopNote', () => {
-  it('invites Claude desktop app users to add their status line', () => {
+  it('points Claude Desktop users at statusline-anywhere', () => {
     const { container } = render(<DesktopNote />)
     expect(container.textContent).toBe(
-      'Using the Claude desktop app? Add your status line with statusline-anywhere.',
+      'In Claude Desktop? Add this status line with statusline-anywhere.',
     )
   })
 

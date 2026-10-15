@@ -28,11 +28,11 @@ const APPROVAL_WORDING: Record<
 > = {
   submission: {
     subject: 'Your statuslin.es submission was approved',
-    headline: (noun, title) => `Your ${noun} submission “${title}” was approved.`,
+    headline: (noun, title) => `Your ${noun} "${title}" was approved.`,
   },
   update: {
     subject: 'Your statuslin.es update is live',
-    headline: (_noun, title) => `Your update to “${title}” is live.`,
+    headline: (_noun, title) => `Your update to "${title}" is live.`,
   },
 }
 
@@ -43,10 +43,10 @@ function approvalEmailText(input: ApprovalEmailInput): string {
     '',
     APPROVAL_WORDING[input.kind].headline(input.noun, input.title),
     '',
-    `View it on statuslin.es: ${siteLink(origin, input.pagePath)}`,
+    `View it: ${siteLink(origin, input.pagePath)}`,
     `View your submissions: ${origin}/me`,
     '',
-    `Questions? Reply to this email or contact ${CONTACT_EMAIL}.`,
+    'Questions? Reply to this email.',
   ].join('\n')
 }
 

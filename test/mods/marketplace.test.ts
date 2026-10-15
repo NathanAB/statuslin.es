@@ -28,7 +28,7 @@ describe('buildMarketplace', () => {
 
     expect(marketplace).toEqual({
       name: 'statuslines',
-      description: 'Claude Code mods from the statuslin.es gallery, each pinned to a commit.',
+      description: 'Claude Code mods from statuslin.es, each pinned to a commit.',
       owner: { name: 'statuslin.es', email: 'hello@statuslin.es' },
       forceRemoveDeletedPlugins: true,
       plugins: [],

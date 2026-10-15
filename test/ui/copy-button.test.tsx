@@ -19,21 +19,21 @@ afterEach(() => {
 })
 
 describe('CopyButton', () => {
-  it('copies the given text and swaps the label to Copied!', async () => {
+  it('copies the given text and swaps the label to Copied', async () => {
     render(<CopyButton text="echo hi" label="Copy script" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('echo hi'))
-    expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy()
   })
 
-  it('announces Copied! after copying, even with a custom accessible name', async () => {
+  it('announces Copied after copying, even with a custom accessible name', async () => {
     render(<CopyButton text="echo hi" ariaLabel="Copy command: From a shell" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy command: From a shell' }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy())
   })
 
   it('calls onCopied only after a successful clipboard write', async () => {
@@ -45,7 +45,7 @@ describe('CopyButton', () => {
     await waitFor(() => expect(onCopied).toHaveBeenCalledOnce())
   })
 
-  it('does not show Copied! or call onCopied when the clipboard rejects', async () => {
+  it('does not show Copied or call onCopied when the clipboard rejects', async () => {
     writeText.mockRejectedValue(new Error('denied'))
     const onCopied = vi.fn()
     render(<CopyButton text="payload" label="Copy JSON" onCopied={onCopied} />)
@@ -53,11 +53,11 @@ describe('CopyButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copy JSON' }))
 
     await waitFor(() => expect(writeText).toHaveBeenCalled())
-    expect(screen.queryByRole('button', { name: 'Copied!' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull()
     expect(onCopied).not.toHaveBeenCalled()
   })
 
-  it('stays outline while Copied! shows', async () => {
+  it('stays outline while Copied shows', async () => {
     render(<CopyButton text="x" variant="outline" />)
     const button = screen.getByRole('button', { name: 'Copy' })
     expect(button.className).toContain('bg-background')
@@ -65,7 +65,7 @@ describe('CopyButton', () => {
 
     fireEvent.click(button)
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy())
     expect(button.className).toContain('bg-background')
     expect(button.className).not.toContain('bg-primary')
   })

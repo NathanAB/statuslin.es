@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { buildLlmsTxt } from '@/lib/llms'
-import { MOD_SAFETY_GUIDE_TITLE, STATUS_LINES_VS_MODS_GUIDE_TITLE } from '@/lib/page-title'
+import {
+  GUIDE_TITLE_BASE,
+  MOD_SAFETY_GUIDE_TITLE,
+  STATUS_LINES_VS_MODS_GUIDE_TITLE,
+} from '@/lib/page-title'
 
 const FORGED = {
   title: 'Evil [pick](https://evil.example)',
@@ -29,6 +33,25 @@ describe('buildLlmsTxt', () => {
     expect(txt).not.toMatch(/two kinds of submission/i)
     expect(txt).toMatch(/cop(?:y|ied|ies)/i)
     expect(txt).not.toMatch(/upvote/i)
+  })
+
+  it('describes both kinds of entry without assuming a status line', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    const intro = txt.slice(txt.indexOf('> '), txt.indexOf('## Browse'))
+    expect(intro).toMatch(/Status lines are/)
+    expect(intro).toMatch(/Mods are Claude Code plugins/)
+    expect(intro).not.toMatch(/curat|gallery of status lines for/i)
+    expect(intro).not.toMatch(/submitted by the community/i)
+  })
+
+  it('offers both kinds on the submit link', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    expect(txt).toMatch(/\[Submit\]\(https:\/\/statuslin\.es\/submit\): .*status line.*\bmod\b/)
+  })
+
+  it('names the setup guide by its title', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    expect(txt).toContain(`[${GUIDE_TITLE_BASE}](https://statuslin.es/guide)`)
   })
 
   it('links the core pages with absolute per-environment URLs', () => {

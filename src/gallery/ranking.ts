@@ -1,4 +1,4 @@
-import { and, asc, eq, type SQL, sql } from 'drizzle-orm'
+import { and, asc, eq, ne, type SQL, sql } from 'drizzle-orm'
 import type { PgColumn, PgSelect } from 'drizzle-orm/pg-core'
 import {
   coercePage,
@@ -15,6 +15,8 @@ export interface GallerySourceQuery {
   sort: GallerySort
   tags?: string[]
   limit?: number
+  /** One item to leave out, such as the mod the home page already features above the grid. */
+  excludeSlug?: string
 }
 
 export interface RankedColumns {
@@ -42,7 +44,11 @@ export function galleryRanking(columns: RankedColumns, query: GallerySourceQuery
   return {
     sortKey,
     total: sql<number>`(count(*) over ())::int`,
-    where: and(eq(columns.status, 'published'), hasAllTags(columns.allTags, query.tags ?? [])),
+    where: and(
+      eq(columns.status, 'published'),
+      hasAllTags(columns.allTags, query.tags ?? []),
+      query.excludeSlug === undefined ? undefined : ne(columns.slug, query.excludeSlug),
+    ),
     orderBy: [sql`${sortKey} desc nulls last`, asc(columns.slug)] as const,
   }
 }
@@ -59,5 +65,6 @@ export function coerceSourceQuery(query: GallerySourceQuery): GallerySourceQuery
     ...(query.limit === undefined
       ? {}
       : { limit: Math.min(coercePage(query.limit), MAX_GALLERY_PAGE * PAGE_SIZE) }),
+    ...(typeof query.excludeSlug === 'string' ? { excludeSlug: query.excludeSlug } : {}),
   }
 }

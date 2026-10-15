@@ -25,7 +25,7 @@ export async function getModRelated(
 }
 
 /**
- * What a status line page links to under "Mods that do the same job": up to MOD_RELATED_LIMIT
+ * What a status line page links to under "Related mods": up to MOD_RELATED_LIMIT
  * published mods that share a tag with it, most shared tags first.
  */
 export async function getStatusLineMods(

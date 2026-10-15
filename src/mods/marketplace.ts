@@ -1,6 +1,6 @@
 import { PERSONLESS } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
-import { CONTACT_EMAIL, modPath } from '@/lib/site'
+import { CONTACT_EMAIL, modPath, SITE_NAME } from '@/lib/site'
 
 /** The name Claude Code registers the marketplace under, so a mod installs as `<plugin>@statuslines`. */
 export const MARKETPLACE_NAME = 'statuslines'
@@ -63,8 +63,8 @@ function marketplacePlugin(origin: string, row: MarketplaceModRow): MarketplaceP
 export function buildMarketplace(origin: string, rows: MarketplaceModRow[]): Marketplace {
   return {
     name: MARKETPLACE_NAME,
-    description: 'Claude Code mods from the statuslin.es gallery, each pinned to a commit.',
-    owner: { name: 'statuslin.es', email: CONTACT_EMAIL },
+    description: `Claude Code mods from ${SITE_NAME}, each pinned to a commit.`,
+    owner: { name: SITE_NAME, email: CONTACT_EMAIL },
     forceRemoveDeletedPlugins: true,
     plugins: rows.map((row) => marketplacePlugin(origin, row)),
   }

@@ -13,15 +13,15 @@ import { PageShell } from '@/ui/shell'
 import { SignInPrompt } from '@/ui/sign-in-prompt'
 import { Heading, Text } from '@/ui/text'
 
-const STATUS_LINE_PAGE = {
-  title: 'Submit a status line',
+// /submit opens on the status line form with a toggle to mods, so its own page names both kinds.
+const SUBMIT_PAGE = {
+  title: 'Submit a status line or mod',
   description:
-    'Submit your Claude Code status line to the community gallery. We render it in a sandbox across example sessions, review it, and publish it for others to copy.',
+    'Share a Claude Code status line or mod. We review every submission before it goes live.',
 }
 const MOD_PAGE = {
   title: 'Submit a mod',
-  description:
-    'Submit a Claude Code mod to the community gallery by its GitHub link. We pin it to a commit, render it in a sandbox, review it, and list it for others to install.',
+  description: 'Share a Claude Code mod by its GitHub link. We review it before it goes live.',
 }
 
 const KIND_OPTIONS = [
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/submit')({
       ? { kind: 'mod' as const, ...(await loadModSubmitPage(deps)) }
       : { kind: 'status_line' as const, ...(await loadSubmitPage(deps)) },
   head: ({ loaderData }) => {
-    const { title, description } = loaderData?.kind === 'mod' ? MOD_PAGE : STATUS_LINE_PAGE
+    const { title, description } = loaderData?.kind === 'mod' ? MOD_PAGE : SUBMIT_PAGE
     return {
       meta: [
         { title: `${title} — statuslin.es` },
@@ -62,7 +62,9 @@ function Submit() {
   if (!data.user) {
     return (
       <SignInPrompt
-        title={data.kind === 'mod' ? 'Sign in to submit a mod' : 'Sign in to submit a status line'}
+        title={
+          data.kind === 'mod' ? 'Sign in to submit a mod' : 'Sign in to submit a status line or mod'
+        }
       />
     )
   }

@@ -7,7 +7,7 @@ import { Text } from '@/ui/text'
 export function DesktopNote() {
   return (
     <Hint icon={Monitor}>
-      <Text inline>Using the Claude desktop app?</Text> Add your status line with{' '}
+      <Text inline>In Claude Desktop?</Text> Add this status line with{' '}
       <StatuslineAnywhereLink surface="config_page" />.
     </Hint>
   )

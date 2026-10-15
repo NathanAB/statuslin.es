@@ -16,13 +16,19 @@ const { GUIDE_SUBPAGES } = await import('@/lib/page-title')
 const { SiteFooter } = await import('@/ui/site-footer')
 
 describe('SiteFooter', () => {
-  it('renders a mailto contact link labelled for the abuse-report path', () => {
+  it('renders a mailto Contact link, the abuse-report path', () => {
     const { container } = render(<SiteFooter />)
     const link = container.querySelector('a[href^="mailto:"]') as HTMLAnchorElement
     expect(link).not.toBeNull()
     expect(link.getAttribute('href')).toBe(`mailto:${CONTACT_EMAIL}`)
-    // Text link now: the accessible name is the visible text, not an aria-label.
-    expect(link.textContent).toMatch(/email/i)
+    expect(link.textContent).toBe('Contact')
+  })
+
+  it('lists the links one per item, so the separators sit between items', () => {
+    const { container } = render(<SiteFooter />)
+    const items = container.querySelectorAll('footer ul > li')
+    expect(items.length).toBe(container.querySelectorAll('a').length)
+    for (const item of items) expect(item.querySelectorAll('a').length).toBe(1)
   })
 
   it('renders a source link to the public repo that opens in a new tab', () => {

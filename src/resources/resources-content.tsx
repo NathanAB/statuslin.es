@@ -16,66 +16,53 @@ import { Heading, Text, TextLink } from '@/ui/text'
 export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
   return (
     <Stack gap={6}>
-      <Stack gap={3}>
-        <Heading level={1}>Claude Code status line tools & resources</Heading>
-
-        <Text muted>
-          A short, opinionated list of status line tools and reading we'd point a friend at. The
-          descriptions are ours, not the projects' own marketing. Want a rendered status line you
-          can copy? <TextLink to="/">Browse the Claude Code status line gallery</TextLink>. Wiring a
-          script by hand? See the <TextLink to="/guide">setup guide</TextLink>.
-        </Text>
-      </Stack>
+      <Heading level={1}>Claude Code status line tools & resources</Heading>
 
       <Stack gap={3}>
         <Heading level={2}>Four ways to get a status line</Heading>
         <Text muted>
-          The built-in{' '}
+          Run{' '}
           <Text inline mono>
             /statusline
           </Text>{' '}
-          command is the fastest start: describe what you want inside Claude Code, and it writes the
-          script and settings for you. Use it if you don't have a status line yet.
+          in Claude Code and describe what you want. It writes the script and settings for you.
+          Start here if you have no status line yet.
         </Text>
         <Text muted>
-          Install a tool from the list below if you want a terminal UI, themes, or widgets without
-          maintaining a script. Start with ccstatusline or claude-powerline.
-        </Text>
-        <Text muted>
-          Compare:{' '}
+          Install a tool from the list below for a setup screen, themes or widgets without keeping a
+          script yourself. Start with ccstatusline or claude-powerline. Compare{' '}
           <TextLink to="/compare/$pair" params={{ pair: 'ccstatusline-vs-claude-powerline' }}>
             ccstatusline vs claude-powerline
           </TextLink>
           ,{' '}
           <TextLink to="/alternatives/$tool" params={{ tool: 'ccstatusline' }}>
             ccstatusline alternatives
-          </TextLink>
-          ,{' '}
+          </TextLink>{' '}
+          or{' '}
           <TextLink to="/alternatives/$tool" params={{ tool: 'claude-powerline' }}>
             claude-powerline alternatives
           </TextLink>
-          , or the <TextLink to="/status-lines/best">most-copied gallery status lines</TextLink>.
+          .
         </Text>
         <Text muted>
-          Copy a reviewed script from <TextLink to="/">the gallery</TextLink> if you want a rendered
-          preview and a one-paste install — no extra runtime. Powerline look:{' '}
+          Copy a reviewed script from <TextLink to="/">the gallery</TextLink> to see its real output
+          first. Try the <TextLink to="/status-lines/best">most-copied</TextLink>,{' '}
           <TextLink to="/c/$slug" params={{ slug: 'powerline-dracula-6936b97c' }}>
             Powerline Dracula
-          </TextLink>
-          . Token counters:{' '}
+          </TextLink>{' '}
+          or{' '}
           <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
             status lines that show token usage
           </TextLink>
-          . Looking for ohugonnot/claude-code-statusline?{' '}
+          .{' '}
           <TextLink to="/c/$slug" params={{ slug: 'quota-fallback-2a730aa6' }}>
             Quota Fallback
           </TextLink>{' '}
-          is the reviewed gallery copy.
+          is the reviewed copy of ohugonnot/claude-code-statusline.
         </Text>
         <Text muted>
-          Write a script by hand when you want to own every field. The{' '}
-          <TextLink to="/guide">setup guide</TextLink> uses the same JSON this site uses for gallery
-          previews, and a script the tests execute on every commit.
+          Write your own to control every field. The <TextLink to="/guide">setup guide</TextLink>{' '}
+          walks through the JSON Claude Code sends, with a script our tests run on every commit.
         </Text>
       </Stack>
 
@@ -109,11 +96,9 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
           <Stack gap={3}>
             <Heading level={2}>Get listed</Heading>
             <Text muted>
-              If you've made a status line you like,{' '}
-              <TextLink to="/submit">submit it to the gallery</TextLink> and it gets its own preview
-              page. Built a tool that belongs on this list? Email{' '}
-              <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink> and we'll take a
-              look.
+              Made a status line or mod? <TextLink to="/submit">Submit it</TextLink> for its own
+              page in the gallery. Built a tool for this list? Email{' '}
+              <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
             </Text>
             <Row gap={3}>
               <SubmitCta signedIn={signedIn} />

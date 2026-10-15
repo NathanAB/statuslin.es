@@ -44,63 +44,33 @@ export const SETTINGS_SNIPPET = `{
   }
 }`
 
+/** What each top-level field in SAMPLE_STDIN_JSON holds, worded from the official docs. */
 export const STDIN_FIELD_GUIDE: Array<{ label: string; value: string }> = [
-  {
-    label: 'session_id',
-    value: 'UUID for this Claude Code session. Always present in gallery renders.',
-  },
-  {
-    label: 'transcript_path',
-    value: 'Path to the session transcript. This site fixtures it when a script reads the file.',
-  },
-  {
-    label: 'cwd',
-    value: 'Mirrors workspace.current_dir. Always present.',
-  },
-  {
-    label: 'model',
-    value: 'id and display_name. Gallery previews cover Opus, Sonnet, Haiku, and Fable.',
-  },
-  {
-    label: 'effort',
-    value: 'Reasoning effort. Absent on some models, including Haiku in these fixtures.',
-  },
-  {
-    label: 'thinking',
-    value: 'Whether extended thinking is on. Gallery scenarios cover both.',
-  },
+  { label: 'session_id', value: 'Unique ID for this session.' },
+  { label: 'transcript_path', value: "Path to the session's transcript file." },
+  { label: 'cwd', value: 'Same value as workspace.current_dir.' },
+  { label: 'model', value: 'id and display_name.' },
+  { label: 'effort', value: "Reasoning effort level. Absent when the model doesn't support it." },
+  { label: 'thinking', value: 'Whether extended thinking is on.' },
   {
     label: 'workspace',
-    value: 'current_dir, project_dir, optional repo, git_worktree, and added_dirs.',
+    value: 'current_dir, project_dir and added_dirs, plus repo and git_worktree when they apply.',
   },
-  {
-    label: 'version',
-    value: 'Claude Code version string this site renders against.',
-  },
+  { label: 'version', value: 'Claude Code version.' },
   {
     label: 'cost',
-    value:
-      'Running session cost, duration, and line counts. total_cost_usd is the usual display field.',
+    value: 'Session cost, duration, and lines added and removed. Most scripts show total_cost_usd.',
   },
   {
     label: 'context_window',
-    value: 'Token usage. used_percentage is null at the start of a fresh session.',
+    value: 'Token counts and used_percentage, which can be null early in a session.',
   },
-  {
-    label: 'exceeds_200k_tokens',
-    value: 'Boolean for the 200k token threshold.',
-  },
+  { label: 'exceeds_200k_tokens', value: 'Whether the last response passed 200k tokens.' },
   {
     label: 'rate_limits',
     value:
-      'five_hour and seven_day windows with used_percentage and resets_at. May be absent or partial.',
+      'five_hour and seven_day windows, each with used_percentage and resets_at in unix seconds. Pro and Max plans only, after the first response.',
   },
-  {
-    label: 'output_style',
-    value: 'Named output style, usually default.',
-  },
-  {
-    label: 'pr',
-    value: 'Optional PR number, url, and review_state. Git itself is not in the payload.',
-  },
+  { label: 'output_style', value: "The current output style's name." },
+  { label: 'pr', value: "Open PR's number, url and review_state, when the branch has one." },
 ]
