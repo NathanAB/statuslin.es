@@ -1,4 +1,6 @@
 import {
+  configMetaDescription,
+  configPageTitle,
   HOME_DESCRIPTION_BASE,
   HOME_TITLE_BASE,
   homeMetaDescription,
@@ -20,11 +22,7 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: base },
     { property: 'og:title', content: HOME_TITLE_BASE },
-    {
-      property: 'og:description',
-      content:
-        'Browse rendered Claude Code status lines and mods. Copy a status line or install a mod.',
-    },
+    { property: 'og:description', content: HOME_DESCRIPTION_BASE },
     { property: 'og:image', content: `${base}/og/home.png` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
@@ -56,11 +54,8 @@ export function configSocialMeta(input: {
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}/c/${input.slug}` },
-    { property: 'og:title', content: `${input.title} — statuslin.es` },
-    {
-      property: 'og:description',
-      content: input.description || 'A reviewed Claude Code status line.',
-    },
+    { property: 'og:title', content: configPageTitle(input.title) },
+    { property: 'og:description', content: configMetaDescription(input.description) },
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },

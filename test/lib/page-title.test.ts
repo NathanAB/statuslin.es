@@ -37,8 +37,8 @@ describe('configPageTitle', () => {
     ).toBe('A very long config title that… — Claude Code Status Line')
   })
 
-  it('keeps the not-found title on-brand and two-worded', () => {
-    expect(NOT_FOUND_TITLE).toBe('Status line not found — statuslin.es')
+  it('keeps the not-found title on-brand and true of any missing page', () => {
+    expect(NOT_FOUND_TITLE).toBe('Page not found — statuslin.es')
   })
 
   it('exposes the home title base for the title tag and JSON-LD to share', () => {
@@ -104,7 +104,7 @@ describe('configMetaDescription', () => {
 
   it('uses the reviewed status line fallback when the description is blank', () => {
     expect(configMetaDescription('   ')).toBe(
-      'A reviewed Claude Code status line — rendered preview, source, and one-paste install.',
+      'A reviewed Claude Code status line. See its preview and source, then copy it in one paste.',
     )
   })
 })
@@ -145,7 +145,7 @@ describe('modMetaDescription', () => {
 
   it('falls back to a generic mod description when there is none', () => {
     expect(modMetaDescription(null)).toBe(
-      'A Claude Code mod — rendered preview, what it touches, and a one-line install.',
+      'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one command.',
     )
   })
 })

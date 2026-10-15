@@ -92,3 +92,36 @@ describe('og cards render to PNG', () => {
     expect(nothing.equals(none)).toBe(true)
   })
 })
+
+/** Every string a card draws, in order, read from its element tree. */
+function cardText(node: unknown): string {
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(cardText).join('')
+  if (node && typeof node === 'object' && 'props' in node) {
+    return cardText((node as { props: { children?: unknown } }).props.children)
+  }
+  return ''
+}
+
+describe('og card text', () => {
+  it('names a status line card as a Claude Code status line, with its author', () => {
+    expect(cardText(configCard({ title: 'Dots', author: '@ada', previews: [] }))).toContain(
+      'Claude Code status line · by @ada',
+    )
+    expect(cardText(configCard({ title: 'Dots', author: null, previews: [] }))).toMatch(
+      /Claude Code status line$/,
+    )
+  })
+
+  it('names a mod card as a Claude Code mod, with its author', () => {
+    expect(
+      cardText(modCard({ title: 'Tree', authorGithub: 'octocat', preview: [seg('x')] })),
+    ).toContain('Claude Code mod · by @octocat')
+  })
+
+  it('says where a mod with no terminal preview draws', () => {
+    expect(cardText(modCard({ title: 'Tree', authorGithub: 'octocat', preview: null }))).toContain(
+      'Draws in Claude Desktop',
+    )
+  })
+})

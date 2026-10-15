@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { HOME_TITLE_BASE, homeMetaDescription, homePageName } from '@/lib/page-title'
+import {
+  configMetaDescription,
+  HOME_DESCRIPTION_BASE,
+  HOME_TITLE_BASE,
+  homeMetaDescription,
+  homePageName,
+} from '@/lib/page-title'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import {
   configSocialMeta,
@@ -30,6 +36,7 @@ describe('social meta', () => {
     expect(description).toMatch(/status lines.*\bmods\b/i)
     const pageDescription = meta.find((entry) => entry.name === 'description')?.content
     expect(pageDescription).toMatch(/status lines.*\bmods\b/i)
+    expect(description).toBe(HOME_DESCRIPTION_BASE)
     expect(description).not.toMatch(/curat|pick|chose|behalf/i)
     expect(description).not.toMatch(/upvote/i)
   })
@@ -66,7 +73,18 @@ describe('social meta', () => {
       property: 'og:image',
       content: 'https://statuslin.es/og/c/my-line.png',
     })
-    expect(meta.find((m) => m.property === 'og:title')?.content).toBe('My Line — statuslin.es')
+    expect(meta.find((m) => m.property === 'og:title')?.content).toBe(
+      'My Line — Claude Code Status Line | statuslin.es',
+    )
+  })
+  it('config shares the search description, or the status line fallback when it has none', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const described = configSocialMeta({ slug: 'a', title: 'A', description: 'Shows  git.' })
+    const bare = configSocialMeta({ slug: 'b', title: 'B', description: null })
+    const og = (meta: Array<Record<string, string>>) =>
+      meta.find((m) => m.property === 'og:description')?.content
+    expect(og(described)).toBe('Shows git.')
+    expect(og(bare)).toBe(configMetaDescription(null))
   })
   it('root declares the og:image dimensions from the render constants', () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
