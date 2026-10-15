@@ -168,7 +168,7 @@ describe('submitConfig', () => {
     const obfuscatedSource = `#!/bin/bash\necho "${'A'.repeat(240)}"`
     await expect(
       submitConfig(db, { ...input, title: 'Obfuscated Submission', source: obfuscatedSource }),
-    ).rejects.toThrow('Submission rejected (looks obfuscated)')
+    ).rejects.toThrow('Rejected as obfuscated: ')
     await expect(
       submitConfig(db, { ...input, title: 'Obfuscated Submission 2', source: obfuscatedSource }),
     ).rejects.toMatchObject({ status: 400 })

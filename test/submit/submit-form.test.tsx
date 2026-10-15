@@ -68,7 +68,7 @@ describe('SubmitForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
 
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledTimes(1))
-    expect(toastSuccess).toHaveBeenCalledWith("Queued for review — we'll take a look shortly.")
+    expect(toastSuccess).toHaveBeenCalledWith('Submitted for review.')
   })
 
   it('does not render the success message inline (it is a toast, not a text block)', async () => {

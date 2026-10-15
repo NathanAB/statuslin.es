@@ -36,14 +36,14 @@ const REJECTION_WORDING: Record<
 > = {
   submission: {
     subject: 'Your statuslin.es submission was not accepted',
-    headline: (noun, title) => `Your ${noun} submission “${title}” was not accepted.`,
+    headline: (noun, title) => `Your ${noun} "${title}" was not accepted.`,
     note: [],
     nextStep: 'Fix and resubmit',
   },
   update: {
     subject: 'Your statuslin.es update was not accepted',
-    headline: (_noun, title) => `Your update to “${title}” was not accepted.`,
-    note: ['Your live version is unaffected and stays in the gallery.', ''],
+    headline: (_noun, title) => `Your update to "${title}" was not accepted.`,
+    note: ['Your live version stays in the gallery.', ''],
     nextStep: 'Submit a new update',
   },
 }
@@ -63,7 +63,7 @@ function rejectionEmailText(input: RejectionEmailInput): string {
     `View your submissions: ${origin}/me`,
     `${wording.nextStep}: ${siteLink(origin, input.nextStepPath)}`,
     '',
-    `Questions? Reply to this email or contact ${CONTACT_EMAIL}.`,
+    'Questions? Reply to this email.',
   ].join('\n')
 }
 

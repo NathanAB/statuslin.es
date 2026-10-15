@@ -19,7 +19,7 @@ describe('submitPageCopy', () => {
 
   it('tells an updater the live version stays up until review', () => {
     expect(submitPageCopy({ kind: 'update' }).intro).toMatch(
-      /live version stays in the gallery until .*review/i,
+      /live version stays up until .*review/i,
     )
   })
 })
