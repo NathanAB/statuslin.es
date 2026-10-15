@@ -85,9 +85,30 @@ async function loadNewMods(
   return (await loader({ deps: search })).newMods.map((card) => card.slug)
 }
 
+async function loadHome() {
+  const loader = HomeRoute.options.loader as (ctx: unknown) => Promise<{
+    newMods: GalleryModCard[]
+    gallery: { items: Array<{ kind: string; card: { slug: string } }> }
+  }>
+  return loader({ deps: {} })
+}
+
 describe('home "New mods" row loader', () => {
-  it('lists the four newest published mods, newest first, on the default first page', async () => {
-    expect(await loadNewMods()).toEqual(['newest-mod', 'second-mod', 'middle-mod', 'fourth-mod'])
+  it('lists two mods, newest first, on the default first page', async () => {
+    const { newMods, gallery } = await loadHome()
+    const inGrid = new Set(
+      gallery.items.filter((item) => item.kind === 'mod').map((item) => item.card.slug),
+    )
+    const newest = ['newest-mod', 'second-mod', 'middle-mod', 'fourth-mod', 'oldest-mod']
+    expect(newMods.map((card) => card.slug)).toEqual(
+      newest.filter((slug) => !inGrid.has(slug)).slice(0, 2),
+    )
+  })
+
+  it('never repeats a mod that page 1 of the grid already shows', async () => {
+    const { newMods, gallery } = await loadHome()
+    const inGrid = gallery.items.filter((item) => item.kind === 'mod').map((item) => item.card.slug)
+    expect(newMods.map((card) => card.slug).filter((slug) => inGrid.includes(slug))).toEqual([])
   })
 
   it('lists none past page 1', async () => {

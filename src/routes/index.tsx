@@ -19,6 +19,7 @@ import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
+import { selectNewMods } from '@/mods/new-mods'
 import { loadNewMods, NewModsRow } from '@/mods/new-mods-row'
 import { homeSocialMeta } from '@/og/meta'
 import { Button } from '@/ui/button'
@@ -70,7 +71,11 @@ export const Route = createFileRoute('/')({
       showsNewMods ? loadNewMods() : [],
     ])
     if (!listing) throw notFound()
-    return { user: await getSession(), gallery: { ...gallery, ...listing }, newMods }
+    return {
+      user: await getSession(),
+      gallery: { ...gallery, ...listing },
+      newMods: selectNewMods(newMods, listing.items),
+    }
   },
   head: ({ loaderData, match }) => {
     const page = loaderData?.gallery.page ?? 1

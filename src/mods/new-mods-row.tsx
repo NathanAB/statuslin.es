@@ -4,15 +4,13 @@ import { Grid, Row, Stack } from '@/ui/layout'
 import { Heading, TextLink } from '@/ui/text'
 import { getGalleryModsFn } from './gallery-functions'
 import { ModCard } from './mod-card'
+import { NEW_MOD_CANDIDATES } from './new-mods'
 
 const HEADING_ID = 'new-mods-heading'
 
-/** How many mods the row shows: two rows of the two-column grid. */
-const NEW_MODS_ROW_SIZE = 4
-
-/** The row's mods: the newest published, newest first. */
+/** The row's candidates: the newest published mods, newest first. selectNewMods picks from them. */
 export async function loadNewMods(): Promise<GalleryModCard[]> {
-  const { items } = await getGalleryModsFn({ data: { sort: 'new', limit: NEW_MODS_ROW_SIZE } })
+  const { items } = await getGalleryModsFn({ data: { sort: 'new', limit: NEW_MOD_CANDIDATES } })
   return items.flatMap(({ item }) => (item.kind === 'mod' ? [item.card] : []))
 }
 
