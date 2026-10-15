@@ -61,7 +61,7 @@ describe('modJsonLd', () => {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Status lines', item: 'https://statuslin.es' },
+        { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://statuslin.es' },
         {
           '@type': 'ListItem',
           position: 2,
