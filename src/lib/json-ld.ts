@@ -23,10 +23,21 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
   }
 }
 
-/** The site identity plus gallery CollectionPage and its visible configs. */
+/** A gallery card as JSON-LD sees it: enough to name and link it. */
+interface GalleryListEntry {
+  kind: GalleryKind
+  slug: string
+  title: string
+}
+
+function galleryEntryUrl(origin: string, item: GalleryListEntry): string {
+  return `${origin}${item.kind === 'mod' ? modPath(item.slug) : `/c/${item.slug}`}`
+}
+
+/** The site identity plus gallery CollectionPage and its visible status lines and mods, in order. */
 export function homeJsonLd(
   origin: string,
-  items: Array<{ slug: string; title: string }>,
+  items: GalleryListEntry[],
   options: { page: number; pageSize: number; includeCollectionPage?: boolean },
 ): object[] {
   const website = {
@@ -51,7 +62,7 @@ export function homeJsonLd(
           '@type': 'ListItem',
           position: positionOffset + i + 1,
           name: item.title,
-          url: `${origin}/c/${item.slug}`,
+          url: galleryEntryUrl(origin, item),
         })),
       },
     },
@@ -181,7 +192,7 @@ export function facetJsonLd(
   origin: string,
   facet: { slug: string; titleBase: string },
   /** The page's status lines and mods, in the order it shows them. */
-  items: Array<{ kind: GalleryKind; slug: string; title: string }>,
+  items: GalleryListEntry[],
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
   updated: string | null,
   options: { includeCollectionPage?: boolean; faq?: FaqEntry[] | undefined } = {},
@@ -199,7 +210,7 @@ export function facetJsonLd(
         '@type': 'ListItem',
         position: i + 1,
         name: item.title,
-        url: `${origin}${item.kind === 'mod' ? modPath(item.slug) : `/c/${item.slug}`}`,
+        url: galleryEntryUrl(origin, item),
       })),
     },
   }

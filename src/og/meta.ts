@@ -1,4 +1,10 @@
-import { HOME_TITLE_BASE, modMetaDescription, modPageTitle } from '@/lib/page-title'
+import {
+  HOME_TITLE_BASE,
+  homeMetaDescription,
+  homePageName,
+  modMetaDescription,
+  modPageTitle,
+} from '@/lib/page-title'
 import { modPath, siteUrl } from '@/lib/site'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
@@ -8,7 +14,7 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     {
       name: 'description',
       content:
-        'A community gallery of Claude Code status lines — browse rendered previews and copy one to use.',
+        'A community gallery of Claude Code status lines and mods — browse rendered previews, then copy a status line or install a mod.',
     },
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: base },
@@ -23,6 +29,19 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:image', content: `${base}/og/home.png` },
+  ]
+}
+
+/** The home page's share tags; `url` is its canonical. The image and card come from the root. */
+export function homeSocialMeta(input: {
+  url: string
+  page: number
+  pageCount: number
+}): Array<Record<string, string>> {
+  return [
+    { property: 'og:url', content: input.url },
+    { property: 'og:title', content: homePageName(input.page) },
+    { property: 'og:description', content: homeMetaDescription(input.page, input.pageCount) },
   ]
 }
 
