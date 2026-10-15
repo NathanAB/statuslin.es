@@ -127,10 +127,10 @@ describe('home search indexing metadata', () => {
     ])
   })
 
-  // The ItemList is the ranked gallery, numbered across pages. The "New mods" row is a separate
-  // section whose mods also rank later in the gallery, so listing it would shift page 1's numbering
-  // and list those mods twice.
-  it('lists only the ranked gallery in the CollectionPage, not the "New mods" row', async () => {
+  // The ItemList is the ranked gallery, numbered across pages. The "Featured mod" row is a separate
+  // section whose mod also ranks in the gallery, so listing it would shift page 1's numbering and
+  // list that mod twice.
+  it('lists only the ranked gallery in the CollectionPage, not the "Featured mod" row', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
       loaderData: {
@@ -139,7 +139,7 @@ describe('home search indexing metadata', () => {
           pageCount: 2,
           items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
         },
-        newMods: [{ slug: 'meter', title: 'Meter' }],
+        featuredMod: { slug: 'meter', title: 'Meter' },
       },
       match: { search: {} },
     } as never)

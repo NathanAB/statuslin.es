@@ -69,12 +69,12 @@ const modCard = (slug: string): GalleryModCard => ({
 function renderHome(
   overrides: Partial<typeof gallery> = {},
   search: Record<string, string> = {},
-  newMods: GalleryModCard[] = [],
+  featuredMod: GalleryModCard | null = null,
 ) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
-    newMods,
+    featuredMod,
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
@@ -150,60 +150,44 @@ describe('home analytics', () => {
   })
 })
 
-describe('home "New mods" row', () => {
-  const newMods = [modCard('newest-mod'), modCard('older-mod')]
-
-  it('shows the mods it is given, in order, above the gallery, with a link to all mods', () => {
-    renderHome({}, {}, newMods)
-
-    const row = screen
-      .getByRole('heading', { level: 2, name: 'New mods' })
+describe('home "Featured mod" row', () => {
+  const featured = modCard('context-bar')
+  const row = () =>
+    screen
+      .getByRole('heading', { level: 2, name: 'Featured mod' })
       .closest('section') as HTMLElement
-    const inRow = within(row)
+
+  it('shows the one mod it is given above the gallery, with a link to all mods', () => {
+    renderHome({}, {}, featured)
+
+    const inRow = within(row())
     expect(inRow.getByRole('link', { name: 'Browse all mods' }).getAttribute('href')).toBe('/mods')
-    const cardLinks = inRow
-      .getAllByRole('link', { name: /-mod$/ })
-      .map((a) => [a.textContent, a.getAttribute('href')])
-    expect(cardLinks).toEqual([
-      ['newest-mod', '/mods/newest-mod'],
-      ['older-mod', '/mods/older-mod'],
-    ])
+    expect(inRow.getByRole('link', { name: 'context-bar' }).getAttribute('href')).toBe(
+      '/mods/context-bar',
+    )
+    expect(row().querySelectorAll('[data-slot="card"]')).toHaveLength(1)
     const galleryHeading = screen.getByRole('heading', { name: 'Status lines and mods' })
     expect(
-      row.compareDocumentPosition(galleryHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+      row().compareDocumentPosition(galleryHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
   })
 
-  it('stacks its cards full width in one column, like the mods page', () => {
-    renderHome({}, {}, newMods)
-
-    const row = screen
-      .getByRole('heading', { level: 2, name: 'New mods' })
-      .closest('section') as HTMLElement
-    const cards = row.querySelectorAll('[data-slot="card"]')
-    expect(cards).toHaveLength(2)
-    const column = cards[0]?.parentElement
-    expect(column).toBe(cards[1]?.parentElement)
-    expect(column?.className).toContain('flex-col')
-    expect(column?.className).not.toContain('grid-cols')
-  })
-
-  it('is left out when there are no mods to show', () => {
+  it('is left out when there is no featured mod', () => {
     renderHome()
 
-    expect(screen.queryByRole('heading', { name: 'New mods' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Featured mod' })).toBeNull()
   })
 
   it('reports a card click with the row as its surface', () => {
-    renderHome({}, {}, newMods)
+    renderHome({}, {}, featured)
 
-    fireEvent.click(screen.getByRole('link', { name: 'older-mod' }))
+    fireEvent.click(screen.getByRole('link', { name: 'context-bar' }))
 
     expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
-      modId: 'id-older-mod',
-      slug: 'older-mod',
-      surface: 'home_new_mods',
-      position: 2,
+      modId: 'id-context-bar',
+      slug: 'context-bar',
+      surface: 'home_featured_mod',
+      position: 1,
     })
   })
 })

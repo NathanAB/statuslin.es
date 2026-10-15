@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigSource } from '@/gallery/config-items'
 import { type GalleryItem, mergeGalleryItems } from '@/gallery/gallery-items'
-import { getModSource } from '@/mods/gallery-queries'
+import { getModSource, getPublishedModCard } from '@/mods/gallery-queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import {
   addDesktopPreview,
@@ -130,6 +130,22 @@ describe('getModSource', () => {
 
     expect(source.items).toHaveLength(2)
     expect(source.total).toBe(3)
+  })
+})
+
+describe('getPublishedModCard', () => {
+  it('returns the card of a published mod by slug', async () => {
+    await publishedMod('meter')
+    await publishedMod('other')
+
+    expect((await getPublishedModCard(db, 'meter'))?.slug).toBe('meter')
+  })
+
+  it('returns null for a mod that is not published or does not exist', async () => {
+    await publishedMod('drafted', { status: 'draft' })
+
+    expect(await getPublishedModCard(db, 'drafted')).toBeNull()
+    expect(await getPublishedModCard(db, 'missing')).toBeNull()
   })
 })
 
