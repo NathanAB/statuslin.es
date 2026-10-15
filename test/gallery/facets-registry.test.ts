@@ -43,6 +43,14 @@ describe('tag registry', () => {
       expect(copy.metaDescription.length).toBeLessThanOrEqual(160)
     }
   })
+  it('claims nothing about where mods draw, which varies by mod and is shown on each mod page', () => {
+    // Surfaces and Desktop support come from each mod's recorded facts, never from shared copy.
+    const surfaceClaims = /above the prompt|in a pane|claude desktop shows/i
+    for (const copy of Object.values(FACET_MOD_COPY)) {
+      expect(copy.kindNote).not.toMatch(surfaceClaims)
+      expect(copy.metaDescription).not.toMatch(surfaceClaims)
+    }
+  })
   it('TAG_VOCABULARY is exactly the feature group', () => {
     expect(new Set(TAG_VOCABULARY)).toEqual(
       new Set(FACETS.filter((f) => f.group === 'feature').map((f) => f.slug)),

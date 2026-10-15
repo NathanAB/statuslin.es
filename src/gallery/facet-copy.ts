@@ -141,9 +141,9 @@ export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
     titleBase: 'Claude Code Token Usage: Status Lines & Mods',
     heading: 'Claude Code status lines and mods that show token usage',
     metaDescription:
-      'Status lines and mods that show context window usage in Claude Code, as token counts, burn bars, or a bar above the prompt. Rendered previews of each.',
+      'Status lines and mods that show context window usage in Claude Code, as token counts, burn bars or meters. Rendered previews of each.',
     kindNote:
-      'The status lines print token counts in the terminal, under the prompt. The mods here draw context usage above the prompt, and Claude Desktop shows them too.',
+      "The status lines print token counts in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
   },
   cost: {
     titleBase: 'Claude Code Session Cost: Status Lines & Mods',
@@ -151,7 +151,7 @@ export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
     metaDescription:
       'Status lines and mods that show what a Claude Code session costs as you work, from plain dollar figures to burn-rate meters. Rendered previews of each.',
     kindNote:
-      'The status lines print the session cost in the terminal, under the prompt. The mods here draw it as a meter above the prompt, and Claude Desktop shows them too.',
+      "The status lines print the session cost in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
   },
   quota: {
     titleBase: 'Claude Code Usage Limits: Status Lines & Mods',
@@ -159,7 +159,7 @@ export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
     metaDescription:
       'Status lines and mods that show your Claude Code 5-hour and weekly usage limits: quota percentages, reset countdowns, and overage warnings.',
     kindNote:
-      'The status lines print your limits in the terminal, under the prompt. The mods here watch the same limits from above the prompt, and Claude Desktop shows them too.',
+      "The status lines print your limits in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
   },
   minimal: {
     titleBase: 'Minimal Claude Code Status Lines & Mods',
@@ -167,7 +167,7 @@ export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
     metaDescription:
       'Single-line, low-noise Claude Code status lines and mods that show just the essentials. Rendered previews of each.',
     kindNote:
-      'The status lines keep to one short line in the terminal, under the prompt. The mods here draw a small readout above the prompt, and Claude Desktop shows them too.',
+      "The status lines keep to one short line in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
   },
   'multi-line': {
     titleBase: 'Multi-Line Claude Code Status Lines & Mods',
@@ -175,6 +175,6 @@ export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
     metaDescription:
       'Claude Code status lines and mods that use two or more lines for a fuller view of the session: tokens, cost, usage limits, and more at a glance.',
     kindNote:
-      'The status lines stack their rows in the terminal, under the prompt. The mods here stack theirs above the prompt, and Claude Desktop shows them too.',
+      "The status lines stack their rows in the terminal, under the prompt. The mods here are plugins that draw inside Claude Code itself; each mod's page shows where it draws.",
   },
 }
