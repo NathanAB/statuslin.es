@@ -366,7 +366,7 @@ describe('public reads while an update is pending', () => {
     expect(card).toMatchObject({ slug: v1.slug, title: live.title })
     await configCardResponse(db, v1.slug)
     expect(configCard).toHaveBeenLastCalledWith(expect.objectContaining({ title: live.title }))
-    const llms = await (await llmsTxtResponseForRoute()).text()
+    const llms = await (await llmsTxtResponseForRoute([])).text()
     expect(llms).toContain(`[${live.title}]`)
     expect(llms).toContain(live.description)
     expect(llms).not.toContain(update.title)

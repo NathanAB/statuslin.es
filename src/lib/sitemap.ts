@@ -3,7 +3,7 @@ import { MODS_PATH, modPath } from '@/lib/site'
 
 /**
  * The `/sitemap.xml` builder. Lists the static public pages plus one `<url>` per published config
- * so crawlers discover the long-tail config pages without relying on link-following alone.
+ * and mod so crawlers discover the long-tail pages without relying on link-following alone.
  *
  * `<lastmod>` uses the current version's review date, falling back to config creation, formatted
  * as a W3C date.
@@ -51,18 +51,24 @@ function urlEntry(loc: string, lastmod?: string): string {
   return `  <url>\n    <loc>${xmlEscape(loc)}</loc>${tail}\n  </url>`
 }
 
+function newest(items: Array<{ updatedAt: Date }>): Date | null {
+  return items.reduce<Date | null>(
+    (latest, item) => (latest === null || item.updatedAt > latest ? item.updatedAt : latest),
+    null,
+  )
+}
+
 function buildSitemapXml(
   base: string,
   configs: SitemapConfig[],
   facets: SitemapFacet[],
   pageCount: number,
   comparePaths: string[],
+  mods: SitemapMod[],
 ): string {
-  const homepageUpdatedAt = configs.reduce<Date | null>(
-    (latest, config) => (latest === null || config.updatedAt > latest ? config.updatedAt : latest),
-    null,
-  )
-  const homepageLastmod = homepageUpdatedAt?.toISOString().slice(0, 10)
+  const homepageLastmod = newest([...configs, ...mods])
+    ?.toISOString()
+    .slice(0, 10)
   const staticEntries = [
     urlEntry(base, homepageLastmod),
     ...STATIC_PAGES.map((page) => urlEntry(`${base}${page.path}`, page.lastmod)),
@@ -81,7 +87,23 @@ function buildSitemapXml(
   const configEntries = configs.map((c) =>
     urlEntry(`${base}/c/${c.slug}`, c.updatedAt.toISOString().slice(0, 10)),
   )
-  const body = [...staticEntries, ...pageEntries, ...facetEntries, ...configEntries].join('\n')
+  const modsUpdatedAt = newest(mods)
+  const modEntries =
+    modsUpdatedAt === null
+      ? []
+      : [
+          urlEntry(`${base}${MODS_PATH}`, modsUpdatedAt.toISOString().slice(0, 10)),
+          ...mods.map((m) =>
+            urlEntry(`${base}${modPath(m.slug)}`, m.updatedAt.toISOString().slice(0, 10)),
+          ),
+        ]
+  const body = [
+    ...staticEntries,
+    ...pageEntries,
+    ...facetEntries,
+    ...configEntries,
+    ...modEntries,
+  ].join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
 }
 
@@ -95,38 +117,12 @@ export function sitemapResponse(
   facets: SitemapFacet[],
   pageCount = 1,
   comparePaths: string[] = [],
+  mods: SitemapMod[] = [],
 ): Response {
-  return new Response(buildSitemapXml(base, configs, facets, pageCount, comparePaths), {
+  return new Response(buildSitemapXml(base, configs, facets, pageCount, comparePaths, mods), {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
       'Cache-Control': 'max-age=3600',
     },
   })
-}
-
-/** The gallery builds `/sitemap.xml` without knowing about mods, so they are spliced into its response. */
-export async function withModUrls(
-  sitemap: Response,
-  base: string,
-  mods: SitemapMod[],
-): Promise<Response> {
-  const xml = await sitemap.text()
-  const newest = mods.reduce<Date | null>(
-    (latest, m) => (latest === null || m.updatedAt > latest ? m.updatedAt : latest),
-    null,
-  )
-  const entries =
-    newest === null
-      ? []
-      : [
-          urlEntry(`${base}${MODS_PATH}`, newest.toISOString().slice(0, 10)),
-          ...mods.map((m) =>
-            urlEntry(`${base}${modPath(m.slug)}`, m.updatedAt.toISOString().slice(0, 10)),
-          ),
-        ]
-  const body =
-    entries.length === 0
-      ? xml
-      : xml.replace('\n</urlset>', () => `\n${entries.join('\n')}\n</urlset>`)
-  return new Response(body, { status: sitemap.status, headers: sitemap.headers })
 }

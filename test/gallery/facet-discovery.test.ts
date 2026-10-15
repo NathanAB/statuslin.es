@@ -149,8 +149,8 @@ describe('facet discovery threshold', () => {
   })
 
   it('omits 1- and 2-config facets from sitemap and llms.txt discovery', async () => {
-    const sitemap = await (await sitemapResponseForRoute()).text()
-    const llms = await (await llmsTxtResponseForRoute()).text()
+    const sitemap = await (await sitemapResponseForRoute([])).text()
+    const llms = await (await llmsTxtResponseForRoute([])).text()
 
     for (const facet of ['python', 'cost']) {
       expect(sitemap).not.toContain(`/status-lines/${facet}`)
