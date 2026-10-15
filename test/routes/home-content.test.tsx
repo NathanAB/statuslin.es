@@ -17,12 +17,14 @@ vi.mock('@tanstack/react-router', async () => {
       to,
       params,
       search,
+      hash,
       children,
       ...props
     }: {
       to: string
       params?: Record<string, string>
       search?: unknown
+      hash?: string
       children: React.ReactNode
     }) => {
       const path = params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to
@@ -30,7 +32,7 @@ vi.mock('@tanstack/react-router', async () => {
         search && typeof search === 'object'
           ? new URLSearchParams(search as Record<string, string>).toString()
           : ''
-      const href = query ? `${path}?${query}` : path
+      const href = `${query ? `${path}?${query}` : path}${hash ? `#${hash}` : ''}`
       return (
         <a href={href} {...props}>
           {children}
@@ -165,13 +167,16 @@ describe('home "Featured mod" row', () => {
       .closest('section') as HTMLElement
 
   // The row sits right above the gallery's filter, so its link switches that filter to mods
-  // instead of leaving for /mods.
+  // instead of leaving for /mods, and scrolls down to the list.
   it('shows the one mod it is given above the gallery, with a link that filters it to mods', () => {
     renderHome({}, {}, featured)
 
     const inRow = within(row())
-    expect(inRow.getByRole('link', { name: 'Browse all mods' }).getAttribute('href')).toBe(
-      '/?kind=mods',
+    const link = inRow.getByRole('link', { name: 'Browse all mods' })
+    expect(link.getAttribute('href')).toBe('/?kind=mods#gallery')
+    const target = document.getElementById('gallery')
+    expect(target?.contains(screen.getByRole('heading', { name: 'Status lines and mods' }))).toBe(
+      true,
     )
     expect(inRow.getByRole('link', { name: 'context-bar' }).getAttribute('href')).toBe(
       '/mods/context-bar',

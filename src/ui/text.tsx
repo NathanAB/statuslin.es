@@ -98,6 +98,8 @@ type TextLinkProps =
       to: NonNullable<LinkProps['to']>
       search?: LinkProps['search']
       params?: LinkProps['params']
+      // An element id on the target page; the router scrolls to it after navigating.
+      hash?: string
       href?: never
       children: React.ReactNode
       target?: string
@@ -112,6 +114,7 @@ type TextLinkProps =
       to?: never
       search?: never
       params?: never
+      hash?: never
       children: React.ReactNode
       target?: string
       rel?: string
@@ -146,6 +149,7 @@ export function TextLink(props: TextLinkProps) {
       to={props.to}
       {...(props.search !== undefined ? { search: props.search } : {})}
       {...(props.params !== undefined ? { params: props.params } : {})}
+      {...(props.hash !== undefined ? { hash: props.hash } : {})}
       className={className}
     >
       {props.children}

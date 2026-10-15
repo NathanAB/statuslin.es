@@ -18,7 +18,7 @@ import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
-import { FeaturedModRow } from '@/mods/featured-mod-row'
+import { FeaturedModRow, GALLERY_ID } from '@/mods/featured-mod-row'
 import { getFeaturedModFn, getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
 import { homeSocialMeta } from '@/og/meta'
@@ -155,29 +155,31 @@ function Home() {
           <HomeGalleryIntro page={page} />
         </HomeMasthead>
         <FeaturedModRow mod={featuredMod} />
-        <Stack gap={4}>
-          <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-          <Row gap={4} justify="between" wrap>
-            <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
-            <SubmitCta signedIn={!!user} />
-          </Row>
-          {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
-          {items.map((item, index) =>
-            item.kind === 'mod' ? (
-              <ModCard
-                key={`mod:${item.card.slug}`}
-                card={item.card}
-                analytics={cardAnalytics(index)}
-              />
-            ) : (
-              <GalleryConfigCard
-                key={`status-line:${item.card.slug}`}
-                card={item.card}
-                analytics={cardAnalytics(index)}
-              />
-            ),
-          )}
-        </Stack>
+        <section id={GALLERY_ID}>
+          <Stack gap={4}>
+            <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
+            <Row gap={4} justify="between" wrap>
+              <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
+              <SubmitCta signedIn={!!user} />
+            </Row>
+            {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
+            {items.map((item, index) =>
+              item.kind === 'mod' ? (
+                <ModCard
+                  key={`mod:${item.card.slug}`}
+                  card={item.card}
+                  analytics={cardAnalytics(index)}
+                />
+              ) : (
+                <GalleryConfigCard
+                  key={`status-line:${item.card.slug}`}
+                  card={item.card}
+                  analytics={cardAnalytics(index)}
+                />
+              ),
+            )}
+          </Stack>
+        </section>
 
         {pageCount > 1 ? (
           <Row gap={4} align="center" justify="center">
