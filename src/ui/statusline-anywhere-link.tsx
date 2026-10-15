@@ -6,7 +6,7 @@ import { TextLink } from '@/ui/text'
 export function StatuslineAnywhereLink({
   surface,
 }: {
-  surface: 'config_page' | 'desktop_guide' | 'home'
+  surface: 'config_page' | 'desktop_guide' | 'status_lines_vs_mods_guide'
 }) {
   const posthog = usePostHog()
   return (

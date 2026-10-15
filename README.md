@@ -61,7 +61,9 @@ GITHUB_CLIENT_ID=          # from the GitHub OAuth app below
 GITHUB_CLIENT_SECRET=      # from the GitHub OAuth app below
 ```
 
-`E2B_API_KEY` is optional locally — without it, submitted scripts render with a built-in fake runner.
+`E2B_API_KEY` is optional locally: set `RENDER_RUNNER=fake` instead and submitted scripts render with
+a built-in fake runner. The dev server renders each submission in the background as soon as it's
+submitted; there's no separate worker to run.
 The dev server's port is **derived from `BETTER_AUTH_URL`**, so the default `:3100` comes from that
 URL; change the URL and the port moves with it.
 

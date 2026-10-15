@@ -96,16 +96,15 @@ describe('Row', () => {
     }
   })
 
-  it('takes leftover width and can shrink below content when grow is set', () => {
+  it('takes leftover width but never shrinks below its content when grow is set', () => {
     const { container } = render(
       <Row gap={2} grow>
         x
       </Row>,
     )
     const classes = (container.firstChild as HTMLElement).className.split(/\s+/)
-    for (const cls of ['min-w-0', 'flex-1']) {
-      expect(classes).toContain(cls)
-    }
+    expect(classes).toContain('flex-1')
+    expect(classes).not.toContain('min-w-0')
   })
 
   it('right-aligns its children when justify is end', () => {

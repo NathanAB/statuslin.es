@@ -1,0 +1,93 @@
+[
+  {
+    "repoUrl": "https://github.com/anthropics/claude-code-playground",
+    "path": "claude-code/mods/token-weather",
+    "commitSha": "569c5283d9a0a7ee7938df85bb32e4f48cbb8c86",
+    "pluginName": "token-weather",
+    "title": "Token Weather"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/context-bar",
+    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "pluginName": "context-bar",
+    "title": "Context Bar"
+  },
+  {
+    "repoUrl": "https://github.com/NathanAB/statusline-anywhere",
+    "path": "",
+    "commitSha": "93fb965863571fca8140aca0d17277d121a2f9df",
+    "pluginName": "statusline-anywhere",
+    "title": "Status Line Anywhere"
+  },
+  {
+    "repoUrl": "https://github.com/OneWave-AI/claude-code-mods",
+    "path": "burn-meter",
+    "commitSha": "e6da26ca36a88eec3be25605d30fa20f2c1c0cec",
+    "pluginName": "burn-meter",
+    "title": "Burn Meter"
+  },
+  {
+    "repoUrl": "https://github.com/nateherkai/claude-code-mods",
+    "path": "recording-mode",
+    "commitSha": "33a936f2ec6bbfea5a30a1a4d71d992487a5c769",
+    "pluginName": "recording-mode",
+    "title": "Recording Mode",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/rec"
+      },
+      {
+        "type": "text",
+        "text": "Email jane.doe@acme.com the $4,200 invoice"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/BayramAnnakov/claude-reflect",
+    "path": "mod",
+    "commitSha": "b6c42326903af3dd2bf3772b979730a44d8548ca",
+    "pluginName": "reflect-mod",
+    "title": "Reflect",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "remember: Always run the tests with pnpm, not npm"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/matthlh/claude-mods",
+    "path": "plugins/pixel-cat",
+    "commitSha": "a8fe0f7d2fdaff45f1ab47c6d29a4ec5094b2d1c",
+    "pluginName": "pixel-cat",
+    "title": "Pixel Cat"
+  },
+  {
+    "repoUrl": "https://github.com/furqan-khan07/pixelband",
+    "path": "",
+    "commitSha": "20e27f99b023e62c8aa91dace07654442a715c24",
+    "pluginName": "pixelband",
+    "title": "Pixelband",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/pixelband scene city"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/robdmac/flow",
+    "path": "",
+    "commitSha": "9e1dc0fdb0e5d7f2a32b44efe4cd6336f378ff66",
+    "pluginName": "flow-scenes",
+    "title": "Flow",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/flow 8"
+      }
+    ]
+  }
+]

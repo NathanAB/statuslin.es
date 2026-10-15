@@ -22,6 +22,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Secondary text | `text-muted-foreground` |
 | Borders | `border-border` |
 | Destructive | `bg-destructive` / `text-destructive` |
+| Caution (a cost or a risk) | `bg-warning/10` / `text-warning` |
 | Monospace (status line output, code) | `font-mono` |
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
@@ -73,7 +74,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | Export | What it does |
 | --- | --- |
 | `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. |
-| `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`, `measure` caps line length. |
+| `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`. Text always fills its container: there is no line-length cap. |
 | `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>` |
 
 ### Cards and interactive surfaces
@@ -97,6 +98,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | Export | File | What it does |
 | --- | --- | --- |
 | `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control; `Copyable` overlays it on a code well |
+| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: "Copy install prompt" button, copy count, toast |
 | `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display; pass `text` to copy |
 | `<LineDiff lines={…}>` | `src/ui/line-diff.tsx` | Unified line diff in a code well; `DiffLine[]` with +/- markers |
 | `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | Section with header + optional action slot |
@@ -104,6 +106,8 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<Notice tone="info\|error">` | `src/ui/notice.tsx` | Inline status / error notice |
 | `<SelectField options label …>` | `src/ui/select.tsx` | Closed select with `SelectOption[]` |
 | `<Details summary="…">` | `src/ui/details.tsx` | Styled `<details>` / `<summary>` disclosure |
+| `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles; `caution` uses the warning tint |
+| `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
 | `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip |
 | `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header; used by shells |
@@ -122,6 +126,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 - `src/ui/` — primitives only. Imports only `src/ui` / `src/lib`. Type-only imports from elsewhere are allowed (erased at build).
 - `src/<feature>/` — feature code colocated (`src/gallery`, `src/submit`, `src/review`, `src/adopt`, `src/votes`). No cross-feature value imports — go through `src/lib` or `src/ui`.
+- `src/mods/` may import `src/gallery`, the shared listing and ranking code that ranks mods and status lines on one scale. `src/gallery` never imports `src/mods` or any other feature folder; a route maps mod data into the gallery's shapes instead.
 - `src/routes/` — thin: a loader calling a server function + a component composing `src/ui` primitives. No data shaping, no `@/db` import.
 - Files ≤ 250 lines, one responsibility. Named exports (default exports only in `src/routes/`). Components `PascalCase`, files `kebab-case.tsx`.
 
@@ -143,7 +148,7 @@ All rules run in `bun run check` and at the hooks listed below.
 | 10 | No arbitrary Tailwind values | `w-[200px]`-style values in app code (allowed in `src/ui/` vendored files) | `check-frontend.ts` — gate error |
 | 11 | File size | Any file over 250 lines | `check-frontend.ts` — gate error |
 | 12 | Centralized font family | A `font-<family>` class (`font-mono`, a typo like `font-heading`, …) outside `src/ui/text.tsx` + the code/header allowlist — text must render through `Text`/`Heading`, which own the font | `check-frontend.ts` — gate error |
-| 13 | Import boundaries | routes ↛ db; `src/ui` ↛ features; no cross-feature value imports | `check-boundaries` (dependency-cruiser) |
+| 13 | Import boundaries | routes ↛ db; `src/ui` ↛ features; `src/gallery` ↛ `src/mods`; no cross-feature value imports | `check-boundaries` (dependency-cruiser) |
 | 14 | Biome lint + format | Style, complexity, naming, import order, `noConsole` | `bun run lint` |
 
 **Hook schedule:**

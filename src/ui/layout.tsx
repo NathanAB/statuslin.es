@@ -54,8 +54,8 @@ const JUSTIFY_CLASS = {
 } as const
 
 /** Horizontal flex row. `align` defaults to center (the common title/footer case).
- *  `grow` lets the row take the leftover width in a flex parent and shrink below its
- *  content (min-w-0) — needed so a `wrap` row actually wraps instead of overflowing.
+ *  `grow` lets the row take the leftover width in a flex parent. It never shrinks below
+ *  its min-content, so a `wrap` row wraps down to its widest child and no narrower.
  *  `aboveOverlay` stacks the row over a sibling StretchedLink overlay inside an
  *  interactive Card, so its buttons/links stay clickable (relative z-10). */
 export function Row({
@@ -77,7 +77,7 @@ export function Row({
 }) {
   return (
     <div
-      className={`flex ${wrap ? `flex-wrap ${GAP_CLASS_Y[gap]}` : ''} ${grow ? 'min-w-0 flex-1' : ''} ${aboveOverlay ? 'relative z-10' : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
+      className={`flex ${wrap ? `flex-wrap ${GAP_CLASS_Y[gap]}` : ''} ${grow ? 'flex-1' : ''} ${aboveOverlay ? 'relative z-10' : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
     >
       {children}
     </div>

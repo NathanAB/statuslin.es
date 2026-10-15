@@ -202,6 +202,11 @@ export function tagLabel(chipLabel: string): string {
   return chipLabel.replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+/** Human-readable tag names for a page's JSON-LD keywords: each tag's chip label. */
+export function tagKeywords(tags: string[]): string[] {
+  return tags.map((slug) => FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)
+}
+
 /** Valid values for configs.tags (the classifier's curated column): the feature-group slugs. */
 export const TAG_VOCABULARY = FACETS.filter((f) => f.group === 'feature').map((f) => f.slug)
 

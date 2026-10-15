@@ -1,0 +1,1 @@
+ALTER TABLE "mods" DROP CONSTRAINT "mods_plugin_name_unique";

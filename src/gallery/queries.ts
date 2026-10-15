@@ -1,20 +1,20 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
-import type { PgDatabase } from 'drizzle-orm/pg-core'
-import type { GeneratedContent } from '@/content/types'
-import { configs, configVersions, previews, user } from '@/db/schema'
+import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
+import type { PgColumn, PgDatabase } from 'drizzle-orm/pg-core'
+import { type ConfigPageCopy, configPageCopySchema, readPageCopy } from '@/content/types'
+import { configs, configVersions, previews, submissions, user } from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { compactSegments } from '@/render/compact-segments'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
-import { coerceInterpreter, galleryCardSelection, mapCardRows } from './card-rows'
-import { newestFirstPublished } from './published-at'
-import { trendingScore } from './trending'
+import { coerceInterpreter } from './card-rows'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /** Cards per gallery page. */
 export const PAGE_SIZE = 10
+/** Caps the rows one request loads: each kind is asked for `page * PAGE_SIZE` items. */
+export const MAX_GALLERY_PAGE = 100
 /** The scenario shown on a gallery card; falls back to the first available preview. */
 const CARD_SCENARIO = 'clean-main'
 
@@ -75,53 +75,23 @@ export interface GalleryCard {
   tags: string[]
 }
 
-/** Total published configs matching the active tag filter — drives the gallery's page count.
- * Applies the same `allTags @>` filter as getPublishedConfigs so the count and the cards agree. */
-export async function getPublishedCount(db: Db, tags: string[] = []): Promise<number> {
-  const tagFilter =
-    tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
-  const [row] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(configs)
-    .where(and(eq(configs.status, 'published'), tagFilter))
-  return row?.n ?? 0
+function holdsTags(allTags: PgColumn, tags: string[]): SQL {
+  return sql`${allTags} @> ${JSON.stringify(tags)}::jsonb`
 }
 
-export async function getPublishedConfigs(
-  db: Db,
-  sort: GallerySort = 'trending',
-  page = 1,
-  tags: string[] = [],
-): Promise<GalleryCard[]> {
-  const orderBy =
-    sort === 'top'
-      ? [desc(configs.copyCount)]
-      : sort === 'trending'
-        ? [desc(trendingScore(configs.id))]
-        : [newestFirstPublished]
+export function hasAllTags(allTags: PgColumn, tags: string[]): SQL | undefined {
+  return tags.length > 0 ? holdsTags(allTags, tags) : undefined
+}
 
-  const tagFilter =
-    tags.length > 0 ? sql`${configs.allTags} @> ${JSON.stringify(tags)}::jsonb` : undefined
+/** Matches a row that holds at least one of `tags`; undefined (no filter) for no tags. */
+export function hasAnyTag(allTags: PgColumn, tags: string[]): SQL | undefined {
+  return or(...tags.map((tag) => holdsTags(allTags, [tag])))
+}
 
-  const rows = await db
-    .select(galleryCardSelection)
-    .from(configs)
-    .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
-    .leftJoin(user, eq(user.id, configs.authorId))
-    .where(and(eq(configs.status, 'published'), tagFilter))
-    .orderBy(...orderBy)
-    .limit(PAGE_SIZE)
-    .offset((page - 1) * PAGE_SIZE)
-
-  // One batched query for every card's preview instead of one lookup per card (the N+1). Select
-  // only `segments` — the card never shows rawStdout or the behavior trace, so pulling them (the
-  // big text/jsonb columns) would be wasted bytes on every gallery hit.
-  const cardPreviews = await selectCardPreviews(
-    db,
-    rows.map((r) => r.version.contentSha256),
-  )
-
-  return mapCardRows(rows, cardPreviews)
+/** How many of `tags` a row holds, to rank the most shared tags first. `tags` must not be empty. */
+export function sharedTagCount(allTags: PgColumn, tags: string[]): SQL<number> {
+  const held = [...new Set(tags)].map((tag) => sql`(${holdsTags(allTags, [tag])})::int`)
+  return sql<number>`(${sql.join(held, sql` + `)})`
 }
 
 /**
@@ -172,15 +142,15 @@ export interface ConfigDetail {
   contentSha256: string
   networkHosts: string[]
   readsClaudeToken: boolean
-  /** Auto-generated page copy, or null when scripts/generate-content.ts hasn't run for this version. */
-  generatedContent: GeneratedContent | null
+  /** Generated page copy, or null when scripts/generate-content.ts hasn't written it in the current format. */
+  generatedContent: ConfigPageCopy | null
   previews: ClientSafePreview[]
   /** SPDX license of third-party (seeded) source, e.g. 'MIT'. Null = submitter's own work (CC0 per terms). */
   license: string | null
   /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
   sourceUrl: string | null
   /**
-   * ISO date (YYYY-MM-DD) this version was published — the version's `reviewedAt`, falling back
+   * ISO date (YYYY-MM-DD) this version was published — its submission's `reviewedAt`, falling back
    * to the config's `createdAt`. A freshness signal for search/AI; pre-formatted to a string to
    * dodge the Date-through-server-fn serialization gamble.
    */
@@ -189,9 +159,15 @@ export interface ConfigDetail {
 
 export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetail | null> {
   const [row] = await db
-    .select({ config: configs, version: configVersions, author: user })
+    .select({
+      config: configs,
+      version: configVersions,
+      author: user,
+      reviewedAt: submissions.reviewedAt,
+    })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
+    .leftJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .leftJoin(user, eq(user.id, configs.authorId))
     .where(and(eq(configs.slug, slug), eq(configs.status, 'published')))
     .limit(1)
@@ -217,14 +193,14 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
     contentSha256: row.version.contentSha256,
     networkHosts: row.version.networkHosts ?? [],
     readsClaudeToken: row.version.readsClaudeToken ?? false,
-    generatedContent: row.version.generatedContent ?? null,
+    generatedContent: readPageCopy(configPageCopySchema, row.version.generatedContent),
     previews: previews.map((p) => ({
       scenarioKey: p.scenarioKey,
       segments: compactSegments(p.segments),
     })),
     license: row.version.license ?? null,
     sourceUrl: row.version.sourceUrl ?? null,
-    updatedAt: (row.version.reviewedAt ?? row.config.createdAt).toISOString().slice(0, 10),
+    updatedAt: (row.reviewedAt ?? row.config.createdAt).toISOString().slice(0, 10),
   }
 }
 
@@ -244,4 +220,4 @@ export { getPublishedSlugsForSitemap } from './published-at'
 // Re-exported so @/gallery/queries stays the single import surface for gallery
 // queries (related.ts exists only to respect the 250-line file gate).
 export type { RelatedConfig } from './related'
-export { getRelatedConfigs, RELATED_LIMIT } from './related'
+export { getConfigsSharingTags, getRelatedConfigs, RELATED_LIMIT } from './related'

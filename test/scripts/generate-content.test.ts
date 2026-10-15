@@ -9,15 +9,34 @@ import {
   parseContentGenerationResponses,
   prepareContentGenerationRequest,
 } from '@/content/generation-workflow'
-import type { GeneratedContent } from '@/content/types'
+import type { ConfigPageCopy, ModPageCopy } from '@/content/types'
 import * as schema from '@/db/schema'
 import { storePreviews } from '@/render/store'
-import { parseGenerateContentArgs, runGenerateContentCommand } from '../../scripts/generate-content'
+import {
+  fetchModReadme,
+  parseGenerateContentArgs,
+  runGenerateContentCommand,
+} from '../../scripts/generate-content'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 
-const CONTENT: GeneratedContent = {
+const CONTENT: ConfigPageCopy = {
+  summary: 'Shows the current git branch.',
+  howItWorks: ['Runs `git` in the session folder'],
+  goodToKnow: ['The branch disappears outside a git repo'],
+  details: {},
+}
+
+const MOD_CONTENT: ModPageCopy = {
+  summary: 'A meter above the prompt.',
+  howItWorks: [],
+  goodToKnow: [],
+  details: { showsUp: 'A one-line meter above the prompt' },
+}
+
+/** The three-section format copy was stored in before the page copy format. */
+const OLD_FORMAT = {
   whatItShows: ['Current git branch'],
   requirements: ['bash'],
   behaviorNotes: ['Branch segment disappears outside a git repo'],
@@ -25,7 +44,7 @@ const CONTENT: GeneratedContent = {
 
 async function seedConfig(
   slug: string,
-  opts: { status?: string; generatedContent?: GeneratedContent | null } = {},
+  opts: { status?: string; generatedContent?: unknown } = {},
 ): Promise<string> {
   const [config] = await db
     .insert(schema.configs)
@@ -100,7 +119,7 @@ describe('prepareContentGenerationRequest', () => {
     const request = await prepareContentGenerationRequest(db, 'happy-path')
 
     expect(request).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       slug: 'happy-path',
       versionId,
       contentSha256: 'sha-happy-path',
@@ -128,7 +147,7 @@ describe('content generation responses', () => {
   it('parses one response object or an array', async () => {
     const versionId = await seedConfig('parse-response')
     const response = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       slug: 'parse-response',
       versionId,
       contentSha256: 'sha-parse-response',
@@ -144,7 +163,7 @@ describe('content generation responses', () => {
     const versionId = await seedConfig('apply-response')
     const [response] = parseContentGenerationResponses(
       JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         slug: 'apply-response',
         versionId,
         contentSha256: 'sha-apply-response',
@@ -179,7 +198,7 @@ describe('content generation responses', () => {
     const responses = parseContentGenerationResponses(
       JSON.stringify([
         {
-          schemaVersion: 1,
+          schemaVersion: 2,
           slug: 'atomic-valid',
           versionId: validVersionId,
           contentSha256: 'sha-atomic-valid',
@@ -187,7 +206,7 @@ describe('content generation responses', () => {
           tags: ['git'],
         },
         {
-          schemaVersion: 1,
+          schemaVersion: 2,
           slug: 'atomic-stale',
           versionId: staleVersionId,
           contentSha256: 'wrong-sha',
@@ -218,11 +237,11 @@ describe('content generation responses', () => {
     expect(() =>
       parseContentGenerationResponses(
         JSON.stringify({
-          schemaVersion: 1,
+          schemaVersion: 2,
           slug: 'invalid-content',
           versionId,
           contentSha256: 'sha-invalid-content',
-          generatedContent: { whatItShows: [], requirements: [] },
+          generatedContent: OLD_FORMAT,
           tags: [],
         }),
       ),
@@ -233,7 +252,7 @@ describe('content generation responses', () => {
     expect(() => parseContentGenerationResponses('[]')).toThrow(/validation/i)
     const versionId = await seedConfig('duplicate-response')
     const response = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       slug: 'duplicate-response',
       versionId,
       contentSha256: 'sha-duplicate-response',
@@ -274,7 +293,7 @@ describe('content generation responses', () => {
     const responses = parseContentGenerationResponses(
       JSON.stringify([
         {
-          schemaVersion: 1,
+          schemaVersion: 2,
           slug: 'version-batch-valid',
           versionId: validVersionId,
           contentSha256: 'sha-version-batch-valid',
@@ -282,7 +301,7 @@ describe('content generation responses', () => {
           tags: ['git'],
         },
         {
-          schemaVersion: 1,
+          schemaVersion: 2,
           slug: 'version-batch-stale',
           versionId: staleVersionId,
           contentSha256: 'sha-version-batch-stale',
@@ -312,6 +331,12 @@ describe('listPublishedSlugsMissingContent', () => {
     expect(slugs).toContain('missing-a')
     expect(slugs).not.toContain('already-done')
     expect(slugs).not.toContain('still-draft')
+  })
+
+  it('lists a published config whose stored copy is in an old format, so it is regenerated', async () => {
+    await seedConfig('old-format', { generatedContent: OLD_FORMAT })
+
+    expect(await listPublishedSlugsMissingContent(db)).toContain('old-format')
   })
 })
 
@@ -363,7 +388,7 @@ describe('runGenerateContentCommand', () => {
     const stdout: string[] = []
     const stderr: string[] = []
     const response = JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: 2,
       slug: 'stream-apply',
       versionId,
       contentSha256: 'sha-stream-apply',
@@ -379,5 +404,131 @@ describe('runGenerateContentCommand', () => {
 
     expect(stdout).toEqual([])
     expect(stderr).toEqual(['[generate-content] applied 1 response(s)'])
+  })
+})
+
+describe('generate-content for mods', () => {
+  const COMMIT = 'c'.repeat(40)
+
+  async function seedMod(slug: string): Promise<string> {
+    const [mod] = await db
+      .insert(schema.mods)
+      .values({ slug, pluginName: slug, title: slug, authorGithub: 'octocat' })
+      .returning()
+    const [version] = await db
+      .insert(schema.modVersions)
+      .values({
+        modId: mod?.id as string,
+        versionNumber: 1,
+        repoUrl: `https://github.com/octocat/${slug}`,
+        commitSha: COMMIT,
+        footprint: { events: [], calls: [] },
+        validatedWith: '2.1.0',
+      })
+      .returning()
+    await db
+      .update(schema.mods)
+      .set({ currentVersionId: version?.id as string })
+      .where(eq(schema.mods.id, mod?.id as string))
+    return version?.id as string
+  }
+
+  function capture(stdin = '') {
+    const stdout: string[] = []
+    const stderr: string[] = []
+    return {
+      stdout,
+      stderr,
+      io: {
+        readStdin: async () => stdin,
+        writeStdout: (value: string) => stdout.push(value),
+        writeStderr: (value: string) => stderr.push(value),
+        readModReadme: async () => 'A meter mod.',
+      },
+    }
+  }
+
+  it('selects the mod catalog with --mod in every mode', () => {
+    expect(parseGenerateContentArgs(['token-weather', '--prepare', '--mod'])).toEqual({
+      mode: 'prepare',
+      slug: 'token-weather',
+      all: false,
+      mods: true,
+    })
+    expect(parseGenerateContentArgs(['--mod', '--all', '--prepare'])).toEqual({
+      mode: 'prepare',
+      slug: null,
+      all: true,
+      mods: true,
+    })
+    expect(parseGenerateContentArgs(['--apply', '--mod'])).toEqual({ mode: 'apply', mods: true })
+    expect(() => parseGenerateContentArgs(['--mod'])).toThrow(/usage/i)
+    expect(() => parseGenerateContentArgs(['a', '--prepare', '--mod', '--mod'])).toThrow(/usage/i)
+  })
+
+  it('prepares one mod request, or only mods with --all', async () => {
+    const versionId = await seedMod('cli-meter')
+    const one = capture()
+    await runGenerateContentCommand(
+      { mode: 'prepare', slug: 'cli-meter', all: false, mods: true },
+      db,
+      one.io,
+    )
+    expect(JSON.parse(one.stdout[0] ?? '')).toMatchObject({
+      kind: 'mod',
+      slug: 'cli-meter',
+      versionId,
+      commitSha: COMMIT,
+    })
+
+    const all = capture()
+    await runGenerateContentCommand(
+      { mode: 'prepare', slug: null, all: true, mods: true },
+      db,
+      all.io,
+    )
+    const requests = JSON.parse(all.stdout[0] ?? '') as Array<{ kind: string; slug: string }>
+    expect(requests.map((r) => [r.kind, r.slug])).toContainEqual(['mod', 'cli-meter'])
+    expect(requests.every((r) => r.kind === 'mod')).toBe(true)
+  })
+
+  it('applies mod responses with --mod', async () => {
+    const versionId = await seedMod('cli-apply')
+    const run = capture(
+      JSON.stringify({
+        schemaVersion: 2,
+        kind: 'mod',
+        slug: 'cli-apply',
+        versionId,
+        commitSha: COMMIT,
+        generatedContent: MOD_CONTENT,
+        tags: ['minimal'],
+      }),
+    )
+
+    await runGenerateContentCommand({ mode: 'apply', mods: true }, db, run.io)
+
+    expect(run.stdout).toEqual([])
+    expect(run.stderr).toEqual(['[generate-content] applied 1 mod response(s)'])
+    const [row] = await db
+      .select({ generatedContent: schema.modVersions.generatedContent })
+      .from(schema.modVersions)
+      .where(eq(schema.modVersions.id, versionId))
+    expect(row?.generatedContent).toEqual(MOD_CONTENT)
+  })
+})
+
+describe('fetchModReadme', () => {
+  const COMMIT = 'd'.repeat(40)
+
+  it('cuts a very long README down to a fixed size', async () => {
+    const long = 'x'.repeat(100_000)
+    const text = await fetchModReadme({ readme: async () => long })(
+      'https://github.com/octocat/meter',
+      '',
+      COMMIT,
+    )
+    expect(text?.length).toBeLessThan(long.length)
+    expect(text).toMatch(/README cut off/)
   })
 })

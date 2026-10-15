@@ -1,0 +1,486 @@
+import { readFileSync } from 'node:fs'
+import { eq } from 'drizzle-orm'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import * as schema from '@/db/schema'
+import type { RepoInfo } from '@/mods/github'
+import { getMarketplaceRows } from '@/mods/queries'
+import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
+import { FakeModRecorder } from '@/render/mods/fake-recorder'
+import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
+import { insertPendingSubmission } from '@/submissions/record'
+import { type ImportDeps, importMods } from '../../scripts/import-mods'
+import { runPublish } from '../../scripts/publish-mod'
+import { renderMods } from '../../scripts/render-mods'
+import baseline from '../render/mods/fixtures/baseline.json'
+import skins from '../render/mods/fixtures/skins.json'
+import {
+  addMod,
+  addVersion,
+  fakeGitHub,
+  MODULES_ONLY_LISTING,
+  openTestDb,
+  type TestDb,
+} from './seed-mods'
+
+const SHA = 'c'.repeat(40)
+const TARBALL = new Uint8Array([31, 139, 8, 0])
+const VALIDATE_OUTPUT = readFileSync(
+  new URL('./fixtures/validate-skins.json', import.meta.url),
+  'utf8',
+)
+
+let db: TestDb
+let close: () => Promise<void>
+
+beforeAll(async () => {
+  ;({ db, close } = await openTestDb())
+})
+beforeEach(async () => {
+  await db.delete(schema.mods)
+})
+afterAll(async () => {
+  await close()
+})
+
+const entry = (overrides: Record<string, unknown> = {}) => ({
+  repoUrl: 'https://github.com/hellosverre/claude-skins',
+  path: '',
+  commitSha: SHA,
+  pluginName: 'skins',
+  title: 'Skins',
+  inputSteps: [{ type: 'text', text: '/skin', submit: false }],
+  ...overrides,
+})
+
+interface Fakes {
+  fullName?: string
+  license?: string | null
+  manifest?: Record<string, unknown>
+  validate?: string
+  sandboxError?: Error
+}
+
+function fakes({
+  fullName = 'hellosverre/claude-skins',
+  license = 'MIT',
+  manifest = { name: 'skins', version: '1.4.0', description: 'Reskins Claude Code.' },
+  validate = VALIDATE_OUTPUT,
+  sandboxError,
+}: Fakes = {}) {
+  const calls: string[] = []
+  const github: ImportDeps['github'] = {
+    async repoInfo(repoUrl): Promise<RepoInfo> {
+      calls.push(`repoInfo:${repoUrl}`)
+      return { fullName, license, defaultBranch: 'main' }
+    },
+    async tarball(repoUrl, sha) {
+      calls.push(`tarball:${repoUrl}@${sha}`)
+      return TARBALL
+    },
+  }
+  // What each sandbox command prints, matched in order; anything else is "command not found".
+  const answers: [(command: string) => boolean, string][] = [
+    [(c) => c.endsWith('--version'), '2.1.296 (Claude Code)\n'],
+    [(c) => c.includes(' plugin validate --json '), validate],
+    [(c) => c.endsWith('/.claude-plugin/plugin.json'), JSON.stringify(manifest)],
+    [(c) => c.includes('hooks/hooks.json'), MODULES_ONLY_LISTING],
+  ]
+  const sandbox: ModSandbox = {
+    pluginDir: '/home/user/plugins/mod',
+    async run(command) {
+      const stdout = answers.find(([matches]) => matches(command))?.[1] ?? ''
+      return { exitCode: stdout ? 0 : 127, stdout, stderr: '' }
+    },
+  }
+  async function withSandbox<T>(source: ModSource, use: (s: ModSandbox) => Promise<T>) {
+    calls.push(`sandbox:${source.path || '(root)'}:${source.tarball.byteLength}`)
+    if (sandboxError) throw sandboxError
+    return use(sandbox)
+  }
+  return { calls, github, withSandbox }
+}
+
+async function run(curation: unknown, deps = fakes()) {
+  const lines: string[] = []
+  const exitCode = await importMods(curation, { db, ...deps, log: (line) => lines.push(line) })
+  return { exitCode, lines, output: lines.join('\n'), calls: deps.calls }
+}
+
+const allMods = () => db.select().from(schema.mods)
+const allVersions = () => db.select().from(schema.modVersions)
+
+describe('importMods', () => {
+  it('lands a clean entry as a draft mod with its first version', async () => {
+    const { exitCode, calls } = await run([entry()])
+
+    expect(exitCode).toBe(0)
+    expect(calls).toEqual([
+      'repoInfo:https://github.com/hellosverre/claude-skins',
+      `tarball:https://github.com/hellosverre/claude-skins@${SHA}`,
+      'sandbox:(root):4',
+    ])
+    const [mod] = await allMods()
+    expect(mod).toMatchObject({
+      slug: 'skins',
+      pluginName: 'skins',
+      title: 'Skins',
+      description: 'Reskins Claude Code.',
+      authorGithub: 'hellosverre',
+      status: 'draft',
+    })
+    const [version] = await allVersions()
+    expect(version).toMatchObject({
+      modId: mod?.id,
+      versionNumber: 1,
+      repoUrl: 'https://github.com/hellosverre/claude-skins',
+      path: '',
+      commitSha: SHA,
+      pluginVersion: '1.4.0',
+      license: 'MIT',
+      validatedWith: '2.1.296',
+      inputSteps: [{ type: 'text', text: '/skin', submit: false }],
+    })
+    expect(version?.footprint.events).toContain('ui.render{component=AbovePrompt}')
+    expect(version?.footprint.calls).toContain('$.ui.toast')
+    expect(mod?.currentVersionId).toBe(version?.id)
+  })
+
+  it('records a missing plugin version and licence as null', async () => {
+    await run([entry()], fakes({ license: null, manifest: { name: 'skins' } }))
+
+    const [version] = await allVersions()
+    expect(version).toMatchObject({ pluginVersion: null, license: null })
+  })
+
+  it('changes nothing on a second run with the same file', async () => {
+    await run([entry()])
+    const before = { mods: await allMods(), versions: await allVersions() }
+
+    const second = await run([entry()])
+
+    expect(second.exitCode).toBe(0)
+    expect(second.calls).toEqual([])
+    expect(second.output).toMatch(/skins.*already imported/)
+    expect({ mods: await allMods(), versions: await allVersions() }).toEqual(before)
+  })
+
+  it('adds a re-pinned entry as the next version of its mod and leaves the current one live', async () => {
+    await run([entry()])
+    await db.update(schema.mods).set({ status: 'published' })
+    const [before] = await allMods()
+    const newSha = 'd'.repeat(40)
+    const inputSteps = [{ type: 'text', text: '/skin dark', submit: false }]
+
+    const { exitCode, output, calls } = await run(
+      [entry({ commitSha: newSha, inputSteps })],
+      fakes({ manifest: { name: 'skins', version: '1.5.0', description: 'Reskins it all.' } }),
+    )
+
+    expect(exitCode).toBe(0)
+    expect(output).toMatch(new RegExp(`^imported skins v2 at ${newSha}: plugin 1\\.5\\.0`))
+    expect(calls).toEqual([
+      'repoInfo:https://github.com/hellosverre/claude-skins',
+      `tarball:https://github.com/hellosverre/claude-skins@${newSha}`,
+      'sandbox:(root):4',
+    ])
+    expect(await allMods()).toEqual([before])
+    const versions = await allVersions()
+    expect(versions.map((v) => [v.versionNumber, v.commitSha])).toEqual([
+      [1, SHA],
+      [2, newSha],
+    ])
+    expect(versions[1]).toMatchObject({ modId: before?.id, pluginVersion: '1.5.0', inputSteps })
+  })
+
+  it('refuses a re-pin whose plugin.json names another plugin and adds no version', async () => {
+    await run([entry()])
+
+    const { exitCode, output } = await run(
+      [entry({ commitSha: 'd'.repeat(40) })],
+      fakes({ manifest: { name: 'skin-pack' } }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/plugin\.json names the plugin "skin-pack", not "skins"/)
+    expect((await allVersions()).map((v) => v.commitSha)).toEqual([SHA])
+  })
+
+  it('imports a same-named plugin from another repository as <name>-<owner>', async () => {
+    await run([entry()])
+    const other = entry({ repoUrl: 'https://github.com/mallory/skins', commitSha: 'd'.repeat(40) })
+
+    const { exitCode, output } = await run([other], fakes({ fullName: 'mallory/skins' }))
+
+    expect(exitCode).toBe(0)
+    expect(output).toMatch(/^imported skins-mallory v1 at d{40}/)
+    const mods = await allMods()
+    expect(mods.map((m) => [m.slug, m.pluginName, m.authorGithub]).sort()).toEqual([
+      ['skins', 'skins', 'hellosverre'],
+      ['skins-mallory', 'skins', 'mallory'],
+    ])
+  })
+
+  it('re-pins the mod from the same repository when two mods share the plugin name', async () => {
+    const other = entry({ repoUrl: 'https://github.com/mallory/skins' })
+    await run([entry()])
+    await run([other], fakes({ fullName: 'mallory/skins' }))
+    const newSha = 'e'.repeat(40)
+
+    const { exitCode, output } = await run(
+      [{ ...other, commitSha: newSha }],
+      fakes({ fullName: 'mallory/skins' }),
+    )
+
+    expect(exitCode).toBe(0)
+    expect(output).toMatch(/^imported skins-mallory v2 at e{40}/)
+    expect((await allMods()).map((m) => m.slug).sort()).toEqual(['skins', 'skins-mallory'])
+  })
+
+  it('never re-pins a mod a user submitted, even from the same repository', async () => {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    await run([entry()])
+    const [submitted] = await allMods()
+    const [version] = await allVersions()
+    await insertPendingSubmission(db, {
+      kind: 'mod',
+      versionId: version!.id,
+      submittedBy: 'ada',
+    })
+
+    const { output } = await run([entry({ commitSha: 'e'.repeat(40) })])
+
+    expect(output).toMatch(/^imported skins-hellosverre v1/)
+    expect((await allVersions()).filter((v) => v.modId === submitted?.id)).toHaveLength(1)
+  })
+
+  it("imports a curated entry whose commit a user's submission already pins, as its own mod", async () => {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    const submittedId = await addMod(db, 'skins-3f9a2c', 'draft')
+    await db.update(schema.mods).set({ pluginName: 'skins' }).where(eq(schema.mods.id, submittedId))
+    const versionId = await addVersion(db, submittedId, {
+      commitSha: SHA,
+      versionNumber: 1,
+      repoUrl: entry().repoUrl,
+    })
+    await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'ada' })
+
+    const { output } = await run([entry()])
+
+    expect(output).toMatch(/^imported skins v1/)
+    expect((await allMods()).map((m) => m.slug).sort()).toEqual(['skins', 'skins-3f9a2c'])
+  })
+
+  it('names a new mod <name>-<owner> when another mod already has its name as a slug', async () => {
+    await db.insert(schema.mods).values({
+      slug: 'skins',
+      pluginName: 'skin-pack',
+      title: 'Skin Pack',
+      authorGithub: 'octocat',
+    })
+
+    const { exitCode } = await run([entry()])
+
+    expect(exitCode).toBe(0)
+    const [mod] = await db
+      .select()
+      .from(schema.mods)
+      .where(eq(schema.mods.slug, 'skins-hellosverre'))
+    expect(mod).toMatchObject({ pluginName: 'skins', authorGithub: 'hellosverre' })
+  })
+
+  it('refuses a plugin whose name and <name>-<owner> are both taken', async () => {
+    for (const slug of ['skins', 'skins-hellosverre']) {
+      await db.insert(schema.mods).values({
+        slug,
+        pluginName: `${slug}-pack`,
+        title: slug,
+        authorGithub: 'octocat',
+      })
+    }
+
+    const { exitCode, output } = await run([entry()])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/"skins" and "skins-hellosverre" are both taken/)
+    expect(await allVersions()).toEqual([])
+  })
+
+  it('refuses a plugin.json whose name differs from the curation entry', async () => {
+    const { exitCode, output } = await run([entry()], fakes({ manifest: { name: 'skin-pack' } }))
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/plugin\.json names the plugin "skin-pack", not "skins"/)
+    expect(await allMods()).toEqual([])
+  })
+
+  it('refuses a repository URL that is not the canonical one GitHub reports', async () => {
+    const { exitCode, output } = await run(
+      [entry()],
+      fakes({ fullName: 'HelloSverre/claude-skins' }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/https:\/\/github\.com\/HelloSverre\/claude-skins/)
+    expect(await allMods()).toEqual([])
+  })
+
+  it('keeps importing the other entries when one is refused', async () => {
+    const curation = [
+      entry({ pluginName: 'skin-pack', title: 'Skin Pack' }),
+      entry({ path: 'other', pluginName: 'skins' }),
+    ]
+
+    const { exitCode } = await run(curation)
+
+    expect(exitCode).toBe(1)
+    expect((await allMods()).map((m) => m.slug)).toEqual(['skins'])
+  })
+
+  it('writes nothing and fetches nothing when any entry is invalid', async () => {
+    const { exitCode, output, calls } = await run([
+      entry(),
+      entry({ pluginName: 'meter', commitSha: 'abc1234' }),
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/entry 2 \(meter\) commitSha/)
+    expect(calls).toEqual([])
+    expect(await allMods()).toEqual([])
+  })
+
+  it('takes a re-pinned commit live only once it has rendered and been published', async () => {
+    const newSha = 'd'.repeat(40)
+    const deps = fakes()
+    const silent = { db, log: () => {} }
+    const render = () =>
+      renderMods(
+        {},
+        {
+          ...silent,
+          github: deps.github,
+          recorder: new FakeModRecorder({ baseline, mods: { skins } }),
+          desktopRecorder: new FakeDesktopRecorder(),
+        },
+      )
+    const publish = (sha: string, ...flags: string[]) =>
+      runPublish(['skins', sha, ...flags], { ...silent, github: fakeGitHub() })
+    const liveCommit = async () => (await getMarketplaceRows(db)).map((row) => row.commitSha)
+    await run([entry()], deps)
+    await render()
+    await publish(SHA, '--apply', '--confirm=skins')
+
+    await run([entry({ commitSha: newSha })], deps)
+    expect(await publish(newSha)).toBe(1)
+    expect(await liveCommit()).toEqual([SHA])
+
+    expect(await render()).toBe(0)
+    expect(await liveCommit()).toEqual([SHA])
+    expect(await publish(newSha, '--apply', '--confirm=skins')).toBe(0)
+    expect(await liveCommit()).toEqual([newSha])
+  })
+
+  describe('prints what a mod controls escaped, one line per entry', () => {
+    const OSC52 = '\u001b]52;c;cm0gLXJmIH4=\u0007'
+    const CRAFTED = `\u001b[2K\r${OSC52}`
+    const CONTROL = /[\p{Cc}\p{Cf}]/u
+
+    it('escapes a thrown error message', async () => {
+      const sandboxError = new Error(`tar: member${CRAFTED}\nforged line`)
+      const { exitCode, lines } = await run([entry()], fakes({ sandboxError }))
+
+      expect(exitCode).toBe(1)
+      expect(lines).toHaveLength(1)
+      expect(lines[0]).not.toMatch(CONTROL)
+      expect(lines[0]).toContain('tar: member\\u001b[2K\\u000d\\u001b]52;c;')
+      expect(lines[0]).toContain('\\u000aforged line')
+    })
+
+    it('truncates a long error message', async () => {
+      const sandboxError = new Error(`tar: ${'x'.repeat(10_000)}`)
+      const { lines } = await run([entry()], fakes({ sandboxError }))
+
+      expect(lines[0]?.length).toBeLessThanOrEqual(500)
+      expect(lines[0]).toMatch(/^refused skins: tar: x+… \(\d+ more characters\)$/)
+    })
+
+    it.each([0, 1, 2, 3, 4, 5])(
+      'cuts a long line between escapes, never inside one (offset %i)',
+      async (offset) => {
+        const sandboxError = new Error(`${'x'.repeat(offset)}${'\u0007'.repeat(200)}`)
+        const { lines } = await run([entry()], fakes({ sandboxError }))
+
+        expect(lines[0]).toMatch(/^refused skins: x*(\\u0007)+… \(\d+ more characters\)$/)
+      },
+    )
+  })
+
+  describe('refuses plugin facts past the stored limits and writes nothing', () => {
+    const validateWith = (notes: string[]) =>
+      JSON.stringify({ success: true, contents: [{ errors: [], notes }] })
+    const many = (n: number) => Array.from({ length: n }, (_, i) => `event.e${i}`)
+
+    it.each([
+      [
+        'a description over 1000 characters',
+        fakes({ manifest: { name: 'skins', description: 'd'.repeat(1001) } }),
+        /description.*1000/,
+      ],
+      [
+        'a version over 64 characters',
+        fakes({ manifest: { name: 'skins', version: '1'.repeat(65) } }),
+        /version.*64/,
+      ],
+      ['a name over 100 characters', fakes({ manifest: { name: 'n'.repeat(101) } }), /name.*100/],
+      [
+        'a version carrying an escape sequence',
+        fakes({ manifest: { name: 'skins', version: '1.0.0\u001b[2K' } }),
+        /version must not contain control or format characters \(U\+001B\)/,
+      ],
+      [
+        'a name carrying a bidi override',
+        fakes({ manifest: { name: 'skins\u202e' } }),
+        /name must not contain control or format characters \(U\+202E\)/,
+      ],
+      [
+        'more than 200 events',
+        fakes({ validate: validateWith([`./a.ts hooks: ${many(201).join(', ')}`]) }),
+        /201 events.*200/,
+      ],
+      [
+        'more than 200 calls',
+        fakes({
+          validate: validateWith([
+            `./a.ts calls: ${many(201)
+              .map((e) => `$.${e}`)
+              .join(', ')}`,
+          ]),
+        }),
+        /201 calls.*200/,
+      ],
+      [
+        'an event over 200 characters',
+        fakes({ validate: validateWith([`./a.ts hooks: ${'e'.repeat(201)}`]) }),
+        /events longer than 200 characters/,
+      ],
+      [
+        'a call over 200 characters',
+        fakes({ validate: validateWith([`./a.ts calls: $.${'c'.repeat(199)}`]) }),
+        /calls longer than 200 characters/,
+      ],
+    ])('%s', async (_name, deps, message) => {
+      const { exitCode, output } = await run([entry()], deps)
+
+      expect(exitCode).toBe(1)
+      expect(output).toMatch(/^refused skins: /)
+      expect(output).toMatch(message)
+      expect(await allMods()).toEqual([])
+      expect(await allVersions()).toEqual([])
+    })
+  })
+})

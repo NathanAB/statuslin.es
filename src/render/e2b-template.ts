@@ -29,3 +29,40 @@ export const SANDBOX_ANTHROPIC_USAGE_DIR = '/opt/statuslines/anthropic-usage'
 export const SANDBOX_ANTHROPIC_USAGE_SERVER_DEST = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.py`
 export const SANDBOX_ANTHROPIC_USAGE_CERT_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.crt`
 export const SANDBOX_ANTHROPIC_USAGE_KEY_PATH = `${SANDBOX_ANTHROPIC_USAGE_DIR}/server.key`
+
+/** E2B build alias for the mod render template: the status line template plus Claude Code. */
+export const E2B_MOD_TEMPLATE_BUILD_NAME = 'statuslines-mod-render-build'
+
+/**
+ * Immutable E2B snapshot selected by every mod render. Updated only after a reviewed build.
+ * Create sandboxes from it with the SDK's default `secure: true`: without it, envd takes commands
+ * with no access token, so code inside the sandbox could ask envd to run commands as root.
+ */
+export const E2B_MOD_TEMPLATE_ID = 'xwhhq2gqlkp8dx6lbh4l:default'
+
+/** Root-owned npm prefix holding Claude Code in the mod template, and the binary to run. */
+export const SANDBOX_CLAUDE_CODE_PREFIX = '/opt/statuslines/claude-code'
+export const SANDBOX_CLAUDE_CODE_BIN = `${SANDBOX_CLAUDE_CODE_PREFIX}/bin/claude`
+
+/** Where `@xterm/headless` is installed in the mod template, so recordings replay in the sandbox. */
+export const SANDBOX_REPLAY_DIR = '/opt/statuslines/replay'
+
+/** A world-readable copy of the usage server, so its `--canned-reply` mode runs as `user`. */
+export const SANDBOX_CANNED_MODEL_DIR = '/opt/statuslines/canned-model'
+export const SANDBOX_CANNED_MODEL_SERVER_DEST = `${SANDBOX_CANNED_MODEL_DIR}/server.py`
+
+/** E2B build alias for the Desktop template: the mod template plus Claude Desktop on a virtual display. */
+export const E2B_DESKTOP_TEMPLATE_BUILD_NAME = 'statuslines-desktop-render-build'
+
+/**
+ * Immutable E2B snapshot selected by every Desktop recording. Updated only after a reviewed build.
+ * Created with `secure: true` like the mod template, for the same reason.
+ */
+export const E2B_DESKTOP_TEMPLATE_ID = 'q0fljxtraslw7qr04jt6:default'
+
+/** Root-owned files the Desktop template adds: the boot script and Desktop's managed settings. */
+export const SANDBOX_DESKTOP_DIR = '/opt/statuslines/desktop'
+export const SANDBOX_DESKTOP_BOOT = `${SANDBOX_DESKTOP_DIR}/boot.sh`
+export const SANDBOX_DESKTOP_MANAGED_SETTINGS = '/etc/claude-desktop/managed-settings.json'
+/** The engine version Desktop installs from its preseed, written when the build verifies it. */
+export const SANDBOX_DESKTOP_ENGINE_VERSION = `${SANDBOX_DESKTOP_DIR}/engine-version`

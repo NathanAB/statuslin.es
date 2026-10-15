@@ -7,6 +7,7 @@ import { nitro } from 'nitro/vite'
 import type { Plugin } from 'vite'
 import { loadEnv } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
+import { GITHUB_AVATARS_ORIGIN } from './src/lib/github-avatars'
 import { POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST } from './src/lib/posthog-hosts'
 
 // Vite plugin: import binary files as Buffer via the `?arraybuffer` query suffix.
@@ -42,6 +43,32 @@ function binaryArrayBuffer(): Plugin {
   }
 }
 
+// Dev only. Nitro's dev server hands a request to the app only when it matches a Nitro route, and
+// every TanStack route sits behind Nitro's `/**` catch-all. So it guesses: a browser's <img> request
+// (Sec-Fetch-Dest: image, or a .png path without Accept: text/html) is taken for a static file and
+// 404s before the app sees it. These are the app's image routes (src/routes/og.*[.]png.ts,
+// mod-previews.$versionId.desktop[.]png.ts and its admin twin under admin/); dressing their requests
+// as page loads makes Nitro pass them on. The production server has no such guess: its static
+// middleware falls through on a miss.
+const DEV_IMAGE_ROUTE_PREFIXES = ['/og/', '/mod-previews/', '/admin/mod-previews/']
+
+function devImageRoutes(): Plugin {
+  return {
+    name: 'dev-image-routes',
+    apply: 'serve',
+    enforce: 'pre',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (DEV_IMAGE_ROUTE_PREFIXES.some((prefix) => req.url?.startsWith(prefix))) {
+          delete req.headers['sec-fetch-dest']
+          req.headers.accept = 'text/html'
+        }
+        next()
+      })
+    },
+  }
+}
+
 // Single source of truth for the dev origin: BETTER_AUTH_URL (.env). The dev server
 // binds the port from that URL so the GitHub OAuth callback always matches.
 const DEFAULT_DEV_PORT = 3100
@@ -66,7 +93,7 @@ const CSP_REPORT_ONLY = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "img-src 'self' data: https://avatars.githubusercontent.com",
+  `img-src 'self' data: ${GITHUB_AVATARS_ORIGIN}`,
   "font-src 'self'",
   "style-src 'self' 'unsafe-inline'", // React inline style attrs (preview colors) + Tailwind
   "script-src 'self' 'unsafe-inline'", // TanStack inline hydration scripts (needs nonces to tighten)
@@ -130,6 +157,8 @@ export default defineConfig(({ mode }) => ({
     ...(isTest
       ? []
       : [
+          // Before nitro(), so its middleware sees the image requests first.
+          devImageRoutes(),
           tailwindcss(),
           tanstackStart({
             srcDirectory: 'src',
@@ -155,7 +184,12 @@ export default defineConfig(({ mode }) => ({
             //   src/db/index.ts alone would throw per request instead of at boot).
             // - posthog-error-plugin: registers a Nitro `error` hook forwarding SSR crashes /
             //   uncaught exceptions / unhandled rejections to PostHog (src/lib/posthog-server).
-            plugins: ['./src/server/db-tls-plugin.ts', './src/server/posthog-error-plugin.ts'],
+            // - render-drain-plugin: renders the status line jobs already queued (ADR 0006).
+            plugins: [
+              './src/server/db-tls-plugin.ts',
+              './src/server/posthog-error-plugin.ts',
+              './src/server/render-drain-plugin.ts',
+            ],
             // Nitro's generated static-asset manifest contains only this build's files. Its static
             // middleware runs first and falls through on a miss; this route then serves retained
             // generations before the catch-all TanStack renderer. Keep it method-agnostic so the

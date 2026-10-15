@@ -7,6 +7,7 @@ import * as schema from '@/db/schema'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getCardsByCopies, getFacetCards, getFacetStats, resolveLiveFacet } from '@/gallery/queries'
 import { computeAllTags } from '@/lib/derived-tags'
+import { insertSubmission } from '../fixtures/submission'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -69,10 +70,9 @@ async function seed(
       source: 'echo hi',
       interpreter,
       contentSha256: slug.padEnd(64, '0'),
-      status: 'approved',
-      reviewedAt: opts.reviewedAt,
     })
     .returning()
+  await insertSubmission(db, ver!.id, 'u1', { status: 'approved', reviewedAt: opts.reviewedAt })
   await db
     .update(schema.configs)
     .set({ currentVersionId: ver!.id })
@@ -89,13 +89,18 @@ describe('facet queries', () => {
       createdAt: new Date(2026, 5, 1),
       reviewedAt: new Date(2026, 6, 5),
     })
-    await db.insert(schema.configVersions).values({
-      configId: gitA.config.id,
-      versionNumber: 2,
-      title: 'git-a',
-      source: 'echo newer but not current',
-      interpreter: 'bash',
-      contentSha256: 'git-a-not-current'.padEnd(64, '0'),
+    const [notCurrent] = await db
+      .insert(schema.configVersions)
+      .values({
+        configId: gitA.config.id,
+        versionNumber: 2,
+        title: 'git-a',
+        source: 'echo newer but not current',
+        interpreter: 'bash',
+        contentSha256: 'git-a-not-current'.padEnd(64, '0'),
+      })
+      .returning()
+    await insertSubmission(db, notCurrent!.id, 'u1', {
       status: 'approved',
       reviewedAt: new Date(2026, 11, 31),
     })
@@ -184,6 +189,20 @@ describe('facet queries', () => {
   it('a page tag with only 1 config is live (no floor)', async () => {
     const stats = await getFacetStats(db)
     expect(resolveLiveFacet('cost', stats)?.slug).toBe('cost')
+  })
+
+  it('counts the published mods it is given alongside configs', async () => {
+    const stats = await getFacetStats(db, [['git'], ['powerline', 'git'], []])
+    expect(stats.get('git')?.count).toBe(4)
+    expect(stats.get('powerline')?.count).toBe(1)
+    expect(stats.get('cost')?.count).toBe(1)
+  })
+
+  it('resolves a facet whose only matches are mods', async () => {
+    expect(resolveLiveFacet('powerline', await getFacetStats(db))).toBeNull()
+    expect(resolveLiveFacet('powerline', await getFacetStats(db, [['powerline']]))?.slug).toBe(
+      'powerline',
+    )
   })
 
   it('a page:false capability tag never resolves to a page', async () => {

@@ -1,4 +1,5 @@
 import { PostHog } from 'posthog-node'
+import { PERSONLESS } from './posthog-person'
 
 let posthogClient: PostHog | null = null
 let warnedMissingToken = false
@@ -42,19 +43,11 @@ export interface ServerEvent {
   properties: Record<string, unknown>
 }
 
-// posthog-node processes a person profile for every distinct id it sees, so a server event sent under
-// an id that isn't a signed-in user (an anonymous browser id, an ip hash, 'server') would create a
-// profile per id. Spreading this into an event's properties turns that off — the client's
-// person_profiles: 'identified_only', applied server-side. Assigned through a variable key so
-// neither the camelCase naming rule nor the literal-keys rule fires on the leading '$'.
-const PROCESS_PERSON_PROFILE_PROP = '$process_person_profile'
-export const PERSONLESS: Readonly<Record<string, false>> = { [PROCESS_PERSON_PROFILE_PROP]: false }
-
 /** Context attached to a server-side error capture. Only safe, non-script metadata belongs here. */
 export type ServerErrorContext = {
   /** Defaults to the constant `'server'`; error tracking groups by fingerprint, not person. */
   distinctId?: string
-  /** Coarse origin tag: 'ssr' | 'server-fn' | 'worker' | 'uncaught'. */
+  /** Coarse origin tag: 'ssr' | 'server-fn' | 'render-drain' | 'uncaught'. */
   source?: string
   /** Allowlist of safe fields (path, status, …) — NEVER submitted-script bytes. See the spec. */
   properties?: Record<string, unknown>
@@ -92,8 +85,8 @@ function serverErrorProperties(ctx?: ServerErrorContext): Record<string, unknown
 
 /**
  * Capture a non-error server event in PostHog. Fire-and-forget (the client flushes immediately),
- * fail-soft (missing token or any client error is swallowed — telemetry must never crash the
- * worker or 500 a request). The counterpart to captureServerException for plain events.
+ * fail-soft (missing token or any client error is swallowed — telemetry must never fail a render
+ * or 500 a request). The counterpart to captureServerException for plain events.
  */
 export function captureServerEvent(
   event: string,
@@ -112,7 +105,7 @@ export function captureServerEvent(
 /**
  * Capture a server-side exception in PostHog. Fire-and-forget (the client flushes immediately).
  * Fail-soft: a missing token or any client error is swallowed — error reporting must never be the
- * thing that 500s a request or crashes the worker. Deduped per error object across capture points.
+ * thing that 500s a request or fails a render. Deduped per error object across capture points.
  */
 export function captureServerException(error: unknown, ctx?: ServerErrorContext): void {
   try {
@@ -120,29 +113,6 @@ export function captureServerException(error: unknown, ctx?: ServerErrorContext)
     if (!client) return
     if (!markCapturedOnce(error)) return
     client.captureException(error, ctx?.distinctId ?? 'server', serverErrorProperties(ctx))
-  } catch {
-    // error reporting must never throw — swallow
-  }
-}
-
-/**
- * Awaited variant for paths that exit right after capturing (the worker's fatal handlers), where a
- * fire-and-forget send would be lost when the process dies before the flush. Otherwise identical to
- * {@link captureServerException}: fail-soft, deduped, off when there's no token.
- */
-export async function captureServerExceptionImmediate(
-  error: unknown,
-  ctx?: ServerErrorContext,
-): Promise<void> {
-  try {
-    const client = getPostHogClient()
-    if (!client) return
-    if (!markCapturedOnce(error)) return
-    await client.captureExceptionImmediate(
-      error,
-      ctx?.distinctId ?? 'server',
-      serverErrorProperties(ctx),
-    )
   } catch {
     // error reporting must never throw — swallow
   }

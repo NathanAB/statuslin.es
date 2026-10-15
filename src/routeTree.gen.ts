@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as MarketplaceDotjsonRouteImport } from './routes/marketplace[.]json'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -25,12 +26,19 @@ import { Route as AlternativesToolRouteImport } from './routes/alternatives.$too
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ComparePairRouteImport } from './routes/compare.$pair'
+import { Route as GuideAreClaudeCodeModsSafeRouteImport } from './routes/guide_.are-claude-code-mods-safe'
 import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
+import { Route as GuideStatusLinesVsModsRouteImport } from './routes/guide_.status-lines-vs-mods'
+import { Route as ModsIndexRouteImport } from './routes/mods.index'
+import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/mod-previews.$versionId.desktop[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
+import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
+import { Route as AdminModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/admin/mod-previews.$versionId.desktop[.]png'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +53,11 @@ const GuideRoute = GuideRouteImport.update({
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
   path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketplaceDotjsonRoute = MarketplaceDotjsonRouteImport.update({
+  id: '/marketplace.json',
+  path: '/marketplace.json',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeRoute = MeRouteImport.update({
@@ -113,9 +126,30 @@ const ComparePairRoute = ComparePairRouteImport.update({
   path: '/compare/$pair',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideAreClaudeCodeModsSafeRoute =
+  GuideAreClaudeCodeModsSafeRouteImport.update({
+    id: '/guide_/are-claude-code-mods-safe',
+    path: '/guide/are-claude-code-mods-safe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
   id: '/guide_/claude-desktop',
   path: '/guide/claude-desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuideStatusLinesVsModsRoute = GuideStatusLinesVsModsRouteImport.update({
+  id: '/guide_/status-lines-vs-mods',
+  path: '/guide/status-lines-vs-mods',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModsIndexRoute = ModsIndexRouteImport.update({
+  id: '/mods/',
+  path: '/mods/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModsSlugRoute = ModsSlugRouteImport.update({
+  id: '/mods/$slug',
+  path: '/mods/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
@@ -138,10 +172,28 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModPreviewsVersionIdDesktopDotpngRoute =
+  ModPreviewsVersionIdDesktopDotpngRouteImport.update({
+    id: '/mod-previews/$versionId/desktop.png',
+    path: '/mod-previews/$versionId/desktop.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const OgCChar123slugChar125DotpngRoute =
   OgCChar123slugChar125DotpngRouteImport.update({
     id: '/og/c/{$slug}.png',
     path: '/og/c/{$slug}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OgModsChar123slugChar125DotpngRoute =
+  OgModsChar123slugChar125DotpngRouteImport.update({
+    id: '/og/mods/{$slug}.png',
+    path: '/og/mods/{$slug}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminModPreviewsVersionIdDesktopDotpngRoute =
+  AdminModPreviewsVersionIdDesktopDotpngRouteImport.update({
+    id: '/admin/mod-previews/$versionId/desktop.png',
+    path: '/admin/mod-previews/$versionId/desktop.png',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -149,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -161,18 +214,26 @@ export interface FileRoutesByFullPath {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
+  '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -185,19 +246,27 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin': typeof AdminIndexRoute
+  '/mods': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
   '/resources': typeof ResourcesRoute
   '/robots.txt': typeof RobotsDottxtRoute
@@ -210,13 +279,20 @@ export interface FileRoutesById {
   '/api/health': typeof ApiHealthRoute
   '/c/$slug': typeof CSlugRoute
   '/compare/$pair': typeof ComparePairRoute
+  '/guide_/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide_/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
+  '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
+  '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
+  '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -224,6 +300,7 @@ export interface FileRouteTypes {
     | '/'
     | '/guide'
     | '/llms.txt'
+    | '/marketplace.json'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -236,18 +313,26 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-desktop'
+    | '/guide/status-lines-vs-mods'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
+    | '/mods/'
     | '/api/auth/$'
+    | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
+    | '/admin/mod-previews/$versionId/desktop.png'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/guide'
     | '/llms.txt'
+    | '/marketplace.json'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -260,18 +345,26 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-desktop'
+    | '/guide/status-lines-vs-mods'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin'
+    | '/mods'
     | '/api/auth/$'
+    | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
+    | '/admin/mod-previews/$versionId/desktop.png'
   id:
     | '__root__'
     | '/'
     | '/guide'
     | '/llms.txt'
+    | '/marketplace.json'
     | '/me'
     | '/resources'
     | '/robots.txt'
@@ -284,19 +377,27 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/c/$slug'
     | '/compare/$pair'
+    | '/guide_/are-claude-code-mods-safe'
     | '/guide_/claude-desktop'
+    | '/guide_/status-lines-vs-mods'
+    | '/mods/$slug'
     | '/og/home.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
+    | '/mods/'
     | '/api/auth/$'
+    | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
+    | '/og/mods/{$slug}.png'
+    | '/admin/mod-previews/$versionId/desktop.png'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GuideRoute: typeof GuideRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
+  MarketplaceDotjsonRoute: typeof MarketplaceDotjsonRoute
   MeRoute: typeof MeRoute
   ResourcesRoute: typeof ResourcesRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -309,13 +410,20 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   CSlugRoute: typeof CSlugRoute
   ComparePairRoute: typeof ComparePairRoute
+  GuideAreClaudeCodeModsSafeRoute: typeof GuideAreClaudeCodeModsSafeRoute
   GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
+  GuideStatusLinesVsModsRoute: typeof GuideStatusLinesVsModsRoute
+  ModsSlugRoute: typeof ModsSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   StatusLinesBestRoute: typeof StatusLinesBestRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ModsIndexRoute: typeof ModsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
+  OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
+  AdminModPreviewsVersionIdDesktopDotpngRoute: typeof AdminModPreviewsVersionIdDesktopDotpngRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -339,6 +447,13 @@ declare module '@tanstack/react-router' {
       path: '/llms.txt'
       fullPath: '/llms.txt'
       preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketplace.json': {
+      id: '/marketplace.json'
+      path: '/marketplace.json'
+      fullPath: '/marketplace.json'
+      preLoaderRoute: typeof MarketplaceDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/me': {
@@ -432,11 +547,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComparePairRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide_/are-claude-code-mods-safe': {
+      id: '/guide_/are-claude-code-mods-safe'
+      path: '/guide/are-claude-code-mods-safe'
+      fullPath: '/guide/are-claude-code-mods-safe'
+      preLoaderRoute: typeof GuideAreClaudeCodeModsSafeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guide_/claude-desktop': {
       id: '/guide_/claude-desktop'
       path: '/guide/claude-desktop'
       fullPath: '/guide/claude-desktop'
       preLoaderRoute: typeof GuideClaudeDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guide_/status-lines-vs-mods': {
+      id: '/guide_/status-lines-vs-mods'
+      path: '/guide/status-lines-vs-mods'
+      fullPath: '/guide/status-lines-vs-mods'
+      preLoaderRoute: typeof GuideStatusLinesVsModsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mods/': {
+      id: '/mods/'
+      path: '/mods'
+      fullPath: '/mods/'
+      preLoaderRoute: typeof ModsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mods/$slug': {
+      id: '/mods/$slug'
+      path: '/mods/$slug'
+      fullPath: '/mods/$slug'
+      preLoaderRoute: typeof ModsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/og/home.png': {
@@ -467,11 +610,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mod-previews/$versionId/desktop.png': {
+      id: '/mod-previews/$versionId/desktop.png'
+      path: '/mod-previews/$versionId/desktop.png'
+      fullPath: '/mod-previews/$versionId/desktop.png'
+      preLoaderRoute: typeof ModPreviewsVersionIdDesktopDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/og/c/{$slug}.png': {
       id: '/og/c/{$slug}.png'
       path: '/og/c/{$slug}.png'
       fullPath: '/og/c/{$slug}.png'
       preLoaderRoute: typeof OgCChar123slugChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/og/mods/{$slug}.png': {
+      id: '/og/mods/{$slug}.png'
+      path: '/og/mods/{$slug}.png'
+      fullPath: '/og/mods/{$slug}.png'
+      preLoaderRoute: typeof OgModsChar123slugChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/mod-previews/$versionId/desktop.png': {
+      id: '/admin/mod-previews/$versionId/desktop.png'
+      path: '/admin/mod-previews/$versionId/desktop.png'
+      fullPath: '/admin/mod-previews/$versionId/desktop.png'
+      preLoaderRoute: typeof AdminModPreviewsVersionIdDesktopDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -481,6 +645,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GuideRoute: GuideRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
+  MarketplaceDotjsonRoute: MarketplaceDotjsonRoute,
   MeRoute: MeRoute,
   ResourcesRoute: ResourcesRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
@@ -493,13 +658,22 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   CSlugRoute: CSlugRoute,
   ComparePairRoute: ComparePairRoute,
+  GuideAreClaudeCodeModsSafeRoute: GuideAreClaudeCodeModsSafeRoute,
   GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
+  GuideStatusLinesVsModsRoute: GuideStatusLinesVsModsRoute,
+  ModsSlugRoute: ModsSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
   StatusLinesBestRoute: StatusLinesBestRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ModsIndexRoute: ModsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ModPreviewsVersionIdDesktopDotpngRoute:
+    ModPreviewsVersionIdDesktopDotpngRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
+  OgModsChar123slugChar125DotpngRoute: OgModsChar123slugChar125DotpngRoute,
+  AdminModPreviewsVersionIdDesktopDotpngRoute:
+    AdminModPreviewsVersionIdDesktopDotpngRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

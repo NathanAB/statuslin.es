@@ -2,6 +2,8 @@
 import { createMemoryHistory } from '@tanstack/react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DESKTOP_GUIDE_DESCRIPTION, DESKTOP_GUIDE_TITLE_BASE } from '@/lib/page-title'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
+import type { ModDesktopShot } from '@/mods/desktop-shot'
 import { Route as DesktopGuideRoute } from '@/routes/guide_.claude-desktop'
 import { serverResult } from './server-result'
 
@@ -11,16 +13,31 @@ vi.mock('@/lib/analytics-config', () => ({
 vi.mock('@/lib/auth-functions', () => ({
   getSession: vi.fn().mockResolvedValue(null),
 }))
+const getModDesktopShotFn = vi.hoisted(() => vi.fn())
+vi.mock('@/mods/functions', () => ({ getModDesktopShotFn }))
 
 const { getRouter } = await import('@/router')
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
   process.env.BETTER_AUTH_URL = ORIGINAL
+  getModDesktopShotFn.mockReset()
 })
+
+const SHOT = { src: '/mod-previews/v1/desktop.png?v=1', width: 800, height: 500 }
+
+async function loadStatuslineAnywhere(state: ModDesktopShot) {
+  getModDesktopShotFn.mockResolvedValue(state)
+  const loader = DesktopGuideRoute.options.loader as (ctx: unknown) => Promise<{
+    statuslineAnywhere: unknown
+  }>
+  const data = await loader({})
+  return data.statuslineAnywhere
+}
 
 describe('/guide/claude-desktop page', () => {
   it('loads through the real router as its own page', async () => {
+    getModDesktopShotFn.mockResolvedValue({ kind: 'unpublished' })
     const router = getRouter()
     router.update({
       history: createMemoryHistory({ initialEntries: ['/guide/claude-desktop'] }),
@@ -30,6 +47,19 @@ describe('/guide/claude-desktop page', () => {
 
     expect(serverResult(router)).toMatchObject({ type: 'render', status: 200 })
     expect(router.state.matches.at(-1)?.routeId).toBe('/guide_/claude-desktop')
+  })
+
+  it('loads whether statusline-anywhere is published, and its Desktop screenshot', async () => {
+    for (const state of [
+      { kind: 'shot', shot: SHOT },
+      { kind: 'no-shot' },
+      { kind: 'unpublished' },
+    ] as const) {
+      expect(await loadStatuslineAnywhere(state)).toEqual(state)
+    }
+    expect(getModDesktopShotFn).toHaveBeenCalledWith({
+      data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG },
+    })
   })
 
   it('emits unique title, description, canonical, and social meta', async () => {

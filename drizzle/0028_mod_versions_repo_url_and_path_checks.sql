@@ -1,0 +1,3 @@
+ALTER TABLE "mod_versions" DROP CONSTRAINT "mod_versions_repo_url_check";--> statement-breakpoint
+ALTER TABLE "mod_versions" ADD CONSTRAINT "mod_versions_path_check" CHECK ("mod_versions"."path" ~ '^([A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*)?$' AND "mod_versions"."path" !~ '(^|/)\.{1,2}(/|$)');--> statement-breakpoint
+ALTER TABLE "mod_versions" ADD CONSTRAINT "mod_versions_repo_url_check" CHECK ("mod_versions"."repo_url" ~ '^https://github\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+$' AND "mod_versions"."repo_url" !~* '(\.git|/\.{1,2})$');

@@ -22,44 +22,65 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/ui' },
       to: {
-        path: '^src/(routes|gallery|submit|review|render|adopt|votes|content|guide|resources|compare)',
+        path: '^src/(routes|gallery|submit|review|render|adopt|votes|mods|content|guide|resources|compare)',
         dependencyTypesNot: ['type-only'],
       },
     },
     {
       name: 'gallery-no-cross-feature',
-      comment: 'src/gallery may not import from other feature directories.',
+      comment:
+        'src/gallery may not import from other feature directories. src/mods builds on the gallery, never the reverse.',
       severity: 'error',
       from: { path: '^src/gallery/' },
-      to: { path: '^src/(submit|review|adopt|votes)/' },
+      to: { path: '^src/(submit|review|adopt|votes|mods)/' },
     },
     {
       name: 'submit-no-cross-feature',
       comment: 'src/submit may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/submit/' },
-      to: { path: '^src/(gallery|review|adopt|votes)/' },
+      to: { path: '^src/(gallery|review|adopt|votes|mods)/' },
     },
     {
       name: 'review-no-cross-feature',
-      comment: 'src/review may not import from other feature directories.',
+      comment:
+        'src/review may not import from other feature directories, except the mod code that approving and showing a mod needs: its publish guards, the folder and name a listing takes, queries and GitHub client (ADR 0007).',
       severity: 'error',
       from: { path: '^src/review/' },
-      to: { path: '^src/(gallery|submit|adopt|votes)/' },
+      to: {
+        path: '^src/(gallery|submit|adopt|votes|mods)/',
+        pathNot: '^src/mods/(publish|listing|queries|github)\\.ts$',
+      },
     },
     {
       name: 'adopt-no-cross-feature',
       comment: 'src/adopt may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/adopt/' },
-      to: { path: '^src/(gallery|submit|review|votes)/' },
+      to: { path: '^src/(gallery|submit|review|votes|mods)/' },
     },
     {
       name: 'votes-no-cross-feature',
       comment: 'src/votes may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/votes/' },
-      to: { path: '^src/(gallery|submit|review|adopt)/' },
+      to: { path: '^src/(gallery|submit|review|adopt|mods)/' },
+    },
+    {
+      name: 'submissions-no-feature-imports',
+      comment:
+        'src/submissions records review state for every kind, so status lines and mods can both use it. It may import only src/db and src/lib.',
+      severity: 'error',
+      from: { path: '^src/submissions/' },
+      to: { path: '^src/', pathNot: '^src/(db|lib|submissions)/' },
+    },
+    {
+      name: 'mods-no-cross-feature',
+      comment:
+        'src/mods may import the shared listing code in src/gallery, but no other feature directory.',
+      severity: 'error',
+      from: { path: '^src/mods/' },
+      to: { path: '^src/(submit|review|adopt|votes)/' },
     },
   ],
   options: {

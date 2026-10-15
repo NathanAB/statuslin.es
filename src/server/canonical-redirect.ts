@@ -1,5 +1,5 @@
 import { createMiddleware } from '@tanstack/react-start'
-import { DESKTOP_GUIDE_PATH } from '@/lib/page-title'
+import { GUIDE_PATH, GUIDE_SUBPAGES } from '@/lib/page-title'
 
 type CanonicalPathRule = (pathname: string) => string | null
 
@@ -8,9 +8,11 @@ function withoutTrailingSlash(pathname: string): string | null {
   return pathname.replace(/\/+$/, '') || '/'
 }
 
+const LIVE_GUIDE_SUBPAGES = new Set(GUIDE_SUBPAGES.map((page) => page.path))
+
 function removedGuideSubpage(pathname: string): string | null {
-  if (pathname.replace(/\/+$/, '') === DESKTOP_GUIDE_PATH) return null
-  return pathname.startsWith('/guide/') ? '/guide' : null
+  if (LIVE_GUIDE_SUBPAGES.has(pathname.replace(/\/+$/, ''))) return null
+  return pathname.startsWith(`${GUIDE_PATH}/`) ? GUIDE_PATH : null
 }
 
 const CANONICAL_PATH_RULES: CanonicalPathRule[] = [removedGuideSubpage, withoutTrailingSlash]

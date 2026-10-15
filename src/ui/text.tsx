@@ -51,15 +51,13 @@ export function Heading({
 /**
  * Every piece of non-heading text goes through here, so size, color, and font live in
  * one place. `size` is a closed scale; `muted` dims the color; `mono` is for code/data
- * values (slugs, hashes); `inline` renders a span instead of a paragraph; `measure`
- * caps the line length for readable paragraphs.
+ * values (slugs, hashes); and `inline` renders a span instead of a paragraph.
  */
 export function Text({
   muted = false,
   size = 'base',
   mono = false,
   inline = false,
-  measure = false,
   center = false,
   breakLong = false,
   children,
@@ -68,7 +66,6 @@ export function Text({
   size?: 'base' | 'sm' | 'xs'
   mono?: boolean
   inline?: boolean
-  measure?: boolean
   children: React.ReactNode
   center?: boolean
   // Break long unbreakable tokens (e.g. URLs) so the text can shrink inside a flex
@@ -81,7 +78,6 @@ export function Text({
     size === 'sm' && 'text-sm',
     size === 'xs' && 'text-xs',
     mono && 'font-mono',
-    measure && 'max-w-2xl',
     center && 'self-center text-center',
     breakLong && 'wrap-anywhere min-w-0',
   )

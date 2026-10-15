@@ -5,20 +5,17 @@
 #
 # KEEP IN SYNC with fly.staging.toml by hand — Fly can't include one file from another.
 # [build], [processes], [http_service] internal_port/force_https, and [deploy] must match.
-# What differs on purpose: prod sizes web and worker separately (web scaled up for a launch
-# spike, worker left small) and keeps web warm; staging runs one small [[vm]] for both and
-# scales web to zero.
+# What differs on purpose: prod sizes web up (for a launch spike) and keeps it warm; staging runs
+# one small [[vm]] and scales web to zero.
 app = "statuslines"
 primary_region = "iad"
 
 [build]
 
-# Two process groups off one image: the public web server, and the always-on render worker.
-# The worker is woken on submit via a 6PN wake ping (no public port); it drains the render_jobs
-# queue through E2B, with a periodic safety drain as a fallback. It no longer polls the DB.
+# One process group: the public web server. It also renders submitted status lines in the
+# background through E2B, on submit and at startup (ADR 0006); there is no separate worker.
 [processes]
   web = "bun run .output/server/index.mjs"
-  worker = "bun run scripts/worker.ts"
 
 [http_service]
   # Must match the app's PORT/EXPOSE in the Dockerfile (the listen port).
@@ -46,10 +43,3 @@ primary_region = "iad"
   processes = ["web"]
   size = "shared-cpu-2x"
   memory = "2gb"
-
-# The render worker just orchestrates E2B sandboxes (the heavy lifting runs in E2B, not here)
-# and submissions are rate-limited, so it stays at the small, already-proven size.
-[[vm]]
-  processes = ["worker"]
-  size = "shared-cpu-1x"
-  memory = "512mb"

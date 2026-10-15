@@ -1,0 +1,35 @@
+import { createServerFn } from '@tanstack/react-start'
+import { db } from '@/db'
+import { type BrowserCopyTracking, requestCopyIdentity } from '@/lib/copy-identity.server'
+import { withHttpStatus } from '@/lib/http.server'
+import { getPostHogClient } from '@/lib/posthog-server'
+import { getModDesktopShot } from './desktop-shot'
+import { type InstallCommandKind, modCopyEvent } from './install'
+import { getModDetail, recordModCopy } from './queries'
+import { getModRelated } from './related'
+
+export const getModDetailFn = createServerFn({ method: 'GET' })
+  .inputValidator((d: { slug: string }) => d)
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      const mod = await getModDetail(db, data.slug)
+      return mod && { ...mod, related: await getModRelated(db, mod) }
+    }),
+  )
+
+/** Only what a guide needs to link a mod: whether it is published, and its Desktop shot. */
+export const getModDesktopShotFn = createServerFn({ method: 'GET' })
+  .inputValidator((d: { slug: string }) => d)
+  .handler(({ data }) => withHttpStatus(() => getModDesktopShot(db, data.slug)))
+
+/** Anonymous on purpose, like config copies: anyone can copy an install command. */
+export const recordModCopyFn = createServerFn({ method: 'POST' })
+  .inputValidator((d: { modId: string; kind: InstallCommandKind } & BrowserCopyTracking) => d)
+  .handler(({ data }) =>
+    withHttpStatus(async () => {
+      const { ipHash, ...tracking } = await requestCopyIdentity(data)
+      const event = modCopyEvent({ kind: data.kind, modId: data.modId, ...tracking })
+      if (event) getPostHogClient()?.capture(event)
+      return recordModCopy(db, data.modId, ipHash)
+    }),
+  )

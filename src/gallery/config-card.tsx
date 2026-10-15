@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { ConfigBadges } from '@/gallery/config-badges'
 import type { GalleryCard, GallerySort } from '@/gallery/queries'
 import { AuthorChip } from '@/ui/author-chip'
+import { Badge } from '@/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { CopyCount } from '@/ui/copy-count'
 import { Row, Stack } from '@/ui/layout'
@@ -32,7 +33,7 @@ export function GalleryConfigCard({
     <Card interactive>
       <CardHeader>
         <Row gap={2} align="start" justify="between">
-          <Row gap={2}>
+          <Row gap={2} wrap>
             <CardTitle>
               <StretchedLink
                 to="/c/$slug"
@@ -54,6 +55,7 @@ export function GalleryConfigCard({
                 {card.title}
               </StretchedLink>
             </CardTitle>
+            <Badge variant="outline">Status line</Badge>
             <CopyCount count={card.copyCount} />
           </Row>
           <ConfigBadges tags={card.tags} networkHosts={card.networkHosts} align="end" />

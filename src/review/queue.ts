@@ -3,12 +3,13 @@ import { getRequestHeaders } from '@tanstack/react-start/server'
 import { and, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs, user } from '@/db/schema'
+import { configs, configVersions, renderJobs, submissions, user } from '@/db/schema'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPreviews } from '@/render/store'
 import type { RenderedPreview } from '@/render/types'
 import { assertAdmin } from './admin'
 import { getLiveVersions, type LiveVersion } from './live-version'
+import { getModReviewRows } from './mod-queue'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -62,6 +63,7 @@ const RENDER_STATUS_ORDER = sql`case ${renderJobs.status}
 export type RawRow = {
   config: typeof configs.$inferSelect
   version: typeof configVersions.$inferSelect
+  submission: typeof submissions.$inferSelect
   job: Pick<
     typeof renderJobs.$inferSelect,
     'status' | 'attempts' | 'error' | 'createdAt' | 'finishedAt'
@@ -83,15 +85,15 @@ export async function mapRow(
     interpreter: r.version.interpreter,
     source: r.version.source,
     contentSha256: r.version.contentSha256,
-    status: r.version.status,
+    status: r.submission.status,
     createdAt: r.version.createdAt,
     networkHosts: r.version.networkHosts ?? [],
     readsClaudeToken: r.version.readsClaudeToken ?? false,
-    rejectionReason: r.version.rejectionReason,
+    rejectionReason: r.submission.rejectionReason,
   }
   if (includeDeliveryState) {
-    version.rejectionEmailStatus = r.version.rejectionEmailStatus
-    version.approvalEmailStatus = r.version.approvalEmailStatus
+    version.rejectionEmailStatus = r.submission.rejectionEmailStatus
+    version.approvalEmailStatus = r.submission.approvalEmailStatus
   }
   return {
     config: {
@@ -124,25 +126,39 @@ export async function mapRow(
 
 export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
   const pendingRows = await database
-    .select({ config: configs, version: configVersions, job: renderJobs, author: user })
+    .select({
+      config: configs,
+      version: configVersions,
+      submission: submissions,
+      job: renderJobs,
+      author: user,
+    })
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .innerJoin(configs, eq(configs.id, configVersions.configId))
     .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
     .leftJoin(user, eq(user.id, configs.authorId))
-    .where(eq(configVersions.status, 'pending'))
+    .where(eq(submissions.status, 'pending'))
     .orderBy(RENDER_STATUS_ORDER, desc(configVersions.createdAt))
     .limit(50)
   const contactRows = await database
-    .select({ config: configs, version: configVersions, job: renderJobs, author: user })
+    .select({
+      config: configs,
+      version: configVersions,
+      submission: submissions,
+      job: renderJobs,
+      author: user,
+    })
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .innerJoin(configs, eq(configs.id, configVersions.configId))
     .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
     .leftJoin(user, eq(user.id, configs.authorId))
     .where(
       or(
         and(
-          eq(configVersions.status, 'rejected'),
-          inArray(configVersions.rejectionEmailStatus, [
+          eq(submissions.status, 'rejected'),
+          inArray(submissions.rejectionEmailStatus, [
             'pending',
             'sending',
             'failed',
@@ -151,8 +167,8 @@ export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
           ]),
         ),
         and(
-          eq(configVersions.status, 'approved'),
-          inArray(configVersions.approvalEmailStatus, [
+          eq(submissions.status, 'approved'),
+          inArray(submissions.approvalEmailStatus, [
             'pending',
             'sending',
             'failed',
@@ -187,7 +203,7 @@ export async function getDashboardRows(database: Db): Promise<DashboardRow[]> {
 /** An update is a pending version of a config whose live version is another version. */
 function liveVersionIdOf(r: RawRow): string | undefined {
   const liveId = r.config.currentVersionId
-  return r.version.status === 'pending' && liveId !== null && liveId !== r.version.id
+  return r.submission.status === 'pending' && liveId !== null && liveId !== r.version.id
     ? liveId
     : undefined
 }
@@ -203,13 +219,13 @@ export interface DashboardUser {
 export const getAdminDashboard = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(async () => {
     const admin = await assertAdmin(getRequestHeaders())
-    const rows = await getDashboardRows(db)
+    const [rows, mods] = await Promise.all([getDashboardRows(db), getModReviewRows(db)])
     const user: DashboardUser = {
       name: admin.name,
       username: admin.username,
       image: admin.image,
       role: admin.role,
     }
-    return { user, rows }
+    return { user, rows, mods }
   }),
 )

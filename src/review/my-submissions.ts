@@ -1,9 +1,17 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
-import { desc, eq, inArray } from 'drizzle-orm'
-import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { and, desc, eq, inArray } from 'drizzle-orm'
+import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs, user } from '@/db/schema'
+import {
+  configs,
+  configVersions,
+  mods,
+  modVersions,
+  renderJobs,
+  submissions,
+  user,
+} from '@/db/schema'
 import { auth } from '@/lib/auth'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
@@ -26,6 +34,7 @@ export type MySubmissionRow = DashboardRow & { update: UpdateSummary | null }
 const joinedRow = {
   config: configs,
   version: configVersions,
+  submission: submissions,
   job: renderJobs,
   author: user,
 }
@@ -39,6 +48,7 @@ export async function getMySubmissionRows(
   const latestRows = await database
     .selectDistinctOn([configVersions.configId], joinedRow)
     .from(configVersions)
+    .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .innerJoin(configs, eq(configs.id, configVersions.configId))
     .innerJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
     .leftJoin(user, eq(user.id, configs.authorId))
@@ -57,6 +67,7 @@ export async function getMySubmissionRows(
       ? await database
           .select(joinedRow)
           .from(configVersions)
+          .innerJoin(submissions, eq(submissions.configVersionId, configVersions.id))
           .innerJoin(configs, eq(configs.id, configVersions.configId))
           // Left join: legacy or seeded live versions may have no render_jobs row.
           .leftJoin(renderJobs, eq(renderJobs.configVersionId, configVersions.id))
@@ -88,14 +99,55 @@ export async function getMySubmissionRows(
       liveRow && latest.version.versionNumber > liveRow.version.versionNumber
         ? {
             versionNumber: latest.version.versionNumber,
-            status: latest.version.status,
+            status: latest.submission.status,
             renderStatus: latest.job.status,
-            rejectionReason: latest.version.rejectionReason,
+            rejectionReason: latest.submission.rejectionReason,
           }
         : null
     out.push({ ...(await mapRow(database, liveRow ?? latest, false)), update })
   }
   return out
+}
+
+/** One of the user's submitted mods, by its newest version's review, for /me. */
+export interface MyModRow {
+  mod: { id: string; slug: string; title: string; status: string }
+  latest: {
+    versionNumber: number
+    status: string
+    rejectionReason: string | null
+  }
+  /** The live version's number, once published. */
+  liveVersionNumber: number | null
+}
+
+/** Every mod `userId` submitted, newest first. Only its submitter sends a mod's versions. */
+export async function getMyModRows(database: Db, userId: string): Promise<MyModRow[]> {
+  const live = alias(modVersions, 'live')
+  const rows = await database
+    .selectDistinctOn([mods.id], {
+      mod: {
+        id: mods.id,
+        slug: mods.slug,
+        title: mods.title,
+        status: mods.status,
+        createdAt: mods.createdAt,
+      },
+      latest: {
+        versionNumber: modVersions.versionNumber,
+        status: submissions.status,
+        rejectionReason: submissions.rejectionReason,
+      },
+      liveVersionNumber: live.versionNumber,
+    })
+    .from(submissions)
+    .innerJoin(modVersions, eq(modVersions.id, submissions.modVersionId))
+    .innerJoin(mods, eq(mods.id, modVersions.modId))
+    .leftJoin(live, and(eq(live.id, mods.currentVersionId), eq(mods.status, 'published')))
+    .where(eq(submissions.submittedBy, userId))
+    .orderBy(mods.id, desc(modVersions.versionNumber))
+  rows.sort((a, b) => b.mod.createdAt.getTime() - a.mod.createdAt.getTime())
+  return rows.map(({ mod: { createdAt: _createdAt, ...mod }, ...row }) => ({ ...row, mod }))
 }
 
 export const getMySubmissions = createServerFn({ method: 'GET' }).handler(() =>
@@ -109,13 +161,13 @@ export const getMySubmissions = createServerFn({ method: 'GET' }).handler(() =>
       image?: string | null
       role?: string | null
     }
-    const rows = await getMySubmissionRows(db, u.id)
+    const [rows, mods] = await Promise.all([getMySubmissionRows(db, u.id), getMyModRows(db, u.id)])
     const user: DashboardUser = {
       name: u.name,
       username: u.username ?? null,
       image: u.image ?? null,
       role: u.role ?? null,
     }
-    return { user, rows }
+    return { user, rows, mods }
   }),
 )

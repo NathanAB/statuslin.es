@@ -6,11 +6,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { runCommand } from '@/adopt/install'
 import { listPublishedSlugsMissingContent } from '@/content/generation-workflow'
 import * as schema from '@/db/schema'
+import { getPublishedConfigs } from '@/gallery/config-items'
 import { getFacetPage, llmsTxtResponseForRoute } from '@/gallery/functions'
 import {
   getCardsByCopies,
   getConfigBySlug,
-  getPublishedConfigs,
   getPublishedSlugsForSitemap,
   getRelatedConfigs,
 } from '@/gallery/queries'
@@ -27,6 +27,7 @@ import { getDashboardRows } from '@/review/queue'
 import { type SubmitInput, submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
 import { removeConfig } from '../../scripts/remove-config'
+import { selectVersionsWithReview } from '../fixtures/submission'
 
 const configCard = vi.hoisted(() => vi.fn(() => null))
 vi.mock('@/og/card', () => ({ configCard, homeCard: vi.fn(() => null) }))
@@ -121,7 +122,7 @@ async function submitUpdate(slug: string, input: SubmitInput = update) {
 const configRow = async (configId: string) =>
   (await db.select().from(schema.configs).where(eq(schema.configs.id, configId)))[0]
 const versionRow = async (versionId: string) =>
-  (await db.select().from(schema.configVersions).where(eq(schema.configVersions.id, versionId)))[0]
+  (await selectVersionsWithReview(db).where(eq(schema.configVersions.id, versionId)))[0]
 
 describe('approving an update', () => {
   it('switches every public read to the new version at the same slug', async () => {
@@ -159,11 +160,27 @@ describe('approving an update', () => {
     expect(llms).toContain(update.description)
     expect(llms).not.toContain(live.title)
     const pythonFacet = await getFacetPage({ data: { facet: 'python' } })
-    expect(pythonFacet?.cards.find((card) => card.slug === v1.slug)).toMatchObject({
+    expect(
+      pythonFacet?.configs.items.map(({ item }) => item.card).find((card) => card.slug === v1.slug),
+    ).toMatchObject({
       title: update.title,
     })
     const bashFacet = await getFacetPage({ data: { facet: 'bash' } })
-    expect(bashFacet?.cards.map((card) => card.slug)).not.toContain(v1.slug)
+    expect(bashFacet?.configs.items.map(({ item }) => item.card.slug)).not.toContain(v1.slug)
+  })
+
+  it('refuses a rendered update that a newer one replaced, leaving the live version live', async () => {
+    const v1 = await publish()
+    const v2 = await submitUpdate(v1.slug)
+    await submitUpdate(v1.slug, { ...update, title: 'Newer line' })
+
+    await expect(approveVersion(db, v2.versionId, 'admin')).rejects.toMatchObject({ status: 409 })
+
+    const [config] = await db
+      .select({ currentVersionId: schema.configs.currentVersionId })
+      .from(schema.configs)
+      .where(eq(schema.configs.id, v1.configId))
+    expect(config?.currentVersionId).toBe(v1.versionId)
   })
 
   it('keeps the config in place in the new sort', async () => {
@@ -218,7 +235,14 @@ describe('approving an update', () => {
     const firstLive = (await configRow(v1.configId))?.currentVersionId
     await db
       .update(schema.configVersions)
-      .set({ generatedContent: { schemaVersion: 1 } as never })
+      .set({
+        generatedContent: {
+          summary: 'A status line.',
+          howItWorks: [],
+          goodToKnow: [],
+          details: {},
+        },
+      })
       .where(eq(schema.configVersions.id, firstLive!))
     expect(await listPublishedSlugsMissingContent(db)).not.toContain(v1.slug)
     const v2 = await submitUpdate(v1.slug)
@@ -237,7 +261,11 @@ describe('approving an update', () => {
       delivery: 'sent',
     })
     expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'update', title: update.title, slug: v1.slug }),
+      expect.objectContaining({
+        kind: 'update',
+        title: update.title,
+        pagePath: `/c/${v1.slug}`,
+      }),
     )
   })
 
@@ -269,7 +297,7 @@ describe('rejecting an update', () => {
         kind: 'update',
         title: live.title,
         reason: 'Breaks on macOS',
-        slug: v1.slug,
+        nextStepPath: `/submit?update=${v1.slug}`,
       }),
     )
     expect(await getConfigBySlug(db, v1.slug)).toMatchObject({

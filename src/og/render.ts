@@ -2,9 +2,10 @@ import { Resvg } from '@resvg/resvg-js'
 import type { ReactElement } from 'react'
 import satori from 'satori'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
-import { loadEmojiAsset, loadOgFonts } from '@/og/font'
+import { createEmojiLoader, loadOgFonts } from '@/og/font'
 
-/** The satori options every card renders with: its size, the embedded fonts, and emoji. */
+/** The satori options every card renders with: its size, the embedded fonts, and emoji. Call it
+ * once per render: each call gets its own emoji loader, so the per-render fetch cap holds. */
 export function cardSatoriOptions(opts: { width?: number; height?: number } = {}) {
   return {
     width: opts.width ?? CARD_WIDTH,
@@ -12,7 +13,7 @@ export function cardSatoriOptions(opts: { width?: number; height?: number } = {}
     fonts: loadOgFonts(),
     // satori's published types omit null from loadAdditionalAsset's return type, but the runtime
     // and README both document null as the documented "no asset / skip" value.
-    loadAdditionalAsset: loadEmojiAsset as (code: string, segment: string) => Promise<string>,
+    loadAdditionalAsset: createEmojiLoader() as (code: string, segment: string) => Promise<string>,
   }
 }
 

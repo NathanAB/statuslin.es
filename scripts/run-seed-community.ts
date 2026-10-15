@@ -3,6 +3,10 @@ import { db } from '@/db'
 import { publishRenderedSeeds, releaseHeldSeeds, seedCommunity } from './seed-community'
 import { COMMUNITY_CONFIGS } from './seed-data/community-configs'
 
+// This process can't start the web server's in-process drain (ADR 0006), so say what does.
+const RENDER_HINT =
+  "queued jobs render at the web server's next drain: a submission, an admin action or a machine start (locally, restart `bun run dev`)"
+
 const mode = process.argv[2] ?? 'seed'
 if (mode === 'seed') {
   const outcomes = await seedCommunity(db, COMMUNITY_CONFIGS)
@@ -10,8 +14,10 @@ if (mode === 'seed') {
     console.log(
       `[${o.status}] ${o.login} — ${o.title}${o.slug ? ` → /${o.slug}` : ''}${o.reason ? ` (${o.reason})` : ''}`,
     )
+  console.log(RENDER_HINT)
 } else if (mode === 'release-held') {
   console.log(`released ${await releaseHeldSeeds(db)} held render jobs`)
+  console.log(RENDER_HINT)
 } else if (mode === 'publish-rendered') {
   const { published, skipped } = await publishRenderedSeeds(db)
   console.log(`published ${published}, skipped ${skipped} (render not done)`)

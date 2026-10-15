@@ -42,6 +42,15 @@ describe('static page social metadata', () => {
     )
   })
 
+  it('names /submit?kind=mod for mods', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await SubmitRoute.options.head?.({ loaderData: { kind: 'mod' } } as never)
+
+    expect(head?.meta).toEqual(
+      expect.arrayContaining([{ property: 'og:title', content: 'Submit a mod' }]),
+    )
+  })
+
   it('gives /terms its own share metadata', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await TermsRoute.options.head?.({} as never)

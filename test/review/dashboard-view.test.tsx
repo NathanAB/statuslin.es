@@ -61,6 +61,7 @@ describe('DashboardView', () => {
       <DashboardView
         data={{
           rows: [],
+          mods: [],
           user: { name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' },
         }}
       />,
@@ -85,6 +86,7 @@ describe('DashboardView', () => {
       <DashboardView
         data={{
           rows: [contactNeededRow()],
+          mods: [],
           user: { name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' },
         }}
       />,
@@ -107,6 +109,7 @@ describe('DashboardView', () => {
       <DashboardView
         data={{
           rows: [approved],
+          mods: [],
           user: { name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' },
         }}
       />,

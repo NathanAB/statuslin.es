@@ -1,8 +1,15 @@
-import { and, eq, ne } from 'drizzle-orm'
+import { and, desc, eq, ne } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions } from '@/db/schema'
+import { configs, configVersions, user } from '@/db/schema'
 import type { AnsiSegment, Interpreter } from '@/render/types'
-import { coerceInterpreter, selectCardPreviews } from './queries'
+import { galleryCardSelection, mapCardRows } from './card-rows'
+import {
+  coerceInterpreter,
+  type GalleryCard,
+  hasAnyTag,
+  selectCardPreviews,
+  sharedTagCount,
+} from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -64,4 +71,33 @@ export async function getRelatedConfigs(
     copyCount: r.config.copyCount,
     preview: cardPreviews.get(r.version.contentSha256) ?? null,
   }))
+}
+
+/**
+ * Up to `limit` published status lines carrying any of `tags`: most shared tags first, then the
+ * most copied, then the newest. For a mod page, since src/gallery cannot query mods.
+ */
+export async function getConfigsSharingTags(
+  db: Db,
+  tags: string[],
+  limit: number,
+): Promise<GalleryCard[]> {
+  if (tags.length === 0) return []
+  const rows = await db
+    .select(galleryCardSelection)
+    .from(configs)
+    .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
+    .leftJoin(user, eq(user.id, configs.authorId))
+    .where(and(eq(configs.status, 'published'), hasAnyTag(configs.allTags, tags)))
+    .orderBy(
+      desc(sharedTagCount(configs.allTags, tags)),
+      desc(configs.copyCount),
+      desc(configs.createdAt),
+    )
+    .limit(limit)
+  const cardPreviews = await selectCardPreviews(
+    db,
+    rows.map((row) => row.version.contentSha256),
+  )
+  return mapCardRows(rows, cardPreviews)
 }

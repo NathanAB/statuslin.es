@@ -26,6 +26,25 @@ describe('canonicalRedirect', () => {
     expect(canonicalRedirect('https://statuslin.es/guide/claude-desktop/x')).toBe('/guide')
   })
 
+  it('serves the status lines vs mods guide instead of redirecting it', () => {
+    expect(canonicalRedirect('https://statuslin.es/guide/status-lines-vs-mods')).toBe(null)
+    expect(canonicalRedirect('https://statuslin.es/guide/status-lines-vs-mods/')).toBe(
+      '/guide/status-lines-vs-mods',
+    )
+    expect(canonicalRedirect('https://statuslin.es/guide/status-lines-vs-mods/x')).toBe('/guide')
+    expect(canonicalRedirect('https://statuslin.es/guide/mods')).toBe('/guide')
+  })
+
+  it('serves the mod safety guide instead of redirecting it', () => {
+    expect(canonicalRedirect('https://statuslin.es/guide/are-claude-code-mods-safe')).toBe(null)
+    expect(canonicalRedirect('https://statuslin.es/guide/are-claude-code-mods-safe/')).toBe(
+      '/guide/are-claude-code-mods-safe',
+    )
+    expect(canonicalRedirect('https://statuslin.es/guide/are-claude-code-mods-safe/x')).toBe(
+      '/guide',
+    )
+  })
+
   it('leaves the root and canonical paths alone', () => {
     expect(canonicalRedirect('https://statuslin.es/')).toBe(null)
     expect(canonicalRedirect('https://statuslin.es/status-lines/git?x=1')).toBe(null)

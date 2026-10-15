@@ -4,13 +4,8 @@ import { drizzle } from 'drizzle-orm/pglite'
 import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import {
-  coercePage,
-  galleryPageWindow,
-  getPublishedConfigs,
-  getPublishedCount,
-  PAGE_SIZE,
-} from '@/gallery/queries'
+import { getPublishedConfigs } from '@/gallery/config-items'
+import { coercePage, galleryPageWindow, PAGE_SIZE } from '@/gallery/queries'
 
 describe('coercePage', () => {
   it('passes through positive integers (as string or number)', () => {
@@ -107,10 +102,6 @@ describe('getPublishedConfigs pagination', () => {
       authorId: 'u1',
       status: 'draft',
     })
-  })
-
-  it('counts only published configs', async () => {
-    expect(await getPublishedCount(db)).toBe(PAGE_SIZE + 1)
   })
 
   it('returns a full page of newest-first cards on page 1', async () => {

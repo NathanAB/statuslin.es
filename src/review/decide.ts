@@ -1,16 +1,18 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
-import { configs, configVersions, renderJobs } from '@/db/schema'
+import { configs, configVersions, mods, modVersions, renderJobs, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
-import { pingWorkerWake, workerWakeUrl } from '@/lib/wake'
+import { isCutOff, rerenderStatus, STALE_RUNNING_JOB_MS } from '@/render/job-state'
+import { triggerRenderDrain } from '@/server/render-drain'
+import { updateReviewState } from '@/submissions/review-state'
 import { assertAdmin } from './admin'
 import { approveAndEmailVersion, retryApprovalEmail } from './approval-delivery'
-import { decisionEvent, type VersionConfig } from './decision-event'
+import { decisionEvent, type ReviewedItem } from './decision-event'
 import { rejectAndEmailVersion, retryRejectionEmail } from './rejection-delivery'
 
 export {
@@ -41,37 +43,82 @@ export async function setReadsClaudeToken(
   value: boolean,
   reviewerId: string,
 ): Promise<void> {
-  const [row] = await database
-    .update(configVersions)
-    .set({ readsClaudeToken: value, reviewedBy: reviewerId, reviewedAt: new Date() })
-    .where(eq(configVersions.id, versionId))
-    .returning()
-  if (!row) throw new HttpError(404, 'version not found')
+  await database.transaction(async (tx) => {
+    const [row] = await tx
+      .update(configVersions)
+      .set({ readsClaudeToken: value })
+      .where(eq(configVersions.id, versionId))
+      .returning({ id: configVersions.id })
+    if (!row) throw new HttpError(404, 'version not found')
+    const [reviewed] = await updateReviewState(
+      tx,
+      { reviewedBy: reviewerId, reviewedAt: new Date() },
+      (t) => and(eq(t.id, versionId), eq(t.status, 'pending')),
+    )
+    if (!reviewed) throw new HttpError(409, 'version not in a reviewable (pending) state')
+  })
 }
 
-/** The config a version belongs to, to label its review decision event. */
-export async function findVersionConfig(
+/** The config or mod a version belongs to, to label its review decision event. */
+export async function findReviewedItem(
   database: Db,
   versionId: string,
-): Promise<VersionConfig | undefined> {
+): Promise<ReviewedItem | undefined> {
   const [row] = await database
-    .select({ configId: configVersions.configId, slug: configs.slug })
-    .from(configVersions)
-    .innerJoin(configs, eq(configs.id, configVersions.configId))
-    .where(eq(configVersions.id, versionId))
-  return row
+    .select({
+      configId: configVersions.configId,
+      configSlug: configs.slug,
+      modId: modVersions.modId,
+      modSlug: mods.slug,
+    })
+    .from(submissions)
+    .leftJoin(configVersions, eq(configVersions.id, submissions.configVersionId))
+    .leftJoin(configs, eq(configs.id, configVersions.configId))
+    .leftJoin(modVersions, eq(modVersions.id, submissions.modVersionId))
+    .leftJoin(mods, eq(mods.id, modVersions.modId))
+    .where(eq(submissions.id, versionId))
+  if (row?.configId && row.configSlug) {
+    return { kind: 'status_line', configId: row.configId, slug: row.configSlug }
+  }
+  if (row?.modId && row.modSlug) return { kind: 'mod', modId: row.modId, slug: row.modSlug }
+  return undefined
 }
 
-/** Re-attempt a render: reset the version's render job to 'queued'. Only a FAILED job may be
- * re-queued — never a 'held' network job (that's runNetworkPreview's job alone), never a still
- * 'queued'/'running' one, and never a 'done' one (already rendered). Clears error + attempts. */
+/** Re-attempt a render. A FAILED job goes back to 'queued'. A job cut off mid-render (running
+ * longer than STALE_RUNNING_JOB_MS) goes to its `rerenderStatus`, so a network one still waits
+ * for "Run network preview". A job already 'queued' (a stopping machine puts its job back, and
+ * only a submission, an admin action or a machine start drains) is left as it is, for the drain
+ * the caller starts. Never a 'held' network job (that's runNetworkPreview's job alone), a live
+ * 'running' one, or a 'done' one (already rendered). Clears error + attempts. */
 export async function requeueRenderJob(database: Db, versionId: string): Promise<void> {
-  const [job] = await database
+  const reset = { error: null, attempts: 0, finishedAt: null }
+  const forVersion = eq(renderJobs.configVersionId, versionId)
+  const [failed] = await database
     .update(renderJobs)
-    .set({ status: 'queued', error: null, attempts: 0, finishedAt: null })
-    .where(and(eq(renderJobs.configVersionId, versionId), inArray(renderJobs.status, ['failed'])))
-    .returning()
-  if (!job) throw new HttpError(409, 'no re-queueable render job for that version (must be failed)')
+    .set({ ...reset, status: 'queued' })
+    .where(and(forVersion, eq(renderJobs.status, 'failed')))
+    .returning({ id: renderJobs.id })
+  if (failed) return
+  const [queued] = await database
+    .select({ id: renderJobs.id })
+    .from(renderJobs)
+    .where(and(forVersion, eq(renderJobs.status, 'queued')))
+  if (queued) return
+  const [version] = await database
+    .select({ networkHosts: configVersions.networkHosts })
+    .from(configVersions)
+    .where(eq(configVersions.id, versionId))
+  const [cutOff] = await database
+    .update(renderJobs)
+    .set({ ...reset, status: rerenderStatus(version?.networkHosts ?? null) })
+    .where(and(forVersion, isCutOff()))
+    .returning({ id: renderJobs.id })
+  if (!cutOff) {
+    throw new HttpError(
+      409,
+      `no re-queueable render job for that version (must be failed, queued, or running for over ${STALE_RUNNING_JOB_MS / 60_000} minutes)`,
+    )
+  }
 }
 
 /** Admin-gated: run the network preview for a held network version. Promotes the render job
@@ -92,14 +139,14 @@ export const approveVersionFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
       // Read before deciding, so a failed lookup can't 500 a decision that already committed.
-      const config = await findVersionConfig(db, data.versionId)
+      const reviewed = await findReviewedItem(db, data.versionId)
       const result = await approveAndEmailVersion(db, data.versionId, admin.id)
       getPostHogClient()?.capture(
         decisionEvent({
           adminId: admin.id,
           decision: 'approved',
           versionId: data.versionId,
-          config,
+          reviewed,
         }),
       )
       return result
@@ -111,14 +158,14 @@ export const rejectVersionFn = createServerFn({ method: 'POST' })
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
-      const config = await findVersionConfig(db, data.versionId)
+      const reviewed = await findReviewedItem(db, data.versionId)
       const result = await rejectAndEmailVersion(db, data.versionId, admin.id, data.reason ?? '')
       getPostHogClient()?.capture(
         decisionEvent({
           adminId: admin.id,
           decision: 'rejected',
           versionId: data.versionId,
-          config,
+          reviewed,
         }),
       )
       return result
@@ -158,6 +205,7 @@ export const requeueRenderJobFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())
       await requeueRenderJob(db, data.versionId)
+      triggerRenderDrain()
     }),
   )
 
@@ -167,7 +215,6 @@ export const runNetworkPreviewFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())
       await runNetworkPreview(db, data.versionId)
-      // Best-effort: wake the worker so it renders now instead of on the next safety drain.
-      void pingWorkerWake(workerWakeUrl(process.env))
+      triggerRenderDrain()
     }),
   )

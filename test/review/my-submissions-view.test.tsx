@@ -75,7 +75,7 @@ function row(over: {
 }
 
 const html = (r: MySubmissionRow) =>
-  renderToStaticMarkup(<MySubmissionsView rows={[r]} user={USER} />)
+  renderToStaticMarkup(<MySubmissionsView rows={[r]} mods={[]} user={USER} />)
 const UPDATE_LINK = 'href="/submit?update=my-line"'
 
 /** The update link's button variant and visible label, or null when the card has none. */

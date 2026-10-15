@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DESKTOP_GUIDE_DATES } from '@/lib/page-title'
-import { sitemapResponse } from '@/lib/sitemap'
+import {
+  DESKTOP_GUIDE_DATES,
+  MOD_SAFETY_GUIDE_DATES,
+  STATUS_LINES_VS_MODS_GUIDE_DATES,
+} from '@/lib/page-title'
+import { sitemapResponse, withModUrls } from '@/lib/sitemap'
 
 const BASE = 'https://statuslin.es'
 
@@ -41,6 +45,20 @@ describe('sitemapResponse', () => {
     const xml = await sitemapResponse(BASE, [], []).text()
     expect(entryFor(xml, `${BASE}/guide/claude-desktop`)).toContain(
       `<lastmod>${DESKTOP_GUIDE_DATES.modified}</lastmod>`,
+    )
+  })
+
+  it('lists the status lines vs mods guide with its modified date', async () => {
+    const xml = await sitemapResponse(BASE, [], []).text()
+    expect(entryFor(xml, `${BASE}/guide/status-lines-vs-mods`)).toContain(
+      `<lastmod>${STATUS_LINES_VS_MODS_GUIDE_DATES.modified}</lastmod>`,
+    )
+  })
+
+  it('lists the mod safety guide with its modified date', async () => {
+    const xml = await sitemapResponse(BASE, [], []).text()
+    expect(entryFor(xml, `${BASE}/guide/are-claude-code-mods-safe`)).toContain(
+      `<lastmod>${MOD_SAFETY_GUIDE_DATES.modified}</lastmod>`,
     )
   })
 
@@ -114,5 +132,40 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('<loc>https://example.test/status-lines/git</loc>')
     expect(xml).toContain('<lastmod>2026-06-02</lastmod>')
     expect(xml).toContain('<loc>https://example.test/status-lines/bash</loc>')
+  })
+})
+
+describe('withModUrls', () => {
+  it('leaves the sitemap untouched when no mod is published', async () => {
+    const original = await sitemapResponse(BASE, [], []).text()
+
+    expect(await (await withModUrls(sitemapResponse(BASE, [], []), BASE, [])).text()).toBe(original)
+    expect(original).not.toContain(`<loc>${BASE}/mods</loc>`)
+  })
+
+  it('lists the mods page, dated by its newest mod, ahead of the mod pages', async () => {
+    const xml = await (
+      await withModUrls(sitemapResponse(BASE, [], []), BASE, [
+        { slug: 'meter', updatedAt: new Date('2026-09-01T00:00:00Z') },
+        { slug: 'tree', updatedAt: new Date('2026-10-02T00:00:00Z') },
+      ])
+    ).text()
+
+    expect(xml).toContain(
+      `<url>\n    <loc>${BASE}/mods</loc>\n    <lastmod>2026-10-02</lastmod>\n  </url>\n  <url>\n    <loc>${BASE}/mods/meter</loc>`,
+    )
+  })
+
+  it("keeps $' and $` in a mod url literal instead of splicing the sitemap into it", async () => {
+    const base = "https://a$'b.example/c$`d"
+    const xml = await (
+      await withModUrls(sitemapResponse(BASE, [], []), base, [
+        { slug: 'meter', updatedAt: new Date('2026-10-01T00:00:00Z') },
+      ])
+    ).text()
+
+    expect(xml).toContain('<loc>https://a$&apos;b.example/c$`d/mods/meter</loc>')
+    expect(xml.match(/<urlset/g)).toHaveLength(1)
+    expect(xml.endsWith('</urlset>\n')).toBe(true)
   })
 })

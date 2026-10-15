@@ -5,12 +5,8 @@ import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { prepareContentGenerationRequest } from '@/content/generation-workflow'
 import * as schema from '@/db/schema'
-import {
-  getCardsByCopies,
-  getConfigBySlug,
-  getPublishedConfigs,
-  getRelatedConfigs,
-} from '@/gallery/queries'
+import { getPublishedConfigs } from '@/gallery/config-items'
+import { getCardsByCopies, getConfigBySlug, getRelatedConfigs } from '@/gallery/queries'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>

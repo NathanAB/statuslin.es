@@ -5,6 +5,9 @@ import {
   GUIDE_DESCRIPTION,
   GUIDE_TITLE_BASE,
   HOME_TITLE_BASE,
+  MOD_NOT_FOUND_TITLE,
+  modMetaDescription,
+  modPageTitle,
   NOT_FOUND_TITLE,
   RESOURCES_TITLE_BASE,
   resourcesTitle,
@@ -87,6 +90,47 @@ describe('configMetaDescription', () => {
   it('uses the reviewed status line fallback when the description is blank', () => {
     expect(configMetaDescription('   ')).toBe(
       'A reviewed Claude Code status line — rendered preview, source, and one-paste install.',
+    )
+  })
+})
+
+describe('modPageTitle', () => {
+  it('names the mod as a Claude Code mod on the brand', () => {
+    expect(modPageTitle('File Tree')).toBe('File Tree — Claude Code mod | statuslin.es')
+  })
+
+  it('drops the brand before truncating a name that only fits with the keyword', () => {
+    expect(modPageTitle('Token Weather Forecast Board')).toBe(
+      'Token Weather Forecast Board — Claude Code mod',
+    )
+  })
+
+  it('normalizes whitespace and truncates a name too long even for the keyword alone', () => {
+    expect(
+      modPageTitle('A very long mod title that would otherwise\nmake the search result unwieldy'),
+    ).toBe('A very long mod title that would… — Claude Code mod')
+  })
+
+  it('keeps the not-found title on-brand', () => {
+    expect(MOD_NOT_FOUND_TITLE).toBe('Mod not found — statuslin.es')
+  })
+})
+
+describe('modMetaDescription', () => {
+  it('normalizes whitespace without changing short descriptions', () => {
+    expect(modMetaDescription('  A file\ttree\npane.  ')).toBe('A file tree pane.')
+  })
+
+  it('caps long descriptions at a whole word', () => {
+    const description = modMetaDescription(`A mod with ${'useful details '.repeat(30)}`)
+
+    expect(description.length).toBeLessThanOrEqual(160)
+    expect(description).toMatch(/\S…$/)
+  })
+
+  it('falls back to a generic mod description when there is none', () => {
+    expect(modMetaDescription(null)).toBe(
+      'A Claude Code mod — rendered preview, what it touches, and a one-line install.',
     )
   })
 })

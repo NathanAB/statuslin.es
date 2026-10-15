@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { sitemapResponseForRoute } from '@/gallery/functions'
+import { sitemapWithModsForRoute } from '@/mods/discovery'
 
 export const Route = createFileRoute('/sitemap.xml')({
   server: {
     handlers: {
-      GET: async () => sitemapResponseForRoute(),
+      GET: async () => sitemapWithModsForRoute(),
     },
   },
 })

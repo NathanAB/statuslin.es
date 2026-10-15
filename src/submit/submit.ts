@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { eq, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, renderJobs } from '@/db/schema'
 import { tryHighlightSource } from '@/lib/highlight'
 import { HttpError } from '@/lib/http'
 import { INTERPRETERS, type Interpreter } from '@/render/types'
+import { assertUnderRateLimit, insertPendingSubmission } from '@/submissions/record'
 import { detectForeignCredentialAccess, readsClaudeToken } from './credential-access'
 import { validateNetworkHosts } from './network-hosts'
 import { detectObfuscation } from './obfuscation'
@@ -19,10 +20,7 @@ export type SubmitDraft = ResubmissionDraft | UpdateDraft
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
-export const SUBMISSION_RATE_LIMIT = 3 // max submissions per author per rate window
-const RATE_WINDOW_MS = 60 * 60 * 1000 // 1 hour in milliseconds
-
-// Global cap on pending (queued + running) render_jobs across all authors. The worker drains
+// Global cap on pending (queued + running) render_jobs across all authors. Each web machine drains
 // jobs serially, so this bounds backlog and DB growth, not throughput. 100 is generous headroom
 // for legitimate bursts while stopping a flood of throwaway accounts from growing the queue
 // without bound (H3). Soft cap: the count-then-insert isn't atomic (same as the per-author
@@ -107,18 +105,7 @@ export async function submitConfig(
 
   const networkHosts = input.networkHosts ?? []
 
-  const windowStart = new Date(Date.now() - RATE_WINDOW_MS).toISOString()
-  const countResult = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(configVersions)
-    .innerJoin(configs, eq(configs.id, configVersions.configId))
-    .where(
-      sql`${configs.authorId} = ${input.authorId} AND ${configVersions.createdAt} > ${windowStart}`,
-    )
-  const recentCount = countResult[0]?.count ?? 0
-  if (recentCount >= SUBMISSION_RATE_LIMIT) {
-    throw new HttpError(429, 'Rate limit: too many submissions, try again later')
-  }
+  await assertUnderRateLimit(db, input.authorId)
 
   // Global backstop: cap pending (queued + running) render work across all authors so a flood
   // of throwaway accounts can't grow the queue without bound and starve legitimate submissions.
@@ -186,7 +173,6 @@ export async function submitConfig(
         interpreter: input.interpreter,
         contentSha256,
         sourceHtml,
-        status: 'pending',
         networkHosts,
         readsClaudeToken: readsToken,
         license: input.license ?? null,
@@ -195,6 +181,11 @@ export async function submitConfig(
       .returning()
     const ver = verRows[0]
     if (!ver) throw new Error('insert configVersions returned no row')
+    await insertPendingSubmission(tx, {
+      kind: 'status_line',
+      versionId: ver.id,
+      submittedBy: input.authorId,
+    })
     await tx
       .insert(renderJobs)
       .values({ configVersionId: ver.id, status: networkHosts.length > 0 ? 'held' : 'queued' })

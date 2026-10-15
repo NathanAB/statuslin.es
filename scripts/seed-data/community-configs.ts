@@ -6,7 +6,7 @@ import type { CommunityConfig } from '../seed-community'
 // link in the byline; `githubId` is that login's numeric id, pinned here at review time and
 // verified against the live GitHub API before each run (a mismatch means the login was renamed
 // or recycled — that entry is skipped rather than mis-attributed). Every `source` MUST be
-// human-reviewed before a run: it is published only after the worker renders it and an admin
+// human-reviewed before a run: it is published only after the web server renders it and an admin
 // approves it in the review queue, but the data file is the first review checkpoint.
 //
 // Keep it to a few entries per GitHub author: the submit pipeline caps 3 submissions per author

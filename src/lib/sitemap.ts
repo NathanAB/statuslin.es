@@ -1,4 +1,5 @@
-import { DESKTOP_GUIDE_DATES, DESKTOP_GUIDE_PATH, GUIDE_DATES } from '@/lib/page-title'
+import { GUIDE_DATES, GUIDE_PATH, GUIDE_SUBPAGES } from '@/lib/page-title'
+import { MODS_PATH, modPath } from '@/lib/site'
 
 /**
  * The `/sitemap.xml` builder. Lists the static public pages plus one `<url>` per published config
@@ -15,6 +16,12 @@ export interface SitemapConfig {
   updatedAt: Date
 }
 
+/** `updatedAt` is the date of the mod's current version. */
+export interface SitemapMod {
+  slug: string
+  updatedAt: Date
+}
+
 /** Indexable facet pages the sitemap should list (already filtered to the shared threshold). */
 export interface SitemapFacet {
   slug: string
@@ -23,8 +30,8 @@ export interface SitemapFacet {
 
 const STATIC_PAGES: Array<{ path: string; lastmod?: string }> = [
   { path: '/status-lines/best' },
-  { path: '/guide', lastmod: GUIDE_DATES.modified },
-  { path: DESKTOP_GUIDE_PATH, lastmod: DESKTOP_GUIDE_DATES.modified },
+  { path: GUIDE_PATH, lastmod: GUIDE_DATES.modified },
+  ...GUIDE_SUBPAGES.map(({ path, modified }) => ({ path, lastmod: modified })),
   { path: '/resources' },
   { path: '/terms' },
 ]
@@ -95,4 +102,31 @@ export function sitemapResponse(
       'Cache-Control': 'max-age=3600',
     },
   })
+}
+
+/** The gallery builds `/sitemap.xml` without knowing about mods, so they are spliced into its response. */
+export async function withModUrls(
+  sitemap: Response,
+  base: string,
+  mods: SitemapMod[],
+): Promise<Response> {
+  const xml = await sitemap.text()
+  const newest = mods.reduce<Date | null>(
+    (latest, m) => (latest === null || m.updatedAt > latest ? m.updatedAt : latest),
+    null,
+  )
+  const entries =
+    newest === null
+      ? []
+      : [
+          urlEntry(`${base}${MODS_PATH}`, newest.toISOString().slice(0, 10)),
+          ...mods.map((m) =>
+            urlEntry(`${base}${modPath(m.slug)}`, m.updatedAt.toISOString().slice(0, 10)),
+          ),
+        ]
+  const body =
+    entries.length === 0
+      ? xml
+      : xml.replace('\n</urlset>', () => `\n${entries.join('\n')}\n</urlset>`)
+  return new Response(body, { status: sitemap.status, headers: sitemap.headers })
 }

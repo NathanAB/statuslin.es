@@ -1,5 +1,7 @@
 // App tables (configs/votes/etc.) arrive in later slices.
 export * from './auth-schema'
+export * from './mod-schema'
+export * from './submission-schema'
 
 import { sql } from 'drizzle-orm'
 import {
@@ -13,7 +15,6 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
-import type { GeneratedContent } from '../content/types'
 import { user } from './auth-schema'
 
 export const previews = pgTable(
@@ -95,10 +96,11 @@ export const configVersions = pgTable(
     license: text('license'),
     /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
     sourceUrl: text('source_url'),
-    // Auto-generated page copy (what it shows / requirements / behavior notes), written by
-    // scripts/generate-content.ts via claude -p. Nullable: versions without it simply render
-    // no content sections. Describes THIS version's script — regenerate when the script changes.
-    generatedContent: jsonb('generated_content').$type<GeneratedContent>(),
+    // Generated page copy (src/content/types.ts), written by scripts/generate-content.ts.
+    // Untyped on purpose: older rows hold an older format, so every read parses it
+    // (readPageCopy) and treats anything else as missing. Describes THIS version's script,
+    // so regenerate when the script changes.
+    generatedContent: jsonb('generated_content'),
     status: text('status').notNull().default('pending'),
     reviewedBy: text('reviewed_by'),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
@@ -125,6 +127,9 @@ export const renderJobs = pgTable('render_jobs', {
   attempts: integer('attempts').notNull().default(0),
   error: text('error'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  // When a web machine claimed the job. A 'running' job older than the time limit was cut off
+  // and is re-queued (src/submit/worker.ts requeueStaleJobs).
+  startedAt: timestamp('started_at', { withTimezone: true }),
   finishedAt: timestamp('finished_at', { withTimezone: true }),
 })
 

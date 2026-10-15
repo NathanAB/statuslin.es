@@ -1,0 +1,9 @@
+[2J[Hplain text then trailing spaces     
+[1mbold[0m [2mdim[0m [3mitalic[0m [4munderline[0m [1;3;4mall[0m
+[31mred[0m [92mbright green[0m [38;5;208morange256[0m [44mbluebg[0m [48;5;236mgreybg256[0m
+[38;2;215;119;87mtruecolor fg[0m [48;2;55;55;55m[38;2;255;255;255mon grey[0m
+[7minverse default[0m [7;31minverse red[0m [7;38;2;1;2;3;48;2;4;5;6minverse rgb[0m [7;44minverse bluebg[0m
+wide: 日本語 ☀ emoji 🙂 done
+[48;2;55;55;55m❯ [38;2;255;255;255mhello[K[0m
+gap[10Cafter gap[0m   [41m   [0m
+[12;10Hcursor-placed[29;1Hlast row [38;2;153;153;153m22% of context[0m

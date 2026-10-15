@@ -10,7 +10,6 @@ import {
   describeBrowserCommand,
   isTerminalDecisionEmailStatus,
   parseSessionCookie,
-  renderStrategy,
   runDisposableUserCleanup,
   sessionCookieName,
 } from '../../scripts/e2e/rejection-resubmission-helpers'
@@ -138,11 +137,6 @@ better-auth.session_token=token.signature==
       status: 'fulfilled',
       value: [{ id: 'e2e-rejection-author' }],
     })
-  })
-
-  it('renders inline only when the E2E targets the local app', () => {
-    expect(renderStrategy('http://localhost:3100')).toBe('inline')
-    expect(renderStrategy('https://staging.statuslin.es')).toBe('external')
   })
 
   it('accepts only a same-config, same-slug rejected v1 and pending v2 history', () => {

@@ -1,0 +1,36 @@
+{
+  "success": false,
+  "strict": false,
+  "target": "/home/user/plugins/mod/.claude-plugin/plugin.json",
+  "manifest": {
+    "file": "/home/user/plugins/mod/.claude-plugin/plugin.json",
+    "type": "plugin",
+    "errors": [],
+    "warnings": [
+      {
+        "path": "author",
+        "message": "No author information provided. Consider adding author details for plugin attribution",
+        "code": null
+      }
+    ],
+    "notes": [],
+    "gatingHooks": []
+  },
+  "contents": [
+    {
+      "file": "/home/user/plugins/mod/hooks/hooks.json",
+      "type": "hooks",
+      "errors": [
+        {
+          "path": "modules../register.ts",
+          "message": "failing: cannot import \"node:fs\" (from hooks/register.ts): a hooks module imports its own files by relative path and \"claude-code\", nothing else",
+          "code": null
+        }
+      ],
+      "warnings": [],
+      "notes": [],
+      "gatingHooks": []
+    }
+  ],
+  "advice": []
+}

@@ -28,6 +28,14 @@ describe('CopyButton', () => {
     expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy()
   })
 
+  it('announces Copied! after copying, even with a custom accessible name', async () => {
+    render(<CopyButton text="echo hi" ariaLabel="Copy command: From a shell" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy command: From a shell' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied!' })).toBeTruthy())
+  })
+
   it('calls onCopied only after a successful clipboard write', async () => {
     const onCopied = vi.fn()
     render(<CopyButton text="payload" onCopied={onCopied} />)

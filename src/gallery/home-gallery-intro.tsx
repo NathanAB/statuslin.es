@@ -8,9 +8,7 @@ export function HomeGalleryIntro({ page }: { page: number }) {
       <Heading level={1} size="compact">
         {page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
       </Heading>
-      <Text size="sm" measure>
-        Community-submitted and reviewed by hand. Every card shows the real script's output.
-      </Text>
+      <Text size="sm">Community sourced and human reviewed.</Text>
     </Stack>
   )
 }

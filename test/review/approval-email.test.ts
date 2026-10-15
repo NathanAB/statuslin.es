@@ -21,7 +21,8 @@ describe('sendApprovalEmail', () => {
         authorName: 'Ada',
         authorEmail: 'ada@example.com',
         title: 'Ada status line',
-        slug: 'ada-status-line',
+        noun: 'status line',
+        pagePath: '/c/ada-status-line',
         kind: 'submission',
       },
       send,
@@ -64,7 +65,8 @@ describe('sendApprovalEmail', () => {
           authorName: 'Ada',
           authorEmail: 'ada@example.com',
           title: 'Ada status line',
-          slug: 'ada-status-line',
+          noun: 'status line',
+          pagePath: '/c/ada-status-line',
           kind: 'submission',
         },
         send,
@@ -81,7 +83,8 @@ describe('sendApprovalEmail', () => {
         authorName: 'Ada',
         authorEmail: 'ada@example.com',
         title: 'Ada status line v2',
-        slug: 'ada-status-line',
+        noun: 'status line',
+        pagePath: '/c/ada-status-line',
         kind: 'update',
       },
       send,
@@ -107,5 +110,46 @@ describe('sendApprovalEmail', () => {
         'Questions? Reply to this email or contact hello@statuslin.es.',
       ].join('\n'),
     )
+  })
+
+  it('names a mod and links its page', async () => {
+    const send = vi.fn().mockResolvedValue({ data: { id: 'email_mod' }, error: null })
+
+    await sendApprovalEmail(
+      {
+        versionId: 'version-4',
+        authorName: 'Ada',
+        authorEmail: 'ada@example.com',
+        title: 'Pixel cat',
+        noun: 'mod',
+        pagePath: '/mods/pixel-cat',
+        kind: 'submission',
+      },
+      send,
+    )
+
+    const message = send.mock.calls[0]?.[0].text
+    expect(message).toContain('Your mod submission “Pixel cat” was approved.')
+    expect(message).toContain('View it on statuslin.es: https://statuslin.es/mods/pixel-cat')
+  })
+
+  it('refuses a page path that could change the link host, sending nothing', async () => {
+    const send = vi.fn()
+
+    await expect(
+      sendApprovalEmail(
+        {
+          versionId: 'version-5',
+          authorName: 'Ada',
+          authorEmail: 'ada@example.com',
+          title: 'Pixel cat',
+          noun: 'mod',
+          pagePath: '.attacker.example/mods/pixel-cat',
+          kind: 'submission',
+        },
+        send,
+      ),
+    ).rejects.toThrow(/not a path on this site/)
+    expect(send).not.toHaveBeenCalled()
   })
 })

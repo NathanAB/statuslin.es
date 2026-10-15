@@ -37,3 +37,27 @@ export function siteUrl(): string {
   if (typeof window !== 'undefined') return window.location.origin
   return requireEnv('BETTER_AUTH_URL').replace(/\/+$/, '')
 }
+
+export const MODS_PATH = '/mods'
+
+export const MOD_ROUTE = '/mods/$slug'
+
+export function modPath(slug: string): string {
+  return MOD_ROUTE.replace('$slug', slug)
+}
+
+/** A mod version's Claude Desktop preview image. */
+export const MOD_DESKTOP_PREVIEW_ROUTE = '/mod-previews/$versionId/desktop.png'
+
+/** Names the render too, so a re-render is a new URL that no cache has seen. */
+/** A version's Desktop shot, or with `image` 'card' its card image, under the render that made it. */
+export function modDesktopPreviewPath(
+  versionId: string,
+  renderedAt: Date,
+  image: 'shot' | 'card' = 'shot',
+): string {
+  const path = `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)}?r=${renderedAt.getTime()}`
+  return image === 'card' ? `${path}&image=card` : path
+}
+
+export const MARKETPLACE_PATH = '/marketplace.json'

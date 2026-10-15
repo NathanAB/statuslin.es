@@ -1,5 +1,5 @@
-import { HOME_TITLE_BASE } from '@/lib/page-title'
-import { siteUrl } from '@/lib/site'
+import { HOME_TITLE_BASE, modMetaDescription, modPageTitle } from '@/lib/page-title'
+import { modPath, siteUrl } from '@/lib/site'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 export function rootSocialMeta(): Array<Record<string, string>> {
@@ -15,7 +15,8 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     { property: 'og:title', content: HOME_TITLE_BASE },
     {
       property: 'og:description',
-      content: 'Browse rendered Claude Code status lines and copy one to use.',
+      content:
+        'Browse rendered Claude Code status lines and mods. Copy a status line or install a mod.',
     },
     { property: 'og:image', content: `${base}/og/home.png` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
@@ -43,6 +44,25 @@ export function configSocialMeta(input: {
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
+    { name: 'twitter:image', content: image },
+  ]
+}
+
+/** The mod page's share tags; `base` is the loader's origin. */
+export function modSocialMeta(
+  base: string,
+  mod: { slug: string; title: string; description: string | null },
+): Array<Record<string, string>> {
+  const image = `${base}/og/mods/${mod.slug}.png`
+  return [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: `${base}${modPath(mod.slug)}` },
+    { property: 'og:title', content: modPageTitle(mod.title) },
+    { property: 'og:description', content: modMetaDescription(mod.description) },
+    { property: 'og:image', content: image },
+    { property: 'og:image:width', content: String(CARD_WIDTH) },
+    { property: 'og:image:height', content: String(CARD_HEIGHT) },
+    { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:image', content: image },
   ]
 }

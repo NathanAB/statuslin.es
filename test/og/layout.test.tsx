@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import satori from 'satori'
 import { describe, expect, it } from 'vitest'
-import { configCard, homeCard } from '@/og/card'
+import { configCard, homeCard, modCard } from '@/og/card'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
@@ -62,6 +62,23 @@ describe('og card layout', () => {
     expect(root).toMatchObject(FILLS_THE_CARD)
     const m = margins(content)
     expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
+    expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
+  })
+
+  it.each([
+    [
+      'the tallest terminal preview it draws',
+      [seg(Array.from({ length: 9 }, (_, i) => `row ${i + 1}`).join('\n'))],
+    ],
+    ['no terminal preview', null],
+  ])('keeps a mod card with %s inside the card and centered vertically', async (_name, preview) => {
+    const { root, content } = await layout(
+      modCard({ title: 'Usage meter', authorGithub: 'octocat', preview }),
+    )
+    expect(root).toMatchObject(FILLS_THE_CARD)
+    const m = margins(content)
+    expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
+    expect(m.bottom).toBeGreaterThanOrEqual(0)
     expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
   })
 })

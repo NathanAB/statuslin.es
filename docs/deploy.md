@@ -43,11 +43,28 @@ without rebuilding.
 
 ## What runs in each Fly app
 
-Two process groups off one image (declared in `fly.toml` for prod and `fly.staging.toml` for staging):
-- **web** — `bun run .output/server/index.mjs` — public, serves site + auth + API.
-- **worker** — `bun run scripts/worker.ts` — always-on poller; renders submitted scripts via E2B. No public port.
+One process group, **web** (`bun run .output/server/index.mjs`, declared in `fly.toml` for prod and
+`fly.staging.toml` for staging): public, serves site + auth + API. It also renders submitted status
+lines through E2B, in the background ([ADR 0006](./adr/0006-renders-run-on-demand.md)):
 
-## The seven required environment variables
+- A submission, the admin's re-queue and "Run network preview" each start a drain in that machine
+  (`src/server/render-drain.ts`).
+- Each machine drains once at startup (`src/server/render-drain-plugin.ts`), which picks up jobs
+  queued while no machine was running.
+- Several machines can render at once; each job is claimed with a conditional update.
+- A machine that Fly stops (a deploy, or auto-stop) gets SIGINT and puts the job it is rendering
+  back: `queued`, or `held` for a network job. The next drain renders it: the next submission, a
+  machine start, or the admin's re-queue, which accepts a job that is already queued and starts a
+  drain for it.
+- A job left `running` for over 15 minutes (`STALE_RUNNING_JOB_MS`) was cut off by a crash. The next
+  drain puts it back the same way, and the admin's re-queue accepts it too. Nothing notices it before
+  then: drains only run on the triggers above.
+- A job cut off on its third attempt (`MAX_RENDER_ATTEMPTS`), or after its submission was decided,
+  fails instead.
+
+There is no worker process. Mod previews render from the operator's machine (`render:mods`).
+
+## The environment variables
 
 From `.env.example` (the committed contract):
 
@@ -59,7 +76,10 @@ From `.env.example` (the committed contract):
 | `GITHUB_CLIENT_ID` | yes | the env's OAuth app |
 | `GITHUB_CLIENT_SECRET` | yes | the env's OAuth app |
 | `E2B_API_KEY` | no | one E2B account serves all envs |
+| `RENDER_RUNNER` | — | **local only**: `fake` renders submissions without E2B. Leave unset on staging and production, which refuse it (`NODE_ENV=production`) |
 | `RESEND_API_KEY` | yes | server-only key used to email submission review decisions |
+| `NOINDEX_SITE` | yes | `true` only on staging, set in `fly.staging.toml` `[env]` (not a secret): every response then carries `X-Robots-Tag: noindex, nofollow` so search engines drop staging. Off when unset or any value but `true`, so production (`fly.toml` leaves it out) stays indexable. robots.txt still allows crawling, or crawlers would never see the header |
+| `GITHUB_TOKEN` | yes, for mod submissions | the web server calls GitHub when a user submits a mod and when an admin approves one; without it those calls share GitHub's 60-requests-an-hour anonymous limit per IP, and run out after a handful of submissions. The operator mod scripts (`import:mods`, `render:mods`, `input-steps:mods`, `publish-mod`, `check-mods`, …) read it from `.env.local` or the shell too. A fine-grained token with public-repository read access (the default, no extra permissions) is enough: never one that can read private repositories |
 
 No R2 keys — preview data is stored in Postgres (`previews` table), and OG card images are rendered on
 the fly by the app (`src/og`), not stored. R2 isn't used.
@@ -108,12 +128,11 @@ push from*, never read by the servers.
 
 Staging and prod use **separate Fly config files** so each sizes its machines independently:
 
-- **`fly.toml`** — production (`app = "statuslines"`): web `shared-cpu-2x` / 2GB, worker
-  `shared-cpu-1x` / 512MB (separate `[[vm]]` blocks — only web needs to absorb a launch spike),
+- **`fly.toml`** — production (`app = "statuslines"`): web `shared-cpu-2x` / 2GB,
   `min_machines_running = 1`. Add web headroom with `fly scale count web=N`.
 - **`fly.staging.toml`** — staging (`app = "statuslines-staging"`): `shared-cpu-1x` / 512MB,
-  `min_machines_running = 0` — the web process scales to zero when idle. (The worker is a separate
-  background machine, not behind the proxy, so it keeps running; `fly scale count worker=0` stops it.)
+  `min_machines_running = 0` — the web process scales to zero when idle. Stopping can cut a render
+  off; the next drain after the 15-minute limit re-queues it.
 
 Fly can't include one file from another, so `[build]`, `[processes]`, `[http_service]` port, and
 `[deploy]` are duplicated in both — a header comment in each lists what must stay in sync. Only the
@@ -150,6 +169,13 @@ use the `drizzle-kit` CLI. So the only things the image must keep are `drizzle-o
 dependency, never pruned) and the `drizzle/` folder (copied in) — verify the `drizzle/` copy
 survives when editing the generated Dockerfile.
 
+**Rolling back past the `submissions` table (#83) keeps review state correct.** Until the release
+that drops them, every review write lands on `submissions` and on the old review columns of
+`config_versions`, in one transaction, so an image from before #83 reads correct review state. After
+rolling forward again, run `scripts/reconcile-submissions.ts` as in step 1 of the mods launch runbook
+below, to copy what the older image reviewed. Once a release drops those columns, nothing older than
+it can run.
+
 **One-time backfill for the `configs.all_tags` release (migration `0018`):** the migration adds the
 column with a `'[]'` default, so **existing** published configs start with an empty `all_tags` until
 it's populated. Every read path (facet pages, the home tag filter, the sitemap/llms facet list) now
@@ -182,6 +208,21 @@ DATABASE_URL='<env pooled url>' bun run scripts/tag-weather-markets.ts --write  
 Idempotent, matches by title. **Staging first, then production.** New submissions get the tags from
 the classifier, which now knows both criteria.
 
+**One-time copy regeneration for the "What it does" release:** page copy is now one format for
+status lines and mods (summary, steps, notes and tile wording; see "Generated page copy" in
+`CLAUDE.md`). Copy stored in the old three-section format no longer renders, so after deploying,
+every published status line and mod shows only its fact tiles until its copy is regenerated. Run the
+workflow for both kinds against that env's DB; `--all --prepare` lists every version whose copy is
+missing or in the old format:
+```sh
+DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare
+DATABASE_URL='<env pooled url>' bun run generate:content --apply          # response JSON on stdin
+DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare --mod
+DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod    # response JSON on stdin
+```
+**Staging first, then production.** Rerun `--all --prepare` (and `--mod`) afterwards: it prints `[]`
+once nothing is left.
+
 Promote to production with the **gated** command — never promote by hand:
 ```sh
 bun run deploy:prod
@@ -211,6 +252,202 @@ smokes the real production bundle. The smoke uses the signed-out checks only (th
 a session against the local dev DB, which staging doesn't share). **Do not** run the two `fly deploy`
 commands by hand and skip the smoke — that's the hole that let the crash ship.
 
+## Mods
+
+Mods are Claude Code plugins listed in `/marketplace.json` and shown at `/mods/<slug>`. The slug is
+also the mod's marketplace entry name: the plugin's own name, or `<name>-<owner>` when another mod
+already has that name (ADR 0005). It never changes once published. Every script below prints its
+full usage in its header comment.
+
+### The mods E2B template
+
+Mods render in their own E2B template, separate from the status line template:
+```sh
+bun run build:e2b-mod-template
+```
+It prints an immutable snapshot ID. Commit that value as `E2B_MOD_TEMPLATE_ID` in
+`src/render/e2b-template.ts` before deploying. Rebuild only when the Claude Code or headless-terminal
+version in `scripts/build-e2b-mod-template.ts` changes. It leaves `E2B_TEMPLATE_ID` alone.
+
+### The Desktop E2B template
+
+Claude Desktop previews render in a third template, with Claude Desktop for Linux and its bundled
+engine on a virtual display (ADR 0004):
+```sh
+bun run scripts/build-e2b-desktop-template.ts
+```
+Commit what it prints as its header comment says. Rebuild it only for a Desktop upgrade (below).
+
+### Desktop upgrade runbook
+
+The Desktop recorder drives the session by clicking fixed screen positions, so a new Claude Desktop
+can move what it clicks. For each Desktop upgrade:
+1. Bump the Desktop version in `scripts/build-e2b-desktop-template.ts`, rebuild the template and
+   commit its new ID.
+2. Check that the scripted clicks still land:
+   ```sh
+   bun run smoke:desktop
+   ```
+3. Re-render every mod (launch runbook step 3) on staging, then production, so each Desktop preview
+   comes from the new Desktop.
+
+### Launch runbook
+
+Run every step against **staging first, then production**, from your machine. `<env pooled url>` is
+that environment's `DATABASE_URL`. The import and render steps also need `E2B_API_KEY`.
+
+1. Apply the migrations (`0026` to `0030` add the mods tables and the Desktop previews, plus anything
+   newer). `0031` deletes Desktop shots recorded before each shot had a card image, so run step 3
+   again after it. The deploy's `release_command` already applies them, so on a deployed environment
+   this only confirms it:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run db:migrate
+   ```
+   `0035` and `0036` move status line review state from `config_versions` into the new `submissions`
+   table. The `release_command` copies it while machines on the old code are still serving, and they
+   write review state only to `config_versions` until the deploy replaces them. Once `fly deploy` has
+   finished, copy what they wrote, dry run first:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/reconcile-submissions.ts
+   DATABASE_URL='<env pooled url>' bun run scripts/reconcile-submissions.ts --apply
+   ```
+   Until it has run, /admin is missing submissions the old machines took and shows their decisions
+   as pending. A review action on any version they changed is refused (409), so nothing is decided
+   twice. A `CONFLICT` line is a difference the old code can't cause: a submission decided
+   differently from `config_versions`, or with email state ahead of it. The script leaves it alone
+   and exits 1, so settle it by hand.
+2. Import the curated mods in `src/mods/curation.json` as drafts. Rerunning skips mods already
+   imported at the same commit:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run import:mods
+   ```
+3. Render each mod's previews. One run records every mod in the terminal and in Claude Desktop and
+   prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
+   its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
+   it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run render:mods
+   ```
+   `bun run dev` shows the stored Desktop images on mod pages and cards, like staging and production.
+4. Generate the page copy. `--all --prepare --mod` prints a request for every published mod and
+   curated draft without content in the current format; a submitted mod gets its copy once it is
+   approved. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
+   the response JSON to apply on stdin, without writing it to a file:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare --mod
+   DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod   # response JSON on stdin
+   ```
+5. Publish each mod. `<sha>` is the entry's `commitSha` in `src/mods/curation.json`. Run the dry
+   run first and read its WARN lines, then apply with the slug typed back:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
+   ```
+   To move a published mod to a newer commit, follow "Re-pin a mod" below.
+
+### Re-pin a mod
+
+An update is a new version of the mod. The current version stays live until you publish the new
+one. Run every step against staging first, then production.
+
+1. In `src/mods/curation.json`, change the entry's `commitSha` (and `inputSteps` if the new version
+   needs them). Keep `pluginName` and `repoUrl`: an entry from another repository imports as a new
+   mod, named `<name>-<owner>`.
+   The mod's title and description stay as they were first imported.
+2. Import it. The import adds the commit as the mod's next version and leaves the current one live:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run import:mods
+   ```
+3. Render it. `render:mods` renders each mod's current version and, when there is a newer one, its
+   newest version, printed as `<slug> v<n> (not current)`, in the terminal and in Claude Desktop.
+   Publishing refuses a version without a result on both:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
+   ```
+4. Publish it with the new `commitSha`. The dry run lists the files changed since the live commit
+   and warns when the footprint grows or plugin.json's `version` is unchanged (existing installs
+   then won't update). Read it, then apply:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
+   DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
+   ```
+5. Generate the page copy again, as in step 4 of the launch runbook: the newly current version
+   starts with none, so the mod page's "What it does" card shows only its fact tiles until you do.
+
+### Process a submitted mod
+
+Any signed-in user can submit a mod on `/submit` (the **Mod** choice) by pasting a GitHub link
+(ADR 0005). The web server pins the link to a commit on the default branch, checks the plugin in the
+offline sandbox, and writes a draft mod credited to the repository's owner (or a new version of the
+submitter's own mod) with a pending submission. A new draft's slug is provisional
+(`<plugin name>-<6 hex>`): until approval a submission holds no marketplace name, and holds its
+folder only against its own submitter, so submitting someone's plugin first cannot lock its author
+out. Nothing renders until you do: mods render from your machine (ADR 0006). Run each step against the environment the submission came in on.
+`<env pooled url>` is its `DATABASE_URL`; rendering also needs `E2B_API_KEY`.
+
+1. **See what is waiting.** `/admin` lists submitted mods under **Mods**. One that hasn't rendered
+   shows `needs render` and the exact command for step 3.
+2. **Pick its input steps** with your coding agent. Prepare prints a request per pending mod
+   submission, pinned to its version and commit, with the README, description and footprint fenced
+   as hostile data. The agent answers without following anything inside the fence; send the answer
+   to apply on stdin, without writing it to a file. A mod that draws without any input needs no
+   steps (`[]`):
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run input-steps:mods --prepare <slug>
+   DATABASE_URL='<env pooled url>' bun run input-steps:mods --apply   # response JSON on stdin
+   ```
+3. **Render it** in the terminal and in Claude Desktop (up to 15 minutes):
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
+   ```
+   Check both previews on `/admin`. If a surface drew nothing and should, revise the steps (step 2)
+   and render again. `render:mods` skips versions whose submission was rejected or replaced.
+4. **Review it on `/admin`.** Read the footprint, the source at its commit and, for an update, the
+   warnings and the compare link against the live commit. **Approve** checks again that both
+   surfaces rendered, that the commit is on the default branch, that the mod isn't delisted and that
+   the version isn't older than the live one. A draft is refused when a listed mod already holds its
+   folder; otherwise it takes its marketplace name, the plugin name or `<name>-<owner>` when another
+   mod has it (ADR 0005). Approve then publishes it to the gallery and `/marketplace.json` and emails
+   the submitter. **Reject** takes a reason and emails the submitter
+   a link to fix and resubmit, or to send a new update; a published mod's live version stays up.
+5. **Generate its page copy** after approving, as in step 4 of the launch runbook, for the one mod:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run generate:content <slug> --prepare --mod
+   DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod   # response JSON on stdin
+   ```
+
+The submitter follows the mod on `/me` and sends fixes and updates from there; each is a new
+version, reviewed again, while the live one keeps serving. Curated mods have no submitter and keep
+the command-line re-pin. To take a submitted mod down, use the emergency delist below.
+
+To delete a draft that will never be approved (spam, or a submission its author abandoned), with
+its versions and submissions, run the dry run first, then type the slug back. A published or
+removed mod is refused:
+```sh
+DATABASE_URL='<env pooled url>' bun run scripts/delete-mod-draft.ts <slug>
+DATABASE_URL='<env pooled url>' bun run scripts/delete-mod-draft.ts <slug> --confirm=<slug>
+```
+
+### Emergency delist
+
+Delisting removes a mod from `/marketplace.json`. The marketplace sets `forceRemoveDeletedPlugins`,
+so **delisting uninstalls the mod for every subscriber** at their next session start. Restoring
+re-lists it but reinstalls it for no one.
+```sh
+fly ssh console --app statuslines --command "bun run scripts/delist-mod.ts <slug> --confirm=<slug>"
+fly ssh console --app statuslines --command "bun run scripts/delist-mod.ts <slug> --restore --confirm=<slug>"
+```
+
+### Pinned-commit check
+
+Claude Code installs each mod from the commit the marketplace pins. A force-pushed or deleted commit
+breaks every new install. `scripts/check-mods.ts` lists each published mod whose commit GitHub no
+longer serves, and exits 1 when any is missing:
+```sh
+fly ssh console --app statuslines --command "bun run scripts/check-mods.ts"
+```
+Re-pin a listed mod to a fetchable commit (see "Re-pin a mod"), or delist it.
+
 ## DNS (Cloudflare, after the first Fly deploy)
 
 For each subdomain, point Cloudflare at the Fly app. First deploy **DNS-only** (gray cloud) so
@@ -232,7 +469,7 @@ run on PGlite against the committed migrations.
 1. Sign up: Fly, E2B. (Neon already exists.)
 2. Neon `staging` branch; build the E2B template; create the staging GitHub OAuth app.
 3. `fly launch --no-deploy` — generates the `Dockerfile` + `fly.toml` and creates the staging app.
-   Then edit `fly.toml` for the two process groups + `release_command`, and the `Dockerfile` for
+   Then edit `fly.toml` for the `web` process group + `release_command`, and the `Dockerfile` for
    the migration caveat above. Add `.dockerignore`.
 4. Set staging secrets (`fly secrets import --app statuslines-staging < .env.staging`).
 5. `fly deploy --config fly.staging.toml`; verify on the `*.fly.dev` URL, then point `staging`
@@ -243,20 +480,23 @@ run on PGlite against the committed migrations.
 
 ## Render-queue alerts (PostHog)
 
-The render worker emits two PostHog events the maintainer can alert on. Both are **fail-soft and
-prod-only**: `captureServerEvent` is a no-op when the worker has no `POSTHOG_PROJECT_TOKEN`, so local
-and staging never emit them — the alerts only have data to act on once the worker runs in production.
+The web server's render drain emits two PostHog events the maintainer can alert on. Both are
+**fail-soft and prod-only**: `captureServerEvent` is a no-op without a `POSTHOG_PROJECT_TOKEN`, so
+local and staging never emit them. Both use `distinctId: 'render-worker'`, kept from the old worker
+so the history stays one series.
 
-- **`render_worker_heartbeat`** — emitted every 5 minutes by `scripts/worker.ts`, DB-free (a liveness
-  ping; no DB poll, so it doesn't keep Neon's compute warm). `distinctId: 'render-worker'`.
-- **`render_queue_drained`** — emitted at the end of every drain by the worker, with
-  `{ processed, queuedRemaining, oldestQueuedAgeSec }`.
-- **`statusline_render_completed`** — emitted once per render job by the worker, with
+- **`render_queue_drained`** — emitted at the end of every drain, with
+  `{ processed, cutOffJobs, queuedRemaining, oldestQueuedAgeSec }`. `cutOffJobs` counts the jobs this
+  drain found `running` past the 15-minute limit and put back.
+- **`statusline_render_completed`** — emitted once per render job, with
   `{ outcome, errorClass?, durationMs, configId, versionId, slug }`. `outcome` is `'failure'` when the
   job threw (`errorClass: 'job_failed'`) or any scenario hit a sandbox error, timed out, or exited
   non-zero (`'sandbox_error'` / `'timeout'` / `'nonzero_exit'`). Never carries script output.
   `sandbox_error` keys off the runner's infra exit code (125), which a script can also return
   itself, so don't alert on it as a pure infra signal.
+
+A drain that throws (database or E2B unreachable, `E2B_API_KEY` missing) goes to PostHog error
+tracking with `source: 'render-drain'`, and to the server log.
 
 ### PostHog alert facts (verified against the docs, 2026-06-25)
 
@@ -268,22 +508,22 @@ and staging never emit them — the alerts only have data to act on once the wor
   you'd need a different mechanism (e.g. an external uptime check), out of scope here.
 - Notify via email, Slack, Discord, or webhook. These email the maintainer.
 
-### The two alerts (create these AFTER the first prod worker deploy)
+### The alert
 
-Do NOT create them before the worker is live and emitting. The "worker down" alert fires when the
-heartbeat count is below 1; created against a project with no `render_worker_heartbeat` events yet, it
-would fire immediately and email you on a false alarm. Create both once the events appear in PostHog.
+**Queue stuck** — trends insight on `render_queue_drained` with two series, and one alert on each →
+email:
 
-1. **Worker down / crashed** — trends insight counting `render_worker_heartbeat` over the **last 15
-   minutes**; alert when the count is **< 1** → email. (At a 5-min heartbeat, two pings must be missed
-   before it fires.)
-2. **Queue stuck** — trends insight on `render_queue_drained`, value = **max(`oldestQueuedAgeSec`)**
-   over the **last 30 minutes**; alert when **> 900** (15 min of the oldest queued job sitting
-   unrendered) → email.
+- **max(`oldestQueuedAgeSec`)** over the **last 30 minutes**; alert when **> 900** (15 min of the
+  oldest queued job sitting unrendered).
+- **sum(`cutOffJobs`)** over the **last hour**; alert when **> 0** (a render sat `running` for 15
+  minutes after its machine crashed).
 
-Both can be created in the PostHog UI (insight → Alerts → New alert) or via the PostHog MCP
-(`render_worker_heartbeat` / `render_queue_drained` are the event names). Re-create them from this
-section if the project is ever rebuilt.
+Drains run only on submissions, admin actions and machine starts, so this catches a drain that
+leaves old jobs behind or finds a stuck render, not a queue nothing drains.
+
+Create it in the PostHog UI (insight → Alerts → New alert) or via the PostHog MCP. Re-create it from
+this section if the project is ever rebuilt. The old **Worker down** alert counted
+`render_worker_heartbeat`, which no longer exists; delete it, or it emails on every check.
 
 ## Not yet (later)
 

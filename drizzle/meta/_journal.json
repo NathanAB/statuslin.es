@@ -183,6 +183,104 @@
       "when": 1791563560773,
       "tag": "0025_backfill_config_first_published_at",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791579402316,
+      "tag": "0026_mods_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791580693989,
+      "tag": "0027_mod_versions_desktop_screenshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791581916032,
+      "tag": "0028_mod_versions_repo_url_and_path_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791652386774,
+      "tag": "0029_mod_desktop_previews",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791653680796,
+      "tag": "0030_drop_mod_versions_desktop_screenshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791733858845,
+      "tag": "0031_drop_desktop_shots_without_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791733880419,
+      "tag": "0032_mod_desktop_preview_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791733889626,
+      "tag": "0033_drop_mod_desktop_previews_card_anchor",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791745581987,
+      "tag": "0034_render_jobs_started_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791747351846,
+      "tag": "0035_submissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791747352091,
+      "tag": "0036_backfill_submissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791837594053,
+      "tag": "0037_mods_plugin_name_not_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791840039087,
+      "tag": "0038_mods_plugin_id_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791852077598,
+      "tag": "0039_mod_versions_source_per_mod",
+      "breakpoints": true
     }
   ]
 }

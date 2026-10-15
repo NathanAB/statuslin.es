@@ -3,7 +3,9 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
-import { getConfigBySlug, getPublishedConfigs, getPublishedCount } from '@/gallery/queries'
+import { getPublishedConfigs } from '@/gallery/config-items'
+import { getPublishedInventory } from '@/gallery/inventory'
+import { getConfigBySlug } from '@/gallery/queries'
 import { requireEnv } from '@/lib/env'
 import { highlightSource } from '@/lib/highlight'
 import { loadtestSlug, seedLoadConfigs } from '../loadtest/seed'
@@ -12,7 +14,7 @@ import { teardownLoadConfigs } from '../loadtest/teardown'
 /**
  * Phase bench for the hot read paths — the part a CPU flamegraph can't show: how long each real
  * function actually takes, including time spent WAITING on Postgres. It imports the same functions
- * the routes call (`getPublishedCount` + `getPublishedConfigs` for the gallery; `getConfigBySlug`
+ * the routes call (`getPublishedInventory` + `getPublishedConfigs` for the gallery; `getConfigBySlug`
  * + `highlightSource` for the detail page — see src/gallery/functions.ts) and times them against
  * the dev DB. Zero production code is touched; this only reads + calls existing functions.
  *
@@ -117,8 +119,8 @@ async function main(): Promise<void> {
 
   try {
     const phases: Record<string, Summary> = {}
-    phases['gallery: getPublishedCount'] = summarize(
-      await bench(() => getPublishedCount(db), ITERS),
+    phases['gallery: getPublishedInventory'] = summarize(
+      await bench(() => getPublishedInventory(db), ITERS),
     )
     phases['gallery: getPublishedConfigs(new,p1)'] = summarize(
       await bench(() => getPublishedConfigs(db, 'new', 1), ITERS),
@@ -135,7 +137,7 @@ async function main(): Promise<void> {
     )
 
     const queryCounts = {
-      getPublishedCount: await queriesPerCall(client, (d) => getPublishedCount(d)),
+      getPublishedInventory: await queriesPerCall(client, (d) => getPublishedInventory(d)),
       getPublishedConfigs: await queriesPerCall(client, (d) => getPublishedConfigs(d, 'new', 1)),
       getConfigBySlug: await queriesPerCall(client, (d) => getConfigBySlug(d, slug)),
     }

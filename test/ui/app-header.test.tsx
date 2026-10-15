@@ -67,6 +67,14 @@ describe('AppHeader', () => {
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
+  it('links to the mods page ahead of the guide', () => {
+    render(<AppHeader user={null} />)
+    const mods = screen.getByRole('link', { name: 'Mods' })
+    expect(mods.getAttribute('href')).toBe('/mods')
+    const guide = screen.getByRole('link', { name: 'Guide' })
+    expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('links to the guide page when signed out', () => {
     const { container } = render(<AppHeader user={null} />)
     const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement
@@ -106,6 +114,28 @@ describe('AppHeader', () => {
   it('falls back to the display name when username is null', () => {
     render(<AppHeader user={{ name: 'Ada Lovelace', username: null, image: null, role: 'user' }} />)
     expect(screen.getByText('Ada Lovelace')).toBeTruthy()
+  })
+
+  // Phones hide the text label and show only the avatar, so the trigger names itself.
+  it('names the user menu trigger @username for screen readers', () => {
+    render(
+      <AppHeader
+        user={{
+          name: 'Ada Lovelace',
+          username: 'ada',
+          image: 'https://example.com/a.png',
+          role: 'user',
+        }}
+      />,
+    )
+    const trigger = screen.getByRole('button', { name: '@ada' })
+    expect(trigger.getAttribute('aria-label')).toBe('@ada')
+  })
+
+  it('names the user menu trigger with the display name when username is null', () => {
+    render(<AppHeader user={{ name: 'Ada Lovelace', username: null, image: null, role: 'user' }} />)
+    const trigger = screen.getByRole('button', { name: 'Ada Lovelace' })
+    expect(trigger.getAttribute('aria-label')).toBe('Ada Lovelace')
   })
 
   it('opens a Log out menu item on trigger click and calls signOut', async () => {

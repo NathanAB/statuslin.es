@@ -1,5 +1,8 @@
 import { StatusSummary, SubmissionCard } from '@/review/dashboard-card'
-import type { MySubmissionRow } from '@/review/my-submissions'
+import type { ModReviewRow } from '@/review/mod-queue'
+import { ModReviewCard } from '@/review/mod-review-card'
+import { MyModCard } from '@/review/my-mod-card'
+import type { MyModRow, MySubmissionRow } from '@/review/my-submissions'
 import type { DashboardRow, DashboardUser } from '@/review/queue'
 import { Stack } from '@/ui/layout'
 import { CenteredShell, PageShell } from '@/ui/shell'
@@ -7,7 +10,7 @@ import { SignInPrompt } from '@/ui/sign-in-prompt'
 import { Heading, Text } from '@/ui/text'
 
 export type DashboardData =
-  | { rows: DashboardRow[]; user: DashboardUser }
+  | { rows: DashboardRow[]; mods: ModReviewRow[]; user: DashboardUser }
   | { forbidden: true }
   | { signedOut: true }
 
@@ -26,14 +29,16 @@ export function DashboardView({ data }: { data: DashboardData }) {
     )
   }
 
-  const { rows, user } = data
+  const { rows, mods, user } = data
   const reviewRows = rows.filter((row) => row.version.status === 'pending')
   const contactRows = rows.filter((row) => row.version.status !== 'pending')
+  const reviewMods = mods.filter((row) => row.version.status === 'pending')
+  const contactMods = mods.filter((row) => row.version.status !== 'pending')
   return (
     <PageShell user={user}>
       <Stack gap={6}>
         <Heading level={1}>Admin dashboard</Heading>
-        {rows.length === 0 ? (
+        {rows.length === 0 && mods.length === 0 ? (
           <Text muted size="sm">
             No submissions in flight.
           </Text>
@@ -49,7 +54,15 @@ export function DashboardView({ data }: { data: DashboardData }) {
                 </Stack>
               </>
             ) : null}
-            {contactRows.length > 0 ? (
+            {reviewMods.length > 0 ? (
+              <Stack gap={4}>
+                <Heading level={2}>Mods</Heading>
+                {reviewMods.map((row) => (
+                  <ModReviewCard key={row.version.id} row={row} />
+                ))}
+              </Stack>
+            ) : null}
+            {contactRows.length > 0 || contactMods.length > 0 ? (
               <Stack gap={4}>
                 <Stack gap={1}>
                   <Heading level={2}>Contact needed</Heading>
@@ -59,6 +72,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
                 </Stack>
                 {contactRows.map((row) => (
                   <SubmissionCard key={row.version.id} row={row} />
+                ))}
+                {contactMods.map((row) => (
+                  <ModReviewCard key={row.version.id} row={row} />
                 ))}
               </Stack>
             ) : null}
@@ -72,16 +88,18 @@ export function DashboardView({ data }: { data: DashboardData }) {
 /** The signed-in author's own submissions — same cards as the admin view, read-only (no actions). */
 export function MySubmissionsView({
   rows,
+  mods,
   user,
 }: {
   rows: MySubmissionRow[]
+  mods: MyModRow[]
   user: DashboardUser
 }) {
   return (
     <PageShell user={user}>
       <Stack gap={6}>
         <Heading level={1}>My submissions</Heading>
-        {rows.length === 0 ? (
+        {rows.length === 0 && mods.length === 0 ? (
           <Text muted size="sm">
             You haven't submitted anything yet.
           </Text>
@@ -102,6 +120,9 @@ export function MySubmissionsView({
                 />
               )
             })}
+            {mods.map((row) => (
+              <MyModCard key={row.mod.id} row={row} />
+            ))}
           </Stack>
         )}
       </Stack>

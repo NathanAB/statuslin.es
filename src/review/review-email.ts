@@ -8,6 +8,13 @@ import { requireEnv } from '@/lib/env'
 
 export const REVIEW_EMAIL_FROM = 'statuslin.es reviews <reviews@statuslin.es>'
 
+/** A link to `path` on the site at `origin`. A path must start with "/", which ends the host, so
+ * no path can turn the link into one to another site. */
+export function siteLink(origin: string, path: string): string {
+  if (!path.startsWith('/')) throw new Error(`"${path}" is not a path on this site`)
+  return `${origin}${path}`
+}
+
 /** What a review decision was about: a config's first submission, or an update to a config that
  * already has a live version. The two get different email wording. */
 export type ReviewedChange = 'submission' | 'update'

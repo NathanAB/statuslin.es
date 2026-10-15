@@ -1,15 +1,22 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   STATUSLINE_ANYWHERE_INSTALL_COMMAND,
   STATUSLINE_ANYWHERE_URL,
 } from '@/lib/statusline-anywhere'
+import type { ModDesktopShot } from '@/mods/desktop-shot'
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
-    <a href={to}>{children}</a>
-  ),
+  Link: ({
+    to,
+    params,
+    children,
+  }: {
+    to: string
+    params?: Record<string, string>
+    children: React.ReactNode
+  }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
 }))
 
 const capture = vi.fn()
@@ -19,13 +26,25 @@ vi.mock('@posthog/react', () => ({
 
 const { DesktopGuideContent } = await import('@/guide/desktop-guide-content')
 
+const SHOT = { src: '/mod-previews/v1/desktop.png?v=1', width: 800, height: 500 }
+const WITH_SHOT: ModDesktopShot = { kind: 'shot', shot: SHOT }
+const NO_SHOT: ModDesktopShot = { kind: 'no-shot' }
+const UNPUBLISHED: ModDesktopShot = { kind: 'unpublished' }
+
+function newSessionStep() {
+  return screen.getByRole('heading', {
+    level: 2,
+    name: /^2\. open a new code session in claude desktop$/i,
+  }).parentElement as HTMLElement
+}
+
 afterEach(() => {
   capture.mockClear()
 })
 
 describe('DesktopGuideContent', () => {
   it('renders the h1 and every section heading', () => {
-    render(<DesktopGuideContent />)
+    render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     expect(
       screen.getByRole('heading', {
         level: 1,
@@ -45,7 +64,7 @@ describe('DesktopGuideContent', () => {
   })
 
   it('explains the cause and the plugin in the intro', () => {
-    const { container } = render(<DesktopGuideContent />)
+    const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     expect(container.textContent).toMatch(/doesn.t run the statusLine command/i)
     expect(container.textContent).toContain(
       'statusline-anywhere, a Claude Code plugin, adds it back.',
@@ -59,7 +78,7 @@ describe('DesktopGuideContent', () => {
       configurable: true,
       writable: true,
     })
-    const { container } = render(<DesktopGuideContent />)
+    const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     const page = container.textContent ?? ''
     expect(page).toContain(STATUSLINE_ANYWHERE_INSTALL_COMMAND)
     expect(page).toMatch(/open a new Code session/i)
@@ -70,20 +89,54 @@ describe('DesktopGuideContent', () => {
   })
 
   it('stays short: no paragraph over 30 words', () => {
-    const { container } = render(<DesktopGuideContent />)
+    const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     for (const p of container.querySelectorAll('p, li')) {
       expect((p.textContent ?? '').split(/\s+/).length).toBeLessThanOrEqual(30)
     }
   })
 
   it('links back to the gallery and the setup guide', () => {
-    const { container } = render(<DesktopGuideContent />)
+    const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     expect(container.querySelector('a[href="/"]')).not.toBeNull()
     expect(container.querySelector('a[href="/guide"]')).not.toBeNull()
   })
 
+  it('links the new-session step to the mod page for a screenshot when it has none to show', () => {
+    render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
+    const link = within(newSessionStep()).getByRole('link', { name: 'See a screenshot' })
+    expect(link.getAttribute('href')).toBe('/mods/statusline-anywhere')
+  })
+
+  it("shows statusline-anywhere's real Desktop screenshot under the new-session step", () => {
+    render(<DesktopGuideContent statuslineAnywhere={WITH_SHOT} />)
+    const step = within(newSessionStep())
+    const img = step.getByRole('img', { name: 'statusline-anywhere in Claude Desktop' })
+    expect(img.getAttribute('src')).toBe(SHOT.src)
+    expect(img.getAttribute('width')).toBe('800')
+    expect(step.getByRole('link', { name: 'See its mod page' }).getAttribute('href')).toBe(
+      '/mods/statusline-anywhere',
+    )
+    expect(step.queryByRole('link', { name: 'See a screenshot' })).toBeNull()
+  })
+
+  it('adds no image when there is no screenshot', () => {
+    for (const statuslineAnywhere of [NO_SHOT, UNPUBLISHED]) {
+      const { unmount } = render(<DesktopGuideContent statuslineAnywhere={statuslineAnywhere} />)
+      expect(screen.queryByRole('img')).toBeNull()
+      unmount()
+    }
+  })
+
+  it('links no mod page while statusline-anywhere is unpublished, and keeps the step text', () => {
+    const { container } = render(<DesktopGuideContent statuslineAnywhere={UNPUBLISHED} />)
+    expect(container.querySelector('a[href="/mods/statusline-anywhere"]')).toBeNull()
+    expect(newSessionStep().textContent).toContain(
+      'Your status line shows above the prompt, in color. Needs Claude Code 2.1.286 or later.',
+    )
+  })
+
   it('records plugin link clicks in PostHog with the guide as its surface', () => {
-    const { container } = render(<DesktopGuideContent />)
+    const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     const link = container.querySelector(`a[href="${STATUSLINE_ANYWHERE_URL}"]`)
     expect(link).not.toBeNull()
     fireEvent.click(link as Element)

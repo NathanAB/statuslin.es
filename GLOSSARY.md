@@ -16,12 +16,24 @@ _Avoid_: script entry
 One immutable, reviewed snapshot of a config or a mod, with its listing text: a config's script, or a mod's code at one commit of the author's repo. Each shows exactly one version at a time.
 _Avoid_: revision, edit, pin
 
+**Submission**:
+A version sent for review by a signed-in user: a new config or mod, an update, or a resubmission.
+_Avoid_: entry, request
+
+**Submitter**:
+The signed-in user who sent a submission. For a config, always its author; for a mod, anyone.
+_Avoid_: uploader, owner
+
+**Author**:
+Who made a config or mod and is credited for it. A config's author is the site user who submitted it; a mod's author is the owner of its GitHub repository, who may never have signed in.
+_Avoid_: creator, owner, submitter
+
 **Update**:
-A submitter's request to add a new version to a config that is already published.
+A submitter's request to add a new version to a config or mod that is already published.
 _Avoid_: edit, revision, resubmission
 
 **Resubmission**:
-Re-sending a rejected config that was never published.
+Re-sending a rejected config or mod that was never published.
 _Avoid_: update
 
 **Mod**:
@@ -32,8 +44,12 @@ _Avoid_: meter, usage mod, status line mod
 A named, fixed Claude Code session state (model, usage, folder, git and so on) that previews are rendered against. Status lines and mods draw from the same set.
 _Avoid_: fixture, test case, sample
 
+**Surface**:
+Where Claude Code draws a mod: the terminal or Claude Desktop.
+_Avoid_: client, app, platform
+
 **Preview**:
-What a status line or mod showed when statuslin.es rendered it against one scenario.
+What a status line or mod showed when statuslin.es rendered it against one scenario, on one surface.
 _Avoid_: screenshot, demo, render
 
 **Marketplace**:

@@ -5,12 +5,18 @@ import { Notice } from '@/ui/notice'
 import { Text, TextLink } from '@/ui/text'
 import { RetryRejectionEmailButton } from './dashboard-rejection-controls'
 
+/** The review fields a decided card reads, for a status line or a mod. */
+type DecidedVersion = Pick<
+  DashboardRow['version'],
+  'id' | 'status' | 'rejectionReason' | 'rejectionEmailStatus'
+>
+
 export function RejectionDetails({
   version,
   slug,
   showActions,
 }: {
-  version: DashboardRow['version']
+  version: DecidedVersion
   slug: string
   showActions: boolean
 }) {

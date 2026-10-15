@@ -41,10 +41,9 @@ vi.mock('@/ui/submit-cta', () => ({
 const { Route: HomeRoute } = await import('@/routes/index')
 
 const gallery = {
-  cards: [],
+  items: [],
   page: 1,
   pageCount: 1,
-  availableTags: [],
   publishedCount: 32,
   copyCount: 148,
   asOf: '2026-09-08',
@@ -61,16 +60,10 @@ function renderHome(overrides: Partial<typeof gallery> = {}) {
 }
 
 describe('home content', () => {
-  it('explains the reviewed community gallery of real submitted status lines', () => {
+  it('shows the published count, copy count and as-of date it is given', () => {
     renderHome()
 
     const page = document.body.textContent ?? ''
-    expect(page).toContain(
-      "Community-submitted and reviewed by hand. Every card shows the real script's output.",
-    )
-    expect(page).not.toMatch(/examples/)
-    expect(page).not.toMatch(/templates/)
-    expect(page).not.toMatch(/TUI installer/)
     expect(page).toMatch(/32 published/)
     expect(page).toMatch(/148/)
     expect(page).toMatch(/Sep 8, 2026/)
@@ -82,7 +75,7 @@ describe('home content', () => {
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
     expect(h1s[0]?.textContent).toBe(HOME_HEADING)
-    expect(HOME_HEADING).toBe('A gallery of Claude Code status lines')
+    expect(HOME_HEADING).toBe('Claude Code status lines and mods')
   })
 
   it('names the page number in the h1 past page 1', () => {
@@ -90,7 +83,7 @@ describe('home content', () => {
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    expect(h1s[0]?.textContent).toBe('A gallery of Claude Code status lines, page 2')
+    expect(h1s[0]?.textContent).toBe('Claude Code status lines and mods, page 2')
   })
 
   it('sits the heading beside the wordmark, with no browse-by-feature row', () => {

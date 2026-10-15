@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
+import type { PageCopy } from '@/content/types'
+import { guideJsonLd } from '@/lib/guide-json-ld'
 import {
   configJsonLd,
   facetJsonLd,
   faqPageJsonLd,
-  guideJsonLd,
   homeJsonLd,
   jsonLdScript,
   resourcesJsonLd,
 } from '@/lib/json-ld'
-import { GUIDE_DESCRIPTION, GUIDE_TITLE_BASE } from '@/lib/page-title'
+import { GUIDE_DATES, GUIDE_DESCRIPTION, GUIDE_PATH, GUIDE_TITLE_BASE } from '@/lib/page-title'
 
 describe('jsonLdScript', () => {
   it('serializes to an application/ld+json script descriptor', () => {
@@ -103,14 +104,10 @@ describe('configJsonLd', () => {
     keywords: ['Git', 'Token usage'],
     updatedAt: '2026-07-06',
     generatedContent: {
-      whatItShows: ['The git branch.', 'A context progress bar.'],
-      requirements: ['Bash 4+.', 'A nerd font.'],
-      behaviorNotes: ['Colors fade as context fills.'],
-    } as {
-      whatItShows: string[]
-      requirements: string[]
-      behaviorNotes: string[]
-    } | null,
+      summary: 'Shows the git branch and a context bar.',
+      howItWorks: ['Reads the session JSON on stdin', 'Runs `git` for the branch.'],
+      goodToKnow: ['Needs Bash 4 or newer.', 'Uses Nerd Font glyphs'],
+    } as PageCopy | null,
     primaryFacet: null as { slug: string; heading: string } | null,
   }
 
@@ -212,7 +209,7 @@ describe('configJsonLd', () => {
     expect(code).not.toHaveProperty('keywords')
   })
 
-  it('appends a FAQPage built from the generated content', () => {
+  it('appends a FAQPage built from the summary, the steps and the notes', () => {
     const nodes = configJsonLd('https://statuslin.es', base) as Array<Record<string, unknown>>
     const faq = nodes.find((n) => n['@type'] === 'FAQPage')
     expect(faq).toBeDefined()
@@ -221,14 +218,21 @@ describe('configJsonLd', () => {
       name: string
       acceptedAnswer: { text: string }
     }>
-    expect(questions).toHaveLength(3)
+    expect(questions.map((q) => [q.name, q.acceptedAnswer.text])).toEqual([
+      ['What does Powerline Dracula do?', 'Shows the git branch and a context bar.'],
+      [
+        'How does Powerline Dracula work?',
+        'Reads the session JSON on stdin. Runs git for the branch.',
+      ],
+      [
+        'What should I know before using Powerline Dracula?',
+        'Needs Bash 4 or newer. Uses Nerd Font glyphs.',
+      ],
+    ])
     expect(questions[0]).toMatchObject({
       '@type': 'Question',
-      name: 'What does Powerline Dracula show?',
-      acceptedAnswer: { '@type': 'Answer', text: 'The git branch. A context progress bar.' },
+      acceptedAnswer: { '@type': 'Answer' },
     })
-    expect(questions[1]!.name).toBe('What does Powerline Dracula require?')
-    expect(questions[2]!.name).toBe('How does Powerline Dracula behave?')
   })
 
   it('omits the FAQPage when there is no generated content', () => {
@@ -241,19 +245,14 @@ describe('configJsonLd', () => {
     expect(nodes).toHaveLength(2)
   })
 
-  it('drops FAQ questions whose section is empty', () => {
+  it('drops the steps and notes questions when there are none', () => {
     const nodes = configJsonLd('https://statuslin.es', {
       ...base,
-      generatedContent: {
-        whatItShows: ['The git branch.'],
-        requirements: [],
-        behaviorNotes: [],
-      },
+      generatedContent: { summary: 'Shows the git branch.', howItWorks: [], goodToKnow: [] },
     }) as Array<Record<string, unknown>>
     const faq = nodes.find((n) => n['@type'] === 'FAQPage')
     const questions = faq!.mainEntity as Array<{ name: string }>
-    expect(questions).toHaveLength(1)
-    expect(questions[0]!.name).toBe('What does Powerline Dracula show?')
+    expect(questions.map((q) => q.name)).toEqual(['What does Powerline Dracula do?'])
   })
 })
 
@@ -278,7 +277,13 @@ describe('faqPageJsonLd', () => {
 })
 
 describe('guideJsonLd', () => {
-  const nodes = guideJsonLd('https://statuslin.es', GUIDE_DESCRIPTION, [
+  const guide = {
+    path: GUIDE_PATH,
+    headline: GUIDE_TITLE_BASE,
+    description: GUIDE_DESCRIPTION,
+    dates: GUIDE_DATES,
+  }
+  const nodes = guideJsonLd('https://statuslin.es', guide, [
     { question: 'Why?', answer: 'Because.' },
   ]) as Array<Record<string, unknown>>
 
@@ -322,6 +327,29 @@ describe('guideJsonLd', () => {
       ],
     })
   })
+
+  it('runs a subpage breadcrumb through /guide and leaves out an empty FAQ', () => {
+    const subpage = guideJsonLd('https://statuslin.es', {
+      path: '/guide/sub',
+      headline: 'A Subpage',
+      description: 'About it.',
+      dates: { published: '2026-10-01', modified: '2026-10-02' },
+    }) as Array<Record<string, unknown>>
+
+    expect(subpage.map((node) => node['@type'])).toEqual(['TechArticle', 'BreadcrumbList'])
+    expect(subpage[0]).toMatchObject({
+      headline: 'A Subpage',
+      url: 'https://statuslin.es/guide/sub',
+      datePublished: '2026-10-01',
+      dateModified: '2026-10-02',
+    })
+    const crumbs = subpage[1] as { itemListElement: Array<{ name: string; item: string }> }
+    expect(crumbs.itemListElement.map(({ name, item }) => ({ name, item }))).toEqual([
+      { name: 'Status lines', item: 'https://statuslin.es' },
+      { name: GUIDE_TITLE_BASE, item: 'https://statuslin.es/guide' },
+      { name: 'A Subpage', item: 'https://statuslin.es/guide/sub' },
+    ])
+  })
 })
 
 describe('resourcesJsonLd', () => {
@@ -347,7 +375,7 @@ describe('facetJsonLd', () => {
   const [page, crumbs] = facetJsonLd(
     'https://example.test',
     facet,
-    [{ slug: 'a', title: 'A' }],
+    [{ kind: 'status-line', slug: 'a', title: 'A' }],
     '2026-07-06',
   ) as [Record<string, unknown>, Record<string, unknown>]
 
@@ -356,6 +384,22 @@ describe('facetJsonLd', () => {
     expect(page.url).toBe('https://example.test/status-lines/git')
     const list = page.mainEntity as { itemListElement: Array<{ url: string }> }
     expect(list.itemListElement[0]?.url).toBe('https://example.test/c/a')
+  })
+  it('lists a mod at its mod page, in the order given', () => {
+    const [withMod] = facetJsonLd(
+      'https://example.test',
+      facet,
+      [
+        { kind: 'mod', slug: 'meter', title: 'Meter' },
+        { kind: 'status-line', slug: 'a', title: 'A' },
+      ],
+      null,
+    ) as [Record<string, unknown>]
+    const list = withMod.mainEntity as { itemListElement: Array<Record<string, unknown>> }
+    expect(list.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Meter', url: 'https://example.test/mods/meter' },
+      { '@type': 'ListItem', position: 2, name: 'A', url: 'https://example.test/c/a' },
+    ])
   })
   it('carries a breadcrumb trail back to the gallery', () => {
     expect(crumbs['@type']).toBe('BreadcrumbList')
@@ -367,9 +411,12 @@ describe('facetJsonLd', () => {
     expect(page.dateModified).toBe('2026-07-06')
   })
   it('omits dateModified when there is no updated date', () => {
-    const [p] = facetJsonLd('https://example.test', facet, [{ slug: 'a', title: 'A' }], null) as [
-      Record<string, unknown>,
-    ]
+    const [p] = facetJsonLd(
+      'https://example.test',
+      facet,
+      [{ kind: 'status-line', slug: 'a', title: 'A' }],
+      null,
+    ) as [Record<string, unknown>]
     expect(p).not.toHaveProperty('dateModified')
   })
 })

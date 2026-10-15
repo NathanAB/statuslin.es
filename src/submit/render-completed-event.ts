@@ -1,10 +1,11 @@
 import type { ServerEvent } from '@/lib/posthog-server'
-import { INFRA_ERROR_EXIT_CODE } from '@/render/e2b-runner'
+import { INFRA_ERROR_EXIT_CODE } from '@/render/run-script'
 
-/** PostHog distinct id every render-worker event is attributed to (it's a process, not a person). */
+/** PostHog distinct id every render event is attributed to (it's a process, not a person). Named
+ * for the old always-on worker; kept so the PostHog history stays one series. */
 export const RENDER_WORKER_DISTINCT_ID = 'render-worker'
 
-/** Spread into every render-worker event: the worker isn't a person, so PostHog must not create a
+/** Spread into every render event: the renderer isn't a person, so PostHog must not create a
  * person profile for its distinct id. */
 export const PERSONLESS_EVENT_PROPERTIES = {
   // biome-ignore lint/style/useNamingConvention: PostHog's reserved property name.
@@ -17,7 +18,7 @@ interface ScenarioOutcome {
   timedOut: boolean
 }
 
-/** What the worker knows when a render job finishes. Ids are null when the job failed before its
+/** What the drain knows when a render job finishes. Ids are null when the job failed before its
  * version was found. `scenarios` is null when the job threw (status 'failed', nothing stored). */
 export interface RenderJobReport {
   configId: string | null

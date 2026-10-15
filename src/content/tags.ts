@@ -8,7 +8,7 @@ import { TAG_VOCABULARY } from '@/gallery/facets'
  */
 
 /** What each tag means, for the model. Keep in sync with the facet registry's intent. */
-const TAG_CRITERIA: Record<string, string> = {
+export const TAG_CRITERIA: Record<string, string> = {
   git: 'shows git branch, dirty state, diff stats, or other repo state',
   'token-usage': 'shows context window usage: token counts, percentages, bars, or countdowns',
   cost: 'shows the session cost in dollars (or a burn rate derived from it)',

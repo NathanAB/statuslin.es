@@ -4,5 +4,5 @@ Mod previews come from running the real Claude Code binary in the E2B sandbox wi
 
 ## Consequences
 
-- Mods that draw only in Desktop, such as statusline-anywhere, produce nothing in a terminal capture and need a separate answer.
+- Mods that draw only in Desktop, such as statusline-anywhere, produce nothing in a terminal capture and need a separate answer: ADR 0004.
 - Each adopted Claude Code release means rebuilding the sandbox template and re-rendering mod previews.

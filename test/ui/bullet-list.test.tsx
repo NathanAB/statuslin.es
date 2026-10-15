@@ -13,6 +13,12 @@ describe('BulletList', () => {
     expect(items[1]?.textContent).toBe('Model name')
   })
 
+  it('shows backtick-marked code in monospace', () => {
+    const { container } = render(<BulletList items={['Needs `jq` on your PATH']} />)
+    expect(container.querySelector('li')?.textContent).toBe('Needs jq on your PATH')
+    expect(container.querySelector('.font-mono')?.textContent).toBe('jq')
+  })
+
   it('renders duplicate items as separate list entries', () => {
     const { container } = render(<BulletList items={['bash', 'bash']} />)
     const items = container.querySelectorAll('ul > li')

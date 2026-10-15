@@ -2,6 +2,7 @@ export function configListPageJsonLd(
   origin: string,
   page: { path: string; name: string },
   items: Array<{ slug: string; title: string }>,
+  itemPath: (slug: string) => string = (slug) => `/c/${slug}`,
 ): object[] {
   const url = `${origin}${page.path}`
   return [
@@ -17,7 +18,7 @@ export function configListPageJsonLd(
           '@type': 'ListItem',
           position: i + 1,
           name: item.title,
-          url: `${origin}/c/${item.slug}`,
+          url: `${origin}${itemPath(item.slug)}`,
         })),
       },
     },

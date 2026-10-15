@@ -1,15 +1,12 @@
 import { desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions } from '@/db/schema'
+import { configs, configVersions, submissions } from '@/db/schema'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /** When the current version went live, falling back to first submit if `reviewedAt` is missing. */
-export const publishedAt = sql`coalesce(${configVersions.reviewedAt}, ${configs.createdAt})`
-
-/** The gallery's `new` sort: newest first publish first, so an approved update keeps its place. */
-export const newestFirstPublished = sql`${configs.firstPublishedAt} desc nulls last`
+export const publishedAt = sql`coalesce(${submissions.reviewedAt}, ${configs.createdAt})`
 
 /** Published sitemap rows joined to their current version, newest published date first. */
 export async function getPublishedSlugsForSitemap(
@@ -19,10 +16,11 @@ export async function getPublishedSlugsForSitemap(
     .select({
       slug: configs.slug,
       createdAt: configs.createdAt,
-      reviewedAt: configVersions.reviewedAt,
+      reviewedAt: submissions.reviewedAt,
     })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
+    .leftJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .where(eq(configs.status, 'published'))
     .orderBy(desc(publishedAt))
   return rows.map((row) => ({

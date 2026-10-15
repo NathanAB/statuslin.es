@@ -69,4 +69,62 @@ describe('check:boundaries', () => {
     },
     TIMEOUT_MS,
   )
+
+  test(
+    'lets src/mods import only the gallery, and fails when src/gallery imports src/mods',
+    async () => {
+      const root = await fixture({
+        'tsconfig.json': JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }),
+        'src/gallery/listing.ts':
+          "import { modCard } from '@/mods/card'\nexport const listing = modCard\n",
+        'src/mods/card.ts':
+          "import { rank } from '@/gallery/ranking'\nexport const modCard = rank\n",
+        'src/gallery/ranking.ts': 'export const rank = 1\n',
+        'src/mods/install.ts':
+          "import { copied } from '@/adopt/copy'\nexport const install = copied\n",
+        'src/adopt/copy.ts': 'export const copied = 1\n',
+      })
+
+      const { stdout } = depcruise(root, ['--output-type', 'json'])
+      const { violations } = (JSON.parse(stdout) as ICruiseResult).summary
+
+      expect(violations.map(({ rule, from, to }) => ({ rule: rule.name, from, to }))).toEqual([
+        {
+          rule: 'gallery-no-cross-feature',
+          from: 'src/gallery/listing.ts',
+          to: 'src/mods/card.ts',
+        },
+        { rule: 'mods-no-cross-feature', from: 'src/mods/install.ts', to: 'src/adopt/copy.ts' },
+      ])
+    },
+    TIMEOUT_MS,
+  )
+  test(
+    'lets src/review import the mod publish, query and GitHub code, and nothing else in src/mods',
+    async () => {
+      const root = await fixture({
+        'tsconfig.json': JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }),
+        'src/review/kinds/mod.ts': [
+          "import { guards } from '@/mods/publish'",
+          "import { rows } from '@/mods/queries'",
+          "import { github } from '@/mods/github'",
+          "import { submit } from '@/mods/submit'",
+          'export const all = [guards, rows, github, submit]',
+          '',
+        ].join('\n'),
+        'src/mods/publish.ts': 'export const guards = 1\n',
+        'src/mods/queries.ts': 'export const rows = 1\n',
+        'src/mods/github.ts': 'export const github = 1\n',
+        'src/mods/submit.ts': 'export const submit = 1\n',
+      })
+
+      const { stdout } = depcruise(root, ['--output-type', 'json'])
+      const { violations } = (JSON.parse(stdout) as ICruiseResult).summary
+
+      expect(violations.map(({ rule, to }) => ({ rule: rule.name, to }))).toEqual([
+        { rule: 'review-no-cross-feature', to: 'src/mods/submit.ts' },
+      ])
+    },
+    TIMEOUT_MS,
+  )
 })

@@ -1,0 +1,5 @@
+{
+  "name": "sample-plugin",
+  "version": "0.1.0",
+  "description": "Smallest valid plugin, for checking `claude plugin validate` in the mod render template."
+}

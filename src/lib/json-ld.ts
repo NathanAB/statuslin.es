@@ -1,7 +1,9 @@
-import type { GeneratedContent } from '@/content/types'
+import type { PageCopy } from '@/content/types'
+import type { GalleryKind } from '@/gallery/gallery-items'
+import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
-import { GUIDE_DATES, GUIDE_TITLE_BASE, homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
-import { CONTENT_LICENSE } from '@/lib/site'
+import { homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { CONTENT_LICENSE, modPath } from '@/lib/site'
 
 /**
  * JSON-LD structured data for search engines. Server-rendered via TanStack
@@ -20,8 +22,6 @@ export function jsonLdScript(data: object): { type: 'application/ld+json'; child
     children: JSON.stringify(data).replace(/</g, '\\u003c'),
   }
 }
-
-export const HOME_CRUMB_NAME = 'Status lines'
 
 /** The site identity plus gallery CollectionPage and its visible configs. */
 export function homeJsonLd(
@@ -58,9 +58,12 @@ export function homeJsonLd(
   ]
 }
 
+/** The `runtimePlatform` of every status line and mod. */
+export const RUNTIME_PLATFORM = 'Claude Code'
+
 /**
- * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the
- * generated copy when present. The SoftwareSourceCode carries `dateModified` (freshness),
+ * A config page as SoftwareSourceCode + breadcrumb, plus a FAQPage built from the page copy
+ * the "What it does" card shows, when present. The SoftwareSourceCode carries `dateModified` (freshness),
  * `runtimePlatform`, and facet `keywords`.
  */
 export function configJsonLd(
@@ -74,7 +77,7 @@ export function configJsonLd(
     license: string | null
     keywords: string[]
     updatedAt: string | null
-    generatedContent: GeneratedContent | null
+    generatedContent: PageCopy | null
     primaryFacet: { slug: string; heading: string } | null
   },
 ): object[] {
@@ -99,24 +102,16 @@ export function configJsonLd(
       description: config.description,
       url,
       programmingLanguage: config.interpreter,
-      runtimePlatform: 'Claude Code',
+      runtimePlatform: RUNTIME_PLATFORM,
       license: config.license ?? CONTENT_LICENSE.url,
       ...(config.updatedAt ? { dateModified: config.updatedAt } : {}),
       ...(config.keywords.length > 0 ? { keywords: config.keywords.join(', ') } : {}),
       ...(config.authorName ? { author: { '@type': 'Person', name: config.authorName } } : {}),
     },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: crumbs.map((crumb, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        ...crumb,
-      })),
-    },
+    breadcrumbJsonLd(crumbs),
   ]
 
-  const faq = configFaqJsonLd(config.title, config.generatedContent)
+  const faq = pageCopyFaqJsonLd(config.title, config.generatedContent)
   if (faq) nodes.push(faq)
   return nodes
 }
@@ -139,45 +134,25 @@ export function faqPageJsonLd(entries: FaqEntry[]): object | null {
   }
 }
 
-function configFaqJsonLd(title: string, content: GeneratedContent | null): object | null {
-  if (!content) return null
-  const sections = [
-    { question: `What does ${title} show?`, lines: content.whatItShows },
-    { question: `What does ${title} require?`, lines: content.requirements },
-    { question: `How does ${title} behave?`, lines: content.behaviorNotes },
-  ]
-  return faqPageJsonLd(
-    sections
-      .filter((s) => s.lines.length > 0)
-      .map((s) => ({ question: s.question, answer: s.lines.join(' ') })),
-  )
-}
+/** A step or note as a sentence, so a list joins into a readable answer. */
+const asSentence = (line: string) => (/[.!?]$/.test(line) ? line : `${line}.`)
 
-export function guideJsonLd(origin: string, description: string, faq: FaqEntry[]): object[] {
-  const url = `${origin}/guide`
-  const nodes: object[] = [
-    {
-      '@context': 'https://schema.org',
-      '@type': 'TechArticle',
-      headline: GUIDE_TITLE_BASE,
-      url,
-      description,
-      author: { '@type': 'Organization', name: 'statuslin.es', url: origin },
-      datePublished: GUIDE_DATES.published,
-      dateModified: GUIDE_DATES.modified,
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
-        { '@type': 'ListItem', position: 2, name: GUIDE_TITLE_BASE, item: url },
-      ],
-    },
+/**
+ * A status line or mod page's "What it does" copy as a FAQPage: the summary, steps and notes,
+ * each as one question; an empty list asks nothing.
+ */
+export function pageCopyFaqJsonLd(title: string, copy: PageCopy | null): object | null {
+  if (!copy) return null
+  const lists = [
+    { question: `How does ${title} work?`, lines: copy.howItWorks },
+    { question: `What should I know before using ${title}?`, lines: copy.goodToKnow },
   ]
-  const faqPage = faqPageJsonLd(faq)
-  if (faqPage) nodes.push(faqPage)
-  return nodes
+  return faqPageJsonLd([
+    { question: `What does ${title} do?`, answer: copy.summary },
+    ...lists
+      .filter((list) => list.lines.length > 0)
+      .map((list) => ({ question: list.question, answer: list.lines.map(asSentence).join(' ') })),
+  ])
 }
 
 /** The /resources page as a CollectionPage listing the external tools/resources. */
@@ -205,7 +180,8 @@ export function resourcesJsonLd(
 export function facetJsonLd(
   origin: string,
   facet: { slug: string; titleBase: string },
-  items: Array<{ slug: string; title: string }>,
+  /** The page's status lines and mods, in the order it shows them. */
+  items: Array<{ kind: GalleryKind; slug: string; title: string }>,
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
   updated: string | null,
   options: { includeCollectionPage?: boolean; faq?: FaqEntry[] | undefined } = {},
@@ -223,18 +199,14 @@ export function facetJsonLd(
         '@type': 'ListItem',
         position: i + 1,
         name: item.title,
-        url: `${origin}/c/${item.slug}`,
+        url: `${origin}${item.kind === 'mod' ? modPath(item.slug) : `/c/${item.slug}`}`,
       })),
     },
   }
-  const breadcrumbs = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Status lines', item: origin },
-      { '@type': 'ListItem', position: 2, name: facet.titleBase, item: url },
-    ],
-  }
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: HOME_CRUMB_NAME, item: origin },
+    { name: facet.titleBase, item: url },
+  ])
   const nodes =
     options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]
   const faqPage = faqPageJsonLd(options.faq ?? [])
