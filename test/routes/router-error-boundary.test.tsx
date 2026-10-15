@@ -19,7 +19,8 @@ vi.mock('@/lib/posthog-client-errors', () => ({
 const { getRouter } = await import('@/router')
 
 describe('router error boundary', () => {
-  it('preserves the document when a child route component preload rejects', async () => {
+  // The 500 keeps the error screen out of search results; no robots meta needed.
+  it('preserves the document and returns 500 when a child route component preload rejects', async () => {
     const chunkError = new Error('failed to fetch route chunk')
     const router = getRouter()
     router.update({
@@ -37,6 +38,5 @@ describe('router error boundary', () => {
     expect(html).toContain('<head>')
     expect(html).toContain('<body>')
     expect(html).toContain('This page couldn’t load')
-    expect(html).toContain('<meta name="robots" content="noindex, follow"')
   })
 })

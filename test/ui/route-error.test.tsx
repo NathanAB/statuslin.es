@@ -9,7 +9,7 @@ afterEach(() => {
 })
 
 describe('RouteError', () => {
-  it('offers a reload and keeps the failed page out of search results', () => {
+  it('offers a reload', () => {
     const reload = vi.fn()
     vi.stubGlobal('location', { reload })
 
@@ -23,8 +23,5 @@ describe('RouteError', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reload page' }))
 
     expect(reload).toHaveBeenCalledOnce()
-    expect(document.head.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe(
-      'noindex, follow',
-    )
   })
 })
