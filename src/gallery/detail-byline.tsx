@@ -9,7 +9,7 @@ import { Text, TextLink } from '@/ui/text'
 export interface Byline {
   author: ConfigAuthor | null
   /** A link to the source, after optional lead words: "original source", "source at 0123456". */
-  source: { lead?: string; label: string; href: string } | null
+  source: { lead?: string; label: string; href: string; onClick?: () => void } | null
   /** The licence fact as the page words it: "MIT licensed", "No licence". */
   license: string | null
 }
@@ -52,7 +52,9 @@ export function DetailByline({ author, source, license }: Byline) {
       fact: (
         <Text muted size="sm">
           {source.lead && `${source.lead} `}
-          <TextLink href={source.href}>{source.label}</TextLink>
+          <TextLink href={source.href} {...(source.onClick ? { onClick: source.onClick } : {})}>
+            {source.label}
+          </TextLink>
         </Text>
       ),
     })

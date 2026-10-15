@@ -95,6 +95,7 @@ describe('GalleryConfigCard analytics', () => {
           page: 1,
           sort: 'trending',
           selectedTags: ['git'],
+          kind: 'status-lines',
         }}
       />,
     )
@@ -111,6 +112,7 @@ describe('GalleryConfigCard analytics', () => {
       sort: 'trending',
       page: 1,
       selectedTags: ['git'],
+      kind: 'status-lines',
     })
   })
 })

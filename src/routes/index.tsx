@@ -1,5 +1,6 @@
 import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import type { GalleryCardAnalytics } from '@/gallery/card-analytics'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery, getGalleryConfigs } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
@@ -108,18 +109,30 @@ export const Route = createFileRoute('/')({
 function Home() {
   const { user, gallery } = Route.useLoaderData()
   const { items, page, pageCount, publishedCount, copyCount, asOf } = gallery
-  const { sort: rawSort, tags, kind } = Route.useSearch()
+  const { sort: rawSort, tags, kind: rawKind } = Route.useSearch()
   const sort = rawSort ?? 'trending'
+  const kind = rawKind ?? 'all'
   const selectedTags = tags ? tags.split(',') : []
   const posthog = usePostHog()
 
-  const pageSearch = (nextPage: number) => homePaginationSearch(nextPage, { sort, tags, kind })
+  const pageSearch = (nextPage: number) =>
+    homePaginationSearch(nextPage, { sort, tags, kind: rawKind })
+
+  const cardAnalytics = (index: number): GalleryCardAnalytics => ({
+    surface: 'home',
+    position: index + 1,
+    page,
+    sort,
+    selectedTags,
+    kind,
+  })
 
   const trackPageChange = (nextPage: number) => {
     posthog.capture('gallery_page_changed', {
       page: nextPage,
       sort,
       selectedTags,
+      kind,
     })
   }
 
@@ -133,24 +146,22 @@ function Home() {
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
-            <GalleryControls kind={kind ?? 'all'} sort={sort} tags={tags ? tags.split(',') : []} />
+            <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
             <SubmitCta signedIn={!!user} />
           </Row>
           {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
           {items.map((item, index) =>
             item.kind === 'mod' ? (
-              <ModCard key={`mod:${item.card.slug}`} card={item.card} />
+              <ModCard
+                key={`mod:${item.card.slug}`}
+                card={item.card}
+                analytics={cardAnalytics(index)}
+              />
             ) : (
               <GalleryConfigCard
                 key={`status-line:${item.card.slug}`}
                 card={item.card}
-                analytics={{
-                  surface: 'home',
-                  position: index + 1,
-                  page,
-                  sort,
-                  selectedTags,
-                }}
+                analytics={cardAnalytics(index)}
               />
             ),
           )}

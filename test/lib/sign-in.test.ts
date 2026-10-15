@@ -33,7 +33,7 @@ describe('startGitHubSignIn', () => {
     expect(socialSignIn).toHaveBeenCalledWith({ provider: 'github', callbackURL: '/' })
   })
 
-  it('tracks the entry point and return path when OAuth starts', () => {
+  it('tracks the entry point and return path when OAuth starts, with no kind the path does not name', () => {
     startGitHubSignIn('/submit', 'submit', { capture })
     expect(capture).toHaveBeenCalledWith('auth_started', {
       provider: 'github',
@@ -41,6 +41,14 @@ describe('startGitHubSignIn', () => {
       returnPath: '/submit',
       $current_url: '/submit',
     })
+  })
+
+  it('tracks a sign-in to submit a mod as a mod submit', () => {
+    startGitHubSignIn('/submit?kind=mod', 'submit', { capture })
+    expect(capture).toHaveBeenCalledWith(
+      'auth_started',
+      expect.objectContaining({ entryPoint: 'submit', submitKind: 'mod', returnPath: '/submit' }),
+    )
   })
 
   it('does not send query parameters in auth analytics', () => {

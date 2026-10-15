@@ -1,3 +1,4 @@
+import { usePostHog } from '@posthog/react'
 import { ConfigBadges } from '@/gallery/config-badges'
 import { DetailHeader } from '@/gallery/detail-header'
 import { MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
@@ -13,6 +14,8 @@ const SHORT_SHA_LENGTH = 7
  * licence, or says there is none.
  */
 export function ModHeader({ mod }: { mod: ModDetail }) {
+  const posthog = usePostHog()
+
   return (
     <DetailHeader
       trail={[MODS_CRUMB]}
@@ -28,6 +31,8 @@ export function ModHeader({ mod }: { mod: ModDetail }) {
           lead: 'source at',
           label: mod.commitSha.slice(0, SHORT_SHA_LENGTH),
           href: modSourceUrl(mod),
+          // Reading the source is how a visitor decides to trust a mod before installing it.
+          onClick: () => posthog.capture('mod_source_clicked', { modId: mod.id, slug: mod.slug }),
         },
         license: mod.license ? `${mod.license} licence` : 'No licence',
       }}

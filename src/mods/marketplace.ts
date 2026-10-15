@@ -70,11 +70,30 @@ export function buildMarketplace(origin: string, rows: MarketplaceModRow[]): Mar
   }
 }
 
+/** The user agent Claude Code's plugin manager sends when it adds or refreshes a marketplace. */
+const CLAUDE_CODE_USER_AGENT = 'Claude-Code-Plugin-Manager'
+
+/** Crawlers send `Mozilla/5.0 (compatible; Googlebot/2.1; …)`, so this is checked before browsers. */
+const CRAWLER = /bot|crawl|spider/i
+
+type MarketplaceClient = 'claude-code' | 'bot' | 'browser' | 'other'
+
+/** A coarse class, so the raw user agent never reaches PostHog. */
+function marketplaceClient(userAgent: string | null): MarketplaceClient {
+  if (userAgent?.startsWith(CLAUDE_CODE_USER_AGENT)) return 'claude-code'
+  if (userAgent && CRAWLER.test(userAgent)) return 'bot'
+  if (userAgent?.startsWith('Mozilla/')) return 'browser'
+  return 'other'
+}
+
 /** Anonymous on purpose: Claude Code fetches the file without any visitor identity. */
-export function marketplaceFetchedEvent(pluginCount: number): ServerEvent {
+export function marketplaceFetchedEvent(
+  pluginCount: number,
+  userAgent: string | null,
+): ServerEvent {
   return {
     distinctId: 'marketplace',
     event: 'marketplace_fetched',
-    properties: { pluginCount, ...PERSONLESS },
+    properties: { pluginCount, client: marketplaceClient(userAgent), ...PERSONLESS },
   }
 }

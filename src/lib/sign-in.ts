@@ -24,6 +24,15 @@ function analyticsPath(path: string): string {
 }
 
 /**
+ * The submit form a sign-in returns to, when its path names one (`/submit?kind=mod`). A bare
+ * `/submit` is left out: the visitor picks the kind on that page, after signing in.
+ */
+function submitKindProperty(returnPath: string): { submitKind?: 'mod' } {
+  const query = returnPath.split('#', 1)[0]?.split('?')[1] ?? ''
+  return new URLSearchParams(query).get('kind') === 'mod' ? { submitKind: 'mod' } : {}
+}
+
+/**
  * Starts the one-click GitHub OAuth redirect, returning the user to `next` (sanitized
  * against open redirects) once they come back. Every sign-in entry point goes through
  * here so the flow lives in exactly one place.
@@ -46,6 +55,7 @@ export function startGitHubSignIn(
   posthog?.capture('auth_started', {
     provider: 'github',
     entryPoint,
+    ...(entryPoint === 'submit' ? submitKindProperty(returnPath) : {}),
     returnPath: trackedReturnPath,
     [CURRENT_URL_PROPERTY]: trackedReturnPath,
   })

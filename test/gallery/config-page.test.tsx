@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { getConfigDetail } from '@/gallery/functions'
@@ -14,16 +14,24 @@ vi.mock('@tanstack/react-router', async () => {
       to,
       params,
       children,
+      onClick,
     }: {
       to: string
       params?: Record<string, string>
       children: React.ReactNode
-    }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
+      onClick?: () => void
+    }) => (
+      <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to} onClick={onClick}>
+        {children}
+      </a>
+    ),
   }
 })
+const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
+
 vi.mock('@posthog/react', () => ({
   usePostHog: () => ({
-    capture: vi.fn(),
+    capture,
     get_distinct_id: () => 'did',
     get_session_id: () => 'sid',
   }),
@@ -171,6 +179,19 @@ describe('status line page', () => {
       '/mods/cost-meter',
     )
     expectInOrder([h2('More status lines'), h2('Mods that do the same job')])
+  })
+
+  it('captures clicks on its mods as status line page related cards, by position', () => {
+    renderPage(false, [COST_MOD])
+
+    fireEvent.click(screen.getByRole('link', { name: 'Cost Meter' }))
+
+    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
+      modId: COST_MOD.modId,
+      slug: 'cost-meter',
+      surface: 'related',
+      position: 1,
+    })
   })
 
   it('shows no mods block when no mod shares its tags', () => {

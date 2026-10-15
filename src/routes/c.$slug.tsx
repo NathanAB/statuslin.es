@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { getViewerIsAuthor } from '@/gallery/authorship'
+import { cardClickProperties } from '@/gallery/card-analytics'
 import { configFactTiles } from '@/gallery/config-fact-tiles'
 import { ConfigHeader } from '@/gallery/config-header'
 import { DesktopNote } from '@/gallery/desktop-note'
@@ -166,12 +167,13 @@ function ConfigDetail() {
                               to="/c/$slug"
                               params={{ slug: r.slug }}
                               onClick={() =>
-                                posthog.capture('statusline_card_clicked', {
-                                  configId: r.configId,
-                                  slug: r.slug,
-                                  surface: 'related',
-                                  position: index + 1,
-                                })
+                                posthog.capture(
+                                  'statusline_card_clicked',
+                                  cardClickProperties(
+                                    { configId: r.configId, slug: r.slug },
+                                    { surface: 'related', position: index + 1 },
+                                  ),
+                                )
                               }
                             >
                               {r.title}
@@ -197,8 +199,12 @@ function ConfigDetail() {
             {mods.length > 0 && (
               <SectionCard title="Mods that do the same job" headingLevel={2}>
                 <Stack gap={3}>
-                  {mods.map((card) => (
-                    <ModCard key={card.slug} card={card} />
+                  {mods.map((card, index) => (
+                    <ModCard
+                      key={card.slug}
+                      card={card}
+                      analytics={{ surface: 'related', position: index + 1 }}
+                    />
                   ))}
                 </Stack>
               </SectionCard>
