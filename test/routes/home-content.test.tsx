@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import type { GalleryModCard } from '@/gallery/gallery-items'
 import { HOME_HEADING } from '@/lib/page-title'
 
 const capture = vi.hoisted(() => vi.fn())
@@ -52,10 +53,27 @@ const gallery = {
   asOf: '2026-09-08',
 }
 
-function renderHome(overrides: Partial<typeof gallery> = {}, search: Record<string, string> = {}) {
+const modCard = (slug: string): GalleryModCard => ({
+  modId: `id-${slug}`,
+  slug,
+  title: slug,
+  description: '',
+  authorGithub: 'octocat',
+  copyCount: 0,
+  tags: [],
+  preview: null,
+  desktopShot: null,
+})
+
+function renderHome(
+  overrides: Partial<typeof gallery> = {},
+  search: Record<string, string> = {},
+  newMods: GalleryModCard[] = [],
+) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
+    newMods,
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
@@ -119,6 +137,50 @@ describe('home analytics', () => {
       sort: 'trending',
       selectedTags: [],
       kind: 'mods',
+    })
+  })
+})
+
+describe('home "New mods" row', () => {
+  const newMods = [modCard('newest-mod'), modCard('older-mod')]
+
+  it('shows the mods it is given, in order, above the gallery, with a link to all mods', () => {
+    renderHome({}, {}, newMods)
+
+    const row = screen
+      .getByRole('heading', { level: 2, name: 'New mods' })
+      .closest('section') as HTMLElement
+    const inRow = within(row)
+    expect(inRow.getByRole('link', { name: 'Browse all mods' }).getAttribute('href')).toBe('/mods')
+    const cardLinks = inRow
+      .getAllByRole('link', { name: /-mod$/ })
+      .map((a) => [a.textContent, a.getAttribute('href')])
+    expect(cardLinks).toEqual([
+      ['newest-mod', '/mods/newest-mod'],
+      ['older-mod', '/mods/older-mod'],
+    ])
+    const galleryHeading = screen.getByRole('heading', { name: 'Status lines and mods' })
+    expect(
+      row.compareDocumentPosition(galleryHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('is left out when there are no mods to show', () => {
+    renderHome()
+
+    expect(screen.queryByRole('heading', { name: 'New mods' })).toBeNull()
+  })
+
+  it('reports a card click with the row as its surface', () => {
+    renderHome({}, {}, newMods)
+
+    fireEvent.click(screen.getByRole('link', { name: 'older-mod' }))
+
+    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
+      modId: 'id-older-mod',
+      slug: 'older-mod',
+      surface: 'home_new_mods',
+      position: 2,
     })
   })
 })

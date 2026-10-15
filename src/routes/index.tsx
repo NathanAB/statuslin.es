@@ -19,6 +19,7 @@ import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
+import { loadNewMods, NewModsRow } from '@/mods/new-mods-row'
 import { homeSocialMeta } from '@/og/meta'
 import { Button } from '@/ui/button'
 import { HomeHero, HomeMasthead } from '@/ui/home-hero'
@@ -54,7 +55,10 @@ export const Route = createFileRoute('/')({
   loader: async ({ deps }) => {
     const sort = deps.sort ?? 'trending'
     const tags = coerceTags(deps.tags)
-    const [listing, gallery] = await Promise.all([
+    // The "New mods" row shows only on the default first page. validateSearch drops every default,
+    // so that page is the one with no deps.
+    const showsNewMods = Object.values(deps).every((value) => value === undefined)
+    const [listing, gallery, newMods] = await Promise.all([
       loadGalleryPage(
         { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
         {
@@ -63,9 +67,10 @@ export const Route = createFileRoute('/')({
         },
       ),
       getGallery(),
+      showsNewMods ? loadNewMods() : [],
     ])
     if (!listing) throw notFound()
-    return { user: await getSession(), gallery: { ...gallery, ...listing } }
+    return { user: await getSession(), gallery: { ...gallery, ...listing }, newMods }
   },
   head: ({ loaderData, match }) => {
     const page = loaderData?.gallery.page ?? 1
@@ -107,7 +112,7 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
-  const { user, gallery } = Route.useLoaderData()
+  const { user, gallery, newMods } = Route.useLoaderData()
   const { items, page, pageCount, publishedCount, copyCount, asOf } = gallery
   const { sort: rawSort, tags, kind: rawKind } = Route.useSearch()
   const sort = rawSort ?? 'trending'
@@ -143,6 +148,7 @@ function Home() {
           <HomeHero />
           <HomeGalleryIntro page={page} />
         </HomeMasthead>
+        <NewModsRow mods={newMods} />
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
