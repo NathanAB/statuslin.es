@@ -32,7 +32,7 @@ export function InstallPrompt({
         label="Copy install prompt"
         size="lg"
         variant="default"
-        ariaLabel={`Copy install prompt — ${title}`}
+        ariaLabel={`Copy install prompt for ${title}`}
         onCopied={handleCopied}
       />
       <CopyCount count={count} />

@@ -68,7 +68,7 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
         },
       })
       setPinned(`Pinned ${result.slug} to ${result.ref} at ${result.commitSha.slice(0, 7)}.`)
-      toast.success("Submitted — we'll render it and review it.")
+      toast.success('Submitted for review.')
       setLink('')
       setTitle(draft?.title ?? '')
     } catch (err) {

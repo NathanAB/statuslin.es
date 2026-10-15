@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { jsonLdScript, resourcesJsonLd } from '@/lib/json-ld'
-import { RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { brandedPageTitle, RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
 import { RESOURCE_SECTIONS } from '@/resources/data'
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/resources')({
   loader: () => getSession(),
   head: () => ({
     meta: [
-      { title: RESOURCES_TITLE_BASE },
+      { title: brandedPageTitle(RESOURCES_TITLE_BASE) },
       { name: 'description', content: DESCRIPTION },
       ...staticPageSocialMeta({
         path: '/resources',

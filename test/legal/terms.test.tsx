@@ -36,9 +36,19 @@ describe('TermsContent', () => {
     )
   })
 
-  it("states mods are listed on their authors' behalf", () => {
+  it('says anyone signed in can submit a mod, credited to its repository owner', () => {
     render(<TermsContent />)
-    expect(screen.getByText(/listed on their authors' behalf/i)).toBeTruthy()
+    const listing = screen.getByText(/anyone signed in can submit a mod/i)
+    expect(listing.textContent).toMatch(/each mod is credited to its repository's owner/i)
+    expect(screen.queryByText(/on their authors' behalf/i)).toBeNull()
+  })
+
+  it('binds a mod submitter to a public repository, the right to share it and no malice', () => {
+    render(<TermsContent />)
+    const clause = screen.getByText(/by submitting a mod, you confirm/i)
+    expect(clause.textContent).toMatch(
+      /the repository is public, you have the right to share the mod, and it isn't malicious/i,
+    )
   })
 
   it('says how to have a mod removed on request', () => {

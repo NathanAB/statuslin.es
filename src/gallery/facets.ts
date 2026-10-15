@@ -106,7 +106,7 @@ export const FACETS: Facet[] = [
     titleBase: 'Claude Code Status Lines That Show Market Data',
     heading: 'Claude Code status lines that show market data',
     metaDescription:
-      'Claude Code status lines that show live market data — crypto prices, stocks, or exchange rates — beside your coding metrics. Rendered previews, one-paste install.',
+      'Claude Code status lines that show live crypto prices, stock quotes or exchange rates beside your coding metrics. Rendered previews, one-paste install.',
     intro: FACET_INTRO.markets,
   },
   {

@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react'
 import { ApprovalDetails } from '@/review/dashboard-approval-details'
-import type { BadgeVariant } from '@/review/dashboard-card-parts'
+import {
+  type BadgeVariant,
+  PUBLISHED_HEADLINE,
+  READY_HEADLINE,
+} from '@/review/dashboard-card-parts'
 import { ReviewDecisionControls } from '@/review/dashboard-rejection-controls'
 import { RejectionDetails } from '@/review/dashboard-rejection-details'
 import type { ModReviewRow, ModReviewVersion } from '@/review/mod-queue'
@@ -88,14 +92,14 @@ function headline(row: ModReviewRow): View {
     return {
       variant: 'primaryOutline',
       label: 'published',
-      text: 'Published — live in the gallery',
+      text: PUBLISHED_HEADLINE,
     }
   }
   if (row.version.status === 'rejected') {
     return { variant: 'destructive', label: 'rejected', text: 'Not accepted' }
   }
   if (row.rendered) {
-    return { variant: 'primaryOutline', label: 'ready', text: 'Rendered — ready to review' }
+    return { variant: 'primaryOutline', label: 'ready', text: READY_HEADLINE }
   }
   return { variant: 'outline', label: 'needs render', text: 'Render it on your machine:' }
 }
