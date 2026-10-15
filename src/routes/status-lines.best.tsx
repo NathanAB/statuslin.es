@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { jsonLdScript } from '@/lib/json-ld'
 import { configListPageJsonLd } from '@/lib/json-ld-lists'
+import { brandedPageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
 import { Stack } from '@/ui/layout'
@@ -12,25 +13,34 @@ import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
 
 const PATH = '/status-lines/best'
-const TITLE_BASE = 'Best Claude Code Status Lines (Most Copied)'
 const DESCRIPTION =
   'The most-copied Claude Code status lines in the gallery, ranked by copies. Each one has a real rendered preview, a one-line summary, and a one-paste install.'
 
+const MONTH = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+
+/** " (October 2026)" from the newest copy's UTC day, or nothing before the first copy. */
+function monthSuffix(latestCopy: string | null): string {
+  return latestCopy ? ` (${MONTH.format(new Date(latestCopy))})` : ''
+}
+
 export const Route = createFileRoute('/status-lines/best')({
   loader: async () => ({ page: await getBestPage(), user: await getSession() }),
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${TITLE_BASE} | statuslin.es` },
-      { name: 'description', content: DESCRIPTION },
-      ...staticPageSocialMeta({ path: PATH, title: TITLE_BASE, description: DESCRIPTION }),
-    ],
-    links: [canonicalLink(PATH)],
-    scripts: configListPageJsonLd(
-      siteUrl(),
-      { path: PATH, name: TITLE_BASE },
-      (loaderData?.page.items ?? []).map(({ card }) => ({ slug: card.slug, title: card.title })),
-    ).map(jsonLdScript),
-  }),
+  head: ({ loaderData }) => {
+    const titleBase = `Best Claude Code Status Lines${monthSuffix(loaderData?.page.latestCopy ?? null)}`
+    return {
+      meta: [
+        { title: brandedPageTitle(titleBase) },
+        { name: 'description', content: DESCRIPTION },
+        ...staticPageSocialMeta({ path: PATH, title: titleBase, description: DESCRIPTION }),
+      ],
+      links: [canonicalLink(PATH)],
+      scripts: configListPageJsonLd(
+        siteUrl(),
+        { path: PATH, name: titleBase },
+        (loaderData?.page.items ?? []).map(({ card }) => ({ slug: card.slug, title: card.title })),
+      ).map(jsonLdScript),
+    }
+  },
   component: BestPage,
 })
 
@@ -40,11 +50,11 @@ function BestPage() {
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
-          <Heading level={1}>Best Claude Code status lines</Heading>
+          <Heading level={1}>Best Claude Code status lines{monthSuffix(page.latestCopy)}</Heading>
           <Text muted>
-            The {page.items.length} status lines copied most often from statuslin.es, as of{' '}
-            {page.asOf}. Every preview is rendered from the real script, and every entry was
-            reviewed by a person before it was published.
+            The {page.items.length} status lines copied most often from statuslin.es
+            {page.latestCopy ? `, as of ${page.latestCopy}` : ''}. Every preview is rendered from
+            the real script, and every entry was reviewed by a person before it was published.
           </Text>
           <Text muted>
             Comparing tools instead?{' '}
