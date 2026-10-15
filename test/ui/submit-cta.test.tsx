@@ -47,6 +47,7 @@ describe('SubmitCta', () => {
     expect(capture).toHaveBeenCalledWith('auth_started', {
       provider: 'github',
       entryPoint: 'submit',
+      submitKind: 'status_line',
       returnPath: '/submit',
       $current_url: '/submit',
     })

@@ -1,3 +1,5 @@
+import { usePostHog } from '@posthog/react'
+import { cardClickProperties, type GalleryCardAnalytics } from '@/gallery/card-analytics'
 import { ConfigBadges } from '@/gallery/config-badges'
 import type { GalleryModCard } from '@/gallery/gallery-items'
 import { githubAvatarUrl } from '@/lib/github-avatars'
@@ -11,14 +13,32 @@ import { StretchedLink } from '@/ui/stretched-link'
 import { Text } from '@/ui/text'
 import { ModCardPreview } from './mod-preview'
 
-export function ModCard({ card }: { card: GalleryModCard }) {
+export function ModCard({
+  card,
+  analytics,
+}: {
+  card: GalleryModCard
+  analytics?: GalleryCardAnalytics
+}) {
+  const posthog = usePostHog()
+
   return (
     <Card interactive>
       <CardHeader>
         <Row gap={2} align="start" justify="between">
           <Row gap={2} wrap>
             <CardTitle>
-              <StretchedLink to={MOD_ROUTE} params={{ slug: card.slug }}>
+              <StretchedLink
+                to={MOD_ROUTE}
+                params={{ slug: card.slug }}
+                onClick={() => {
+                  if (!analytics) return
+                  posthog.capture(
+                    'mod_card_clicked',
+                    cardClickProperties({ modId: card.modId, slug: card.slug }, analytics),
+                  )
+                }}
+              >
                 {card.title}
               </StretchedLink>
             </CardTitle>

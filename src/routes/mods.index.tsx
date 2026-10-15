@@ -79,8 +79,12 @@ function ModsPage() {
         {mods.length > 0 ? (
           <Stack gap={4}>
             <VisuallyHidden as="h2">Mods</VisuallyHidden>
-            {mods.map((card) => (
-              <ModCard key={card.slug} card={card} />
+            {mods.map((card, index) => (
+              <ModCard
+                key={card.slug}
+                card={card}
+                analytics={{ surface: 'mods', position: index + 1 }}
+              />
             ))}
           </Stack>
         ) : (

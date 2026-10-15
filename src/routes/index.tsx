@@ -1,5 +1,6 @@
 import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import type { GalleryCardAnalytics } from '@/gallery/card-analytics'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { getGallery, getGalleryConfigs } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
@@ -116,11 +117,21 @@ function Home() {
 
   const pageSearch = (nextPage: number) => homePaginationSearch(nextPage, { sort, tags, kind })
 
+  const cardAnalytics = (index: number): GalleryCardAnalytics => ({
+    surface: 'home',
+    position: index + 1,
+    page,
+    sort,
+    selectedTags,
+    kind: kind ?? 'all',
+  })
+
   const trackPageChange = (nextPage: number) => {
     posthog.capture('gallery_page_changed', {
       page: nextPage,
       sort,
       selectedTags,
+      kind: kind ?? 'all',
     })
   }
 
@@ -140,18 +151,16 @@ function Home() {
           {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
           {items.map((item, index) =>
             item.kind === 'mod' ? (
-              <ModCard key={`mod:${item.card.slug}`} card={item.card} />
+              <ModCard
+                key={`mod:${item.card.slug}`}
+                card={item.card}
+                analytics={cardAnalytics(index)}
+              />
             ) : (
               <GalleryConfigCard
                 key={`status-line:${item.card.slug}`}
                 card={item.card}
-                analytics={{
-                  surface: 'home',
-                  position: index + 1,
-                  page,
-                  sort,
-                  selectedTags,
-                }}
+                analytics={cardAnalytics(index)}
               />
             ),
           )}

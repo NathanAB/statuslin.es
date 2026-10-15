@@ -109,11 +109,12 @@ describe('GalleryControls analytics', () => {
       selectedTags: [],
       sort: 'top',
       page: 1,
+      kind: 'all',
     })
   })
 
   it('captures sort changes with the active filter state', () => {
-    render(<GalleryControls kind="all" sort="trending" tags={['git']} />)
+    render(<GalleryControls kind="mods" sort="trending" tags={['git']} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Top' }))
 
@@ -121,6 +122,20 @@ describe('GalleryControls analytics', () => {
       sort: 'top',
       selectedTags: ['git'],
       page: 1,
+      kind: 'mods',
+    })
+  })
+
+  it('captures switching what the gallery shows, from what it showed', () => {
+    render(<GalleryControls kind="all" sort="new" tags={['git']} />)
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
+
+    expect(capture).toHaveBeenCalledWith('gallery_kind_changed', {
+      kind: 'mods',
+      previousKind: 'all',
+      sort: 'new',
+      selectedTags: ['git'],
     })
   })
 })
@@ -169,5 +184,6 @@ describe('GalleryControls kind filter', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
 
     expect(navigate).not.toHaveBeenCalled()
+    expect(capture).not.toHaveBeenCalled()
   })
 })

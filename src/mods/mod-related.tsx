@@ -10,11 +10,19 @@ export function ModRelated({ items }: { items: GalleryItem[] }) {
   return (
     <SectionCard title="More like this" headingLevel={2}>
       <Stack gap={3}>
-        {items.map((item) =>
+        {items.map((item, index) =>
           item.kind === 'mod' ? (
-            <ModCard key={`mod:${item.card.slug}`} card={item.card} />
+            <ModCard
+              key={`mod:${item.card.slug}`}
+              card={item.card}
+              analytics={{ surface: 'related', position: index + 1 }}
+            />
           ) : (
-            <GalleryConfigCard key={`status-line:${item.card.slug}`} card={item.card} />
+            <GalleryConfigCard
+              key={`status-line:${item.card.slug}`}
+              card={item.card}
+              analytics={{ surface: 'related', position: index + 1 }}
+            />
           ),
         )}
       </Stack>

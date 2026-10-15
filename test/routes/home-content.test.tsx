@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { HOME_HEADING } from '@/lib/page-title'
+
+const capture = vi.hoisted(() => vi.fn())
+vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
 
 vi.mock('@tanstack/react-router', async () => {
   const actual =
@@ -49,12 +52,12 @@ const gallery = {
   asOf: '2026-09-08',
 }
 
-function renderHome(overrides: Partial<typeof gallery> = {}) {
+function renderHome(overrides: Partial<typeof gallery> = {}, search: Record<string, string> = {}) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
   })
-  vi.spyOn(HomeRoute, 'useSearch').mockReturnValue({})
+  vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
   return render(Home ? <Home /> : null)
 }
@@ -102,5 +105,20 @@ describe('home content', () => {
     const inventory = screen.getByText(/32 published status lines/)
     expect(inventory.tagName).toBe('P')
     expect(inventory.className).toContain('text-center')
+  })
+})
+
+describe('home analytics', () => {
+  it('captures paging with what the gallery shows', () => {
+    renderHome({ pageCount: 2 }, { kind: 'mods' })
+
+    fireEvent.click(screen.getByRole('link', { name: 'Next →' }))
+
+    expect(capture).toHaveBeenCalledWith('gallery_page_changed', {
+      page: 2,
+      sort: 'trending',
+      selectedTags: [],
+      kind: 'mods',
+    })
   })
 })

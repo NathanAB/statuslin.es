@@ -45,6 +45,7 @@ export function GalleryControls({
       sort: value,
       selectedTags: tags,
       page: 1,
+      kind,
     })
     navigate({
       to: '/',
@@ -55,6 +56,12 @@ export function GalleryControls({
     })
   }
   const setKind = (value: GalleryFilter) => {
+    posthog.capture('gallery_kind_changed', {
+      kind: value,
+      previousKind: kind,
+      sort,
+      selectedTags: tags,
+    })
     navigate({
       to: '/',
       search: (prev) => {
@@ -91,6 +98,7 @@ export function GalleryControls({
                 selectedTags: [],
                 sort,
                 page: 1,
+                kind,
               })
             }}
             search={(prev) => {

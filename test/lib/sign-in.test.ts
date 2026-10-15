@@ -38,9 +38,18 @@ describe('startGitHubSignIn', () => {
     expect(capture).toHaveBeenCalledWith('auth_started', {
       provider: 'github',
       entryPoint: 'submit',
+      submitKind: 'status_line',
       returnPath: '/submit',
       $current_url: '/submit',
     })
+  })
+
+  it('tracks a sign-in to submit a mod as a mod submit', () => {
+    startGitHubSignIn('/submit?kind=mod', 'submit', { capture })
+    expect(capture).toHaveBeenCalledWith(
+      'auth_started',
+      expect.objectContaining({ entryPoint: 'submit', submitKind: 'mod', returnPath: '/submit' }),
+    )
   })
 
   it('does not send query parameters in auth analytics', () => {

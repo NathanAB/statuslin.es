@@ -23,6 +23,12 @@ function analyticsPath(path: string): string {
   return path.split(/[?#]/, 1)[0] || '/'
 }
 
+/** Which submit form a submit sign-in returns to: the mod form only when its path asks for it. */
+function submitKind(returnPath: string): 'mod' | 'status_line' {
+  const query = returnPath.split('#', 1)[0]?.split('?')[1] ?? ''
+  return new URLSearchParams(query).get('kind') === 'mod' ? 'mod' : 'status_line'
+}
+
 /**
  * Starts the one-click GitHub OAuth redirect, returning the user to `next` (sanitized
  * against open redirects) once they come back. Every sign-in entry point goes through
@@ -46,6 +52,7 @@ export function startGitHubSignIn(
   posthog?.capture('auth_started', {
     provider: 'github',
     entryPoint,
+    ...(entryPoint === 'submit' ? { submitKind: submitKind(returnPath) } : {}),
     returnPath: trackedReturnPath,
     [CURRENT_URL_PROPERTY]: trackedReturnPath,
   })

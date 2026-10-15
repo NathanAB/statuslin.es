@@ -16,8 +16,13 @@ const recordModCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/functions', () => ({ recordModCopyFn, getModDetailFn: vi.fn() }))
 const toast = vi.hoisted(() => vi.fn())
 vi.mock('sonner', () => ({ toast }))
+const capture = vi.hoisted(() => vi.fn())
 vi.mock('@posthog/react', () => ({
-  usePostHog: () => ({ get_distinct_id: () => 'did-test', get_session_id: () => 'sid-test' }),
+  usePostHog: () => ({
+    capture,
+    get_distinct_id: () => 'did-test',
+    get_session_id: () => 'sid-test',
+  }),
 }))
 vi.mock('@/ui/shell', () => ({
   PageShell: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -32,14 +37,20 @@ vi.mock('@tanstack/react-router', async () => {
       params,
       search,
       children,
+      onClick,
     }: {
       to: string
       params?: Record<string, string>
       search?: Record<string, string>
       children: ReactNode
+      onClick?: () => void
     }) => {
       const path = params ? to.replace(/\$(\w+)/g, (_, key: string) => params[key] ?? '') : to
-      return <a href={search ? `${path}?${new URLSearchParams(search)}` : path}>{children}</a>
+      return (
+        <a href={search ? `${path}?${new URLSearchParams(search)}` : path} onClick={onClick}>
+          {children}
+        </a>
+      )
     },
   }
 })
@@ -478,5 +489,33 @@ describe('mod page', () => {
     renderPage({ license: null })
 
     expect(screen.getByText('No licence')).toBeTruthy()
+  })
+})
+
+describe('mod page analytics', () => {
+  it('captures the view of the mod page', () => {
+    renderPage()
+
+    expect(capture).toHaveBeenCalledWith('mod_detail_viewed', { modId: MOD.id, slug: 'filetree' })
+  })
+
+  it('captures clicks on more like this as related cards, by position', () => {
+    renderPage({ related: RELATED })
+
+    fireEvent.click(screen.getByRole('link', { name: 'Meter' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Cost Bar' }))
+
+    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
+      modId: '22222222-2222-4222-8222-222222222222',
+      slug: 'meter',
+      surface: 'related',
+      position: 1,
+    })
+    expect(capture).toHaveBeenCalledWith('statusline_card_clicked', {
+      configId: '33333333-3333-4333-8333-333333333333',
+      slug: 'cost-bar',
+      surface: 'related',
+      position: 2,
+    })
   })
 })
