@@ -12,11 +12,11 @@ import type { ModDetail } from './queries'
  * What each job tag says a mod shows, in subtitle order. A tag is set only when the mod
  * demonstrably shows it (src/content/tags.ts); style tags such as `minimal` name no job.
  */
-const JOB_BY_TAG: Record<string, string> = {
+export const JOB_BY_TAG: Record<string, string> = {
   git: 'git state',
   'token-usage': 'context window usage',
   cost: 'session cost',
-  quota: 'rate limits',
+  quota: 'usage limits',
   'burn-rate': 'burn rate',
   weather: 'live weather',
   markets: 'live market prices',

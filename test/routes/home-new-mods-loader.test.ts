@@ -100,9 +100,9 @@ describe('home "New mods" row loader', () => {
       gallery.items.filter((item) => item.kind === 'mod').map((item) => item.card.slug),
     )
     const newest = ['newest-mod', 'second-mod', 'middle-mod', 'fourth-mod', 'oldest-mod']
-    expect(newMods.map((card) => card.slug)).toEqual(
-      newest.filter((slug) => !inGrid.has(slug)).slice(0, 2),
-    )
+    const notInGrid = newest.filter((slug) => !inGrid.has(slug))
+    expect(notInGrid.length).toBeGreaterThanOrEqual(2)
+    expect(newMods.map((card) => card.slug)).toEqual(notInGrid.slice(0, 2))
   })
 
   it('never repeats a mod that page 1 of the grid already shows', async () => {

@@ -439,11 +439,11 @@ describe('mod page', () => {
     expect(document.querySelector('a[href^="claude"]')).toBeNull()
   })
 
-  it('names the mod’s job under the title from its tags, in tag order', () => {
+  it('names the mod’s jobs under the title, in a fixed job order whatever the tag order', () => {
     renderPage({ tags: ['quota', 'multi-line', 'cost', 'network-access'] })
 
     const title = screen.getByRole('heading', { level: 1, name: 'File Tree' })
-    const subtitle = screen.getByText('A Claude Code mod that shows session cost and rate limits')
+    const subtitle = screen.getByText('A Claude Code mod that shows session cost and usage limits')
     expect(title.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { FACET_MOD_COPY } from '@/gallery/facet-copy'
 import { ALL_TAG_SLUGS, FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
 import { brandedPageTitle } from '@/lib/page-title'
+import { JOB_BY_TAG } from '@/mods/mod-header'
 
 describe('tag registry', () => {
   it('includes the capability tags as badge+filter-only (page: false)', () => {
@@ -50,6 +51,10 @@ describe('tag registry', () => {
       expect(copy.kindNote).not.toMatch(surfaceClaims)
       expect(copy.metaDescription).not.toMatch(surfaceClaims)
     }
+  })
+  it('keys mod copy only by real tags, so a typo fails here instead of dropping the copy', () => {
+    for (const slug of Object.keys(FACET_MOD_COPY)) expect(TAG_VOCABULARY).toContain(slug)
+    for (const tag of Object.keys(JOB_BY_TAG)) expect(TAG_VOCABULARY).toContain(tag)
   })
   it('TAG_VOCABULARY is exactly the feature group', () => {
     expect(new Set(TAG_VOCABULARY)).toEqual(
