@@ -11,7 +11,8 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }))
 
-const { CONTACT_EMAIL, REPO_URL } = await import('@/lib/site')
+const { CONTACT_EMAIL, MODS_PATH, REPO_URL } = await import('@/lib/site')
+const { GUIDE_SUBPAGES } = await import('@/lib/page-title')
 const { SiteFooter } = await import('@/ui/site-footer')
 
 describe('SiteFooter', () => {
@@ -57,5 +58,20 @@ describe('SiteFooter', () => {
     const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement
     expect(guide).not.toBeNull()
     expect(guide.textContent).toMatch(/guide/i)
+  })
+
+  it('links the mods gallery and the best status lines', () => {
+    const { container } = render(<SiteFooter />)
+    expect(container.querySelector(`a[href="${MODS_PATH}"]`)?.textContent).toBe('Mods')
+    expect(container.querySelector('a[href="/status-lines/best"]')?.textContent).toBe(
+      'Best status lines',
+    )
+  })
+
+  it('links every guide subpage', () => {
+    const { container } = render(<SiteFooter />)
+    for (const { path } of GUIDE_SUBPAGES) {
+      expect(container.querySelector(`a[href="${path}"]`), path).not.toBeNull()
+    }
   })
 })

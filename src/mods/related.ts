@@ -1,5 +1,5 @@
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import type { GalleryItem } from '@/gallery/gallery-items'
+import type { GalleryItem, GalleryModCard } from '@/gallery/gallery-items'
 import { getConfigsSharingTags } from '@/gallery/queries'
 import { getModsSharingTags } from './gallery-queries'
 
@@ -22,4 +22,17 @@ export async function getModRelated(
     getConfigsSharingTags(db, mod.tags, MOD_RELATED_LIMIT),
   ])
   return [...mods, ...statusLines.map((card) => ({ kind: 'status-line' as const, card }))]
+}
+
+/**
+ * What a status line page links to under "Mods that do the same job": up to MOD_RELATED_LIMIT
+ * published mods that share a tag with it, most shared tags first.
+ */
+export async function getStatusLineMods(
+  db: Db,
+  statusLine: { tags: string[] },
+): Promise<GalleryModCard[]> {
+  // A status line is not a mod, so there is no mod to leave out; no mod's slug is empty.
+  const items = await getModsSharingTags(db, { slug: '', tags: statusLine.tags }, MOD_RELATED_LIMIT)
+  return items.flatMap((item) => (item.kind === 'mod' ? [item.card] : []))
 }
