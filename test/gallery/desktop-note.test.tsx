@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { STATUSLINE_ANYWHERE_URL } from '@/lib/statusline-anywhere'
+import { modPath } from '@/lib/site'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 
 const capture = vi.fn()
 vi.mock('@posthog/react', () => ({
@@ -22,12 +23,12 @@ describe('DesktopNote', () => {
     )
   })
 
-  it('has one link: the plugin name, to its repo, recorded with the config page surface', () => {
+  it('has one link: the plugin name, to its mod page, recorded with the config page surface', () => {
     render(<DesktopNote />)
     const links = screen.getAllByRole('link')
     expect(links).toHaveLength(1)
     expect(links[0]?.textContent).toBe('statusline-anywhere')
-    expect(links[0]?.getAttribute('href')).toBe(STATUSLINE_ANYWHERE_URL)
+    expect(links[0]?.getAttribute('href')).toBe(modPath(STATUSLINE_ANYWHERE_MOD_SLUG))
     fireEvent.click(links[0] as Element)
     expect(capture).toHaveBeenCalledWith('statusline_anywhere_link_clicked', {
       surface: 'config_page',

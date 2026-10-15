@@ -15,6 +15,8 @@ import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { configMetaDescription, configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
+import { getStatusLineModsFn } from '@/mods/functions'
+import { ModCard } from '@/mods/mod-card'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
@@ -32,11 +34,12 @@ export const Route = createFileRoute('/c/$slug')({
   loader: async ({ params }) => {
     const detail = await getConfigDetail({ data: { slug: params.slug } })
     if (!detail) throw notFound()
-    const [user, viewerIsAuthor] = await Promise.all([
+    const [user, viewerIsAuthor, mods] = await Promise.all([
       getSession(),
       getViewerIsAuthor({ data: { slug: params.slug } }),
+      getStatusLineModsFn({ data: { tags: detail.tags } }),
     ])
-    return { detail, user, viewerIsAuthor }
+    return { detail, user, viewerIsAuthor, mods }
   },
   head: ({ loaderData }) => {
     // loaderData is undefined when the loader throws notFound() (the 404 page),
@@ -87,7 +90,7 @@ export const Route = createFileRoute('/c/$slug')({
 
 function ConfigDetail() {
   const posthog = usePostHog()
-  const { detail, user, viewerIsAuthor } = Route.useLoaderData()
+  const { detail, user, viewerIsAuthor, mods } = Route.useLoaderData()
   const copyController = useRecordedCopy(detail.id, detail.copyCount)
 
   useEffect(() => {
@@ -150,46 +153,57 @@ function ConfigDetail() {
         }
         // Internal links: without these, every config page is a crawl dead end.
         related={
-          detail.related.length > 0 && (
-            <SectionCard title="More status lines" headingLevel={2}>
-              <Stack gap={3}>
-                {detail.related.map((r, index) => (
-                  <Card key={r.slug} interactive>
-                    <CardHeader>
-                      <Row gap={2}>
-                        <CardTitle>
-                          <StretchedLink
-                            to="/c/$slug"
-                            params={{ slug: r.slug }}
-                            onClick={() =>
-                              posthog.capture('statusline_card_clicked', {
-                                configId: r.configId,
-                                slug: r.slug,
-                                surface: 'related',
-                                position: index + 1,
-                              })
-                            }
-                          >
-                            {r.title}
-                          </StretchedLink>
-                        </CardTitle>
-                        <CopyCount count={r.copyCount} />
-                      </Row>
-                    </CardHeader>
-                    <CardContent>
-                      {r.preview !== null ? (
-                        <StatuslinePreview segments={r.preview} />
-                      ) : (
-                        <Text muted size="sm">
-                          No preview.
-                        </Text>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </Stack>
-            </SectionCard>
-          )
+          <>
+            {detail.related.length > 0 && (
+              <SectionCard title="More status lines" headingLevel={2}>
+                <Stack gap={3}>
+                  {detail.related.map((r, index) => (
+                    <Card key={r.slug} interactive>
+                      <CardHeader>
+                        <Row gap={2}>
+                          <CardTitle>
+                            <StretchedLink
+                              to="/c/$slug"
+                              params={{ slug: r.slug }}
+                              onClick={() =>
+                                posthog.capture('statusline_card_clicked', {
+                                  configId: r.configId,
+                                  slug: r.slug,
+                                  surface: 'related',
+                                  position: index + 1,
+                                })
+                              }
+                            >
+                              {r.title}
+                            </StretchedLink>
+                          </CardTitle>
+                          <CopyCount count={r.copyCount} />
+                        </Row>
+                      </CardHeader>
+                      <CardContent>
+                        {r.preview !== null ? (
+                          <StatuslinePreview segments={r.preview} />
+                        ) : (
+                          <Text muted size="sm">
+                            No preview.
+                          </Text>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
+              </SectionCard>
+            )}
+            {mods.length > 0 && (
+              <SectionCard title="Mods that do the same job" headingLevel={2}>
+                <Stack gap={3}>
+                  {mods.map((card) => (
+                    <ModCard key={card.slug} card={card} />
+                  ))}
+                </Stack>
+              </SectionCard>
+            )}
+          </>
         }
       />
     </PageShell>
