@@ -114,7 +114,7 @@ function ConfigDetail() {
               title={detail.title}
               controller={copyController}
             />
-            <DesktopNote surface="config_page" />
+            <DesktopNote />
           </>
         }
         preview={

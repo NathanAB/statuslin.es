@@ -1,7 +1,6 @@
 import { usePostHog } from '@posthog/react'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
-import { DesktopNote } from '@/gallery/desktop-note'
 import { getGallery, getGalleryConfigs } from '@/gallery/functions'
 import { GalleryControls } from '@/gallery/gallery-controls'
 import {
@@ -128,13 +127,10 @@ function Home() {
   return (
     <PageShell user={user}>
       <Stack gap={9}>
-        <Stack gap={6}>
-          <HomeMasthead>
-            <HomeHero />
-            <HomeGalleryIntro page={page} />
-          </HomeMasthead>
-          <DesktopNote surface="home" />
-        </Stack>
+        <HomeMasthead>
+          <HomeHero />
+          <HomeGalleryIntro page={page} />
+        </HomeMasthead>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           <Row gap={4} justify="between" wrap>
