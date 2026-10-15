@@ -48,33 +48,39 @@ describe('validateSubmitInput', () => {
 
   it('throws on invalid interpreter', () => {
     expect(() => validateSubmitInput({ ...valid, interpreter: 'fish' })).toThrow(
-      'invalid interpreter',
+      'Interpreter must be bash, node or python',
     )
-    expect(() => validateSubmitInput({ ...valid, interpreter: '' })).toThrow('invalid interpreter')
+    expect(() => validateSubmitInput({ ...valid, interpreter: '' })).toThrow(
+      'Interpreter must be bash, node or python',
+    )
     expect(() => validateSubmitInput({ ...valid, interpreter: 'zsh' })).toThrow(
-      'invalid interpreter',
+      'Interpreter must be bash, node or python',
     )
   })
 
   it('throws when source is empty string', () => {
-    expect(() => validateSubmitInput({ ...valid, source: '' })).toThrow('source is required')
+    expect(() => validateSubmitInput({ ...valid, source: '' })).toThrow('Source code is required')
   })
 
   it('throws when source is only whitespace', () => {
-    expect(() => validateSubmitInput({ ...valid, source: '   ' })).toThrow('source is required')
+    expect(() => validateSubmitInput({ ...valid, source: '   ' })).toThrow(
+      'Source code is required',
+    )
   })
 
   it('throws when title is empty string', () => {
-    expect(() => validateSubmitInput({ ...valid, title: '' })).toThrow('title is required')
+    expect(() => validateSubmitInput({ ...valid, title: '' })).toThrow('Title is required')
   })
 
   it('throws when title is only whitespace', () => {
-    expect(() => validateSubmitInput({ ...valid, title: '  \t  ' })).toThrow('title is required')
+    expect(() => validateSubmitInput({ ...valid, title: '  \t  ' })).toThrow('Title is required')
   })
 
   it('throws when source exceeds cap', () => {
     const overCap = 'x'.repeat(SUBMIT_LIMITS.source + 1)
-    expect(() => validateSubmitInput({ ...valid, source: overCap })).toThrow('source too large')
+    expect(() => validateSubmitInput({ ...valid, source: overCap })).toThrow(
+      'Source code is over 100,000 characters',
+    )
   })
 
   it('passes when source is exactly at the cap', () => {
@@ -84,7 +90,9 @@ describe('validateSubmitInput', () => {
 
   it('throws when title exceeds cap', () => {
     const overCap = 'x'.repeat(SUBMIT_LIMITS.title + 1)
-    expect(() => validateSubmitInput({ ...valid, title: overCap })).toThrow('title too long')
+    expect(() => validateSubmitInput({ ...valid, title: overCap })).toThrow(
+      'Title is over 200 characters',
+    )
   })
 
   it('passes when title is exactly at the cap', () => {
@@ -95,7 +103,7 @@ describe('validateSubmitInput', () => {
   it('throws when description exceeds cap', () => {
     const overCap = 'x'.repeat(SUBMIT_LIMITS.description + 1)
     expect(() => validateSubmitInput({ ...valid, description: overCap })).toThrow(
-      'description too long',
+      'Description is over 4,000 characters',
     )
   })
 

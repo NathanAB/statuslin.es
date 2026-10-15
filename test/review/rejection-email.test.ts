@@ -106,17 +106,17 @@ describe('sendRejectionEmail', () => {
       [
         'Hi Ada,',
         '',
-        'Your update to “Ada status line” was not accepted.',
+        'Your update to "Ada status line" was not accepted.',
         '',
         'Reviewer reason:',
         'Breaks on macOS.',
         '',
-        'Your live version is unaffected and stays in the gallery.',
+        'Your live version stays in the gallery.',
         '',
         'View your submissions: https://statuslin.es/me',
         'Submit a new update: https://statuslin.es/submit?update=ada-status-line',
         '',
-        'Questions? Reply to this email or contact hello@statuslin.es.',
+        'Questions? Reply to this email.',
       ].join('\n'),
     )
   })
@@ -139,7 +139,7 @@ describe('sendRejectionEmail', () => {
     )
 
     const message = send.mock.calls[0]?.[0].text
-    expect(message).toContain('Your mod submission “Pixel cat” was not accepted.')
+    expect(message).toContain('Your mod "Pixel cat" was not accepted.')
     expect(message).toContain(
       'Fix and resubmit: https://statuslin.es/submit?resubmit-mod=pixel-cat',
     )

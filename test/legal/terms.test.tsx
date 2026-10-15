@@ -5,7 +5,7 @@ import { TermsContent } from '@/legal/terms'
 import { CONTACT_EMAIL, CONTENT_LICENSE } from '@/lib/site'
 
 describe('TermsContent', () => {
-  it('states submitted configs are released under the content license', () => {
+  it('states submitted status lines are released under the content license', () => {
     const { container } = render(<TermsContent />)
     const license = container.querySelector(`a[href="${CONTENT_LICENSE.url}"]`)
     expect(license).not.toBeNull()
@@ -18,12 +18,12 @@ describe('TermsContent', () => {
     expect(contact).not.toBeNull()
   })
 
-  it('states the maintainer can remove a config', () => {
+  it('puts the risk of running a status line or mod on the visitor', () => {
     render(<TermsContent />)
-    expect(screen.getByText(/remove any config/i)).toBeTruthy()
+    expect(screen.getByText(/copy or install at your own risk/i)).toBeTruthy()
   })
 
-  it('notes seeded configs keep their original license instead of CC0', () => {
+  it('notes seeded status lines keep their original license instead of CC0', () => {
     render(<TermsContent />)
     expect(screen.getByText(/original license/i)).toBeTruthy()
   })
@@ -47,10 +47,12 @@ describe('TermsContent', () => {
     expect(removal.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`)).not.toBeNull()
   })
 
-  it('states the maintainer can remove any listed mod and anyone can report one', () => {
+  it('states the maintainer can remove any status line or mod and anyone can report one', () => {
     render(<TermsContent />)
-    const takedown = screen.getByText(/remove any listed mod at any time/i)
-    expect(takedown.textContent).toMatch(/anyone can report a mod/i)
+    const takedown = screen.getByText(
+      /remove any status line or mod at any time and at their discretion/i,
+    )
+    expect(takedown.textContent).toMatch(/anyone can report one/i)
     expect(takedown.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`)).not.toBeNull()
   })
 })

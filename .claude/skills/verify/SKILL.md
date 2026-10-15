@@ -78,7 +78,7 @@ Browser: `agent-browser`, one session per role.
 .claude/skills/verify/scripts/verify-instance.sh ab author snapshot -i
 .claude/skills/verify/scripts/verify-instance.sh ab author find label "Title" fill "My status line"
 .claude/skills/verify/scripts/verify-instance.sh ab author find role button click --name Submit --exact
-.claude/skills/verify/scripts/verify-instance.sh ab author wait --text "Queued for review"
+.claude/skills/verify/scripts/verify-instance.sh ab author wait --text "Submitted for review"
 ```
 
 - Roles: `anon` (signed out, never logged in), `author`, `admin`. `login` mints a session with

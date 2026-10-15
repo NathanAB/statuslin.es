@@ -37,6 +37,10 @@ export const HELD_RENDER_JOBS_MAX = 50
 
 export const SUBMIT_LIMITS = { source: 100_000, title: 200, description: 4000 } as const
 
+function overLimit(field: string, limit: number): HttpError {
+  return new HttpError(400, `${field} is over ${limit.toLocaleString('en-US')} characters`)
+}
+
 export function validateSubmitInput(data: {
   interpreter: string
   source: string
@@ -45,13 +49,14 @@ export function validateSubmitInput(data: {
   networkHosts?: string[]
 }): Omit<SubmitInput, 'authorId'> {
   if (!(INTERPRETERS as readonly string[]).includes(data.interpreter))
-    throw new HttpError(400, 'invalid interpreter')
-  if (!data.source?.trim()) throw new HttpError(400, 'source is required')
-  if (!data.title?.trim()) throw new HttpError(400, 'title is required')
-  if (data.source.length > SUBMIT_LIMITS.source) throw new HttpError(400, 'source too large')
-  if (data.title.length > SUBMIT_LIMITS.title) throw new HttpError(400, 'title too long')
+    throw new HttpError(400, 'Interpreter must be bash, node or python')
+  if (!data.source?.trim()) throw new HttpError(400, 'Source code is required')
+  if (!data.title?.trim()) throw new HttpError(400, 'Title is required')
+  if (data.source.length > SUBMIT_LIMITS.source)
+    throw overLimit('Source code', SUBMIT_LIMITS.source)
+  if (data.title.length > SUBMIT_LIMITS.title) throw overLimit('Title', SUBMIT_LIMITS.title)
   if ((data.description ?? '').length > SUBMIT_LIMITS.description)
-    throw new HttpError(400, 'description too long')
+    throw overLimit('Description', SUBMIT_LIMITS.description)
   return {
     title: data.title,
     description: data.description ?? '',
@@ -89,10 +94,7 @@ export async function submitConfig(
 ): Promise<SubmitResult> {
   const obfuscationReasons = detectObfuscation(input.source)
   if (obfuscationReasons.length > 0) {
-    throw new HttpError(
-      400,
-      `Submission rejected (looks obfuscated): ${obfuscationReasons.join('; ')}`,
-    )
+    throw new HttpError(400, `Rejected as obfuscated: ${obfuscationReasons.join('; ')}`)
   }
 
   const foreignCredentials = detectForeignCredentialAccess(input.source)

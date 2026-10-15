@@ -13,6 +13,7 @@ vi.mock('@tanstack/react-router', async () => {
 })
 vi.mock('@/ui/shell', () => ({
   PageShell: ({ children }: { children: ReactNode }) => <>{children}</>,
+  CenteredShell: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 vi.mock('@/submit/submit-form', () => ({ SubmitForm: () => null }))
 vi.mock('@/mods/mod-submit-form', async () => {
@@ -58,5 +59,25 @@ describe('/submit kind toggle analytics', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Mod' }))
 
     expect(capture).not.toHaveBeenCalled()
+  })
+})
+
+describe('/submit signed out', () => {
+  function renderSignedOut(kind: 'status_line' | 'mod') {
+    vi.spyOn(SubmitRoute, 'useLoaderData').mockReturnValue({ kind, user: null } as never)
+    const Page = SubmitRoute.options.component
+    return render(Page ? <Page /> : null)
+  }
+
+  it('asks a visitor to sign in to submit either kind', () => {
+    renderSignedOut('status_line')
+    expect(
+      screen.getByRole('heading', { name: 'Sign in to submit a status line or mod' }),
+    ).toBeTruthy()
+  })
+
+  it('names the mod when the link picked one', () => {
+    renderSignedOut('mod')
+    expect(screen.getByRole('heading', { name: 'Sign in to submit a mod' })).toBeTruthy()
   })
 })

@@ -35,9 +35,7 @@ describe('sendApprovalEmail', () => {
         to: 'ada@example.com',
         replyTo: 'hello@statuslin.es',
         subject: 'Your statuslin.es submission was approved',
-        text: expect.stringContaining(
-          'Your status line submission “Ada status line” was approved.',
-        ),
+        text: expect.stringContaining('Your status line "Ada status line" was approved.'),
       }),
       { idempotencyKey: 'approval/version-2' },
     )
@@ -102,12 +100,12 @@ describe('sendApprovalEmail', () => {
       [
         'Hi Ada,',
         '',
-        'Your update to “Ada status line v2” is live.',
+        'Your update to "Ada status line v2" is live.',
         '',
-        'View it on statuslin.es: https://statuslin.es/c/ada-status-line',
+        'View it: https://statuslin.es/c/ada-status-line',
         'View your submissions: https://statuslin.es/me',
         '',
-        'Questions? Reply to this email or contact hello@statuslin.es.',
+        'Questions? Reply to this email.',
       ].join('\n'),
     )
   })
@@ -129,8 +127,8 @@ describe('sendApprovalEmail', () => {
     )
 
     const message = send.mock.calls[0]?.[0].text
-    expect(message).toContain('Your mod submission “Pixel cat” was approved.')
-    expect(message).toContain('View it on statuslin.es: https://statuslin.es/mods/pixel-cat')
+    expect(message).toContain('Your mod "Pixel cat" was approved.')
+    expect(message).toContain('View it: https://statuslin.es/mods/pixel-cat')
   })
 
   it('refuses a page path that could change the link host, sending nothing', async () => {
