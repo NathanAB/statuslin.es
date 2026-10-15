@@ -499,6 +499,14 @@ describe('mod page analytics', () => {
     expect(capture).toHaveBeenCalledWith('mod_detail_viewed', { modId: MOD.id, slug: 'filetree' })
   })
 
+  it('captures a click on the source link at the pinned commit', () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('link', { name: SHA.slice(0, 7) }))
+
+    expect(capture).toHaveBeenCalledWith('mod_source_clicked', { modId: MOD.id, slug: 'filetree' })
+  })
+
   it('captures the view once, however often the page re-renders', () => {
     const { rerender } = renderPage()
     const Page = ModRoute.options.component

@@ -1,3 +1,4 @@
+import { usePostHog } from '@posthog/react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { canonicalLink } from '@/lib/canonical'
 import { ModSubmitForm, modSubmitPageCopy } from '@/mods/mod-submit-form'
@@ -57,6 +58,7 @@ export const Route = createFileRoute('/submit')({
 function Submit() {
   const data = Route.useLoaderData()
   const navigate = useNavigate({ from: '/submit' })
+  const posthog = usePostHog()
   if (!data.user) {
     return (
       <SignInPrompt
@@ -78,7 +80,10 @@ function Submit() {
               label="What are you submitting?"
               options={KIND_OPTIONS}
               value={data.kind}
-              onValueChange={(kind) => navigate({ search: kind === 'mod' ? { kind: 'mod' } : {} })}
+              onValueChange={(kind) => {
+                posthog.capture('submit_kind_changed', { kind, previousKind: data.kind })
+                navigate({ search: kind === 'mod' ? { kind: 'mod' } : {} })
+              }}
             />
           </Row>
         )}
