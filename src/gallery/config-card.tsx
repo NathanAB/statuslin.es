@@ -1,6 +1,7 @@
 import { usePostHog } from '@posthog/react'
+import { cardClickProperties, type GalleryCardAnalytics } from '@/gallery/card-analytics'
 import { ConfigBadges } from '@/gallery/config-badges'
-import type { GalleryCard, GallerySort } from '@/gallery/queries'
+import type { GalleryCard } from '@/gallery/queries'
 import { AuthorChip } from '@/ui/author-chip'
 import { Badge } from '@/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
@@ -9,15 +10,6 @@ import { Row, Stack } from '@/ui/layout'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { StretchedLink } from '@/ui/stretched-link'
 import { Text } from '@/ui/text'
-
-export interface GalleryCardAnalytics {
-  surface: 'home' | 'facet' | 'best' | 'compare'
-  position: number
-  facet?: string
-  sort?: GallerySort
-  page?: number
-  selectedTags?: string[]
-}
 
 /** One gallery card: title, badges, preview, description, author. Used by the home gallery and facet pages. */
 export function GalleryConfigCard({
@@ -40,16 +32,10 @@ export function GalleryConfigCard({
                 params={{ slug: card.slug }}
                 onClick={() => {
                   if (!analytics) return
-                  posthog.capture('statusline_card_clicked', {
-                    configId: card.configId,
-                    slug: card.slug,
-                    surface: analytics.surface,
-                    position: analytics.position,
-                    ...(analytics.facet ? { facet: analytics.facet } : {}),
-                    ...(analytics.sort ? { sort: analytics.sort } : {}),
-                    ...(analytics.page ? { page: analytics.page } : {}),
-                    ...(analytics.selectedTags ? { selectedTags: analytics.selectedTags } : {}),
-                  })
+                  posthog.capture(
+                    'statusline_card_clicked',
+                    cardClickProperties({ configId: card.configId, slug: card.slug }, analytics),
+                  )
                 }}
               >
                 {card.title}

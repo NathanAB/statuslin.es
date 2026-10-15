@@ -93,10 +93,24 @@ describe('buildMarketplace', () => {
 
 describe('marketplaceFetchedEvent', () => {
   it('records the fetch with the number of listed plugins, without a person profile', () => {
-    expect(marketplaceFetchedEvent(3)).toEqual({
+    expect(marketplaceFetchedEvent(3, 'Claude-Code-Plugin-Manager')).toEqual({
       event: 'marketplace_fetched',
       distinctId: 'marketplace',
-      properties: { pluginCount: 3, $process_person_profile: false },
+      properties: { pluginCount: 3, client: 'claude-code', $process_person_profile: false },
+    })
+  })
+
+  it.each([
+    ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'browser'],
+    ['Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', 'bot'],
+    ['Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)', 'bot'],
+    ['curl/8.7.1', 'other'],
+    [null, 'other'],
+  ])('names the client of %s as %s, never the raw user agent', (userAgent, client) => {
+    expect(marketplaceFetchedEvent(1, userAgent).properties).toEqual({
+      pluginCount: 1,
+      client,
+      $process_person_profile: false,
     })
   })
 })

@@ -34,7 +34,7 @@ afterEach(() => {
 
 describe('marketplaceResponseForRoute', () => {
   it('serves the marketplace built from the database as JSON', async () => {
-    const response = await marketplaceResponseForRoute()
+    const response = await marketplaceResponseForRoute(null)
 
     expect(getMarketplaceRows).toHaveBeenCalledWith({ name: 'database' })
     expect(response.status).toBe(200)
@@ -50,12 +50,13 @@ describe('marketplaceResponseForRoute', () => {
     getMarketplaceRows.mockResolvedValue([])
     hasAnyMods.mockResolvedValue(false)
 
-    const response = await marketplaceResponseForRoute()
+    const response = await marketplaceResponseForRoute('Claude-Code-Plugin-Manager')
 
     expect(hasAnyMods).toHaveBeenCalledWith({ name: 'database' })
     expect(response.status).toBe(503)
     expect(captureServerEvent).toHaveBeenCalledWith('marketplace_fetched', 'marketplace', {
       pluginCount: 0,
+      client: 'claude-code',
       $process_person_profile: false,
     })
   })
@@ -64,23 +65,25 @@ describe('marketplaceResponseForRoute', () => {
     getMarketplaceRows.mockResolvedValue([])
     hasAnyMods.mockResolvedValue(true)
 
-    const response = await marketplaceResponseForRoute()
+    const response = await marketplaceResponseForRoute(null)
 
     expect(response.status).toBe(200)
     expect((await response.json()).plugins).toEqual([])
     expect(captureServerEvent).toHaveBeenCalledWith('marketplace_fetched', 'marketplace', {
       pluginCount: 0,
+      client: 'other',
       $process_person_profile: false,
     })
   })
 
   it('logs one server-side analytics event per fetch', async () => {
-    await marketplaceResponseForRoute()
-    await marketplaceResponseForRoute()
+    await marketplaceResponseForRoute(null)
+    await marketplaceResponseForRoute(null)
 
     expect(captureServerEvent).toHaveBeenCalledTimes(2)
     expect(captureServerEvent).toHaveBeenCalledWith('marketplace_fetched', 'marketplace', {
       pluginCount: 1,
+      client: 'other',
       $process_person_profile: false,
     })
   })

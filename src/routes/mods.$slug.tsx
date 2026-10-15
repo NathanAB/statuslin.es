@@ -1,4 +1,6 @@
+import { usePostHog } from '@posthog/react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -46,8 +48,13 @@ export const Route = createFileRoute('/mods/$slug')({
 })
 
 function ModPage() {
+  const posthog = usePostHog()
   const { mod, user, origin } = Route.useLoaderData()
   const copyController = useRecordModCopy(mod.id, mod.copyCount)
+
+  useEffect(() => {
+    posthog.capture('mod_detail_viewed', { modId: mod.id, slug: mod.slug })
+  }, [posthog, mod.id, mod.slug])
 
   return (
     <PageShell user={user}>

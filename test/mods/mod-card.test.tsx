@@ -1,19 +1,36 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+
+const capture = vi.fn()
+vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     to,
     params,
     children,
+    onClick,
   }: {
     to: string
     params?: Record<string, string>
     children: React.ReactNode
-  }) => <a href={params ? to.replace('$slug', params.slug ?? '') : to}>{children}</a>,
+    onClick?: React.MouseEventHandler<HTMLAnchorElement>
+  }) => (
+    <a
+      href={params ? to.replace('$slug', params.slug ?? '') : to}
+      onClick={(event) => {
+        event.preventDefault()
+        onClick?.(event)
+      }}
+    >
+      {children}
+    </a>
+  ),
 }))
+
+afterEach(() => capture.mockClear())
 
 const { ModCard } = await import('@/mods/mod-card')
 
@@ -89,5 +106,36 @@ describe('ModCard', () => {
     expect(screen.queryByText('Terminal')).toBeNull()
     expect(screen.getByText('Claude Desktop')).toBeTruthy()
     expect(screen.getByRole('img', { name: 'Meter in Claude Desktop' })).toBeTruthy()
+  })
+})
+
+describe('ModCard analytics', () => {
+  it('captures the mod and where it was clicked when the card opens', () => {
+    render(
+      <ModCard
+        card={card}
+        analytics={{ surface: 'home', position: 4, page: 1, sort: 'trending', kind: 'all' }}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('link', { name: 'Meter' }))
+
+    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
+      modId: 'mod-1',
+      slug: 'meter',
+      surface: 'home',
+      position: 4,
+      page: 1,
+      sort: 'trending',
+      kind: 'all',
+    })
+  })
+
+  it('captures nothing without a surface to name', () => {
+    render(<ModCard card={card} />)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Meter' }))
+
+    expect(capture).not.toHaveBeenCalled()
   })
 })

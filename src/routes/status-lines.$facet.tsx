@@ -105,7 +105,11 @@ function FacetPage() {
           <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
           {items.map((item, index) =>
             item.kind === 'mod' ? (
-              <ModCard key={`mod:${item.card.slug}`} card={item.card} />
+              <ModCard
+                key={`mod:${item.card.slug}`}
+                card={item.card}
+                analytics={{ surface: 'facet', facet: page.slug, position: index + 1 }}
+              />
             ) : (
               <GalleryConfigCard
                 key={`status-line:${item.card.slug}`}
