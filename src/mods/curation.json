@@ -89,5 +89,18 @@
         "text": "/flow 8"
       }
     ]
+  },
+  {
+    "repoUrl": "https://github.com/augiefra/claude-mods",
+    "path": "plugins/token-weather-usage",
+    "commitSha": "969a72449ba2aa84b258af4f25383d5ea44dec48",
+    "pluginName": "token-weather-usage",
+    "title": "Token Weather Usage",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "Run the tests again"
+      }
+    ]
   }
 ]
