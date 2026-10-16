@@ -103,7 +103,12 @@ export function desktopRecorder(
         )
       }
       const analysis = await sandboxes.withAnalysisSandbox((sandbox) =>
-        analyseShot(sandbox, { shot: shot.png, baseline: base.png, draws }),
+        analyseShot(sandbox, {
+          shot: shot.png,
+          baseline: base.png,
+          draws,
+          typedSteps: inputSteps.length > 0,
+        }),
       )
       return { ...analysis, ...versions }
     },

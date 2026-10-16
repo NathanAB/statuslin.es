@@ -6,6 +6,8 @@ import {
   PANE_BORDER_GREY,
   PROMPT_BORDER_GREY,
   PROMPT_BOX,
+  type Rect,
+  SCALE,
   WINDOW,
 } from '@/render/mods/desktop/screen'
 
@@ -44,6 +46,8 @@ interface FakeShots {
   baseline?: string
   shot?: string
   compare?: string
+  /** Where the shot differs from the baseline: the comparison answers with what its masks leave. */
+  changes?: Rect[]
   content?: string
   plate?: string
   /** The shot across the whole crop, and how it differs from the baseline there. */
@@ -61,6 +65,25 @@ function profileFor(command: string, opts: FakeShots): string {
   return opts.content ?? profile(PROMPT_ROWS)
 }
 
+/** What the comparison prints for `changes` outside the command's masks, in device pixels. */
+function comparisonOf(command: string, changes: readonly Rect[]): string {
+  const masks = [...command.matchAll(/rectangle (\d+),(\d+) (\d+),(\d+)/g)].map((m) =>
+    m.slice(1).map((n) => Number(n) / SCALE),
+  )
+  const masked = ({ x, y, width, height }: Rect) =>
+    masks.some(
+      ([x0 = 0, y0 = 0, x1 = 0, y1 = 0]) =>
+        x >= x0 && y >= y0 && x + width <= x1 + 1 && y + height <= y1 + 1,
+    )
+  const left = changes.filter((change) => !masked(change))
+  if (left.length === 0) return SAME
+  const x = Math.min(...left.map((c) => c.x))
+  const y = Math.min(...left.map((c) => c.y))
+  const right = Math.max(...left.map((c) => c.x + c.width))
+  const bottom = Math.max(...left.map((c) => c.y + c.height))
+  return `1 ${(right - x) * SCALE}x${(bottom - y) * SCALE}+${x * SCALE + 1}+${y * SCALE + 1}`
+}
+
 /** Answers the analysis commands as ImageMagick would for the given layouts and comparison. */
 function fakeAnalysis(opts: FakeShots) {
   const uploaded: string[] = []
@@ -73,7 +96,7 @@ function fakeAnalysis(opts: FakeShots) {
       ran.push(command)
       const answer = (stdout: string) => ({ exitCode: 0, stdout, stderr: '' })
       if (command.includes('-compose difference -composite -compose over')) {
-        return answer(opts.compare ?? SAME)
+        return answer(opts.changes ? comparisonOf(command, opts.changes) : (opts.compare ?? SAME))
       }
       if (command.includes('od -An')) return answer(profileFor(command, opts))
       const layout = command.includes('baseline.png') ? opts.baseline : opts.shot
@@ -92,6 +115,15 @@ function fakeAnalysis(opts: FakeShots) {
 
 const SHOT = new Uint8Array([1])
 const BASELINE = new Uint8Array([2])
+/**
+ * A step's message and the spinner its slash command leaves, as leitstand's `/stand` showed them,
+ * and a command's reply whose first glyph's antialiasing reaches past the column, as `/flow 8`'s did.
+ */
+const STEP_TURNS: Rect[] = [
+  { x: 864, y: 275, width: 70, height: 30 },
+  { x: 166, y: 359, width: 18, height: 18 },
+  { x: 165, y: 394, width: 400, height: 40 },
+]
 const BAND_SHOT = {
   compare: BAND,
   content: profile(BAND_ROWS, PROMPT_ROWS),
@@ -102,7 +134,12 @@ describe('analyseShot', () => {
   it('uploads the shot and the baseline into the fresh sandbox', async () => {
     const { analysis, uploaded } = fakeAnalysis(BAND_SHOT)
 
-    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: ['above-prompt'] })
+    await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      draws: ['above-prompt'],
+    })
 
     expect(uploaded).toEqual([
       '/home/user/.statuslines/shot.png',
@@ -113,7 +150,12 @@ describe('analyseShot', () => {
   it('crops the band with the prompt box, and cards the band alone, both re-encoded', async () => {
     const { analysis, ran } = fakeAnalysis(BAND_SHOT)
 
-    const result = await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      draws: [],
+    })
 
     expect(result).toMatchObject({
       kind: 'shot',
@@ -136,7 +178,12 @@ describe('analyseShot', () => {
       changedRows: profile([300, 340], BAND_ROWS),
     })
 
-    const result = await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      draws: [],
+    })
 
     const removed = 775 - 341 - 50
     expect(result).toMatchObject({
@@ -157,7 +204,7 @@ describe('analyseShot', () => {
       changedRows: profile([300, 600], BAND_ROWS),
     })
 
-    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] })
 
     expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${(775 - 601 - 50) * 2}+0+`)
   })
@@ -165,7 +212,7 @@ describe('analyseShot', () => {
   it('leaves the prompt text and the scrollbar gutter out of the comparison', async () => {
     const { analysis, ran } = fakeAnalysis(BAND_SHOT)
 
-    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] })
 
     const compare = ran.find((c) => c.includes('-compose difference -composite -compose over'))
     expect(compare?.match(/-draw 'rectangle/g)).toHaveLength(2)
@@ -174,9 +221,85 @@ describe('analyseShot', () => {
   it('finds nothing when the shot matches the baseline', async () => {
     const { analysis } = fakeAnalysis({ compare: SAME })
 
-    const result = await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] })
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      draws: [],
+    })
 
     expect(result).toEqual({ kind: 'nothing' })
+  })
+
+  it("finds nothing when only the input steps' own turns changed", async () => {
+    const { analysis } = fakeAnalysis({
+      changes: STEP_TURNS,
+      content: profile([275, 433], PROMPT_ROWS),
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      draws: ['above-prompt', 'toast'],
+    })
+
+    expect(result).toEqual({ kind: 'nothing' })
+  })
+
+  it("crops a band drawn after input steps from the steps' turns down, and cards the band", async () => {
+    const chat = profile([275, 433], BAND_ROWS, PROMPT_ROWS)
+    const { analysis } = fakeAnalysis({
+      changes: [...STEP_TURNS, { x: 166, y: 775, width: 768, height: 40 }],
+      content: chat,
+      cropContent: chat,
+      plate: profile(BAND_ROWS),
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      draws: ['above-prompt'],
+    })
+
+    expect(result).toMatchObject({
+      kind: 'shot',
+      height: CONTENT.bottom - 267 - (775 - 434 - 50),
+      card: { height: PROMPT_BOX.y - 769 },
+    })
+  })
+
+  it('counts a toast beside the chat after input steps', async () => {
+    const { analysis } = fakeAnalysis({
+      changes: [...STEP_TURNS, { x: 950, y: 90, width: 120, height: 40 }],
+      content: profile([275, 433], PROMPT_ROWS),
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      draws: ['toast'],
+    })
+
+    expect(result).toMatchObject({ kind: 'shot' })
+  })
+
+  it('counts a change in the chat when no input steps were typed', async () => {
+    const { analysis } = fakeAnalysis({
+      changes: STEP_TURNS,
+      content: profile([275, 433], PROMPT_ROWS),
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      draws: [],
+    })
+
+    expect(result).toMatchObject({ kind: 'shot' })
   })
 
   it('crops chat and pane without a comparison when a pane is open', async () => {
@@ -185,6 +308,7 @@ describe('analyseShot', () => {
     const result = await analyseShot(analysis, {
       shot: SHOT,
       baseline: BASELINE,
+      typedSteps: false,
       draws: ['pane', 'toast'],
     })
 
@@ -201,7 +325,7 @@ describe('analyseShot', () => {
     const { analysis } = fakeAnalysis({ baseline: PANE })
 
     await expect(
-      analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] }),
+      analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] }),
     ).rejects.toThrow(/baseline/)
   })
 
@@ -212,7 +336,7 @@ describe('analyseShot', () => {
     })
 
     await expect(
-      analyseShot(analysis, { shot: SHOT, baseline: BASELINE, draws: [] }),
+      analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] }),
     ).rejects.toThrow(/pixels/)
   })
 })
