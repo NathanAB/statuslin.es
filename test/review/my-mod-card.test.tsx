@@ -62,6 +62,7 @@ describe('a submitted mod on /me', () => {
         latest: { versionNumber: 2 },
       }),
     ])
+    expect(markup).toContain('Published in the gallery')
     expect(markup).toContain('href="/mods/meter"')
     expect(markup).toContain('href="/submit?kind=mod&amp;update=meter"')
     expect(markup).toContain('Update v2 in review')

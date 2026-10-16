@@ -58,7 +58,7 @@ vi.mock('@tanstack/react-router', async () => {
 const { Route: ModRoute } = await import('@/routes/mods.$slug')
 
 const ORIGIN = 'https://site.example.test'
-const PROMPT_BUTTON = 'Copy install prompt — File Tree'
+const PROMPT_BUTTON = 'Copy install prompt for File Tree'
 const SHA = '0123456789abcdef0123456789abcdef01234567'
 
 const MOD: ModDetail = {

@@ -36,9 +36,11 @@ export function TermsContent() {
       <Stack gap={2}>
         <Heading level={2}>Listed mods</Heading>
         <Text muted>
-          Mods are listed on their authors' behalf, with credit to each author. Each mod keeps its
-          own license, or has none. The {CONTENT_LICENSE.shortLabel} release above does not cover
-          mods. Authors can have a mod removed on request by emailing{' '}
+          Anyone signed in can submit a mod by linking to it on GitHub. Each mod is credited to its
+          repository's owner. By submitting a mod, you confirm the repository is public, you have
+          the right to share the mod, and it isn't malicious. Each mod keeps its own license, or has
+          none. The {CONTENT_LICENSE.shortLabel} release above does not cover mods. Authors can have
+          a mod removed on request by emailing{' '}
           <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
         </Text>
       </Stack>

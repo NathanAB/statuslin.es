@@ -134,6 +134,7 @@ describe('SubmissionCard', () => {
       },
     ]
     const html = renderToStaticMarkup(<SubmissionCard row={r} />)
+    expect(html).toContain('Render output for 2 scenarios')
     // Both scenarios' labels are present (not just clean-main).
     expect(html).toContain('Clean repo')
     expect(html).toContain('Dirty branch')
@@ -231,6 +232,7 @@ describe('SubmissionCard', () => {
     expect(html).toContain('wttr.in')
     expect(html).toContain('*.espn.com')
     expect(html).toMatch(/run network preview/i)
+    expect(html).toContain('Declares network access. Review the hosts, then run the preview.')
   })
 
   it('admin card shows the Claude-token toggle', () => {

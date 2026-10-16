@@ -177,8 +177,8 @@ describe('SubmissionCard rejection actions', () => {
     render(<SubmissionCard row={row('approved', null, 'failed')} />)
 
     expect(screen.getByText('published')).toBeTruthy()
-    expect(screen.getByText('Published — live in the gallery')).toBeTruthy()
-    expect(screen.queryByText('Rendered — ready to review')).toBeNull()
+    expect(screen.getByText('Published in the gallery')).toBeTruthy()
+    expect(screen.queryByText('Rendered and ready to review')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Retry email' }))
 
@@ -210,4 +210,16 @@ describe('SubmissionCard rejection actions', () => {
       expect(screen.queryByRole('button', { name: 'Retry email' })).toBeNull()
     },
   )
+
+  it.each([
+    ['failed', 'Re-queue', 'Re-queued and rendering now.'],
+    ['held', 'Run network preview', 'Network preview queued with the declared hosts.'],
+  ])('confirms a %s render action with a plain toast', async (status, button, message) => {
+    const r = row()
+    r.renderJob.status = status
+    render(<SubmissionCard row={r} />)
+    fireEvent.click(screen.getByRole('button', { name: button }))
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(message))
+  })
 })

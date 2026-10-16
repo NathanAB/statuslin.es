@@ -128,7 +128,7 @@ describe('status line page', () => {
       screen.getByRole('heading', { level: 1, name: 'Powerline Dracula' }),
       screen.getByText('by'),
       screen.getByText('A Powerline-style status line.'),
-      screen.getByRole('button', { name: 'Copy install prompt — Powerline Dracula' }),
+      screen.getByRole('button', { name: 'Copy install prompt for Powerline Dracula' }),
       screen.getByText('In Claude Desktop?'),
       h2('Preview'),
       h2('What it does'),

@@ -33,7 +33,7 @@ const SOURCE_HTML = '<pre class="shiki"><code>echo hi</code></pre>'
 // The aria-label carries the visible text (WCAG label-in-name) and flips to "Copied" after a
 // successful copy, so this query only finds the button before one.
 const promptButton = () =>
-  screen.getByRole('button', { name: 'Copy install prompt — My Statusline' })
+  screen.getByRole('button', { name: 'Copy install prompt for My Statusline' })
 
 function SharedCopyActions() {
   const controller = useRecordedCopy(props.configId, props.copyCount)

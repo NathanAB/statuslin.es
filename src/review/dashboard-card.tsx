@@ -10,6 +10,8 @@ import {
   CredentialFlagToggle,
   metaItems,
   NetworkHostList,
+  PUBLISHED_HEADLINE,
+  READY_HEADLINE,
   SubmissionDetails,
   titleFor,
 } from '@/review/dashboard-card-parts'
@@ -59,9 +61,9 @@ function statusHeadline(renderJob: DashboardRow['renderJob']): ReactNode {
         ? `Render failed after ${renderJob.attempts} attempts`
         : 'Render failed'
     case 'done':
-      return 'Rendered — ready to review'
+      return READY_HEADLINE
     case 'held':
-      return 'Declared network access — review hosts, then run the preview'
+      return 'Declares network access. Review the hosts, then run the preview.'
     default:
       return renderJob.status
   }
@@ -79,7 +81,7 @@ function reviewView(
     return {
       variant: 'primaryOutline',
       label: 'published',
-      headline: 'Published — live in the gallery',
+      headline: PUBLISHED_HEADLINE,
     }
   }
   if (version.status === 'rejected') {
@@ -153,13 +155,13 @@ export function SubmissionCard({
   const requeue = () =>
     run(
       () => requeueRenderJobFn({ data: { versionId: version.id } }),
-      "Sent back to the render queue — it's rendering now.",
+      'Re-queued and rendering now.',
       'Could not re-queue.',
     )
   const runNetworkPreview = () =>
     run(
       () => runNetworkPreviewFn({ data: { versionId: version.id } }),
-      "Network preview queued — it'll render with the declared hosts.",
+      'Network preview queued with the declared hosts.',
       'Could not start the network preview.',
     )
   const setCredentialFlag = (value: boolean) =>

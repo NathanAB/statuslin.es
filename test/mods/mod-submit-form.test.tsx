@@ -7,7 +7,8 @@ const submitModFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/submit-fn', () => ({ submitModFn }))
 const capture = vi.hoisted(() => vi.fn())
 vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
-vi.mock('sonner', () => ({ toast: { success: vi.fn() } }))
+const toast = vi.hoisted(() => ({ success: vi.fn() }))
+vi.mock('sonner', () => ({ toast }))
 
 const { ModSubmitForm, modSubmitPageCopy } = await import('@/mods/mod-submit-form')
 const LINK = 'https://github.com/octocat/mods/tree/main/plugins/meter'
@@ -32,6 +33,7 @@ describe('ModSubmitForm', () => {
       expect(submitModFn).toHaveBeenCalledWith({ data: { link: LINK, title: 'Context meter' } }),
     )
     expect(await screen.findByText('Pinned meter to main at abcdef1.')).toBeTruthy()
+    expect(toast.success).toHaveBeenCalledWith('Submitted for review.')
     expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('')
   })
 

@@ -56,6 +56,7 @@ describe('ModReviewCard', () => {
     render(<ModReviewCard row={row()} />)
 
     expect(screen.getByText('Context meter')).toBeTruthy()
+    expect(screen.getByText('Rendered and ready to review')).toBeTruthy()
     expect(screen.getByText('▮▮▮▯ 62% context')).toBeTruthy()
     expect(screen.getByRole('img').getAttribute('src')).toBe('/admin/mod-previews/v1/desktop.png')
     expect(screen.getByText('ui.render{component=AbovePrompt}')).toBeTruthy()

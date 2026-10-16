@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { FilePen } from 'lucide-react'
-import type { BadgeVariant } from '@/review/dashboard-card-parts'
+import { type BadgeVariant, PUBLISHED_HEADLINE } from '@/review/dashboard-card-parts'
 import type { MyModRow } from '@/review/my-submissions'
 import { AnalyticsPrivate } from '@/ui/analytics-private'
 import { Badge } from '@/ui/badge'
@@ -22,7 +22,7 @@ function view({ mod, latest }: MyModRow): View {
     return {
       variant: 'primaryOutline',
       label: 'published',
-      text: 'Published — live in the gallery',
+      text: PUBLISHED_HEADLINE,
     }
   }
   if (latest.status === 'rejected') {

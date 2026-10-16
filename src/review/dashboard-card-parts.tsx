@@ -14,6 +14,10 @@ import { Switch } from '@/ui/switch'
 import { Text } from '@/ui/text'
 
 type RenderStatus = DashboardRow['renderJob']['status']
+/** Headlines a status line card and a mod card share, so both kinds read alike. */
+export const PUBLISHED_HEADLINE = 'Published in the gallery'
+export const READY_HEADLINE = 'Rendered and ready to review'
+
 export type BadgeVariant = 'secondary' | 'destructive' | 'outline' | 'primaryOutline'
 
 // Render status → badge look + label. Failed is loud (destructive); ready gets a coral *outline*
@@ -97,7 +101,7 @@ export function SubmissionDetails({
   return (
     <>
       {ordered.length > 0 ? (
-        <Details summary={`Render output — ${ordered.length} scenarios`}>
+        <Details summary={`Render output for ${ordered.length} scenarios`}>
           <Stack gap={3}>
             {ordered.map((p) => {
               const scenario = SCENARIO_BY_KEY.get(p.scenarioKey)
