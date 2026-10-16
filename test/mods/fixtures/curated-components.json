@@ -736,5 +736,49 @@
     },
     "hooksJson": "{ \"modules\": [\"./register.tsx\"] }\n",
     "modules": ["./register.tsx"]
+  },
+  "token-weather-usage": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/icon.png",
+      "f 0 .claude-plugin/plugin.json",
+      "f 0 README.md",
+      "d 4096 hooks",
+      "f 45 hooks/hooks.json",
+      "f 0 hooks/token-weather-usage.mjs",
+      "d 4096 tests",
+      "f 0 tests/token-weather-usage.test.ts"
+    ],
+    "hooksJson": "{ \"modules\": [\"./token-weather-usage.mjs\"] }\n",
+    "modules": ["./token-weather-usage.mjs"],
+    "pluginJson": {
+      "name": "token-weather-usage",
+      "version": "3.17.1",
+      "description": "One line above the prompt: context tokens with their weather, a bar per recent prompt, your 5-hour and 7-day limits against the time elapsed, the prompt cache with its time left, the session cost with the last prompt's share in dollars and in points of the 5-hour limit, and the subagents running. Labels in English, French or Russian. After Token Weather (Anthropic, Apache-2.0) and the ideas of usage-meter (HolyGrail) and prompt-cache-control (Daniel San).",
+      "author": {
+        "name": "Eric Cologni"
+      },
+      "license": "Apache-2.0",
+      "repository": "https://github.com/augiefra/claude-mods",
+      "displayName": "Token Weather Usage",
+      "homepage": "https://github.com/augiefra/claude-mods",
+      "keywords": [
+        "mod",
+        "statusline",
+        "usage",
+        "rate-limits",
+        "prompt-cache",
+        "context",
+        "token-weather"
+      ],
+      "userConfig": {
+        "language": {
+          "type": "string",
+          "title": "Language",
+          "description": "Labels in English (en), French (fr) or Russian (ru), or auto: follows LC_ALL, LC_MESSAGES or LANG, and falls back to English.",
+          "default": "auto"
+        }
+      }
+    }
   }
 }
