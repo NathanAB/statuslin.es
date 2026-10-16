@@ -30,12 +30,11 @@ export const Route = createFileRoute('/mods/')({
     return {
       mods: mods.items.flatMap(({ item }) => (item.kind === 'mod' ? [item.card] : [])),
       user,
-      origin: siteUrl(),
     }
   },
   head: ({ loaderData }) => {
     const mods = loaderData?.mods ?? []
-    const faq = faqPageJsonLd(modsFaq(loaderData?.origin ?? siteUrl()))
+    const faq = faqPageJsonLd(modsFaq())
     return {
       meta: [
         { title: `${TITLE_BASE} | statuslin.es` },
@@ -54,7 +53,7 @@ export const Route = createFileRoute('/mods/')({
 })
 
 function ModsPage() {
-  const { mods, user, origin } = Route.useLoaderData()
+  const { mods, user } = Route.useLoaderData()
   return (
     <PageShell user={user}>
       <Stack gap={6}>
@@ -84,7 +83,7 @@ function ModsPage() {
         ) : (
           <Text muted>No mods yet.</Text>
         )}
-        <FaqSection entries={modsFaq(origin)} />
+        <FaqSection entries={modsFaq()} />
       </Stack>
     </PageShell>
   )

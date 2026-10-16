@@ -1,8 +1,5 @@
 import type { FaqEntry } from '@/lib/json-ld'
-import { MOD_INSTALL_MIN_VERSION, modInstallCommands } from './install'
-
-/** Stands in for a mod's name in the install command, which each mod page fills in. */
-const MOD_NAME_PLACEHOLDER = '<mod>'
+import { MOD_INSTALL_MIN_VERSION } from './install'
 
 const MOD_SAFETY_QUESTION = 'Are Claude Code mods safe?'
 
@@ -10,8 +7,7 @@ const MOD_SAFETY_QUESTION = 'Are Claude Code mods safe?'
  * The /mods page's questions, shown on the page and marked up as FAQPage JSON-LD in the same
  * words. They answer the People Also Ask questions Google showed for mod searches on 2026-10-15.
  */
-export function modsFaq(origin: string): FaqEntry[] {
-  const [addMarketplace, installMod] = modInstallCommands(origin, MOD_NAME_PLACEHOLDER)
+export function modsFaq(): FaqEntry[] {
   return [
     {
       question: 'What is a Claude Code mod?',
@@ -24,17 +20,9 @@ export function modsFaq(origin: string): FaqEntry[] {
     },
     {
       question: 'How do I install a mod from statuslin.es?',
-      // The commands come from modInstallCommands (src/mods/install.ts), the same ones each mod
-      // page shows. The new-session step and version floor: MOD_INSTALL_MIN_VERSION's sources.
-      answer: `Copy the install prompt from the mod's page into Claude Code or Claude Desktop. It runs \`${addMarketplace}\` and \`${installMod}\`. Start a new session to load the mod. Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,
-    },
-    {
-      question: 'How do I install a mod by hand?',
-      // --plugin-dir for one session: https://code.claude.com/docs/en/plugins/mods/overview
-      // ("Try a sample mod"). A plugin folder under ~/.claude/skills/ loads as <name>@skills-dir
-      // with no install step: https://code.claude.com/docs/en/plugins/loading
-      answer:
-        "Clone the repository at the commit the mod's page links. Run `claude --plugin-dir <path>` on the folder that holds `.claude-plugin/plugin.json` to try it for one session, or save that folder under `~/.claude/skills/` to keep it.",
+      // No commands to run by hand: only a copy through the mod page's button is counted. The
+      // new-session step and version floor: MOD_INSTALL_MIN_VERSION's sources.
+      answer: `Copy the install prompt from the mod's page into Claude Code or Claude Desktop, then start a new session to load the mod. Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,
     },
     {
       question: 'How is a mod different from a status line?',
