@@ -1,13 +1,14 @@
+import { Link } from '@tanstack/react-router'
 import { MOD_ROUTE } from '@/lib/site'
 import {
-  STATUSLINE_ANYWHERE_INSTALL_COMMAND,
   STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE,
   STATUSLINE_ANYWHERE_MOD_SLUG,
+  STATUSLINE_ANYWHERE_URL,
 } from '@/lib/statusline-anywhere'
 import type { ModDesktopShot } from '@/mods/desktop-shot'
-import { CodeBlock } from '@/ui/code-block'
+import { Button } from '@/ui/button'
 import { DesktopShot } from '@/ui/desktop-shot'
-import { Stack } from '@/ui/layout'
+import { Row, Stack } from '@/ui/layout'
 import { StatuslineAnywhereLink } from '@/ui/statusline-anywhere-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 
@@ -31,10 +32,21 @@ export function DesktopGuideContent({
       </Stack>
 
       <Stack gap={3}>
-        <Heading level={2}>1. Paste this into a terminal</Heading>
-        <CodeBlock wrap text={STATUSLINE_ANYWHERE_INSTALL_COMMAND} copyLabel="Copy install command">
-          {STATUSLINE_ANYWHERE_INSTALL_COMMAND}
-        </CodeBlock>
+        <Heading level={2}>1. Install the mod</Heading>
+        {/* Its mod page holds the counted install prompt; before it's published, the repo. */}
+        <Row gap={2}>
+          <Button asChild>
+            {statuslineAnywhere.kind === 'unpublished' ? (
+              <a href={STATUSLINE_ANYWHERE_URL} target="_blank" rel="noopener noreferrer">
+                Install statusline-anywhere
+              </a>
+            ) : (
+              <Link to={MOD_ROUTE} params={{ slug: STATUSLINE_ANYWHERE_MOD_SLUG }}>
+                Install statusline-anywhere
+              </Link>
+            )}
+          </Button>
+        </Row>
       </Stack>
 
       <Stack gap={3}>

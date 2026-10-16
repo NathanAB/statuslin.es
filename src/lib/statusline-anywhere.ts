@@ -6,7 +6,4 @@ export const STATUSLINE_ANYWHERE_URL = 'https://github.com/NathanAB/statusline-a
 
 export const STATUSLINE_ANYWHERE_MOD_SLUG = 'statusline-anywhere'
 
-export const STATUSLINE_ANYWHERE_INSTALL_COMMAND =
-  'claude plugin marketplace add NathanAB/statusline-anywhere && claude plugin install statusline-anywhere@statusline-anywhere'
-
 export const STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE = '2.1.286'

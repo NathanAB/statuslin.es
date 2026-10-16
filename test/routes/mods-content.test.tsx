@@ -80,7 +80,7 @@ describe('/mods page', () => {
 
     const faq = screen.getByRole('heading', { level: 2, name: 'Common questions' })
     const section = within(faq.parentElement as HTMLElement)
-    for (const entry of modsFaq(ORIGIN)) {
+    for (const entry of modsFaq()) {
       expect(section.getByRole('heading', { level: 3, name: entry.question })).toBeTruthy()
     }
     const lastCard = screen.getByRole('link', { name: 'File Tree' })
@@ -107,25 +107,26 @@ describe('/mods page', () => {
     }
   })
 
-  it('answers what a mod is, how to install one here and by hand, and whether mods are safe', () => {
+  it('answers what a mod is, how to install one here, and whether mods are safe', () => {
     renderPage(MODS)
 
     for (const question of [
       'What is a Claude Code mod?',
       'How do I install a mod from statuslin.es?',
-      'How do I install a mod by hand?',
       'Are Claude Code mods safe?',
     ]) {
       expect(screen.getByRole('heading', { level: 3, name: question }), question).toBeTruthy()
     }
+    expect(screen.queryByRole('heading', { name: 'How do I install a mod by hand?' })).toBeNull()
   })
 
-  it('gives the two commands a mod install runs, for this site', () => {
+  // Installs count only through each mod page's copy button, so the FAQ gives no commands.
+  it('points installs at the copy button and shows no commands to run by hand', () => {
     const { container } = renderPage(MODS)
 
     const pageText = container.textContent ?? ''
-    expect(pageText).toContain(`claude plugin marketplace add ${ORIGIN}/marketplace.json`)
-    expect(pageText).toContain('claude plugin install <mod>@statuslines')
+    expect(pageText).toContain("Copy the install prompt from the mod's page")
+    expect(pageText).not.toMatch(/plugin (marketplace add|install)|--plugin-dir/)
   })
 
   it('links the safety guide once, from the intro', () => {
