@@ -51,14 +51,14 @@ describe('modFactTiles', () => {
     expect(
       modFactTiles(MOD).map(({ label, value, caution }) => [label, value, caution ?? false]),
     ).toEqual([
-      ['Shows up', 'Above the prompt', false],
+      ['What you see', 'Above the prompt', false],
       ['Works in', 'Terminal', false],
-      ['Commands', 'None', false],
-      ['Uses your plan', 'No', false],
+      ['Slash commands', 'None', false],
+      ['Uses your tokens', 'No', false],
       ['Changes files', 'Nothing', false],
-      ['Network', 'None', false],
+      ['Network access', 'None', false],
       ['Reviewed commit', '`0123456` on Sep 30, 2026', false],
-      ['Recorded with', 'Claude Code 2.1.0', false],
+      ['Preview recorded with', 'Claude Code 2.1.0', false],
     ])
   })
 
@@ -74,27 +74,27 @@ describe('modFactTiles', () => {
     }
     const tiles = modFactTiles({ ...MOD, footprint, generatedContent: CLAIMS })
     expect(tiles.map(({ label, value }) => [label, value])).toEqual([
-      ['Shows up', 'A meter above the prompt'],
+      ['What you see', 'A meter above the prompt'],
       ['Works in', 'Terminal'],
-      ['Commands', 'None'],
-      ['Uses your plan', 'Asks the model to summarize'],
+      ['Slash commands', 'None'],
+      ['Uses your tokens', 'Asks the model to summarize'],
       ['Changes files', '`CLAUDE.md`, when you press Save'],
-      ['Network', 'Weather from open-meteo.com'],
+      ['Network access', 'Weather from open-meteo.com'],
       ['Reviewed commit', '`0123456` on Sep 30, 2026'],
-      ['Recorded with', 'Claude Code 2.1.0'],
+      ['Preview recorded with', 'Claude Code 2.1.0'],
     ])
   })
 
-  it('cautions that a mod calling the model uses your plan, with a default without copy', () => {
+  it('cautions that a mod calling the model uses your tokens, with a default without copy', () => {
     const tile = modFactTiles({ ...MOD, footprint: { events: [], calls: ['$.model.complete'] } })[3]
-    expect(tile).toMatchObject({ label: 'Uses your plan', value: 'Yes', caution: true })
+    expect(tile).toMatchObject({ label: 'Uses your tokens', value: 'Yes', caution: true })
   })
 
   it('names every place it draws, and says when it draws nothing on screen', () => {
     const footprint = { events: [ABOVE, 'ui.render{component=Pane}'], calls: ['$.ui.toast'] }
-    expect(value({ footprint }, 'Shows up')).toBe('Above the prompt, a pane, and a toast')
+    expect(value({ footprint }, 'What you see')).toBe('Above the prompt, a pane, and a toast')
     expect(
-      value({ footprint: { events: [], calls: [] }, generatedContent: CLAIMS }, 'Shows up'),
+      value({ footprint: { events: [], calls: [] }, generatedContent: CLAIMS }, 'What you see'),
     ).toBe('Nothing on screen')
   })
 
@@ -106,20 +106,20 @@ describe('modFactTiles', () => {
 
   it('names the commands the footprint records, over any the copy lists', () => {
     const footprint = { events: ['command.run{command=burn|b}'], calls: [] }
-    expect(value({ footprint, generatedContent: CLAIMS }, 'Commands')).toBe('`/burn`, `/b`')
+    expect(value({ footprint, generatedContent: CLAIMS }, 'Slash commands')).toBe('`/burn`, `/b`')
   })
 
   it('takes command names from the copy only when the footprint records none of their names', () => {
     const footprint = { events: ['command.run'], calls: ['$.command.register'] }
-    expect(value({ footprint, generatedContent: CLAIMS }, 'Commands')).toBe('`/meter`')
-    expect(value({ footprint }, 'Commands')).toBe('Yes')
+    expect(value({ footprint, generatedContent: CLAIMS }, 'Slash commands')).toBe('`/meter`')
+    expect(value({ footprint }, 'Slash commands')).toBe('Yes')
   })
 
   it('says a mod that runs programs may change files or use the network through them', () => {
     const footprint = { events: [ABOVE], calls: ['$.process.run'] }
     expect(value({ footprint }, 'Changes files')).toBe('Only through programs it runs')
-    expect(value({ footprint }, 'Network')).toBe('Only through programs it runs')
-    expect(value({ footprint, generatedContent: CLAIMS }, 'Network')).toBe(
+    expect(value({ footprint }, 'Network access')).toBe('Only through programs it runs')
+    expect(value({ footprint, generatedContent: CLAIMS }, 'Network access')).toBe(
       'Weather from open-meteo.com',
     )
   })
@@ -129,6 +129,6 @@ describe('modFactTiles', () => {
   })
 
   it('leaves out the Claude Code version when no terminal preview recorded one', () => {
-    expect(value({ recordedWith: null }, 'Recorded with')).toBeUndefined()
+    expect(value({ recordedWith: null }, 'Preview recorded with')).toBeUndefined()
   })
 })

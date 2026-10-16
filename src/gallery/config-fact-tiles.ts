@@ -28,10 +28,10 @@ export function configFactTiles(
   return [
     {
       icon: iconFor(config.interpreter),
-      label: 'Runs as',
+      label: 'Written in',
       value: INTERPRETER_NAME[config.interpreter],
     },
-    { icon: Globe, label: 'Network', value: network },
+    { icon: Globe, label: 'Network access', value: network },
     ...(config.readsClaudeToken
       ? [
           {

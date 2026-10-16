@@ -472,7 +472,7 @@ describe('mod page', () => {
     const what = section('What it does')
     const tile = (label: string) => what.getByText(label).closest('dt')?.nextElementSibling
     expect(tile('Reviewed commit')?.textContent).toBe('0123456 on Oct 2, 2026')
-    expect(tile('Recorded with')?.textContent).toBe('Claude Code 2.1.0')
+    expect(tile('Preview recorded with')?.textContent).toBe('Claude Code 2.1.0')
   })
 
   it('states the footprint’s facts as tiles in What it does', () => {
@@ -480,12 +480,12 @@ describe('mod page', () => {
 
     const what = section('What it does')
     const tile = (label: string) => what.getByText(label).closest('dt')?.nextElementSibling
-    expect(tile('Shows up')?.textContent).toBe('A pane and a toast')
+    expect(tile('What you see')?.textContent).toBe('A pane and a toast')
     expect(tile('Works in')?.textContent).toBe('Terminal')
-    expect(tile('Commands')?.textContent).toBe('/filetree')
-    expect(tile('Uses your plan')?.textContent).toBe('No')
+    expect(tile('Slash commands')?.textContent).toBe('/filetree')
+    expect(tile('Uses your tokens')?.textContent).toBe('No')
     expect(tile('Changes files')?.textContent).toBe('Nothing')
-    expect(tile('Network')?.textContent).toBe('None')
+    expect(tile('Network access')?.textContent).toBe('None')
   })
 
   it('credits the author with a link to the source at the pinned commit', () => {
@@ -523,7 +523,7 @@ describe('mod page', () => {
   it('still states the facts, with no page copy, when the version has none', () => {
     renderPage()
 
-    expect(section('What it does').getByText('Shows up')).toBeTruthy()
+    expect(section('What it does').getByText('What you see')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'How it works' })).toBeNull()
   })
 

@@ -17,14 +17,14 @@ import type { ModDetail } from './queries'
 
 /** Each tile's label, also named by the guide that explains the tiles. */
 export const MOD_TILE_LABEL = {
-  showsUp: 'Shows up',
+  showsUp: 'What you see',
   worksIn: 'Works in',
-  commands: 'Commands',
-  usesYourPlan: 'Uses your plan',
+  commands: 'Slash commands',
+  usesYourPlan: 'Uses your tokens',
   changesFiles: 'Changes files',
-  network: 'Network',
+  network: 'Network access',
   reviewedCommit: 'Reviewed commit',
-  recordedWith: 'Recorded with',
+  recordedWith: 'Preview recorded with',
 } as const
 
 /** How long a commit sha reads on a mod page: the byline's source link and the tile. */

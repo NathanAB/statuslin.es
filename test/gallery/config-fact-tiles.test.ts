@@ -14,8 +14,8 @@ const shown = (tiles: ReturnType<typeof configFactTiles>) =>
 describe('configFactTiles', () => {
   it('states the interpreter, no network and the terminal for a plain script', () => {
     expect(shown(configFactTiles(CONFIG))).toEqual([
-      { label: 'Runs as', value: 'Bash', caution: false },
-      { label: 'Network', value: 'None', caution: false },
+      { label: 'Written in', value: 'Bash', caution: false },
+      { label: 'Network access', value: 'None', caution: false },
       { label: 'Works in', value: 'Terminal', caution: false },
     ])
   })
@@ -27,7 +27,9 @@ describe('configFactTiles', () => {
 
   it('lists the declared network hosts as code', () => {
     const tiles = configFactTiles({ ...CONFIG, networkHosts: ['wttr.in', 'api.github.com'] })
-    expect(tiles.find((t) => t.label === 'Network')?.value).toBe('`wttr.in`, `api.github.com`')
+    expect(tiles.find((t) => t.label === 'Network access')?.value).toBe(
+      '`wttr.in`, `api.github.com`',
+    )
   })
 
   it('cautions that it reads your Claude login only when it does, in the copy’s words', () => {
