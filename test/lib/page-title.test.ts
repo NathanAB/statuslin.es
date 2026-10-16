@@ -80,22 +80,9 @@ describe('resourcesTitle', () => {
     expect(resourcesTitle(sections)).toBe('alpha, beta & More Claude Code Tools')
   })
 
-  it('drops the second tool when the branded title would pass 60 characters', () => {
-    const sections = [
-      {
-        key: 'tools',
-        title: 'Tools',
-        resources: [tool('ccstatusline'), tool('claude-powerline')],
-      },
-    ]
-    expect(resourcesTitle(sections)).toBe('ccstatusline & More Claude Code Tools')
-  })
-
-  it("builds today's /resources title from the resource data, with the brand in 60 chars", () => {
-    expect(RESOURCES_TITLE_BASE).toBe('ccstatusline & More Claude Code Tools')
-    expect(brandedPageTitle(RESOURCES_TITLE_BASE)).toBe(
-      'ccstatusline & More Claude Code Tools | statuslin.es',
-    )
+  it("builds today's /resources title from the resource data, within 60 chars", () => {
+    expect(RESOURCES_TITLE_BASE).toBe('ccstatusline, claude-powerline & More Claude Code Tools')
+    expect(RESOURCES_TITLE_BASE.length).toBeLessThanOrEqual(60)
   })
 })
 

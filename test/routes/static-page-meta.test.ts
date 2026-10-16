@@ -15,7 +15,7 @@ describe('static page social metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'ccstatusline & More Claude Code Tools | statuslin.es' },
+        { title: 'ccstatusline, claude-powerline & More Claude Code Tools' },
         {
           name: 'description',
           content:

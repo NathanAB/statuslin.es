@@ -159,16 +159,10 @@ export const GUIDE_SUBPAGES: ReadonlyArray<{ path: string; modified: string }> =
   { path: MOD_SAFETY_GUIDE_PATH, modified: MOD_SAFETY_GUIDE_DATES.modified },
 ]
 
-/** The /resources title base: the first two tools, or only the first when two leave no room for the brand. */
 export function resourcesTitle(sections: ResourceSection[]): string {
   const tools = sections.find((s) => s.key === 'tools')?.resources ?? []
-  const title = (count: number) =>
-    `${tools
-      .slice(0, count)
-      .map((t) => t.name)
-      .join(', ')} & More Claude Code Tools`
-  const lead = title(2)
-  return `${lead}${PAGE_TITLE_BRAND}`.length <= PAGE_TITLE_MAX_LENGTH ? lead : title(1)
+  const lead = tools.slice(0, 2).map((t) => t.name)
+  return `${lead.join(', ')} & More Claude Code Tools`
 }
 
 export const RESOURCES_TITLE_BASE = resourcesTitle(RESOURCE_SECTIONS)
