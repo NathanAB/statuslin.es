@@ -89,5 +89,31 @@
         "text": "/flow 8"
       }
     ]
+  },
+  {
+    "repoUrl": "https://github.com/nvr0x5/claude-deck",
+    "path": "",
+    "commitSha": "9a43cd5921ebc4cb4b791e4b8a62768cf1b8e728",
+    "pluginName": "deck",
+    "title": "Deck",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/deck demo"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/dominikmartn/leitstand",
+    "path": "",
+    "commitSha": "c240234c29793e999c8bf1622a02851652f9665e",
+    "pluginName": "leitstand",
+    "title": "Leitstand",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/stand"
+      }
+    ]
   }
 ]
