@@ -14,12 +14,15 @@ import {
 } from './imagemagick'
 import { expectOk } from './interact'
 import { checkedPixelPng } from './png'
-import { emptyRows, gapCuts, type RowCut, type RowProfile } from './rows'
+import { bandAbovePrompt, emptyRows, gapCuts, type RowCut, type RowProfile } from './rows'
 import {
   BORDER_PROBES,
   CHAT_COLUMN,
+  CONTENT,
   type Column,
+  CROP_MARGIN,
   PANE_CHAT_COLUMN,
+  PROMPT_BOX,
   PROMPT_TEXT,
   plateStrips,
   type Rect,
@@ -38,6 +41,8 @@ export interface ShotsToAnalyse {
   /** The no-mod session's full final shot. */
   baseline: Uint8Array
   draws: readonly DrawLocation[]
+  /** The mod's session typed input steps and the baseline's did not, so its chat shows their turns. */
+  typedSteps: boolean
 }
 
 export type Analysis =
@@ -61,11 +66,26 @@ async function rowProfile(analysis: AnalysisSandbox, columns: Column[]): Promise
   return parseRowProfile(stdout, WINDOW.height)
 }
 
-async function changedBox(analysis: AnalysisSandbox): Promise<Rect | null> {
-  const compare = changedBoxCommand(BASELINE, SHOT, [PROMPT_TEXT, SCROLL_GUTTER])
+async function changedBox(analysis: AnalysisSandbox, masks: Rect[] = []): Promise<Rect | null> {
+  const compare = changedBoxCommand(BASELINE, SHOT, [PROMPT_TEXT, SCROLL_GUTTER, ...masks])
   return parseChangedBox(
     expectOk(await analysis.run(compare), 'comparing with the baseline').stdout,
   )
+}
+
+/**
+ * The chat column above the band, or above the prompt box when there is no band: where the input
+ * steps' own turns show (each step's message, and the reply or spinner it leaves). Widened by the
+ * crop margin, as a reply's antialiased first glyph reaches past the column's edge.
+ */
+function stepTurns(plate: RowProfile): Rect {
+  const bottom = bandAbovePrompt(plate, PROMPT_BOX.y)?.top ?? PROMPT_BOX.y
+  return {
+    x: CHAT_COLUMN.x - CROP_MARGIN,
+    y: CONTENT.top,
+    width: CHAT_COLUMN.width + 2 * CROP_MARGIN,
+    height: bottom - CONTENT.top,
+  }
 }
 
 /**
@@ -106,7 +126,7 @@ async function chatGapCuts(analysis: AnalysisSandbox, rect: Rect): Promise<RowCu
  */
 export async function analyseShot(
   analysis: AnalysisSandbox,
-  { shot, baseline, draws }: ShotsToAnalyse,
+  { shot, baseline, draws, typedSteps }: ShotsToAnalyse,
 ): Promise<Analysis> {
   await analysis.writeFiles([
     { path: SHOT, data: shot },
@@ -117,12 +137,17 @@ export async function analyseShot(
   const changed = paneOpen ? null : await changedBox(analysis)
   if (!paneOpen && !changed) return { kind: 'nothing' }
   const column = paneOpen ? PANE_CHAT_COLUMN : CHAT_COLUMN
+  const plate = await rowProfile(analysis, plateStrips(column))
+  // The steps' turns are not the mod's drawing, so they cannot make a shot; a crop still shows them.
+  if (!paneOpen && typedSteps && !(await changedBox(analysis, [stepTurns(plate)]))) {
+    return { kind: 'nothing' }
+  }
   const frame = frameShot({
     changed,
     paneOpen,
     draws,
     rows: await rowProfile(analysis, [column]),
-    plate: await rowProfile(analysis, plateStrips(column)),
+    plate,
   })
   if (frame.kind === 'nothing') return { kind: 'nothing' }
   // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
