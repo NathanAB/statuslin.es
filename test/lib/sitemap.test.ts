@@ -93,7 +93,7 @@ describe('sitemapResponse', () => {
 
     expect(entryFor(xml, BASE)).toContain('<lastmod>2026-05-06</lastmod>')
     expect(entryFor(xml, `${BASE}/?page=2`)).toContain('<lastmod>2026-05-06</lastmod>')
-    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-09-23</lastmod>')
+    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-10-15</lastmod>')
     for (const path of ['/resources', '/terms']) {
       expect(entryFor(xml, `${BASE}${path}`)).not.toContain('<lastmod>')
     }
@@ -113,9 +113,14 @@ describe('sitemapResponse', () => {
   })
 
   it('lists the best page and the live comparison pages', async () => {
-    const xml = await sitemapResponse(BASE, [], [], 1, ['/alternatives/ccstatusline']).text()
-    expect(xml).toContain(`<loc>${BASE}/status-lines/best</loc>`)
-    expect(xml).toContain(`<loc>${BASE}/alternatives/ccstatusline</loc>`)
+    const xml = await sitemapResponse(BASE, [], [], 1, [
+      { path: '/status-lines/best', updatedAt: null },
+      { path: '/alternatives/ccstatusline', updatedAt: new Date('2026-09-24T00:00:00Z') },
+    ]).text()
+    expect(entryFor(xml, `${BASE}/status-lines/best`)).not.toContain('<lastmod>')
+    expect(entryFor(xml, `${BASE}/alternatives/ccstatusline`)).toContain(
+      '<lastmod>2026-09-24</lastmod>',
+    )
     expect(xml).not.toContain(`<loc>${BASE}/compare/`)
   })
 

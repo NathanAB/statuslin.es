@@ -148,6 +148,19 @@ export function buildComparePage(path: string, gallery: GalleryCard[]): CompareP
   return spec.kind === 'alternatives' ? alternativesPage(spec.tool, cards) : versusPage(spec, cards)
 }
 
-export function liveComparePaths(gallery: GalleryCard[]): string[] {
-  return COMPARE_PATHS.filter((path) => buildComparePage(path, gallery) !== null)
+/** A live comparison page and what dates it: its tools' newest fact check and the slugs it lists. */
+export interface LiveComparePage {
+  path: string
+  verifiedAt: string
+  slugs: string[]
+}
+
+export function liveComparePages(gallery: GalleryCard[]): LiveComparePage[] {
+  return SPECS.flatMap((spec) => {
+    const page = buildComparePage(spec.path, gallery)
+    if (!page) return []
+    const tools = spec.kind === 'alternatives' ? [spec.tool] : spec.tools
+    const verifiedAt = tools.map((t) => t.verifiedAt).sort()[tools.length - 1] ?? ''
+    return [{ path: spec.path, verifiedAt, slugs: page.cards.map(({ card }) => card.slug) }]
+  })
 }

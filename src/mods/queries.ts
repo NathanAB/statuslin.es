@@ -111,10 +111,9 @@ export interface PublishedModListing {
   description: string
   copyCount: number
   tags: string[]
-  updatedAt: Date
+  updatedAt: Date // when the current version went live: its approval, else (curated) its creation
 }
 
-/** `updatedAt` is the date of the mod's current version. */
 export async function getPublishedModListings(db: Db): Promise<PublishedModListing[]> {
   return db
     .select({
@@ -123,13 +122,16 @@ export async function getPublishedModListings(db: Db): Promise<PublishedModListi
       description: mods.description,
       copyCount: mods.copyCount,
       tags: mods.allTags,
-      updatedAt: modVersions.createdAt,
+      updatedAt: sql<Date>`coalesce(${submissions.reviewedAt}, ${modVersions.createdAt})`.mapWith(
+        modVersions.createdAt,
+      ),
     })
     .from(mods)
     .innerJoin(
       modVersions,
       and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
     )
+    .leftJoin(submissions, eq(submissions.id, modVersions.id))
     .where(eq(mods.status, 'published'))
     .orderBy(desc(mods.copyCount), asc(mods.slug))
 }
