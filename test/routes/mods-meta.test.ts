@@ -103,8 +103,6 @@ describe('/mods head', () => {
     const faq = nodes.find((n) => n['@type'] === 'FAQPage') as {
       mainEntity: Array<{ name: string }>
     }
-    expect(faq.mainEntity.map((q) => q.name)).toEqual(
-      modsFaq(ORIGIN).map((entry) => entry.question),
-    )
+    expect(faq.mainEntity.map((q) => q.name)).toEqual(modsFaq().map((entry) => entry.question))
   })
 })

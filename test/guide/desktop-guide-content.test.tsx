@@ -1,10 +1,7 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  STATUSLINE_ANYWHERE_INSTALL_COMMAND,
-  STATUSLINE_ANYWHERE_URL,
-} from '@/lib/statusline-anywhere'
+import { STATUSLINE_ANYWHERE_URL } from '@/lib/statusline-anywhere'
 import type { ModDesktopShot } from '@/mods/desktop-shot'
 
 vi.mock('@tanstack/react-router', () => ({
@@ -52,7 +49,7 @@ describe('DesktopGuideContent', () => {
       }),
     ).toBeTruthy()
     for (const heading of [
-      /^1\. paste this into a terminal$/i,
+      /^1\. install the mod$/i,
       /^2\. open a new code session in claude desktop$/i,
     ]) {
       expect(screen.getByRole('heading', { level: 2, name: heading })).toBeTruthy()
@@ -69,21 +66,16 @@ describe('DesktopGuideContent', () => {
     expect(container.textContent).toContain('statusline-anywhere, a Claude Code mod, adds it back.')
   })
 
-  it('gives the one-paste install, the new-session step, and the version floor', async () => {
-    const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined)
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText },
-      configurable: true,
-      writable: true,
-    })
+  // Installs count only through the mod page's copy button, so the guide sends readers there.
+  it('sends the install to the mod page, then gives the new-session step and the version floor', () => {
     const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     const page = container.textContent ?? ''
-    expect(page).toContain(STATUSLINE_ANYWHERE_INSTALL_COMMAND)
+    expect(
+      screen.getByRole('link', { name: 'Install statusline-anywhere' }).getAttribute('href'),
+    ).toBe('/mods/statusline-anywhere')
+    expect(page).not.toMatch(/claude plugin/)
     expect(page).toMatch(/open a new Code session/i)
     expect(page).toContain('2.1.286')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Copy install command' }))
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(STATUSLINE_ANYWHERE_INSTALL_COMMAND))
   })
 
   it('stays short: no paragraph over 30 words', () => {

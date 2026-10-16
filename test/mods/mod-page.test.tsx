@@ -416,20 +416,12 @@ describe('mod page', () => {
     expect(await screen.findByText('4 copies')).toBeTruthy()
   })
 
-  it('shows the install commands as text under the button, run with plain claude', () => {
-    renderPage({ slug: 'filetree-ada' })
+  // Installs count only through the copy button, so the page shows no command to run by hand.
+  it('shows no install commands to run by hand', () => {
+    const { container } = renderPage({ slug: 'filetree-ada' })
 
-    const button = screen.getByRole('button', { name: PROMPT_BUTTON })
-    const lead = screen.getByText('Or run it yourself:')
-    const commands = screen.getByText(/plugin install filetree-ada@statuslines/)
-    expect(commands.textContent).toBe(
-      [
-        `claude plugin marketplace add ${ORIGIN}/marketplace.json`,
-        'claude plugin install filetree-ada@statuslines',
-      ].join('\n'),
-    )
-    expect(button.compareDocumentPosition(lead) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(lead.compareDocumentPosition(commands) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByText(/run it yourself/i)).toBeNull()
+    expect(container.textContent).not.toMatch(/claude plugin/)
   })
 
   it('shows only the button and its count: no install heading or app links', () => {
