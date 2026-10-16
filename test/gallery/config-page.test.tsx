@@ -143,7 +143,7 @@ describe('status line page', () => {
     const card = h2('What it does').closest('[data-slot="card"]') as HTMLElement
     const what = within(card)
     expect(what.getByText('A Powerline bar with the branch and the model.')).toBeTruthy()
-    expect(what.getByText('Runs as')).toBeTruthy()
+    expect(what.getByText('Written in')).toBeTruthy()
     expect(what.getByText('Bash')).toBeTruthy()
     expect(what.getByText('Uses Nerd Font glyphs')).toBeTruthy()
     expect(what.queryByText('Reads your Claude login')).toBeNull()

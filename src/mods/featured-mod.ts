@@ -1,6 +1,7 @@
 /**
- * The mod the home page features, picked by hand. context-bar: its repo has the most stars of the
- * collections we list (254 on 2026-10-15), it covers token usage, the feature most searched for,
- * and it has a terminal preview. The row is left out while this mod isn't published.
+ * The mod the home page features, picked by hand. burn-meter: it covers cost and plan limits, two of
+ * the most searched features, and both its terminal and Claude Desktop previews render on clean
+ * rows. context-bar was featured first, but its bar wraps in Claude Desktop. The row is left out
+ * while this mod isn't published.
  */
-export const FEATURED_MOD_SLUG = 'context-bar'
+export const FEATURED_MOD_SLUG = 'burn-meter'
