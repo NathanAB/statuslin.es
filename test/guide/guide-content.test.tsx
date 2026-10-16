@@ -63,7 +63,7 @@ describe('GuideContent', () => {
 
   it('shows when the guide was last updated', () => {
     render(<GuideContent highlights={highlights} />)
-    expect(screen.getByText('Updated 2026-09-23')).toBeTruthy()
+    expect(screen.getByText('Updated 2026-10-15')).toBeTruthy()
   })
 
   it('shows the example output once, next to the script, not in the intro', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildComparePage, COMPARE_PATHS, liveComparePaths } from '@/compare/pages'
+import { buildComparePage, COMPARE_PATHS, liveComparePages } from '@/compare/pages'
 import type { GalleryCard } from '@/gallery/queries'
 
 function card(slug: string, tags: string[]): GalleryCard {
@@ -116,13 +116,21 @@ describe('buildComparePage', () => {
   })
 })
 
-describe('liveComparePaths', () => {
+describe('liveComparePages', () => {
   it('lists the pages that have enough relevant previews to ship', () => {
-    expect(liveComparePaths(gallery)).toEqual([
+    expect(liveComparePages(gallery).map((page) => page.path)).toEqual([
       '/alternatives/ccstatusline',
       '/alternatives/claude-powerline',
       '/compare/ccstatusline-vs-claude-powerline',
     ])
-    expect(liveComparePaths([oneJob])).toEqual([])
+    expect(liveComparePages([oneJob])).toEqual([])
+  })
+
+  it('gives each page its newest tool fact check and the status lines it lists', () => {
+    expect(liveComparePages(gallery)[0]).toEqual({
+      path: '/alternatives/ccstatusline',
+      verifiedAt: '2026-09-24',
+      slugs: ['three-jobs', 'five-jobs', 'powerline-look'],
+    })
   })
 })

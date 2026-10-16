@@ -1,12 +1,12 @@
 import { createServerFn, createServerOnlyFn } from '@tanstack/react-start'
-import { liveComparePaths } from '@/compare/pages'
+import { liveComparePages } from '@/compare/pages'
 import { db } from '@/db'
 import { FACET_BY_SLUG, tagKeywords } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
 import { type LlmsMod, llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
-import { type SitemapMod, sitemapResponse } from '@/lib/sitemap'
+import { newestDate, type SitemapMod, type SitemapPage, sitemapResponse } from '@/lib/sitemap'
 import { getConfigSource, getPublishedConfigs } from './config-items'
 import { type FacetMod, getLatestCopyAt } from './facet-queries'
 import type { GallerySource } from './gallery-items'
@@ -50,12 +50,33 @@ export const sitemapResponseForRoute = createServerOnlyFn(
     }))
     const configs = await getPublishedSlugsForSitemap(db)
     const pageCount = Math.max(1, Math.ceil((configs.length + mods.length) / PAGE_SIZE))
-    const comparePaths = liveComparePaths(await getCardsByCopies(db))
-    return sitemapResponse(siteUrl(), configs, facets, pageCount, comparePaths, mods)
+    const listingPages = await datedListingPages(configs)
+    return sitemapResponse(siteUrl(), configs, facets, pageCount, listingPages, mods)
   },
 )
 
 const BEST_LIMIT = 10
+
+/**
+ * The best page and the live comparison pages, each dated by the newest status line it lists
+ * going live. The best page ranks by copies, so its newest copy dates it too, as its "as of" line
+ * does; a comparison page also counts its tools' fact check.
+ */
+async function datedListingPages(
+  configs: Array<{ slug: string; updatedAt: Date }>,
+): Promise<SitemapPage[]> {
+  const [cards, latestCopyAt] = await Promise.all([getCardsByCopies(db), getLatestCopyAt(db)])
+  const liveSince = new Map(configs.map((c) => [c.slug, c.updatedAt]))
+  const listed = (slugs: string[]) => slugs.map((slug) => liveSince.get(slug) ?? null)
+  const bestSlugs = cards.slice(0, BEST_LIMIT).map((card) => card.slug)
+  return [
+    { path: '/status-lines/best', updatedAt: newestDate([latestCopyAt, ...listed(bestSlugs)]) },
+    ...liveComparePages(cards).map((page) => ({
+      path: page.path,
+      updatedAt: newestDate([new Date(page.verifiedAt), ...listed(page.slugs)]),
+    })),
+  ]
+}
 
 /** `latestCopy` dates the page by its data, the UTC day of the newest copy, not the request day,
  * so the page claims no newer month than its ranking reflects. */
