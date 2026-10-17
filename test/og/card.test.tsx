@@ -106,6 +106,17 @@ describe('og card text', () => {
     )
   })
 
+  it('draws three scenarios of a status line two rows tall', () => {
+    const previews = ['clean-main', 'fresh-session', 'dirty-feature'].map((scenarioKey) => ({
+      scenarioKey,
+      segments: [seg(`${scenarioKey} · Opus 4.8\nctx 22% · 5h 26%`)],
+    }))
+    const text = cardText(configCard({ title: 'Two rows', author: null, previews }))
+    expect(text).toContain('clean-main')
+    expect(text).toContain('fresh-session')
+    expect(text).toContain('dirty-feature')
+  })
+
   it('names a mod card as a Claude Code mod, with its author', () => {
     expect(
       cardText(
