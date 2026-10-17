@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import satori from 'satori'
 import { describe, expect, it } from 'vitest'
-import { configCard, homeCard, modCard } from '@/og/card'
+import { configCard, homeCard, type ModCardBody, modCard } from '@/og/card'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
@@ -78,28 +78,27 @@ describe('og card layout', () => {
     expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
   })
 
-  it.each([
+  it.each<[string, ModCardBody]>([
     [
       'the tallest terminal preview it draws',
-      [seg(Array.from({ length: 9 }, (_, i) => `row ${i + 1}`).join('\n'))],
-      null,
+      {
+        kind: 'terminal',
+        segments: [seg(Array.from({ length: 9 }, (_, i) => `row ${i + 1}`).join('\n'))],
+      },
     ],
     // A recording is 100 columns wide, a mod's hide control sits in its last ones, and a pixel-art
     // row colors every cell.
-    ['a terminal preview as wide as the terminal', WIDE_PREVIEW, null],
-    ['no terminal preview', null, null],
-    ['only a Desktop shot', null, DESKTOP_SHOT],
-  ])(
-    'keeps a mod card with %s inside the card and centered vertically',
-    async (_name, preview, desktopShot) => {
-      const { root, content } = await layout(
-        modCard({ title: 'Usage meter', authorGithub: 'octocat', preview, desktopShot }),
-      )
-      expect(root).toMatchObject(FILLS_THE_CARD)
-      const m = margins(content)
-      expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
-      expect(m.bottom).toBeGreaterThanOrEqual(0)
-      expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
-    },
-  )
+    ['a terminal preview as wide as the terminal', { kind: 'terminal', segments: WIDE_PREVIEW }],
+    ['no terminal preview', { kind: 'none' }],
+    ['only a Desktop shot', { kind: 'desktop', shot: DESKTOP_SHOT }],
+  ])('keeps a mod card with %s inside the card and centered vertically', async (_name, body) => {
+    const { root, content } = await layout(
+      modCard({ title: 'Usage meter', authorGithub: 'octocat', body }),
+    )
+    expect(root).toMatchObject(FILLS_THE_CARD)
+    const m = margins(content)
+    expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
+    expect(m.bottom).toBeGreaterThanOrEqual(0)
+    expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
+  })
 })

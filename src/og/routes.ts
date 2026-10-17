@@ -2,8 +2,8 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db as defaultDb } from '@/db'
 import { getConfigBySlug } from '@/gallery/queries'
 import { getModDesktopShotPng } from '@/mods/desktop-shot'
-import { getModDetail } from '@/mods/queries'
-import { configCard, homeCard, modCard } from '@/og/card'
+import { getModDetail, type ModDetail } from '@/mods/queries'
+import { configCard, homeCard, type ModCardBody, modCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver; query surface identical.
@@ -53,25 +53,23 @@ export async function configCardResponseForRoute(slug: string): Promise<Response
   return configCardResponse(defaultDb, slug)
 }
 
+/** What a mod's card draws: its terminal preview, else its Desktop shot, which satori only reads
+ * inline, else neither. */
+async function modCardBody(db: Db, mod: ModDetail): Promise<ModCardBody> {
+  if (mod.preview?.length) return { kind: 'terminal', segments: mod.preview }
+  const shot = await getModDesktopShotPng(db, mod.slug)
+  if (!shot) return { kind: 'none' }
+  const src = `data:image/png;base64,${Buffer.from(shot.png).toString('base64')}`
+  return { kind: 'desktop', shot: { src, width: shot.width, height: shot.height } }
+}
+
 /** Per-mod card. Unlike the config card, a draft, removed or unknown slug is a 404: there is no
- * mod page behind it to share. A published mod gets 1h, since a mod can move to a new version. A mod
- * that draws nothing in the terminal shows its Desktop shot, which satori only reads inline. */
+ * mod page behind it to share. A published mod gets 1h, since a mod can move to a new version. */
 export async function modCardResponse(db: Db, slug: string): Promise<Response> {
   const mod = await getModDetail(db, slug)
   if (!mod) return new Response('Not found', { status: 404 })
-  const shot = mod.preview?.length ? null : await getModDesktopShotPng(db, slug)
-  const desktopShot = shot && {
-    src: `data:image/png;base64,${Buffer.from(shot.png).toString('base64')}`,
-    width: shot.width,
-    height: shot.height,
-  }
   const png = await toElementPng(
-    modCard({
-      title: mod.title,
-      authorGithub: mod.authorGithub,
-      preview: mod.preview,
-      desktopShot,
-    }),
+    modCard({ title: mod.title, authorGithub: mod.authorGithub, body: await modCardBody(db, mod) }),
   )
   return pngResponse(png, 'public, max-age=3600')
 }

@@ -250,60 +250,62 @@ const MOD_PREVIEW_PADDING_X = 20
 // A Desktop shot fits in about the height of a preview of MOD_PREVIEW_MAX_LINES rows.
 const MOD_DESKTOP_SHOT_BOX = { width: DETAIL_BODY_WIDTH, height: 250 }
 
-function modCardBody(
-  title: string,
-  preview: AnsiSegment[] | null,
-  desktopShot: DesktopShotImage | null,
-): ReactElement {
-  if (preview && preview.length > 0) {
-    return well(
-      drawStatusLine(
-        preview,
-        19,
-        MOD_PREVIEW_MAX_LINES,
-        DETAIL_BODY_WIDTH - 2 * MOD_PREVIEW_PADDING_X,
-      ),
-      `13px ${MOD_PREVIEW_PADDING_X}px`,
-    )
+/** What a mod's card draws below its header. */
+export type ModCardBody =
+  | { kind: 'terminal'; segments: AnsiSegment[] }
+  | { kind: 'desktop'; shot: DesktopShotImage }
+  | { kind: 'none' }
+
+function drawModCardBody(title: string, body: ModCardBody): ReactElement {
+  switch (body.kind) {
+    case 'terminal':
+      return well(
+        drawStatusLine(
+          body.segments,
+          19,
+          MOD_PREVIEW_MAX_LINES,
+          DETAIL_BODY_WIDTH - 2 * MOD_PREVIEW_PADDING_X,
+        ),
+        `13px ${MOD_PREVIEW_PADDING_X}px`,
+      )
+    case 'desktop': {
+      const { width, height } = fitWithin(body.shot, MOD_DESKTOP_SHOT_BOX)
+      return (
+        <img
+          src={body.shot.src}
+          alt={`${title} in Claude Desktop`}
+          width={width}
+          height={height}
+          style={{ borderRadius: 10 }}
+        />
+      )
+    }
+    case 'none':
+      return well(
+        <div
+          style={{
+            display: 'flex',
+            fontFamily: FONT,
+            fontSize: 24,
+            color: OG_PALETTE.foreground,
+          }}
+        >
+          Draws in Claude Desktop
+        </div>,
+        '10px 18px',
+      )
   }
-  if (desktopShot) {
-    const { width, height } = fitWithin(desktopShot, MOD_DESKTOP_SHOT_BOX)
-    return (
-      <img
-        src={desktopShot.src}
-        alt={`${title} in Claude Desktop`}
-        width={width}
-        height={height}
-        style={{ borderRadius: 10 }}
-      />
-    )
-  }
-  return well(
-    <div
-      style={{
-        display: 'flex',
-        fontFamily: FONT,
-        fontSize: 24,
-        color: OG_PALETTE.foreground,
-      }}
-    >
-      Draws in Claude Desktop
-    </div>,
-    '10px 18px',
-  )
 }
 
-/** A mod's card shows its terminal preview, else its Claude Desktop shot. */
 export function modCard(input: {
   title: string
   authorGithub: string
-  preview: AnsiSegment[] | null
-  desktopShot?: DesktopShotImage | null
+  body: ModCardBody
 }): ReactElement {
   return detailCard(
     cardHeader(input.title, `${MOD_KIND} · by @${input.authorGithub}`),
     <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-      {modCardBody(input.title, input.preview, input.desktopShot ?? null)}
+      {drawModCardBody(input.title, input.body)}
     </div>,
   )
 }
