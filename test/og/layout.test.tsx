@@ -5,6 +5,7 @@ import { configCard, homeCard, modCard } from '@/og/card'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
+import { SEEDED_DESKTOP_SHOT } from '../mods/seed-mods'
 
 type Box = { left: number; top: number; width: number; height: number }
 
@@ -34,6 +35,18 @@ function margins(content: Box[]) {
     top: Math.min(...content.map((b) => b.top)),
     bottom: CARD_HEIGHT - Math.max(...content.map((b) => b.top + b.height)),
   }
+}
+
+const WIDE_PREVIEW = [
+  ...Array.from({ length: 97 }, (_, i) => seg('█', i % 2 ? 'rgb(187,0,187)' : null)),
+  seg('[-]\n❯ '),
+]
+
+// The Status Line Anywhere shot's CSS size, drawn from a stand-in PNG.
+const DESKTOP_SHOT = {
+  src: `data:image/png;base64,${Buffer.from(SEEDED_DESKTOP_SHOT.png).toString('base64')}`,
+  width: 784,
+  height: 129,
 }
 
 const FILLS_THE_CARD = { left: 0, top: 0, width: CARD_WIDTH, height: CARD_HEIGHT }
@@ -69,16 +82,24 @@ describe('og card layout', () => {
     [
       'the tallest terminal preview it draws',
       [seg(Array.from({ length: 9 }, (_, i) => `row ${i + 1}`).join('\n'))],
+      null,
     ],
-    ['no terminal preview', null],
-  ])('keeps a mod card with %s inside the card and centered vertically', async (_name, preview) => {
-    const { root, content } = await layout(
-      modCard({ title: 'Usage meter', authorGithub: 'octocat', preview }),
-    )
-    expect(root).toMatchObject(FILLS_THE_CARD)
-    const m = margins(content)
-    expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
-    expect(m.bottom).toBeGreaterThanOrEqual(0)
-    expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
-  })
+    // A recording is 100 columns wide, a mod's hide control sits in its last ones, and a pixel-art
+    // row colors every cell.
+    ['a terminal preview as wide as the terminal', WIDE_PREVIEW, null],
+    ['no terminal preview', null, null],
+    ['only a Desktop shot', null, DESKTOP_SHOT],
+  ])(
+    'keeps a mod card with %s inside the card and centered vertically',
+    async (_name, preview, desktopShot) => {
+      const { root, content } = await layout(
+        modCard({ title: 'Usage meter', authorGithub: 'octocat', preview, desktopShot }),
+      )
+      expect(root).toMatchObject(FILLS_THE_CARD)
+      const m = margins(content)
+      expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
+      expect(m.bottom).toBeGreaterThanOrEqual(0)
+      expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
+    },
+  )
 })

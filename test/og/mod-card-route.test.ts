@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { modCard } from '@/og/card'
+import { toElementPng } from '@/og/render'
 import { modCardResponse } from '@/og/routes'
 import { addDesktopPreview, openTestDb, seedMod, type TestDb } from '../mods/seed-mods'
 
@@ -40,6 +42,15 @@ describe('modCardResponse', () => {
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
     expect(await magic(res)).toEqual(PNG_MAGIC)
+  })
+
+  it('draws the Desktop shot of a mod that draws nothing in the terminal', async () => {
+    const res = await modCardResponse(db, 'anywhere')
+    const withoutShot = await toElementPng(
+      modCard({ title: 'anywhere', authorGithub: 'octocat', preview: [] }),
+    )
+
+    expect(Buffer.from(await res.arrayBuffer()).equals(Buffer.from(withoutShot))).toBe(false)
   })
 
   it.each([

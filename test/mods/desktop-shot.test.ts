@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getModDesktopShot } from '@/mods/desktop-shot'
+import { getModDesktopShot, getModDesktopShotPng } from '@/mods/desktop-shot'
 import {
   addDesktopPreview,
   addMod,
@@ -66,5 +66,34 @@ describe('getModDesktopShot', () => {
       expect(await getModDesktopShot(db, slug)).toEqual({ kind: 'unpublished' })
     }
     expect(await getModDesktopShot(db, 'unknown')).toEqual({ kind: 'unpublished' })
+  })
+})
+
+describe('getModDesktopShotPng', () => {
+  it("returns a published mod's Desktop shot as PNG bytes and CSS size", async () => {
+    const { versionId } = await seedMod(db, 'anywhere', 'published', 'a')
+    await addDesktopPreview(db, versionId)
+
+    expect(await getModDesktopShotPng(db, 'anywhere')).toEqual({
+      png: SEEDED_DESKTOP_SHOT.png,
+      width: SEEDED_DESKTOP_SHOT.width,
+      height: SEEDED_DESKTOP_SHOT.height,
+    })
+  })
+
+  it('is null for a mod with no shot or no published page', async () => {
+    await seedMod(db, 'blank', 'published', 'a')
+    const modId = await addMod(db, 'unrendered', 'published')
+    await setCurrentVersion(
+      db,
+      modId,
+      await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 1, rendered: false }),
+    )
+    const { versionId } = await seedMod(db, 'draft', 'draft', 'c')
+    await addDesktopPreview(db, versionId)
+
+    for (const slug of ['blank', 'unrendered', 'draft', 'unknown']) {
+      expect(await getModDesktopShotPng(db, slug)).toBeNull()
+    }
   })
 })

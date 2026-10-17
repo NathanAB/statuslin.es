@@ -119,9 +119,41 @@ describe('og card text', () => {
     ).toContain('Claude Code mod · by @octocat')
   })
 
-  it('says where a mod with no terminal preview draws', () => {
+  it('says where a mod with no terminal preview or Desktop shot draws', () => {
     expect(cardText(modCard({ title: 'Tree', authorGithub: 'octocat', preview: null }))).toContain(
       'Draws in Claude Desktop',
     )
+  })
+})
+
+/** The src of every image a card draws, read from its element tree. */
+function cardImages(node: unknown): string[] {
+  if (Array.isArray(node)) return node.flatMap(cardImages)
+  if (!node || typeof node !== 'object' || !('props' in node)) return []
+  const { type, props } = node as { type: unknown; props: { src?: string; children?: unknown } }
+  return type === 'img' && props.src ? [props.src] : cardImages(props.children)
+}
+
+describe('og mod card Desktop shot', () => {
+  const desktopShot = { src: 'data:image/png;base64,c2hvdA==', width: 784, height: 129 }
+
+  it('draws the Desktop shot of a mod with no terminal preview, in place of the chip', () => {
+    for (const preview of [null, []]) {
+      const card = modCard({ title: 'Anywhere', authorGithub: 'octocat', preview, desktopShot })
+
+      expect(cardImages(card)).toEqual([desktopShot.src])
+      expect(cardText(card)).not.toContain('Draws in Claude Desktop')
+    }
+  })
+
+  it('draws the terminal preview of a mod that has both', () => {
+    const card = modCard({
+      title: 'Deck',
+      authorGithub: 'octocat',
+      preview: [seg('x')],
+      desktopShot,
+    })
+
+    expect(cardImages(card)).toEqual([])
   })
 })
