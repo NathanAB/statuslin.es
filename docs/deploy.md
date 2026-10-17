@@ -66,7 +66,7 @@ There is no worker process. Mod previews render from the operator's machine (`re
 
 ## The environment variables
 
-From `.env.example` (the committed contract):
+From `.env.schema` (the committed contract, which [varlock](https://varlock.dev) validates):
 
 | var | differs per env? | notes |
 |---|---|---|
@@ -116,13 +116,32 @@ For each new one:
 fly apps create statuslines-staging
 fly apps create statuslines      # production
 ```
-Set each app's secrets (per-env values from above). Bulk-import from a gitignored local file:
+Set each app's secrets (per-env values from above) from a gitignored local file, `.env.staging` or
+`.env.production`. They're the *source you push from*, never read by the servers. Each holds that
+env's values for the variables in `.env.schema`, and its secrets are encrypted with a key in your
+Mac's Secure Enclave, so reading them back asks for Touch ID:
 ```sh
-fly secrets import --app statuslines-staging < .env.staging
-fly secrets import --app statuslines      < .env.production
+APP_ENV=staging bunx varlock encrypt --file .env.staging   # after adding or changing a plaintext secret
+bun run secrets:push staging --dry-run                     # validate, and list what would change
+bun run secrets:push staging                               # make the staging app's secrets match
 ```
-`.env.staging` / `.env.production` are gitignored (the `.env.*` rule); they're the *source you
-push from*, never read by the servers.
+Use `production` the same way. `secrets:push` targets the app in `fly.staging.toml` / `fly.toml`. It
+reads only `.env.schema` and the env file, never `.env.local`, `.env.development` or your shell. It
+refuses while a required value is missing, a value fails its type, an unknown argument is passed, a
+secret in the env file is still plaintext, or `DATABASE_URL` lacks an encrypting `sslmode` (the same
+rule the app enforces at boot, `src/db/assert-tls.ts`, so a bad URL never restarts the app into a
+crash). It manages the variables tagged `fly` in the schema: it
+sets each one the file sets, through `fly secrets import`, and unsets each one the file no longer sets
+but Fly still has. Each of those steps restarts the app's machines. Fly secrets the schema doesn't tag
+`fly` are listed and left alone. Never pipe an env file into `fly secrets import` yourself: Fly would
+store the encrypted text.
+
+To run a script against staging or production, such as `generate:content`, use
+`bun run with-env staging scripts/generate-content.ts --all --prepare`. It runs the script with that
+env's config and nothing from `.env.local` or `.env.development`.
+
+Both commands decrypt with Touch ID, so run them from a real terminal. From an agent's sandboxed
+tool shell the prompt never appears and varlock gives up after 60 seconds.
 
 ## Per-environment machine size
 
@@ -455,14 +474,16 @@ Fly can issue its TLS cert; once green, switch to **proxied** (orange) for CDN +
 - `staging` → `statuslines-staging`
 - `@` (apex) + `www` → `statuslines`
 
-## Local `.env.local`
+## Local `.env.development` and `.env.local`
 
-Bun auto-loads `.env.local` for local dev (and it overrides a bare `.env`). Point `DATABASE_URL` at a
-**local Postgres** — there's no hosted dev DB — e.g. a Docker `postgres` container; then
-`bun run db:migrate` to create the schema and `bun run seed:gallery` for sample data. Auth runs at
-`BETTER_AUTH_URL=http://localhost:3100`. `.env.staging` / `.env.production` are *not* auto-loaded —
-they're only the source you push to Fly secrets. Unit/integration tests don't need any of this — they
-run on PGlite against the committed migrations.
+Bun auto-loads the committed `.env.development` and your gitignored `.env.local` for local dev, with
+`.env.local` winning. `.env.development` points `DATABASE_URL` at a **local Postgres** (there's no
+hosted dev DB), the Docker `postgres` container from the README; then `bun run db:migrate` creates
+the schema and `bun run seed:gallery` adds sample data. Auth runs at its `BETTER_AUTH_URL`. Override
+either in `.env.local`. `.env.staging` / `.env.production` are *not* auto-loaded: they're only the
+source you push to Fly secrets. `bunx varlock load` checks your dev config against `.env.schema`
+with secrets redacted. Unit/integration tests don't need any of this — they run on
+PGlite against the committed migrations.
 
 ## Order of operations (first launch)
 
@@ -471,7 +492,7 @@ run on PGlite against the committed migrations.
 3. `fly launch --no-deploy` — generates the `Dockerfile` + `fly.toml` and creates the staging app.
    Then edit `fly.toml` for the `web` process group + `release_command`, and the `Dockerfile` for
    the migration caveat above. Add `.dockerignore`.
-4. Set staging secrets (`fly secrets import --app statuslines-staging < .env.staging`).
+4. Set staging secrets (`bun run secrets:push staging`).
 5. `fly deploy --config fly.staging.toml`; verify on the `*.fly.dev` URL, then point `staging`
    DNS in Cloudflare and verify on `staging.statuslin.es`.
 6. Shake out kinks on staging.

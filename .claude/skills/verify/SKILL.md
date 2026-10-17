@@ -41,7 +41,7 @@ and the `statuslines-postgres` Docker container running (`docker start statuslin
 `GET /api/health` and checks the listener is its own; startup takes about 6 s). Server output goes
 to `.verify/run/3110/server.log`.
 
-It refuses the dev server's port (the one in `.env.local`'s `BETTER_AUTH_URL`, normally 3100) and
+It refuses the dev server's port (the one in its `BETTER_AUTH_URL`: `.env.local`'s, else `.env.development`'s 3100) and
 any port held by a process it didn't start. Don't pick 3101 either: the `candidates` dev config
 uses it. Running `up` again on a healthy instance changes nothing; on one that is still starting or
 unhealthy it stops and tells you to run `down`.

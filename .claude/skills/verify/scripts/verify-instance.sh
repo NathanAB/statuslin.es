@@ -37,18 +37,25 @@ AUTHOR_EMAIL=verify-author@test.invalid
 
 die() { echo "verify: $*" >&2; exit 1; }
 
-env_local() { grep -E "^$1=" "${REPO_ROOT}/.env.local" 2>/dev/null | head -1 | cut -d= -f2- || true; }
+# A dev setting as Bun resolves it: .env.local wins over the committed .env.development defaults.
+dev_env() {
+  local file value
+  for file in .env.local .env.development; do
+    value="$(grep -E "^$1=" "${REPO_ROOT}/${file}" 2>/dev/null | head -1 | cut -d= -f2- || true)"
+    [[ -n "$value" ]] && { echo "$value"; return; }
+  done
+}
 
-# DATABASE_URL for the verify DB: the dev URL from .env.local with its database name swapped.
+# DATABASE_URL for the verify DB: the dev URL with its database name swapped.
 database_url() {
   local dev_url
-  dev_url="$(env_local DATABASE_URL)"
-  [[ -n "$dev_url" ]] || die ".env.local has no DATABASE_URL (see README §2)"
+  dev_url="$(dev_env DATABASE_URL)"
+  [[ -n "$dev_url" ]] || die "no DATABASE_URL in .env.local or .env.development (see README §2)"
   echo "${dev_url%/*}/${DB}"
 }
 
 # The user's dev server port, derived from BETTER_AUTH_URL like vite.config.ts does.
-dev_port() { env_local BETTER_AUTH_URL | sed -nE 's#^https?://[^/:]+:([0-9]+).*#\1#p'; }
+dev_port() { dev_env BETTER_AUTH_URL | sed -nE 's#^https?://[^/:]+:([0-9]+).*#\1#p'; }
 
 postgres_up() { docker exec "$CONTAINER" pg_isready -U postgres >/dev/null 2>&1; }
 psql_verify() { docker exec -i "$CONTAINER" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -Atc "$1"; }
@@ -83,7 +90,7 @@ migrations_applied() { psql_verify 'SELECT count(*) FROM drizzle.__drizzle_migra
 db_ready() { [[ "$(migrations_applied)" == "$(migrations_expected)" ]]; }
 
 cmd_up() {
-  [[ "$PORT" != "$(dev_port)" ]] || die "port $PORT is the dev server's (BETTER_AUTH_URL in .env.local); pick another VERIFY_PORT"
+  [[ "$PORT" != "$(dev_port)" ]] || die "port $PORT is the dev server's (its BETTER_AUTH_URL); pick another VERIFY_PORT"
   postgres_up || die "Postgres container '$CONTAINER' is not running (docker start $CONTAINER)"
   if server_alive; then
     if port_owned_by_us && healthy && db_ready; then
