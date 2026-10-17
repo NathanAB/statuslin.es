@@ -1,5 +1,8 @@
+import { createElement } from 'react'
+import satori from 'satori'
 import { describe, expect, it } from 'vitest'
-import { cellWidth, fitFontSize, fitWithin } from '@/og/fit'
+import { cellWidth, fitFontSize, fitWithin, lineHeight } from '@/og/fit'
+import { cardSatoriOptions } from '@/og/render'
 
 describe('cellWidth', () => {
   it('counts one cell per character of ASCII, box drawing and blocks', () => {
@@ -60,4 +63,23 @@ describe('fitWithin', () => {
       height: 250,
     })
   })
+})
+
+describe('lineHeight', () => {
+  it.each([10, 17.43, 19, 24, 30, 54])(
+    'matches the height satori lays out a line of %spx text at',
+    async (fontSize) => {
+      const heights: number[] = []
+      const line = createElement(
+        'div',
+        { style: { display: 'flex', fontFamily: 'StatuslineNerd', fontSize } },
+        'ctx 22%',
+      )
+      await satori(line, {
+        ...cardSatoriOptions(),
+        onNodeDetected: (node) => heights.push(node.height),
+      })
+      expect(lineHeight(fontSize)).toBe(heights[0])
+    },
+  )
 })

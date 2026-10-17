@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import { HOME_HEADING } from '@/lib/page-title'
-import { CARD_WIDTH } from '@/og/dimensions'
-import { fitFontSize, fitWithin } from '@/og/fit'
+import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
+import { fitFontSize, fitWithin, lineHeight } from '@/og/fit'
 import { OG_PALETTE } from '@/og/palette'
 import { orderByScenario } from '@/render/scenarios'
 import type { AnsiSegment } from '@/render/types'
@@ -55,26 +55,31 @@ export function splitSegmentsIntoLines(segments: AnsiSegment[]): AnsiSegment[][]
   return lines
 }
 
+/** A status line's first `maxLines` visual lines, and the largest font up to `maxFontSize` at which
+ * they fit in `width`. */
+function fitStatusLine(
+  segments: AnsiSegment[],
+  maxFontSize: number,
+  maxLines: number,
+  width: number,
+): { lines: AnsiSegment[][]; fontSize: number } {
+  const lines = splitSegmentsIntoLines(segments).slice(0, maxLines)
+  const lineSpans = lines.map((line) => line.map((s) => s.text))
+  return { lines, fontSize: fitFontSize(lineSpans, maxFontSize, width) }
+}
+
 // A status line: colored spans, stacked into one row per visual line (satori won't break on `\n`
 // inside a flex row). fg is an ANSI 'rgb(...)' string or null (use foreground). Lines wider than
 // `width` shrink the font until they fit.
 function drawStatusLine(
   segments: AnsiSegment[],
-  fontSize: number,
+  maxFontSize: number,
   maxLines = Number.POSITIVE_INFINITY,
   width = Number.POSITIVE_INFINITY,
 ): ReactElement {
-  const lines = splitSegmentsIntoLines(segments).slice(0, maxLines)
-  const lineSpans = lines.map((line) => line.map((s) => s.text))
+  const { lines, fontSize } = fitStatusLine(segments, maxFontSize, maxLines, width)
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: FONT,
-        fontSize: fitFontSize(lineSpans, fontSize, width),
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', fontFamily: FONT, fontSize }}>
       {lines.map((line, li) => (
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed ordered render, no identity beyond position.
@@ -170,16 +175,21 @@ export function homeCard(): ReactElement {
   )
 }
 
+// The detail card header's font sizes, and the space below its wordmark and above its byline.
+const HEADER = { wordmarkSize: 30, wordmarkGap: 14, titleSize: 54, bylineGap: 10, bylineSize: 24 }
+
 function cardHeader(title: string, byline: string): ReactElement {
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', marginBottom: 14 }}>{drawWordmark(30)}</div>
+      <div style={{ display: 'flex', marginBottom: HEADER.wordmarkGap }}>
+        {drawWordmark(HEADER.wordmarkSize)}
+      </div>
       <div
         style={{
           display: 'flex',
           fontFamily: FONT,
           fontWeight: 700,
-          fontSize: 54,
+          fontSize: HEADER.titleSize,
           color: OG_PALETTE.foreground,
         }}
       >
@@ -189,9 +199,9 @@ function cardHeader(title: string, byline: string): ReactElement {
         style={{
           display: 'flex',
           fontFamily: FONT,
-          fontSize: 24,
+          fontSize: HEADER.bylineSize,
           color: OG_PALETTE.mutedForeground,
-          marginTop: 10,
+          marginTop: HEADER.bylineGap,
         }}
       >
         {byline}
@@ -200,9 +210,34 @@ function cardHeader(title: string, byline: string): ReactElement {
   )
 }
 
-// The detail card's side padding, and the width it leaves its body.
+// The detail card's padding, the gap between its header and body, and the room it leaves the body
+// below a one-line title.
 const DETAIL_PADDING_X = 72
+const DETAIL_PADDING_Y = 60
+const DETAIL_GAP = 30
 const DETAIL_BODY_WIDTH = CARD_WIDTH - 2 * DETAIL_PADDING_X
+const DETAIL_BODY_HEIGHT =
+  CARD_HEIGHT -
+  2 * DETAIL_PADDING_Y -
+  DETAIL_GAP -
+  (lineHeight(HEADER.wordmarkSize) +
+    HEADER.wordmarkGap +
+    lineHeight(HEADER.titleSize) +
+    HEADER.bylineGap +
+    lineHeight(HEADER.bylineSize))
+
+// A status line preview's well, as status line and mod cards draw it.
+const PREVIEW_FONT_SIZE = 19
+const PREVIEW_PADDING_X = 20
+const PREVIEW_PADDING_Y = 13
+const PREVIEW_WIDTH = DETAIL_BODY_WIDTH - 2 * PREVIEW_PADDING_X
+
+function previewWell(segments: AnsiSegment[], maxLines: number): ReactElement {
+  return well(
+    drawStatusLine(segments, PREVIEW_FONT_SIZE, maxLines, PREVIEW_WIDTH),
+    `${PREVIEW_PADDING_Y}px ${PREVIEW_PADDING_X}px`,
+  )
+}
 
 function detailCard(header: ReactElement, body: ReactElement): ReactElement {
   return (
@@ -214,9 +249,9 @@ function detailCard(header: ReactElement, body: ReactElement): ReactElement {
         boxSizing: 'border-box',
         height: '100%',
         justifyContent: 'center',
-        gap: 30,
+        gap: DETAIL_GAP,
         background: OG_PALETTE.background,
-        padding: `60px ${DETAIL_PADDING_X}px`,
+        padding: `${DETAIL_PADDING_Y}px ${DETAIL_PADDING_X}px`,
       }}
     >
       {header}
@@ -225,19 +260,55 @@ function detailCard(header: ReactElement, body: ReactElement): ReactElement {
   )
 }
 
+type ScenarioPreview = { scenarioKey: string; segments: AnsiSegment[] }
+
+const CONFIG_PREVIEW_GAP = 16
+// The rows of one status line that fill the body at full size, for one taller than the card.
+const CONFIG_PREVIEW_MAX_LINES = Math.floor(
+  (DETAIL_BODY_HEIGHT - 2 * PREVIEW_PADDING_Y) / lineHeight(PREVIEW_FONT_SIZE),
+)
+
+function previewWellHeight(segments: AnsiSegment[]): number {
+  const { lines, fontSize } = fitStatusLine(
+    segments,
+    PREVIEW_FONT_SIZE,
+    CONFIG_PREVIEW_MAX_LINES,
+    PREVIEW_WIDTH,
+  )
+  return lines.length * lineHeight(fontSize) + 2 * PREVIEW_PADDING_Y
+}
+
+/** Up to three scenarios, in order, as many as fit the body whole. The first always shows. */
+function previewsThatFit(previews: ScenarioPreview[]): ScenarioPreview[] {
+  const fitting: ScenarioPreview[] = []
+  let height = 0
+  for (const preview of orderByScenario(previews).slice(0, 3)) {
+    height += (fitting.length > 0 ? CONFIG_PREVIEW_GAP : 0) + previewWellHeight(preview.segments)
+    if (fitting.length > 0 && height > DETAIL_BODY_HEIGHT) break
+    fitting.push(preview)
+  }
+  return fitting
+}
+
 export function configCard(input: {
   title: string
   author: string | null
-  previews: { scenarioKey: string; segments: AnsiSegment[] }[]
+  previews: ScenarioPreview[]
 }): ReactElement {
-  const rows = orderByScenario(input.previews).slice(0, 3)
   const byline = input.author ? `${STATUS_LINE_KIND} · by ${input.author}` : STATUS_LINE_KIND
   return detailCard(
     cardHeader(input.title, byline),
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
-      {rows.map((p) => (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: CONFIG_PREVIEW_GAP,
+        alignItems: 'flex-start',
+      }}
+    >
+      {previewsThatFit(input.previews).map((p) => (
         <div key={p.scenarioKey} style={{ display: 'flex' }}>
-          {well(drawStatusLine(p.segments, 19), '13px 20px')}
+          {previewWell(p.segments, CONFIG_PREVIEW_MAX_LINES)}
         </div>
       ))}
     </div>,
@@ -246,7 +317,6 @@ export function configCard(input: {
 
 // Enough rows of a pane mod's preview to fill the card below the header without overflowing it.
 const MOD_PREVIEW_MAX_LINES = 9
-const MOD_PREVIEW_PADDING_X = 20
 // A Desktop shot fits in about the height of a preview of MOD_PREVIEW_MAX_LINES rows.
 const MOD_DESKTOP_SHOT_BOX = { width: DETAIL_BODY_WIDTH, height: 250 }
 
@@ -259,15 +329,7 @@ export type ModCardBody =
 function drawModCardBody(title: string, body: ModCardBody): ReactElement {
   switch (body.kind) {
     case 'terminal':
-      return well(
-        drawStatusLine(
-          body.segments,
-          19,
-          MOD_PREVIEW_MAX_LINES,
-          DETAIL_BODY_WIDTH - 2 * MOD_PREVIEW_PADDING_X,
-        ),
-        `13px ${MOD_PREVIEW_PADDING_X}px`,
-      )
+      return previewWell(body.segments, MOD_PREVIEW_MAX_LINES)
     case 'desktop': {
       const { width, height } = fitWithin(body.shot, MOD_DESKTOP_SHOT_BOX)
       return (

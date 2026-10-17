@@ -1,5 +1,12 @@
 /** A terminal cell is 0.6em wide: the Nerd Font's advance, which its fallback fonts match (font.ts). */
 const CELL_EM = 0.6
+/** A line is 1.32em tall: the Nerd Font's ascent plus descent, satori's normal line height. */
+const LINE_EM = 1.32
+
+/** How many pixels tall satori lays out one line of text at `fontSize`. */
+export function lineHeight(fontSize: number): number {
+  return Math.round(fontSize * LINE_EM)
+}
 
 // A terminal gives East Asian wide and fullwidth characters two cells. satori draws pictographs
 // like ☀ as 1em twemoji, wider than one cell, so they count as two as well.

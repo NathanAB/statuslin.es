@@ -42,6 +42,19 @@ const WIDE_PREVIEW = [
   seg('[-]\n❯ '),
 ]
 
+/** A status line that draws a box `rows` lines tall. */
+function boxPreview(rows: number): AnsiSegment[] {
+  const middle = Array.from({ length: rows - 2 }, (_, i) => `│ row ${i + 2} ${' '.repeat(30)}│`)
+  return [
+    seg(
+      ['╭─ CONTEXT ──────────────────────╮', ...middle, `╰${'─'.repeat(32)}╯`].join('\n'),
+      'rgb(215,135,95)',
+    ),
+  ]
+}
+
+const SCENARIO_KEYS = ['clean-main', 'fresh-session', 'dirty-feature']
+
 // The Status Line Anywhere shot's CSS size, drawn from a stand-in PNG.
 const DESKTOP_SHOT = {
   src: `data:image/png;base64,${Buffer.from(SEEDED_DESKTOP_SHOT.png).toString('base64')}`,
@@ -77,6 +90,33 @@ describe('og card layout', () => {
     expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
     expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
   })
+
+  // Dreambase Panel draws a six-row box in every scenario, so three of them ran off the top and
+  // bottom of its card.
+  it.each([
+    ['three tall status lines', [6, 6, 6].map(boxPreview)],
+    ['a status line taller than the card', [boxPreview(30)]],
+    ['a status line as wide as the terminal', [WIDE_PREVIEW, WIDE_PREVIEW, WIDE_PREVIEW]],
+  ])(
+    'keeps a status line card with %s inside the card and centered vertically',
+    async (_name, segments) => {
+      const { root, content } = await layout(
+        configCard({
+          title: 'Dreambase Panel',
+          author: '@kyleledbetter',
+          previews: segments.map((s, i) => ({
+            scenarioKey: SCENARIO_KEYS[i] ?? 'clean-main',
+            segments: s,
+          })),
+        }),
+      )
+      expect(root).toMatchObject(FILLS_THE_CARD)
+      const m = margins(content)
+      expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
+      expect(m.bottom).toBeGreaterThanOrEqual(0)
+      expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
+    },
+  )
 
   it.each<[string, ModCardBody]>([
     [
