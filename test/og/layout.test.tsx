@@ -1,10 +1,11 @@
 import type { ReactElement } from 'react'
 import satori from 'satori'
 import { describe, expect, it } from 'vitest'
-import { configCard, homeCard, modCard } from '@/og/card'
+import { configCard, homeCard, type ModCardBody, modCard } from '@/og/card'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
+import { SEEDED_DESKTOP_SHOT } from '../mods/seed-mods'
 
 type Box = { left: number; top: number; width: number; height: number }
 
@@ -36,6 +37,18 @@ function margins(content: Box[]) {
   }
 }
 
+const WIDE_PREVIEW = [
+  ...Array.from({ length: 97 }, (_, i) => seg('█', i % 2 ? 'rgb(187,0,187)' : null)),
+  seg('[-]\n❯ '),
+]
+
+// The Status Line Anywhere shot's CSS size, drawn from a stand-in PNG.
+const DESKTOP_SHOT = {
+  src: `data:image/png;base64,${Buffer.from(SEEDED_DESKTOP_SHOT.png).toString('base64')}`,
+  width: 784,
+  height: 129,
+}
+
 const FILLS_THE_CARD = { left: 0, top: 0, width: CARD_WIDTH, height: CARD_HEIGHT }
 
 // A satori upgrade (0.26 → 0.47) started adding the root's padding to its 100% size, pushing every
@@ -65,15 +78,22 @@ describe('og card layout', () => {
     expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
   })
 
-  it.each([
+  it.each<[string, ModCardBody]>([
     [
       'the tallest terminal preview it draws',
-      [seg(Array.from({ length: 9 }, (_, i) => `row ${i + 1}`).join('\n'))],
+      {
+        kind: 'terminal',
+        segments: [seg(Array.from({ length: 9 }, (_, i) => `row ${i + 1}`).join('\n'))],
+      },
     ],
-    ['no terminal preview', null],
-  ])('keeps a mod card with %s inside the card and centered vertically', async (_name, preview) => {
+    // A recording is 100 columns wide, a mod's hide control sits in its last ones, and a pixel-art
+    // row colors every cell.
+    ['a terminal preview as wide as the terminal', { kind: 'terminal', segments: WIDE_PREVIEW }],
+    ['no terminal preview', { kind: 'none' }],
+    ['only a Desktop shot', { kind: 'desktop', shot: DESKTOP_SHOT }],
+  ])('keeps a mod card with %s inside the card and centered vertically', async (_name, body) => {
     const { root, content } = await layout(
-      modCard({ title: 'Usage meter', authorGithub: 'octocat', preview }),
+      modCard({ title: 'Usage meter', authorGithub: 'octocat', body }),
     )
     expect(root).toMatchObject(FILLS_THE_CARD)
     const m = margins(content)

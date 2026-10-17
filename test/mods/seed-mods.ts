@@ -73,9 +73,15 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
   return versionId
 }
 
-/** The shot `addDesktopPreview` stores, with its card. The bytes start with the PNG signature. */
+/** The shot `addDesktopPreview` stores, with its card. The shot is a real 1x1 PNG, so a card can
+ * draw it; the card's bytes only start with the PNG signature. */
 export const SEEDED_DESKTOP_SHOT = {
-  png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 42]),
+  png: new Uint8Array(
+    Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOUl5P9DwACGQFbbftqRAAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  ),
   width: 790,
   height: 52,
   cardPng: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 43]),

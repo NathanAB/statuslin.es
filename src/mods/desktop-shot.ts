@@ -31,3 +31,25 @@ export async function getModDesktopShot(db: Db, slug: string): Promise<ModDeskto
   const desktop = desktopPreview(row.desktop)
   return desktop?.kind === 'shot' ? { kind: 'shot', shot: desktop.shot } : { kind: 'no-shot' }
 }
+
+/** The PNG of a published mod's current Desktop shot, with its CSS size; null when it has none. */
+export async function getModDesktopShotPng(
+  db: Db,
+  slug: string,
+): Promise<{ png: Uint8Array; width: number; height: number } | null> {
+  const [row] = await db
+    .select({
+      png: modDesktopPreviews.png,
+      width: modDesktopPreviews.width,
+      height: modDesktopPreviews.height,
+    })
+    .from(mods)
+    .innerJoin(
+      modVersions,
+      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
+    )
+    .innerJoin(modDesktopPreviews, desktopPreviewJoin)
+    .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
+  if (!row?.png || !row.width || !row.height) return null
+  return { png: row.png, width: row.width, height: row.height }
+}

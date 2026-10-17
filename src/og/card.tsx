@@ -1,8 +1,11 @@
 import type { ReactElement } from 'react'
 import { HOME_HEADING } from '@/lib/page-title'
+import { CARD_WIDTH } from '@/og/dimensions'
+import { fitFontSize, fitWithin } from '@/og/fit'
 import { OG_PALETTE } from '@/og/palette'
 import { orderByScenario } from '@/render/scenarios'
 import type { AnsiSegment } from '@/render/types'
+import type { DesktopShotImage } from '@/ui/desktop-shot'
 
 const FONT = 'StatuslineNerd'
 
@@ -53,15 +56,25 @@ export function splitSegmentsIntoLines(segments: AnsiSegment[]): AnsiSegment[][]
 }
 
 // A status line: colored spans, stacked into one row per visual line (satori won't break on `\n`
-// inside a flex row). fg is an ANSI 'rgb(...)' string or null (use foreground).
+// inside a flex row). fg is an ANSI 'rgb(...)' string or null (use foreground). Lines wider than
+// `width` shrink the font until they fit.
 function drawStatusLine(
   segments: AnsiSegment[],
   fontSize: number,
   maxLines = Number.POSITIVE_INFINITY,
+  width = Number.POSITIVE_INFINITY,
 ): ReactElement {
   const lines = splitSegmentsIntoLines(segments).slice(0, maxLines)
+  const lineSpans = lines.map((line) => line.map((s) => s.text))
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', fontFamily: FONT, fontSize }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: FONT,
+        fontSize: fitFontSize(lineSpans, fontSize, width),
+      }}
+    >
       {lines.map((line, li) => (
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed ordered render, no identity beyond position.
@@ -187,6 +200,10 @@ function cardHeader(title: string, byline: string): ReactElement {
   )
 }
 
+// The detail card's side padding, and the width it leaves its body.
+const DETAIL_PADDING_X = 72
+const DETAIL_BODY_WIDTH = CARD_WIDTH - 2 * DETAIL_PADDING_X
+
 function detailCard(header: ReactElement, body: ReactElement): ReactElement {
   return (
     <div
@@ -199,7 +216,7 @@ function detailCard(header: ReactElement, body: ReactElement): ReactElement {
         justifyContent: 'center',
         gap: 30,
         background: OG_PALETTE.background,
-        padding: '60px 72px',
+        padding: `60px ${DETAIL_PADDING_X}px`,
       }}
     >
       {header}
@@ -229,30 +246,66 @@ export function configCard(input: {
 
 // Enough rows of a pane mod's preview to fill the card below the header without overflowing it.
 const MOD_PREVIEW_MAX_LINES = 9
+const MOD_PREVIEW_PADDING_X = 20
+// A Desktop shot fits in about the height of a preview of MOD_PREVIEW_MAX_LINES rows.
+const MOD_DESKTOP_SHOT_BOX = { width: DETAIL_BODY_WIDTH, height: 250 }
+
+/** What a mod's card draws below its header. */
+export type ModCardBody =
+  | { kind: 'terminal'; segments: AnsiSegment[] }
+  | { kind: 'desktop'; shot: DesktopShotImage }
+  | { kind: 'none' }
+
+function drawModCardBody(title: string, body: ModCardBody): ReactElement {
+  switch (body.kind) {
+    case 'terminal':
+      return well(
+        drawStatusLine(
+          body.segments,
+          19,
+          MOD_PREVIEW_MAX_LINES,
+          DETAIL_BODY_WIDTH - 2 * MOD_PREVIEW_PADDING_X,
+        ),
+        `13px ${MOD_PREVIEW_PADDING_X}px`,
+      )
+    case 'desktop': {
+      const { width, height } = fitWithin(body.shot, MOD_DESKTOP_SHOT_BOX)
+      return (
+        <img
+          src={body.shot.src}
+          alt={`${title} in Claude Desktop`}
+          width={width}
+          height={height}
+          style={{ borderRadius: 10 }}
+        />
+      )
+    }
+    case 'none':
+      return well(
+        <div
+          style={{
+            display: 'flex',
+            fontFamily: FONT,
+            fontSize: 24,
+            color: OG_PALETTE.foreground,
+          }}
+        >
+          Draws in Claude Desktop
+        </div>,
+        '10px 18px',
+      )
+  }
+}
 
 export function modCard(input: {
   title: string
   authorGithub: string
-  preview: AnsiSegment[] | null
+  body: ModCardBody
 }): ReactElement {
-  const body =
-    input.preview && input.preview.length > 0
-      ? well(drawStatusLine(input.preview, 19, MOD_PREVIEW_MAX_LINES), '13px 20px')
-      : well(
-          <div
-            style={{
-              display: 'flex',
-              fontFamily: FONT,
-              fontSize: 24,
-              color: OG_PALETTE.foreground,
-            }}
-          >
-            Draws in Claude Desktop
-          </div>,
-          '10px 18px',
-        )
   return detailCard(
     cardHeader(input.title, `${MOD_KIND} · by @${input.authorGithub}`),
-    <div style={{ display: 'flex', alignItems: 'flex-start' }}>{body}</div>,
+    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+      {drawModCardBody(input.title, input.body)}
+    </div>,
   )
 }
