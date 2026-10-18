@@ -30,9 +30,9 @@ import type { AnsiSegment } from '@/render/types'
  * publish-mod.ts makes it current. A submitted version whose submission was rejected or replaced is
  * skipped: it will never go live.
  *
- * Terminal: every mod is recorded in its own offline E2B sandbox and cropped against one baseline
- * recording (the same session with no mod), shared across the run while the Claude Code version
- * matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
+ * Terminal: every mod is recorded in its own offline E2B sandbox and cropped against a baseline
+ * recording (the same session, typing the same input steps, with no mod), shared across the run by
+ * mods with the same input steps while the Claude Code version matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
  * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames the mod where its
  * footprint says it draws, and stores the PNG, or the fact that it drew nothing.
  *
@@ -143,9 +143,28 @@ function label(target: Target): string {
   return `${target.slug} v${target.versionNumber} (not current)`
 }
 
+type BaselineFor = (version: string, inputSteps: InputStep[]) => Promise<Recording>
+
+/**
+ * The baseline types the mod's input steps too, so the turns they start crop away and only what
+ * the mod drew is left. One per list of steps, shared by the mods that type the same ones.
+ */
+function sharedBaselines(recorder: ModRecorder): BaselineFor {
+  const bySteps = new Map<string, (version: string) => Promise<Recording>>()
+  return (version, inputSteps) => {
+    const key = JSON.stringify(inputSteps)
+    const forSteps = bySteps.get(key) ?? baselinesByVersion(recorder, inputSteps)
+    bySteps.set(key, forSteps)
+    return forSteps(version)
+  }
+}
+
 /** One baseline per Claude Code version, recorded the first time a mod's recording asks for it. */
-function sharedBaselines(recorder: ModRecorder): (version: string) => Promise<Recording> {
-  const record = async () => boundRecording(await recorder.record({ mod: null, inputSteps: [] }))
+function baselinesByVersion(
+  recorder: ModRecorder,
+  inputSteps: InputStep[],
+): (version: string) => Promise<Recording> {
+  const record = async () => boundRecording(await recorder.record({ mod: null, inputSteps }))
   const byVersion = new Map<string, Promise<Recording>>()
   let first: Promise<Recording> | undefined
   return async (version) => {
@@ -211,10 +230,10 @@ async function renderTerminal(
   target: Target,
   request: ModRequest,
   { db, recorder }: RenderModsDeps,
-  baselineFor: (version: string) => Promise<Recording>,
+  baselineFor: BaselineFor,
 ): Promise<Outcome> {
   const recording = boundRecording(await recorder.record(request))
-  const baseline = await baselineFor(recording.claudeCodeVersion)
+  const baseline = await baselineFor(recording.claudeCodeVersion, request.inputSteps)
   const crop = cropModPreview(baseline.rows, recording.rows)
   const segments = crop.kind === 'rendered' ? crop.segments : []
   await storePreview(db, target.versionId, segments, recording.claudeCodeVersion)
@@ -241,7 +260,7 @@ const failure = (error: unknown): Outcome => ({
 async function renderTarget(
   target: Target,
   deps: RenderModsDeps,
-  baselineFor: (version: string) => Promise<Recording>,
+  baselineFor: BaselineFor,
 ): Promise<Record<Surface, Outcome>> {
   let request: ModRequest
   try {

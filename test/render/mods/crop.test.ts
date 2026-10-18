@@ -26,12 +26,11 @@ function lines(result: CropResult): string[] {
 }
 
 describe('cropModPreview', () => {
-  it('keeps a band drawn above the prompt with its styles, and the prompt row', () => {
+  it('keeps only the band the mod drew, with its styles, never the prompt row', () => {
     const result = cropModPreview(baseline, tokenWeather)
 
     expect(lines(result).map((line) => line.trimEnd())).toEqual([
       ' ☀  Clear  22% of context  44k / 200k   last turns ██  steady                                   [-]',
-      '❯',
     ])
     expect(renderedSegments(result)).toContainEqual(
       expect.objectContaining({ text: '☀  Clear', fg: 'rgb(245, 217, 10)', bold: true }),
@@ -42,7 +41,8 @@ describe('cropModPreview', () => {
     const kept = lines(cropModPreview(baseline, switchboard))
 
     expect(kept[0]).toBe('❯ /route ')
-    expect(kept).toHaveLength(11)
+    expect(kept).toHaveLength(10)
+    expect(kept.at(-1)).toMatch(/^╰─+╯$/)
     expect(kept).not.toContain('● The repo is clean and the tests pass.')
     expect(kept.some((line) => line.startsWith('❯ hello'))).toBe(false)
   })

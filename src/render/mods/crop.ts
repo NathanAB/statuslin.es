@@ -23,14 +23,14 @@ export function cropModPreview(
   const masks = [...TURN_DURATION_MASKS, ...modMasks]
   const masked = (row: string) => masks.reduce((r, m) => r.replace(m.pattern, m.replacement), row)
   const common = modRowsOnCommonSubsequence(baseline.map(masked), modScreen.map(masked))
+  // The prompt row is Claude Code's input line, not the mod's, and its cursor differs between runs.
   const promptRow = lastPromptRow(modScreen)
   const changed = modScreen.flatMap((row, y) =>
     common.has(y) || y === promptRow || plainText(row).trim() === '' ? [] : [y],
   )
   if (changed.length === 0) return { kind: 'not-rendered' }
 
-  const kept = promptRow === -1 ? changed : [...changed, promptRow].sort((a, b) => a - b)
-  return { kind: 'rendered', segments: parseAnsi(kept.map((y) => modScreen[y]).join('\n')) }
+  return { kind: 'rendered', segments: parseAnsi(changed.map((y) => modScreen[y]).join('\n')) }
 }
 
 function lastPromptRow(screen: readonly string[]): number {
