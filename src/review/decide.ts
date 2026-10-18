@@ -134,7 +134,7 @@ export async function runNetworkPreview(database: Db, versionId: string): Promis
 }
 
 export const approveVersionFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string }) => d)
+  .validator((d: { versionId: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
@@ -154,7 +154,7 @@ export const approveVersionFn = createServerFn({ method: 'POST' })
   )
 
 export const rejectVersionFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string; reason?: string }) => d)
+  .validator((d: { versionId: string; reason?: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
@@ -173,7 +173,7 @@ export const rejectVersionFn = createServerFn({ method: 'POST' })
   )
 
 export const retryRejectionEmailFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string }) => d)
+  .validator((d: { versionId: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())
@@ -182,7 +182,7 @@ export const retryRejectionEmailFn = createServerFn({ method: 'POST' })
   )
 
 export const retryApprovalEmailFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string }) => d)
+  .validator((d: { versionId: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())
@@ -191,7 +191,7 @@ export const retryApprovalEmailFn = createServerFn({ method: 'POST' })
   )
 
 export const setReadsClaudeTokenFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string; value: boolean }) => d)
+  .validator((d: { versionId: string; value: boolean }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const admin = await assertAdmin(getRequestHeaders())
@@ -200,7 +200,7 @@ export const setReadsClaudeTokenFn = createServerFn({ method: 'POST' })
   )
 
 export const requeueRenderJobFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string }) => d)
+  .validator((d: { versionId: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())
@@ -210,7 +210,7 @@ export const requeueRenderJobFn = createServerFn({ method: 'POST' })
   )
 
 export const runNetworkPreviewFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { versionId: string }) => d)
+  .validator((d: { versionId: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       await assertAdmin(getRequestHeaders())

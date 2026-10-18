@@ -19,7 +19,7 @@ vi.mock('@tanstack/react-start', () => ({
       handler({ data: args?.data })
     return {
       handler: wrap,
-      inputValidator: (validator: (data: never) => unknown) => ({
+      validator: (validator: (data: never) => unknown) => ({
         handler: (handler: (args: { data: unknown }) => unknown) => (args: { data: never }) =>
           handler({ data: validator(args.data) }),
       }),

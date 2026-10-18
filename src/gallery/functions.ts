@@ -160,7 +160,7 @@ function coerceModTags(value: unknown): FacetMod[] {
 }
 
 export const getGalleryConfigs = createServerFn({ method: 'GET' })
-  .inputValidator(coerceSourceQuery)
+  .validator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
 
 export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
@@ -171,7 +171,7 @@ export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
 )
 
 export const getConfigDetail = createServerFn({ method: 'GET' })
-  .inputValidator((d: { slug: string }) => d)
+  .validator((d: { slug: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const detail = await getConfigBySlug(db, data.slug)
@@ -195,7 +195,7 @@ export const getConfigDetail = createServerFn({ method: 'GET' })
   )
 
 export const getFacetPage = createServerFn({ method: 'GET' })
-  .inputValidator((d: { facet: string; modTags?: string[][] }) => ({
+  .validator((d: { facet: string; modTags?: string[][] }) => ({
     facet: d.facet,
     modTags: coerceModTags(d.modTags),
   }))

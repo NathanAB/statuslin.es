@@ -6,7 +6,7 @@ import { FEATURED_MOD_SLUG } from './featured-mod'
 import { getModSource, getPublishedModCard } from './gallery-queries'
 
 export const getGalleryModsFn = createServerFn({ method: 'GET' })
-  .inputValidator(coerceSourceQuery)
+  .validator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getModSource(db, data)))
 
 export const getPublishedModTagsFn = createServerFn({ method: 'GET' }).handler(() =>
