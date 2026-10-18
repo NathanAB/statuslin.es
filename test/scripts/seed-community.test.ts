@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import {
@@ -20,6 +19,7 @@ import {
   seedCommunity,
   seedCommunityConfig,
 } from '../../scripts/seed-community'
+import { migratedPGlite } from '../helpers/test-db'
 
 const realFetch = globalThis.fetch
 afterEach(() => {
@@ -30,9 +30,8 @@ let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
 })
 
 afterAll(async () => {

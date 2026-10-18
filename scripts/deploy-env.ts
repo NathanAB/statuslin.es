@@ -18,14 +18,14 @@ export function parseDeployEnv(arg: string | undefined): DeployEnv {
 const VARLOCK_BIN = fileURLToPath(new URL('../node_modules/.bin/varlock', import.meta.url))
 
 /**
- * Run `varlock load|run` on one env's config, kept apart from local config three ways. It loads the
+ * Run `varlock load|run|printenv` on one env's config, kept apart from local config three ways. It loads the
  * schema and the env file only, since a directory load would also layer .env.local and
  * .env.development. It gets none of this process's config vars (see varlockEnv). And its own runtime
  * loads no env files: varlock's bin starts with `#!/usr/bin/env node`, and under `bun --bun` that
  * node is Bun, which would auto-load the dev files into varlock's env.
  */
 export function spawnVarlock(
-  command: 'load' | 'run',
+  command: 'load' | 'run' | 'printenv',
   deployEnv: DeployEnv,
   args: string[],
   { cwd, stdio = 'pipe' }: { cwd: string; stdio?: StdioOptions },

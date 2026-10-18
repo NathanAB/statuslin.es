@@ -1,19 +1,18 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigBySlug } from '@/gallery/queries'
 import { storePreviews } from '@/render/store'
 import { insertSubmission } from '../fixtures/submission'
+import { migratedPGlite } from '../helpers/test-db'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   // Seed the user required by the configs author FK.
   await db
     .insert(schema.user)

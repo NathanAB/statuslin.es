@@ -1,8 +1,8 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
+import { migratedPGlite } from '../helpers/test-db'
 
 const getSession = vi.hoisted(() => vi.fn())
 const database = vi.hoisted(() => ({ current: undefined as unknown }))
@@ -47,9 +47,8 @@ async function seedConfig(slug: string, status: string) {
 }
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   const db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   database.current = db
   await seedUser('owner')
   await seedUser('someone-else')

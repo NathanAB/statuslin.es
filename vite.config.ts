@@ -1,3 +1,4 @@
+import posthog from '@posthog/rollup-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
@@ -32,6 +33,25 @@ function devImageRoutes(): Plugin {
         next()
       })
     },
+  }
+}
+
+// Source maps for PostHog error tracking, so a browser exception's stack shows src/ files. Only a build
+// given POSTHOG_API_KEY makes them: the image build, which deploy:staging hands the key (.env.schema).
+// The plugin stamps each client chunk with a chunk id hashed from its code (an unchanged chunk keeps
+// its filename and bytes, as asset retention needs), uploads the maps, then deletes them, so
+// `/assets/*.map` is never served; the Dockerfile fails the build if one is left. Client only: the
+// server bundle isn't minified, so posthog-node frames already show real names.
+const POSTHOG_PROJECT_ID = '475282'
+const sourceMapUploadKey = process.env.POSTHOG_API_KEY
+
+function uploadClientSourceMaps(personalApiKey: string): Plugin {
+  return {
+    // Typed as a Rollup plugin; it detects Rolldown (Vite 8) at runtime, but Rollup's plugin context
+    // type isn't Rolldown's, hence the cast.
+    ...(posthog({ personalApiKey, projectId: POSTHOG_PROJECT_ID }) as unknown as Plugin),
+    apply: 'build',
+    applyToEnvironment: (environment) => environment.name === 'client',
   }
 }
 
@@ -142,6 +162,7 @@ export default defineConfig(({ mode }) => ({
             },
           }),
           viteReact(),
+          ...(sourceMapUploadKey ? [uploadClientSourceMaps(sourceMapUploadKey)] : []),
           nitro({
             preset: 'node-server',
             // Nitro startup plugins, run once at server init.
@@ -203,6 +224,8 @@ export default defineConfig(({ mode }) => ({
     // test run from the main checkout collects their test files too (and fails on their stale state).
     exclude: [...configDefaults.exclude, '.claude/worktrees/**', '.worktrees/**'],
     setupFiles: ['./test/setup.ts'],
+    // Migrates one PGlite per run and saves it, so DB tests boot from that (migratedPGlite()).
+    globalSetup: ['./test/helpers/migrated-snapshot.ts'],
     coverage: {
       provider: 'v8',
       include: [

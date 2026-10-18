@@ -1,14 +1,14 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { betterAuth } from 'better-auth'
 import { getIP } from 'better-auth/api'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/auth-schema'
 import { user as userTable } from '@/db/auth-schema'
 import { auth as prodAuth } from '@/lib/auth'
+import { migratedPGlite } from './helpers/test-db'
 
 // Approach: build a Better Auth instance over an in-memory PGlite database
 // (the same engine db.test.ts uses) with email/password enabled. This
@@ -44,9 +44,8 @@ let auth: ReturnType<typeof buildTestAuth>
 let pgliteDb: ReturnType<typeof drizzle>
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   pgliteDb = drizzle({ client, schema })
-  await migrate(pgliteDb, { migrationsFolder: './drizzle' })
   auth = buildTestAuth(pgliteDb)
 })
 

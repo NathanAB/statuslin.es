@@ -1,12 +1,12 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { SUBMISSION_RATE_LIMIT } from '@/submissions/record'
 import { GLOBAL_RENDER_QUEUE_MAX, HELD_RENDER_JOBS_MAX, submitConfig } from '@/submit/submit'
 import { insertSubmission } from '../fixtures/submission'
+import { migratedPGlite } from '../helpers/test-db'
 
 async function seedConfigs(
   db: ReturnType<typeof drizzle<typeof schema>>,
@@ -82,9 +82,8 @@ async function seedRenderJobs(
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   // Seed the authors referenced by the configs FK (author_id → user.id)
   await db
     .insert(schema.user)
