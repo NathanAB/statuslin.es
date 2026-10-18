@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import {
@@ -12,6 +11,7 @@ import {
   supersedeRejectionEmail,
 } from '@/submissions/record'
 import { insertSubmission, setReviewState } from '../fixtures/submission'
+import { migratedPGlite } from '../helpers/test-db'
 
 const AUTHOR = 'record-author'
 const OTHER = 'record-other'
@@ -20,9 +20,8 @@ let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values([
     { id: AUTHOR, name: 'Author', email: 'record-author@test.com' },
     { id: OTHER, name: 'Other', email: 'record-other@test.com' },

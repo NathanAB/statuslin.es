@@ -224,6 +224,8 @@ export default defineConfig(({ mode }) => ({
     // test run from the main checkout collects their test files too (and fails on their stale state).
     exclude: [...configDefaults.exclude, '.claude/worktrees/**', '.worktrees/**'],
     setupFiles: ['./test/setup.ts'],
+    // Migrates one PGlite per run and saves it, so DB tests boot from that (migratedPGlite()).
+    globalSetup: ['./test/helpers/migrated-snapshot.ts'],
     fileParallelism: false,
     coverage: {
       provider: 'v8',

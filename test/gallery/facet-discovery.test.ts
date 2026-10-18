@@ -1,9 +1,9 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
+import { migratedPGlite } from '../helpers/test-db'
 
 const testState = vi.hoisted(() => ({ db: null as unknown }))
 
@@ -39,10 +39,9 @@ let FacetRoute: typeof import('@/routes/status-lines.$facet').Route
 
 beforeAll(async () => {
   process.env.BETTER_AUTH_URL = 'https://statuslin.es'
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
   testState.db = db
-  await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values({
     id: 'facet-discovery-author',
     name: 'Facet Discovery Author',

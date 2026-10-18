@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { runCommand } from '@/adopt/install'
 import { listPublishedSlugsMissingContent } from '@/content/generation-workflow'
@@ -28,6 +27,7 @@ import { type SubmitInput, submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
 import { removeConfig } from '../../scripts/remove-config'
 import { selectVersionsWithReview } from '../fixtures/submission'
+import { migratedPGlite } from '../helpers/test-db'
 
 const configCard = vi.hoisted(() => vi.fn(() => null))
 vi.mock('@/og/card', () => ({ configCard, homeCard: vi.fn(() => null) }))
@@ -60,10 +60,9 @@ let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
   testState.db = db
-  await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values(
     ['owner', 'neighbour'].map((id) => ({
       id,

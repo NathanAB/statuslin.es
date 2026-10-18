@@ -1,11 +1,11 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { ConfigPageCopy } from '@/content/types'
 import * as schema from '@/db/schema'
 import { getConfigBySlug } from '@/gallery/queries'
+import { migratedPGlite } from '../helpers/test-db'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -48,9 +48,8 @@ async function seedConfig(slug: string, generatedContent: unknown): Promise<void
 }
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values({
     id: 'u1',
     name: 'Author One',

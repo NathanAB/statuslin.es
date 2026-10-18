@@ -1,19 +1,18 @@
 import { randomUUID } from 'node:crypto'
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getVoteState } from '@/lib/vote-state'
 import { toggleVote } from '@/votes/vote'
+import { migratedPGlite } from '../helpers/test-db'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   // Seed users required by the votes FK (user_id → user.id) and the
   // configs author FK (author_id → user.id, the 'author' id below).
   await db

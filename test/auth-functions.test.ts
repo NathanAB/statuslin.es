@@ -1,11 +1,11 @@
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { betterAuth } from 'better-auth'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/auth-schema'
 import { toHeaderUser } from '@/lib/auth-functions'
+import { migratedPGlite } from './helpers/test-db'
 
 function buildTestAuth(db: ReturnType<typeof drizzle>) {
   return betterAuth({
@@ -31,9 +31,8 @@ type ResolvedSession = Awaited<ReturnType<typeof auth.api.getSession>>
 let realSession: ResolvedSession
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   const db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   auth = buildTestAuth(db)
 
   const email = 'leak@example.com'

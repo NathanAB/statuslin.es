@@ -1,10 +1,10 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import * as schema from '@/db/schema'
 import type { GitHub } from '@/mods/github'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
+import { migratedPGlite } from '../helpers/test-db'
 
 export type TestDb = ReturnType<typeof drizzle<typeof schema>>
 
@@ -15,9 +15,8 @@ export async function openTestDb(): Promise<{
   client: PGlite
   close: () => Promise<void>
 }> {
-  const client = new PGlite()
+  const client = await migratedPGlite()
   const db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   return { db, client, close: () => client.close() }
 }
 
