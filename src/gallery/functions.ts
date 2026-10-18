@@ -4,10 +4,10 @@ import { db } from '@/db'
 import { FACET_BY_SLUG, tagKeywords } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
-import { type LlmsMod, llmsResponse } from '@/lib/llms'
+import { type LlmsCatalogEntry, type LlmsMod, llmsFullResponse, llmsResponse } from '@/lib/llms'
 import { siteUrl } from '@/lib/site'
 import { newestDate, type SitemapMod, type SitemapPage, sitemapResponse } from '@/lib/sitemap'
-import { getConfigSource, getPublishedConfigs } from './config-items'
+import { getConfigSource, getPublishedConfigCatalog, getPublishedConfigs } from './config-items'
 import { type FacetMod, getLatestCopyAt } from './facet-queries'
 import type { GallerySource } from './gallery-items'
 import { getPublishedInventory } from './inventory'
@@ -94,20 +94,24 @@ export const getBestPage = createServerFn({ method: 'GET' }).handler(() =>
 )
 
 /**
+ * The live facets llms.txt and llms-full.txt link, by page heading. Lists only indexable page
+ * facets that meet the shared inventory threshold, counting the published mods passed in.
+ */
+async function llmsFacets(mods: FacetMod[]): Promise<Array<{ slug: string; label: string }>> {
+  const stats = await getFacetStats(db, mods)
+  return liveFacetLinks(stats).map((link) => ({
+    slug: link.slug,
+    label: FACET_BY_SLUG.get(link.slug)?.heading ?? link.chipLabel,
+  }))
+}
+
+/**
  * The `/llms.txt` response. Server-only for the same reason as the sitemap: it reads live facet
- * counts from `db`, which route files can't import. Lists only indexable page facets that meet the
- * shared inventory threshold, counting the published mods the caller passes in.
+ * counts from `db`, which route files can't import.
  */
 export const llmsTxtResponseForRoute = createServerOnlyFn(
   async (mods: Array<LlmsMod & FacetMod>): Promise<Response> => {
-    const stats = await getFacetStats(db, mods)
-    const facets = liveFacetLinks(stats).map((link) => {
-      const facet = FACET_BY_SLUG.get(link.slug)
-      return {
-        slug: link.slug,
-        label: facet?.heading ?? link.chipLabel,
-      }
-    })
+    const facets = await llmsFacets(mods)
     const top = await getPublishedConfigs(db, 'top', 1)
     return llmsResponse(
       siteUrl(),
@@ -119,6 +123,30 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(
         copyCount,
       })),
       mods,
+    )
+  },
+)
+
+/** A published status line or mod with its tag slugs and its page copy. */
+type LlmsCatalogRow = Omit<LlmsCatalogEntry, 'tagLabels'> & FacetMod
+
+function llmsCatalogEntry(row: LlmsCatalogRow): LlmsCatalogEntry {
+  const { slug, title, description, copyCount, generatedContent } = row
+  return { slug, title, description, copyCount, tagLabels: tagKeywords(row.tags), generatedContent }
+}
+
+/**
+ * The `/llms-full.txt` response: every published status line and the published mods passed in,
+ * with the same facets as llms.txt. Server-only for the same reason as llms.txt.
+ */
+export const llmsFullTxtResponseForRoute = createServerOnlyFn(
+  async (mods: LlmsCatalogRow[]): Promise<Response> => {
+    const [facets, configs] = await Promise.all([llmsFacets(mods), getPublishedConfigCatalog(db)])
+    return llmsFullResponse(
+      siteUrl(),
+      facets,
+      configs.map(llmsCatalogEntry),
+      mods.map(llmsCatalogEntry),
     )
   },
 )
