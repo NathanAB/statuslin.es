@@ -203,7 +203,6 @@ export default defineConfig(({ mode }) => ({
     // test run from the main checkout collects their test files too (and fails on their stale state).
     exclude: [...configDefaults.exclude, '.claude/worktrees/**', '.worktrees/**'],
     setupFiles: ['./test/setup.ts'],
-    fileParallelism: false,
     coverage: {
       provider: 'v8',
       include: [
