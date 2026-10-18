@@ -1,4 +1,4 @@
-import { and, eq, type SQL, sql } from 'drizzle-orm'
+import { eq, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, type ModStatus, modVersions } from '@/db/schema'
 import { mergeTags } from '@/lib/derived-tags'
@@ -59,21 +59,14 @@ export async function loadVersions(db: Db, where: SQL | undefined): Promise<Publ
     .where(where)
 }
 
-/**
- * Scoped to the mod. A current_version_id pointing at another mod's version is refused, so it is
- * never mistaken for a first publish with nothing to compare against.
- */
 export async function loadCurrentVersion(
   db: Db,
-  mod: { id: string; currentVersionId: string | null },
+  mod: { currentVersionId: string | null },
 ): Promise<PublishVersion | null> {
   if (!mod.currentVersionId) return null
-  const [current] = await loadVersions(
-    db,
-    and(eq(modVersions.id, mod.currentVersionId), eq(modVersions.modId, mod.id)),
-  )
+  const [current] = await loadVersions(db, eq(modVersions.id, mod.currentVersionId))
   if (!current) {
-    throw new Error(`current_version_id ${mod.currentVersionId} is not a version of this mod`)
+    throw new Error(`current_version_id ${mod.currentVersionId} names no version`)
   }
   return current
 }

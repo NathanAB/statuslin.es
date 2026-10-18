@@ -68,18 +68,6 @@ it('exits zero when every published commit can be fetched', async () => {
   expect(output).toMatch(/all 1 published mod commits can be fetched/)
 })
 
-it('ignores a current version that belongs to another mod', async () => {
-  const ownerId = await addMod(db, 'owner', 'draft')
-  const borrowedId = await addVersion(db, ownerId, { commitSha: sha('a'), versionNumber: 1 })
-  const borrowerId = await addMod(db, 'borrower', 'published')
-  await setCurrentVersion(db, borrowerId, borrowedId)
-
-  const { exitCode, output } = await check(githubWithout([sha('a')]))
-
-  expect(output).not.toMatch(/borrower/)
-  expect(exitCode).toBe(0)
-})
-
 // A slug is a plugin id (mods_slug_check), so only its length is hostile here.
 it('caps each printed line', async () => {
   const modId = await addMod(db, 'forged', 'published')

@@ -405,20 +405,6 @@ describe('renderMods', () => {
     expect(lines.join('\n')).not.toContain('skins')
   })
 
-  it("renders only a mod's own current version, never one that belongs to another mod", async () => {
-    const othersVersionId = await seedMod('token-weather')
-    const modId = await addMod(db, 'skins', 'draft')
-    await setCurrentVersion(db, modId, othersVersionId)
-    const recorder = new FakeModRecorder({
-      baseline,
-      mods: { skins, 'token-weather': tokenWeather },
-    })
-
-    expect(await run(recorder).exitCode).toBe(0)
-
-    expect(modRequests(recorder.requests).map((r) => r.mod?.pluginName)).toEqual(['token-weather'])
-  })
-
   it('escapes and caps each printed line', async () => {
     await seedMod('skins')
     const reason = `\u001b]52;c;${'A'.repeat(10_000)}\u0007`

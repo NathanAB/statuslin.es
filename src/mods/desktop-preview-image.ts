@@ -32,7 +32,7 @@ export async function modDesktopPreviewResponse(
     })
     .from(modDesktopPreviews)
     .innerJoin(modVersions, eq(modVersions.id, modDesktopPreviews.modVersionId))
-    .innerJoin(mods, and(eq(mods.currentVersionId, modVersions.id), eq(mods.id, modVersions.modId)))
+    .innerJoin(mods, eq(mods.currentVersionId, modVersions.id))
     .where(
       and(
         eq(modDesktopPreviews.modVersionId, versionId),

@@ -97,10 +97,7 @@ export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
       license: modVersions.license,
     })
     .from(mods)
-    .innerJoin(
-      modVersions,
-      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-    )
+    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
     .where(eq(mods.status, 'published'))
     .orderBy(asc(mods.slug))
 }
@@ -167,10 +164,7 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       reviewedAt: submissions.reviewedAt,
     })
     .from(mods)
-    .innerJoin(
-      modVersions,
-      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-    )
+    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .leftJoin(

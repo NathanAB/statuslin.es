@@ -98,19 +98,6 @@ describe('getModReviewRows', () => {
     expect(rows[0]?.live).toMatchObject({ id: first, commitSha: sha('a') })
   })
 
-  it("shows no live version when the pointer names another mod's version", async () => {
-    const { modId } = await submitMod('meter')
-    const other = await submitMod('gauge', true, 'f')
-    await db
-      .update(schema.mods)
-      .set({ status: 'published', currentVersionId: other.versionId })
-      .where(eq(schema.mods.id, modId))
-
-    const row = (await getModReviewRows(db)).find((r) => r.mod.slug === 'meter')
-
-    expect(row).not.toHaveProperty('live')
-  })
-
   it('keeps a decided mod listed until its email is delivered', async () => {
     const { versionId } = await submitMod('meter')
     await rejectVersion(db, versionId, 'admin', 'No')

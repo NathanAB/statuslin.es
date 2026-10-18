@@ -49,10 +49,7 @@ function selectModCards<Extra extends SelectedFields>(db: Db, extra: Extra) {
       ...extra,
     })
     .from(mods)
-    .innerJoin(
-      modVersions,
-      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-    )
+    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .$dynamic()

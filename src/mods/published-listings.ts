@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { asc, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModPageCopy, modPageCopySchema, readPageCopy } from '@/content/types'
 import { mods, modVersions, submissions } from '@/db/schema'
@@ -32,10 +32,7 @@ export async function getPublishedModListings(db: Db): Promise<PublishedModListi
       generatedContent: modVersions.generatedContent,
     })
     .from(mods)
-    .innerJoin(
-      modVersions,
-      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-    )
+    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
     .leftJoin(submissions, eq(submissions.id, modVersions.id))
     .where(eq(mods.status, 'published'))
     .orderBy(desc(mods.copyCount), asc(mods.slug))

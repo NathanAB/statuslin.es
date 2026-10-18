@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import type { PGlite } from '@electric-sql/pglite'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
@@ -28,22 +29,29 @@ async function insertMod(label: string) {
   return mod?.id as string
 }
 
+function versionValues(
+  modId: string,
+  overrides: Partial<typeof schema.modVersions.$inferInsert> = {},
+): typeof schema.modVersions.$inferInsert {
+  return {
+    modId,
+    versionNumber: 1,
+    repoUrl: 'https://github.com/octocat/mods',
+    path: '',
+    commitSha: 'a'.repeat(40),
+    footprint: { events: [], calls: [] },
+    validatedWith: '2.1.0',
+    ...overrides,
+  }
+}
+
 async function insertVersion(
   modId: string,
   overrides: Partial<typeof schema.modVersions.$inferInsert> = {},
 ) {
   const [version] = await db
     .insert(schema.modVersions)
-    .values({
-      modId,
-      versionNumber: 1,
-      repoUrl: 'https://github.com/octocat/mods',
-      path: '',
-      commitSha: 'a'.repeat(40),
-      footprint: { events: [], calls: [] },
-      validatedWith: '2.1.0',
-      ...overrides,
-    })
+    .values(versionValues(modId, overrides))
     .returning()
   return version?.id as string
 }
@@ -200,6 +208,115 @@ describe('mods schema', () => {
     ).toEqual([])
     expect(
       await db.select().from(schema.modCopyEvents).where(eq(schema.modCopyEvents.modId, modId)),
+    ).toEqual([])
+  })
+})
+
+async function insertModAt(slug: string, status: schema.ModStatus) {
+  const [mod] = await db
+    .insert(schema.mods)
+    .values({ slug, pluginName: slug, title: slug, authorGithub: 'octocat', status })
+    .returning({ id: schema.mods.id })
+  return mod?.id as string
+}
+
+async function modRow(id: string) {
+  const [mod] = await db
+    .select({
+      slug: schema.mods.slug,
+      status: schema.mods.status,
+      currentVersionId: schema.mods.currentVersionId,
+    })
+    .from(schema.mods)
+    .where(eq(schema.mods.id, id))
+  return mod
+}
+
+describe("a mod's slug", () => {
+  it.each(['published', 'removed'] as const)('refuses renaming a %s mod', async (status) => {
+    const id = await insertModAt(`frozen-${status}`, status)
+    await expect(
+      db
+        .update(schema.mods)
+        .set({ slug: `renamed-${status}` })
+        .where(eq(schema.mods.id, id)),
+    ).rejects.toMatchObject(violates('mods_slug_immutable'))
+  })
+
+  it("lets an update write a published mod's slug back unchanged, as approving an update does", async () => {
+    const id = await insertModAt('same-published', 'published')
+    await db.update(schema.mods).set({ slug: 'same-published' }).where(eq(schema.mods.id, id))
+    expect(await modRow(id)).toMatchObject({ slug: 'same-published', status: 'published' })
+  })
+
+  it('lets a draft be renamed', async () => {
+    const id = await insertModAt('draft-before', 'draft')
+    await db.update(schema.mods).set({ slug: 'draft-after' }).where(eq(schema.mods.id, id))
+    expect(await modRow(id)).toMatchObject({ slug: 'draft-after', status: 'draft' })
+  })
+
+  it('lets approval rename a draft in the update that publishes it', async () => {
+    const id = await insertModAt('gauge-3f9a2c', 'draft')
+    await db
+      .update(schema.mods)
+      .set({ slug: 'gauge', status: 'published' })
+      .where(eq(schema.mods.id, id))
+    expect(await modRow(id)).toMatchObject({ slug: 'gauge', status: 'published' })
+  })
+})
+
+describe("a mod's status", () => {
+  it('refuses a status other than draft, published or removed', async () => {
+    const id = await insertMod('unknown-status')
+    await expect(
+      db.execute(sql`UPDATE mods SET status = 'archived' WHERE id = ${id}`),
+    ).rejects.toMatchObject(violates('mods_status_check'))
+  })
+})
+
+describe("a mod's current version", () => {
+  it("refuses a current_version_id that names another mod's version", async () => {
+    const otherVersion = await insertVersion(await insertMod('pointer-owner'))
+    const id = await insertMod('pointer-borrower')
+    await expect(
+      db.update(schema.mods).set({ currentVersionId: otherVersion }).where(eq(schema.mods.id, id)),
+    ).rejects.toMatchObject(violates('mods_current_version_fk'))
+  })
+
+  it('lets a draft name its first version before the version is inserted, in one transaction', async () => {
+    const id = randomUUID()
+    const versionId = randomUUID()
+    await db.transaction(async (tx) => {
+      await tx.insert(schema.mods).values({
+        id,
+        slug: 'first-version',
+        pluginName: 'first-version',
+        title: 'T',
+        authorGithub: 'octocat',
+        currentVersionId: versionId,
+      })
+      await tx.insert(schema.modVersions).values(versionValues(id, { id: versionId }))
+    })
+    expect(await modRow(id)).toMatchObject({ currentVersionId: versionId })
+  })
+
+  it('lets a mod point at no version', async () => {
+    const id = await insertMod('no-pointer')
+    const versionId = await insertVersion(id)
+    await db.update(schema.mods).set({ currentVersionId: versionId }).where(eq(schema.mods.id, id))
+    await db.update(schema.mods).set({ currentVersionId: null }).where(eq(schema.mods.id, id))
+    expect(await modRow(id)).toMatchObject({ currentVersionId: null })
+  })
+
+  it('deletes a mod that points at its own version, with its versions', async () => {
+    const id = await insertMod('delete-pointed')
+    const versionId = await insertVersion(id)
+    await db.update(schema.mods).set({ currentVersionId: versionId }).where(eq(schema.mods.id, id))
+
+    await db.delete(schema.mods).where(eq(schema.mods.id, id))
+
+    expect(
+      await db.select().from(schema.modVersions).where(eq(schema.modVersions.id, versionId)),
     ).toEqual([])
   })
 })

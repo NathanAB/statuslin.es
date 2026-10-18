@@ -22,10 +22,7 @@ export async function buddyPets(db: Db, slugs: readonly string[]): Promise<Buddy
     db
       .select({ slug: mods.slug, footprint: modVersions.footprint })
       .from(mods)
-      .innerJoin(
-        modVersions,
-        and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-      )
+      .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
       .where(and(eq(mods.status, 'published'), inArray(mods.slug, [...slugs]))),
   ])
   const cards = found.filter((card) => card !== null)
