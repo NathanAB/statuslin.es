@@ -7,8 +7,8 @@ import {
 } from '@/render/e2b-template'
 import { feedScenario, feedStdin } from '@/render/mods/scenario-feed'
 import { FAKE_API_KEY, MODEL_URL } from '@/render/mods/session'
-import { hardenSnapshot, modRenderTemplate } from './build-e2b-mod-template'
-import { buildSnapshot } from './build-e2b-template'
+import { MOD_HARDENING, modRenderTemplate } from './build-e2b-mod-template'
+import { buildSnapshot, hardenSnapshot } from './build-e2b-template'
 
 /**
  * Builds the E2B template that records mods in Claude Desktop: the mod template plus the real
@@ -139,7 +139,7 @@ export const buildDesktopSnapshot = () =>
     desktopTemplate(),
     E2B_DESKTOP_TEMPLATE_BUILD_NAME,
     'E2B_DESKTOP_TEMPLATE_ID',
-    (sandbox) => hardenSnapshot(sandbox, DESKTOP_HARDENING),
+    (sandbox) => hardenSnapshot(sandbox, MOD_HARDENING, DESKTOP_HARDENING),
     { cpuCount: 4, memoryMB: 4096 },
   )
 
