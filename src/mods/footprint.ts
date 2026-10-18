@@ -54,7 +54,7 @@ const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     '$.mcp.call': { phrase: 'calls MCP tools' },
     '$.tool.register': { phrase: 'adds a tool the model can call' },
     'prompt.compose': { phrase: 'changes the system prompt' },
-    'session.append': { phrase: 'adds messages to the conversation' },
+    'session.append': { phrase: 'sees each message added to the conversation and can change it' },
     '$.fs.read': { phrase: 'reads files' },
     '$.fs.list': { phrase: 'reads files' },
     '$.fs.exists': { phrase: 'reads files' },
