@@ -93,17 +93,11 @@ async function seed(status: string, slug = 'detail-one', sha = SHA, tags: string
 }
 
 describe('getConfigBySlug', () => {
-  it('returns the published config with source, hash, and all previews', async () => {
+  it('returns source, hash, and every preview with only the scenario and compact segments', async () => {
     await seed('published')
     const detail = await getConfigBySlug(db, 'detail-one')
-    expect(detail).not.toBeNull()
     expect(detail?.source).toBe(SOURCE)
     expect(detail?.contentSha256).toBe(SHA)
-    expect(detail?.previews.map((p) => p.scenarioKey).sort()).toEqual(['clean-main', 'costly-full'])
-  })
-  it('ships only what the page renders per preview: the scenario and compact segments', async () => {
-    await seed('published', 'detail-compact', '22'.repeat(32))
-    const detail = await getConfigBySlug(db, 'detail-compact')
     const byKey = [...(detail?.previews ?? [])].sort((a, b) =>
       a.scenarioKey.localeCompare(b.scenarioKey),
     )
@@ -123,7 +117,7 @@ describe('getConfigBySlug', () => {
     expect(detail).toBeNull()
   })
 
-  it('returns copyCount without public vote state on ConfigDetail', async () => {
+  it('returns author and copyCount without public vote state on ConfigDetail', async () => {
     const cfg = await seed('published', 'detail-counts', 'e'.repeat(64))
     await db
       .update(schema.configs)
@@ -131,19 +125,9 @@ describe('getConfigBySlug', () => {
       .where(eq(schema.configs.id, cfg.id))
 
     const detail = await getConfigBySlug(db, 'detail-counts')
-    expect(detail).not.toBeNull()
     expect(detail?.copyCount).toBe(6)
     expect(detail).not.toHaveProperty('upvoteCount')
     expect(detail).not.toHaveProperty('hasVoted')
-  })
-
-  it('returns author and copyCount on ConfigDetail', async () => {
-    const cfg = await seed('published', 'detail-author', '11'.repeat(32))
-    await db.update(schema.configs).set({ copyCount: 6 }).where(eq(schema.configs.id, cfg.id))
-
-    const detail = await getConfigBySlug(db, 'detail-author')
-    expect(detail).not.toBeNull()
-    expect(detail?.copyCount).toBe(6)
     expect(detail?.author).toEqual({
       name: 'Author One',
       username: 'authorone',
@@ -161,10 +145,15 @@ describe('getConfigBySlug', () => {
     expect(detail?.sourceHtml).toBe('<pre>STORED</pre>')
   })
 
-  it('sourceHtml is null when the version has none (fallback path)', async () => {
-    await seed('published', 'detail-nohtml', 'ef01'.repeat(16))
-    const detail = await getConfigBySlug(db, 'detail-nohtml')
-    expect(detail?.sourceHtml).toBeNull()
+  it('falls back to null sourceHtml, license and sourceUrl, and no networkHosts, for a bare version', async () => {
+    await seed('published', 'detail-bare', 'ef01'.repeat(16))
+    const detail = await getConfigBySlug(db, 'detail-bare')
+    expect(detail).toMatchObject({
+      sourceHtml: null,
+      networkHosts: [],
+      license: null,
+      sourceUrl: null,
+    })
   })
 
   it('returns networkHosts for a published network config', async () => {
@@ -178,12 +167,6 @@ describe('getConfigBySlug', () => {
     expect(detail?.networkHosts).toEqual(['wttr.in'])
   })
 
-  it('returns empty networkHosts when version has none', async () => {
-    await seed('published', 'detail-nonetwork', 'abab'.repeat(16))
-    const detail = await getConfigBySlug(db, 'detail-nonetwork')
-    expect(detail?.networkHosts).toEqual([])
-  })
-
   it('returns the stored license and sourceUrl when the version has them', async () => {
     const cfg = await seed('published', 'detail-licensed', 'aabb'.repeat(16))
     await db
@@ -194,13 +177,6 @@ describe('getConfigBySlug', () => {
     const detail = await getConfigBySlug(db, 'detail-licensed')
     expect(detail?.license).toBe('MIT')
     expect(detail?.sourceUrl).toBe('https://example.com/x')
-  })
-
-  it('license and sourceUrl are null when the version has neither', async () => {
-    await seed('published', 'detail-unlicensed', 'ccdd'.repeat(16))
-    const detail = await getConfigBySlug(db, 'detail-unlicensed')
-    expect(detail?.license).toBeNull()
-    expect(detail?.sourceUrl).toBeNull()
   })
 
   it('returns the config tags', async () => {
@@ -228,8 +204,12 @@ describe('getConfigBySlug', () => {
   })
 
   it('updatedAt falls back to the config createdAt date when reviewedAt is null', async () => {
-    await seed('published', 'detail-noreview', '3333'.repeat(16))
+    const cfg = await seed('published', 'detail-noreview', '3333'.repeat(16))
+    await db
+      .update(schema.configs)
+      .set({ createdAt: new Date('2026-03-04T08:00:00Z') })
+      .where(eq(schema.configs.id, cfg.id))
     const detail = await getConfigBySlug(db, 'detail-noreview')
-    expect(detail?.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(detail?.updatedAt).toBe('2026-03-04')
   })
 })

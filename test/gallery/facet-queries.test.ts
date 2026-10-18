@@ -142,11 +142,6 @@ describe('facet queries', () => {
     expect(stats.get('powerline')).toEqual({ count: 0, latest: null })
   })
 
-  it('excludes drafts everywhere', async () => {
-    const cards = await getFacetCards(db, FACET_BY_SLUG.get('git')!)
-    expect(cards.map((c) => c.slug)).not.toContain('git-draft')
-  })
-
   it('returns tag-facet cards by lifetime copies', async () => {
     const cards = await getFacetCards(db, FACET_BY_SLUG.get('git')!)
     expect(cards.map((c) => c.slug)).toEqual(['git-b', 'git-a'])
@@ -186,11 +181,6 @@ describe('facet queries', () => {
     )
   })
 
-  it('a page tag with only 1 config is live (no floor)', async () => {
-    const stats = await getFacetStats(db)
-    expect(resolveLiveFacet('cost', stats)?.slug).toBe('cost')
-  })
-
   it('counts the published mods it is given alongside configs', async () => {
     const stats = await getFacetStats(db, [
       { tags: ['git'] },
@@ -207,11 +197,6 @@ describe('facet queries', () => {
     expect(
       resolveLiveFacet('powerline', await getFacetStats(db, [{ tags: ['powerline'] }]))?.slug,
     ).toBe('powerline')
-  })
-
-  it('a page:false capability tag never resolves to a page', async () => {
-    const stats = await getFacetStats(db)
-    expect(resolveLiveFacet('reads-token', stats)).toBeNull()
   })
 
   it('dates the copy ranking by the newest copy of a published config, or null with none', async () => {

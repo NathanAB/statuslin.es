@@ -54,27 +54,14 @@ describe('check:boundaries', () => {
   )
 
   test(
-    'fails when a route imports the DB through the @/ alias',
+    'fails on each cross-boundary import and allows the permitted ones',
     async () => {
       const root = await fixture({
         'tsconfig.json': JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }),
+        // A route must not reach the DB, even through the @/ alias.
         'src/db/index.ts': 'export const db = {}\n',
         'src/routes/leak.ts': "import { db } from '@/db'\nexport const leak = db\n",
-      })
-
-      const { status, stdout } = depcruise(root)
-
-      expect(status).not.toBe(0)
-      expect(stdout).toContain('routes-no-direct-db')
-    },
-    TIMEOUT_MS,
-  )
-
-  test(
-    'lets src/mods import only the gallery, and fails when src/gallery imports src/mods',
-    async () => {
-      const root = await fixture({
-        'tsconfig.json': JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }),
+        // src/mods may import the gallery, but src/gallery must not import src/mods.
         'src/gallery/listing.ts':
           "import { modCard } from '@/mods/card'\nexport const listing = modCard\n",
         'src/mods/card.ts':
@@ -83,27 +70,7 @@ describe('check:boundaries', () => {
         'src/mods/install.ts':
           "import { copied } from '@/adopt/copy'\nexport const install = copied\n",
         'src/adopt/copy.ts': 'export const copied = 1\n',
-      })
-
-      const { stdout } = depcruise(root, ['--output-type', 'json'])
-      const { violations } = (JSON.parse(stdout) as ICruiseResult).summary
-
-      expect(violations.map(({ rule, from, to }) => ({ rule: rule.name, from, to }))).toEqual([
-        {
-          rule: 'gallery-no-cross-feature',
-          from: 'src/gallery/listing.ts',
-          to: 'src/mods/card.ts',
-        },
-        { rule: 'mods-no-cross-feature', from: 'src/mods/install.ts', to: 'src/adopt/copy.ts' },
-      ])
-    },
-    TIMEOUT_MS,
-  )
-  test(
-    'lets src/review import the mod publish, query and GitHub code, and nothing else in src/mods',
-    async () => {
-      const root = await fixture({
-        'tsconfig.json': JSON.stringify({ compilerOptions: { paths: { '@/*': ['./src/*'] } } }),
+        // src/review may import the mod publish, query and GitHub code, and nothing else in src/mods.
         'src/review/kinds/mod.ts': [
           "import { guards } from '@/mods/publish'",
           "import { rows } from '@/mods/queries'",
@@ -121,9 +88,25 @@ describe('check:boundaries', () => {
       const { stdout } = depcruise(root, ['--output-type', 'json'])
       const { violations } = (JSON.parse(stdout) as ICruiseResult).summary
 
-      expect(violations.map(({ rule, to }) => ({ rule: rule.name, to }))).toEqual([
-        { rule: 'review-no-cross-feature', to: 'src/mods/submit.ts' },
-      ])
+      // The JSON reporter exits 0; an error-severity violation is what fails the real gate.
+      expect(violations.every(({ rule }) => rule.severity === 'error')).toBe(true)
+      expect(violations.map(({ rule, from, to }) => ({ rule: rule.name, from, to }))).toEqual(
+        expect.arrayContaining([
+          { rule: 'routes-no-direct-db', from: 'src/routes/leak.ts', to: 'src/db/index.ts' },
+          {
+            rule: 'gallery-no-cross-feature',
+            from: 'src/gallery/listing.ts',
+            to: 'src/mods/card.ts',
+          },
+          { rule: 'mods-no-cross-feature', from: 'src/mods/install.ts', to: 'src/adopt/copy.ts' },
+          {
+            rule: 'review-no-cross-feature',
+            from: 'src/review/kinds/mod.ts',
+            to: 'src/mods/submit.ts',
+          },
+        ]),
+      )
+      expect(violations).toHaveLength(4)
     },
     TIMEOUT_MS,
   )

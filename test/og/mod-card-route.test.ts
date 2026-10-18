@@ -13,8 +13,6 @@ import {
   type TestDb,
 } from '../mods/seed-mods'
 
-const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
-
 let db: TestDb
 let close: () => Promise<void>
 
@@ -51,23 +49,7 @@ const SEEDED_SHOT_BODY: ModCardBody = {
   },
 }
 
-async function magic(res: Response) {
-  return Array.from(new Uint8Array(await res.arrayBuffer()).slice(0, 8))
-}
-
 describe('modCardResponse', () => {
-  it.each([
-    ['a published mod with a terminal preview', 'meter'],
-    ['a published mod that draws only in Claude Desktop', 'anywhere'],
-  ])('renders a PNG for %s', async (_name, slug) => {
-    const res = await modCardResponse(db, slug)
-
-    expect(res.status).toBe(200)
-    expect(res.headers.get('content-type')).toBe('image/png')
-    expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
-    expect(await magic(res)).toEqual(PNG_MAGIC)
-  })
-
   it.each<[string, string, ModCardBody]>([
     ['its terminal preview', 'meter', { kind: 'terminal', segments: SEEDED_PREVIEW.segments }],
     [
@@ -85,6 +67,9 @@ describe('modCardResponse', () => {
     const res = await modCardResponse(db, slug)
     const expected = await toElementPng(modCard({ title: slug, authorGithub: 'octocat', body }))
 
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('image/png')
+    expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
     expect(Buffer.from(await res.arrayBuffer()).equals(Buffer.from(expected))).toBe(true)
   })
 

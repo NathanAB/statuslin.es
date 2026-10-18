@@ -16,11 +16,14 @@ import {
   PTY_MAX_BYTES,
   PtyOutput,
   recordInSandbox,
+  type SessionTiming,
 } from '@/render/mods/recorder'
 import { feedScenario } from '@/render/mods/scenario-feed'
 import { sessionFiles, setupCommand, TERMINAL } from '@/render/mods/session'
 
 const SESSION_TEST_TIMEOUT_MS = 20_000
+/** The real waits are seconds long; the fake pty answers at once. */
+const FAST: SessionTiming = { quietMs: 20, keyPauseMs: 0, pollMs: 5 }
 
 type Emit = (text: string | Uint8Array) => void
 
@@ -83,7 +86,7 @@ describe('recordInSandbox', () => {
     async () => {
       const fake = fakeSandbox(claudeSession, (emit) => emit('shell banner $ '))
 
-      const capture = await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [] })
+      const capture = await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [] }, FAST)
 
       expect(capture.claudeCodeVersion).toBe('2.1.296')
       const pty = new TextDecoder().decode(capture.pty)
@@ -118,7 +121,7 @@ describe('recordInSandbox', () => {
         () => {},
       )
 
-      const recording = recordInSandbox(fake.sandbox, { mod: null, inputSteps: [] })
+      const recording = recordInSandbox(fake.sandbox, { mod: null, inputSteps: [] }, FAST)
 
       await expect(recording).rejects.toThrow(`pty output passed ${PTY_MAX_BYTES} bytes`)
       expect(performance.now() - floodStartedAt).toBeLessThan(1_000)
@@ -157,10 +160,10 @@ function fakeSandboxes(rows: string[]) {
       events.push('kill replay sandbox')
     }
   }
-  const recorder = modRecorder({
-    withRecordingSandbox: recordingSandbox,
-    withReplaySandbox: replaySandbox,
-  })
+  const recorder = modRecorder(
+    { withRecordingSandbox: recordingSandbox, withReplaySandbox: replaySandbox },
+    FAST,
+  )
   return { recorder, events, uploads }
 }
 

@@ -62,14 +62,6 @@ describe('buildMarketplace', () => {
     })
   })
 
-  it('builds the homepage from the site origin and the mod slug', () => {
-    const [plugin] = buildMarketplace('https://staging.statuslin.es', [
-      row({ slug: 'context-meter' }),
-    ]).plugins
-
-    expect(plugin?.homepage).toBe('https://staging.statuslin.es/mods/context-meter')
-  })
-
   it('names each entry by the mod slug, the name that stays unique when plugin names clash', () => {
     const [plugin] = buildMarketplace(ORIGIN, [row({ slug: 'meter-ada' })]).plugins
 

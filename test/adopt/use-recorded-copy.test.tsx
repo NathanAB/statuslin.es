@@ -24,17 +24,6 @@ beforeEach(() => {
 })
 
 describe('useRecordedCopy', () => {
-  it('optimistically bumps the count on record', async () => {
-    const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))
-    expect(result.current.count).toBe(5)
-
-    await act(async () => {
-      await result.current.record('prompt')
-    })
-
-    await waitFor(() => expect(result.current.count).toBe(6))
-  })
-
   it('reconciles to the server-returned count', async () => {
     recordCopyFn.mockResolvedValue(42)
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))

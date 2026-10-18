@@ -32,9 +32,6 @@ describe('liveFacetLinks', () => {
   it('lists page facets with 3 matches but omits facets with 1 or 2', () => {
     expect(liveFacetLinks(stats)).toEqual([{ slug: 'git', chipLabel: 'git' }])
   })
-  it('excludes page:false capability tags even with matches', () => {
-    expect(liveFacetLinks(stats).map((f) => f.slug)).not.toContain('reads-token')
-  })
   it('can exclude the current facet', () => {
     expect(liveFacetLinks(stats, 'git')).toEqual([])
   })

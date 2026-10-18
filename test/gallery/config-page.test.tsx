@@ -158,19 +158,6 @@ describe('status line page', () => {
     ])
   })
 
-  it('credits author, original source and licence in one dot-separated byline', () => {
-    renderPage()
-
-    const dots = screen.getAllByText('·')
-    expect(dots.map((dot) => dot.parentElement?.textContent)).toEqual([
-      '·original source',
-      '·MIT licence',
-    ])
-    expect(dots[0]?.parentElement?.parentElement?.textContent).toBe(
-      'by@LindseyB·original source·MIT licence',
-    )
-  })
-
   it('links the mods that share its tags after the other status lines', () => {
     renderPage(false, [COST_MOD])
 

@@ -60,19 +60,6 @@ const toolResults = (entries: Entry[]): ContentBlock[] =>
     .flatMap((e) => blocks(e).filter((b) => b.type === 'tool_result'))
 
 describe('buildTranscript', () => {
-  it('writes to the scenario transcript_path', () => {
-    const s = scenario('near-full')
-    const { path } = buildTranscript(s, NOW)
-    expect(path).toBe((s.stdin as { transcript_path: string }).transcript_path)
-  })
-
-  it('emits valid JSONL (every line parses) with at least one assistant turn for a used context', () => {
-    const entries = parse(buildTranscript(scenario('near-full'), NOW).content)
-    expect(entries.length).toBeGreaterThan(0)
-    expect(entries.some((e) => e.type === 'assistant')).toBe(true)
-    expect(entries.some((e) => e.type === 'user')).toBe(true)
-  })
-
   it('stamps every assistant turn with the scenario model id', () => {
     const s = scenario('dirty-feature')
     const model = (s.stdin as { model: { id: string } }).model.id

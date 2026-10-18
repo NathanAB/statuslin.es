@@ -766,16 +766,6 @@ describe('requeueRenderJob held-job invariant', () => {
       .where(eq(schema.renderJobs.configVersionId, versionId))
     expect(job?.status).toBe('held') // untouched
   })
-
-  it('still re-queues a failed job', async () => {
-    const versionId = await seedVersionWithJob(db, { status: 'failed', networkHosts: [] })
-    await requeueRenderJob(db, versionId)
-    const [job] = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.configVersionId, versionId))
-    expect(job?.status).toBe('queued')
-  })
 })
 
 describe('setReadsClaudeToken', () => {

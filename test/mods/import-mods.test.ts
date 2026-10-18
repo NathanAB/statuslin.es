@@ -408,79 +408,18 @@ describe('importMods', () => {
       expect(lines[0]?.length).toBeLessThanOrEqual(500)
       expect(lines[0]).toMatch(/^refused skins: tar: x+… \(\d+ more characters\)$/)
     })
-
-    it.each([0, 1, 2, 3, 4, 5])(
-      'cuts a long line between escapes, never inside one (offset %i)',
-      async (offset) => {
-        const sandboxError = new Error(`${'x'.repeat(offset)}${'\u0007'.repeat(200)}`)
-        const { lines } = await run([entry()], fakes({ sandboxError }))
-
-        expect(lines[0]).toMatch(/^refused skins: x*(\\u0007)+… \(\d+ more characters\)$/)
-      },
-    )
   })
 
-  describe('refuses plugin facts past the stored limits and writes nothing', () => {
-    const validateWith = (notes: string[]) =>
-      JSON.stringify({ success: true, contents: [{ errors: [], notes }] })
-    const many = (n: number) => Array.from({ length: n }, (_, i) => `event.e${i}`)
+  // Each limit is tested in test/mods/plugin-facts.test.ts; this checks a refusal writes nothing.
+  it('refuses plugin facts past the stored limits and writes nothing', async () => {
+    const deps = fakes({ manifest: { name: 'skins', description: 'd'.repeat(1001) } })
 
-    it.each([
-      [
-        'a description over 1000 characters',
-        fakes({ manifest: { name: 'skins', description: 'd'.repeat(1001) } }),
-        /description.*1000/,
-      ],
-      [
-        'a version over 64 characters',
-        fakes({ manifest: { name: 'skins', version: '1'.repeat(65) } }),
-        /version.*64/,
-      ],
-      ['a name over 100 characters', fakes({ manifest: { name: 'n'.repeat(101) } }), /name.*100/],
-      [
-        'a version carrying an escape sequence',
-        fakes({ manifest: { name: 'skins', version: '1.0.0\u001b[2K' } }),
-        /version must not contain control or format characters \(U\+001B\)/,
-      ],
-      [
-        'a name carrying a bidi override',
-        fakes({ manifest: { name: 'skins\u202e' } }),
-        /name must not contain control or format characters \(U\+202E\)/,
-      ],
-      [
-        'more than 200 events',
-        fakes({ validate: validateWith([`./a.ts hooks: ${many(201).join(', ')}`]) }),
-        /201 events.*200/,
-      ],
-      [
-        'more than 200 calls',
-        fakes({
-          validate: validateWith([
-            `./a.ts calls: ${many(201)
-              .map((e) => `$.${e}`)
-              .join(', ')}`,
-          ]),
-        }),
-        /201 calls.*200/,
-      ],
-      [
-        'an event over 200 characters',
-        fakes({ validate: validateWith([`./a.ts hooks: ${'e'.repeat(201)}`]) }),
-        /events longer than 200 characters/,
-      ],
-      [
-        'a call over 200 characters',
-        fakes({ validate: validateWith([`./a.ts calls: $.${'c'.repeat(199)}`]) }),
-        /calls longer than 200 characters/,
-      ],
-    ])('%s', async (_name, deps, message) => {
-      const { exitCode, output } = await run([entry()], deps)
+    const { exitCode, output } = await run([entry()], deps)
 
-      expect(exitCode).toBe(1)
-      expect(output).toMatch(/^refused skins: /)
-      expect(output).toMatch(message)
-      expect(await allMods()).toEqual([])
-      expect(await allVersions()).toEqual([])
-    })
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/^refused skins: /)
+    expect(output).toMatch(/description.*1000/)
+    expect(await allMods()).toEqual([])
+    expect(await allVersions()).toEqual([])
   })
 })

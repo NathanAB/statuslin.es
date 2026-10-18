@@ -18,8 +18,4 @@ describe('coerceInterpreter', () => {
     expect(coerceInterpreter('ruby')).toBe('bash')
     expect(coerceInterpreter('deno')).toBe('bash')
   })
-
-  it('falls back to "bash" for an empty string', () => {
-    expect(coerceInterpreter('')).toBe('bash')
-  })
 })

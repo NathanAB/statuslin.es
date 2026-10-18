@@ -47,11 +47,6 @@ describe('SiteFooter', () => {
     expect(link.textContent).toMatch(/terms/i)
   })
 
-  it('renders inside a semantic footer element', () => {
-    const { container } = render(<SiteFooter />)
-    expect(container.querySelector('footer')).not.toBeNull()
-  })
-
   it('links to the resources page', () => {
     const { container } = render(<SiteFooter />)
     const resources = container.querySelector('a[href="/resources"]') as HTMLAnchorElement

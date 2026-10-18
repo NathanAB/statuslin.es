@@ -38,16 +38,6 @@ async function installedVersion(template: TemplateClass, pkg: string): Promise<s
 }
 
 describe('mod render template definition', () => {
-  it('installs Claude Code 2.1.296 exactly, never a range', async () => {
-    const version = await installedVersion(modRenderTemplate(), '@anthropic-ai/claude-code')
-    expect(version).toMatch(/^\d+\.\d+\.\d+$/)
-    expect(version).toBe('2.1.296')
-  })
-
-  it('installs @xterm/headless 6.0.0 exactly for in-sandbox replay', async () => {
-    expect(await installedVersion(modRenderTemplate(), '@xterm/headless')).toBe('6.0.0')
-  })
-
   it('extends the status line template step for step', async () => {
     const base = await steps(renderTemplate())
     expect((await steps(modRenderTemplate())).slice(0, base.length)).toEqual(base)
@@ -65,12 +55,19 @@ describe('mod render template definition', () => {
 })
 
 describe('mod template package integrity', () => {
-  it('pins Claude Code, its Linux x64 native package and @xterm/headless', () => {
-    expect(MOD_TEMPLATE_PACKAGES.map((p) => `${p.name}@${p.version}`)).toEqual([
-      '@anthropic-ai/claude-code@2.1.296',
-      '@anthropic-ai/claude-code-linux-x64@2.1.296',
-      '@xterm/headless@6.0.0',
+  it('installs Claude Code and @xterm/headless at the exact versions the integrity pins name', async () => {
+    expect(MOD_TEMPLATE_PACKAGES.map((p) => p.name)).toEqual([
+      '@anthropic-ai/claude-code',
+      '@anthropic-ai/claude-code-linux-x64',
+      '@xterm/headless',
     ])
+    for (const pkg of MOD_TEMPLATE_PACKAGES) {
+      expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/)
+    }
+    const pinned = (name: string) => MOD_TEMPLATE_PACKAGES.find((p) => p.name === name)?.version
+    for (const name of ['@anthropic-ai/claude-code', '@xterm/headless']) {
+      expect(await installedVersion(modRenderTemplate(), name), name).toBe(pinned(name))
+    }
   })
 
   it('pins each package to an exact sha512 integrity', () => {

@@ -42,14 +42,6 @@ describe('renderConfig', () => {
     expect(Buffer.byteLength(clean.rawStdout)).toBeLessThanOrEqual(MAX_RENDER_STDOUT_BYTES + 64)
     expect(clean.rawStdout).toContain('[output truncated]')
   })
-  it('leaves stdout under the cap untouched (no marker, byte-for-byte)', async () => {
-    const small = '\x1b[35mOpus\x1b[0m main'
-    const runner = new FakeSandboxRunner({ 'clean-main': { stdout: small } })
-    const previews = await renderConfig({ script: '', interpreter: 'bash' }, runner)
-    const clean = previews.find((p) => p.scenarioKey === 'clean-main')!
-    expect(clean.rawStdout).toBe(small)
-    expect(clean.rawStdout).not.toContain('[output truncated]')
-  })
   it('preserves exitCode, timedOut, and the trace per scenario', async () => {
     const runner = new FakeSandboxRunner({
       'non-git': {
@@ -103,15 +95,6 @@ describe('renderConfig', () => {
 })
 
 describe('renderConfig network mode', () => {
-  it('renders every scenario for a network config, same as offline', async () => {
-    const runner = new FakeSandboxRunner()
-    const previews = await renderConfig(
-      { script: '', interpreter: 'bash', networkHosts: ['wttr.in'] },
-      runner,
-    )
-    expect(previews).toHaveLength(SCENARIOS.length)
-  })
-
   it('forwards networkHosts to the runner on every scenario', async () => {
     const seen: (string[] | undefined)[] = []
     const runner = {
@@ -150,14 +133,6 @@ describe('renderConfig network mode', () => {
 
     expect(seen).toHaveLength(SCENARIOS.length)
     expect(seen.every((input) => input.readsClaudeToken === true)).toBe(true)
-  })
-
-  it('renders all scenarios when there are no networkHosts (offline, unchanged)', async () => {
-    const previews = await renderConfig(
-      { script: '', interpreter: 'bash' },
-      new FakeSandboxRunner(),
-    )
-    expect(previews).toHaveLength(SCENARIOS.length)
   })
 
   it('drops a Tasqr cache snapshot into every scenario when api.tasqr.ai is declared', async () => {

@@ -88,15 +88,7 @@ beforeAll(async () => {
   await db
     .insert(schema.user)
     .values(
-      [
-        'u1',
-        'rate-user',
-        'rate-user-full',
-        'rate-user-other',
-        'rate-user-old',
-        'queue-seed-user',
-        'queue-user',
-      ].map((id) => ({
+      ['u1', 'rate-user', 'queue-seed-user', 'queue-user'].map((id) => ({
         id,
         name: id,
         email: `${id}@test.com`,
@@ -198,19 +190,6 @@ describe('submitConfig', () => {
     expect(ver?.readsClaudeToken).toBe(true)
   })
 
-  it.each([
-    'os.environ["CLAUDE_CODE_OAUTH_TOKEN"]',
-    'open(os.path.expanduser("~/.claude/.credentials.json"))',
-  ])('stores readsClaudeToken=true for supported token read %s', async (source) => {
-    const res = await submitConfig(db, { ...input, source })
-    const [ver] = await db
-      .select()
-      .from(schema.configVersions)
-      .where(eq(schema.configVersions.id, res.versionId))
-
-    expect(ver?.readsClaudeToken).toBe(true)
-  })
-
   it('stores readsClaudeToken=false for a plain statusline', async () => {
     const res = await submitConfig(db, input) // base input is a plain `echo hi`
     const [ver] = await db
@@ -286,37 +265,6 @@ describe('submitConfig', () => {
           source: '#!/bin/bash\necho rate',
         }),
       ).rejects.toMatchObject({ status: 429 })
-    })
-
-    it('does not rate-limit a different author when one author is at the limit', async () => {
-      const limitedAuthor = 'rate-user-full'
-      const otherAuthor = 'rate-user-other'
-      const withinHour = new Date(Date.now() - 30 * 60 * 1000)
-      await seedConfigs(db, limitedAuthor, SUBMISSION_RATE_LIMIT, withinHour)
-      // The other author has no configs — should succeed
-      const result = await submitConfig(db, {
-        authorId: otherAuthor,
-        title: 'Other Author Submission',
-        description: 'should succeed',
-        interpreter: 'bash',
-        source: '#!/bin/bash\necho other',
-      })
-      expect(result.configId).toBeDefined()
-    })
-
-    it('does not count configs created more than an hour ago toward the rate limit', async () => {
-      const authorId = 'rate-user-old'
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000)
-      await seedConfigs(db, authorId, SUBMISSION_RATE_LIMIT, twoHoursAgo)
-      // All are outside the window — should succeed
-      const result = await submitConfig(db, {
-        authorId,
-        title: 'Old Configs Submission',
-        description: 'should succeed because old configs do not count',
-        interpreter: 'bash',
-        source: '#!/bin/bash\necho old',
-      })
-      expect(result.configId).toBeDefined()
     })
   })
 

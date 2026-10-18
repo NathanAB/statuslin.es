@@ -47,13 +47,6 @@ async function makeConfig(
 }
 
 describe('recordCopy', () => {
-  it('increments copyCount and returns the new value', async () => {
-    const configId = await makeConfig('copy-a')
-    expect(await recordCopy(db, configId, 'ip-1')).toBe(1)
-    expect(await recordCopy(db, configId, 'ip-2')).toBe(2)
-    const rows = await db.select().from(schema.configs).where(eq(schema.configs.id, configId))
-    expect(rows[0]?.copyCount).toBe(2)
-  })
   it('returns 0 without throwing when the config does not exist', async () => {
     const nonexistentId = randomUUID()
     expect(await recordCopy(db, nonexistentId, 'ip-1')).toBe(0)

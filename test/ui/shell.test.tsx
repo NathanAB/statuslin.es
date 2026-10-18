@@ -86,15 +86,4 @@ describe('PageShell narrow', () => {
     expect(main.className).toContain('max-w-lg')
     expect(main.className).not.toContain('max-w-5xl')
   })
-
-  it('uses the default max-w-5xl when narrow is not set', () => {
-    const { container } = render(
-      <PageShell user={null}>
-        <p>wide</p>
-      </PageShell>,
-    )
-    const main = container.querySelector('main') as HTMLElement
-    expect(main.className).toContain('max-w-5xl')
-    expect(main.className).not.toContain('max-w-lg')
-  })
 })

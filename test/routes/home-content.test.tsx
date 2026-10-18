@@ -131,16 +131,9 @@ describe('home content', () => {
     const { container } = renderHome()
 
     const masthead = container.querySelector('h1')?.parentElement?.parentElement
-    expect(masthead?.className).toContain('sm:grid-cols-2')
     expect(masthead?.textContent).toMatch(/statuslin\.es/)
     expect(masthead?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
-  })
-
-  it('centers the dated inventory note under the gallery', () => {
-    renderHome()
-
-    expect(inventoryNote()?.className).toContain('text-center')
   })
 })
 

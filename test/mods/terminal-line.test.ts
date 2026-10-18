@@ -28,4 +28,12 @@ describe('terminalLine', () => {
 
     expect(line).toMatch(/^(\\u\{e0001\})+… \(\d+ more characters\)$/)
   })
+
+  it('cuts a long line between escapes, never inside one, at every alignment', () => {
+    for (const offset of [0, 1, 2, 3, 4, 5]) {
+      const line = terminalLine(`${'x'.repeat(offset)}${'\u0007'.repeat(200)}`)
+
+      expect(line).toMatch(/^x*(\\u0007)+… \(\d+ more characters\)$/)
+    }
+  })
 })

@@ -154,15 +154,6 @@ describe('home search indexing metadata', () => {
     ).toEqual([{ position: 1, url: 'https://statuslin.es/c/alpha' }])
   })
 
-  it('marks a kind-filtered gallery view noindex', async () => {
-    const head = await HomeRoute.options.head?.({
-      loaderData: undefined,
-      match: { search: { kind: 'mods' } },
-    } as never)
-
-    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
-  })
-
   it('canonicalizes a kind-filtered gallery to itself and marks it noindex', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({

@@ -251,12 +251,26 @@ describe('getDashboardRows', () => {
   })
 
   it('orders problems first: failed, then running, then queued, then done', async () => {
-    const rows = await getDashboardRows(db)
-    const priority: Record<string, number> = { failed: 0, running: 1, queued: 2, done: 3 }
-    const seq = rows.map((r) => priority[r.renderJob.status] ?? 99)
-    for (let i = 1; i < seq.length; i++) {
-      expect(seq[i]).toBeGreaterThanOrEqual(seq[i - 1] ?? 0)
+    await db.delete(schema.configs)
+    // Submitted in priority order, so newest-first alone would list them backwards.
+    const statuses = ['failed', 'running', 'queued', 'done']
+    for (const [index, status] of statuses.entries()) {
+      const { versionId } = await submitConfig(db, {
+        authorId: index < 2 ? 'u1' : 'u2',
+        title: `Order ${status}`,
+        description: '',
+        interpreter: 'bash',
+        source: `echo ${status}`,
+      })
+      await db
+        .update(schema.renderJobs)
+        .set({ status })
+        .where(eq(schema.renderJobs.configVersionId, versionId))
     }
+
+    const rows = await getDashboardRows(db)
+
+    expect(rows.map((r) => r.renderJob.status)).toEqual(statuses)
   })
 })
 

@@ -17,6 +17,7 @@ describe('Notice', () => {
     const el = container.firstChild as HTMLElement
     expect(el.className).toContain('bg-muted')
     expect(el.className).not.toContain('bg-destructive')
+    expect(el.className).toContain('text-foreground')
   })
 
   it('uses destructive/10 background for tone="error"', () => {
@@ -24,17 +25,6 @@ describe('Notice', () => {
     const el = container.firstChild as HTMLElement
     expect(el.className).toContain('bg-destructive/10')
     expect(el.className).not.toContain('bg-muted')
-  })
-
-  it('applies destructive text color for tone="error"', () => {
-    const { container } = render(<Notice tone="error">Oops</Notice>)
-    const el = container.firstChild as HTMLElement
     expect(el.className).toContain('text-destructive')
-  })
-
-  it('applies foreground text color for tone="info"', () => {
-    const { container } = render(<Notice tone="info">Ok</Notice>)
-    const el = container.firstChild as HTMLElement
-    expect(el.className).toContain('text-foreground')
   })
 })

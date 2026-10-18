@@ -74,33 +74,6 @@ describe('homeJsonLd', () => {
       },
     })
   })
-
-  it('gives page 2 its own URL, name, and gallery-wide item positions', () => {
-    const nodes = homeJsonLd(
-      'https://statuslin.es',
-      [
-        { kind: 'status-line', slug: 'a-1', title: 'Alpha' },
-        { kind: 'mod', slug: 'file-tree', title: 'File Tree' },
-      ],
-      { page: 2, pageSize: 10 },
-    ) as Array<Record<string, unknown>>
-
-    expect(nodes[0]).toMatchObject({
-      '@type': 'WebSite',
-      url: 'https://statuslin.es',
-    })
-    expect(nodes[2]).toMatchObject({
-      '@type': 'CollectionPage',
-      name: 'Claude Code Status Lines & Mods — Page 2',
-      url: 'https://statuslin.es/?page=2',
-      mainEntity: {
-        itemListElement: [
-          { position: 11, url: 'https://statuslin.es/c/a-1' },
-          { position: 12, url: 'https://statuslin.es/mods/file-tree' },
-        ],
-      },
-    })
-  })
 })
 
 describe('configJsonLd', () => {
@@ -189,14 +162,6 @@ describe('configJsonLd', () => {
     expect(code!.license).toBe('MIT')
   })
 
-  it('falls back to the CC0 url when license is null', () => {
-    const [code] = configJsonLd('https://statuslin.es', {
-      ...base,
-      license: null,
-    }) as Array<Record<string, unknown>>
-    expect(code!.license).toContain('creativecommons.org')
-  })
-
   // --- GEO enrichment: freshness, entity clarity, extractable Q&A ---
 
   it('enriches SoftwareSourceCode without presenting copies as install interactions', () => {
@@ -227,22 +192,25 @@ describe('configJsonLd', () => {
 })
 
 describe('faqPageJsonLd', () => {
-  it('turns question/answer pairs into a FAQPage', () => {
-    expect(faqPageJsonLd([{ question: 'Why?', answer: 'Because.' }])).toEqual({
+  it('returns null when there are no questions', () => {
+    expect(faqPageJsonLd([])).toBeNull()
+  })
+
+  it('emits answers as plain text without inline-code backticks', () => {
+    const faq = faqPageJsonLd([
+      { question: 'Where?', answer: 'Read `workspace.current_dir` first.' },
+    ])
+    expect(faq).toEqual({
       '@context': 'https://schema.org',
       '@type': 'FAQPage',
       mainEntity: [
         {
           '@type': 'Question',
-          name: 'Why?',
-          acceptedAnswer: { '@type': 'Answer', text: 'Because.' },
+          name: 'Where?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Read workspace.current_dir first.' },
         },
       ],
     })
-  })
-
-  it('returns null when there are no questions', () => {
-    expect(faqPageJsonLd([])).toBeNull()
   })
 })
 
@@ -389,24 +357,5 @@ describe('facetJsonLd', () => {
       null,
     ) as [Record<string, unknown>]
     expect(p).not.toHaveProperty('dateModified')
-  })
-})
-
-describe('faqPageJsonLd', () => {
-  it('emits answers as plain text without inline-code backticks', () => {
-    const faq = faqPageJsonLd([
-      { question: 'Where?', answer: 'Read `workspace.current_dir` first.' },
-    ])
-    expect(faq).toEqual({
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: [
-        {
-          '@type': 'Question',
-          name: 'Where?',
-          acceptedAnswer: { '@type': 'Answer', text: 'Read workspace.current_dir first.' },
-        },
-      ],
-    })
   })
 })

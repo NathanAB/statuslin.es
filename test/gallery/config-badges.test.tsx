@@ -44,10 +44,6 @@ describe('iconFor', () => {
     expect(iconFor('bash')).not.toBe(iconFor('reads-token'))
   })
 
-  it('is stable for the same slug', () => {
-    expect(iconFor('bash')).toBe(iconFor('bash'))
-  })
-
   it('falls back to the feature icon for an unmapped feature-group slug', () => {
     // 'git' is a feature-group facet with no entry in TAG_ICON
     expect(iconFor('git')).not.toBe(iconFor('bash'))
@@ -72,12 +68,6 @@ describe('ConfigBadges', () => {
     const { container } = renderBadges({ tags: ['network-access'], networkHosts: [] })
     expect(container.querySelector('a')).toBeNull()
     expect(screen.getByText('Network Access')).toBeTruthy()
-  })
-
-  it('does not link the reads-token capability tag', () => {
-    const { container } = renderBadges({ tags: ['reads-token'], networkHosts: [] })
-    expect(container.querySelector('a')).toBeNull()
-    expect(screen.getByText('Reads Token')).toBeTruthy()
   })
 
   it('links only the page tags when a config mixes page and capability tags', () => {

@@ -70,9 +70,10 @@ describe('DashboardView', () => {
     expect(screen.queryByText(/sign in/i)).toBeNull()
   })
 
-  it('shows a sign-in button only on the forbidden view', () => {
+  it('shows the access notice and a sign-in button on the forbidden view', () => {
     render(<DashboardView data={{ forbidden: true }} />)
-    expect(screen.queryByText('@ada')).toBeNull()
+    expect(screen.getByText("You don't have access to this page.")).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: 'Sign in with GitHub' }).length).toBeGreaterThan(0)
   })
 
   it('renders a sign-in prompt for signed-out visitors', () => {

@@ -11,7 +11,7 @@ import { auth as prodAuth } from '@/lib/auth'
 import { migratedPGlite } from './helpers/test-db'
 
 // Approach: build a Better Auth instance over an in-memory PGlite database
-// (the same engine db.test.ts uses) with email/password enabled. This
+// with email/password enabled. This
 // exercises the real Better Auth session pipeline -- sign-up, sign-in, and
 // session resolution -- WITHOUT the GitHub OAuth round-trip and WITHOUT a
 // live Postgres server.

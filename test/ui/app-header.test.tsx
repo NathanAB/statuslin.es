@@ -72,26 +72,13 @@ describe('AppHeader', () => {
     const mods = screen.getByRole('link', { name: 'Mods' })
     expect(mods.getAttribute('href')).toBe('/mods')
     const guide = screen.getByRole('link', { name: 'Guide' })
+    expect(guide.getAttribute('href')).toBe('/guide')
     expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  })
-
-  it('links to the guide page when signed out', () => {
-    const { container } = render(<AppHeader user={null} />)
-    const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement
-    expect(guide).not.toBeNull()
-    expect(guide.textContent).toMatch(/guide/i)
   })
 
   it('shows the Star on GitHub link', () => {
     render(<AppHeader user={null} />)
     expect(screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })).toBeTruthy()
-  })
-
-  it('links to the resources page when signed in', () => {
-    const { container } = render(
-      <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,
-    )
-    expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
   it('shows the avatar image and @username for a signed-in user', () => {

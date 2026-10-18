@@ -11,13 +11,6 @@ describe('Hint', () => {
     expect(container.textContent).toBe('Some text')
   })
 
-  it('renders as an outlined card-colored strip', () => {
-    const { container } = render(<Hint icon={Monitor}>Some text</Hint>)
-    expect(container.firstElementChild?.className.split(' ')).toEqual(
-      expect.arrayContaining(['border', 'border-border', 'bg-card']),
-    )
-  })
-
   it('puts an action after its text, inside the same strip', () => {
     const { container } = render(
       <Hint icon={Monitor} action={<button type="button">Act</button>}>

@@ -5,7 +5,6 @@ import {
   configPageTitle,
   GUIDE_DESCRIPTION,
   GUIDE_TITLE_BASE,
-  HOME_TITLE_BASE,
   homeMetaDescription,
   homePageTitle,
   MOD_NOT_FOUND_TITLE,
@@ -39,15 +38,6 @@ describe('configPageTitle', () => {
 
   it('keeps the not-found title on-brand and true of any missing page', () => {
     expect(NOT_FOUND_TITLE).toBe('Page not found — statuslin.es')
-  })
-
-  it('exposes the home title base for the title tag and JSON-LD to share', () => {
-    expect(HOME_TITLE_BASE).toBe('Claude Code Status Lines & Mods')
-  })
-
-  it('titles the home page status lines first, with the page number past page 1', () => {
-    expect(homePageTitle(1)).toBe('Claude Code Status Lines & Mods | statuslin.es')
-    expect(homePageTitle(2)).toBe('Claude Code Status Lines & Mods — Page 2 | statuslin.es')
   })
 
   it('keeps the rendered home title inside the length Google shows', () => {

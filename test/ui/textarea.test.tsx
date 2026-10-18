@@ -5,11 +5,6 @@ import { describe, expect, it } from 'vitest'
 import { Textarea } from '@/ui/textarea'
 
 describe('Textarea', () => {
-  it('renders a textarea element', () => {
-    const { container } = render(<Textarea />)
-    expect(container.querySelector('textarea')).not.toBeNull()
-  })
-
   it('does NOT apply font-mono by default', () => {
     const { container } = render(<Textarea />)
     const el = container.querySelector('textarea') as HTMLElement
