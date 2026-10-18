@@ -116,4 +116,4 @@ export function desktopRecorder(
   }
 }
 
-export const e2bDesktopRecorder = (): DesktopRecorder => desktopRecorder(E2B_DESKTOP_SANDBOXES)
+export const e2bDesktopRecorder = () => desktopRecorder(E2B_DESKTOP_SANDBOXES)

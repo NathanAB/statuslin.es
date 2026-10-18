@@ -4,11 +4,22 @@ import type { TestDb } from '../mods/seed-mods'
 
 const AUTHOR_ID = 'seed-configs-author'
 
-/** A published config with one approved current version, its author created on first use. */
+interface ConfigSeed {
+  allTags?: string[]
+  status?: string
+  source?: string
+  interpreter?: string
+  networkHosts?: string[]
+}
+
+/**
+ * A config with one approved current version, published unless told otherwise, its author created
+ * on first use.
+ */
 export async function addPublishedConfig(
   db: TestDb,
   slug: string,
-  opts: { allTags?: string[] } = {},
+  opts: ConfigSeed = {},
 ): Promise<string> {
   await db
     .insert(schema.user)
@@ -26,7 +37,7 @@ export async function addPublishedConfig(
     .values({
       slug,
       authorId: AUTHOR_ID,
-      status: 'published',
+      status: opts.status ?? 'published',
       allTags: opts.allTags ?? [],
       firstPublishedAt: new Date(),
     })
@@ -39,8 +50,9 @@ export async function addPublishedConfig(
       versionNumber: 1,
       title: slug,
       description: '',
-      source: 'echo hi',
-      interpreter: 'bash',
+      source: opts.source ?? 'echo hi',
+      interpreter: opts.interpreter ?? 'bash',
+      networkHosts: opts.networkHosts ?? [],
       contentSha256: slug.padEnd(64, '0'),
       status: 'approved',
     })
