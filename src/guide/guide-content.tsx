@@ -6,7 +6,11 @@ import {
 } from '@/guide/examples'
 import { GUIDE_FAQ } from '@/guide/guide-faq'
 import { GuideStdinFields } from '@/guide/guide-stdin-fields'
-import { GUIDE_DATES, STATUS_LINES_VS_MODS_GUIDE_PATH } from '@/lib/page-title'
+import {
+  GUIDE_DATES,
+  NOT_SHOWING_GUIDE_PATH,
+  STATUS_LINES_VS_MODS_GUIDE_PATH,
+} from '@/lib/page-title'
 import type { AnsiSegment } from '@/render/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { FaqSection } from '@/ui/faq-section'
@@ -209,6 +213,10 @@ export function GuideContent({
           The <TextLink to="/resources">tools and resources list</TextLink> has themes and usage
           trackers. If you build a status line you like,{' '}
           <TextLink to="/submit">submit it to the gallery</TextLink>.
+        </Text>
+        <Text muted>
+          Status line blank in the terminal?{' '}
+          <TextLink to={NOT_SHOWING_GUIDE_PATH}>Work through the fixes</TextLink>.
         </Text>
         <Text muted>
           Claude Desktop's Code tab doesn't run your status line.{' '}

@@ -29,6 +29,7 @@ import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as GuideAreClaudeCodeModsSafeRouteImport } from './routes/guide_.are-claude-code-mods-safe'
 import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
+import { Route as GuideStatusLineNotShowingRouteImport } from './routes/guide_.status-line-not-showing'
 import { Route as GuideStatusLinesVsModsRouteImport } from './routes/guide_.status-lines-vs-mods'
 import { Route as ModsIndexRouteImport } from './routes/mods.index'
 import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
@@ -143,6 +144,12 @@ const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
   path: '/guide/claude-desktop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideStatusLineNotShowingRoute =
+  GuideStatusLineNotShowingRouteImport.update({
+    id: '/guide_/status-line-not-showing',
+    path: '/guide/status-line-not-showing',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const GuideStatusLinesVsModsRoute = GuideStatusLinesVsModsRouteImport.update({
   id: '/guide_/status-lines-vs-mods',
   path: '/guide/status-lines-vs-mods',
@@ -223,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/compare/$pair': typeof ComparePairRoute
   '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-line-not-showing': typeof GuideStatusLineNotShowingRoute
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
@@ -256,6 +264,7 @@ export interface FileRoutesByTo {
   '/compare/$pair': typeof ComparePairRoute
   '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-line-not-showing': typeof GuideStatusLineNotShowingRoute
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
@@ -290,6 +299,7 @@ export interface FileRoutesById {
   '/compare/$pair': typeof ComparePairRoute
   '/guide_/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide_/status-line-not-showing': typeof GuideStatusLineNotShowingRoute
   '/guide_/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/compare/$pair'
     | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-desktop'
+    | '/guide/status-line-not-showing'
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/compare/$pair'
     | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-desktop'
+    | '/guide/status-line-not-showing'
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
@@ -391,6 +403,7 @@ export interface FileRouteTypes {
     | '/compare/$pair'
     | '/guide_/are-claude-code-mods-safe'
     | '/guide_/claude-desktop'
+    | '/guide_/status-line-not-showing'
     | '/guide_/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
@@ -425,6 +438,7 @@ export interface RootRouteChildren {
   ComparePairRoute: typeof ComparePairRoute
   GuideAreClaudeCodeModsSafeRoute: typeof GuideAreClaudeCodeModsSafeRoute
   GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
+  GuideStatusLineNotShowingRoute: typeof GuideStatusLineNotShowingRoute
   GuideStatusLinesVsModsRoute: typeof GuideStatusLinesVsModsRoute
   ModsSlugRoute: typeof ModsSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
@@ -581,6 +595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuideClaudeDesktopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide_/status-line-not-showing': {
+      id: '/guide_/status-line-not-showing'
+      path: '/guide/status-line-not-showing'
+      fullPath: '/guide/status-line-not-showing'
+      preLoaderRoute: typeof GuideStatusLineNotShowingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guide_/status-lines-vs-mods': {
       id: '/guide_/status-lines-vs-mods'
       path: '/guide/status-lines-vs-mods'
@@ -681,6 +702,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComparePairRoute: ComparePairRoute,
   GuideAreClaudeCodeModsSafeRoute: GuideAreClaudeCodeModsSafeRoute,
   GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
+  GuideStatusLineNotShowingRoute: GuideStatusLineNotShowingRoute,
   GuideStatusLinesVsModsRoute: GuideStatusLinesVsModsRoute,
   ModsSlugRoute: ModsSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,

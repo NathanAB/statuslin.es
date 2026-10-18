@@ -112,7 +112,7 @@ export const GUIDE_PATH = '/guide'
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 
 /** `modified` is the day a change to the page's text went live; bump it with every such change. */
-export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-15' } as const
+export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-18' } as const
 
 /** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
 export const GUIDE_DESCRIPTION =
@@ -160,11 +160,26 @@ export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026
 export const MOD_SAFETY_GUIDE_DESCRIPTION =
   'A Claude Code mod runs with your permissions. See what claude plugin validate reports, how statuslin.es pins and reviews each mod, and what to check yourself.'
 
+export const NOT_SHOWING_GUIDE_PATH = '/guide/status-line-not-showing'
+
+/**
+ * /guide/status-line-not-showing title — the <title> tag and its JSON-LD headline. It leaves out
+ * ` | statuslin.es`, which would push it past 60 characters.
+ */
+export const NOT_SHOWING_GUIDE_TITLE = 'Claude Code Status Line Not Showing? How to Fix It'
+
+export const NOT_SHOWING_GUIDE_DATES = { published: '2026-10-18', modified: '2026-10-18' } as const
+
+/** /guide/status-line-not-showing meta description — the description tag, OG, and JSON-LD. */
+export const NOT_SHOWING_GUIDE_DESCRIPTION =
+  'Why a Claude Code status line stays blank in the terminal: script permissions, stdout, workspace trust, settings that turn it off, and how to debug it.'
+
 /** The live /guide subpages and their last edits. Every other /guide/* path redirects to /guide. */
 export const GUIDE_SUBPAGES: ReadonlyArray<{ path: string; modified: string }> = [
   { path: DESKTOP_GUIDE_PATH, modified: DESKTOP_GUIDE_DATES.modified },
   { path: STATUS_LINES_VS_MODS_GUIDE_PATH, modified: STATUS_LINES_VS_MODS_GUIDE_DATES.modified },
   { path: MOD_SAFETY_GUIDE_PATH, modified: MOD_SAFETY_GUIDE_DATES.modified },
+  { path: NOT_SHOWING_GUIDE_PATH, modified: NOT_SHOWING_GUIDE_DATES.modified },
 ]
 
 export function resourcesTitle(sections: ResourceSection[]): string {

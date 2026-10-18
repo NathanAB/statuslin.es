@@ -6,6 +6,8 @@ import {
   GUIDE_TITLE_BASE,
   MOD_SAFETY_GUIDE_PATH,
   MOD_SAFETY_GUIDE_TITLE,
+  NOT_SHOWING_GUIDE_PATH,
+  NOT_SHOWING_GUIDE_TITLE,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
@@ -110,6 +112,7 @@ function corePageLinks(base: string): string[] {
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
     `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
     `- [${GUIDE_TITLE_BASE}](${base}${GUIDE_PATH}): the statusLine setting, the JSON a script receives, and a tested example`,
+    `- [${NOT_SHOWING_GUIDE_TITLE}](${base}${NOT_SHOWING_GUIDE_PATH}): why a status line stays blank in the terminal, and the checks that fix it`,
     `- [${DESKTOP_GUIDE_TITLE_BASE}](${base}${DESKTOP_GUIDE_PATH}): why the Code tab skips status lines, and the plugin that shows them`,
     `- [${STATUS_LINES_VS_MODS_GUIDE_TITLE}](${base}${STATUS_LINES_VS_MODS_GUIDE_PATH}): where each one shows up, and when to pick which`,
     `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what a mod can do, and how statuslin.es pins and reviews each one`,
