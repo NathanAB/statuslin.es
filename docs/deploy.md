@@ -467,6 +467,42 @@ fly ssh console --app statuslines --command "bun run scripts/check-mods.ts"
 ```
 Re-pin a listed mod to a fetchable commit (see "Re-pin a mod"), or delist it.
 
+## Community status line seeds
+
+`scripts/seed-data/community-configs.ts` lists MIT status lines vendored from GitHub, each credited to
+its author (a placeholder account their first GitHub sign-in takes over). `seed:community` submits
+them through the normal submit path, so each one renders and waits on `/admin` like any submission.
+Rerunning skips an entry its author already has under that title, in any status, so wave 1's entries
+are skipped. Run it on staging first, then production, from your machine (`with-env` asks for
+Touch ID). Each run checks every author's GitHub id against the one pinned in the file.
+
+1. Submit the entries. Each prints `[submitted]`, `[skipped]` or `[error]` with the reason:
+   ```sh
+   bun run with-env staging scripts/run-seed-community.ts seed
+   ```
+2. Entries without network hosts are queued, and entries with hosts are held. Release the held ones,
+   which is the batched "Run network preview":
+   ```sh
+   bun run with-env staging scripts/run-seed-community.ts release-held
+   ```
+3. A CLI can't start the web server's render drain. Press Re-queue on one seeded entry on `/admin`
+   (the drain then renders every queued job), or restart the app (`fly apps restart
+   statuslines-staging`). `/admin` then shows each preview.
+4. Review each one on `/admin` against its pinned `sourceUrl` and approve or reject it there. On
+   staging only, `publish-rendered` approves every seeded draft whose render finished, without
+   looking. Never run it on production: there, each entry is approved on `/admin` after review.
+   ```sh
+   bun run with-env staging scripts/run-seed-community.ts publish-rendered   # staging only
+   ```
+5. Generate the page copy for the newly published entries, per the "Generated page copy" convention in
+   `CLAUDE.md`:
+   ```sh
+   bun run with-env staging scripts/generate-content.ts --all --prepare
+   bun run with-env staging scripts/generate-content.ts --apply   # response JSON on stdin
+   ```
+6. Repeat 1–5 with `production` (app `statuslines`), except `publish-rendered`: approve each entry on
+   `/admin`.
+
 ## DNS (Cloudflare, after the first Fly deploy)
 
 For each subdomain, point Cloudflare at the Fly app. First deploy **DNS-only** (gray cloud) so
