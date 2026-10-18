@@ -35,7 +35,7 @@ vi.mock('@/lib/auth-functions', () => ({
 }))
 const getModDesktopShotFn = vi.hoisted(() => vi.fn().mockResolvedValue({ kind: 'unpublished' }))
 vi.mock('@/mods/functions', () => ({ getModDesktopShotFn }))
-const getBuddyPetsFn = vi.hoisted(() => vi.fn().mockResolvedValue([]))
+const getBuddyPetsFn = vi.hoisted(() => vi.fn().mockResolvedValue({ cards: [], clashes: [] }))
 vi.mock('@/guide/functions', () => ({ getBuddyPetsFn }))
 
 const { getRouter } = await import('@/router')
@@ -174,11 +174,14 @@ describe('/guide/status-lines-vs-mods loader', () => {
 })
 
 describe('/guide/claude-code-buddy loader', () => {
-  it('loads the published pets through the guide server function', async () => {
-    const pets = [{ slug: 'familiar' }]
-    getBuddyPetsFn.mockResolvedValueOnce(pets)
-    const loader = BuddyRoute.options.loader as (ctx: unknown) => Promise<{ pets: unknown }>
+  it('loads the published pet cards and their clashes through the guide server function', async () => {
+    const cards = [{ slug: 'pixipet' }]
+    const clashes = [{ command: 'pet', titles: ['Pixipet', 'Code Pet'] }]
+    getBuddyPetsFn.mockResolvedValueOnce({ cards, clashes })
+    const loader = BuddyRoute.options.loader as (
+      ctx: unknown,
+    ) => Promise<{ cards: unknown; clashes: unknown }>
 
-    expect((await loader({})).pets).toBe(pets)
+    expect(await loader({})).toMatchObject({ cards, clashes })
   })
 })

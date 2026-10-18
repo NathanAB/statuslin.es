@@ -1,138 +1,153 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import type { GalleryModCard } from '@/gallery/gallery-items'
 import { BUDDY_FAQ } from '@/guide/buddy-faq'
 import { MOD_SAFETY_GUIDE_PATH } from '@/lib/page-title'
 import { MOD_INSTALL_MIN_VERSION } from '@/mods/install'
-import type { ModDetail } from '@/mods/queries'
 
-vi.mock('@/mods/functions', () => ({ recordModCopyFn: vi.fn() }))
-vi.mock('sonner', () => ({ toast: vi.fn() }))
-vi.mock('@posthog/react', () => ({
-  usePostHog: () => ({ capture: vi.fn(), get_distinct_id: () => 'd', get_session_id: () => 's' }),
-}))
+const capture = vi.hoisted(() => vi.fn())
+vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     to,
     params,
     children,
+    onClick,
   }: {
     to: string
     params?: Record<string, string>
     children: ReactNode
-  }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
+    onClick?: () => void
+  }) => (
+    <a
+      href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}
+      onClick={(event) => {
+        event.preventDefault()
+        onClick?.()
+      }}
+    >
+      {children}
+    </a>
+  ),
 }))
 
 const { BuddyGuideContent } = await import('@/guide/buddy-guide-content')
 
-const ORIGIN = 'https://site.example.test'
 const ISSUE_URL = 'https://github.com/anthropics/claude-code/issues/45596'
 
-function pet(slug: string, title: string, overrides: Partial<ModDetail> = {}): ModDetail {
+function card(slug: string, title: string): GalleryModCard {
   return {
-    id: `11111111-1111-4111-8111-${slug.padStart(12, '0').slice(-12)}`,
+    modId: `11111111-1111-4111-8111-${slug.padStart(12, '0').slice(-12)}`,
     slug,
-    pluginName: slug,
     title,
     description: `${title} lives above the prompt.`,
     authorGithub: 'octocat',
-    repoUrl: `https://github.com/octocat/${slug}`,
-    path: '',
-    commitSha: '0123456789abcdef0123456789abcdef01234567',
-    license: 'MIT',
-    footprint: {
-      events: ['ui.render{component=AbovePrompt}', `command.run{command=${slug}}`],
-      calls: ['$.store.set'],
-    },
-    preview: [{ text: `${title} preview` }],
-    desktop: null,
-    generatedContent: null,
     copyCount: 0,
     tags: [],
-    updatedAt: '2026-10-17',
-    recordedWith: '2.1.296',
-    reviewedAt: null,
-    ...overrides,
+    preview: [{ text: `${title} preview` }],
+    desktopShot: null,
   }
 }
 
-const FAMILIAR = pet('familiar', 'Familiar', {
-  generatedContent: {
-    summary: 'A pixel companion above the prompt that reacts to your session.',
-    howItWorks: [],
-    goodToKnow: [],
-    details: {},
-  },
-})
-const CAT = pet('pixel-cat', 'Pixel Cat')
+const PIXIPET = card('pixipet', 'Pixipet')
+const CAT = card('pixel-cat', 'Pixel Cat')
 
 describe('BuddyGuideContent', () => {
-  it('says buddy was removed, links the Bring Back Buddy issue, and that these pets are not buddy', () => {
-    render(<BuddyGuideContent pets={[FAMILIAR]} origin={ORIGIN} />)
+  it('says buddy was removed, links the Bring Back Buddy issue, and that these are new pets', () => {
+    render(<BuddyGuideContent cards={[PIXIPET]} clashes={[]} />)
 
     expect(screen.getByRole('heading', { level: 1, name: /buddy/i })).toBeTruthy()
-    const issue = screen.getByRole('link', { name: /#45596/ }) as HTMLAnchorElement
+    const issue = screen.getByRole('link', {
+      name: 'Bring Back Buddy, #45596',
+    }) as HTMLAnchorElement
     expect(issue.href).toBe(ISSUE_URL)
-    expect(document.body.textContent).toMatch(/2\.1\.97/)
-    expect(document.body.textContent).toMatch(/none of them is buddy/i)
-    expect(document.body.textContent).toContain(`Claude Code ${MOD_INSTALL_MIN_VERSION} or later`)
-  })
-
-  it('gives each pet its own section, in order, with its page link, summary and preview', () => {
-    render(<BuddyGuideContent pets={[FAMILIAR, CAT]} origin={ORIGIN} />)
-
-    const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
-    expect(titles.slice(0, 2)).toEqual(['Familiar', 'Pixel Cat'])
-    const familiar = screen.getByRole('region', { name: 'Familiar' })
-    const link = within(familiar).getByRole('link', { name: 'Familiar' }) as HTMLAnchorElement
-    expect(link.getAttribute('href')).toBe('/mods/familiar')
-    // The reviewed page summary when there is one, the author's description otherwise.
-    expect(familiar.textContent).toContain(FAMILIAR.generatedContent?.summary)
-    expect(familiar.textContent).toContain('Familiar preview')
-    const cat = screen.getByRole('region', { name: 'Pixel Cat' })
-    expect(cat.textContent).toContain('Pixel Cat lives above the prompt.')
-  })
-
-  it("shows each pet's reach from its footprint and its counted install prompt", () => {
-    render(<BuddyGuideContent pets={[FAMILIAR]} origin={ORIGIN} />)
-
-    const familiar = screen.getByRole('region', { name: 'Familiar' })
-    for (const label of ['What you see', 'Uses your tokens', 'Changes files', 'Network access']) {
-      expect(familiar.textContent).toContain(label)
-    }
-    expect(familiar.textContent).toContain('/familiar')
-    expect(
-      within(familiar).getByRole('button', { name: 'Copy install prompt for Familiar' }),
-    ).toBeTruthy()
-  })
-
-  it('warns when two pets add the same slash command', () => {
-    const pets = [pet('pets', 'Claude Pets'), pet('pixipet', 'Pixipet'), CAT].map((p, i) =>
-      i < 2 ? { ...p, footprint: { events: ['command.run{command=pet}'], calls: [] } } : p,
-    )
-    render(<BuddyGuideContent pets={pets} origin={ORIGIN} />)
-
-    expect(document.body.textContent).toMatch(/Claude Pets and Pixipet both add \/pet/)
-  })
-
-  it('says no pet is listed yet when none is published, and adds no warning', () => {
-    render(<BuddyGuideContent pets={[]} origin={ORIGIN} />)
-
-    expect(screen.queryAllByRole('region')).toEqual([])
-    expect(document.body.textContent).toMatch(/no pet mods are published yet/i)
-    expect(document.body.textContent).not.toMatch(/both add|all add/)
-  })
-
-  it('points to the mod safety guide and asks its common questions', () => {
-    render(<BuddyGuideContent pets={[FAMILIAR]} origin={ORIGIN} />)
-
+    const text = document.body.textContent ?? ''
+    expect(text).toContain('Claude Code 2.1.97 removed /buddy in April 2026')
+    expect(text).toContain("They're new pets, not your old buddy.")
+    expect(text).toContain(`Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`)
     expect(
       screen.getAllByRole('link').some((a) => a.getAttribute('href') === MOD_SAFETY_GUIDE_PATH),
     ).toBe(true)
+  })
+
+  it('lists each pet as a gallery card linking to its mod page, in order, with no install controls', () => {
+    render(<BuddyGuideContent cards={[PIXIPET, CAT]} clashes={[]} />)
+
+    const titles = ['Pixipet', 'Pixel Cat'].map(
+      (name) => screen.getByRole('link', { name }) as HTMLAnchorElement,
+    )
+    expect(titles.map((a) => a.getAttribute('href'))).toEqual(['/mods/pixipet', '/mods/pixel-cat'])
+    expect(titles[0]?.compareDocumentPosition(titles[1] as Node)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+    expect(document.body.textContent).toContain('Pixipet preview')
+    // The previews, fact tiles and install prompt live on each mod page now.
+    expect(screen.queryByRole('button', { name: /copy install prompt/i })).toBeNull()
+    for (const tile of ['Changes files', 'Network access', 'Reviewed commit']) {
+      expect(document.body.textContent).not.toContain(tile)
+    }
+  })
+
+  it('counts card clicks under their own surface, with the position on the page', () => {
+    capture.mockClear()
+    render(<BuddyGuideContent cards={[PIXIPET, CAT]} clashes={[]} />)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Pixel Cat' }))
+
+    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
+      modId: CAT.modId,
+      slug: 'pixel-cat',
+      surface: 'buddy_guide',
+      position: 2,
+    })
+  })
+
+  it('puts a note above the cards for each command two or more pets add', () => {
+    render(
+      <BuddyGuideContent
+        cards={[PIXIPET, CAT]}
+        clashes={[
+          { command: 'pet', titles: ['Pixipet', 'Claude Pets', 'Code Pet'] },
+          { command: 'mods', titles: ['Pixel Cat', 'Pixipet'] },
+        ]}
+      />,
+    )
+
+    const notes = screen.getAllByText(/Install one\./)
+    expect(notes.map((note) => note.closest('p')?.textContent)).toEqual([
+      'Pixipet, Claude Pets, and Code Pet all add /pet. Install one.',
+      'Pixel Cat and Pixipet both add /mods. Install one.',
+    ])
+    const firstCard = screen.getByRole('link', { name: 'Pixipet' })
+    expect(notes[1]?.compareDocumentPosition(firstCard)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('says no pet is published yet, without cards or notes, when there are none', () => {
+    render(<BuddyGuideContent cards={[]} clashes={[]} />)
+
+    expect(document.body.textContent).toMatch(/no pet mods are published yet/i)
+    expect(screen.queryByText(/Install one\./)).toBeNull()
+  })
+
+  it('keeps the submit link and asks its common questions', () => {
+    render(<BuddyGuideContent cards={[PIXIPET]} clashes={[]} />)
+
+    const submit = within(document.body).getByRole('link', { name: /submit your pet mod/i })
+    expect(submit.getAttribute('href')).toBe('/submit')
     expect(screen.getByRole('heading', { level: 2, name: /common questions/i })).toBeTruthy()
     for (const entry of BUDDY_FAQ) {
       expect(screen.getByRole('heading', { level: 3, name: entry.question })).toBeTruthy()
+    }
+  })
+})
+
+describe('BUDDY_FAQ', () => {
+  it('answers in one or two sentences, without repeating the /pet note', () => {
+    for (const { answer } of BUDDY_FAQ) {
+      expect(answer.split(/(?<=\.)\s+(?=[A-Z])/).length, answer).toBeLessThanOrEqual(2)
+      expect(answer).not.toMatch(/install one|install only one/i)
     }
   })
 })

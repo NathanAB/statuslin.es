@@ -65,5 +65,5 @@ commands, and observable proof.
 - [Mods](./mods.md): submit a mod by GitHub link, `/me`, review and approve on `/admin`, the mod
   page and its install prompt, and `/marketplace.json`. Submit, render and approve need GitHub and
   E2B access; see its preconditions.
-- [Claude Code buddy guide](./buddy-guide.md): `/guide/claude-code-buddy`, its published pet mods,
-  the shared-command notice, install copy from the guide, and its sitemap, llms.txt and footer links.
+- [Claude Code buddy guide](./buddy-guide.md): `/guide/claude-code-buddy`, its published pet mod cards,
+  the shared-command note, card links to each mod page, and its sitemap, llms.txt and footer links.

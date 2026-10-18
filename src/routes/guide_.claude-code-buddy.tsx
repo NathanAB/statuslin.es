@@ -20,7 +20,7 @@ import { PageShell } from '@/ui/shell'
 export const Route = createFileRoute('/guide_/claude-code-buddy')({
   loader: async () => {
     const [user, pets] = await Promise.all([getSession(), getBuddyPetsFn()])
-    return { user, pets, origin: siteUrl() }
+    return { user, ...pets }
   },
   head: () => ({
     meta: [
@@ -48,10 +48,10 @@ export const Route = createFileRoute('/guide_/claude-code-buddy')({
 })
 
 function BuddyGuide() {
-  const { user, pets, origin } = Route.useLoaderData()
+  const { user, cards, clashes } = Route.useLoaderData()
   return (
     <PageShell user={user}>
-      <BuddyGuideContent pets={pets} origin={origin} />
+      <BuddyGuideContent cards={cards} clashes={clashes} />
     </PageShell>
   )
 }
