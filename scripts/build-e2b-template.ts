@@ -126,9 +126,34 @@ const STATUSLINE_HARDENING: HardeningExtras = {
     ANTHROPIC_USAGE_CA_PATH,
     dirname(ANTHROPIC_USAGE_CA_PATH),
     SANDBOX_ANTHROPIC_USAGE_DIR,
+    // The system CA bundle curl and Python trust, and the hosts file that points the usage host home.
+    '/etc/ssl/certs/ca-certificates.crt',
+    '/etc/hosts',
   ],
   userChecks: [`test "$(jq --version)" = "jq-${JQ_VERSION}"`],
 }
+
+/**
+ * Every mounted filesystem that holds files, for sweeps that would skip them under `find / -xdev`
+ * alone: /run, /run/lock, /dev/shm and E2B's /etc/ssl/certs are tmpfs, /dev is devtmpfs. The kernel
+ * filesystems left out hold kernel interfaces, not files a build step leaves behind. `/` comes
+ * first, so a broken mount listing still sweeps the root filesystem rather than the working dir.
+ */
+const FILE_MOUNTS = `/ $(findmnt -rn -o TARGET,FSTYPE | awk '$1 != "/" && $2 !~ /^(proc|sysfs|securityfs|selinuxfs|devpts|cgroup2|pstore|bpf|autofs|binfmt_misc|mqueue|hugetlbfs|debugfs|fusectl|rpc_pipefs)$/ { print $1 }')`
+
+/** Device nodes the kernel makes world-writable because they only work that way. */
+const WORLD_WRITABLE_DEVICES = [
+  '/dev/null',
+  '/dev/zero',
+  '/dev/full',
+  '/dev/random',
+  '/dev/urandom',
+  '/dev/tty',
+  '/dev/ptmx',
+  '/dev/fuse',
+]
+
+const FILES_WITH_CAPABILITIES = `find ${FILE_MOUNTS} -xdev -type f -exec getcap {} +`
 
 const EXITS_UNLESS_LOCKED = `awk '{ exit $2 != "L" }'`
 
@@ -154,7 +179,9 @@ const snapshotHardening = (
       'rm -rf /etc/sudoers.d/*',
       'gpasswd -d user sudo',
       'chmod -R go-w /usr/local',
-      'find / -xdev -perm /6000 -type f -exec chmod ug-s {} +',
+      `find ${FILE_MOUNTS} -xdev -perm /6000 -type f -exec chmod ug-s {} +`,
+      // File capabilities are setuid's finer-grained twin (the base image gives ping cap_net_raw).
+      `${FILES_WITH_CAPABILITIES} | cut -d' ' -f1 | xargs -r setcap -r`,
       'passwd -l root',
       'passwd -l user',
       'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
@@ -166,12 +193,14 @@ const snapshotHardening = (
       printsNothing(
         `find ${layers.flatMap((l) => l.protectedRoots).join(' ')} -perm /022 -not -type l`,
       ),
-      printsNothing('find / -xdev -perm /6000 -type f'),
+      printsNothing(`find ${FILE_MOUNTS} -xdev -perm /6000 -type f`),
+      printsNothing(FILES_WITH_CAPABILITIES),
+      // Sockets hold no content to tamper with; daemons like journald need them world-writable.
       printsNothing(
-        'find / -xdev -perm -0002 ! -type l ! -type d ! -path "/tmp/*" ! -path "/proc/*"',
+        `find ${FILE_MOUNTS} -xdev -perm -0002 ! -type l ! -type d ! -type s ${WORLD_WRITABLE_DEVICES.map((d) => `! -path ${d}`).join(' ')} ! -path "/tmp/*" ! -path "/proc/*"`,
       ),
       printsNothing(
-        'find / -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"',
+        `find ${FILE_MOUNTS} -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"`,
       ),
       'test "$(cat /proc/sys/user/max_user_namespaces)" = 0',
       `passwd -S root | ${EXITS_UNLESS_LOCKED}`,

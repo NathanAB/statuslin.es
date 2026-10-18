@@ -109,12 +109,15 @@ describe('mod template Claude Code binary pin', () => {
 
 type Ran = { cmd: string; user: string | undefined }
 
+const FILE_MOUNTS = `/ $(findmnt -rn -o TARGET,FSTYPE | awk '$1 != "/" && $2 !~ /^(proc|sysfs|securityfs|selinuxfs|devpts|cgroup2|pstore|bpf|autofs|binfmt_misc|mqueue|hugetlbfs|debugfs|fusectl|rpc_pipefs)$/ { print $1 }')`
+
 const HARDENING_STEPS = [
   "sed -i '/^user ALL=/d' /etc/sudoers",
   'rm -rf /etc/sudoers.d/*',
   'gpasswd -d user sudo',
   'chmod -R go-w /usr/local',
-  'find / -xdev -perm /6000 -type f -exec chmod ug-s {} +',
+  `find ${FILE_MOUNTS} -xdev -perm /6000 -type f -exec chmod ug-s {} +`,
+  `find ${FILE_MOUNTS} -xdev -type f -exec getcap {} + | cut -d' ' -f1 | xargs -r setcap -r`,
   'passwd -l root',
   'passwd -l user',
   'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
@@ -126,9 +129,14 @@ const noOutput = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$o
 
 const ROOT_ASSERTIONS = [
   noOutput('find /opt/statuslines /usr/local -perm /022 -not -type l'),
-  noOutput('find / -xdev -perm /6000 -type f'),
-  noOutput('find / -xdev -perm -0002 ! -type l ! -type d ! -path "/tmp/*" ! -path "/proc/*"'),
-  noOutput('find / -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"'),
+  noOutput(`find ${FILE_MOUNTS} -xdev -perm /6000 -type f`),
+  noOutput(`find ${FILE_MOUNTS} -xdev -type f -exec getcap {} +`),
+  noOutput(
+    `find ${FILE_MOUNTS} -xdev -perm -0002 ! -type l ! -type d ! -type s ! -path /dev/null ! -path /dev/zero ! -path /dev/full ! -path /dev/random ! -path /dev/urandom ! -path /dev/tty ! -path /dev/ptmx ! -path /dev/fuse ! -path "/tmp/*" ! -path "/proc/*"`,
+  ),
+  noOutput(
+    `find ${FILE_MOUNTS} -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"`,
+  ),
   'test "$(cat /proc/sys/user/max_user_namespaces)" = 0',
   'passwd -S root | awk \'{ exit $2 != "L" }\'',
   'passwd -S user | awk \'{ exit $2 != "L" }\'',
@@ -149,6 +157,8 @@ const STATUSLINE_USER_ASSERTIONS = [
     '/usr/local/share/ca-certificates/statuslines-anthropic-usage-ca.crt',
     '/usr/local/share/ca-certificates',
     '/opt/statuslines/anthropic-usage',
+    '/etc/ssl/certs/ca-certificates.crt',
+    '/etc/hosts',
   ].map(notWritable),
   'test "$(jq --version)" = "jq-1.7.1"',
 ]
