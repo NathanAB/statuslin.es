@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process'
 import { assertBuildContextClean } from './check-docker-context'
+import { spawnVarlock } from './deploy-env'
 
 const PRODUCTION_APP = 'statuslines'
 
@@ -34,8 +35,15 @@ export function parseFlyImageReference(jsonOutput: string, label: string): strin
   return reference
 }
 
-/** Construct the staging deploy whose build inherits the exact current production image. */
-export function buildStagingDeployCommand(productionImage: string): string[] {
+/**
+ * Construct the staging deploy whose build inherits the exact current production image. With a
+ * source map upload key, the build uploads the browser bundle's source maps to PostHog. The key goes
+ * in as a build secret, which stays out of the image and its history, unlike a build arg.
+ */
+export function buildStagingDeployCommand(
+  productionImage: string,
+  sourceMapUploadKey?: string,
+): string[] {
   return [
     'fly',
     'deploy',
@@ -43,7 +51,20 @@ export function buildStagingDeployCommand(productionImage: string): string[] {
     'fly.staging.toml',
     '--build-arg',
     `PREVIOUS_IMAGE=${productionImage}`,
+    ...(sourceMapUploadKey ? ['--build-secret', `POSTHOG_API_KEY=${sourceMapUploadKey}`] : []),
   ]
+}
+
+/**
+ * The PostHog personal API key the build uploads source maps with. It lives in .env.production, with
+ * the rest of the PostHog config, because this build makes the image production runs. Decrypting it
+ * asks for Touch ID.
+ */
+export function readSourceMapUploadKey(cwd: string): string | undefined {
+  const printed = spawnVarlock('printenv', 'production', ['POSTHOG_API_KEY'], { cwd })
+  if (printed.status !== 0)
+    throw new Error(`could not read POSTHOG_API_KEY: ${printed.stderr || printed.stdout}`)
+  return printed.stdout.trim() || undefined
 }
 
 export function readFlyImageReference(app: string, label: string): string {
@@ -67,9 +88,12 @@ function run(command: string[]): Promise<number> {
 
 export async function main(): Promise<void> {
   await assertBuildContextClean(process.cwd())
+  const sourceMapUploadKey = readSourceMapUploadKey(process.cwd())
+  if (!sourceMapUploadKey)
+    console.log('.env.production sets no POSTHOG_API_KEY, so this build uploads no source maps')
   const productionImage = readFlyImageReference(PRODUCTION_APP, 'production')
   console.log(`building staging with retained assets from ${productionImage}`)
-  const code = await run(buildStagingDeployCommand(productionImage))
+  const code = await run(buildStagingDeployCommand(productionImage, sourceMapUploadKey))
   if (code !== 0) throw new Error('staging deploy failed')
 }
 
