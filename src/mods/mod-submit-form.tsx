@@ -85,7 +85,11 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
   return (
     <form onSubmit={handleSubmit}>
       <Stack gap={4}>
-        {error ? <Notice tone="error">{error}</Notice> : null}
+        {error ? (
+          <Notice tone="error" live>
+            {error}
+          </Notice>
+        ) : null}
         {pinned ? <Notice tone="info">{pinned}</Notice> : null}
         <Stack gap={1.5}>
           <Label htmlFor="mod-link">GitHub link</Label>

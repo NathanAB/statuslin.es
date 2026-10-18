@@ -100,6 +100,24 @@ run('E2BSandboxRunner (integration, needs E2B_API_KEY)', () => {
     expect(res.stdout).toContain('SETTINGS_VALID')
   }, 60_000)
 
+  it('gives a submitted script no route to root and no write access to the tooling', async () => {
+    const script = [
+      '#!/usr/bin/env bash',
+      'cat >/dev/null',
+      'sudo -n true 2>/dev/null && sudo=root || sudo=locked',
+      'echo | timeout 2 su -c true root 2>/dev/null && su=root || su=locked',
+      'unshare -Ur true 2>/dev/null && userns=open || userns=locked',
+      'max_userns=$(cat /proc/sys/user/max_user_namespaces)',
+      'for path in /usr/local/bin/jq /usr/local/bin /usr/local/share/ca-certificates/statuslines-anthropic-usage-ca.crt /usr/local/share/ca-certificates /etc/ssl/certs/ca-certificates.crt /etc/hosts; do { test -e "$path" && test ! -w "$path"; } || echo "unsafe=$path"; done',
+      'printf "sudo=%s su=%s userns=%s max_userns=%s" "$sudo" "$su" "$userns" "$max_userns"',
+    ].join('\n')
+    const scenario = SCENARIOS.find((s) => s.key === 'clean-main')
+    if (!scenario) throw new Error('clean-main scenario missing')
+    const res = await new E2BSandboxRunner().render({ script, interpreter: 'bash', scenario })
+    expect(res.exitCode, res.stderr).toBe(0)
+    expect(res.stdout).toBe('sudo=locked su=locked userns=locked max_userns=0')
+  }, 60_000)
+
   const usageScenario = SCENARIOS.find((scenario) => scenario.key === 'fresh-session')
   if (!usageScenario) throw new Error('fresh-session scenario missing')
   const fableUsageScenario = SCENARIOS.find((scenario) => scenario.key === 'big-context')

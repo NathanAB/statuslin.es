@@ -1,5 +1,4 @@
 import { dirname } from 'node:path'
-import type { Sandbox } from 'e2b'
 import {
   E2B_MOD_TEMPLATE_BUILD_NAME,
   SANDBOX_ANTHROPIC_USAGE_SERVER_SRC,
@@ -9,7 +8,12 @@ import {
   SANDBOX_CLAUDE_CODE_PREFIX,
   SANDBOX_REPLAY_DIR,
 } from '@/render/e2b-template'
-import { buildSnapshot, renderTemplate } from './build-e2b-template'
+import {
+  buildSnapshot,
+  type HardeningExtras,
+  hardenSnapshot,
+  renderTemplate,
+} from './build-e2b-template'
 
 /**
  * Builds the E2B template that renders mods: the status line template plus Claude Code, a headless
@@ -60,94 +64,27 @@ export const MOD_TEMPLATE_PACKAGES = [
 export const CLAUDE_CODE_BINARY_SHA256 =
   '24972e3bc859fab2b46ed4c1e51f7d6130f06d3bd550811a114640de3370d0de'
 
-const PROTECTED_ROOTS = `/opt/statuslines /usr/local`
-
-const EXITS_UNLESS_LOCKED = `awk '{ exit $2 != "L" }'`
-
-/** Fails when `cmd` fails as well as when it prints anything, so a broken probe never passes. */
-const printsNothing = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$out"`
-
-const ROOT_LISTENERS_OTHER_THAN_ENVD = `ss -Hltunp | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u | xargs -r -n1 ps -o user=,comm= -p | awk '$1 == "root" && $2 != "envd"'`
-
 const MATCHES_CLAUDE_CODE_BINARY_PIN = `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SANDBOX_CLAUDE_CODE_BIN}" | sha256sum -c -`
 
 const RUNS_CLAUDE_CODE_VERSION = `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "${CLAUDE_CODE_VERSION}"`
 
-/** Paths a template adds beyond the mod template's, held to the same hardening proofs. */
-export interface HardeningExtras {
-  /** Checked as root for any group- or world-writable file. */
-  protectedRoots: readonly string[]
-  /** Checked as `user` to exist and not be writable. */
-  readOnlyPaths: readonly string[]
-}
-
-const NO_EXTRAS: HardeningExtras = { protectedRoots: [], readOnlyPaths: [] }
-
-/**
- * The built sandbox leaves root reachable from `user` (finalize's passwordless sudo, an empty root
- * password beside a setuid `su`, world-writable paths) and runs root sshd and rpcbind. Root removes
- * each whole category on the live sandbox, then the build proves it as root and as `user`, and
- * proves the tooling still runs. Any failing command aborts the build before the snapshot.
- */
-export const snapshotHardening = (
-  extras: HardeningExtras = NO_EXTRAS,
-): ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> => [
-  ...[
-    "sed -i '/^user ALL=/d' /etc/sudoers",
-    'rm -rf /etc/sudoers.d/*',
-    'gpasswd -d user sudo',
-    'chmod -R go-w /usr/local',
-    'find / -xdev -perm /6000 -type f -exec chmod ug-s {} +',
-    'passwd -l root',
-    'passwd -l user',
-    'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
-    // The base image ships these 0777; the world-writable checks below reject them.
-    'chmod go-w /etc/inittab /code',
-    // Unprivileged user namespaces are a kernel-exploit surface, and nothing here needs them.
-    'sysctl -w user.max_user_namespaces=0',
-    // As root, because `user` cannot list the root-only usage server directory.
-    printsNothing(
-      `find ${[PROTECTED_ROOTS, ...extras.protectedRoots].join(' ')} -perm /022 -not -type l`,
-    ),
-    printsNothing('find / -xdev -perm /6000 -type f'),
-    printsNothing(
-      'find / -xdev -perm -0002 ! -type l ! -type d ! -path "/tmp/*" ! -path "/proc/*"',
-    ),
-    printsNothing(
-      'find / -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"',
-    ),
-    'test "$(cat /proc/sys/user/max_user_namespaces)" = 0',
-    `passwd -S root | ${EXITS_UNLESS_LOCKED}`,
-    `passwd -S user | ${EXITS_UNLESS_LOCKED}`,
-    printsNothing(ROOT_LISTENERS_OTHER_THAN_ENVD),
-  ].map((cmd) => ({ user: 'root' as const, cmd })),
-  ...[
-    '! echo | timeout 5 su -c true root',
-    '! sudo -n true',
-    'test -x /usr/bin/unshare && ! unshare -Ur true',
+/** What the mod template adds to the status line template's hardening proofs. */
+export const MOD_HARDENING: HardeningExtras = {
+  protectedRoots: [],
+  readOnlyPaths: [
+    SANDBOX_CLAUDE_CODE_BIN,
+    dirname(SANDBOX_CLAUDE_CODE_BIN),
+    SANDBOX_CANNED_MODEL_SERVER_DEST,
+    SANDBOX_CANNED_MODEL_DIR,
+    SANDBOX_REPLAY_DIR,
+    dirname(SANDBOX_REPLAY_DIR),
+    dirname(dirname(SANDBOX_REPLAY_DIR)),
+  ],
+  userChecks: [
     MATCHES_CLAUDE_CODE_BINARY_PIN,
-    ...[
-      SANDBOX_CLAUDE_CODE_BIN,
-      dirname(SANDBOX_CLAUDE_CODE_BIN),
-      SANDBOX_CANNED_MODEL_SERVER_DEST,
-      SANDBOX_CANNED_MODEL_DIR,
-      SANDBOX_REPLAY_DIR,
-      dirname(SANDBOX_REPLAY_DIR),
-      dirname(dirname(SANDBOX_REPLAY_DIR)),
-      ...extras.readOnlyPaths,
-    ].map((path) => `test -e ${path} && test ! -w ${path}`),
     RUNS_CLAUDE_CODE_VERSION,
     `cd ${SANDBOX_REPLAY_DIR} && node -e "require('@xterm/headless')"`,
-  ].map((cmd) => ({ user: 'user' as const, cmd })),
-]
-
-export async function hardenSnapshot(
-  sandbox: Sandbox,
-  extras: HardeningExtras = NO_EXTRAS,
-): Promise<void> {
-  for (const { user, cmd } of snapshotHardening(extras)) {
-    await sandbox.commands.run(cmd, { user })
-  }
+  ],
 }
 
 const verifyIntegrity = ({ name, version, integrity }: (typeof MOD_TEMPLATE_PACKAGES)[number]) =>
@@ -155,8 +92,6 @@ const verifyIntegrity = ({ name, version, integrity }: (typeof MOD_TEMPLATE_PACK
 
 export const modRenderTemplate = () =>
   renderTemplate()
-    // `ss`, for the build's check that envd is the only root process listening on a port.
-    .aptInstall(['iproute2'])
     .runCmd(MOD_TEMPLATE_PACKAGES.map(verifyIntegrity).join(' && '))
     // A root-owned prefix under /opt, because E2B's build finalize makes /usr/local world-writable.
     .runCmd(
@@ -190,7 +125,7 @@ export const buildModSnapshot = () =>
     modRenderTemplate(),
     E2B_MOD_TEMPLATE_BUILD_NAME,
     'E2B_MOD_TEMPLATE_ID',
-    (sandbox) => hardenSnapshot(sandbox),
+    (sandbox) => hardenSnapshot(sandbox, MOD_HARDENING),
   )
 
 if (import.meta.main) {

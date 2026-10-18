@@ -27,4 +27,19 @@ describe('Notice', () => {
     expect(el.className).not.toContain('bg-muted')
     expect(el.className).toContain('text-destructive')
   })
+
+  it('is announced as an alert when live', () => {
+    render(
+      <Notice tone="error" live>
+        Submit failed
+      </Notice>,
+    )
+    expect(screen.getByRole('alert').textContent).toBe('Submit failed')
+  })
+
+  it('has no role unless live', () => {
+    const { container } = render(<Notice tone="error">Rejected</Notice>)
+    const el = container.firstChild as HTMLElement
+    expect(el.hasAttribute('role')).toBe(false)
+  })
 })

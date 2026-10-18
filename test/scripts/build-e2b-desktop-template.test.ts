@@ -167,7 +167,10 @@ describe('desktop snapshot', () => {
     expect(commands).toEqual(
       expect.arrayContaining([
         "sed -i '/^user ALL=/d' /etc/sudoers",
-        'find / -xdev -perm /6000 -type f -exec chmod ug-s {} +',
+        expect.stringMatching(
+          /^find \/ \$\(findmnt .* -xdev -perm \/6000 -type f -exec chmod ug-s \{\} \+$/,
+        ),
+        expect.stringMatching(/-exec getcap \{\} \+ \| cut -d' ' -f1 \| xargs -r setcap -r$/),
         'sysctl -w user.max_user_namespaces=0',
         DESKTOP_ROOTS_NOT_WRITABLE,
       ]),

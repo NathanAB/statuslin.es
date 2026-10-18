@@ -81,6 +81,16 @@ describe('SubmitForm', () => {
     expect(screen.queryByText(/Submitted/i)).toBeNull()
   })
 
+  it('announces a refused submit to screen readers', async () => {
+    submitConfigFn.mockRejectedValue(new Error('Title is too long.'))
+    render(<SubmitForm user={USER} />)
+    fillRequiredFields()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Title is too long.')
+  })
+
   it('sends declared hosts when network access is enabled', async () => {
     render(<SubmitForm user={USER} />)
     fillRequiredFields()

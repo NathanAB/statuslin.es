@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { defaultBuildLogger, Sandbox, Template, type TemplateClass } from 'e2b'
 import { requireEnv } from '@/lib/env'
 import { ANTHROPIC_USAGE_CA_PATH, ANTHROPIC_USAGE_HOST } from '@/render/anthropic-usage-mock'
@@ -50,6 +50,7 @@ import {
 const JQ_VERSION = '1.7.1'
 const JQ_SHA256_AMD64 = '5942c9b0934e510ee61eb3e30273f1b3fe2590df93933a93d7c58b81d19c8ff5'
 const JQ_URL = `https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux-amd64`
+const JQ_PATH = '/usr/local/bin/jq'
 
 // `copy` resolves its src against the template's file context, which defaults to THIS script's
 // directory (scripts/). Anchor it at the repo root so SANDBOX_CLAUDE_SETTINGS_SRC (a repo-relative
@@ -60,7 +61,8 @@ export const renderTemplate = () =>
   Template({ fileContextPath: REPO_ROOT })
     .fromTemplate('base')
     // Everything except jq comes from apt; jq is the pinned binary installed below.
-    .aptInstall(['bc', 'gawk', 'bsdextrautils', 'strace', 'openssl', 'ca-certificates'])
+    // iproute2 provides `ss`, for the hardening check that envd is the only root process listening.
+    .aptInstall(['bc', 'gawk', 'bsdextrautils', 'strace', 'openssl', 'ca-certificates', 'iproute2'])
     // Install the pinned, hash-verified jq 1.7.1 into /usr/local/bin (ahead of /usr/bin on PATH).
     // The `&&` chain aborts the build on any failure — a checksum mismatch fails loudly here rather
     // than shipping an unverified binary into the sandbox that runs untrusted scripts.
@@ -69,7 +71,7 @@ export const renderTemplate = () =>
         'test "$(uname -m)" = "x86_64" || { echo "unexpected sandbox arch: $(uname -m)"; exit 1; }',
         `curl -fsSL -o /tmp/jq "${JQ_URL}"`,
         `echo "${JQ_SHA256_AMD64}  /tmp/jq" | sha256sum -c -`,
-        'install -m 0755 /tmp/jq /usr/local/bin/jq',
+        `install -m 0755 /tmp/jq ${JQ_PATH}`,
         'rm -f /tmp/jq',
         'jq --version',
       ].join(' && '),
@@ -105,6 +107,126 @@ export const renderTemplate = () =>
       ].join(' && '),
       { user: 'root' },
     )
+
+/** A template's own paths and tooling, held to the snapshot hardening proofs. */
+export interface HardeningExtras {
+  /** Checked as root for any group- or world-writable file. */
+  protectedRoots: readonly string[]
+  /** Checked as `user` to exist and not be writable. */
+  readOnlyPaths: readonly string[]
+  /** Run as `user` after the read-only checks, to prove the template's tooling still runs. */
+  userChecks?: readonly string[]
+}
+
+const STATUSLINE_HARDENING: HardeningExtras = {
+  protectedRoots: ['/opt/statuslines', '/usr/local'],
+  readOnlyPaths: [
+    JQ_PATH,
+    dirname(JQ_PATH),
+    ANTHROPIC_USAGE_CA_PATH,
+    dirname(ANTHROPIC_USAGE_CA_PATH),
+    SANDBOX_ANTHROPIC_USAGE_DIR,
+    // The system CA bundle curl and Python trust, and the hosts file that points the usage host home.
+    '/etc/ssl/certs/ca-certificates.crt',
+    '/etc/hosts',
+  ],
+  userChecks: [`test "$(jq --version)" = "jq-${JQ_VERSION}"`],
+}
+
+/**
+ * Every mounted filesystem that holds files, for sweeps that would skip them under `find / -xdev`
+ * alone: /run, /run/lock, /dev/shm and E2B's /etc/ssl/certs are tmpfs, /dev is devtmpfs. The kernel
+ * filesystems left out hold kernel interfaces, not files a build step leaves behind. `/` comes
+ * first, so a broken mount listing still sweeps the root filesystem rather than the working dir.
+ */
+const FILE_MOUNTS = `/ $(findmnt -rn -o TARGET,FSTYPE | awk '$1 != "/" && $2 !~ /^(proc|sysfs|securityfs|selinuxfs|devpts|cgroup2|pstore|bpf|autofs|binfmt_misc|mqueue|hugetlbfs|debugfs|fusectl|rpc_pipefs)$/ { print $1 }')`
+
+/** Device nodes the kernel makes world-writable because they only work that way. */
+const WORLD_WRITABLE_DEVICES = [
+  '/dev/null',
+  '/dev/zero',
+  '/dev/full',
+  '/dev/random',
+  '/dev/urandom',
+  '/dev/tty',
+  '/dev/ptmx',
+  '/dev/fuse',
+]
+
+const FILES_WITH_CAPABILITIES = `find ${FILE_MOUNTS} -xdev -type f -exec getcap {} +`
+
+const EXITS_UNLESS_LOCKED = `awk '{ exit $2 != "L" }'`
+
+/** Fails when `cmd` fails as well as when it prints anything, so a broken probe never passes. */
+const printsNothing = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$out"`
+
+const ROOT_LISTENERS_OTHER_THAN_ENVD = `ss -Hltunp | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u | xargs -r -n1 ps -o user=,comm= -p | awk '$1 == "root" && $2 != "envd"'`
+
+/**
+ * The built sandbox leaves root reachable from `user` (finalize's passwordless sudo, an empty root
+ * password beside a setuid `su`, world-writable paths) and runs root sshd and rpcbind. Root removes
+ * each whole category on the live sandbox, then the build proves it as root and as `user`, and
+ * proves the tooling still runs. Any failing command aborts the build before the snapshot. Every
+ * template extends this one, so its own paths are always checked; `extras` add a template's own.
+ */
+const snapshotHardening = (
+  ...extras: HardeningExtras[]
+): ReadonlyArray<{ user: 'root' | 'user'; cmd: string }> => {
+  const layers = [STATUSLINE_HARDENING, ...extras]
+  return [
+    ...[
+      "sed -i '/^user ALL=/d' /etc/sudoers",
+      'rm -rf /etc/sudoers.d/*',
+      'gpasswd -d user sudo',
+      'chmod -R go-w /usr/local',
+      `find ${FILE_MOUNTS} -xdev -perm /6000 -type f -exec chmod ug-s {} +`,
+      // File capabilities are setuid's finer-grained twin (the base image gives ping cap_net_raw).
+      `${FILES_WITH_CAPABILITIES} | cut -d' ' -f1 | xargs -r setcap -r`,
+      'passwd -l root',
+      'passwd -l user',
+      'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
+      // The base image ships these 0777; the world-writable checks below reject them.
+      'chmod go-w /etc/inittab /code',
+      // Unprivileged user namespaces are a kernel-exploit surface, and nothing here needs them.
+      'sysctl -w user.max_user_namespaces=0',
+      // As root, because `user` cannot list the root-only usage server directory.
+      printsNothing(
+        `find ${layers.flatMap((l) => l.protectedRoots).join(' ')} -perm /022 -not -type l`,
+      ),
+      printsNothing(`find ${FILE_MOUNTS} -xdev -perm /6000 -type f`),
+      printsNothing(FILES_WITH_CAPABILITIES),
+      // Sockets hold no content to tamper with; daemons like journald need them world-writable.
+      printsNothing(
+        `find ${FILE_MOUNTS} -xdev -perm -0002 ! -type l ! -type d ! -type s ${WORLD_WRITABLE_DEVICES.map((d) => `! -path ${d}`).join(' ')} ! -path "/tmp/*" ! -path "/proc/*"`,
+      ),
+      printsNothing(
+        `find ${FILE_MOUNTS} -xdev -type d -perm -0002 ! -perm -1000 ! -path "/tmp/*" ! -path "/var/tmp/*"`,
+      ),
+      'test "$(cat /proc/sys/user/max_user_namespaces)" = 0',
+      `passwd -S root | ${EXITS_UNLESS_LOCKED}`,
+      `passwd -S user | ${EXITS_UNLESS_LOCKED}`,
+      printsNothing(ROOT_LISTENERS_OTHER_THAN_ENVD),
+    ].map((cmd) => ({ user: 'root' as const, cmd })),
+    ...[
+      '! echo | timeout 5 su -c true root',
+      '! sudo -n true',
+      'test -x /usr/bin/unshare && ! unshare -Ur true',
+      ...layers.flatMap((l) => [
+        ...l.readOnlyPaths.map((path) => `test -e ${path} && test ! -w ${path}`),
+        ...(l.userChecks ?? []),
+      ]),
+    ].map((cmd) => ({ user: 'user' as const, cmd })),
+  ]
+}
+
+export async function hardenSnapshot(
+  sandbox: Sandbox,
+  ...extras: HardeningExtras[]
+): Promise<void> {
+  for (const { user, cmd } of snapshotHardening(...extras)) {
+    await sandbox.commands.run(cmd, { user })
+  }
+}
 
 /** What every sandbox started from the snapshot gets. */
 export interface SandboxResources {
@@ -149,7 +271,12 @@ export async function buildSnapshot(
   console.log(`Commit that snapshot ID as ${snapshotConstant} before deploying.`)
 }
 
+export const buildStatuslineSnapshot = () =>
+  buildSnapshot(renderTemplate(), E2B_TEMPLATE_BUILD_NAME, 'E2B_TEMPLATE_ID', (sandbox) =>
+    hardenSnapshot(sandbox),
+  )
+
 if (import.meta.main) {
-  await buildSnapshot(renderTemplate(), E2B_TEMPLATE_BUILD_NAME, 'E2B_TEMPLATE_ID')
+  await buildStatuslineSnapshot()
   process.exit(0)
 }
