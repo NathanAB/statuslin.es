@@ -5,8 +5,8 @@ import { validateSubmitInput } from '@/submit/submit'
 import { COMMUNITY_CONFIGS } from '../../scripts/seed-data/community-configs'
 
 describe('community seed data', () => {
-  it('has 15 entries, each passing submit validation', () => {
-    expect(COMMUNITY_CONFIGS.length).toBe(15)
+  it('has 31 entries, each passing submit validation', () => {
+    expect(COMMUNITY_CONFIGS.length).toBe(31)
     for (const e of COMMUNITY_CONFIGS) {
       expect(() =>
         validateSubmitInput({
@@ -29,7 +29,7 @@ describe('community seed data', () => {
   })
   it('locks in the Claude-token disclosure badge count across the wave', () => {
     const count = COMMUNITY_CONFIGS.filter((e) => readsClaudeToken(e.source)).length
-    expect(count).toBe(9)
+    expect(count).toBe(10)
   })
   it('every entry carries MIT license + a pinned source url + numeric github id', () => {
     for (const e of COMMUNITY_CONFIGS) {

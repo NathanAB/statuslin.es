@@ -215,4 +215,213 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     license: 'MIT',
     sourceUrl: 'https://gist.github.com/Mohamed3on/70780575570a07985916e5f50e290382',
   },
+  // Wave 2 (2026-10-17). Same rules; 18-burn-rate-trio.sh carries a `[statuslin.es] trimmed:` comment.
+  {
+    githubLogin: 'awesomezun',
+    githubId: '55944204',
+    title: 'Mocha Two-Liner',
+    description:
+      'Two lines in Catppuccin colors: model with effort, output style, path, branch and a git clean or dirty mark, then gradient bars for context and the five-hour and seven-day limits with reset times.',
+    interpreter: 'bash',
+    source: src('16-mocha-two-liner.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/awesomezun/claude-statusline/blob/b5311af03fb645845985c100e74c0def7f3e3d81/scripts/awesome-statusline-small.sh',
+  },
+  {
+    githubLogin: 'awesomezun',
+    githubId: '55944204',
+    title: 'Catppuccin Wide Bars',
+    description:
+      'Five lines in Catppuccin colors: model, git state with ahead and behind counts, path and branch with session cost and duration, then wide 40-block gradient bars for context and the five-hour and seven-day limits.',
+    interpreter: 'bash',
+    source: src('17-catppuccin-wide-bars.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/awesomezun/claude-statusline/blob/b5311af03fb645845985c100e74c0def7f3e3d81/scripts/awesome-statusline-xlarge.sh',
+  },
+  {
+    githubLogin: 'chongdashu',
+    githubId: '1178121',
+    title: 'Burn Rate Trio',
+    description:
+      'Three lines: directory, branch, model, Claude Code version and output style, then context remaining as a bar, then session cost with dollars per hour and total tokens with tokens per minute. From the cc-statusline generator.',
+    interpreter: 'bash',
+    source: src('18-burn-rate-trio.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/chongdashu/cc-statusline/blob/6fe55d96e8688d7951fbab35e5d4a4545e37dd4a/.claude/statusline.sh',
+  },
+  {
+    githubLogin: 'Field-Logic-Ltd',
+    githubId: '202088401',
+    title: 'Context Growth Watch',
+    description:
+      'Model, project, a context bar with token count, what each turn costs in cache reads, how much the context has grown, and five-hour and seven-day usage. Adds a line suggesting /compact or /clear once context gets large. Python, no network calls.',
+    interpreter: 'python',
+    source: src('19-context-growth-watch.py'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/Field-Logic-Ltd/ClaudeStatsBar/blob/02300a12fe9d9e2401c14c7dc2f25184995f42bb/statsbar.py',
+  },
+  {
+    githubLogin: 'alp82',
+    githubId: '966342',
+    title: 'Instrument Panel Rows',
+    description:
+      "Two rows: project, branch and changed-file and line counts on top, then model, effort, a context bar and five-hour and seven-day bars that stack your usage against the time elapsed. Reads the Fable weekly limit from Claude Code's cache, falling back to api.anthropic.com with your Claude login.",
+    interpreter: 'bash',
+    source: src('20-instrument-panel-rows.sh'),
+    networkHosts: ['api.anthropic.com'],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/alp82/claude-statusline/blob/3d4c4470e2d1080e979c1c6dff0f3a3fddeeae90/statusline.sh',
+  },
+  {
+    githubLogin: 'FahimFBA',
+    githubId: '64195132',
+    title: 'Used and Remaining Bars',
+    description:
+      'One line with project, branch, model, a context bar and effort level, plus five-hour and seven-day limit bars that show both used and remaining percent with reset countdowns. No network calls.',
+    interpreter: 'bash',
+    source: src('21-used-and-remaining-bars.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/FahimFBA/claudecode-statusline/blob/0dc025f46541c8df04ad97f76d2a2cb62e80b61a/hooks/caveman-statusline.sh',
+  },
+  {
+    githubLogin: 'XyzElias',
+    githubId: '132617320',
+    title: 'Framed Pill Row',
+    description:
+      'A rounded frame around gradient pills for model, effort, path, branch, context bar, five-hour usage, diff, cost and session time, with labels underneath. Pure Node with no network calls; creates its own config file in ~/.claude on first run.',
+    interpreter: 'node',
+    source: src('22-framed-pill-row.js'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/XyzElias/prismatic-claude-statusline/blob/58007fe3d5851b747d2038e71cfe0a77353e8496/statusline.js',
+  },
+  {
+    githubLogin: 'aromanarguello',
+    githubId: '28843542',
+    title: 'Dot Gauge Trio',
+    description:
+      'Three lines: model, token counts and lines changed; dot gauges for context, five-hour and weekly usage; then the clock time each limit resets. No network calls.',
+    interpreter: 'bash',
+    source: src('23-dot-gauge-trio.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/aromanarguello/claude-statusline/blob/3b97a36f063be120969cbf8ab1bc17366071560c/statusline.sh',
+  },
+  {
+    githubLogin: 'philipshurpik',
+    githubId: '6635302',
+    title: 'Cache Clock Line',
+    description:
+      'One line in Node: model, project, branch, the time of the last token change (to judge prompt-cache expiry), a context bar measured against the usable window, and five-hour and seven-day usage with reset countdowns. No network calls.',
+    interpreter: 'node',
+    source: src('24-cache-clock-line.js'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/philipshurpik/claude-code-status-line/blob/6b212408da5862516fc9ddd176039f28f31ad3bf/status-line.js',
+  },
+  {
+    githubLogin: 'kangraemin',
+    githubId: '22047559',
+    title: 'Hourly Burn Lines',
+    description:
+      'Three emoji-labeled lines: folder, git branch and model; context use with a bar and session cost with a dollars-per-hour rate; then five-hour and seven-day quota bars when your plan reports them. No network calls.',
+    interpreter: 'bash',
+    source: src('25-hourly-burn-lines.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/kangraemin/claude-status-bar/blob/33e288a46646a2e65af4aca757b9526325632d84/statusline.sh',
+  },
+  {
+    githubLogin: 'jacob-bd',
+    githubId: '47641890',
+    title: 'Timestamped Quota Line',
+    description:
+      'One line that starts with the time, then model, output style, folder and git state, a context bar with tokens left, and five-hour and seven-day quota bars, or the session cost on API billing. More segments in an optional config file. No network calls.',
+    interpreter: 'bash',
+    source: src('26-timestamped-quota-line.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/jacob-bd/claude-code-statusline/blob/6608aa41f9d2bf081974aab1d27b8f4573090ffb/statusline-command.sh',
+  },
+  {
+    githubLogin: 'k8adev',
+    githubId: '3808430',
+    title: 'Clay Braille Bars',
+    description:
+      "Three lines in Anthropic's clay and olive palette: project, git branch and lines changed; model with a braille context bar and session time; then five-hour and seven-day usage with reset countdowns. No network calls.",
+    interpreter: 'bash',
+    source: src('27-clay-braille-bars.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/k8adev/claude-code-statusline/blob/b10c64b58971e9f79453e51cfad3f374d02dfd17/statusline.sh',
+  },
+  {
+    githubLogin: 'hoangsonww',
+    githubId: '124531104',
+    title: 'Plain Python Bar',
+    description:
+      'One cross-platform Python line: model, user, folder, git branch, a color-coded context bar, input, output and cache token counts, and session cost. Standard library only, no network calls.',
+    interpreter: 'python',
+    source: src('28-plain-python-bar.py'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/hoangsonww/Claude-Code-Agent-Monitor/blob/a06db038a93b4d7316492dc55758f597e104894c/statusline/statusline.py',
+  },
+  {
+    githubLogin: 'minorun365',
+    githubId: '74597894',
+    title: 'Heat Dot Line',
+    description:
+      'One short Python line: the model, then context, five-hour and seven-day usage, each as a percentage with a dot that shifts from green to red as it fills. No dependencies, no network calls.',
+    interpreter: 'python',
+    source: src('29-heat-dot-line.py'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/minorun365/my-claude-code-settings/blob/a78c2faa071da28d2b996b4cfe62ccac08854518/claude/statusline.py',
+  },
+  {
+    githubLogin: 'travisjneuman',
+    githubId: '33078474',
+    title: 'Middle-Dot Ledger',
+    description:
+      'One colorless Node line: model, effort, folder and git branch, context size in tokens, the prompt-cache hit rate when Claude Code reports it, five-hour and seven-day usage, and session cost. Node built-ins only, no network calls.',
+    interpreter: 'node',
+    source: src('30-middle-dot-ledger.js'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/travisjneuman/.claude/blob/9b6c3d21dae256a66857237c47c5232810c51b95/hooks/statusline.js',
+  },
+  {
+    githubLogin: 'GourangaDasSamrat',
+    githubId: '146644902',
+    title: 'Dracula Two-Liner',
+    description:
+      'Two lines in the Dracula palette: model, folder, git branch with staged and modified counts, and effort on top; a context bar, cost, session time and five-hour usage below. Needs a Nerd Font, no network calls.',
+    interpreter: 'bash',
+    source: src('31-dracula-two-liner.sh'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/GourangaDasSamrat/dotfiles/blob/a88a74367048a7b3cfa4ffd265ea1659631b2940/claude/.claude/statusline.sh',
+  },
 ]
