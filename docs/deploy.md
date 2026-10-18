@@ -488,10 +488,11 @@ Touch ID). Each run checks every author's GitHub id against the one pinned in th
 3. A CLI can't start the web server's render drain. Press Re-queue on one seeded entry on `/admin`
    (the drain then renders every queued job), or restart the app (`fly apps restart
    statuslines-staging`). `/admin` then shows each preview.
-4. Review each one on `/admin` against its pinned `sourceUrl` and approve or reject it there.
-   `publish-rendered` approves every seeded draft whose render finished, without looking:
+4. Review each one on `/admin` against its pinned `sourceUrl` and approve or reject it there. On
+   staging only, `publish-rendered` approves every seeded draft whose render finished, without
+   looking. Never run it on production: there, each entry is approved on `/admin` after review.
    ```sh
-   bun run with-env staging scripts/run-seed-community.ts publish-rendered
+   bun run with-env staging scripts/run-seed-community.ts publish-rendered   # staging only
    ```
 5. Generate the page copy for the newly published entries, per the "Generated page copy" convention in
    `CLAUDE.md`:
@@ -499,7 +500,8 @@ Touch ID). Each run checks every author's GitHub id against the one pinned in th
    bun run with-env staging scripts/generate-content.ts --all --prepare
    bun run with-env staging scripts/generate-content.ts --apply   # response JSON on stdin
    ```
-6. Repeat 1–5 with `production` (app `statuslines`).
+6. Repeat 1–5 with `production` (app `statuslines`), except `publish-rendered`: approve each entry on
+   `/admin`.
 
 ## DNS (Cloudflare, after the first Fly deploy)
 

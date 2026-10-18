@@ -260,7 +260,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '202088401',
     title: 'Context Growth Watch',
     description:
-      'Model, project, a context bar with token count, what each turn costs in cache reads, how much the context has grown, and five-hour and seven-day usage. Adds a line suggesting /compact or /clear once context gets large. Python, no network calls.',
+      'Model, project, a context bar with token count, what each turn costs in cache reads, how much the context has grown, and five-hour and seven-day usage. Adds a line suggesting /compact or /clear once context gets large. Python, no network calls. Keeps a small JSON file per session in ~/.claude/.statusline-state/ and deletes ones older than a week.',
     interpreter: 'python',
     source: src('19-context-growth-watch.py'),
     networkHosts: [],
@@ -273,26 +273,13 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '966342',
     title: 'Instrument Panel Rows',
     description:
-      "Two rows: project, branch and changed-file and line counts on top, then model, effort, a context bar and five-hour and seven-day bars that stack your usage against the time elapsed. Reads the Fable weekly limit from Claude Code's cache, falling back to api.anthropic.com with your Claude login.",
+      "Two rows: project, branch and changed-file and line counts on top, then model, effort, a context bar and five-hour and seven-day bars that stack usage against time elapsed. Reads the Fable weekly limit from Claude Code's cache, falling back to api.anthropic.com with your Claude login; on macOS that reads the Keychain item 'Claude Code-credentials', which can ask permission once.",
     interpreter: 'bash',
     source: src('20-instrument-panel-rows.sh'),
     networkHosts: ['api.anthropic.com'],
     license: 'MIT',
     sourceUrl:
       'https://github.com/alp82/claude-statusline/blob/3d4c4470e2d1080e979c1c6dff0f3a3fddeeae90/statusline.sh',
-  },
-  {
-    githubLogin: 'FahimFBA',
-    githubId: '64195132',
-    title: 'Used and Remaining Bars',
-    description:
-      'One line with project, branch, model, a context bar and effort level, plus five-hour and seven-day limit bars that show both used and remaining percent with reset countdowns. No network calls.',
-    interpreter: 'bash',
-    source: src('21-used-and-remaining-bars.sh'),
-    networkHosts: [],
-    license: 'MIT',
-    sourceUrl:
-      'https://github.com/FahimFBA/claudecode-statusline/blob/0dc025f46541c8df04ad97f76d2a2cb62e80b61a/hooks/caveman-statusline.sh',
   },
   {
     githubLogin: 'XyzElias',
@@ -325,7 +312,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '6635302',
     title: 'Cache Clock Line',
     description:
-      'One line in Node: model, project, branch, the time of the last token change (to judge prompt-cache expiry), a context bar measured against the usable window, and five-hour and seven-day usage with reset countdowns. No network calls.',
+      'One line in Node: model, project, branch, the time of the last token change (to judge prompt-cache expiry), a context bar measured against the usable window, and five-hour and seven-day usage with reset countdowns. No network calls. Overwrites one small state file in the system temp folder on each render.',
     interpreter: 'node',
     source: src('24-cache-clock-line.js'),
     networkHosts: [],
@@ -351,7 +338,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '47641890',
     title: 'Timestamped Quota Line',
     description:
-      'One line that starts with the time, then model, output style, folder and git state, a context bar with tokens left, and five-hour and seven-day quota bars, or the session cost on API billing. More segments in an optional config file. No network calls.',
+      'Starts with the time, then model, output style, folder and git state, a context bar with tokens left, and five-hour and seven-day quota bars, or the session cost on API billing, wrapping onto more lines to fit the terminal width. More segments in an optional config file. No network calls.',
     interpreter: 'bash',
     source: src('26-timestamped-quota-line.sh'),
     networkHosts: [],
@@ -364,7 +351,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '3808430',
     title: 'Clay Braille Bars',
     description:
-      "Three lines in Anthropic's clay and olive palette: project, git branch and lines changed; model with a braille context bar and session time; then five-hour and seven-day usage with reset countdowns. No network calls.",
+      "Three lines in Anthropic's clay and olive palette: project, git branch and lines changed; model with a braille context bar and session time; then five-hour and seven-day usage with reset countdowns. Needs a Nerd Font. No network calls; overwrites ~/.claude/cache/rate-limits.json on each render, and inside tmux reads its status settings with tmux show.",
     interpreter: 'bash',
     source: src('27-clay-braille-bars.sh'),
     networkHosts: [],
@@ -416,7 +403,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '146644902',
     title: 'Dracula Two-Liner',
     description:
-      'Two lines in the Dracula palette: model, folder, git branch with staged and modified counts, and effort on top; a context bar, cost, session time and five-hour usage below. Needs a Nerd Font, no network calls.',
+      'Two lines in the Dracula palette: model, folder, git branch with staged and modified counts, and effort on top; a context bar, cost, session time and five-hour usage below. Needs a Nerd Font, no network calls. Caches git status in /tmp/statusline-git-<session id>, one small file per session that it never deletes.',
     interpreter: 'bash',
     source: src('31-dracula-two-liner.sh'),
     networkHosts: [],
