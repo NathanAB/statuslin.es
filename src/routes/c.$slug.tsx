@@ -8,6 +8,7 @@ import { cardClickProperties } from '@/gallery/card-analytics'
 import { configFactTiles } from '@/gallery/config-fact-tiles'
 import { ConfigHeader } from '@/gallery/config-header'
 import { DesktopNote } from '@/gallery/desktop-note'
+import { DesktopPreviewBlock } from '@/gallery/desktop-preview-block'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getConfigDetail } from '@/gallery/functions'
 import { OwnerUpdateStrip } from '@/gallery/owner-update-strip'
@@ -117,29 +118,35 @@ function ConfigDetail() {
               title={detail.title}
               controller={copyController}
             />
-            <DesktopNote />
+            {/* Once the preview shows it in Desktop, that names statusline-anywhere instead. */}
+            {detail.desktop === null && <DesktopNote />}
           </>
         }
         preview={
-          orderedPreviews.length > 0 ? (
-            <Stack gap={3}>
-              {orderedPreviews.map((p) => {
-                const scenario = SCENARIO_BY_KEY.get(p.scenarioKey)
-                return (
-                  <ScenarioRow
-                    key={p.scenarioKey}
-                    shortLabel={scenario?.shortLabel ?? p.scenarioKey}
-                    title={scenario?.label ?? p.scenarioKey}
-                    segments={p.segments}
-                  />
-                )
-              })}
-            </Stack>
-          ) : (
-            <Text muted size="sm">
-              No preview.
-            </Text>
-          )
+          <Stack gap={4}>
+            {orderedPreviews.length > 0 ? (
+              <Stack gap={3}>
+                {orderedPreviews.map((p) => {
+                  const scenario = SCENARIO_BY_KEY.get(p.scenarioKey)
+                  return (
+                    <ScenarioRow
+                      key={p.scenarioKey}
+                      shortLabel={scenario?.shortLabel ?? p.scenarioKey}
+                      title={scenario?.label ?? p.scenarioKey}
+                      segments={p.segments}
+                    />
+                  )
+                })}
+              </Stack>
+            ) : (
+              <Text muted size="sm">
+                No preview.
+              </Text>
+            )}
+            {detail.desktop !== null && (
+              <DesktopPreviewBlock desktop={detail.desktop} title={detail.title} />
+            )}
+          </Stack>
         }
         // Generated copy around the stored facts: the SEO answer to "what does this status line do?"
         whatItDoes={{ copy: detail.generatedContent, tiles: configFactTiles(detail) }}

@@ -95,9 +95,9 @@ const COST_MOD: GalleryModCard = {
   desktopShot: null,
 }
 
-function renderPage(viewerIsAuthor = false, mods: GalleryModCard[] = []) {
+function renderPage(viewerIsAuthor = false, mods: GalleryModCard[] = [], detail: Detail = DETAIL) {
   vi.spyOn(ConfigRoute, 'useLoaderData').mockReturnValue({
-    detail: DETAIL,
+    detail,
     user: null,
     viewerIsAuthor,
     mods,
@@ -186,5 +186,52 @@ describe('status line page', () => {
     renderPage()
 
     expect(screen.queryByRole('heading', { name: 'Related mods' })).toBeNull()
+  })
+})
+
+describe('status line page in Claude Desktop', () => {
+  const SHOT = { src: '/config-previews/v/desktop.png?r=1', width: 790, height: 40 }
+  const preview = () => within(h2('Preview').closest('[data-slot="card"]') as HTMLElement)
+
+  it('shows the Desktop shot under the terminal rows, with the plugin that drew it', () => {
+    renderPage(false, [], { ...DETAIL, desktop: { kind: 'shot', shot: SHOT } })
+
+    const shot = preview().getByRole('img', { name: 'Powerline Dracula in Claude Desktop' })
+    expect(shot.getAttribute('src')).toBe(SHOT.src)
+    expectInOrder([
+      preview().getByText('main ✓'),
+      preview().getByText('In Claude Desktop'),
+      shot,
+      preview().getByRole('link', { name: 'statusline-anywhere' }),
+    ])
+    expect(preview().getByText(/Recorded with/).textContent).toBe(
+      'Recorded with statusline-anywhere.',
+    )
+  })
+
+  it('says when it draws nothing in Claude Desktop, with the plugin it was recorded with', () => {
+    renderPage(false, [], { ...DETAIL, desktop: { kind: 'nothing' } })
+
+    expect(preview().queryByRole('img')).toBeNull()
+    expect(preview().getByText('Draws nothing in Claude Desktop.')).toBeTruthy()
+    expect(preview().getByRole('link', { name: 'statusline-anywhere' })).toBeTruthy()
+  })
+
+  it('drops the Desktop note from the install slot once the preview links the plugin', () => {
+    for (const desktop of [{ kind: 'shot' as const, shot: SHOT }, { kind: 'nothing' as const }]) {
+      const { unmount } = renderPage(false, [], { ...DETAIL, desktop })
+
+      expect(screen.queryByText('In Claude Desktop?')).toBeNull()
+      expect(screen.getAllByRole('link', { name: 'statusline-anywhere' })).toHaveLength(1)
+      unmount()
+    }
+  })
+
+  it('keeps the Desktop note, and adds nothing to the preview, before it is recorded', () => {
+    renderPage()
+
+    expect(screen.getByText('In Claude Desktop?')).toBeTruthy()
+    expect(preview().queryByText('In Claude Desktop')).toBeNull()
+    expect(preview().queryByRole('link', { name: 'statusline-anywhere' })).toBeNull()
   })
 })
