@@ -107,7 +107,7 @@ export const modPreviews = pgTable(
   (t) => [uniqueIndex('mod_previews_version_scenario_uq').on(t.modVersionId, t.scenarioKey)],
 )
 
-const bytea = customType<{ data: Uint8Array }>({ dataType: () => 'bytea' })
+export const bytea = customType<{ data: Uint8Array }>({ dataType: () => 'bytea' })
 
 /**
  * A mod's Claude Desktop preview: a PNG shot for its page and a smaller one for its card, or the

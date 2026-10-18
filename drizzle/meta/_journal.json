@@ -302,6 +302,13 @@
       "when": 1792358342855,
       "tag": "0042_mods_current_version_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792363428736,
+      "tag": "0043_config_desktop_previews",
+      "breakpoints": true
     }
   ]
 }
