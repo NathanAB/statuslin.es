@@ -160,18 +160,39 @@ export function croppedPngCommand(
   ].join(' ')
 }
 
-/** For each CSS row of `column`, the share of it that differs from the baseline, as one byte per row. */
-export function changedRowProfileCommand(
-  baseline: string,
-  shot: string,
+/**
+ * Cells across a row signature: about 3 CSS pixels each across the chat column, and few enough
+ * that a whole shot's signatures print under the sandbox's output cap.
+ */
+export const SIGNATURE_CELLS = 256
+
+/**
+ * For each CSS row of `column`, which of its SIGNATURE_CELLS cells hold anything but page
+ * background, one bit per cell, printed as base64. It reads what a row draws and not its colours,
+ * so text that only changed colour looks the same.
+ */
+export function rowSignatureCommand(
+  path: string,
   { x, width }: { x: number; width: number },
 ): string {
-  const crop = geometry({ x, y: 0, width, height: WINDOW.height })
   return [
-    `set -o pipefail; convert ${pngInput(baseline)} ${pngInput(shot)} -compose difference -composite`,
-    `-crop ${crop} +repage -colorspace Gray -threshold ${FAINT_CHANGE}`,
-    `-scale 1x${WINDOW.height}! -depth 8 gray:- | od -An -v -tu1`,
+    `set -o pipefail; convert ${pngInput(path)} -crop ${geometry({ x, y: 0, width, height: WINDOW.height })} +repage`,
+    `\\( +clone -fill '${PAGE_BACKGROUND}' -colorize 100% \\) -compose difference -composite`,
+    `-colorspace Gray -threshold ${NOT_BACKGROUND} -scale ${SIGNATURE_CELLS}x${WINDOW.height}!`,
+    '-threshold 0 -depth 1 gray:- | base64 -w0',
   ].join(' ')
+}
+
+/** Each row's signature: SIGNATURE_CELLS bits, the first cell in the first byte's high bit. */
+export function parseRowSignatures(stdout: string, rows: number): Uint8Array[] {
+  const text = stdout.trim()
+  if (!BASE64.test(text)) throw new Error('unreadable row signatures')
+  const bytes = new Uint8Array(Buffer.from(text, 'base64'))
+  const perRow = SIGNATURE_CELLS / 8
+  if (bytes.length !== rows * perRow) {
+    throw new Error(`expected ${rows} row signatures, got ${bytes.length / perRow}`)
+  }
+  return Array.from({ length: rows }, (_, y) => bytes.subarray(y * perRow, (y + 1) * perRow))
 }
 
 export interface QuietOptions {

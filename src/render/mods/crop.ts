@@ -66,24 +66,32 @@ function plainText(row: string): string {
     .join('')
 }
 
-function modRowsOnCommonSubsequence(
-  baseline: readonly string[],
-  mod: readonly string[],
+/**
+ * The indexes of `mod`'s rows on a longest common subsequence with `baseline`'s, rows matching
+ * when `same` says so: a row that only moved up or down is on it.
+ */
+export function modRowsOnCommonSubsequence<Row>(
+  baseline: readonly Row[],
+  mod: readonly Row[],
+  same: (a: Row, b: Row) => boolean = (a, b) => a === b,
 ): Set<number> {
   const width = mod.length + 1
   const lengths = new Uint32Array((baseline.length + 1) * width)
   const at = (i: number, j: number) => lengths[i * width + j] ?? 0
+  // Both indexes are in range wherever this is called.
+  const matches = (i: number, j: number) => same(baseline[i] as Row, mod[j] as Row)
   for (let i = baseline.length - 1; i >= 0; i--) {
     for (let j = mod.length - 1; j >= 0; j--) {
-      lengths[i * width + j] =
-        baseline[i] === mod[j] ? at(i + 1, j + 1) + 1 : Math.max(at(i + 1, j), at(i, j + 1))
+      lengths[i * width + j] = matches(i, j)
+        ? at(i + 1, j + 1) + 1
+        : Math.max(at(i + 1, j), at(i, j + 1))
     }
   }
   const matched = new Set<number>()
   let i = 0
   let j = 0
   while (i < baseline.length && j < mod.length) {
-    if (baseline[i] === mod[j]) {
+    if (matches(i, j)) {
       matched.add(j)
       i++
       j++

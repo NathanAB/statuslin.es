@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import {
   changedBoxCommand,
-  changedRowProfileCommand,
   croppedPngCommand,
   parseChangedBox,
   parsePrintedPng,
   parseProbes,
   parseRowProfile,
+  parseRowSignatures,
   printedPngCommand,
   probeCommand,
   quietScreenCommand,
   rowProfileCommand,
+  rowSignatureCommand,
   SCREEN_PNG_COMMAND,
+  SIGNATURE_CELLS,
 } from '@/render/mods/desktop/imagemagick'
 
 describe('probeCommand', () => {
@@ -155,13 +157,31 @@ describe('croppedPngCommand', () => {
   })
 })
 
-describe('changedRowProfileCommand', () => {
-  it('prints, per CSS row of a column, the share of it that differs from the baseline', () => {
-    expect(
-      changedRowProfileCommand('/tmp/baseline.png', '/tmp/final.png', { x: 158, width: 784 }),
-    ).toBe(
-      "set -o pipefail; convert 'png:/tmp/baseline.png[0]' 'png:/tmp/final.png[0]' -compose difference -composite -crop 1568x1800+316+0 +repage -colorspace Gray -threshold 2% -scale 1x900! -depth 8 gray:- | od -An -v -tu1",
+describe('rowSignatureCommand', () => {
+  it('prints, per CSS row of a column, which of its cells hold anything but page background, one bit each', () => {
+    expect(rowSignatureCommand('/tmp/final.png', { x: 158, width: 784 })).toBe(
+      `set -o pipefail; convert 'png:/tmp/final.png[0]' -crop 1568x1800+316+0 +repage \\( +clone -fill 'gray(21)' -colorize 100% \\) -compose difference -composite -colorspace Gray -threshold 3% -scale ${SIGNATURE_CELLS}x900! -threshold 0 -depth 1 gray:- | base64 -w0`,
     )
+  })
+})
+
+describe('parseRowSignatures', () => {
+  const bytesPerRow = SIGNATURE_CELLS / 8
+
+  it('reads one signature per row', () => {
+    const bytes = new Uint8Array(2 * bytesPerRow)
+    bytes[bytesPerRow] = 0x80
+    const [first, second] = parseRowSignatures(Buffer.from(bytes).toString('base64'), 2)
+
+    expect(first).toEqual(new Uint8Array(bytesPerRow))
+    expect(second?.[0]).toBe(0x80)
+  })
+
+  it.each([
+    ['too few rows', Buffer.from(new Uint8Array(bytesPerRow)).toString('base64'), 2],
+    ['anything but base64', 'not base64!', 1],
+  ])('refuses %s', (_name, stdout, rows) => {
+    expect(() => parseRowSignatures(stdout, rows)).toThrow(/row signatures/)
   })
 })
 

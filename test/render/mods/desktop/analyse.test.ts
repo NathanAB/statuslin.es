@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { analyseShot } from '@/render/mods/desktop/analyse'
 import type { AnalysisSandbox } from '@/render/mods/desktop/desktop-sandbox'
+import { SIGNATURE_CELLS } from '@/render/mods/desktop/imagemagick'
 import {
   PANE_BORDER_GREY,
   PROMPT_BORDER_GREY,
@@ -51,18 +52,37 @@ interface FakeShots {
   plate?: string
   /** The shot across the pane's body. */
   pane?: string
-  /** The shot across the whole crop, and how it differs from the baseline there. */
+  /** The shot across the whole crop. */
   cropContent?: string
-  changedRows?: string
+  /** What the shot and the baseline draw, as [from, to, element] runs: an element is its own look. */
+  shotRows?: Drawn[]
+  baselineRows?: Drawn[]
   /** Rows a message the user sent fills, in the shot, and in the baseline when it differs. */
   bubbles?: [number, number][]
   baselineBubbles?: [number, number][]
   crop?: (width: number, height: number) => Uint8Array
 }
 
-/** What a row-profile command prints: by row change, across the crop, plate, pane or column. */
+type Drawn = [number, number, number]
+
+/** What a row-signature command prints: each element fills its own eight cells of its rows. */
+function signatures(...runs: Drawn[]): string {
+  const bytesPerRow = SIGNATURE_CELLS / 8
+  const bytes = new Uint8Array(WINDOW.height * bytesPerRow)
+  for (const [from, to, element] of runs) {
+    for (let y = from; y <= to; y++) bytes[y * bytesPerRow + element] = 0xff
+  }
+  return Buffer.from(bytes).toString('base64')
+}
+
+/** What a row-signature command prints, for the shot or the baseline. */
+function signaturesFor(command: string, opts: FakeShots): string {
+  const drawn = command.includes('baseline.png') ? opts.baselineRows : opts.shotRows
+  return signatures(...(drawn ?? []))
+}
+
+/** What a row-profile command prints: across the crop, plate, pane or column. */
 function profileFor(command: string, opts: FakeShots): string {
-  if (command.includes('difference -composite -crop')) return opts.changedRows ?? profile()
   const strips = [...command.matchAll(/-crop 6x\d+\+(\d+)\+0 /g)]
   if (strips.length === 1) {
     const inBaseline = command.includes('baseline.png')
@@ -113,6 +133,7 @@ function fakeAnalysis(opts: FakeShots) {
         return answer(opts.changes ? comparisonOf(command, opts.changes) : (opts.compare ?? SAME))
       }
       if (command.includes('od -An')) return answer(profileFor(command, opts))
+      if (command.includes('| base64')) return answer(signaturesFor(command, opts))
       const layout = command.includes('baseline.png') ? opts.baseline : opts.shot
       return answer(layout ?? CHAT)
     },
@@ -138,11 +159,11 @@ const STEP_TURNS: Rect[] = [
   { x: 166, y: 359, width: 18, height: 18 },
   { x: 165, y: 394, width: 400, height: 40 },
 ]
-const BAND_SHOT = {
+const BAND_SHOT: FakeShots = {
   compare: BAND,
   content: profile(BAND_ROWS, PROMPT_ROWS),
   plate: profile(BAND_ROWS),
-  changedRows: profile(BAND_ROWS),
+  shotRows: [[...BAND_ROWS, 1]],
 }
 /** A crop of the band alone: its rows and the crop margin above and below. */
 const BAND_HEIGHT = BAND_ROWS[1] + 1 - BAND_ROWS[0] + 2 * 8
@@ -192,7 +213,10 @@ describe('analyseShot', () => {
       content: chat,
       plate: profile(BAND_ROWS),
       cropContent: chat,
-      changedRows: profile([300, 340], BAND_ROWS),
+      shotRows: [
+        [300, 340, 2],
+        [...BAND_ROWS, 1],
+      ],
     })
 
     const result = await analyseShot(analysis, {
@@ -211,14 +235,19 @@ describe('analyseShot', () => {
     expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${between * 2}+0+`)
   })
 
-  it('keeps rows that differ from the baseline though they look empty, such as where its spinner was', async () => {
-    const chat = profile([300, 340], BAND_ROWS, PROMPT_ROWS)
+  it("leaves out a turn the mod's drawing only pushed down, as the turn marker", async () => {
+    const chat = profile([300, 340], [400, 420], BAND_ROWS, PROMPT_ROWS)
     const { analysis, ran } = fakeAnalysis({
       compare: '1 1536x1030+333+601',
       content: chat,
       plate: profile(BAND_ROWS),
       cropContent: chat,
-      changedRows: profile([300, 600], BAND_ROWS),
+      shotRows: [
+        [300, 340, 2],
+        [400, 420, 3],
+        [...BAND_ROWS, 1],
+      ],
+      baselineRows: [[320, 340, 3]],
     })
 
     await analyseShot(analysis, {
@@ -228,7 +257,7 @@ describe('analyseShot', () => {
       typedSlashCommand: false,
     })
 
-    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${(775 - 601 - 16) * 2}+0+`)
+    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${(775 - 341 - 16) * 2}+0+`)
   })
 
   it('leaves the prompt text and the scrollbar gutter out of the comparison', async () => {
@@ -281,7 +310,7 @@ describe('analyseShot', () => {
       content: chat,
       cropContent: chat,
       plate: profile(BAND_ROWS),
-      changedRows: profile(BAND_ROWS),
+      shotRows: [[...BAND_ROWS, 1]],
     })
 
     const result = await analyseShot(analysis, {
@@ -309,8 +338,41 @@ describe('analyseShot', () => {
       content: chat,
       cropContent: chat,
       plate: profile(BAND_ROWS),
-      changedRows: profile(bubble, BAND_ROWS),
+      shotRows: [
+        [...bubble, 2],
+        [...BAND_ROWS, 1],
+      ],
+      baselineRows: [[...bubble, 3]],
       bubbles: [bubble],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      typedSlashCommand: true,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot', height: BAND_HEIGHT })
+  })
+
+  it("leaves out the whole message, though its rounded corners miss the column's edge", async () => {
+    const bubble: [number, number] = [275, 310]
+    const chat = profile(bubble, BAND_ROWS, PROMPT_ROWS)
+    const { analysis } = fakeAnalysis({
+      changes: [
+        { x: 864, y: 275, width: 70, height: 35 },
+        { x: 166, y: 775, width: 768, height: 40 },
+      ],
+      content: chat,
+      cropContent: chat,
+      plate: profile(BAND_ROWS),
+      shotRows: [
+        [...bubble, 2],
+        [...BAND_ROWS, 1],
+      ],
+      baselineRows: [[...bubble, 3]],
+      bubbles: [[281, 304]],
     })
 
     const result = await analyseShot(analysis, {
@@ -334,7 +396,11 @@ describe('analyseShot', () => {
       content: chat,
       cropContent: chat,
       plate: profile(BAND_ROWS),
-      changedRows: profile(message, BAND_ROWS),
+      shotRows: [
+        [...message, 2],
+        [...BAND_ROWS, 1],
+      ],
+      baselineRows: [[...message, 3]],
       bubbles: [message],
     })
 
@@ -359,7 +425,10 @@ describe('analyseShot', () => {
       content: chat,
       cropContent: chat,
       plate: profile(BAND_ROWS),
-      changedRows: profile(drawn, BAND_ROWS),
+      shotRows: [
+        [...drawn, 2],
+        [...BAND_ROWS, 1],
+      ],
       bubbles: [drawn],
       baselineBubbles: [[0, 0]],
     })
@@ -379,7 +448,7 @@ describe('analyseShot', () => {
     const { analysis } = fakeAnalysis({
       changes: [...STEP_TURNS, { x: 950, y: 90, width: 120, height: 40 }],
       content: profile([275, 433], PROMPT_ROWS),
-      changedRows: profile([90, 129]),
+      shotRows: [[90, 129, 5]],
     })
 
     const result = await analyseShot(analysis, {
@@ -396,7 +465,7 @@ describe('analyseShot', () => {
     const { analysis } = fakeAnalysis({
       changes: STEP_TURNS,
       content: profile([275, 433], PROMPT_ROWS),
-      changedRows: profile([275, 433]),
+      shotRows: [[275, 433, 2]],
     })
 
     const result = await analyseShot(analysis, {
