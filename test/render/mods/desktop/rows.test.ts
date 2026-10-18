@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   bandAbovePrompt,
   cardBottom,
+  drawnRows,
   emptyRows,
   GAP_COLLAPSE_OVER,
   gapCuts,
@@ -92,6 +93,24 @@ describe('cardBottom', () => {
 
   it('never runs past the shot', () => {
     expect(cardBottom(rows(), 800, 896)).toBe(896)
+  })
+
+  it('takes a taller limit for a card that has room for one', () => {
+    const profile = rows([300, 340, 0.4], [400, 460, 0.4], [480, 600, 0.4])
+
+    expect(cardBottom(profile, 292, 896, 250)).toBe(480)
+  })
+})
+
+describe('drawnRows', () => {
+  it('finds the first and last rows that hold anything between two rows', () => {
+    const profile = rows([50, 60, 1], [93, 103, 0.3], [127, 361, 0.8], [880, 887, 1])
+
+    expect(drawnRows(profile, 76, 876)).toEqual({ top: 93, bottom: 361 })
+  })
+
+  it('finds nothing when every row between them is blank', () => {
+    expect(drawnRows(rows([50, 60, 1]), 76, 876)).toBeNull()
   })
 })
 describe('emptyRows', () => {

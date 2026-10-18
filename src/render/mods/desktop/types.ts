@@ -26,7 +26,10 @@ export interface DesktopImage {
 /** A framed screenshot of the mod in Claude Desktop, for its page, and a smaller one for its card. */
 export interface DesktopShot extends DesktopVersions, DesktopImage {
   kind: 'shot'
-  /** The band the mod draws above the prompt box, or the top of the shot when it draws none. */
+  /**
+   * The band the mod draws above the prompt box, else what it draws in the pane it opens, else the
+   * top of the shot.
+   */
   card: DesktopImage
 }
 

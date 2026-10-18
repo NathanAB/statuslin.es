@@ -50,15 +50,18 @@ interface FakeShots {
   changes?: Rect[]
   content?: string
   plate?: string
+  /** The shot across the pane's body. */
+  pane?: string
   /** The shot across the whole crop, and how it differs from the baseline there. */
   cropContent?: string
   changedRows?: string
   crop?: (width: number, height: number) => Uint8Array
 }
 
-/** What a row-profile command prints: by row change, across the crop, the plate or the column. */
+/** What a row-profile command prints: by row change, across the crop, plate, pane or column. */
 function profileFor(command: string, opts: FakeShots): string {
   if (command.includes('difference -composite -crop')) return opts.changedRows ?? profile()
+  if (command.includes('-crop 708x')) return opts.pane ?? profile()
   if (command.includes('-crop 1568x'))
     return opts.cropContent ?? opts.content ?? profile(PROMPT_ROWS)
   if (command.includes('-crop 6x')) return opts.plate ?? profile()
@@ -319,6 +322,23 @@ describe('analyseShot', () => {
       card: { width: 1055, height: 150 },
     })
     expect(ran.some((c) => c.includes('-compose difference -composite -compose over'))).toBe(false)
+  })
+
+  it("cards what the mod draws in its pane, from inside the pane's border", async () => {
+    const { analysis, ran } = fakeAnalysis({
+      shot: PANE,
+      pane: profile([44, 68], [93, 361], [879, 887]),
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      draws: ['pane'],
+    })
+
+    expect(result).toMatchObject({ kind: 'shot', card: { width: 354, height: 370 - 85 } })
+    expect(ran.some((c) => c.includes('-crop 708x570+1466+170'))).toBe(true)
   })
 
   it('refuses a baseline that shows a pane', async () => {
