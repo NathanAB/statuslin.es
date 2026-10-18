@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest'
+import { SIGNATURE_CELLS } from '@/render/mods/desktop/imagemagick'
 import {
   bandAbovePrompt,
   cardBottom,
   drawnRows,
   KEPT_GAP,
   keptRowCuts,
+  rowsNotInBaseline,
+  SIGNATURE_TOLERANCE,
   uncutTop,
   userBubbleRows,
+  wholeElements,
 } from '@/render/mods/desktop/rows'
-import { CARD_MAX_HEIGHT, CHAT_TOP, CROP_MARGIN, WINDOW } from '@/render/mods/desktop/screen'
+import {
+  CARD_MAX_HEIGHT,
+  CHAT_TOP,
+  CROP_MARGIN,
+  PROMPT_BOX,
+  WINDOW,
+} from '@/render/mods/desktop/screen'
 
 /** A shot's row profile: 0 (page background) everywhere except the given [from, to, share] runs. */
 function rows(...runs: [number, number, number][]): number[] {
@@ -121,6 +131,19 @@ describe('userBubbleRows', () => {
   })
 })
 
+describe('wholeElements', () => {
+  it('spreads each marked row to the element it is in, from blank row to blank row', () => {
+    const profile = rows([10, 20, 0.4], [30, 40, 0.4])
+    const marked = profile.map((_, y) => y === 15)
+
+    const spread = wholeElements(marked, profile)
+
+    expect(spread.flatMap((m, y) => (m ? [y] : []))).toEqual(
+      Array.from({ length: 11 }, (_, i) => 10 + i),
+    )
+  })
+})
+
 describe('keptRowCuts', () => {
   /** Kept only on the given [from, to] runs of rows. */
   const kept = (...runs: [number, number][]) => {
@@ -149,5 +172,67 @@ describe('keptRowCuts', () => {
 
   it('is null when no row is kept', () => {
     expect(keptRowCuts(kept([100, 200]), 292, 896)).toBeNull()
+  })
+})
+
+describe('rowsNotInBaseline', () => {
+  /**
+   * A shot's row signatures: blank except the given [from, to, element] runs, where each element
+   * fills its own eight cells, so two elements share nothing.
+   */
+  const signatures = (...runs: [number, number, number][]) => {
+    const rows = Array.from({ length: WINDOW.height }, () => new Uint8Array(SIGNATURE_CELLS / 8))
+    for (const [from, to, element] of runs) {
+      for (let y = from; y <= to; y++) rows[y]?.fill(0xff, element, element + 1)
+    }
+    return rows
+  }
+  const keptRuns = (kept: readonly boolean[]) =>
+    kept.flatMap((k, y) => (k && !kept[y - 1] ? [[y, kept.indexOf(false, y) - 1]] : []))
+
+  it('keeps an element the baseline does not have', () => {
+    const shot = signatures([100, 120, 1], [200, 240, 2])
+    const baseline = signatures([100, 120, 1])
+
+    expect(keptRuns(rowsNotInBaseline(shot, baseline, PROMPT_BOX.y))).toEqual([[200, 240]])
+  })
+
+  it("leaves out an element that only moved down, pushed by the mod's drawing above it", () => {
+    const shot = signatures([100, 140, 2], [180, 200, 1])
+    const baseline = signatures([120, 140, 1])
+
+    expect(keptRuns(rowsNotInBaseline(shot, baseline, PROMPT_BOX.y))).toEqual([[100, 140]])
+  })
+
+  it('matches a row that differs only in a few cells, as antialiasing does', () => {
+    const baseline = signatures([100, 120, 1])
+    const shot = signatures([140, 160, 1])
+    for (let y = 140; y <= 160; y++) shot[y]?.fill((1 << SIGNATURE_TOLERANCE) - 1, 3, 4)
+
+    expect(keptRuns(rowsNotInBaseline(shot, baseline, PROMPT_BOX.y))).toEqual([])
+  })
+
+  it('keeps a row that differs in more cells than that, as different text does', () => {
+    const baseline = signatures([100, 120, 1])
+    const shot = signatures([100, 120, 1])
+    for (let y = 100; y <= 120; y++) shot[y]?.fill((1 << (SIGNATURE_TOLERANCE + 1)) - 1, 3, 4)
+
+    expect(keptRuns(rowsNotInBaseline(shot, baseline, PROMPT_BOX.y))).toEqual([[100, 120]])
+  })
+
+  it('never keeps a blank row', () => {
+    const shot = signatures()
+    const baseline = signatures([100, 120, 1])
+
+    expect(keptRuns(rowsNotInBaseline(shot, baseline, PROMPT_BOX.y))).toEqual([])
+  })
+
+  it('compares the rows from the bottom of the chat down at the same height, as Desktop fixes them there', () => {
+    const prompt: [number, number, number] = [PROMPT_BOX.y, PROMPT_BOX.y + 39, 4]
+    // A band's plate and the prompt box are both content edge to edge, so their rows look alike.
+    const shot = signatures([775, 814, 4], prompt)
+    const baseline = signatures(prompt)
+
+    expect(keptRuns(rowsNotInBaseline(shot, baseline, 775))).toEqual([[775, 814]])
   })
 })

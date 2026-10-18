@@ -1,4 +1,5 @@
-import { CARD_MAX_HEIGHT, CHAT_TOP, CROP_MARGIN } from './screen'
+import { modRowsOnCommonSubsequence } from '../crop'
+import { CARD_MAX_HEIGHT, CHAT_TOP, CROP_MARGIN, PROMPT_BOX } from './screen'
 
 /**
  * A shot read row by row: for each CSS row, the share (0..1) of a column that is not page
@@ -56,6 +57,68 @@ export function uncutTop(rows: RowProfile, top: number): number {
  */
 export function userBubbleRows(left: RowProfile, right: RowProfile): boolean[] {
   return right.map((share, y) => !isBlank(share) && isBlank(left[y]))
+}
+
+/** Each marked row spread to the whole element it is in: the run of rows between two blank ones. */
+export function wholeElements(marked: readonly boolean[], rows: RowProfile): boolean[] {
+  const spread = marked.map(() => false)
+  for (const [y, mark] of marked.entries()) {
+    if (!mark || spread[y]) continue
+    let top = y
+    while (top > 0 && !isBlank(rows[top - 1])) top--
+    let bottom = y
+    while (bottom < marked.length - 1 && !isBlank(rows[bottom + 1])) bottom++
+    spread.fill(true, top, bottom + 1)
+  }
+  return spread
+}
+
+/** A row's signature: one bit per cell across the crop, set where the cell holds anything. */
+export type RowSignature = Uint8Array
+
+/** Two rows this many cells apart or fewer are one row: antialiasing moves an edge a cell or two. */
+export const SIGNATURE_TOLERANCE = 2
+
+function cellsSet(byte: number): number {
+  let cells = 0
+  for (let b = byte; b > 0; b >>= 1) cells += b & 1
+  return cells
+}
+
+const cellsApart = (a: RowSignature, b: RowSignature) =>
+  a.reduce((cells, byte, i) => cells + cellsSet(byte ^ (b[i] ?? 0)), 0)
+const sameRow = (a: RowSignature, b: RowSignature) => cellsApart(a, b) <= SIGNATURE_TOLERANCE
+const isDrawn = (row: RowSignature) => row.some((byte) => byte !== 0)
+
+/**
+ * The shot's rows the baseline does not have, as the terminal crop keeps only rows off their
+ * common subsequence: a chat element the mod's drawing only pushed down matches its baseline row
+ * and is not kept. Only drawn rows are matched, as any blank row would match any other. From
+ * `chatBottom` (a band's top, or the prompt box) down, Desktop fixes what it draws in place, so
+ * those rows are compared at the same height; above it, the baseline's chat runs down to its
+ * prompt box. A blank row is never kept.
+ */
+export function rowsNotInBaseline(
+  shot: readonly RowSignature[],
+  baseline: readonly RowSignature[],
+  chatBottom: number,
+): boolean[] {
+  const drawnAbove = (rows: readonly RowSignature[], bottom: number) =>
+    rows.flatMap((row, y) => (y < bottom && isDrawn(row) ? [y] : []))
+  const shotChat = drawnAbove(shot, chatBottom)
+  const baselineChat = drawnAbove(baseline, PROMPT_BOX.y)
+  const common = modRowsOnCommonSubsequence(
+    baselineChat.map((y) => baseline[y] as RowSignature),
+    shotChat.map((y) => shot[y] as RowSignature),
+    sameRow,
+  )
+  const inChat = new Set([...common].map((j) => shotChat[j]))
+  return shot.map((row, y) => {
+    if (!isDrawn(row)) return false
+    if (y < chatBottom) return !inChat.has(y)
+    const atSameHeight = baseline[y]
+    return !atSameHeight || !sameRow(row, atSameHeight)
+  })
 }
 
 /** Rows `from` to `from + rows` of a shot, left out of its crop. */

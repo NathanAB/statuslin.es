@@ -3,17 +3,27 @@ import type { AnalysisSandbox } from './desktop-sandbox'
 import { frameShot, readLayout } from './framing'
 import {
   changedBoxCommand,
-  changedRowProfileCommand,
   croppedPngCommand,
   parseChangedBox,
   parseProbes,
   parseRowProfile,
+  parseRowSignatures,
   probeCommand,
   rowProfileCommand,
+  rowSignatureCommand,
 } from './imagemagick'
 import { expectOk } from './interact'
 import { checkedPixelPng } from './png'
-import { bandAbovePrompt, keptRowCuts, type RowCut, type RowProfile, userBubbleRows } from './rows'
+import {
+  bandAbovePrompt,
+  keptRowCuts,
+  type RowCut,
+  type RowProfile,
+  type RowSignature,
+  rowsNotInBaseline,
+  userBubbleRows,
+  wholeElements,
+} from './rows'
 import {
   BORDER_PROBES,
   CHAT_COLUMN,
@@ -85,13 +95,16 @@ async function changedBox(analysis: AnalysisSandbox, masks: Rect[] = []): Promis
   )
 }
 
+/** Where the chat ends: at the band's top, or at the prompt box when there is no band. */
+const chatBottom = (plate: RowProfile) => bandAbovePrompt(plate, PROMPT_BOX.y)?.top ?? PROMPT_BOX.y
+
 /**
- * The chat column above the band, or above the prompt box when there is no band: where the input
- * steps' own turns show (each step's message, and the reply or spinner it leaves). Widened by the
- * crop margin, as a reply's antialiased first glyph reaches past the column's edge.
+ * The chat column above the chat's bottom: where the input steps' own turns show (each step's
+ * message, and the reply or spinner it leaves). Widened by the crop margin, as a reply's
+ * antialiased first glyph reaches past the column's edge.
  */
 function stepTurns(plate: RowProfile): Rect {
-  const bottom = bandAbovePrompt(plate, PROMPT_BOX.y)?.top ?? PROMPT_BOX.y
+  const bottom = chatBottom(plate)
   return {
     x: CHAT_COLUMN.x - CROP_MARGIN,
     y: CONTENT.top,
@@ -127,24 +140,51 @@ async function userBubbles(analysis: AnalysisSandbox, path: string): Promise<boo
   )
 }
 
+/** Each row's signature across `rect`'s columns. */
+async function rowSignatures(
+  analysis: AnalysisSandbox,
+  path: string,
+  rect: Rect,
+): Promise<RowSignature[]> {
+  const { stdout } = expectOk(
+    await analysis.run(rowSignatureCommand(path, { x: rect.x, width: rect.width })),
+    'reading the row signatures',
+  )
+  return parseRowSignatures(stdout, WINDOW.height)
+}
+
+/** The shot's column and plate strips, read row by row. */
+interface ShotRows {
+  column: RowProfile
+  plate: RowProfile
+}
+
 /**
- * The cuts that leave only what the mod drew in a chat crop, as the terminal crop keeps only
- * changed rows: every row the same as the baseline and, after a slash command, the user's own
- * messages. A row is a message only where the baseline has one too, so nothing the mod draws on
- * the right is taken for one. Null when nothing is left.
+ * The cuts that leave only what the mod drew in a chat crop, as the terminal crop keeps only rows
+ * off the common subsequence: every row the baseline has too, though the mod's drawing pushed it
+ * down, and, after a slash command, the user's own messages whole, as the baseline may complete a
+ * command to another. A message is one only where the baseline has one at that height too, so
+ * nothing the mod draws on the right is taken for one. Null when nothing is left.
  */
 async function chatCuts(
   analysis: AnalysisSandbox,
   rect: Rect,
+  { column, plate }: ShotRows,
   typedSlashCommand: boolean,
 ): Promise<RowCut[] | null> {
-  const compare = changedRowProfileCommand(BASELINE, SHOT, { x: rect.x, width: rect.width })
-  const { stdout } = expectOk(await analysis.run(compare), 'comparing with the baseline by row')
-  const changed = parseRowProfile(stdout, WINDOW.height)
-  const noMessages = changed.map(() => false)
+  const notInBaseline = rowsNotInBaseline(
+    await rowSignatures(analysis, SHOT, rect),
+    await rowSignatures(analysis, BASELINE, rect),
+    chatBottom(plate),
+  )
+  const noMessages = notInBaseline.map(() => false)
   const shotMessages = typedSlashCommand ? await userBubbles(analysis, SHOT) : noMessages
   const baselineMessages = typedSlashCommand ? await userBubbles(analysis, BASELINE) : noMessages
-  const kept = changed.map((share, y) => share > 0 && !(shotMessages[y] && baselineMessages[y]))
+  const messages = wholeElements(
+    shotMessages.map((message, y) => message && Boolean(baselineMessages[y])),
+    column,
+  )
+  const kept = notInBaseline.map((row, y) => row && !messages[y])
   return keptRowCuts(kept, rect.y, rect.y + rect.height)
 }
 
@@ -170,16 +210,19 @@ export async function analyseShot(
   if (!paneOpen && typedSteps && !(await changedBox(analysis, [stepTurns(plate)]))) {
     return { kind: 'nothing' }
   }
+  const rows = await rowProfile(analysis, [column])
   const frame = frameShot({
     changed,
     paneOpen,
-    rows: await rowProfile(analysis, [column]),
+    rows,
     plate,
     ...(paneOpen && { pane: await rowProfile(analysis, [PANE_BODY]) }),
   })
   if (frame.kind === 'nothing') return { kind: 'nothing' }
   // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
-  const cuts = paneOpen ? [] : await chatCuts(analysis, frame.rect, typedSlashCommand)
+  const cuts = paneOpen
+    ? []
+    : await chatCuts(analysis, frame.rect, { column: rows, plate }, typedSlashCommand)
   if (!cuts) return { kind: 'nothing' }
   const page = await cropped(analysis, frame.rect, cuts)
   return { kind: 'shot', ...page, card: await cropped(analysis, frame.card) }
