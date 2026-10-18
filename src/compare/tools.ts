@@ -9,6 +9,11 @@ export const FACT_ROWS: Array<{ key: FactKey; label: string }> = [
   { key: 'latestRelease', label: 'Latest release' },
 ]
 
+export interface SourceFile {
+  name: string
+  url: string
+}
+
 export interface ThirdPartyTool {
   slug: string
   name: string
@@ -16,6 +21,8 @@ export interface ThirdPartyTool {
   sourceUrl: string
   verifiedAt: string
   facts: Record<FactKey, string>
+  /** Facts its README doesn't state, each with the files that do. */
+  otherSources?: Array<{ fact: FactKey; files: SourceFile[] }>
   jobs: string[]
   /** Completes "Want …?" and "Pick <tool> if you want …". */
   wants: string
@@ -87,6 +94,21 @@ export const TOOLS: ThirdPartyTool[] = [
       usageLimits: 'Yes',
       latestRelease: 'v1.1.2, Mar 14',
     },
+    otherSources: [
+      {
+        fact: 'usageLimits',
+        files: [
+          {
+            name: 'CHANGELOG',
+            url: 'https://github.com/Haleclipse/CCometixLine/blob/master/CHANGELOG.md',
+          },
+          {
+            name: 'src/core/segments/usage.rs',
+            url: 'https://github.com/Haleclipse/CCometixLine/blob/master/src/core/segments/usage.rs',
+          },
+        ],
+      },
+    ],
     jobs: ['git', 'token-usage', 'cost', 'quota', 'powerline', 'themed'],
     wants: 'a single compiled binary',
   },

@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { NOT_SHOWING_GUIDE_PATH } from '@/lib/page-title'
 import { MOD_ROUTE } from '@/lib/site'
 import {
   STATUSLINE_ANYWHERE_MIN_CLAUDE_CODE,
@@ -28,6 +29,10 @@ export function DesktopGuideContent({
         <Text muted>
           Claude Desktop doesn't run the statusLine command, so your status line never appears.{' '}
           <StatuslineAnywhereLink surface="desktop_guide" />, a Claude Code mod, adds it back.
+        </Text>
+        <Text muted>
+          Missing in the terminal too? See{' '}
+          <TextLink to={NOT_SHOWING_GUIDE_PATH}>the terminal fixes</TextLink>.
         </Text>
       </Stack>
 

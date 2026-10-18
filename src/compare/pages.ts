@@ -1,4 +1,11 @@
-import { COMPARISONS, FACT_ROWS, type ThirdPartyTool, TOOL_BY_SLUG, TOOLS } from '@/compare/tools'
+import {
+  COMPARISONS,
+  FACT_ROWS,
+  type SourceFile,
+  type ThirdPartyTool,
+  TOOL_BY_SLUG,
+  TOOLS,
+} from '@/compare/tools'
 import { type GalleryCard, MIN_INDEXABLE_FACET_CONFIGS } from '@/gallery/queries'
 import { listPhrase, type RankedCard, rankedCard } from '@/gallery/why-line'
 import { PAGE_TITLE_BRAND } from '@/lib/page-title'
@@ -15,6 +22,7 @@ export interface FactSheet {
   columns: Array<Pick<ThirdPartyTool, 'name' | 'repoUrl' | 'sourceUrl'>>
   rows: Array<{ label: string; cells: string[] }>
   checks: Array<{ sources: Array<Pick<ThirdPartyTool, 'name' | 'sourceUrl'>>; on: string }>
+  otherSources: Array<{ row: string; tool: string; files: SourceFile[] }>
 }
 
 export interface ComparePage {
@@ -81,6 +89,13 @@ function factSheet(tools: ThirdPartyTool[]): FactSheet {
     columns: tools.map(({ name, repoUrl, sourceUrl }) => ({ name, repoUrl, sourceUrl })),
     rows: FACT_ROWS.map((row) => ({ label: row.label, cells: tools.map((t) => t.facts[row.key]) })),
     checks: [...sourcesByDate].map(([on, sources]) => ({ sources, on })),
+    otherSources: tools.flatMap((t) =>
+      (t.otherSources ?? []).map(({ fact, files }) => ({
+        row: FACT_ROWS.find((row) => row.key === fact)?.label ?? fact,
+        tool: t.name,
+        files,
+      })),
+    ),
   }
 }
 

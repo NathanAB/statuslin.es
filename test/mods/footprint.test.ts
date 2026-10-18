@@ -74,6 +74,12 @@ describe('describeFootprint', () => {
     expect(result).toEqual({ phrases: [], unknown: [], draws: [] })
   })
 
+  // flightdeck's hook only reads each message and after's rewrites one; neither adds any.
+  it('says a session.append hook sees and can change messages, not that it adds them', () => {
+    const { phrases } = describeFootprint({ events: ['session.append'], calls: [] })
+    expect(phrases).toEqual(['sees each message added to the conversation and can change it'])
+  })
+
   it('keeps a matcher it cannot read as plain words generic', () => {
     const { phrases } = describeFootprint({
       events: ['tool.call{tool=/"^mcp__skins__design$"/}', 'command.run'],

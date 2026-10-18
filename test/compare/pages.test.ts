@@ -167,6 +167,28 @@ describe('buildComparePage', () => {
     ])
   })
 
+  it('cites the files a fact comes from when the tool’s README does not state it', () => {
+    const cometix = buildComparePage('/alternatives/ccometixline', gallery)
+    expect(cometix?.facts.otherSources).toEqual([
+      {
+        row: 'Usage limits',
+        tool: 'CCometixLine',
+        files: [
+          {
+            name: 'CHANGELOG',
+            url: 'https://github.com/Haleclipse/CCometixLine/blob/master/CHANGELOG.md',
+          },
+          {
+            name: 'src/core/segments/usage.rs',
+            url: 'https://github.com/Haleclipse/CCometixLine/blob/master/src/core/segments/usage.rs',
+          },
+        ],
+      },
+    ])
+    const powerline = buildComparePage('/alternatives/claude-powerline', gallery)
+    expect(powerline?.facts.otherSources).toEqual([])
+  })
+
   it('refuses a page that cannot show three relevant previews', () => {
     expect(buildComparePage('/alternatives/ccstatusline', [threeJobs, fiveJobs, oneJob])).toBeNull()
   })
