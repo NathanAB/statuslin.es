@@ -56,6 +56,40 @@ export const TOOLS: ThirdPartyTool[] = [
     jobs: ['git', 'token-usage', 'cost', 'quota', 'burn-rate', 'multi-line', 'powerline', 'themed'],
     wants: 'a config file you can commit',
   },
+  {
+    slug: 'claude-hud',
+    name: 'claude-hud',
+    repoUrl: 'https://github.com/jarrodwatts/claude-hud',
+    sourceUrl: 'https://github.com/jarrodwatts/claude-hud/blob/main/README.md',
+    verifiedAt: '2026-10-17',
+    facts: {
+      setup: 'Plugin, then /claude-hud:setup',
+      runsOn: 'Node.js 18+ or Bun',
+      themes: 'None, custom colors in JSON',
+      font: 'No special font',
+      usageLimits: 'Yes',
+      latestRelease: 'v0.11.3, Oct 17',
+    },
+    jobs: ['git', 'token-usage', 'cost', 'quota', 'burn-rate', 'multi-line'],
+    wants: 'to see running tools, agents, and todos',
+  },
+  {
+    slug: 'ccometixline',
+    name: 'CCometixLine',
+    repoUrl: 'https://github.com/Haleclipse/CCometixLine',
+    sourceUrl: 'https://github.com/Haleclipse/CCometixLine/blob/master/README.md',
+    verifiedAt: '2026-10-17',
+    facts: {
+      setup: 'Edit settings.json, then terminal UI',
+      runsOn: 'Rust binary and Git',
+      themes: 'Built-in presets, plus custom',
+      font: 'Nerd Font',
+      usageLimits: 'Yes',
+      latestRelease: 'v1.1.2, Mar 14',
+    },
+    jobs: ['git', 'token-usage', 'cost', 'quota', 'powerline', 'themed'],
+    wants: 'a single compiled binary',
+  },
 ]
 
 export const TOOL_BY_SLUG = new Map(TOOLS.map((t) => [t.slug, t]))
@@ -70,5 +104,10 @@ export const COMPARISONS: Comparison[] = [
     tools: ['ccstatusline', 'claude-powerline'],
     intro:
       'Two npm tools for the Claude Code status line. The biggest difference is setup: ccstatusline uses an interactive terminal UI, claude-powerline uses a JSON file.',
+  },
+  {
+    tools: ['claude-hud', 'ccstatusline'],
+    intro:
+      'Two Claude Code status line tools that run on Node.js or Bun. The biggest difference is setup: claude-hud installs as a Claude Code plugin, ccstatusline uses an interactive terminal UI.',
   },
 ]

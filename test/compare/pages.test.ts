@@ -25,6 +25,7 @@ const twoJobs = card('two-jobs', ['weather', 'git', 'cost'])
 const burnRate = card('burn-rate', ['git', 'quota', 'burn-rate'])
 const powerlineLook = card('powerline-look', ['git', 'token-usage', 'powerline', 'themed'])
 const gallery = [threeJobs, oneJob, fiveJobs, twoJobs, burnRate, powerlineLook]
+const usageLines = card('usage-lines', ['token-usage', 'quota', 'multi-line'])
 
 describe('buildComparePage', () => {
   it('keeps gallery configs sharing at least three of the tool’s jobs, in copy order', () => {
@@ -47,12 +48,46 @@ describe('buildComparePage', () => {
     ])
   })
 
+  it('counts burn rate but not the powerline look for claude-hud, and the reverse for CCometixLine', () => {
+    const hud = buildComparePage('/alternatives/claude-hud', gallery)
+    expect(hud?.cards.map((c) => c.card.slug)).toEqual(['three-jobs', 'five-jobs', 'burn-rate'])
+    const cometix = buildComparePage('/alternatives/ccometixline', gallery)
+    expect(cometix?.cards.map((c) => c.card.slug)).toEqual([
+      'three-jobs',
+      'five-jobs',
+      'powerline-look',
+    ])
+  })
+
+  it('names every other tool in an alternatives page’s search snippet', () => {
+    const page = buildComparePage('/alternatives/claude-hud', gallery)
+    expect(page?.description).toBe(
+      'Alternatives to claude-hud for your Claude Code status line: ccstatusline, claude-powerline, and CCometixLine, plus scripts with real rendered previews.',
+    )
+  })
+
   it('matches the versus page on the jobs both tools share', () => {
     const page = buildComparePage('/compare/ccstatusline-vs-claude-powerline', gallery)
     expect(page?.cards.map((c) => c.card.slug)).toEqual([
       'three-jobs',
       'five-jobs',
       'powerline-look',
+    ])
+  })
+
+  it('matches claude-hud vs ccstatusline on git, tokens, cost, limits, and multiple lines', () => {
+    const page = buildComparePage('/compare/claude-hud-vs-ccstatusline', [
+      threeJobs,
+      fiveJobs,
+      usageLines,
+      powerlineLook,
+    ])
+    expect(page?.cards.map((c) => c.card.slug)).toEqual(['three-jobs', 'five-jobs', 'usage-lines'])
+    expect(page?.facts.columns.map((c) => c.name)).toEqual(['claude-hud', 'ccstatusline'])
+    expect(page?.picks).toEqual([
+      'Want to see running tools, agents, and todos? claude-hud.',
+      'Want a setup screen? ccstatusline.',
+      'Want to read one script and see its real output first? Pick a status line below.',
     ])
   })
 
@@ -104,7 +139,7 @@ describe('buildComparePage', () => {
 
   it('keeps every page’s search snippet in length and free of em dashes', () => {
     for (const path of COMPARE_PATHS) {
-      const page = buildComparePage(path, gallery)
+      const page = buildComparePage(path, [...gallery, usageLines])
       if (!page) throw new Error(`no page for ${path}`)
       expect(page.title.length, page.title).toBeLessThanOrEqual(60)
       expect(page.description.length, page.description).toBeGreaterThanOrEqual(140)
@@ -121,6 +156,8 @@ describe('liveComparePages', () => {
     expect(liveComparePages(gallery).map((page) => page.path)).toEqual([
       '/alternatives/ccstatusline',
       '/alternatives/claude-powerline',
+      '/alternatives/claude-hud',
+      '/alternatives/ccometixline',
       '/compare/ccstatusline-vs-claude-powerline',
     ])
     expect(liveComparePages([oneJob])).toEqual([])
