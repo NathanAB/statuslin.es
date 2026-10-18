@@ -780,5 +780,168 @@
         }
       }
     }
+  },
+  "cache-tax": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/plugin.json",
+      "d 4096 .github",
+      "d 4096 .github/workflows",
+      "f 0 .github/workflows/deploy-pages.yml",
+      "f 0 .gitignore",
+      "f 0 LICENSE",
+      "f 0 README.md",
+      "d 4096 docs",
+      "d 4096 docs/assets",
+      "f 0 docs/assets/cache-cost-explainer.mp4",
+      "f 0 docs/site.md",
+      "d 4096 hooks",
+      "f 313 hooks/hooks.json",
+      "f 0 hooks/register.ts",
+      "f 0 hooks/status-icons.ts",
+      "d 4096 site",
+      "f 0 site/CNAME",
+      "d 4096 site/assets",
+      "f 0 site/assets/cache-tax-dark.svg",
+      "f 0 site/assets/cache-tax-light.svg",
+      "f 0 site/assets/keepwarm-receipt.png",
+      "f 0 site/assets/refusal.gif",
+      "f 0 site/assets/social-1280x640.png",
+      "f 0 site/favicon-32.png",
+      "f 0 site/favicon.svg",
+      "d 4096 site/fonts",
+      "f 0 site/fonts/Lora-OFL.txt",
+      "f 0 site/fonts/Poppins-OFL.txt",
+      "f 0 site/fonts/lora-latin.woff2",
+      "f 0 site/fonts/poppins-medium-latin.woff2",
+      "f 0 site/fonts/poppins-regular-latin.woff2",
+      "f 0 site/index.html",
+      "f 0 site/social-card.html",
+      "f 0 site/styles.css",
+      "d 4096 tests",
+      "f 0 tests/register.test.ts",
+      "d 4096 tools",
+      "f 0 tools/generate-status-icons.py",
+      "f 0 tsconfig.json"
+    ],
+    "hooksJson": "{\n  \"description\": \"cache-tax (Mod): session.start, classic.SessionStart, command.run{command=keepwarm|cache-tax}, prompt.submit, turn.step, turn.complete, session.compact. Needs CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1; builds without function hooks ignore the modules key.\",\n  \"modules\": [\n    \"./register.ts\"\n  ]\n}\n",
+    "modules": ["./register.ts"],
+    "pluginJson": {
+      "name": "cache-tax",
+      "version": "2.2.2",
+      "description": "A Claude Code mod that keeps the one-hour prompt cache warm during breaks and stops a cold send once with its estimated rewrite cost. Warming uses model requests and costs tokens. Requires Claude Code 2.1.287+.",
+      "author": {
+        "name": "Karan Bansal"
+      },
+      "license": "MIT"
+    }
+  },
+  "filetree": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/marketplace.json",
+      "f 0 .claude-plugin/plugin.json",
+      "d 4096 .githooks",
+      "f 0 .githooks/pre-commit",
+      "d 4096 .github",
+      "d 4096 .github/workflows",
+      "f 0 .github/workflows/platforms.yml",
+      "f 0 .gitignore",
+      "f 0 ACKNOWLEDGEMENTS.md",
+      "f 0 LICENSE",
+      "f 0 README.md",
+      "d 4096 hooks",
+      "f 0 hooks/button.tsx",
+      "f 0 hooks/git.ts",
+      "f 34 hooks/hooks.json",
+      "f 0 hooks/icons.ts",
+      "f 0 hooks/open.ts",
+      "f 0 hooks/register.tsx",
+      "f 0 hooks/rows.tsx",
+      "f 0 hooks/tree.ts",
+      "d 4096 media",
+      "f 0 media/filetree-ask.gif",
+      "f 0 media/filetree-git.gif",
+      "f 0 media/filetree-read.gif",
+      "f 0 media/filetree-resize.gif",
+      "f 0 media/filetree-shimmer.gif",
+      "d 4096 scripts",
+      "f 0 scripts/check-open.ts",
+      "d 4096 tests",
+      "f 0 tests/open.test.ts",
+      "f 0 tests/surfaces.test.tsx",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "hooksJson": "{ \"modules\": [\"./register.tsx\"] }\n",
+    "modules": ["./register.tsx"],
+    "pluginJson": {
+      "name": "filetree",
+      "version": "0.2.26",
+      "description": "An IDE-style file tree for Claude Code that shows what Claude is doing and where in files",
+      "types": "./types/index.d.ts",
+      "author": {
+        "name": "Kurt Buhler"
+      },
+      "repository": "https://github.com/data-goblin/claude-code-filetree",
+      "keywords": ["file-tree", "git", "mod", "pane"],
+      "userConfig": {
+        "activity": {
+          "type": "string",
+          "title": "Claude activity",
+          "description": "Which of Claude's file activity shimmers in the tree: files read with the Read tool or Bash readers (rg, grep, find, cat) in purple, writes in orange and git actions in green",
+          "default": "reads and writes",
+          "options": ["reads and writes", "writes", "reads", "none"]
+        },
+        "glyphs": {
+          "type": "string",
+          "title": "Glyphs",
+          "description": "Icon set: auto uses Nerd Font icons when one is installed here, except in the desktop app; plain uses Unicode only",
+          "default": "auto",
+          "options": ["auto", "nerd", "plain"]
+        },
+        "follow": {
+          "type": "string",
+          "title": "Follow Claude",
+          "description": "on: the tree scrolls to what Claude reads, writes or commits. off: the view stays where you put it and only your own scrolling moves it; highlights still show.",
+          "default": "on",
+          "options": ["on", "off"]
+        },
+        "start": {
+          "type": "string",
+          "title": "Open at start",
+          "description": "on: the pane opens when a session starts. off: it stays closed until you run /filetree.",
+          "default": "on",
+          "options": ["on", "off"]
+        },
+        "column": {
+          "type": "string",
+          "title": "Right column",
+          "description": "What the right column shows by default: date (last modified), age (time since last modified, short: now, 12m, 3h, 5d, then Oct 9 past a week and the year past a year) or size (files in bytes, folders as disk usage computed in the background). The header button toggles between size and the date or age.",
+          "default": "date",
+          "options": ["date", "age", "size"]
+        },
+        "hints": {
+          "type": "string",
+          "title": "Hints",
+          "description": "on: outside a git repo, a line under the header says git status starts after git init. off: the line is hidden and the tree gets the row.",
+          "default": "on",
+          "options": ["on", "off"]
+        },
+        "open": {
+          "type": "string",
+          "title": "Open with",
+          "description": "What a double-click or Enter does with a file. Empty: the default app, also inside tmux. editor: use $VISUAL, then $EDITOR, then vi in tmux (Linux/macOS only; otherwise shows a notice). preview: show it in the pane (left goes back; \u2197 always opens the default app). Anything else is a command run instead: {path} is the file and {dir} its folder; without {path} the path goes last. Words split on spaces, quotes keep a word whole, and no shell runs it. It should start the viewer and return; on Linux it runs detached.",
+          "default": ""
+        },
+        "edit": {
+          "type": "string",
+          "title": "Edit with",
+          "description": "What e does in the preview: open the file at the top line shown. Empty: $VISUAL, then $EDITOR, then vi in tmux with +line (Linux/macOS only; the e button is hidden elsewhere). Anything else is a command like Open with, where {line} is that line, for example code -g {path}:{line} or zed {path}:{line}.",
+          "default": ""
+        }
+      },
+      "license": "MIT"
+    }
   }
 }
