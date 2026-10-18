@@ -204,12 +204,14 @@ const BUN_IMAGE =
 /** An exact Bun version tag, optionally with an image variant: `1.4.3`, `1.4.3-alpine`. */
 const EXACT_TAG = /^(\d+\.\d+\.\d+)(?:-[a-z0-9.-]+)?$/
 
-/** The Bun that builds production (Dockerfile), the one every CI job tests with, and its types must
- * be one exact version. A floating `oven/bun:1` tag moved production to 1.4.x without anyone deciding to. */
+/** The Bun that builds production (Dockerfile), the one every CI job tests with, its types, and the
+ * Bun running this check must be one exact version. A floating `oven/bun:1` tag moved production to
+ * 1.4.x without anyone deciding to. */
 export function findBunVersionDrift(input: {
   dockerfile: string
   ciWorkflow: unknown
   pkg: PackageJson
+  runningBun: string
 }): string[] {
   const images = [...input.dockerfile.matchAll(BUN_IMAGE)].map(([, ref = '', tag = '']) => ({
     ref: ref.replace(/@\S+$/, ''),
@@ -238,11 +240,17 @@ export function findBunVersionDrift(input: {
   const docker = [...new Set(images.map((image) => image.version))]
   const ci = [...new Set(ciVersions)]
   const types = input.pkg.devDependencies?.['@types/bun']
-  if (new Set([...docker, ...ci, types]).size === 1 && docker.length && ci.length && types)
-    return []
-  return [
-    `Bun versions disagree: Dockerfile ${docker.join('/') || 'missing'}, CI ${ci.join('/') || 'missing'}, @types/bun ${types ?? 'missing'}. Move all three together.`,
-  ]
+  if (new Set([...docker, ...ci, types]).size !== 1 || !docker.length || !ci.length || !types) {
+    return [
+      `Bun versions disagree: Dockerfile ${docker.join('/') || 'missing'}, CI ${ci.join('/') || 'missing'}, @types/bun ${types ?? 'missing'}. Move all three together.`,
+    ]
+  }
+  if (input.runningBun !== types) {
+    return [
+      `This is Bun ${input.runningBun}, but the project pins ${types}. Install it: curl -fsSL https://bun.com/install | bash -s "bun-v${types}"`,
+    ]
+  }
+  return []
 }
 
 if (!process.env.VITEST) {
@@ -255,6 +263,7 @@ if (!process.env.VITEST) {
       dockerfile: read('Dockerfile'),
       ciWorkflow: Bun.YAML.parse(read('.github/workflows/ci.yml')),
       pkg,
+      runningBun: Bun.version,
     }),
   ]
   if (problems.length) {

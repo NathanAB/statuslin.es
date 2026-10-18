@@ -152,13 +152,20 @@ describe('findBunVersionDrift', () => {
       'FROM base AS build',
     ].join('\n')
     const ci = { jobs: { a: { steps: [setupBun('1.4.3')] }, b: { steps: [setupBun('1.4.3')] } } }
-    expect(findBunVersionDrift({ dockerfile, ciWorkflow: ci, pkg: TYPES })).toEqual([])
+    expect(
+      findBunVersionDrift({ dockerfile, ciWorkflow: ci, pkg: TYPES, runningBun: '1.4.3' }),
+    ).toEqual([])
   })
 
   it('reads the version from image variants and digest pins', () => {
     const dockerfile = 'FROM oven/bun:1.4.3-alpine AS a\nFROM oven/bun:1.4.3@sha256:ec06c3b6 AS b'
     expect(
-      findBunVersionDrift({ dockerfile, ciWorkflow: ciWith(setupBun('1.4.3')), pkg: TYPES }),
+      findBunVersionDrift({
+        dockerfile,
+        ciWorkflow: ciWith(setupBun('1.4.3')),
+        pkg: TYPES,
+        runningBun: '1.4.3',
+      }),
     ).toEqual([])
   })
 
@@ -170,7 +177,12 @@ describe('findBunVersionDrift', () => {
     ['from oven/bun:latest as base', 'oven/bun:latest'],
   ])('flags a floating image: %s', (dockerfile, ref) => {
     expect(
-      findBunVersionDrift({ dockerfile, ciWorkflow: ciWith(setupBun('1.4.3')), pkg: TYPES }),
+      findBunVersionDrift({
+        dockerfile,
+        ciWorkflow: ciWith(setupBun('1.4.3')),
+        pkg: TYPES,
+        runningBun: '1.4.3',
+      }),
     ).toEqual([
       `Dockerfile: ${ref} is not an exact Bun version, so each build can pick up a different Bun. Pin the version it resolves to today (docker buildx imagetools inspect ${ref}).`,
     ])
@@ -179,7 +191,12 @@ describe('findBunVersionDrift', () => {
   it('flags a CI job that does not pin an exact Bun', () => {
     const ci = ciWith(setupBun('1.4.3'), setupBun())
     expect(
-      findBunVersionDrift({ dockerfile: 'FROM oven/bun:1.4.3', ciWorkflow: ci, pkg: TYPES }),
+      findBunVersionDrift({
+        dockerfile: 'FROM oven/bun:1.4.3',
+        ciWorkflow: ci,
+        pkg: TYPES,
+        runningBun: '1.4.3',
+      }),
     ).toEqual([
       '.github/workflows/ci.yml: a setup-bun step has no exact bun-version, so CI can test on a different Bun. Pin it.',
     ])
@@ -188,9 +205,27 @@ describe('findBunVersionDrift', () => {
   it('flags versions that disagree', () => {
     const ci = { jobs: { a: { steps: [setupBun('1.4.3')] }, b: { steps: [setupBun('1.3.14')] } } }
     expect(
-      findBunVersionDrift({ dockerfile: 'FROM oven/bun:1.4.3', ciWorkflow: ci, pkg: TYPES }),
+      findBunVersionDrift({
+        dockerfile: 'FROM oven/bun:1.4.3',
+        ciWorkflow: ci,
+        pkg: TYPES,
+        runningBun: '1.4.3',
+      }),
     ).toEqual([
       'Bun versions disagree: Dockerfile 1.4.3, CI 1.4.3/1.3.14, @types/bun 1.4.3. Move all three together.',
+    ])
+  })
+
+  it('flags a Bun on this machine that differs from the pinned one', () => {
+    expect(
+      findBunVersionDrift({
+        dockerfile: 'FROM oven/bun:1.4.3',
+        ciWorkflow: ciWith(setupBun('1.4.3')),
+        pkg: TYPES,
+        runningBun: '1.3.14',
+      }),
+    ).toEqual([
+      'This is Bun 1.3.14, but the project pins 1.4.3. Install it: curl -fsSL https://bun.com/install | bash -s "bun-v1.4.3"',
     ])
   })
 })
