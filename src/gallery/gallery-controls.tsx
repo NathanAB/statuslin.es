@@ -37,6 +37,8 @@ export function GalleryControls({
 }) {
   // From '/', so `prev` is the gallery's search alone, not every route's.
   const navigate = useNavigate({ from: '/' })
+  // Every control here only changes the search, so the reader stays where they were instead of
+  // the router's default jump to the top of the page.
   const posthog = usePostHog()
   const selected = new Set(tags)
 
@@ -53,6 +55,7 @@ export function GalleryControls({
         const { page: _page, ...rest } = prev
         return { ...rest, sort: value }
       },
+      resetScroll: false,
     })
   }
   const setKind = (value: GalleryFilter) => {
@@ -68,6 +71,7 @@ export function GalleryControls({
         const { page: _page, kind: _kind, ...rest } = prev
         return value === 'all' ? rest : { ...rest, kind: value }
       },
+      resetScroll: false,
     })
   }
   return (
@@ -92,6 +96,7 @@ export function GalleryControls({
           <Link
             from="/"
             to="/"
+            resetScroll={false}
             onClick={() => {
               posthog.capture('gallery_filter_changed', {
                 action: 'clear',
