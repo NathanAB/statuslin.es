@@ -1,12 +1,9 @@
 import type { InputStep } from '@/mods/curation'
-import type { DrawLocation } from '@/mods/footprint'
 import type { ModUnderRender } from '../recorder'
 
 export interface DesktopRecordRequest {
   mod: ModUnderRender
   inputSteps: readonly InputStep[]
-  /** Where the mod's footprint says it draws; decides how the shot is framed. */
-  draws: readonly DrawLocation[]
 }
 
 interface DesktopVersions {

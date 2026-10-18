@@ -1,4 +1,3 @@
-import type { DrawLocation } from '@/mods/footprint'
 import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import type { AnalysisSandbox } from './desktop-sandbox'
 import { frameShot, readLayout } from './framing'
@@ -14,7 +13,7 @@ import {
 } from './imagemagick'
 import { expectOk } from './interact'
 import { checkedPixelPng } from './png'
-import { bandAbovePrompt, emptyRows, gapCuts, type RowCut, type RowProfile } from './rows'
+import { bandAbovePrompt, keptRowCuts, type RowCut, type RowProfile, userBubbleRows } from './rows'
 import {
   BORDER_PROBES,
   CHAT_COLUMN,
@@ -39,11 +38,19 @@ const BASELINE = `${SANDBOX_WORK_DIR}/baseline.png`
 export interface ShotsToAnalyse {
   /** The mod session's full final shot, as printed by its sandbox. Untrusted. */
   shot: Uint8Array
-  /** The no-mod session's full final shot. */
+  /** The no-mod session's full final shot, after the same input steps. */
   baseline: Uint8Array
-  draws: readonly DrawLocation[]
-  /** The mod's session typed input steps and the baseline's did not, so its chat shows their turns. */
+  /**
+   * The sessions typed input steps. Their turns show in both chats, but a slash command's differ
+   * without the plugin, and no turn of theirs is the mod's drawing.
+   */
   typedSteps: boolean
+  /**
+   * A step was a slash command, which Desktop colours in the user's message only when the plugin
+   * that owns it is loaded: that message differs from the baseline's, though the mod drew nothing
+   * in it. With no slash command a changed message is the mod's, such as one it redacts.
+   */
+  typedSlashCommand: boolean
 }
 
 export type Analysis =
@@ -59,9 +66,13 @@ async function layoutOf(analysis: AnalysisSandbox, path: string): Promise<'chat'
   return readLayout({ prompt, promptBesidePane, pane })
 }
 
-async function rowProfile(analysis: AnalysisSandbox, columns: Column[]): Promise<RowProfile> {
+async function rowProfile(
+  analysis: AnalysisSandbox,
+  columns: Column[],
+  path = SHOT,
+): Promise<RowProfile> {
   const { stdout } = expectOk(
-    await analysis.run(rowProfileCommand(SHOT, columns)),
+    await analysis.run(rowProfileCommand(path, columns)),
     'reading the shot row by row',
   )
   return parseRowProfile(stdout, WINDOW.height)
@@ -106,19 +117,35 @@ async function cropped(
   return { png, width: rect.width, height }
 }
 
-/**
- * The empty stretches to cut out of a chat crop, as the terminal crop drops unchanged rows: rows
- * of nothing but page background, the same as the baseline, across the crop's whole width.
- */
-async function chatGapCuts(analysis: AnalysisSandbox, rect: Rect): Promise<RowCut[]> {
-  const column = { x: rect.x, width: rect.width }
-  const compare = changedRowProfileCommand(BASELINE, SHOT, column)
-  const { stdout } = expectOk(await analysis.run(compare), 'comparing with the baseline by row')
-  const empty = emptyRows(
-    await rowProfile(analysis, [column]),
-    parseRowProfile(stdout, WINDOW.height),
+/** Rows of a message the user sent, read across the chat column's plate strips. */
+async function userBubbles(analysis: AnalysisSandbox, path: string): Promise<boolean[]> {
+  const [left, right] = plateStrips(CHAT_COLUMN)
+  if (!left || !right) throw new Error('the chat column has two plate strips')
+  return userBubbleRows(
+    await rowProfile(analysis, [left], path),
+    await rowProfile(analysis, [right], path),
   )
-  return gapCuts(empty, rect.y, rect.y + rect.height)
+}
+
+/**
+ * The cuts that leave only what the mod drew in a chat crop, as the terminal crop keeps only
+ * changed rows: every row the same as the baseline and, after a slash command, the user's own
+ * messages. A row is a message only where the baseline has one too, so nothing the mod draws on
+ * the right is taken for one. Null when nothing is left.
+ */
+async function chatCuts(
+  analysis: AnalysisSandbox,
+  rect: Rect,
+  typedSlashCommand: boolean,
+): Promise<RowCut[] | null> {
+  const compare = changedRowProfileCommand(BASELINE, SHOT, { x: rect.x, width: rect.width })
+  const { stdout } = expectOk(await analysis.run(compare), 'comparing with the baseline by row')
+  const changed = parseRowProfile(stdout, WINDOW.height)
+  const noMessages = changed.map(() => false)
+  const shotMessages = typedSlashCommand ? await userBubbles(analysis, SHOT) : noMessages
+  const baselineMessages = typedSlashCommand ? await userBubbles(analysis, BASELINE) : noMessages
+  const kept = changed.map((share, y) => share > 0 && !(shotMessages[y] && baselineMessages[y]))
+  return keptRowCuts(kept, rect.y, rect.y + rect.height)
 }
 
 /**
@@ -127,7 +154,7 @@ async function chatGapCuts(analysis: AnalysisSandbox, rect: Rect): Promise<RowCu
  */
 export async function analyseShot(
   analysis: AnalysisSandbox,
-  { shot, baseline, draws, typedSteps }: ShotsToAnalyse,
+  { shot, baseline, typedSteps, typedSlashCommand }: ShotsToAnalyse,
 ): Promise<Analysis> {
   await analysis.writeFiles([
     { path: SHOT, data: shot },
@@ -146,14 +173,14 @@ export async function analyseShot(
   const frame = frameShot({
     changed,
     paneOpen,
-    draws,
     rows: await rowProfile(analysis, [column]),
     plate,
     ...(paneOpen && { pane: await rowProfile(analysis, [PANE_BODY]) }),
   })
   if (frame.kind === 'nothing') return { kind: 'nothing' }
   // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
-  const cuts = paneOpen ? [] : await chatGapCuts(analysis, frame.rect)
+  const cuts = paneOpen ? [] : await chatCuts(analysis, frame.rect, typedSlashCommand)
+  if (!cuts) return { kind: 'nothing' }
   const page = await cropped(analysis, frame.rect, cuts)
   return { kind: 'shot', ...page, card: await cropped(analysis, frame.card) }
 }
