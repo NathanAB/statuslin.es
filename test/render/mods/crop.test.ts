@@ -40,11 +40,31 @@ describe('cropModPreview', () => {
   it('drops rows that only moved because the mod scrolled the transcript', () => {
     const kept = lines(cropModPreview(baseline, switchboard))
 
-    expect(kept[0]).toBe('❯ /route ')
-    expect(kept).toHaveLength(10)
+    expect(kept[0]).toMatch(/^ {2}⎿ {2}switchboard: 0 subagents/)
+    expect(kept).toHaveLength(9)
     expect(kept.at(-1)).toMatch(/^╰─+╯$/)
     expect(kept).not.toContain('● The repo is clean and the tests pass.')
     expect(kept.some((line) => line.startsWith('❯ hello'))).toBe(false)
+  })
+
+  it('never keeps a message typed at the prompt', () => {
+    for (const screen of [tokenWeather, switchboard, skins]) {
+      for (const line of lines(cropModPreview(baseline, screen))) expect(line).not.toMatch(/^\s*❯/)
+    }
+  })
+
+  it("keeps an entry the mod adds to the footer, without Claude Code's mode hint", () => {
+    const footer = baseline.findIndex((row) => row.includes('shift+tab to cycle'))
+    const withEntry = baseline.map((row, y) =>
+      y === footer ? `${row}\x1b[1;36m[ Deck 1 ]\x1b[0m` : row,
+    )
+
+    const kept = lines(cropModPreview(baseline, withEntry))
+
+    expect(kept.map((line) => line.trim())).toEqual(['[ Deck 1 ]'])
+    expect(renderedSegments(cropModPreview(baseline, withEntry))).toContainEqual(
+      expect.objectContaining({ text: '[ Deck 1 ]', fg: expect.any(String), bold: true }),
+    )
   })
 
   it('never keeps the baseline branding rows, even when they scrolled', () => {

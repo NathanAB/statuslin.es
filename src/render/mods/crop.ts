@@ -12,7 +12,12 @@ const TURN_DURATION_MASKS: readonly RowMask[] = [
   { name: 'clock', pattern: /\b\d{1,2}:\d{2}(?:\s?[AP]M)?\b/g, replacement: 'HH:MM' },
 ]
 
+/** The prompt, and every message typed at it: Claude Code's, never the mod's. */
 const PROMPT_ROW = /^❯(?:\s|$)/
+/** Claude Code's permission-mode hint, on the footer row a mod can add its own entry to. */
+const MODE_HINT = /⏵⏵ .*?\(shift\+tab to cycle\)(?: · ← for agents)?/u
+// Built with fromCharCode so the ESC doesn't trip Biome's noControlCharactersInRegex (as ansi.ts).
+const SGR = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'y')
 
 /** Rows are compared as SGR-styled strings by longest common subsequence, so a row that only moved up or down is never kept. */
 export function cropModPreview(
@@ -23,21 +28,36 @@ export function cropModPreview(
   const masks = [...TURN_DURATION_MASKS, ...modMasks]
   const masked = (row: string) => masks.reduce((r, m) => r.replace(m.pattern, m.replacement), row)
   const common = modRowsOnCommonSubsequence(baseline.map(masked), modScreen.map(masked))
-  // The prompt row is Claude Code's input line, not the mod's, and its cursor differs between runs.
-  const promptRow = lastPromptRow(modScreen)
-  const changed = modScreen.flatMap((row, y) =>
-    common.has(y) || y === promptRow || plainText(row).trim() === '' ? [] : [y],
-  )
-  if (changed.length === 0) return { kind: 'not-rendered' }
+  const kept = modScreen.flatMap((row, y) => {
+    if (common.has(y) || PROMPT_ROW.test(plainText(row).trimStart())) return []
+    const modOnly = blankMatch(row, MODE_HINT)
+    return plainText(modOnly).trim() === '' ? [] : [modOnly]
+  })
+  if (kept.length === 0) return { kind: 'not-rendered' }
 
-  return { kind: 'rendered', segments: parseAnsi(changed.map((y) => modScreen[y]).join('\n')) }
+  return { kind: 'rendered', segments: parseAnsi(kept.join('\n')) }
 }
 
-function lastPromptRow(screen: readonly string[]): number {
-  for (let y = screen.length - 1; y >= 0; y--) {
-    if (PROMPT_ROW.test(plainText(screen[y] ?? '').trimStart())) return y
+/** `row` with the text `pattern` matches turned to spaces, its styles left as they were. */
+function blankMatch(row: string, pattern: RegExp): string {
+  const match = pattern.exec(plainText(row))
+  if (!match) return row
+  const end = match.index + match[0].length
+  let out = ''
+  let textAt = 0
+  for (let i = 0; i < row.length; ) {
+    SGR.lastIndex = i
+    const sgr = SGR.exec(row)
+    if (sgr) {
+      out += sgr[0]
+      i += sgr[0].length
+      continue
+    }
+    out += textAt >= match.index && textAt < end ? ' ' : row[i]
+    textAt++
+    i++
   }
-  return -1
+  return out
 }
 
 function plainText(row: string): string {
