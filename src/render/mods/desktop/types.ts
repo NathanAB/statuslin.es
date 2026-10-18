@@ -1,5 +1,4 @@
 import type { InputStep } from '@/mods/curation'
-import type { DrawLocation } from '@/mods/footprint'
 import type { Interpreter } from '../../types'
 import type { ModUnderRender } from '../recorder'
 
@@ -12,8 +11,6 @@ export interface StatusLineScript {
 export interface DesktopRecordRequest {
   mod: ModUnderRender
   inputSteps: readonly InputStep[]
-  /** Where the mod's footprint says it draws; decides how the shot is framed. */
-  draws: readonly DrawLocation[]
   /** The status line the session's settings run, in place of the committed sample. */
   statusLine?: StatusLineScript
 }

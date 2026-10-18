@@ -1,4 +1,4 @@
-import { CARD_MAX_HEIGHT, CHAT_TOP } from './screen'
+import { CARD_MAX_HEIGHT, CHAT_TOP, CROP_MARGIN } from './screen'
 
 /**
  * A shot read row by row: for each CSS row, the share (0..1) of a column that is not page
@@ -51,15 +51,11 @@ export function uncutTop(rows: RowProfile, top: number): number {
 }
 
 /**
- * Desktop leaves about 50px between chat messages. An empty stretch more than twice that is the
- * chat ending well above the band and prompt box, and is cut down to that gap.
+ * Rows of a message the user sent: Desktop draws it as a bubble against the column's right edge,
+ * clear of its left edge, read across the column's two plate strips.
  */
-export const KEPT_GAP = 50
-export const GAP_COLLAPSE_OVER = 100
-
-/** Rows of a crop that hold nothing: page background in the shot, and the same as the baseline. */
-export function emptyRows(content: RowProfile, changed: RowProfile): boolean[] {
-  return content.map((share, y) => isBlank(share) && isBlank(changed[y]))
+export function userBubbleRows(left: RowProfile, right: RowProfile): boolean[] {
+  return right.map((share, y) => !isBlank(share) && isBlank(left[y]))
 }
 
 /** Rows `from` to `from + rows` of a shot, left out of its crop. */
@@ -68,23 +64,34 @@ export interface RowCut {
   rows: number
 }
 
+/** The space a crop keeps between two kept parts: the crop margin below one and above the next. */
+export const KEPT_GAP = 2 * CROP_MARGIN
+
 /**
- * The cuts that bring every empty stretch inside [top, bottom) longer than GAP_COLLAPSE_OVER down
- * to KEPT_GAP, keeping half the gap above what it removes and half below. Top to bottom.
+ * The cuts that leave only the kept rows of [top, bottom), as the terminal crop keeps only changed
+ * rows: everything above the first and below the last down to the crop margin, and every stretch
+ * between two kept rows longer than KEPT_GAP down to it. Top to bottom; null when no row is kept.
  */
-export function gapCuts(empty: readonly boolean[], top: number, bottom: number): RowCut[] {
+export function keptRowCuts(
+  kept: readonly boolean[],
+  top: number,
+  bottom: number,
+): RowCut[] | null {
+  const rows: number[] = []
+  for (let y = top; y < bottom; y++) if (kept[y]) rows.push(y)
+  const first = rows[0]
+  const last = rows.at(-1)
+  if (first === undefined || last === undefined) return null
   const cuts: RowCut[] = []
-  let start = -1
-  for (let y = top; y <= bottom; y++) {
-    const isEmpty = y < bottom && empty[y] === true
-    if (isEmpty && start === -1) start = y
-    if (!isEmpty && start !== -1) {
-      if (y - start > GAP_COLLAPSE_OVER) {
-        cuts.push({ from: start + KEPT_GAP / 2, rows: y - start - KEPT_GAP })
-      }
-      start = -1
+  if (first - CROP_MARGIN > top) cuts.push({ from: top, rows: first - CROP_MARGIN - top })
+  for (const [i, y] of rows.entries()) {
+    const next = rows[i + 1]
+    if (next !== undefined && next - y - 1 > KEPT_GAP) {
+      cuts.push({ from: y + 1 + CROP_MARGIN, rows: next - y - 1 - KEPT_GAP })
     }
   }
+  const end = last + 1 + CROP_MARGIN
+  if (end < bottom) cuts.push({ from: end, rows: bottom - end })
   return cuts
 }
 

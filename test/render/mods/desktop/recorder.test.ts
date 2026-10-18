@@ -51,7 +51,7 @@ describe('desktopRecorder', () => {
     }))
 
     await expect(
-      desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: steps, draws: [] }),
+      desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: steps }),
     ).rejects.toThrow(/input steps/)
     expect(sandboxes.withRecordingDesktop).not.toHaveBeenCalled()
   })
@@ -61,27 +61,65 @@ describe('desktopRecorder', () => {
     const step = { type: 'text' as const, text: 'x'.repeat(MAX_STEP_CHARS + 1) }
 
     await expect(
-      desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: [step], draws: [] }),
+      desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: [step] }),
     ).rejects.toThrow(/characters/)
     expect(sandboxes.withRecordingDesktop).not.toHaveBeenCalled()
   })
 
+  it("records the baseline typing the mod's input steps, once per distinct list", async () => {
+    const baselineSteps: string[][] = []
+    const sandboxes = {
+      withRecordingDesktop: vi
+        .fn()
+        .mockImplementation(
+          async (setup: {
+            source: unknown
+            files: (versions: typeof FULL_SHOT) => { path: string; data: string | Uint8Array }[]
+          }) => {
+            if (setup.source === null) {
+              const typed = setup.files(FULL_SHOT).filter((f) => /step-\d+\.txt$/.test(f.path))
+              baselineSteps.push(typed.map((f) => String(f.data)))
+            }
+            return FULL_SHOT
+          },
+        ),
+      withAnalysisSandbox: vi.fn().mockImplementation((use: (a: object) => unknown) => use({})),
+    }
+    const recorder = desktopRecorder(sandboxes)
+    const pet = [{ type: 'text' as const, text: '/pet' }]
+
+    for (const inputSteps of [pet, [], [{ type: 'text' as const, text: '/pet' }]]) {
+      await recorder.record({ mod: MOD, inputSteps })
+    }
+
+    expect(baselineSteps).toEqual([['/pet'], []])
+  })
+
   it.each([
-    { steps: [{ type: 'text' as const, text: '/stand' }], typedSteps: true },
-    { steps: [], typedSteps: false },
+    {
+      steps: [{ type: 'text' as const, text: '/stand' }],
+      typedSteps: true,
+      typedSlashCommand: true,
+    },
+    {
+      steps: [{ type: 'text' as const, text: 'hello' }],
+      typedSteps: true,
+      typedSlashCommand: false,
+    },
+    { steps: [], typedSteps: false, typedSlashCommand: false },
   ])(
-    'tells the analysis whether the mod session typed input steps the baseline did not ($typedSteps)',
-    async ({ steps, typedSteps }) => {
+    'tells the analysis whether the sessions typed input steps ($typedSteps) and a slash command ($typedSlashCommand)',
+    async ({ steps, typedSteps, typedSlashCommand }) => {
       const sandboxes = {
         withRecordingDesktop: vi.fn().mockResolvedValue(FULL_SHOT),
         withAnalysisSandbox: vi.fn().mockImplementation((use: (a: object) => unknown) => use({})),
       }
 
-      await desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: steps, draws: [] })
+      await desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: steps })
 
       expect(vi.mocked(analyseShot)).toHaveBeenLastCalledWith(
         {},
-        expect.objectContaining({ typedSteps }),
+        expect.objectContaining({ typedSteps, typedSlashCommand }),
       )
     },
   )
@@ -100,7 +138,7 @@ describe('desktopRecorder status line', () => {
       }),
       withAnalysisSandbox: vi.fn().mockImplementation((use: (a: object) => unknown) => use({})),
     }
-    const request = { mod: MOD, inputSteps: [], draws: [] }
+    const request = { mod: MOD, inputSteps: [] }
     await desktopRecorder(sandboxes).record(statusLine ? { ...request, statusLine } : request)
     return staged
   }

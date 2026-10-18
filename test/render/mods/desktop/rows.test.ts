@@ -3,13 +3,12 @@ import {
   bandAbovePrompt,
   cardBottom,
   drawnRows,
-  emptyRows,
-  GAP_COLLAPSE_OVER,
-  gapCuts,
   KEPT_GAP,
+  keptRowCuts,
   uncutTop,
+  userBubbleRows,
 } from '@/render/mods/desktop/rows'
-import { CARD_MAX_HEIGHT, CHAT_TOP, WINDOW } from '@/render/mods/desktop/screen'
+import { CARD_MAX_HEIGHT, CHAT_TOP, CROP_MARGIN, WINDOW } from '@/render/mods/desktop/screen'
 
 /** A shot's row profile: 0 (page background) everywhere except the given [from, to, share] runs. */
 function rows(...runs: [number, number, number][]): number[] {
@@ -113,51 +112,42 @@ describe('drawnRows', () => {
     expect(drawnRows(rows([50, 60, 1]), 76, 876)).toBeNull()
   })
 })
-describe('emptyRows', () => {
-  it('is a row only when it is page background and the same as in the baseline', () => {
-    const content = [0, 0.3, 0, 0]
-    const changed = [0, 0, 0.1, 0]
+describe('userBubbleRows', () => {
+  it("is a row of a message the user sent: on the column's right edge, clear of its left", () => {
+    const left = [0, 0, 0.5, 1, 0]
+    const right = [0, 0.4, 0, 1, 0.4]
 
-    expect(emptyRows(content, changed)).toEqual([true, false, false, true])
+    expect(userBubbleRows(left, right)).toEqual([false, true, false, false, true])
   })
 })
 
-describe('gapCuts', () => {
-  /** Empty everywhere except the given [from, to] runs of rows that have something in them. */
-  const empty = (...filled: [number, number][]) => {
-    const flags = Array<boolean>(WINDOW.height).fill(true)
-    for (const [from, to] of filled) flags.fill(false, from, to + 1)
+describe('keptRowCuts', () => {
+  /** Kept only on the given [from, to] runs of rows. */
+  const kept = (...runs: [number, number][]) => {
+    const flags = Array<boolean>(WINDOW.height).fill(false)
+    for (const [from, to] of runs) flags.fill(true, from, to + 1)
     return flags
   }
 
-  it('cuts a long empty stretch down to the gap Desktop leaves between messages', () => {
-    const flags = empty([300, 340], [740, 896])
-
-    expect(gapCuts(flags, 292, 896)).toEqual([
-      { from: 341 + KEPT_GAP / 2, rows: 740 - 341 - KEPT_GAP },
+  it('cuts everything above and below what is kept, down to the crop margin', () => {
+    expect(keptRowCuts(kept([775, 814]), 292, 896)).toEqual([
+      { from: 292, rows: 775 - CROP_MARGIN - 292 },
+      { from: 815 + CROP_MARGIN, rows: 896 - (815 + CROP_MARGIN) },
     ])
   })
 
-  it('leaves the space between messages alone', () => {
-    expect(gapCuts(empty([300, 340], [392, 430], [740, 896]), 292, 896)).toEqual([
-      { from: 431 + KEPT_GAP / 2, rows: 740 - 431 - KEPT_GAP },
-    ])
+  it('cuts a stretch between kept rows down to the gap it keeps', () => {
+    const cuts = keptRowCuts(kept([300, 340], [775, 814]), 300, 815)
+
+    expect(cuts).toEqual([{ from: 341 + KEPT_GAP / 2, rows: 775 - 341 - KEPT_GAP }])
   })
 
-  it('collapses only a stretch longer than the threshold', () => {
-    const at = (length: number) => gapCuts(empty([300, 340], [341 + length, 896]), 292, 896)
-
-    expect(at(GAP_COLLAPSE_OVER)).toEqual([])
-    expect(at(GAP_COLLAPSE_OVER + 1)).toHaveLength(1)
+  it('leaves a stretch no longer than the gap it keeps, such as between lines of text', () => {
+    expect(keptRowCuts(kept([300, 310], [311 + KEPT_GAP, 330]), 300, 331)).toEqual([])
+    expect(keptRowCuts(kept([300, 310], [312 + KEPT_GAP, 330]), 300, 331)).toHaveLength(1)
   })
 
-  it('cuts every long stretch, top to bottom', () => {
-    const cuts = gapCuts(empty([300, 310], [500, 510], [800, 896]), 292, 896)
-
-    expect(cuts.map((c) => c.from)).toEqual([311 + KEPT_GAP / 2, 511 + KEPT_GAP / 2])
-  })
-
-  it('looks only inside the crop', () => {
-    expect(gapCuts(empty([700, 896]), 650, 896)).toEqual([])
+  it('is null when no row is kept', () => {
+    expect(keptRowCuts(kept([100, 200]), 292, 896)).toBeNull()
   })
 })

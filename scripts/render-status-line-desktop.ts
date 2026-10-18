@@ -9,7 +9,6 @@ import { requireEnv } from '@/lib/env'
 import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { inputStepsSchema } from '@/mods/curation'
-import { describeFootprint } from '@/mods/footprint'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { terminalLine } from '@/mods/terminal-line'
 import type { DesktopVersions } from '@/render/mods/desktop/desktop-sandbox'
@@ -49,7 +48,9 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface RenderStatusLineDesktopDeps {
   db: Db
-  desktopRecorder: DesktopRecorder & { baseline(): Promise<DesktopVersions> }
+  desktopRecorder: DesktopRecorder & {
+    baseline(inputSteps: DesktopRecordRequest['inputSteps']): Promise<DesktopVersions>
+  }
   github: Pick<GitHubSource, 'tarball'>
   log: (line: string) => void
 }
@@ -67,7 +68,6 @@ async function statuslineAnywhere(db: Db) {
       path: schema.modVersions.path,
       commitSha: schema.modVersions.commitSha,
       inputSteps: schema.modVersions.inputSteps,
-      footprint: schema.modVersions.footprint,
     })
     .from(schema.mods)
     .innerJoin(schema.modVersions, eq(schema.modVersions.id, schema.mods.currentVersionId))
@@ -170,9 +170,11 @@ export async function renderStatusLineDesktop(
   const request: Omit<DesktopRecordRequest, 'statusLine'> = {
     mod: { source: { tarball, path: mod.path }, pluginName: mod.pluginName },
     inputSteps: inputStepsSchema.parse(mod.inputSteps),
-    draws: describeFootprint(mod.footprint).draws,
   }
-  const now = { ...(await deps.desktopRecorder.baseline()), modCommitSha: mod.commitSha }
+  const now = {
+    ...(await deps.desktopRecorder.baseline(request.inputSteps)),
+    modCommitSha: mod.commitSha,
+  }
 
   const todo: Target[] = []
   for (const target of published) {

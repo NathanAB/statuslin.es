@@ -1,4 +1,3 @@
-import type { DrawLocation } from '@/mods/footprint'
 import type { RegionGrey } from './imagemagick'
 import { bandAbovePrompt, cardBottom, drawnRows, type RowProfile, uncutTop } from './rows'
 import {
@@ -49,7 +48,6 @@ export interface ShotFacts {
    */
   changed: Rect | null
   paneOpen: boolean
-  draws: readonly DrawLocation[]
   /** The final shot, row by row, across its layout's chat column. */
   rows: RowProfile
   /** The final shot, row by row, across the plate strips at its chat column's two edges. */
@@ -86,13 +84,6 @@ const PANE_ONLY = clamp(
   PANE.y - PANE_MARGIN,
   PANE.x + PANE.width + PANE_MARGIN,
   PANE.y + PANE.height + PANE_MARGIN,
-)
-
-const CHAT_AND_PANE = clamp(
-  PANE_CHAT_LEFT - CROP_MARGIN,
-  PANE.y - PANE_MARGIN,
-  PANE.x + PANE.width + PANE_MARGIN,
-  CONTENT.bottom,
 )
 
 const PROMPT_RIGHT = PROMPT_BOX.x + PROMPT_BOX.width
@@ -145,13 +136,12 @@ function chatFrame(changed: Rect, rows: RowProfile, plate: RowProfile): Frame {
 
 /**
  * Where to crop the final shot. With a pane open the chat column narrows, so a comparison with the
- * baseline says nothing and the crop is fixed: the pane alone when the mod draws only there. Its
- * card is a band above the prompt box, or else what the mod draws in the pane.
+ * baseline says nothing and the crop is fixed: the pane alone. Its card is a band above the prompt
+ * box, or else what the mod draws in the pane.
  */
-export function frameShot({ changed, paneOpen, draws, rows, plate, pane }: ShotFacts): Frame {
+export function frameShot({ changed, paneOpen, rows, plate, pane }: ShotFacts): Frame {
   if (paneOpen) {
-    const paneOnly = draws.length > 0 && draws.every((d) => d === 'pane')
-    const rect = paneOnly ? PANE_ONLY : CHAT_AND_PANE
+    const rect = PANE_ONLY
     const card =
       promptCard(plate, PANE_CHAT_LEFT - CROP_MARGIN, PANE_CHAT_RIGHT + CROP_MARGIN, false) ??
       (pane && paneCard(pane)) ??

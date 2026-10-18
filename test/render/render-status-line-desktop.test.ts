@@ -146,7 +146,7 @@ describe('renderStatusLineDesktop', () => {
     expect(tarballs).toEqual([`${REPO_URL}@${MOD_SHA}`])
   })
 
-  it('records the status line through statusline-anywhere where its footprint draws', async () => {
+  it('records the status line through statusline-anywhere', async () => {
     await seedStatuslineAnywhere()
     await seedConfig('dracula', { source: 'print("hi")', interpreter: 'python' })
     const recorder = new FakeDesktopRecorder({}, VERSIONS)
@@ -160,7 +160,6 @@ describe('renderStatusLineDesktop', () => {
           pluginName: STATUSLINE_ANYWHERE_MOD_SLUG,
         },
         inputSteps: [],
-        draws: ['above-prompt'],
         statusLine: { source: 'print("hi")', interpreter: 'python' },
       },
     ])

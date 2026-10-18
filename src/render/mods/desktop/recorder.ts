@@ -75,21 +75,28 @@ const sameVersions = (a: DesktopVersions, b: DesktopVersions) =>
 
 /**
  * Records mods in the real Claude Desktop, each in its own cold-booted sandbox, and frames each
- * final shot against one no-mod baseline shared by every record on this instance. The framing and
- * crop run in a second, fresh sandbox, as the terminal recorder's replay does.
+ * final shot against a no-mod baseline that types the same input steps, so the turns they start
+ * frame away. One baseline per list of steps, shared by every record on this instance. The framing
+ * and crop run in a second, fresh sandbox, as the terminal recorder's replay does.
  */
 export function desktopRecorder(
   sandboxes: Sandboxes,
-): DesktopRecorder & { baseline(): Promise<FullShot> } {
-  const baseline = sharedOnce(() =>
-    recordFullShot(sandboxes, null, { target: null, inputSteps: [] }),
-  )
+): DesktopRecorder & { baseline(inputSteps: readonly InputStep[]): Promise<FullShot> } {
+  const bySteps = new Map<string, () => Promise<FullShot>>()
+  const baseline = (inputSteps: readonly InputStep[]) => {
+    const key = JSON.stringify(inputSteps)
+    const shared =
+      bySteps.get(key) ??
+      sharedOnce(() => recordFullShot(sandboxes, null, { target: null, inputSteps }))
+    bySteps.set(key, shared)
+    return shared()
+  }
   return {
     baseline,
-    record: async ({ mod, inputSteps, draws, statusLine }): Promise<DesktopRecording> => {
+    record: async ({ mod, inputSteps, statusLine }): Promise<DesktopRecording> => {
       checkInputSteps(inputSteps)
       // Started now, alongside the mod's session; awaited only to frame its shot.
-      const pendingBaseline = baseline()
+      const pendingBaseline = baseline(inputSteps)
       pendingBaseline.catch(() => {})
       const shot = await recordFullShot(sandboxes, mod.source, {
         target: mod.pluginName,
@@ -107,8 +114,8 @@ export function desktopRecorder(
         analyseShot(sandbox, {
           shot: shot.png,
           baseline: base.png,
-          draws,
           typedSteps: inputSteps.length > 0,
+          typedSlashCommand: inputSteps.some((step) => step.text.startsWith('/')),
         }),
       )
       return { ...analysis, ...versions }
