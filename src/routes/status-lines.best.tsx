@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { jsonLdScript } from '@/lib/json-ld'
 import { configListPageJsonLd } from '@/lib/json-ld-lists'
-import { brandedPageTitle } from '@/lib/page-title'
+import { BEST_PAGE_TITLE_BASE, brandedPageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
 import { Stack } from '@/ui/layout'
@@ -30,7 +30,7 @@ function rankedLines(count: number): string {
 export const Route = createFileRoute('/status-lines/best')({
   loader: async () => ({ page: await getBestPage(), user: await getSession() }),
   head: ({ loaderData }) => {
-    const titleBase = `Best Claude Code Status Lines${monthSuffix(loaderData?.page.latestCopy ?? null)}`
+    const titleBase = `${BEST_PAGE_TITLE_BASE}${monthSuffix(loaderData?.page.latestCopy ?? null)}`
     return {
       meta: [
         { title: brandedPageTitle(titleBase) },

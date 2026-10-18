@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModPageCopy, modPageCopySchema, readPageCopy } from '@/content/types'
 import {
@@ -103,37 +103,6 @@ export async function getMarketplaceRows(db: Db): Promise<MarketplaceModRow[]> {
     )
     .where(eq(mods.status, 'published'))
     .orderBy(asc(mods.slug))
-}
-
-export interface PublishedModListing {
-  slug: string
-  title: string
-  description: string
-  copyCount: number
-  tags: string[]
-  updatedAt: Date // when the current version went live: its approval, else (curated) its creation
-}
-
-export async function getPublishedModListings(db: Db): Promise<PublishedModListing[]> {
-  return db
-    .select({
-      slug: mods.slug,
-      title: mods.title,
-      description: mods.description,
-      copyCount: mods.copyCount,
-      tags: mods.allTags,
-      updatedAt: sql<Date>`coalesce(${submissions.reviewedAt}, ${modVersions.createdAt})`.mapWith(
-        modVersions.createdAt,
-      ),
-    })
-    .from(mods)
-    .innerJoin(
-      modVersions,
-      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-    )
-    .leftJoin(submissions, eq(submissions.id, modVersions.id))
-    .where(eq(mods.status, 'published'))
-    .orderBy(desc(mods.copyCount), asc(mods.slug))
 }
 
 /** True when the `mods` table has a row in any status, published or not. */

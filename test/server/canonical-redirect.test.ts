@@ -35,6 +35,13 @@ describe('canonicalRedirect', () => {
     expect(canonicalRedirect('https://statuslin.es/guide/mods')).toBe('/guide')
   })
 
+  it('serves the status line not showing guide instead of redirecting it', () => {
+    expect(canonicalRedirect('https://statuslin.es/guide/status-line-not-showing')).toBe(null)
+    expect(canonicalRedirect('https://statuslin.es/guide/status-line-not-showing/')).toBe(
+      '/guide/status-line-not-showing',
+    )
+  })
+
   it('serves the mod safety guide instead of redirecting it', () => {
     expect(canonicalRedirect('https://statuslin.es/guide/are-claude-code-mods-safe')).toBe(null)
     expect(canonicalRedirect('https://statuslin.es/guide/are-claude-code-mods-safe/')).toBe(

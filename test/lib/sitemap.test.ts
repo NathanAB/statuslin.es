@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DESKTOP_GUIDE_DATES,
   MOD_SAFETY_GUIDE_DATES,
+  NOT_SHOWING_GUIDE_DATES,
   STATUS_LINES_VS_MODS_GUIDE_DATES,
 } from '@/lib/page-title'
 import { sitemapResponse } from '@/lib/sitemap'
@@ -55,6 +56,13 @@ describe('sitemapResponse', () => {
     )
   })
 
+  it('lists the status line not showing guide with its modified date', async () => {
+    const xml = await sitemapResponse(BASE, [], []).text()
+    expect(entryFor(xml, `${BASE}/guide/status-line-not-showing`)).toContain(
+      `<lastmod>${NOT_SHOWING_GUIDE_DATES.modified}</lastmod>`,
+    )
+  })
+
   it('lists the mod safety guide with its modified date', async () => {
     const xml = await sitemapResponse(BASE, [], []).text()
     expect(entryFor(xml, `${BASE}/guide/are-claude-code-mods-safe`)).toContain(
@@ -93,7 +101,7 @@ describe('sitemapResponse', () => {
 
     expect(entryFor(xml, BASE)).toContain('<lastmod>2026-05-06</lastmod>')
     expect(entryFor(xml, `${BASE}/?page=2`)).toContain('<lastmod>2026-05-06</lastmod>')
-    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-10-15</lastmod>')
+    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-10-18</lastmod>')
     for (const path of ['/resources', '/terms']) {
       expect(entryFor(xml, `${BASE}${path}`)).not.toContain('<lastmod>')
     }
