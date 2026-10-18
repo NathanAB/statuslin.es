@@ -48,12 +48,13 @@ Later, start/stop it with `docker start statuslines-postgres` / `docker stop sta
 
 ### 2. Env (`.env.local`)
 
-Copy `.env.example` to `.env.local`. Bun auto-loads it, and it's the only env file the local app
-reads. (`.env.staging` / `.env.production` are just the source you push to Fly secrets; see
-[`docs/deploy.md`](./docs/deploy.md).)
+Bun auto-loads two env files in dev: the committed `.env.development`, which already holds working
+local defaults for `DATABASE_URL` and `BETTER_AUTH_URL`, and your own gitignored `.env.local`, which
+wins over it. `.env.schema` is the committed list of every variable, with its type and a note on
+where each environment sets it. (`.env.staging` / `.env.production` are just the source you push to
+Fly secrets; see [`docs/deploy.md`](./docs/deploy.md).)
 
-`.env.example` already ships with working local defaults for `DATABASE_URL` and `BETTER_AUTH_URL`, so
-the only values you fill in are:
+Create `.env.local` with the only values you fill in:
 
 ```sh
 BETTER_AUTH_SECRET=        # generate with: openssl rand -base64 32

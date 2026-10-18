@@ -12,7 +12,8 @@ dist/
 # Env / secrets
 .env
 .env.*
-!.env.example
+!.env.schema
+!.env.development
 
 # Brainstorm companion (local only)
 .superpowers/

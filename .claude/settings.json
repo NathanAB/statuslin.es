@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "deny": [
+      "Read(**/.env.local)",
+      "Read(**/.env.staging)",
+      "Read(**/.env.production)",
+      "Bash(fly secrets import *)",
+      "Bash(flyctl secrets import *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
