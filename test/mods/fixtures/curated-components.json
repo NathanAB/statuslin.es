@@ -943,5 +943,942 @@
       },
       "license": "MIT"
     }
+  },
+  "flightdeck": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/marketplace.json",
+      "f 0 .claude-plugin/plugin.json",
+      "f 0 .gitignore",
+      "f 0 CHANGELOG.md",
+      "f 0 CONTRIBUTING.md",
+      "f 0 LICENSE",
+      "f 0 README.md",
+      "f 0 SECURITY.md",
+      "d 4096 docs",
+      "d 4096 docs/media",
+      "f 0 docs/media/demo.gif",
+      "f 0 docs/media/docked-pane.png",
+      "f 0 docs/media/docked-session.png",
+      "f 0 docs/media/inline-mini.png",
+      "f 0 docs/media/social-preview.png",
+      "d 4096 hooks",
+      "f 0 hooks/core.ts",
+      "f 0 hooks/elapsed.tsx",
+      "f 34 hooks/hooks.json",
+      "f 0 hooks/rail.tsx",
+      "f 0 hooks/register.tsx",
+      "d 4096 tests",
+      "f 0 tests/flightdeck.test.ts",
+      "f 0 tsconfig.json",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "pluginJson": {
+      "name": "flightdeck",
+      "version": "0.4.0",
+      "description": "Flightdeck: a live agent dashboard for Claude Code. Main model vitals, an on-call architect, every permission check, subagent cards and swimlanes, a turn receipt and a session log, all from real session events",
+      "author": {
+        "name": "Stephen Casella",
+        "url": "https://github.com/scasella"
+      },
+      "homepage": "https://github.com/scasella/claude-flightdeck",
+      "repository": "https://github.com/scasella/claude-flightdeck",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "claude-code-mod",
+        "claude-code-plugin",
+        "dashboard",
+        "subagents",
+        "agents",
+        "observability",
+        "tui"
+      ],
+      "types": "./types/index.d.ts",
+      "userConfig": {
+        "architectPattern": {
+          "title": "Architect pattern",
+          "description": "Regular expression (case-insensitive) for the agent types and server tools that count as the on-call architect, e.g. advisor|architect|reviewer",
+          "type": "string",
+          "default": "advisor|architect"
+        },
+        "architectLabel": {
+          "title": "Architect label",
+          "description": "Name shown for the architect role",
+          "type": "string",
+          "default": "ARCHITECT"
+        },
+        "gateLabel": {
+          "title": "Gate label",
+          "description": "Name shown for the permission panel",
+          "type": "string",
+          "default": "GATE"
+        },
+        "panels": {
+          "title": "Panels",
+          "description": "Comma-separated panels in display order: main, architect, gate, agents, loops, receipt, log. Leave one out to hide it.",
+          "type": "string",
+          "default": "main,architect,gate,agents,loops,receipt,log"
+        },
+        "motion": {
+          "title": "Motion",
+          "description": "Animate the connectors while real work flows, or keep them still",
+          "type": "string",
+          "options": ["while-active", "off"],
+          "default": "while-active"
+        },
+        "moments": {
+          "title": "Architect moments",
+          "description": "Show the inferred moment of each consult (before a plan, error repeats, before done)",
+          "type": "boolean",
+          "default": true
+        },
+        "matchDescriptions": {
+          "title": "Match agent descriptions",
+          "description": "Also count an agent type as the architect when its description (not just its name) matches the pattern",
+          "type": "boolean",
+          "default": false
+        },
+        "maxCards": {
+          "title": "Cards before swimlanes",
+          "description": "Agent cards drawn side by side; more agents than this switch to swimlanes (1-6)",
+          "type": "number",
+          "default": 3
+        },
+        "layout": {
+          "title": "Layout",
+          "description": "auto: a summary of at most 8 rows when the pane sits inline above the prompt, two columns from 110 columns when docked, one column otherwise",
+          "type": "string",
+          "options": ["auto", "compact", "wide", "mini"],
+          "default": "auto"
+        },
+        "palette": {
+          "title": "Palette",
+          "description": "theme follows your Claude Code theme (light, dark, colour-blind); pastel is fixed colours tuned for dark terminals",
+          "type": "string",
+          "options": ["theme", "pastel"],
+          "default": "theme"
+        },
+        "openOnStart": {
+          "title": "Open on start",
+          "description": "Open the pane when a session starts",
+          "type": "boolean",
+          "default": true
+        },
+        "statusLine": {
+          "title": "Status line",
+          "description": "Show context, agents, consults and denials in the status line",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "hooksJson": "{ \"modules\": [\"./register.tsx\"] }\n",
+    "modules": ["./register.tsx"]
+  },
+  "prismantis": {
+    "records": [
+      "d 4096 .agents",
+      "d 4096 .agents/plugins",
+      "f 0 .agents/plugins/marketplace.json",
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/marketplace.json",
+      "f 0 .claude-plugin/plugin.json",
+      "d 4096 .claude",
+      "f 0 .claude/CLAUDE.md",
+      "d 4096 .claude/skills",
+      "d 4096 .claude/skills/add-theme",
+      "f 0 .claude/skills/add-theme/SKILL.md",
+      "d 4096 .claude/skills/demo",
+      "f 0 .claude/skills/demo/SKILL.md",
+      "d 4096 .claude/skills/drive-check",
+      "f 0 .claude/skills/drive-check/SKILL.md",
+      "f 0 .claude/skills/drive-check/drive.sh",
+      "d 4096 .claude/skills/live-check",
+      "f 0 .claude/skills/live-check/SKILL.md",
+      "f 0 .claude/skills/live-check/capture.py",
+      "f 0 .claude/skills/live-check/render.mjs",
+      "d 4096 .claude/skills/release",
+      "f 0 .claude/skills/release/SKILL.md",
+      "d 4096 .codex-plugin",
+      "f 0 .codex-plugin/plugin.json",
+      "d 4096 .github",
+      "f 0 .github/CODEOWNERS",
+      "f 0 .github/CONTRIBUTING.md",
+      "d 4096 .github/ISSUE_TEMPLATE",
+      "f 0 .github/ISSUE_TEMPLATE/bug.yml",
+      "f 0 .github/ISSUE_TEMPLATE/theme.yml",
+      "f 0 .github/dependabot.yml",
+      "f 0 .github/pull_request_template.md",
+      "d 4096 .github/workflows",
+      "f 0 .github/workflows/ci.yml",
+      "f 0 .github/workflows/release.yml",
+      "f 0 .gitignore",
+      "f 0 AGENTS.md",
+      "f 0 LICENSE",
+      "f 0 README.md",
+      "f 0 SECURITY.md",
+      "d 4096 codex",
+      "f 0 codex/README.md",
+      "f 0 codex/hint.md",
+      "f 0 codex/hooks.json",
+      "d 4096 codex/skills",
+      "d 4096 codex/skills/prismantis-themes",
+      "f 0 codex/skills/prismantis-themes/SKILL.md",
+      "d 4096 codex/skills/prismantis-themes/themes",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-catppuccin-latte.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-catppuccin-mocha.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-dracula.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-everforest.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-github-dark.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-github-light.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-gruvbox-dark.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-gruvbox-light.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-mono.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-nord.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-one-dark.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-rose-pine-dawn.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-rose-pine.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-solarized-dark.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-solarized-light.tmTheme",
+      "f 0 codex/skills/prismantis-themes/themes/prismantis-tokyo-night.tmTheme",
+      "d 4096 codex/skills/prismantis",
+      "f 0 codex/skills/prismantis/SKILL.md",
+      "d 4096 docs",
+      "f 0 docs/CHANGELOG.md",
+      "f 0 docs/THIRD_PARTY_NOTICES.md",
+      "f 0 docs/bench-baseline.json",
+      "d 4096 docs/brand",
+      "f 0 docs/brand/banner.png",
+      "f 0 docs/brand/mascot.png",
+      "d 4096 docs/clock",
+      "f 0 docs/clock/prompt.png",
+      "f 0 docs/clock/turn.png",
+      "f 0 docs/compare.gif",
+      "d 4096 docs/compare",
+      "f 0 docs/compare/charts.png",
+      "f 0 docs/compare/code-fold.png",
+      "f 0 docs/compare/code.png",
+      "f 0 docs/compare/codex-after.png",
+      "f 0 docs/compare/codex-before.png",
+      "f 0 docs/compare/copy.png",
+      "f 0 docs/compare/diagrams.png",
+      "f 0 docs/compare/diff-cards.png",
+      "f 0 docs/compare/fallback-note.png",
+      "f 0 docs/compare/footer.png",
+      "f 0 docs/compare/footnotes.png",
+      "f 0 docs/compare/headings.png",
+      "f 0 docs/compare/latex.png",
+      "f 0 docs/compare/layout.png",
+      "f 0 docs/compare/prompts.png",
+      "f 0 docs/compare/random-theme.png",
+      "f 0 docs/compare/rtl.png",
+      "f 0 docs/compare/tables.png",
+      "f 0 docs/compare/text.png",
+      "f 0 docs/compare/tools.png",
+      "d 4096 docs/copy",
+      "f 0 docs/copy/hover.png",
+      "f 0 docs/demo.md",
+      "f 0 docs/figure.png",
+      "d 4096 docs/mermaid",
+      "f 0 docs/mermaid/inline-tags.png",
+      "d 4096 docs/prompts",
+      "f 0 docs/prompts/bar.png",
+      "f 0 docs/prompts/bubble.png",
+      "f 0 docs/prompts/chevron.png",
+      "f 0 docs/task-lists.png",
+      "f 0 docs/themes.png",
+      "f 0 docs/tool-output.md",
+      "d 4096 docs/tools",
+      "f 0 docs/tools/chat.png",
+      "f 0 docs/tools/classic.png",
+      "f 0 docs/tools/quiet.png",
+      "f 0 docs/tools/tree-bold.png",
+      "f 0 docs/tools/tree-dim.png",
+      "f 0 docs/tour.gif",
+      "d 4096 hooks",
+      "f 0 hooks/charts.ts",
+      "f 0 hooks/clipboard.ts",
+      "f 0 hooks/clock.ts",
+      "f 0 hooks/figure.tsx",
+      "f 0 hooks/help.ts",
+      "f 34 hooks/hooks.json",
+      "f 0 hooks/html.ts",
+      "f 0 hooks/latex.ts",
+      "f 0 hooks/markdown.ts",
+      "f 0 hooks/mermaid.tsx",
+      "f 0 hooks/presets.ts",
+      "f 0 hooks/register.tsx",
+      "f 0 hooks/render.tsx",
+      "f 0 hooks/rtl.ts",
+      "f 0 hooks/theme.ts",
+      "d 4096 hooks/vendor",
+      "f 0 hooks/vendor/mermaid-text.d.ts",
+      "f 0 hooks/vendor/mermaid-text.js",
+      "f 0 hooks/vendor/prism.d.ts",
+      "f 0 hooks/vendor/prism.js",
+      "d 4096 scripts",
+      "f 0 scripts/bench.mjs",
+      "f 0 scripts/build-codex.mjs",
+      "f 0 scripts/build-vendor.mjs",
+      "f 0 scripts/clipboard-check.mjs",
+      "f 0 scripts/clipboard-copyq-check.mjs",
+      "f 0 scripts/clipboard-linux-check.mjs",
+      "f 0 scripts/clipboard-windows-check.mjs",
+      "f 0 scripts/complexity-baseline.json",
+      "f 0 scripts/complexity.mjs",
+      "f 0 scripts/load.mjs",
+      "f 0 scripts/package-lock.json",
+      "f 0 scripts/package.json",
+      "f 0 scripts/snapshot.mjs",
+      "d 4096 tests",
+      "f 0 tests/caches.test.tsx",
+      "f 0 tests/claude-version.ts",
+      "f 0 tests/clipboard-env.ts",
+      "f 0 tests/clipboard.test.tsx",
+      "f 0 tests/contrast.test.tsx",
+      "f 0 tests/features.test.tsx",
+      "f 0 tests/figure.test.tsx",
+      "f 0 tests/images.test.tsx",
+      "f 0 tests/latex.test.tsx",
+      "f 0 tests/regressions.test.tsx",
+      "f 0 tests/render.test.tsx",
+      "f 0 tests/rtl.test.tsx",
+      "f 0 tests/security.test.tsx",
+      "d 4096 tests/snapshots",
+      "f 0 tests/snapshots/demo-catppuccin-mocha.txt",
+      "f 0 tests/snapshots/demo-github-light.txt",
+      "f 0 tests/snapshots/demo-kitty.txt",
+      "f 0 tests/snapshots/demo-mono.txt",
+      "f 0 tsconfig.json",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "pluginJson": {
+      "name": "prismantis",
+      "version": "0.28.0",
+      "description": "Colorful, themeable rendering for Claude Code replies: tables, headings, code, numbers, paths and links.",
+      "author": {
+        "name": "Nahum Litvin",
+        "url": "https://github.com/NahumLitvin"
+      },
+      "homepage": "https://github.com/NahumLitvin/prismantis",
+      "repository": "https://github.com/NahumLitvin/prismantis",
+      "license": "MIT",
+      "keywords": ["mod", "theme", "markdown", "tables", "colors", "terminal"],
+      "types": "./types/index.d.ts",
+      "userConfig": {
+        "enabled": {
+          "type": "boolean",
+          "title": "Enabled",
+          "description": "Draw replies with this mod. Off falls back to Claude Code's own renderer.",
+          "default": true
+        },
+        "theme": {
+          "type": "string",
+          "title": "Theme",
+          "description": "Base palette, from popular MIT-licensed themes. Light variants: catppuccin-latte, gruvbox-light, rose-pine-dawn, github-light, solarized-light. mono uses bold and dim only. random picks a dark color preset each time the mod loads (session start or reload).",
+          "default": "catppuccin-mocha",
+          "options": [
+            "catppuccin-mocha",
+            "catppuccin-latte",
+            "dracula",
+            "nord",
+            "tokyo-night",
+            "gruvbox-dark",
+            "gruvbox-light",
+            "rose-pine",
+            "rose-pine-dawn",
+            "everforest",
+            "github-dark",
+            "github-light",
+            "one-dark",
+            "solarized-dark",
+            "solarized-light",
+            "mono",
+            "random"
+          ]
+        },
+        "headingStyle": {
+          "type": "string",
+          "title": "Heading style",
+          "description": "Terminals have one font size, so headings get weight instead: banner (a box around H1, a heavy rule under H2), bold, underline, or uppercase H1.",
+          "default": "banner",
+          "options": ["bold", "underline", "uppercase", "banner"]
+        },
+        "tableStyle": {
+          "type": "string",
+          "title": "Table style",
+          "description": "box: every cell boxed, with a double line under the header. rules: a rule under the header and between rows. grid: heavier header rule, wider gaps. minimal: header rule only.",
+          "default": "box",
+          "options": ["box", "rules", "grid", "minimal"]
+        },
+        "promptStyle": {
+          "type": "string",
+          "title": "Your prompt style",
+          "description": "How the prompts you type draw in the transcript. bubble: a rounded box in the accent color. bar: an accent bar on the left. chevron: a bold accent › before the text. off: Claude Code's own look.",
+          "default": "bubble",
+          "options": ["bubble", "bar", "chevron", "off"]
+        },
+        "clock": {
+          "type": "string",
+          "title": "Clock times",
+          "description": "Shows when you sent each prompt and when each turn finished. 24h: 14:32. 12h: 2:32 PM. A time from another day gets its date. off: no times.",
+          "default": "off",
+          "options": ["off", "24h", "12h"]
+        },
+        "toolStyle": {
+          "type": "string",
+          "title": "Tool row style",
+          "description": "How tool rows (Ran, Read, Edited) sit next to Claude's sentences. chat: tool rows dimmed on the right, Claude on the left. tree-dim: tucked under the sentence with ⎿ and dimmed. tree-bold: tree-dim plus one-line sentences in bold. classic: the original look.",
+          "default": "chat",
+          "options": ["chat", "tree-dim", "tree-bold", "classic"]
+        },
+        "toolOutput": {
+          "type": "string",
+          "title": "Tool output",
+          "description": "How much of a tool call shows. full: what Claude Code shows. quiet: rows say in plain words what a call did, reads, searches and listings show only their row, other shell commands show their first lines, edits keep their diff, a failed call shows the last line of its error, and a refused call its full reason. Needs toolRows on.",
+          "default": "full",
+          "options": ["full", "quiet"]
+        },
+        "taskStyle": {
+          "type": "string",
+          "title": "Task list style",
+          "description": "How - [ ] and - [x] items draw. checks: [ ] and [✓] with done items dimmed and struck through. ticks: ○ and ✓, done items dimmed. box: □ and ✓, done items dimmed and struck through. progress: ticks with a done-count bar above each list.",
+          "default": "checks",
+          "options": ["checks", "ticks", "box", "progress"]
+        },
+        "rtl": {
+          "type": "string",
+          "title": "Right-to-left terminal",
+          "description": "Hebrew and Arabic get a right-to-left layout (right aligned, bullets and quote bars on the right, tables mirrored), with the letters sent the way your terminal needs them. auto detects the terminal; pick one to force its handling, or off for none.",
+          "default": "auto",
+          "options": [
+            "auto",
+            "warp",
+            "kitty",
+            "apple-terminal",
+            "iterm",
+            "ghostty",
+            "wezterm",
+            "vscode",
+            "alacritty",
+            "windows-terminal",
+            "gnome",
+            "konsole",
+            "off"
+          ]
+        },
+        "highlightNumbers": {
+          "type": "boolean",
+          "title": "Highlight numbers",
+          "description": "Color versions, IDs, counts and durations in prose and tables.",
+          "default": true
+        },
+        "highlightPaths": {
+          "type": "boolean",
+          "title": "Highlight paths",
+          "description": "Color file paths like ~/src/app.ts or /var/log.",
+          "default": true
+        },
+        "accentColor": {
+          "type": "string",
+          "title": "Accent",
+          "description": "Color for the reply bullet, H3+ headings and quote bars. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "headingColor": {
+          "type": "string",
+          "title": "Heading",
+          "description": "Color for H1 and H2 headings. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "tableHeaderColor": {
+          "type": "string",
+          "title": "Table header",
+          "description": "Color for table header cells. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "tableRuleColor": {
+          "type": "string",
+          "title": "Table rule",
+          "description": "Color for table rules. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "numberColor": {
+          "type": "string",
+          "title": "Numbers",
+          "description": "Color for versions, IDs and counts. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "pathColor": {
+          "type": "string",
+          "title": "Paths",
+          "description": "Color for file paths. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "linkColor": {
+          "type": "string",
+          "title": "Links",
+          "description": "Color for links and URLs. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "inlineCodeColor": {
+          "type": "string",
+          "title": "Inline code",
+          "description": "Color for `inline code`. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "codeCommandColor": {
+          "type": "string",
+          "title": "Code command",
+          "description": "Color for the command word in shell blocks. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "codeFlagColor": {
+          "type": "string",
+          "title": "Code flag",
+          "description": "Color for --flags in shell blocks. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "codeStringColor": {
+          "type": "string",
+          "title": "Code string",
+          "description": "Color for quoted strings in shell blocks. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "strongColor": {
+          "type": "string",
+          "title": "Bold text",
+          "description": "Color for **bold** text. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "quoteColor": {
+          "type": "string",
+          "title": "Quote",
+          "description": "Color for block quotes. Hex (#a6e3a1), rgb(166,227,161), ansi256(114) or a name (green). Empty uses the theme.",
+          "default": ""
+        },
+        "mermaidAscii": {
+          "type": "boolean",
+          "title": "Mermaid ASCII only",
+          "description": "Draw diagrams with + - | > instead of box-drawing characters, for fonts without them.",
+          "default": false
+        },
+        "diagramColor": {
+          "type": "string",
+          "title": "Diagram lines",
+          "description": "Color for diagram boxes and arrows. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+          "default": ""
+        },
+        "diagramTextColor": {
+          "type": "string",
+          "title": "Diagram text",
+          "description": "Color for diagram labels and LaTeX formulas. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+          "default": ""
+        },
+        "toolRows": {
+          "type": "boolean",
+          "title": "Tool rows",
+          "description": "Draw tool calls as one compact line: Ran gh pr view 12, Read ~/src/app.ts, Edited README.md. Results still draw below as usual.",
+          "default": true
+        },
+        "emphasisColor": {
+          "type": "string",
+          "title": "Italic text",
+          "description": "Color for *italic* text. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+          "default": ""
+        },
+        "codeTextColor": {
+          "type": "string",
+          "title": "Code text",
+          "description": "Color for code block text. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+          "default": ""
+        },
+        "codeCommentColor": {
+          "type": "string",
+          "title": "Code comment",
+          "description": "Color for # comments in shell blocks. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+          "default": ""
+        },
+        "ruleColor": {
+          "type": "string",
+          "title": "Rules",
+          "description": "Color for horizontal rules, diff card borders and chart gridlines. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+          "default": ""
+        },
+        "bulletColor": {
+          "type": "string",
+          "title": "Bullets",
+          "description": "Color for list bullets and numbers. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+          "default": ""
+        },
+        "diffAddedColor": {
+          "type": "string",
+          "title": "Diff added",
+          "description": "Color for added diff lines: their + marks and count, and in hex the tint behind them, mixed into black or white so code text stays at 4.5:1. Hex, rgb(), ansi256() or a name. Empty uses the theme's green.",
+          "default": ""
+        },
+        "diffRemovedColor": {
+          "type": "string",
+          "title": "Diff removed",
+          "description": "Color for removed diff lines: their - marks and count, and in hex the tint behind them, mixed into black or white so code text stays at 4.5:1. Hex, rgb(), ansi256() or a name. Empty uses the theme's red.",
+          "default": ""
+        },
+        "diffStyle": {
+          "type": "string",
+          "title": "Diff style",
+          "description": "How edit and shell edit diffs draw. card: a rounded box with tinted lines. full: no box, each changed line tinted across the width. marks: no box and no tint, changed lines in the theme's diff colors. bar: no box and no tint, a colored ▌ before each changed line.",
+          "default": "card",
+          "options": ["card", "full", "marks", "bar"]
+        },
+        "mermaid": {
+          "type": "boolean",
+          "title": "Mermaid diagrams",
+          "description": "Draw ```mermaid blocks as colored box art sized to the terminal. Off leaves the code as written.",
+          "default": true
+        },
+        "copyButtons": {
+          "type": "boolean",
+          "title": "Copy buttons",
+          "description": "Put a copy button on code blocks, tables, diagrams, lists and quotes. Reach them with ctrl+x tab then Enter, or click where the terminal passes clicks through.",
+          "default": true
+        },
+        "copyButtonStyle": {
+          "type": "string",
+          "title": "Copy button style",
+          "description": "inline: buttons beside or above each block, always shown. hover: a block's buttons float over its top-right corner only while the pointer is over it, and the reply's over its bottom-right corner, so they take no line; ctrl+x tab does not reach them, and the mobile app, which has no pointer, shows them inline. Needs copyButtons on.",
+          "default": "inline",
+          "options": ["inline", "hover"]
+        },
+        "issueHint": {
+          "type": "boolean",
+          "title": "Issue hint",
+          "description": "On your first prompt and every tenth after it, tell the model it can offer, after asking you, to open a minimal repro issue on prismantis when you say something drew wrong. About 35 tokens each time.",
+          "default": true
+        },
+        "diagramHints": {
+          "type": "boolean",
+          "title": "Diagram hints",
+          "description": "Attach a short note, read by the model and never shown, to each prompt you type or another plugin sends, saying tables, code, mermaid diagrams, charts and figures render here, and LaTeX formulas when the renderer runs. About 630 tokens per prompt (about 275 for the main part, about 360 for figures), about 80 more with LaTeX. Off when mermaid is off.",
+          "default": true
+        },
+        "latex": {
+          "type": "boolean",
+          "title": "LaTeX math",
+          "description": "Draw $$ and ```math formulas as typeset images in kitty and Ghostty (not under tmux) with RaTeX's renderer, installed as ratex-render on your PATH. Off runs nothing. Formulas that can't be drawn stay as text.",
+          "default": false
+        }
+      }
+    },
+    "hooksJson": "{ \"modules\": [\"./register.tsx\"] }\n",
+    "modules": ["./register.tsx"]
+  },
+  "ctx-handoff": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/marketplace.json",
+      "f 0 .claude-plugin/plugin.json",
+      "f 0 .editorconfig",
+      "f 0 .gitattributes",
+      "d 4096 .github",
+      "d 4096 .github/ISSUE_TEMPLATE",
+      "f 0 .github/ISSUE_TEMPLATE/bug_report.yml",
+      "f 0 .github/ISSUE_TEMPLATE/config.yml",
+      "f 0 .github/ISSUE_TEMPLATE/feature_request.yml",
+      "f 0 .github/dependabot.yml",
+      "f 0 .github/pull_request_template.md",
+      "d 4096 .github/workflows",
+      "f 0 .github/workflows/check.yml",
+      "f 0 .gitignore",
+      "f 0 CHANGELOG.md",
+      "f 0 CHANGELOG.zh-TW.md",
+      "f 0 CLAUDE.md",
+      "f 0 CODE_OF_CONDUCT.md",
+      "f 0 CONTRIBUTING.md",
+      "f 0 LICENSE",
+      "f 0 README.md",
+      "f 0 README.zh-TW.md",
+      "f 0 SECURITY.md",
+      "f 0 biome.json",
+      "d 4096 docs",
+      "d 4096 docs/assets",
+      "f 0 docs/assets/banner-dark.svg",
+      "f 0 docs/assets/banner-dark.zh-TW.svg",
+      "f 0 docs/assets/banner-light.svg",
+      "f 0 docs/assets/banner-light.zh-TW.svg",
+      "f 0 docs/assets/cache.svg",
+      "f 0 docs/assets/cache.zh-TW.svg",
+      "f 0 docs/assets/guard.svg",
+      "f 0 docs/assets/guard.zh-TW.svg",
+      "f 0 docs/assets/handoff.svg",
+      "f 0 docs/assets/handoff.zh-TW.svg",
+      "f 0 docs/assets/memory.svg",
+      "f 0 docs/assets/memory.zh-TW.svg",
+      "f 0 docs/assets/nudges.svg",
+      "f 0 docs/assets/nudges.zh-TW.svg",
+      "f 0 docs/assets/resume.svg",
+      "f 0 docs/assets/resume.zh-TW.svg",
+      "f 0 docs/eval-log.md",
+      "f 0 docs/guide.md",
+      "f 0 docs/guide.zh-TW.md",
+      "f 0 docs/north-star.md",
+      "f 0 docs/social-preview.html",
+      "f 0 docs/social-preview.png",
+      "d 4096 hooks",
+      "f 0 hooks/config.test.ts",
+      "f 0 hooks/config.ts",
+      "f 0 hooks/distill-batch.ts",
+      "f 0 hooks/distill.test.ts",
+      "f 0 hooks/distill.ts",
+      "f 0 hooks/guard-ask.test.ts",
+      "f 0 hooks/guards.test.ts",
+      "f 0 hooks/guards.ts",
+      "f 0 hooks/handoff-failure.test.ts",
+      "f 0 hooks/handoff.test.ts",
+      "f 0 hooks/handoff.ts",
+      "f 33 hooks/hooks.json",
+      "f 0 hooks/i18n.ts",
+      "f 0 hooks/lang.test.ts",
+      "f 0 hooks/lang.ts",
+      "f 0 hooks/loops.test.ts",
+      "f 0 hooks/loops.ts",
+      "f 0 hooks/notes-file.test.ts",
+      "f 0 hooks/notes.ts",
+      "f 0 hooks/panel-data.ts",
+      "f 0 hooks/panel.test.ts",
+      "f 0 hooks/panel.tsx",
+      "f 0 hooks/paths.ts",
+      "f 0 hooks/procedures.test.ts",
+      "f 0 hooks/progress.test.ts",
+      "f 0 hooks/progress.ts",
+      "f 0 hooks/promote.test.ts",
+      "f 0 hooks/promote.ts",
+      "f 0 hooks/records.ts",
+      "f 0 hooks/register.ts",
+      "f 0 hooks/reply-lang.test.ts",
+      "f 0 hooks/runtime.ts",
+      "f 0 hooks/stats.test.ts",
+      "f 0 hooks/status.ts",
+      "f 0 hooks/test-world.ts",
+      "f 0 hooks/tombstones.ts",
+      "f 0 hooks/transcript.ts",
+      "d 4096 tools",
+      "f 0 tools/README.md",
+      "f 0 tools/check.mjs",
+      "f 0 tools/docs.mjs",
+      "f 0 tools/docs.test.mjs",
+      "f 0 tools/eval-distill.mjs",
+      "f 0 tools/eval-distill.test.mjs",
+      "f 0 tools/eval-handoff.mjs",
+      "f 0 tools/eval-handoff.test.mjs",
+      "f 0 tools/eval-lib.mjs",
+      "f 0 tools/lib.mjs",
+      "f 0 tools/notes.mjs",
+      "f 0 tools/notes.test.mjs",
+      "f 0 tools/status.mjs",
+      "f 0 tools/ts-resolve.mjs",
+      "f 0 tools/wt.mjs",
+      "f 0 tsconfig.json",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "pluginJson": {
+      "name": "ctx-handoff",
+      "version": "0.8.0",
+      "description": "Turns what you teach Claude into project notes, catches its usual slips, keeps the cache warm while you're away, and picks long sessions back up",
+      "author": {
+        "name": "CabLate",
+        "url": "https://github.com/cablate"
+      },
+      "homepage": "https://github.com/cablate/ctx-handoff-mod",
+      "repository": "https://github.com/cablate/ctx-handoff-mod",
+      "license": "MIT",
+      "keywords": ["context", "handoff", "prompt-cache", "memory", "mod"],
+      "types": "./types/index.d.ts"
+    },
+    "hooksJson": "{ \"modules\": [\"./register.ts\"] }\n",
+    "modules": ["./register.ts"]
+  },
+  "after": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/plugin.json",
+      "f 0 README.md",
+      "d 4096 hooks",
+      "f 34 hooks/hooks.json",
+      "f 0 hooks/register.test.tsx",
+      "f 0 hooks/register.tsx",
+      "d 4096 scripts",
+      "f 0 scripts/eval-haiku.js",
+      "d 4096 src",
+      "d 4096 src/commands",
+      "f 0 src/commands/apply.js",
+      "f 0 src/commands/execute.js",
+      "f 0 src/commands/parse.js",
+      "d 4096 src/core",
+      "f 0 src/core/queue.js",
+      "d 4096 src/smart",
+      "f 0 src/smart/heuristics.js",
+      "f 0 src/smart/protocol.js",
+      "f 0 src/smart/resolve.js",
+      "f 0 src/smart/text.js",
+      "d 4096 src/ui",
+      "f 0 src/ui/card.js",
+      "f 0 src/ui/format.js",
+      "f 0 src/ui/render.js",
+      "d 4096 test",
+      "f 0 test/apply.test.js",
+      "f 0 test/card.test.js",
+      "f 0 test/execute.test.js",
+      "f 0 test/helpers.js",
+      "f 0 test/heuristics.test.js",
+      "f 0 test/parse.test.js",
+      "f 0 test/plugin.test.js",
+      "f 0 test/protocol.test.js",
+      "f 0 test/queue.test.js",
+      "f 0 test/render.test.js",
+      "f 0 test/resolve.test.js",
+      "f 0 test/text.test.js",
+      "f 0 tsconfig.json",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "pluginJson": {
+      "name": "after",
+      "version": "0.2.0",
+      "description": "A real prompt queue for Claude Code: /after <task> runs it after the current task, without steering. See, reorder and remove queued tasks from a band and a live pane, in plain language.",
+      "author": {
+        "name": "Miguel Ángel Durán (midudev)",
+        "url": "https://github.com/midudev"
+      },
+      "homepage": "https://github.com/midudev/better-claude",
+      "repository": "https://github.com/midudev/better-claude",
+      "license": "MIT",
+      "keywords": ["queue", "prompts", "workflow", "productivity", "mod"],
+      "types": "./types/index.d.ts",
+      "userConfig": {
+        "smart": {
+          "type": "boolean",
+          "title": "Plain-language commands",
+          "description": "Ask a small model what a command means when it may refer to queued tasks (\"remove the tests one\"). Off: local matching only.",
+          "default": true
+        },
+        "model": {
+          "type": "string",
+          "title": "Model for plain-language commands",
+          "description": "An alias (haiku) or a full model id.",
+          "default": "haiku"
+        },
+        "display": {
+          "type": "string",
+          "title": "Where the queue shows",
+          "description": "band: above the prompt · status: one line under it · none: only /after and /after watch",
+          "options": ["band", "status", "none"],
+          "default": "band"
+        }
+      }
+    },
+    "hooksJson": "{ \"modules\": [\"./register.tsx\"] }\n",
+    "modules": ["./register.tsx"]
+  },
+  "sub-meter": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/plugin.json",
+      "f 0 README.md",
+      "d 4096 hooks",
+      "f 36 hooks/hooks.json",
+      "f 0 hooks/register.test.tsx",
+      "f 0 hooks/register.tsx",
+      "f 0 tsconfig.json",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "pluginJson": {
+      "name": "sub-meter",
+      "version": "0.1.0",
+      "description": "Your subscription usage at the bottom right of Claude Code: the 5-hour and weekly windows, as a bar that takes turns.",
+      "author": {
+        "name": "Miguel Ángel Durán (midudev)",
+        "url": "https://github.com/midudev"
+      },
+      "homepage": "https://github.com/midudev/better-claude",
+      "repository": "https://github.com/midudev/better-claude",
+      "license": "MIT",
+      "keywords": ["usage", "subscription", "rate-limits", "status", "mod"],
+      "types": "./types/index.d.ts",
+      "userConfig": {
+        "hideCycleHint": {
+          "type": "boolean",
+          "title": "Hide the mode cycle hint",
+          "description": "Drop \"(shift+tab to cycle)\" after the permission mode, to leave room for the meter.",
+          "default": true
+        }
+      }
+    },
+    "hooksJson": "{\n  \"modules\": [\"./register.tsx\"]\n}\n",
+    "modules": ["./register.tsx"]
+  },
+  "token-meter": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/plugin.json",
+      "f 0 README.md",
+      "d 4096 hooks",
+      "f 36 hooks/hooks.json",
+      "f 0 hooks/register.test.tsx",
+      "f 0 hooks/register.tsx",
+      "f 0 tsconfig.json",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "pluginJson": {
+      "name": "token-meter",
+      "version": "0.1.0",
+      "description": "Each turn's tokens and the session's running total, in color at the end of the hint line under the prompt.",
+      "author": {
+        "name": "Miguel Ángel Durán (midudev)",
+        "url": "https://github.com/midudev"
+      },
+      "homepage": "https://github.com/midudev/better-claude",
+      "repository": "https://github.com/midudev/better-claude",
+      "license": "MIT",
+      "keywords": ["tokens", "usage", "status", "mod"],
+      "types": "./types/index.d.ts"
+    },
+    "hooksJson": "{\n  \"modules\": [\"./register.tsx\"]\n}\n",
+    "modules": ["./register.tsx"]
+  },
+  "use-haiku": {
+    "records": [
+      "d 4096 .claude-plugin",
+      "f 0 .claude-plugin/plugin.json",
+      "f 0 README.md",
+      "d 4096 hooks",
+      "f 36 hooks/hooks.json",
+      "f 0 hooks/register.test.tsx",
+      "f 0 hooks/register.tsx",
+      "f 0 tsconfig.json",
+      "d 4096 types",
+      "f 0 types/index.d.ts"
+    ],
+    "pluginJson": {
+      "name": "use-haiku",
+      "version": "0.2.0",
+      "description": "Start a prompt with _ and that turn runs on Haiku, shown as you type, while it runs and under the answer.",
+      "author": {
+        "name": "Miguel Ángel Durán (midudev)",
+        "url": "https://github.com/midudev"
+      },
+      "homepage": "https://github.com/midudev/better-claude",
+      "repository": "https://github.com/midudev/better-claude",
+      "license": "MIT",
+      "keywords": ["haiku", "model", "prompt", "mod"],
+      "types": "./types/index.d.ts"
+    },
+    "hooksJson": "{\n  \"modules\": [\"./register.tsx\"]\n}\n",
+    "modules": ["./register.tsx"]
   }
 }
