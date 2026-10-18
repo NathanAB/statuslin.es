@@ -9,9 +9,9 @@ import {
 import { buildNetworkOption } from './e2b-network'
 import { E2B_TEMPLATE_ID } from './e2b-template'
 import { INFRA_ERROR_EXIT_CODE, runScript } from './run-script'
-import { scriptExtension } from './script-extension'
+import { RUN_CMD, scriptExtension } from './script-extension'
 import { parseStrace } from './strace'
-import type { Interpreter, RenderInput, RenderResult, SandboxRunner } from './types'
+import type { RenderInput, RenderResult, SandboxRunner } from './types'
 
 /** Hard per-command wall-clock cap. Untrusted scripts get single-digit seconds. */
 const COMMAND_TIMEOUT_MS = 5000
@@ -42,8 +42,6 @@ export function assertSafeFixturePaths(fixtures: { path: string; content: string
  * DB-backed/untrusted, so don't let one set PATH/LD_PRELOAD/NODE_OPTIONS for the script.
  */
 const ALLOWED_ENV = ['COLUMNS', 'LINES']
-
-const RUN_CMD: Record<Interpreter, string> = { bash: 'bash', node: 'node', python: 'python3' }
 
 const SCRIPT_DIR = '/home/user'
 const INPUT_PATH = `${SCRIPT_DIR}/input.json`

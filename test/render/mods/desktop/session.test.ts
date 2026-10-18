@@ -73,16 +73,48 @@ describe('deepLink', () => {
 describe('desktopSessionFiles', () => {
   const files = new Map(desktopSessionFiles(scenario, SEED).map((f) => [f.path, f.data]))
 
+  const settings = (all: Map<string, string>) =>
+    JSON.parse(String(all.get(`${CONFIG_DIR}/settings.json`)))
+
   it('writes the committed sample status line and points the settings at it', () => {
     const script = `${CONFIG_DIR}/statusline.sh`
 
     expect(files.get(script)).toBe(
       readFileSync('src/render/mods/desktop/sandbox/statusline.sh', 'utf8'),
     )
-    expect(JSON.parse(String(files.get(`${CONFIG_DIR}/settings.json`)))).toEqual({
-      statusLine: { type: 'command', command: `bash ${script}` },
+    expect(settings(files)).toEqual({
+      statusLine: { type: 'command', command: `cat | bash ${script}` },
     })
   })
+
+  it.each([
+    {
+      interpreter: 'python' as const,
+      source: 'print("hi")',
+      file: 'statusline.py',
+      bin: 'python3',
+    },
+    {
+      interpreter: 'node' as const,
+      source: "import fs from 'node:fs'",
+      file: 'statusline.mjs',
+      bin: 'node',
+    },
+    { interpreter: 'bash' as const, source: 'echo hi', file: 'statusline.sh', bin: 'bash' },
+  ])(
+    'writes a given $interpreter status line in place of the sample and runs it with $bin',
+    ({ interpreter, source, file, bin }) => {
+      const given = new Map(
+        desktopSessionFiles(scenario, SEED, { source, interpreter }).map((f) => [f.path, f.data]),
+      )
+      const script = `${CONFIG_DIR}/${file}`
+
+      expect(given.get(script)).toBe(source)
+      expect([...given.keys()].filter((path) => /\/statusline\./.test(path))).toEqual([script])
+      // Piped, so a script reading /dev/stdin gets the JSON: statusline-anywhere's stdin is a socket.
+      expect(settings(given).statusLine.command).toBe(`cat | ${bin} ${script}`)
+    },
+  )
 
   it('puts Desktop in dark theme', () => {
     expect(JSON.parse(String(files.get('/home/user/.config/Claude-3p/config.json')))).toEqual({

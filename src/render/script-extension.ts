@@ -2,6 +2,13 @@ import type { Interpreter } from './types'
 
 const STATIC_SCRIPT_EXT: Record<Exclude<Interpreter, 'node'>, string> = { bash: 'sh', python: 'py' }
 
+/** The binary a sandbox runs each interpreter's script with. */
+export const RUN_CMD: Record<Interpreter, string> = {
+  bash: 'bash',
+  node: 'node',
+  python: 'python3',
+}
+
 /** True when the source is an ES module: a static `import`/`export` statement at the start of a
  *  line. A dynamic `import(...)` is valid in CommonJS, so `import` immediately followed by `(`
  *  does NOT count. Anchored to line starts so the word "import" inside a string/comment is ignored. */

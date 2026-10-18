@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { analyseShot } from '@/render/mods/desktop/analyse'
+import type { RecordingSetup } from '@/render/mods/desktop/desktop-sandbox'
 import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { desktopRecorder, sharedOnce } from '@/render/mods/desktop/recorder'
+import type { StatusLineScript } from '@/render/mods/desktop/types'
+import type { SandboxFile } from '@/render/mods/mod-sandbox'
 
 vi.mock('@/render/mods/desktop/analyse', () => ({
   analyseShot: vi.fn(async () => ({ kind: 'nothing' })),
@@ -82,4 +85,46 @@ describe('desktopRecorder', () => {
       )
     },
   )
+})
+
+describe('desktopRecorder status line', () => {
+  const VERSIONS = { desktopVersion: '2.31226.1', engineVersion: '2.1.0' }
+
+  /** The files each recording session staged: the baseline's, then the mod's. */
+  async function stagedFiles(statusLine?: StatusLineScript) {
+    const staged: Map<string, SandboxFile['data']>[] = []
+    const sandboxes = {
+      withRecordingDesktop: vi.fn().mockImplementation(async (setup: RecordingSetup) => {
+        staged.push(new Map(setup.files(VERSIONS).map((f) => [f.path, f.data])))
+        return FULL_SHOT
+      }),
+      withAnalysisSandbox: vi.fn().mockImplementation((use: (a: object) => unknown) => use({})),
+    }
+    const request = { mod: MOD, inputSteps: [], draws: [] }
+    await desktopRecorder(sandboxes).record(statusLine ? { ...request, statusLine } : request)
+    return staged
+  }
+
+  const statusLineFiles = (files: Map<string, SandboxFile['data']> | undefined) =>
+    [...(files ?? [])].filter(([path]) => /\/statusline\.[a-z]+$/.test(path))
+
+  const SAMPLE = [
+    expect.stringMatching(/\/statusline\.sh$/),
+    expect.stringContaining('#!/bin/bash'),
+  ]
+
+  it("stages the given status line for the mod's session, and the sample for the baseline", async () => {
+    const [baseline, session] = await stagedFiles({ source: 'print("hi")', interpreter: 'python' })
+
+    expect(statusLineFiles(session)).toEqual([
+      [expect.stringMatching(/\/statusline\.py$/), 'print("hi")'],
+    ])
+    expect(statusLineFiles(baseline)).toEqual([SAMPLE])
+  })
+
+  it('stages the sample for a mod recording with no status line', async () => {
+    const [, session] = await stagedFiles()
+
+    expect(statusLineFiles(session)).toEqual([SAMPLE])
+  })
 })
