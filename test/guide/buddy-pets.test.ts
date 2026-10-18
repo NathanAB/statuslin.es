@@ -1,8 +1,16 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { sharedCommands } from '@/guide/buddy-pets'
-import { publishedMods } from '@/guide/buddy-pets.server'
-import { openTestDb, seedMod, sha, type TestDb } from '../mods/seed-mods'
+import { buddyPets } from '@/guide/buddy-pets.server'
+import {
+  addMod,
+  addVersion,
+  openTestDb,
+  seedMod,
+  setCurrentVersion,
+  sha,
+  type TestDb,
+} from '../mods/seed-mods'
 
 let db: TestDb
 let close: () => Promise<void>
@@ -17,30 +25,43 @@ beforeEach(async () => {
   await db.delete(schema.mods)
 })
 
-describe('publishedMods', () => {
-  it('returns the published pets in the order given, leaving out drafts, removed and unknown slugs', async () => {
+/** A published mod whose current version adds `commands` as slash commands. */
+async function seedPet(slug: string, commitChar: string, commands: string[]) {
+  const modId = await addMod(db, slug, 'published')
+  const versionId = await addVersion(db, modId, {
+    commitSha: sha(commitChar),
+    versionNumber: 1,
+    footprint: { events: commands.map((c) => `command.run{command=${c}}`), calls: [] },
+  })
+  await setCurrentVersion(db, modId, versionId)
+}
+
+describe('buddyPets', () => {
+  it('returns the published pets as gallery cards in the order given, leaving out the rest', async () => {
     await seedMod(db, 'cat', 'published', 'a')
     await seedMod(db, 'egg', 'draft', 'b')
     await seedMod(db, 'dog', 'published', 'c')
     await seedMod(db, 'ghost', 'removed', 'd')
 
-    const pets = await publishedMods(db, ['dog', 'egg', 'missing', 'ghost', 'cat'])
+    const { cards } = await buddyPets(db, ['dog', 'egg', 'missing', 'ghost', 'cat'])
 
-    expect(pets.map((pet) => pet.slug)).toEqual(['dog', 'cat'])
+    expect(cards.map((card) => card.slug)).toEqual(['dog', 'cat'])
+    expect(cards[0]).toMatchObject({
+      title: 'dog',
+      preview: [{ text: 'meter' }],
+      desktopShot: null,
+    })
   })
 
-  it('carries what a pet section shows: previews, footprint and the reviewed commit', async () => {
-    await seedMod(db, 'cat', 'published', 'a')
+  it("names the commands two or more published pets add, from their current versions' footprints", async () => {
+    await seedPet('pets', 'a', ['pet'])
+    await seedPet('cat', 'b', ['cat'])
+    await seedPet('pixipet', 'c', ['pet'])
+    await seedMod(db, 'draft-pet', 'draft', 'd')
 
-    const [cat] = await publishedMods(db, ['cat'])
+    const { clashes } = await buddyPets(db, ['pets', 'cat', 'pixipet', 'draft-pet'])
 
-    expect(cat).toMatchObject({
-      slug: 'cat',
-      preview: [{ text: 'meter' }],
-      desktop: { kind: 'nothing' },
-      footprint: { events: [], calls: [] },
-      commitSha: sha('a'),
-    })
+    expect(clashes).toEqual([{ command: 'pet', titles: ['pets', 'pixipet'] }])
   })
 })
 

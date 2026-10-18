@@ -5,7 +5,8 @@ import type { GallerySort } from '@/gallery/queries'
 export interface GalleryCardAnalytics {
   /**
    * `related` is a status line page's suggestions; `mod_related` is a mod page's "More like this";
-   * `home_featured_mod` is the home page's pinned "Featured mod" row.
+   * `home_featured_mod` is the home page's pinned "Featured mod" row; `buddy_guide` is the pet mods
+   * on /guide/claude-code-buddy.
    */
   surface:
     | 'home'
@@ -16,6 +17,7 @@ export interface GalleryCardAnalytics {
     | 'mods'
     | 'related'
     | 'mod_related'
+    | 'buddy_guide'
   position: number
   facet?: string
   sort?: GallerySort

@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
 import { BUDDY_PET_MOD_SLUGS } from '@/guide/buddy-pets'
-import { publishedMods } from '@/guide/buddy-pets.server'
+import { buddyPets } from '@/guide/buddy-pets.server'
 import { MINIMAL_SCRIPT, SAMPLE_STDIN_JSON, SETTINGS_SNIPPET } from '@/guide/examples'
 import { highlightSource } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
@@ -44,5 +44,5 @@ export const getGuideHighlights = createServerFn({ method: 'GET' }).handler(() =
 
 /** The published pets /guide/claude-code-buddy lists. No input: the guide's own list is the query. */
 export const getBuddyPetsFn = createServerFn({ method: 'GET' }).handler(() =>
-  withHttpStatus(() => publishedMods(db, BUDDY_PET_MOD_SLUGS)),
+  withHttpStatus(() => buddyPets(db, BUDDY_PET_MOD_SLUGS)),
 )
