@@ -1,15 +1,12 @@
 import { db } from '@/db'
 import { createDrainController } from '@/lib/drain-controller'
 import { assertNotProduction, requireEnv } from '@/lib/env'
+import { PERSONLESS } from '@/lib/posthog-person'
 import { captureServerEvent, captureServerException } from '@/lib/posthog-server'
 import { E2BSandboxRunner } from '@/render/e2b-runner'
 import { FakeSandboxRunner } from '@/render/fake-runner'
 import type { SandboxRunner } from '@/render/types'
-import {
-  PERSONLESS_EVENT_PROPERTIES,
-  RENDER_WORKER_DISTINCT_ID,
-  renderCompletedEvent,
-} from '@/submit/render-completed-event'
+import { RENDER_WORKER_DISTINCT_ID, renderCompletedEvent } from '@/submit/render-completed-event'
 import { drainRenderJobs, queueDepthStats } from '@/submit/worker'
 
 /** The fake runner only on an explicit RENDER_RUNNER=fake, and never in production, so a server
@@ -39,7 +36,7 @@ async function drainAndReport(): Promise<void> {
     processed,
     cutOffJobs: cutOff,
     ...stats,
-    ...PERSONLESS_EVENT_PROPERTIES,
+    ...PERSONLESS,
   })
 }
 

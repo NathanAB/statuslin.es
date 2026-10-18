@@ -58,6 +58,7 @@ describe('ModSubmitForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }))
 
     expect(await screen.findByText('The repository root has no plugin.')).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toBe('The repository root has no plugin.')
     expect(capture).toHaveBeenCalledWith('mod_submission_failed', { status: 400 })
   })
 })

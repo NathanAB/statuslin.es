@@ -103,7 +103,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<LineDiff lines={…}>` | `src/ui/line-diff.tsx` | Unified line diff in a code well; `DiffLine[]` with +/- markers |
 | `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | Section with header + optional action slot |
 | `<ScenarioRow>` | `src/ui/scenario-row.tsx` | Labeled row for scenario-level content |
-| `<Notice tone="info\|error">` | `src/ui/notice.tsx` | Inline status / error notice |
+| `<Notice tone="info\|error" live?>` | `src/ui/notice.tsx` | Inline status / error notice; `live` makes it an alert, for an error that appears after the user acts (a failed submit) |
 | `<SelectField options label …>` | `src/ui/select.tsx` | Closed select with `SelectOption[]` |
 | `<Details summary="…">` | `src/ui/details.tsx` | Styled `<details>` / `<summary>` disclosure |
 | `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles; `caution` uses the warning tint |
