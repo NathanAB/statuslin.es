@@ -1,16 +1,10 @@
+import { PERSONLESS } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
 import { INFRA_ERROR_EXIT_CODE } from '@/render/run-script'
 
 /** PostHog distinct id every render event is attributed to (it's a process, not a person). Named
  * for the old always-on worker; kept so the PostHog history stays one series. */
 export const RENDER_WORKER_DISTINCT_ID = 'render-worker'
-
-/** Spread into every render event: the renderer isn't a person, so PostHog must not create a
- * person profile for its distinct id. */
-export const PERSONLESS_EVENT_PROPERTIES = {
-  // biome-ignore lint/style/useNamingConvention: PostHog's reserved property name.
-  $process_person_profile: false,
-} as const
 
 /** How one scenario's sandbox run ended — exit status only, never its output. */
 interface ScenarioOutcome {
@@ -58,7 +52,7 @@ export function renderCompletedEvent(report: RenderJobReport): ServerEvent {
       configId: report.configId,
       versionId: report.versionId,
       slug: report.slug,
-      ...PERSONLESS_EVENT_PROPERTIES,
+      ...PERSONLESS,
     },
   }
 }
