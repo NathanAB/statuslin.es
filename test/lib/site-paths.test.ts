@@ -23,6 +23,10 @@ describe('site paths', () => {
     expect(modPath('filetree')).toBe('/mods/filetree')
   })
 
+  it('fills the slug as written, not as a replacement pattern', () => {
+    expect(modPath("a$'b")).toBe("/mods/a$'b")
+  })
+
   it('names the route that serves Desktop preview images', () => {
     expect(routesByPath[MOD_DESKTOP_PREVIEW_ROUTE]).toBe(DesktopPreviewRoute)
   })
@@ -30,6 +34,12 @@ describe('site paths', () => {
   it("fills the Desktop preview route's version id and names the render, so a re-render is a new URL", () => {
     expect(modDesktopPreviewPath('v-1', new Date(1_700_000_000_000))).toBe(
       '/mod-previews/v-1/desktop.png?r=1700000000000',
+    )
+  })
+
+  it('fills the version id as written, not as a replacement pattern', () => {
+    expect(modDesktopPreviewPath('v$&1', new Date(1_700_000_000_000))).toBe(
+      '/mod-previews/v$&1/desktop.png?r=1700000000000',
     )
   })
 

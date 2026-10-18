@@ -49,7 +49,7 @@ export const MODS_PATH = '/mods'
 export const MOD_ROUTE = '/mods/$slug'
 
 export function modPath(slug: string): string {
-  return MOD_ROUTE.replace('$slug', slug)
+  return MOD_ROUTE.replace('$slug', () => slug)
 }
 
 /** A mod version's Claude Desktop preview image. */
@@ -62,7 +62,7 @@ export function modDesktopPreviewPath(
   renderedAt: Date,
   image: 'shot' | 'card' = 'shot',
 ): string {
-  const path = `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', versionId)}?r=${renderedAt.getTime()}`
+  const path = `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', () => versionId)}?r=${renderedAt.getTime()}`
   return image === 'card' ? `${path}&image=card` : path
 }
 
