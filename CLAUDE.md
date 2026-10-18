@@ -92,7 +92,7 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
   - An `e2b` update also needs `bun run test:e2b`, since e2b is the sandbox. Note the result on the PR.
   - For a major or 0.x update, read the changelog and look at what it renders (the OG cards render through satori).
   - Put any fix in your own PR. A commit pushed to a Dependabot branch stops Dependabot rebasing it.
-  - A Bun upgrade (Dependabot's docker PR) moves the Dockerfile, both `ci.yml` jobs and `@types/bun` together; `check:deps` fails when they disagree.
+  - A Bun upgrade (Dependabot's docker PR) moves the Dockerfile, both `ci.yml` jobs and `@types/bun` together; `check:deps` fails when they disagree, or when the Bun you run it with is a different version. Its error prints the install command for the pinned Bun.
 
 ## Enforcement (the guardrails)
 
