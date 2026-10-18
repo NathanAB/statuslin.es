@@ -1,10 +1,11 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { modVersions } from '@/db/schema'
+import { mods, modVersions } from '@/db/schema'
 import { isUniqueViolation } from '@/db/unique-violation'
 import { HttpError } from '@/lib/http'
 import { assertUnderRateLimit, insertPendingSubmission } from '@/submissions/record'
+import type { GitHub } from './github'
 import {
   type InspectDeps,
   insertDraftMod,
@@ -24,8 +25,10 @@ import { CONTROL_OR_FORMAT } from './terminal-line'
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
+type SubmitGitHub = LinkGitHub & Pick<GitHub, 'compareCommits'>
+
 export type ModSubmitDeps = InspectDeps & {
-  github: LinkGitHub & InspectDeps['github']
+  github: SubmitGitHub & InspectDeps['github']
   guard: SubmitGuard
 }
 
@@ -89,8 +92,33 @@ function checkedTitle(title: string): string {
   return trimmed
 }
 
+async function refuseUnlessAheadOfLive(
+  db: Db,
+  own: OwnMod,
+  source: { repoUrl: string; commitSha: string },
+  github: SubmitGitHub,
+) {
+  if (own.status !== 'published') return
+  const [live] = await db
+    .select({ commitSha: modVersions.commitSha })
+    .from(mods)
+    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
+    .where(eq(mods.id, own.id))
+  if (!live) return
+  const comparison = await github.compareCommits(source.repoUrl, live.commitSha, source.commitSha)
+  if (comparison === 'ahead') return
+  const commit = source.commitSha.slice(0, 7)
+  const liveCommit = live.commitSha.slice(0, 7)
+  throw new HttpError(
+    409,
+    comparison === 'diverged'
+      ? `Commit ${commit} doesn't build on the live commit ${liveCommit}. Link to a commit that includes it.`
+      : `Commit ${commit} is behind the live commit ${liveCommit}. Link to a newer commit.`,
+  )
+}
+
 /** Pins the link, and refuses what can't become this submission before anything is downloaded. */
-async function pinSource(db: Db, input: ModSubmitInput, own: OwnMod | null, github: LinkGitHub) {
+async function pinSource(db: Db, input: ModSubmitInput, own: OwnMod | null, github: SubmitGitHub) {
   const link = await resolveModLink(parseModLink(input.link), github)
   const source = { repoUrl: link.repoUrl, path: link.path, commitSha: link.commitSha }
   if (own) {
@@ -103,6 +131,7 @@ async function pinSource(db: Db, input: ModSubmitInput, own: OwnMod | null, gith
       .from(modVersions)
       .where(and(eq(modVersions.modId, own.id), eq(modVersions.commitSha, source.commitSha)))
     if (same) throw new HttpError(409, 'That commit is already submitted.')
+    await refuseUnlessAheadOfLive(db, own, source, github)
     return { link, source }
   }
   const holder = await folderHolder(db, source, { userId: input.submittedBy })

@@ -3,6 +3,7 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, type ModStatus, modVersions } from '@/db/schema'
 import { mergeTags } from '@/lib/derived-tags'
 import { COMMIT_SHA } from './curation'
+import type { CommitComparison } from './github'
 import { MOD_SCENARIO_KEY, versionIsRendered } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -11,6 +12,17 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 /** A mod's tags plus the one its footprint implies, as the gallery's badges and filters read them. */
 export function modAllTags(tags: string[], footprint: ModFootprint): string[] {
   return mergeTags(tags, footprint.calls.includes('$.http.fetch') ? ['network-access'] : [])
+}
+
+export function publishedRow(
+  target: PublishVersion,
+  tags: string[],
+): { currentVersionId: string; status: ModStatus; allTags: string[] } {
+  return {
+    currentVersionId: target.id,
+    status: 'published',
+    allTags: modAllTags(tags, target.footprint),
+  }
 }
 
 export interface Guard {
@@ -81,6 +93,7 @@ export interface PublishFacts extends ListingFacts {
   current: PublishVersion | null
   /** Files changed since `compareBase`; null when there is no base to compare against. */
   filesChanged: string[] | null
+  comparedToLive: CommitComparison | null
 }
 
 /** GitHub compares commits only within one repository, so a move to another repo has no base. */
@@ -100,7 +113,7 @@ function added(before: string[], after: string[]): string[] {
   return after.filter((item) => !before.includes(item))
 }
 
-function bracketed(items: string[]): string {
+export function bracketed(items: string[]): string {
   return `[${items.join(', ')}]`
 }
 
@@ -159,6 +172,17 @@ function truncationGuards({ current, target, filesChanged }: PublishFacts): Guar
   ]
 }
 
+function aheadOfLiveGuards({ current, target, comparedToLive }: PublishFacts): Guard[] {
+  if (!current || comparedToLive === null || comparedToLive === 'ahead') return []
+  const live = `the live commit ${current.commitSha}`
+  const why = {
+    behind: `is behind ${live}, so publishing it would roll users back`,
+    diverged: `doesn't build on ${live}, so publishing it could drop changes users already have`,
+    identical: `is ${live}`,
+  }[comparedToLive]
+  return [refuse('not-ahead-of-live', `commit ${target.commitSha} ${why}`)]
+}
+
 export function listingGuards({ target, onDefaultBranch }: ListingFacts): Guard[] {
   const offDefault = `commit ${target.commitSha} is not on the repository's default branch`
   const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop)`
@@ -190,6 +214,7 @@ export function publishGuards(facts: PublishFacts): Guard[] {
   return [
     ...(facts.modStatus === 'removed' ? [removedGuard(facts.slug)] : []),
     ...listingGuards(facts),
+    ...aheadOfLiveGuards(facts),
     ...sourceGuards(facts),
     ...truncationGuards(facts),
     ...footprintGuards(facts),
@@ -207,37 +232,6 @@ export function confirmationGuards(slug: string, argv: string[]): Guard[] {
 
 export function refuses(guards: Guard[]): boolean {
   return guards.some((g) => g.level === 'refuse')
-}
-
-function footprintLine(label: string, footprint: ModFootprint | null): string {
-  if (!footprint) return `footprint ${label}: none (first publish)`
-  return `footprint ${label}: events ${bracketed(footprint.events)} calls ${bracketed(footprint.calls)}`
-}
-
-function sourceLine(label: string, version: PublishVersion | null): string {
-  return `source ${label}: ${version ? sourceLabel(version) : 'none (first publish)'}`
-}
-
-function filesLines({ current, filesChanged }: PublishFacts): string[] {
-  if (filesChanged !== null) {
-    return [`files changed (${filesChanged.length}):`, ...filesChanged.map((f) => `  ${f}`)]
-  }
-  return [
-    `files changed: none to compare (${current ? 'the repository changed' : 'first publish'})`,
-  ]
-}
-
-/** The lines carry author text unescaped; print each through `terminalLine`. */
-export function publishReport(facts: PublishFacts): string[] {
-  return [
-    `${facts.slug}: ${facts.current?.commitSha ?? 'unpublished'} → ${facts.target.commitSha}`,
-    `description: ${facts.description || 'none'}`,
-    sourceLine('before', facts.current),
-    sourceLine('after', facts.target),
-    ...filesLines(facts),
-    footprintLine('before', facts.current?.footprint ?? null),
-    footprintLine('after', facts.target.footprint),
-  ]
 }
 
 export function guardLine(guard: Guard): string {

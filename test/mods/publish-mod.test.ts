@@ -100,6 +100,25 @@ describe('publish confirmation', () => {
     expect(exitCode).toBe(0)
     expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: nextId })
   })
+
+  it('derives the network tag from the re-pinned version, keeping the curated tags', async () => {
+    const { modId } = await publishedMod({})
+    await db
+      .update(schema.mods)
+      .set({ tags: ['minimal'], allTags: ['minimal'] })
+      .where(eq(schema.mods.id, modId))
+    await addVersion(db, modId, {
+      commitSha: sha('b'),
+      versionNumber: 2,
+      footprint: { events: [], calls: ['$.http.fetch'] },
+    })
+
+    const { exitCode } = await publish(['meter', sha('b'), '--apply', '--confirm=meter'])
+
+    expect(exitCode).toBe(0)
+    const [mod] = await db.select().from(schema.mods).where(eq(schema.mods.id, modId))
+    expect(mod?.allTags).toEqual(['minimal', 'network-access'])
+  })
 })
 
 describe('first publish of an imported draft', () => {
@@ -157,6 +176,17 @@ describe('first publish of an imported draft', () => {
     expect(output).toContain('source before: none (first publish)')
     expect(exitCode).toBe(0)
     expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: nextId })
+  })
+
+  it('does not compare a draft with the version it points at, which is not live', async () => {
+    const { modId } = await importedDraft()
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    const github = fakeGitHub({ comparedToLive: 'behind' })
+
+    const { exitCode } = await publish(['meter', sha('b'), '--apply', '--confirm=meter'], github)
+
+    expect(exitCode).toBe(0)
+    expect(github.calls.filter((c) => c.startsWith('compare:'))).toEqual([])
   })
 
   it('refuses when the draft is published between its first-publish report and the write', async () => {
@@ -252,6 +282,28 @@ describe('publish refusals', () => {
     expect(exitCode).toBe(1)
     expect(output).toMatch(/not on the repository's default branch/)
     expect(await modState(db, 'meter')).toEqual({ status: 'draft', currentVersionId: null })
+  })
+
+  it.each([
+    ['behind', /REFUSE not-ahead-of-live: commit b{40} is behind the live commit a{40}/],
+    ['diverged', /REFUSE not-ahead-of-live: commit b{40} doesn't build on the live commit a{40}/],
+  ] as const)('refuses a re-pin to a commit GitHub compares as %s', async (comparison, message) => {
+    const { modId, currentId } = await publishedMod({})
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    const github = fakeGitHub({ comparedToLive: comparison })
+
+    const { exitCode, output } = await publish(
+      ['meter', sha('b'), '--apply', '--confirm=meter'],
+      github,
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(message)
+    expect(github.calls).toContain(`compare:${sha('a')}...${sha('b')}`)
+    expect(await modState(db, 'meter')).toEqual({
+      status: 'published',
+      currentVersionId: currentId,
+    })
   })
 
   it('refuses a version that has not rendered', async () => {

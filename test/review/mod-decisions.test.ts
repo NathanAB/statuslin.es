@@ -141,16 +141,36 @@ describe('approving a mod', () => {
     expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: newer })
   })
 
-  it('asks GitHub only whether the commit is on the default branch', async () => {
+  it('asks GitHub whether the commit is on the default branch, and ahead of a live one', async () => {
     const { modId, versionId: first } = await submitMod()
-    await approveVersion(db, first, 'admin', fakeGitHub())
+    const firstGitHub = fakeGitHub()
+    await approveVersion(db, first, 'admin', firstGitHub)
     const update = await submitUpdate(modId)
     const github = fakeGitHub()
 
     await approveVersion(db, update, 'admin', github)
 
-    expect(github.calls).toEqual([`on-default:${sha('b')}`])
+    expect(firstGitHub.calls).toEqual([`on-default:${sha('a')}`])
+    expect(github.calls).toEqual([`on-default:${sha('b')}`, `compare:${sha('a')}...${sha('b')}`])
   })
+
+  it.each([
+    ['behind', `commit ${sha('b')} is behind the live commit ${sha('a')}`],
+    ['diverged', `commit ${sha('b')} doesn't build on the live commit ${sha('a')}`],
+  ] as const)(
+    'refuses an update GitHub compares as %s against the live one',
+    async (comparison, message) => {
+      const { modId, versionId: first } = await submitMod()
+      await approveVersion(db, first, 'admin', fakeGitHub())
+      const update = await submitUpdate(modId)
+
+      await expect(
+        approveVersion(db, update, 'admin', fakeGitHub({ comparedToLive: comparison })),
+      ).rejects.toMatchObject({ status: 409, message: expect.stringContaining(message) })
+      expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: first })
+      expect(await submissionOf(update)).toMatchObject({ status: 'pending' })
+    },
+  )
 
   it.each([
     [

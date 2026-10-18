@@ -38,10 +38,14 @@ export interface GitHubSource {
   readme(repoUrl: string, path: string, sha: string): Promise<string | null>
 }
 
+/** How GitHub's compare places a head commit against a base: 'ahead' when it builds on the base. */
+export type CommitComparison = 'ahead' | 'behind' | 'diverged' | 'identical'
+
 export interface GitHub {
   /** `defaultBranch` saves reading the repository when the caller already has it. */
   commitIsOnDefaultBranch(repoUrl: string, sha: string, defaultBranch?: string): Promise<boolean>
   filesChanged(repoUrl: string, base: string, head: string): Promise<string[]>
+  compareCommits(repoUrl: string, base: string, head: string): Promise<CommitComparison>
   commitIsFetchable(repoUrl: string, sha: string): Promise<boolean>
 }
 
@@ -192,6 +196,13 @@ export function createGitHub(
         files: { filename: string }[]
       }
       return files.map((f) => f.filename)
+    },
+
+    async compareCommits(repoUrl, base, head) {
+      const { status } = (await request(`${repoApiUrl(repoUrl)}/compare/${base}...${head}`)) as {
+        status: CommitComparison
+      }
+      return status
     },
 
     tarball(repoUrl, sha) {
