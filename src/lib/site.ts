@@ -66,6 +66,14 @@ export function modDesktopPreviewPath(
   return image === 'card' ? `${path}&image=card` : path
 }
 
+/** A status line version's Claude Desktop preview image. */
+export const CONFIG_DESKTOP_PREVIEW_ROUTE = '/config-previews/$versionId/desktop.png'
+
+/** A status line version's Desktop shot, under the recording that made it, as for mods. */
+export function configDesktopPreviewPath(versionId: string, renderedAt: Date): string {
+  return `${CONFIG_DESKTOP_PREVIEW_ROUTE.replace('$versionId', () => versionId)}?r=${renderedAt.getTime()}`
+}
+
 export const MARKETPLACE_PATH = '/marketplace.json'
 
 /** The full plain-markdown catalog that /llms.txt links (see llmstxt.org). */

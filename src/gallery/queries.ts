@@ -1,12 +1,25 @@
 import { and, desc, eq, inArray, or, type SQL, sql } from 'drizzle-orm'
 import type { PgColumn, PgDatabase } from 'drizzle-orm/pg-core'
 import { type ConfigPageCopy, configPageCopySchema, readPageCopy } from '@/content/types'
-import { configs, configVersions, previews, submissions, user } from '@/db/schema'
+import {
+  configDesktopPreviews,
+  configs,
+  configVersions,
+  previews,
+  submissions,
+  user,
+} from '@/db/schema'
 import { ALL_TAG_SLUGS } from '@/gallery/facets'
 import { compactSegments } from '@/render/compact-segments'
 import { getPreviews } from '@/render/store'
 import type { AnsiSegment, Interpreter, RenderedPreview } from '@/render/types'
 import { coerceInterpreter } from './card-rows'
+import {
+  type ConfigDesktopPreview,
+  configDesktopPreview,
+  configDesktopPreviewColumns,
+  configDesktopPreviewJoin,
+} from './desktop-preview'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -145,6 +158,8 @@ export interface ConfigDetail {
   /** Generated page copy, or null when scripts/generate-content.ts hasn't written it in the current format. */
   generatedContent: ConfigPageCopy | null
   previews: ClientSafePreview[]
+  /** How it looks in Claude Desktop, or null until render:status-line-desktop records it. */
+  desktop: ConfigDesktopPreview | null
   /** SPDX license of third-party (seeded) source, e.g. 'MIT'. Null = submitter's own work (CC0 per terms). */
   license: string | null
   /** Permanent link to the upstream source at the pinned revision (seeded configs only). */
@@ -164,11 +179,13 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
       version: configVersions,
       author: user,
       reviewedAt: submissions.reviewedAt,
+      desktop: configDesktopPreviewColumns,
     })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(submissions, eq(submissions.configVersionId, configVersions.id))
     .leftJoin(user, eq(user.id, configs.authorId))
+    .leftJoin(configDesktopPreviews, configDesktopPreviewJoin)
     .where(and(eq(configs.slug, slug), eq(configs.status, 'published')))
     .limit(1)
   if (!row) return null
@@ -198,6 +215,7 @@ export async function getConfigBySlug(db: Db, slug: string): Promise<ConfigDetai
       scenarioKey: p.scenarioKey,
       segments: compactSegments(p.segments),
     })),
+    desktop: configDesktopPreview(row.desktop),
     license: row.version.license ?? null,
     sourceUrl: row.version.sourceUrl ?? null,
     updatedAt: (row.reviewedAt ?? row.config.createdAt).toISOString().slice(0, 10),

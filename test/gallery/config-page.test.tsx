@@ -65,6 +65,7 @@ const DETAIL: Detail = {
     details: {},
   },
   previews: [{ scenarioKey: 'clean-main', segments: [{ text: 'main ✓' }] }],
+  desktop: null,
   license: 'MIT',
   sourceUrl: 'https://example.com/x',
   updatedAt: '2026-07-06',

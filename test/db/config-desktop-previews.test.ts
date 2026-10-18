@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { addPublishedConfig } from '../gallery/seed-configs'
+import { addPublishedConfig, currentVersionOf } from '../gallery/seed-configs'
 import { openTestDb, type TestDb } from '../mods/seed-mods'
 
 let db: TestDb
@@ -16,12 +16,7 @@ afterAll(async () => {
 })
 
 async function insertVersion(): Promise<string> {
-  const configId = await addPublishedConfig(db, `c${++seeded}`)
-  const [config] = await db
-    .select({ versionId: schema.configs.currentVersionId })
-    .from(schema.configs)
-    .where(eq(schema.configs.id, configId))
-  return config?.versionId as string
+  return currentVersionOf(db, await addPublishedConfig(db, `c${++seeded}`))
 }
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 255])

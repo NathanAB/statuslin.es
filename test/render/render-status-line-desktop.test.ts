@@ -6,7 +6,7 @@ import type { GitHubSource } from '@/mods/github'
 import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import type { DesktopRecordRequest } from '@/render/mods/desktop/types'
 import { renderStatusLineDesktop } from '../../scripts/render-status-line-desktop'
-import { addPublishedConfig } from '../gallery/seed-configs'
+import { addPublishedConfig, currentVersionOf } from '../gallery/seed-configs'
 import {
   addMod,
   addVersion,
@@ -55,12 +55,10 @@ async function seedStatuslineAnywhere(commitSha = MOD_SHA) {
 }
 
 async function seedConfig(slug: string, opts: Parameters<typeof addPublishedConfig>[2] = {}) {
-  const configId = await addPublishedConfig(db, slug, { source: `echo ${slug}`, ...opts })
-  const [config] = await db
-    .select({ versionId: schema.configs.currentVersionId })
-    .from(schema.configs)
-    .where(eq(schema.configs.id, configId))
-  return config?.versionId as string
+  return currentVersionOf(
+    db,
+    await addPublishedConfig(db, slug, { source: `echo ${slug}`, ...opts }),
+  )
 }
 
 async function stored(versionId: string) {
