@@ -2,6 +2,7 @@ import {
   BUDDY_GUIDE_PATH,
   DESKTOP_GUIDE_PATH,
   MOD_SAFETY_GUIDE_PATH,
+  NOT_SHOWING_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
 } from '@/lib/page-title'
 import { CONTACT_EMAIL, MODS_PATH, REPO_URL } from '@/lib/site'
@@ -11,6 +12,7 @@ const PAGE_LINKS = [
   { to: MODS_PATH, label: 'Mods' },
   { to: '/status-lines/best', label: 'Best status lines' },
   { to: '/guide', label: 'Guide' },
+  { to: NOT_SHOWING_GUIDE_PATH, label: 'Status line not showing?' },
   { to: DESKTOP_GUIDE_PATH, label: 'Claude Desktop' },
   { to: STATUS_LINES_VS_MODS_GUIDE_PATH, label: 'Status lines vs mods' },
   { to: MOD_SAFETY_GUIDE_PATH, label: 'Are mods safe?' },

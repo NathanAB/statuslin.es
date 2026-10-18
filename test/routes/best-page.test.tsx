@@ -20,15 +20,18 @@ const loaderData = (latestCopy: string | null, count = 0) => ({
   page: { items: Array.from({ length: count }, () => ({})), latestCopy },
 })
 
+async function headFor(latestCopy: string | null) {
+  return BestRoute.options.head?.({ loaderData: loaderData(latestCopy) } as never)
+}
+
 async function titleFor(latestCopy: string | null) {
-  const head = await BestRoute.options.head?.({ loaderData: loaderData(latestCopy) } as never)
-  return head?.meta?.find((tag) => tag && 'title' in tag)
+  return (await headFor(latestCopy))?.meta?.find((tag) => tag && 'title' in tag)
 }
 
 describe('/status-lines/best', () => {
   it('dates the title and H1 with the month and year of the newest copy', async () => {
     expect(await titleFor('2026-10-14')).toEqual({
-      title: 'Best Claude Code Status Lines (October 2026) | statuslin.es',
+      title: 'Best Claude Code Status Line Examples (October 2026)',
     })
 
     vi.spyOn(BestRoute, 'useLoaderData').mockReturnValue(loaderData('2026-10-14'))
@@ -45,14 +48,31 @@ describe('/status-lines/best', () => {
 
   it('reads the month in UTC, so a first-of-month copy never shows the previous month', async () => {
     expect(await titleFor('2026-11-01')).toEqual({
-      title: 'Best Claude Code Status Lines (November 2026) | statuslin.es',
+      title: 'Best Claude Code Status Line Examples (November 2026)',
     })
   })
 
-  it('drops the brand in the one month whose title would pass 60 characters', async () => {
+  it('leaves the brand off a dated title, which would pass 60 characters with it', async () => {
     expect(await titleFor('2026-09-30')).toEqual({
-      title: 'Best Claude Code Status Lines (September 2026)',
+      title: 'Best Claude Code Status Line Examples (September 2026)',
     })
+    for (let month = 1; month <= 12; month++) {
+      const { title } = (await titleFor(`2026-${String(month).padStart(2, '0')}-15`)) ?? {}
+      expect(title?.length).toBeLessThanOrEqual(60)
+      expect(title).not.toContain('statuslin.es')
+    }
+  })
+
+  it('keeps og:title and the JSON-LD name in step with the title', async () => {
+    const head = await headFor('2026-10-14')
+    expect(head?.meta).toContainEqual({
+      property: 'og:title',
+      content: 'Best Claude Code Status Line Examples (October 2026)',
+    })
+    const [collection] = ((head?.scripts ?? []) as Array<{ children: string }>).map(
+      (script) => JSON.parse(script.children) as { name?: string },
+    )
+    expect(collection?.name).toBe('Best Claude Code Status Line Examples (October 2026)')
   })
 
   it('counts the ranked status lines in the intro, singular for one', () => {
@@ -68,6 +88,8 @@ describe('/status-lines/best', () => {
   })
 
   it('leaves the date out before anything has been copied', async () => {
-    expect(await titleFor(null)).toEqual({ title: 'Best Claude Code Status Lines | statuslin.es' })
+    expect(await titleFor(null)).toEqual({
+      title: 'Best Claude Code Status Line Examples | statuslin.es',
+    })
   })
 })

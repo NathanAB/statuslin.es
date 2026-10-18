@@ -21,6 +21,12 @@ vi.mock('@tanstack/react-start', () => ({
 }))
 
 const BASE = 'https://staging.statuslin.es'
+const LINE_COPY = { summary: 'Prints hi.', howItWorks: ['Runs `echo hi`.'], goodToKnow: [] }
+const METER_COPY = {
+  summary: 'Shows how full the context window is.',
+  howItWorks: ['Reads the session usage.'],
+  goodToKnow: ['Draws in the terminal only.'],
+}
 
 let db: TestDb
 let close: () => Promise<void>
@@ -50,6 +56,17 @@ beforeAll(async () => {
     await addPublishedConfig(db, `line-${i}`, { allTags: i < 2 ? ['minimal'] : [] })
   }
   await db.update(schema.configs).set({ createdAt: new Date('2026-09-01T00:00:00Z') })
+  await setConfigCopy('line-0', LINE_COPY)
+  await setConfigCopy('line-1', { summary: 'Copy in an older format.', bullets: ['Old.'] })
+  await db
+    .update(schema.modVersions)
+    .set({ generatedContent: METER_COPY })
+    .where(eq(schema.modVersions.id, meter.versionId))
+  const removedLine = await addPublishedConfig(db, 'removed-line')
+  await db
+    .update(schema.configs)
+    .set({ status: 'removed' })
+    .where(eq(schema.configs.id, removedLine))
   await seedMod(db, 'draft-mod', 'draft', 'b')
   await seedMod(db, 'removed-mod', 'removed', 'c')
   discovery = await import('@/mods/discovery')
@@ -58,6 +75,17 @@ afterAll(async () => {
   vi.unstubAllEnvs()
   await close()
 })
+
+async function setConfigCopy(slug: string, generatedContent: unknown) {
+  const [config] = await db
+    .select({ versionId: schema.configs.currentVersionId })
+    .from(schema.configs)
+    .where(eq(schema.configs.slug, slug))
+  await db
+    .update(schema.configVersions)
+    .set({ generatedContent })
+    .where(eq(schema.configVersions.id, config?.versionId as string))
+}
 
 describe('sitemap with mods', () => {
   it("lists each published mod's page with its current version's date", async () => {
@@ -109,7 +137,7 @@ describe('llms.txt with mods', () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
     expect(txt).toMatch(
-      /\n## Mods\n\n- \[Context Meter\]\(https:\/\/staging\.statuslin\.es\/mods\/context-meter\): Shows how full the context is\. Copied 3 times\.\n$/,
+      /\n## Mods\n\n- \[Context Meter\]\(https:\/\/staging\.statuslin\.es\/mods\/context-meter\): Shows how full the context is\. Copied 3 times\.\n\n## Optional\n/,
     )
     expect(txt).not.toContain('draft-mod')
     expect(txt).not.toContain('removed-mod')
@@ -133,5 +161,71 @@ describe('llms.txt with mods', () => {
     const response = await discovery.llmsTxtWithModsForRoute()
 
     expect(response.headers.get('content-type')).toBe('text/plain; charset=utf-8')
+  })
+})
+
+describe('llms-full.txt with mods', () => {
+  it('lists every published status line and mod with its tags and page copy', async () => {
+    const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
+
+    for (let i = 0; i < PAGE_SIZE; i++)
+      expect(txt).toContain(`### [line-${i}](${BASE}/c/line-${i})`)
+    expect(txt).toContain(
+      [
+        `### [line-0](${BASE}/c/line-0)`,
+        '',
+        '- Tags: minimal',
+        '- Summary: Prints hi.',
+        '- How it works:',
+        '  1. Runs `echo hi`.',
+      ].join('\n'),
+    )
+    expect(txt).toContain(
+      [
+        '## Mods',
+        '',
+        `### [Context Meter](${BASE}/mods/context-meter)`,
+        '',
+        '- Description: Shows how full the context is',
+        '- Copied 3 times.',
+        '- Tags: minimal',
+        '- Summary: Shows how full the context window is.',
+        '- How it works:',
+        '  1. Reads the session usage.',
+        '- Good to know:',
+        '  - Draws in the terminal only.',
+      ].join('\n'),
+    )
+  })
+
+  it('treats page copy stored in an older format as missing', async () => {
+    const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
+
+    expect(txt).toContain(`### [line-1](${BASE}/c/line-1)\n\n- Tags: minimal\n\n###`)
+    expect(txt).not.toContain('Copy in an older format.')
+  })
+
+  it('leaves out every status line and mod that is not published', async () => {
+    const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
+
+    expect(txt).not.toContain('removed-line')
+    expect(txt).not.toContain('draft-mod')
+    expect(txt).not.toContain('removed-mod')
+  })
+
+  it('links a facet that mods make indexable', async () => {
+    const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
+
+    expect(txt).toContain(`(${BASE}/status-lines/minimal)`)
+  })
+
+  it('has the llms.txt content type and cache header', async () => {
+    const [full, short] = await Promise.all([
+      discovery.llmsFullTxtWithModsForRoute(),
+      discovery.llmsTxtWithModsForRoute(),
+    ])
+
+    expect(full.headers.get('content-type')).toBe(short.headers.get('content-type'))
+    expect(full.headers.get('cache-control')).toBe(short.headers.get('cache-control'))
   })
 })

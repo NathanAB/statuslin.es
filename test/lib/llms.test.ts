@@ -4,6 +4,7 @@ import {
   BUDDY_GUIDE_TITLE,
   GUIDE_TITLE_BASE,
   MOD_SAFETY_GUIDE_TITLE,
+  NOT_SHOWING_GUIDE_TITLE,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
 
@@ -89,6 +90,14 @@ describe('buildLlmsTxt', () => {
     )
     expect(browse).toContain(
       `[${MOD_SAFETY_GUIDE_TITLE}](https://statuslin.es/guide/are-claude-code-mods-safe)`,
+    )
+  })
+
+  it('links the status line not showing guide under Browse', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))
+    expect(browse).toContain(
+      `[${NOT_SHOWING_GUIDE_TITLE}](https://statuslin.es/guide/status-line-not-showing)`,
     )
   })
 

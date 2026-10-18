@@ -3,6 +3,7 @@ import { createMemoryHistory } from '@tanstack/react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BUDDY_FAQ } from '@/guide/buddy-faq'
 import { MOD_SAFETY_FAQ } from '@/guide/mod-safety-faq'
+import { NOT_SHOWING_FAQ } from '@/guide/status-line-not-showing-faq'
 import { STATUS_LINES_VS_MODS_FAQ } from '@/guide/status-lines-vs-mods-faq'
 import {
   BUDDY_GUIDE_DESCRIPTION,
@@ -11,6 +12,10 @@ import {
   MOD_SAFETY_GUIDE_DESCRIPTION,
   MOD_SAFETY_GUIDE_PATH,
   MOD_SAFETY_GUIDE_TITLE,
+  NOT_SHOWING_GUIDE_DATES,
+  NOT_SHOWING_GUIDE_DESCRIPTION,
+  NOT_SHOWING_GUIDE_PATH,
+  NOT_SHOWING_GUIDE_TITLE,
   STATUS_LINES_VS_MODS_GUIDE_DESCRIPTION,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
@@ -18,6 +23,7 @@ import {
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { Route as ModSafetyRoute } from '@/routes/guide_.are-claude-code-mods-safe'
 import { Route as BuddyRoute } from '@/routes/guide_.claude-code-buddy'
+import { Route as NotShowingRoute } from '@/routes/guide_.status-line-not-showing'
 import { Route as StatusLinesVsModsRoute } from '@/routes/guide_.status-lines-vs-mods'
 import { serverResult } from './server-result'
 
@@ -55,6 +61,14 @@ const GUIDES = [
     description: MOD_SAFETY_GUIDE_DESCRIPTION,
     faq: MOD_SAFETY_FAQ,
     route: ModSafetyRoute,
+  },
+  {
+    routeId: '/guide_/status-line-not-showing',
+    path: NOT_SHOWING_GUIDE_PATH,
+    title: NOT_SHOWING_GUIDE_TITLE,
+    description: NOT_SHOWING_GUIDE_DESCRIPTION,
+    faq: NOT_SHOWING_FAQ,
+    route: NotShowingRoute,
   },
   {
     routeId: '/guide_/claude-code-buddy',
@@ -122,6 +136,26 @@ describe.each(GUIDES)('$path page', (guide) => {
     expect(faq.mainEntity.map((question) => question.name)).toEqual(
       guide.faq.map((entry) => entry.question),
     )
+  })
+})
+
+describe('/guide/status-line-not-showing page', () => {
+  it('names the problem in a title Google shows whole, without the brand', () => {
+    expect(NOT_SHOWING_GUIDE_TITLE).toBe('Claude Code Status Line Not Showing? How to Fix It')
+    expect(NOT_SHOWING_GUIDE_TITLE.length).toBeLessThanOrEqual(60)
+  })
+
+  it('dates its TechArticle from its published and modified days', async () => {
+    const head = await headOf(NotShowingRoute)
+    const article = ((head?.scripts ?? []) as Array<{ children: string }>)
+      .map((script) => JSON.parse(script.children) as Record<string, unknown>)
+      .find((node) => node['@type'] === 'TechArticle')
+
+    expect(NOT_SHOWING_GUIDE_DATES).toEqual({ published: '2026-10-18', modified: '2026-10-18' })
+    expect(article).toMatchObject({
+      datePublished: NOT_SHOWING_GUIDE_DATES.published,
+      dateModified: NOT_SHOWING_GUIDE_DATES.modified,
+    })
   })
 })
 

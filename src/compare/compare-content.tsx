@@ -63,14 +63,21 @@ function Facts({ facts }: { facts: FactSheet }) {
         rows={facts.rows}
       />
       <Text muted size="xs">
-        Checked against the{' '}
-        {facts.columns.map((c, i) => (
-          <Fragment key={c.name}>
+        Checked against{' '}
+        {facts.checks.map((check, i) => (
+          <Fragment key={check.on}>
             {i > 0 && ' and '}
-            <TextLink href={c.sourceUrl}>{c.name}</TextLink>
+            the{' '}
+            {check.sources.map((s, j) => (
+              <Fragment key={s.name}>
+                {j > 0 && ' and '}
+                <TextLink href={s.sourceUrl}>{s.name}</TextLink>
+              </Fragment>
+            ))}{' '}
+            {check.sources.length > 1 ? 'READMEs' : 'README'} on {check.on}
           </Fragment>
-        ))}{' '}
-        {facts.columns.length > 1 ? 'READMEs' : 'README'} on {facts.checkedOn}.
+        ))}
+        .
       </Text>
     </Stack>
   )

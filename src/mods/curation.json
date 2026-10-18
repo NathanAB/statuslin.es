@@ -144,6 +144,90 @@
     "title": "Filetree"
   },
   {
+    "repoUrl": "https://github.com/scasella/claude-flightdeck",
+    "path": "",
+    "commitSha": "6150b9f40b0a36e42c22d39f03ddb81aaefe1844",
+    "pluginName": "flightdeck",
+    "title": "Flightdeck",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/flightdeck open"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/NahumLitvin/prismantis",
+    "path": "",
+    "commitSha": "01fb39d34e5d973a9dc3ecb2019ebb20514775d3",
+    "pluginName": "prismantis",
+    "title": "Prismantis",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/prismantis"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/cablate/ctx-handoff-mod",
+    "path": "",
+    "commitSha": "5382e94e78b4a8e7b24d973b481add83e406e7ee",
+    "pluginName": "ctx-handoff",
+    "title": "Ctx Handoff",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/handoff panel"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/after",
+    "commitSha": "c2ee6a456c8dfb540dc1f0763c58ebf486d0b60d",
+    "pluginName": "after",
+    "title": "After",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/after pause"
+      },
+      {
+        "type": "text",
+        "text": "/after run the tests"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/sub-meter",
+    "commitSha": "c2ee6a456c8dfb540dc1f0763c58ebf486d0b60d",
+    "pluginName": "sub-meter",
+    "title": "Sub Meter"
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/token-meter",
+    "commitSha": "c2ee6a456c8dfb540dc1f0763c58ebf486d0b60d",
+    "pluginName": "token-meter",
+    "title": "Token Meter"
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/use-haiku",
+    "commitSha": "c2ee6a456c8dfb540dc1f0763c58ebf486d0b60d",
+    "pluginName": "use-haiku",
+    "title": "Use Haiku",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "_summarize the last commit",
+        "submit": false
+      }
+    ]
+  },
+  {
     "repoUrl": "https://github.com/uppinote20/claude-pets",
     "path": "",
     "commitSha": "1f8027d8b211b12027a8d89e659c85b212e0c5f6",

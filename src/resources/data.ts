@@ -42,6 +42,12 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
           'Vim-style powerline segments with themes and usage tracking. Powerline Studio, listed below, builds its config visually.',
       },
       {
+        name: 'claude-hud',
+        url: 'https://github.com/jarrodwatts/claude-hud',
+        description:
+          'A Claude Code plugin that points your status line at itself. Shows context and usage limits, with optional lines for running tools, agents, and todos.',
+      },
+      {
         name: 'CCometixLine',
         url: 'https://github.com/Haleclipse/CCometixLine',
         description:

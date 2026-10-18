@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { type ConfigPageCopy, configPageCopySchema, readPageCopy } from '@/content/types'
 import { configs, configVersions, user } from '@/db/schema'
 import { galleryCardSelection, mapCardRow } from './card-rows'
 import type { GallerySource } from './gallery-items'
@@ -61,6 +62,40 @@ export async function getPublishedConfigs(
     offset: (page - 1) * PAGE_SIZE,
   })
   return cards.map(({ card }) => card)
+}
+
+/** A published status line as /llms-full.txt lists it: its card facts and its page copy. */
+export interface PublishedConfigCatalogRow {
+  slug: string
+  title: string
+  description: string
+  copyCount: number
+  tags: string[]
+  /** Null when its current version has no page copy in the current format. */
+  generatedContent: ConfigPageCopy | null
+}
+
+/** Every published status line, most copied first, the order `top` ranks them in. */
+export async function getPublishedConfigCatalog(db: Db): Promise<PublishedConfigCatalogRow[]> {
+  const ranking = galleryRanking(CONFIG_RANKING, { sort: 'top' })
+  const rows = await db
+    .select({
+      slug: configs.slug,
+      title: configVersions.title,
+      description: configVersions.description,
+      copyCount: configs.copyCount,
+      tags: configs.allTags,
+      generatedContent: configVersions.generatedContent,
+    })
+    .from(configs)
+    .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
+    .where(ranking.where)
+    .orderBy(...ranking.orderBy)
+  return rows.map((row) => ({
+    ...row,
+    tags: row.tags ?? [],
+    generatedContent: readPageCopy(configPageCopySchema, row.generatedContent),
+  }))
 }
 
 export async function getConfigSource(db: Db, query: GallerySourceQuery): Promise<GallerySource> {

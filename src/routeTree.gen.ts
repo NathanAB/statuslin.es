@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GuideRouteImport } from './routes/guide'
+import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MarketplaceDotjsonRouteImport } from './routes/marketplace[.]json'
 import { Route as MeRouteImport } from './routes/me'
@@ -29,6 +30,7 @@ import { Route as ComparePairRouteImport } from './routes/compare.$pair'
 import { Route as GuideAreClaudeCodeModsSafeRouteImport } from './routes/guide_.are-claude-code-mods-safe'
 import { Route as GuideClaudeCodeBuddyRouteImport } from './routes/guide_.claude-code-buddy'
 import { Route as GuideClaudeDesktopRouteImport } from './routes/guide_.claude-desktop'
+import { Route as GuideStatusLineNotShowingRouteImport } from './routes/guide_.status-line-not-showing'
 import { Route as GuideStatusLinesVsModsRouteImport } from './routes/guide_.status-lines-vs-mods'
 import { Route as ModsIndexRouteImport } from './routes/mods.index'
 import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
@@ -49,6 +51,11 @@ const IndexRoute = IndexRouteImport.update({
 const GuideRoute = GuideRouteImport.update({
   id: '/guide',
   path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
+  id: '/llms-full.txt',
+  path: '/llms-full.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
@@ -143,6 +150,12 @@ const GuideClaudeDesktopRoute = GuideClaudeDesktopRouteImport.update({
   path: '/guide/claude-desktop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideStatusLineNotShowingRoute =
+  GuideStatusLineNotShowingRouteImport.update({
+    id: '/guide_/status-line-not-showing',
+    path: '/guide/status-line-not-showing',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const GuideStatusLinesVsModsRoute = GuideStatusLinesVsModsRouteImport.update({
   id: '/guide_/status-lines-vs-mods',
   path: '/guide/status-lines-vs-mods',
@@ -206,6 +219,7 @@ const AdminModPreviewsVersionIdDesktopDotpngRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
@@ -223,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-code-buddy': typeof GuideClaudeCodeBuddyRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-line-not-showing': typeof GuideStatusLineNotShowingRoute
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
@@ -239,6 +254,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
@@ -256,6 +272,7 @@ export interface FileRoutesByTo {
   '/guide/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide/claude-code-buddy': typeof GuideClaudeCodeBuddyRoute
   '/guide/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide/status-line-not-showing': typeof GuideStatusLineNotShowingRoute
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
@@ -273,6 +290,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/marketplace.json': typeof MarketplaceDotjsonRoute
   '/me': typeof MeRoute
@@ -290,6 +308,7 @@ export interface FileRoutesById {
   '/guide_/are-claude-code-mods-safe': typeof GuideAreClaudeCodeModsSafeRoute
   '/guide_/claude-code-buddy': typeof GuideClaudeCodeBuddyRoute
   '/guide_/claude-desktop': typeof GuideClaudeDesktopRoute
+  '/guide_/status-line-not-showing': typeof GuideStatusLineNotShowingRoute
   '/guide_/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
@@ -308,6 +327,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/guide'
+    | '/llms-full.txt'
     | '/llms.txt'
     | '/marketplace.json'
     | '/me'
@@ -325,6 +345,7 @@ export interface FileRouteTypes {
     | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-code-buddy'
     | '/guide/claude-desktop'
+    | '/guide/status-line-not-showing'
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
@@ -341,6 +362,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/guide'
+    | '/llms-full.txt'
     | '/llms.txt'
     | '/marketplace.json'
     | '/me'
@@ -358,6 +380,7 @@ export interface FileRouteTypes {
     | '/guide/are-claude-code-mods-safe'
     | '/guide/claude-code-buddy'
     | '/guide/claude-desktop'
+    | '/guide/status-line-not-showing'
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
@@ -374,6 +397,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/guide'
+    | '/llms-full.txt'
     | '/llms.txt'
     | '/marketplace.json'
     | '/me'
@@ -391,6 +415,7 @@ export interface FileRouteTypes {
     | '/guide_/are-claude-code-mods-safe'
     | '/guide_/claude-code-buddy'
     | '/guide_/claude-desktop'
+    | '/guide_/status-line-not-showing'
     | '/guide_/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
@@ -408,6 +433,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GuideRoute: typeof GuideRoute
+  LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   MarketplaceDotjsonRoute: typeof MarketplaceDotjsonRoute
   MeRoute: typeof MeRoute
@@ -425,6 +451,7 @@ export interface RootRouteChildren {
   GuideAreClaudeCodeModsSafeRoute: typeof GuideAreClaudeCodeModsSafeRoute
   GuideClaudeCodeBuddyRoute: typeof GuideClaudeCodeBuddyRoute
   GuideClaudeDesktopRoute: typeof GuideClaudeDesktopRoute
+  GuideStatusLineNotShowingRoute: typeof GuideStatusLineNotShowingRoute
   GuideStatusLinesVsModsRoute: typeof GuideStatusLinesVsModsRoute
   ModsSlugRoute: typeof ModsSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
@@ -453,6 +480,13 @@ declare module '@tanstack/react-router' {
       path: '/guide'
       fullPath: '/guide'
       preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms-full.txt': {
+      id: '/llms-full.txt'
+      path: '/llms-full.txt'
+      fullPath: '/llms-full.txt'
+      preLoaderRoute: typeof LlmsFullDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/llms.txt': {
@@ -581,6 +615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuideClaudeDesktopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide_/status-line-not-showing': {
+      id: '/guide_/status-line-not-showing'
+      path: '/guide/status-line-not-showing'
+      fullPath: '/guide/status-line-not-showing'
+      preLoaderRoute: typeof GuideStatusLineNotShowingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/guide_/status-lines-vs-mods': {
       id: '/guide_/status-lines-vs-mods'
       path: '/guide/status-lines-vs-mods'
@@ -664,6 +705,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GuideRoute: GuideRoute,
+  LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   MarketplaceDotjsonRoute: MarketplaceDotjsonRoute,
   MeRoute: MeRoute,
@@ -681,6 +723,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuideAreClaudeCodeModsSafeRoute: GuideAreClaudeCodeModsSafeRoute,
   GuideClaudeCodeBuddyRoute: GuideClaudeCodeBuddyRoute,
   GuideClaudeDesktopRoute: GuideClaudeDesktopRoute,
+  GuideStatusLineNotShowingRoute: GuideStatusLineNotShowingRoute,
   GuideStatusLinesVsModsRoute: GuideStatusLinesVsModsRoute,
   ModsSlugRoute: ModsSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,

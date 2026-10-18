@@ -67,3 +67,6 @@ export function modDesktopPreviewPath(
 }
 
 export const MARKETPLACE_PATH = '/marketplace.json'
+
+/** The full plain-markdown catalog that /llms.txt links (see llmstxt.org). */
+export const LLMS_FULL_PATH = '/llms-full.txt'

@@ -63,7 +63,7 @@ describe('GuideContent', () => {
 
   it('shows when the guide was last updated', () => {
     render(<GuideContent highlights={highlights} />)
-    expect(screen.getByText('Updated 2026-10-15')).toBeTruthy()
+    expect(screen.getByText('Updated 2026-10-18')).toBeTruthy()
   })
 
   it('shows the example output once, next to the script, not in the intro', () => {
@@ -166,6 +166,11 @@ describe('GuideContent', () => {
   it('links to the status lines vs mods guide', () => {
     const { container } = render(<GuideContent highlights={highlights} />)
     expect(container.querySelector('a[href="/guide/status-lines-vs-mods"]')).not.toBeNull()
+  })
+
+  it('links to the status line not showing guide', () => {
+    const { container } = render(<GuideContent highlights={highlights} />)
+    expect(container.querySelector('a[href="/guide/status-line-not-showing"]')).not.toBeNull()
   })
 
   it('links the payload fields to the facet pages that show them', () => {
