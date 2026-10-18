@@ -78,6 +78,19 @@ function Facts({ facts }: { facts: FactSheet }) {
           </Fragment>
         ))}
         .
+        {facts.otherSources.map((other) => (
+          <Fragment key={`${other.tool} ${other.row}`}>
+            {' '}
+            The {other.row} row for {other.tool} is from its{' '}
+            {other.files.map((file, i) => (
+              <Fragment key={file.url}>
+                {i > 0 && ' and '}
+                <TextLink href={file.url}>{file.name}</TextLink>
+              </Fragment>
+            ))}
+            .
+          </Fragment>
+        ))}
       </Text>
     </Stack>
   )
