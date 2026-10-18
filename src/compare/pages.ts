@@ -14,7 +14,7 @@ export type CompareLink =
 export interface FactSheet {
   columns: Array<Pick<ThirdPartyTool, 'name' | 'repoUrl' | 'sourceUrl'>>
   rows: Array<{ label: string; cells: string[] }>
-  checkedOn: string
+  checks: Array<{ sources: Array<Pick<ThirdPartyTool, 'name' | 'sourceUrl'>>; on: string }>
 }
 
 export interface ComparePage {
@@ -73,10 +73,14 @@ function relevantCards(jobs: string[], cards: GalleryCard[]): RankedCard[] {
 }
 
 function factSheet(tools: ThirdPartyTool[]): FactSheet {
+  const sourcesByDate = new Map<string, FactSheet['checks'][number]['sources']>()
+  for (const { name, sourceUrl, verifiedAt } of tools) {
+    sourcesByDate.set(verifiedAt, [...(sourcesByDate.get(verifiedAt) ?? []), { name, sourceUrl }])
+  }
   return {
     columns: tools.map(({ name, repoUrl, sourceUrl }) => ({ name, repoUrl, sourceUrl })),
     rows: FACT_ROWS.map((row) => ({ label: row.label, cells: tools.map((t) => t.facts[row.key]) })),
-    checkedOn: tools.map((t) => t.verifiedAt).sort()[0] ?? '',
+    checks: [...sourcesByDate].map(([on, sources]) => ({ sources, on })),
   }
 }
 
@@ -104,7 +108,7 @@ function alternativesPage(t: ThirdPartyTool, cards: RankedCard[]): ComparePage {
     path: `/alternatives/${t.slug}`,
     title: `${t.name} Alternatives for Claude Code${PAGE_TITLE_BRAND}`,
     heading: `${t.name} alternatives`,
-    description: `Alternatives to ${t.name} for your Claude Code status line: ${listPhrase(others.map((o) => o.name))}, plus scripts with real rendered previews you can compare before you copy.`,
+    description: `Alternatives to ${t.name} for your Claude Code status line: ${listPhrase(others.map((o) => o.name))}, plus scripts with real rendered previews.`,
     intro: `Single scripts from the gallery that cover at least ${MIN_SHARED_JOBS} of the same features as ${t.name}, each shown with its real output.`,
     facts: factSheet([t]),
     picks: [
