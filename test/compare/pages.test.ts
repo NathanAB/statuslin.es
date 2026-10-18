@@ -105,11 +105,49 @@ describe('buildComparePage', () => {
       { label: 'Usage limits', cells: ['Yes', 'Yes'] },
       { label: 'Latest release', cells: ['v2.2.30, Sep 17', 'v1.32.0, Sep 23'] },
     ])
-    expect(page?.facts.checkedOn).toBe('2026-09-24')
+    expect(page?.facts.checks).toEqual([
+      {
+        sources: [
+          {
+            name: 'ccstatusline',
+            sourceUrl: 'https://github.com/sirmalloc/ccstatusline/blob/main/README.md',
+          },
+          {
+            name: 'claude-powerline',
+            sourceUrl: 'https://github.com/Owloops/claude-powerline/blob/main/README.md',
+          },
+        ],
+        on: '2026-09-24',
+      },
+    ])
     expect(page?.picks).toEqual([
       'Want a setup screen? ccstatusline.',
       'Want a config file you can commit? claude-powerline.',
       'Want to read one script and see its real output first? Pick a status line below.',
+    ])
+  })
+
+  it('dates each tool’s README check on its own, in column order', () => {
+    const page = buildComparePage('/compare/claude-hud-vs-ccstatusline', [...gallery, usageLines])
+    expect(page?.facts.checks).toEqual([
+      {
+        sources: [
+          {
+            name: 'claude-hud',
+            sourceUrl: 'https://github.com/jarrodwatts/claude-hud/blob/main/README.md',
+          },
+        ],
+        on: '2026-10-17',
+      },
+      {
+        sources: [
+          {
+            name: 'ccstatusline',
+            sourceUrl: 'https://github.com/sirmalloc/ccstatusline/blob/main/README.md',
+          },
+        ],
+        on: '2026-09-24',
+      },
     ])
   })
 
