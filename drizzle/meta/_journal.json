@@ -281,6 +281,27 @@
       "when": 1791852077598,
       "tag": "0039_mod_versions_source_per_mod",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792358336448,
+      "tag": "0040_mods_status_check_and_version_owner_uq",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792358342513,
+      "tag": "0041_mods_slug_immutable",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1792358342855,
+      "tag": "0042_mods_current_version_fk",
+      "breakpoints": true
     }
   ]
 }

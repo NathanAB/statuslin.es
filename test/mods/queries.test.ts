@@ -112,17 +112,6 @@ describe('getMarketplaceRows', () => {
     expect(await listedSlugs()).toEqual([])
   })
 
-  it('leaves out a published mod whose current version belongs to another mod', async () => {
-    const victim = await addMod('victim', 'draft', 'scenario-preview')
-    const { modId } = await addMod('hijacked', 'published', 'none')
-    await db
-      .update(schema.mods)
-      .set({ currentVersionId: victim.versionId })
-      .where(eq(schema.mods.id, modId))
-
-    expect(await listedSlugs()).toEqual([])
-  })
-
   it("serves the current version's commit, not an older one", async () => {
     const { modId, versionId: older } = await addMod('repinned', 'published', 'none')
     const current = await addVersion(modId, 2, 'none')
@@ -377,17 +366,6 @@ describe('getModDetail', () => {
 
   it('returns null for an unknown slug', async () => {
     expect(await getModDetail(db, 'nope')).toBeNull()
-  })
-
-  it('returns null when the current version belongs to another mod', async () => {
-    const victim = await addMod('victim', 'draft', 'scenario-preview')
-    const { modId } = await addMod('hijacked', 'published', 'none')
-    await db
-      .update(schema.mods)
-      .set({ currentVersionId: victim.versionId })
-      .where(eq(schema.mods.id, modId))
-
-    expect(await getModDetail(db, 'hijacked')).toBeNull()
   })
 })
 

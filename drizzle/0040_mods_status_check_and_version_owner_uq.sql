@@ -1,0 +1,2 @@
+ALTER TABLE "mod_versions" ADD CONSTRAINT "mod_versions_id_mod_uq" UNIQUE("id","mod_id");--> statement-breakpoint
+ALTER TABLE "mods" ADD CONSTRAINT "mods_status_check" CHECK ("mods"."status" IN ('draft', 'published', 'removed'));

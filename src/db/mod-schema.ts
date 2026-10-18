@@ -7,13 +7,15 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
 import type { DesktopRecording } from '../render/mods/desktop/types'
 import type { AnsiSegment } from '../render/types'
 
-export type ModStatus = 'draft' | 'published' | 'removed'
+const MOD_STATUSES = ['draft', 'published', 'removed'] as const
+export type ModStatus = (typeof MOD_STATUSES)[number]
 
 /** What a mod touches, as `claude plugin validate --json` reports it. */
 export type ModFootprint = { events: string[]; calls: string[] }
@@ -27,6 +29,7 @@ export const mods = pgTable(
   'mods',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    /** Fixed once the mod leaves draft (ADR 0005): a trigger in drizzle/0041_mods_slug_immutable.sql. */
     slug: text('slug').notNull().unique(),
     /** plugin.json's name. Two mods can share it; the slug names the marketplace entry (ADR 0005). */
     pluginName: text('plugin_name').notNull(),
@@ -34,6 +37,7 @@ export const mods = pgTable(
     description: text('description').notNull().default(''),
     authorGithub: text('author_github').notNull(),
     status: text('status').$type<ModStatus>().notNull().default('draft'),
+    /** One of this mod's own versions: a deferred foreign key in drizzle/0042_mods_current_version_fk.sql. */
     currentVersionId: uuid('current_version_id'),
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     allTags: jsonb('all_tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
@@ -43,6 +47,10 @@ export const mods = pgTable(
   (t) => [
     check('mods_slug_check', sql`${t.slug} ~ ${sql.raw(`'${PLUGIN_ID}'`)}`),
     check('mods_plugin_name_check', sql`${t.pluginName} ~ ${sql.raw(`'${PLUGIN_ID}'`)}`),
+    check(
+      'mods_status_check',
+      sql`${t.status} IN (${sql.raw(MOD_STATUSES.map((status) => `'${status}'`).join(', '))})`,
+    ),
   ],
 )
 
@@ -66,6 +74,8 @@ export const modVersions = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    // The key mods.current_version_id references with mods.id, so a mod's live version is its own.
+    unique('mod_versions_id_mod_uq').on(t.id, t.modId),
     uniqueIndex('mod_versions_mod_version_uq').on(t.modId, t.versionNumber),
     // Per mod: until one is approved, two users' submissions may pin the same commit of a folder.
     uniqueIndex('mod_versions_mod_source_uq').on(t.modId, t.repoUrl, t.path, t.commitSha),

@@ -589,16 +589,3 @@ it('refuses when another publish re-pins the mod between the report and the writ
   expect(output).toMatch(/REFUSE current-version-changed/)
   expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: otherId })
 })
-
-it('refuses a mod whose current version belongs to another mod instead of calling it a first publish', async () => {
-  const ownerId = await addMod(db, 'owner', 'published')
-  const borrowedId = await addVersion(db, ownerId, { commitSha: sha('a'), versionNumber: 1 })
-  const modId = await addMod(db, 'meter', 'published')
-  await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 1 })
-  await setCurrentVersion(db, modId, borrowedId)
-
-  await expect(publish(['meter', sha('b')])).rejects.toThrow(
-    `current_version_id ${borrowedId} is not a version of this mod`,
-  )
-  expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: borrowedId })
-})
