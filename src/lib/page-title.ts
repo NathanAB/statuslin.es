@@ -99,6 +99,13 @@ export function homeMetaDescription(page: number, pageCount: number): string {
   return `${HOME_DESCRIPTION_BASE}${page > 1 ? ` Page ${page} of ${pageCount}.` : ''}`
 }
 
+/**
+ * /status-lines/best title base, before the month of its newest copy: the <title> tag, og:title
+ * and its JSON-LD name. People search for status line "examples". A dated title leaves out
+ * ` | statuslin.es`, which would push it past 60 characters.
+ */
+export const BEST_PAGE_TITLE_BASE = 'Best Claude Code Status Line Examples'
+
 export const GUIDE_PATH = '/guide'
 
 /** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
