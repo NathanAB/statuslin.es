@@ -1,6 +1,8 @@
 import type { FaqEntry } from '@/lib/json-ld'
 
-// Every answer comes from https://code.claude.com/docs/en/statusline#troubleshooting.
+// The blank and workspace trust answers come from
+// https://code.claude.com/docs/en/statusline#troubleshooting. The Claude Desktop answer comes
+// from /guide/claude-desktop.
 export const NOT_SHOWING_FAQ: FaqEntry[] = [
   {
     question: 'Why is my Claude Code status line blank?',

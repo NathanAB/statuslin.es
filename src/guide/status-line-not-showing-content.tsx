@@ -6,7 +6,11 @@ import { Stack } from '@/ui/layout'
 import { NumberedList } from '@/ui/numbered-list'
 import { Heading, Text, TextLink } from '@/ui/text'
 
-/** Every fix on this page comes from this section of Anthropic's docs. */
+/**
+ * Most fixes on this page come from this section of Anthropic's docs. The `~` note comes from the
+ * same page's Windows configuration section, the turn-off fix from its Disable the status line
+ * section, and the Claude Desktop line from /guide/claude-desktop.
+ */
 const DOCS_TROUBLESHOOTING_URL = 'https://code.claude.com/docs/en/statusline#troubleshooting'
 
 /** In the order the docs give them. */
