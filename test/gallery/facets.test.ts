@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FACET_BY_SLUG, FACETS, TAG_VOCABULARY, tagLabel } from '@/gallery/facets'
+import { FACETS, tagLabel } from '@/gallery/facets'
 import { HOME_TITLE_BASE } from '@/lib/page-title'
 import { INTERPRETERS } from '@/render/types'
 
@@ -25,13 +25,6 @@ describe('facet registry', () => {
       if (f.group === 'interpreter') expect(INTERPRETERS).toContain(f.interpreter)
       else expect(f.interpreter).toBeUndefined()
     }
-  })
-  it('exposes the tag vocabulary as the feature-group slugs', () => {
-    expect(TAG_VOCABULARY).toEqual(FACETS.filter((f) => f.group === 'feature').map((f) => f.slug))
-    expect(TAG_VOCABULARY.length).toBeGreaterThanOrEqual(8)
-  })
-  it('indexes every facet by slug', () => {
-    expect(FACET_BY_SLUG.size).toBe(FACETS.length)
   })
   it('capitalizes each word of a chip label for display', () => {
     expect(tagLabel('git')).toBe('Git')

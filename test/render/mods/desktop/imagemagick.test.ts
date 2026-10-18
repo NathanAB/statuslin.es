@@ -73,10 +73,6 @@ describe('changedBoxCommand', () => {
       "convert 'png:/tmp/baseline.png[0]' 'png:/tmp/final.png[0]' -compose difference -composite -compose over -fill black -draw 'rectangle 336,1126 1863,1197' -draw 'rectangle 2168,0 2199,1799' -colorspace Gray -threshold 2% -bordercolor black -border 1 -format '%[fx:maxima] %@' info:",
     )
   })
-
-  it('ignores a change too faint to see, like the fade over a scrolled chat', () => {
-    expect(changedBoxCommand('/a.png', '/b.png', [])).toContain('-threshold 2%')
-  })
 })
 
 describe('rowProfileCommand', () => {

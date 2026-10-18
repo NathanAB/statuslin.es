@@ -12,9 +12,7 @@ const assertAdmin = vi.hoisted(() => vi.fn())
 vi.mock('@/review/admin', () => ({ assertAdmin }))
 vi.mock('@/db', () => ({ db: {} }))
 
-const { adminModDesktopPreviewPath, adminModDesktopPreviewResponse } = await import(
-  '@/review/mod-desktop-preview'
-)
+const { adminModDesktopPreviewResponse } = await import('@/review/mod-desktop-preview')
 
 let db: TestDb
 let close: () => Promise<void>
@@ -66,9 +64,5 @@ describe('adminModDesktopPreviewResponse', () => {
     const res = await get(versionId())
     expect(res.status).toBe(404)
     expect(res.headers.get('cache-control')).toBe('private, no-store')
-  })
-
-  it('names the admin route for a version', () => {
-    expect(adminModDesktopPreviewPath('v-1')).toBe('/admin/mod-previews/v-1/desktop.png')
   })
 })

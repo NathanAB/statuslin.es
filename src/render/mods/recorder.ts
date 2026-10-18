@@ -47,14 +47,19 @@ export interface ModRecorder {
   record(request: RecordRequest): Promise<Recording>
 }
 
-/** Claude Code has settled once its output has been silent this long. */
-const QUIET_MS = 2_000
+/** How long the session waits on the pty. Tests shorten it; real recordings use the defaults. */
+export interface SessionTiming {
+  /** Claude Code has settled once its output has been silent this long. */
+  quietMs: number
+  keyPauseMs: number
+  pollMs: number
+}
+
+const SESSION_TIMING: SessionTiming = { quietMs: 2_000, keyPauseMs: 200, pollMs: 100 }
 const SHELL_MAX_MS = 5_000
 /** A mod that never goes quiet is recorded as it stands when the wait runs out. */
 const LAUNCH_MAX_MS = 60_000
 const STEP_MAX_MS = 45_000
-const KEY_PAUSE_MS = 200
-const POLL_MS = 100
 const PROMPT_GLYPH = '❯'
 /**
  * The worst case inside the recording sandbox before the session starts: the tarball upload, the
@@ -67,7 +72,7 @@ const SETUP_MAX_MS = 3 * REQUEST_TIMEOUT_MS + 3 * COMMAND_TIMEOUT_MS
  * launch's and the closing kill, are not counted; each returns in milliseconds, and one that stalls
  * to its request timeout runs into the sandbox lifetime, which fails the recording.
  */
-const STEP_BUDGET_MS = STEP_MAX_MS + KEY_PAUSE_MS
+const STEP_BUDGET_MS = STEP_MAX_MS + SESSION_TIMING.keyPauseMs
 /**
  * The input steps whose waits, after the scripted prompt's, still end before the recording sandbox
  * does. The replay runs after that sandbox is killed, in a sandbox with its own lifetime.
@@ -110,6 +115,7 @@ async function recordSession(
   scenario: Scenario,
   modPluginDir: string | null,
   inputSteps: readonly InputStep[],
+  timing: SessionTiming,
 ): Promise<Uint8Array> {
   const output = new PtyOutput()
   let lastActivityAt = performance.now()
@@ -134,9 +140,9 @@ async function recordSession(
   }
   const settle = async (maxMs: number, ready = () => true) => {
     const startedAt = performance.now()
-    const settled = () => ready() && performance.now() - lastActivityAt >= QUIET_MS
+    const settled = () => ready() && performance.now() - lastActivityAt >= timing.quietMs
     while (!output.overflowed && !settled() && performance.now() - startedAt < maxMs)
-      await sleep(POLL_MS)
+      await sleep(timing.pollMs)
     if (output.overflowed) throw new Error(`pty output passed ${PTY_MAX_BYTES} bytes`)
   }
   try {
@@ -148,7 +154,7 @@ async function recordSession(
     await settle(LAUNCH_MAX_MS, () => promptShown)
     for (const step of [SCRIPTED_PROMPT, ...inputSteps]) {
       for (const [i, chunk] of keystrokes(step).entries()) {
-        if (i > 0) await sleep(KEY_PAUSE_MS)
+        if (i > 0) await sleep(timing.keyPauseMs)
         await send(chunk)
       }
       await settle(STEP_MAX_MS)
@@ -168,6 +174,7 @@ export interface SessionCapture {
 export async function recordInSandbox(
   sandbox: RecordingSandbox,
   { mod, inputSteps }: RecordRequest,
+  timing: SessionTiming = SESSION_TIMING,
 ): Promise<SessionCapture> {
   const scenario = feedScenario()
   const version = await claudeCodeVersion(sandbox, scenario)
@@ -176,7 +183,7 @@ export async function recordInSandbox(
   const setup = await sandbox.run(setupCommand(scenario))
   if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)
   const modPluginDir = mod ? sandbox.pluginDir : null
-  const pty = await recordSession(sandbox, scenario, modPluginDir, inputSteps)
+  const pty = await recordSession(sandbox, scenario, modPluginDir, inputSteps, timing)
   return { pty, claudeCodeVersion: version }
 }
 
@@ -189,7 +196,10 @@ interface Sandboxes {
  * Mod code runs in a recording sandbox, which is killed before its pty bytes are parsed. They are
  * parsed in a second, fresh sandbox, so a stream that exhausts xterm takes down only that sandbox.
  */
-export function modRecorder(sandboxes: Sandboxes): ModRecorder {
+export function modRecorder(
+  sandboxes: Sandboxes,
+  timing: SessionTiming = SESSION_TIMING,
+): ModRecorder {
   return {
     record: async (request) => {
       const steps = request.inputSteps.length
@@ -200,7 +210,7 @@ export function modRecorder(sandboxes: Sandboxes): ModRecorder {
       }
       const { pty, claudeCodeVersion } = await sandboxes.withRecordingSandbox(
         request.mod?.source ?? null,
-        (sandbox) => recordInSandbox(sandbox, request),
+        (sandbox) => recordInSandbox(sandbox, request, timing),
       )
       const rows = await sandboxes.withReplaySandbox((sandbox) => replayInSandbox(sandbox, pty))
       return boundRecording({ rows, claudeCodeVersion })

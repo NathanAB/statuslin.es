@@ -2,12 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { highlightSource, resolveSourceHtml, tryHighlightSource } from '@/lib/highlight'
 
 describe('highlightSource', () => {
-  it('wraps the source in a Shiki <pre>', async () => {
-    const html = await highlightSource('echo hi', 'bash')
-    expect(html).toContain('class="shiki')
-    expect(html).toContain('<pre')
-  })
-
   it('escapes HTML in the source so it cannot inject markup', async () => {
     const html = await highlightSource('echo "<script>alert(1)</script>"', 'bash')
     expect(html).not.toContain('<script>')

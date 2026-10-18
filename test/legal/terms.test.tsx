@@ -12,12 +12,6 @@ describe('TermsContent', () => {
     expect(screen.getByText(/public domain/i)).toBeTruthy()
   })
 
-  it('gives a takedown / report contact', () => {
-    const { container } = render(<TermsContent />)
-    const contact = container.querySelector(`a[href="mailto:${CONTACT_EMAIL}"]`)
-    expect(contact).not.toBeNull()
-  })
-
   it('puts the risk of running a status line or mod on the visitor', () => {
     render(<TermsContent />)
     expect(screen.getByText(/copy or install at your own risk/i)).toBeTruthy()

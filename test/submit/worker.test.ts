@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
@@ -17,13 +16,13 @@ import {
   processNextRenderJob,
   requeueStaleJobs,
 } from '@/submit/worker'
+import { migratedPGlite } from '../helpers/test-db'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   // Seed the author referenced by the configs FK (author_id → user.id)
   await db
     .insert(schema.user)

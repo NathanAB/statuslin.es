@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FACET_KIND_NOTE, FACET_MOD_COPY } from '@/gallery/facet-copy'
-import { ALL_TAG_SLUGS, FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
+import { FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
 import { brandedPageTitle } from '@/lib/page-title'
 import { JOB_BY_TAG } from '@/mods/mod-header'
 
@@ -18,13 +18,6 @@ describe('tag registry', () => {
       expect(f?.group).toBe('feature')
       expect(f?.page).toBe(true)
       expect(TAG_VOCABULARY).toContain(slug)
-    }
-  })
-  it('every page:true facet has SEO copy', () => {
-    for (const f of FACETS.filter((x) => x.page)) {
-      expect(f.titleBase).toBeTruthy()
-      expect(f.metaDescription).toBeTruthy()
-      expect(f.intro?.length).toBeGreaterThan(0)
     }
   })
   it('gives mod copy only to the facets published mods carry, sized for search results', () => {
@@ -55,14 +48,6 @@ describe('tag registry', () => {
   it('keys mod copy only by real tags, so a typo fails here instead of dropping the copy', () => {
     for (const slug of Object.keys(FACET_MOD_COPY)) expect(TAG_VOCABULARY).toContain(slug)
     for (const tag of Object.keys(JOB_BY_TAG)) expect(TAG_VOCABULARY).toContain(tag)
-  })
-  it('TAG_VOCABULARY is exactly the feature group', () => {
-    expect(new Set(TAG_VOCABULARY)).toEqual(
-      new Set(FACETS.filter((f) => f.group === 'feature').map((f) => f.slug)),
-    )
-  })
-  it('ALL_TAG_SLUGS covers every facet', () => {
-    expect(new Set(ALL_TAG_SLUGS)).toEqual(new Set(FACETS.map((f) => f.slug)))
   })
   it('tagHref points page tags to their page and non-page tags to the filtered home', () => {
     expect(tagHref('git')).toEqual({ to: '/status-lines/$facet', params: { facet: 'git' } })

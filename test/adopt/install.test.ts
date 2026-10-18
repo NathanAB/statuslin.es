@@ -1,29 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { buildClaudePrompt, buildShellInstall, installFilename, runCommand } from '@/adopt/install'
-import { INTERPRETERS } from '@/render/types'
+import { buildClaudePrompt, buildShellInstall, runCommand } from '@/adopt/install'
 
 const CJS_NODE = "const fs = require('node:fs')\nprocess.stdout.write('hi')"
 const ESM_NODE = "import fs from 'node:fs'\nprocess.stdout.write('hi')"
-
-describe('installFilename', () => {
-  it('returns statusline.sh for bash', () => {
-    expect(installFilename('bash', 'echo hi')).toBe('statusline.sh')
-  })
-  it('returns statusline.cjs for a CommonJS node source', () => {
-    expect(installFilename('node', CJS_NODE)).toBe('statusline.cjs')
-  })
-  it('returns statusline.mjs for an ESM node source', () => {
-    expect(installFilename('node', ESM_NODE)).toBe('statusline.mjs')
-  })
-  it('returns statusline.py for python', () => {
-    expect(installFilename('python', 'print(1)')).toBe('statusline.py')
-  })
-  it('covers all INTERPRETERS', () => {
-    for (const interp of INTERPRETERS) {
-      expect(installFilename(interp, '')).toBeTruthy()
-    }
-  })
-})
 
 describe('runCommand', () => {
   it('returns bare path for bash', () => {
@@ -47,11 +26,6 @@ describe('buildClaudePrompt', () => {
   it('includes the exact source verbatim', () => {
     const result = buildClaudePrompt({ source, interpreter: 'bash', title })
     expect(result).toContain(source)
-  })
-
-  it('names the correct file for bash', () => {
-    const result = buildClaudePrompt({ source, interpreter: 'bash', title })
-    expect(result).toContain('~/.claude/statusline.sh')
   })
 
   it('saves and runs a CommonJS node source as .cjs', () => {

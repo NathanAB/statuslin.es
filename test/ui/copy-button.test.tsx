@@ -24,8 +24,8 @@ describe('CopyButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
 
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('echo hi'))
-    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy())
+    expect(writeText).toHaveBeenCalledWith('echo hi')
   })
 
   it('announces Copied after copying, even with a custom accessible name', async () => {

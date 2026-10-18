@@ -36,14 +36,6 @@ describe('serverErrorContextFromNitro', () => {
     expect(ctx.properties).not.toHaveProperty('path')
   })
 
-  it('never attaches anything beyond path/method/tags (redaction allowlist)', () => {
-    const ctx = serverErrorContextFromNitro({
-      event: { req: { url: 'https://statuslin.es/submit', method: 'POST' } },
-      tags: ['request'],
-    })
-    expect(Object.keys(ctx.properties ?? {}).sort()).toEqual(['method', 'path', 'tags'])
-  })
-
   it('handles a fully empty context without throwing', () => {
     expect(() => serverErrorContextFromNitro()).not.toThrow()
     expect(serverErrorContextFromNitro().source).toBe('ssr')

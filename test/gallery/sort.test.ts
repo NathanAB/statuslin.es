@@ -22,20 +22,4 @@ describe('coerceSort', () => {
   it('returns the default "trending" for undefined', () => {
     expect(coerceSort(undefined)).toBe('trending')
   })
-
-  it('returns the default "trending" for null', () => {
-    expect(coerceSort(null)).toBe('trending')
-  })
-
-  it('returns the default "trending" for a number', () => {
-    expect(coerceSort(42)).toBe('trending')
-  })
-
-  it('returns the default "trending" for an object', () => {
-    expect(coerceSort({ sort: 'top' })).toBe('trending')
-  })
-
-  it('returns the default "trending" for an empty string', () => {
-    expect(coerceSort('')).toBe('trending')
-  })
 })

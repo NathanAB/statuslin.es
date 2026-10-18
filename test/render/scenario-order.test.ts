@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
+import { orderByScenario } from '@/render/scenarios'
 
 describe('orderByScenario', () => {
   it('sorts items by the canonical SCENARIOS order regardless of input order', () => {
@@ -18,10 +18,5 @@ describe('orderByScenario', () => {
     const ordered = orderByScenario(input)
     expect(ordered.map((x) => x.scenarioKey)).toEqual(['clean-main', 'mystery'])
     expect(input[0]?.scenarioKey).toBe('mystery') // original array untouched
-  })
-
-  it('exposes scenario metadata by key for label lookup', () => {
-    expect(SCENARIO_BY_KEY.get('clean-main')?.shortLabel).toBeTruthy()
-    expect(SCENARIO_BY_KEY.get('clean-main')?.label).toBeTruthy()
   })
 })

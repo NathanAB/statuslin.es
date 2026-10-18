@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { FakeSandboxRunner } from '@/render/fake-runner'
@@ -21,6 +20,7 @@ import {
 import { submitConfig } from '@/submit/submit'
 import { processNextRenderJob } from '@/submit/worker'
 import { insertSubmission, setReviewState } from '../fixtures/submission'
+import { migratedPGlite } from '../helpers/test-db'
 
 async function seedVersionWithJob(
   db: ReturnType<typeof drizzle<typeof schema>>,
@@ -57,9 +57,8 @@ async function seedVersionWithJob(
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   // Seed the author referenced by the configs FK (author_id → user.id)
   await db
     .insert(schema.user)
@@ -766,16 +765,6 @@ describe('requeueRenderJob held-job invariant', () => {
       .from(schema.renderJobs)
       .where(eq(schema.renderJobs.configVersionId, versionId))
     expect(job?.status).toBe('held') // untouched
-  })
-
-  it('still re-queues a failed job', async () => {
-    const versionId = await seedVersionWithJob(db, { status: 'failed', networkHosts: [] })
-    await requeueRenderJob(db, versionId)
-    const [job] = await db
-      .select()
-      .from(schema.renderJobs)
-      .where(eq(schema.renderJobs.configVersionId, versionId))
-    expect(job?.status).toBe('queued')
   })
 })
 

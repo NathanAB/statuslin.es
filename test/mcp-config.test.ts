@@ -7,16 +7,13 @@ type McpConfig = {
 
 describe('.mcp.json', () => {
   const config = JSON.parse(readFileSync('.mcp.json', 'utf8')) as McpConfig
-  const allArgs = Object.values(config.mcpServers).flatMap((s) => s.args)
 
-  it('never uses a floating @latest tag', () => {
-    for (const arg of allArgs) {
-      expect(arg, `${arg} must be pinned, not @latest`).not.toMatch(/@latest$/)
+  it('pins every server package to an exact version', () => {
+    const packages = Object.values(config.mcpServers).map((s) =>
+      s.args.find((arg) => !arg.startsWith('-')),
+    )
+    for (const pkg of packages) {
+      expect(pkg, `${pkg} must be pinned to an exact version`).toMatch(/.@\d+\.\d+\.\d+$/)
     }
-  })
-
-  it('pins shadcn and context7 to the reviewed versions', () => {
-    expect(allArgs).toContain('shadcn@4.12.0')
-    expect(allArgs).toContain('@upstash/context7-mcp@3.2.2')
   })
 })

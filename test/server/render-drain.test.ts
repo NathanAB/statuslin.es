@@ -5,15 +5,13 @@ import type { RenderInput, RenderResult } from '@/render/types'
 
 // The drain renders through the app's `@/db`; point it at an in-memory database on the real migrations.
 const pglite = vi.hoisted(async (): Promise<PGlite> => {
-  const { PGlite } = await import('@electric-sql/pglite')
-  return new PGlite()
+  const { migratedPGlite } = await import('../helpers/test-db')
+  return migratedPGlite()
 })
 vi.mock('@/db', async () => {
   const { drizzle } = await import('drizzle-orm/pglite')
-  const { migrate } = await import('drizzle-orm/pglite/migrator')
   const schema = await import('@/db/schema')
   const db = drizzle({ client: await pglite, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   return { db }
 })
 // While `hang` is set, a fake render never finishes: the machine shuts down in the middle of it.

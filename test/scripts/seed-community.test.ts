@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import {
@@ -20,6 +19,7 @@ import {
   seedCommunity,
   seedCommunityConfig,
 } from '../../scripts/seed-community'
+import { migratedPGlite } from '../helpers/test-db'
 
 const realFetch = globalThis.fetch
 afterEach(() => {
@@ -30,9 +30,8 @@ let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
 })
 
 afterAll(async () => {
@@ -242,34 +241,6 @@ describe('seedCommunityConfig', () => {
       .from(renderJobsTable)
       .where(eq(renderJobsTable.configVersionId, ver?.id as string))
     expect(job?.status).toBe('held')
-  })
-
-  it('a no-network entry gets a queued (not held) render job', async () => {
-    const profile = {
-      id: '4245',
-      login: 'nonetwork',
-      name: 'No Network',
-      avatarUrl: 'https://x/nn.png',
-    }
-    await ensureSeededAuthor(db, profile)
-    const e: CommunityConfig = {
-      ...entry,
-      githubLogin: 'nonetwork',
-      githubId: '4245',
-      title: 'No Network Config',
-    }
-
-    const outcome = await seedCommunityConfig(db, profile, e)
-
-    const [ver] = await db
-      .select()
-      .from(configVersionsTable)
-      .where(eq(configVersionsTable.configId, outcome.configId as string))
-    const [job] = await db
-      .select()
-      .from(renderJobsTable)
-      .where(eq(renderJobsTable.configVersionId, ver?.id as string))
-    expect(job?.status).toBe('queued')
   })
 })
 

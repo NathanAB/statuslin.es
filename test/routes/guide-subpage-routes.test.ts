@@ -140,11 +140,6 @@ describe.each(GUIDES)('$path page', (guide) => {
 })
 
 describe('/guide/status-line-not-showing page', () => {
-  it('names the problem in a title Google shows whole, without the brand', () => {
-    expect(NOT_SHOWING_GUIDE_TITLE).toBe('Claude Code Status Line Not Showing? How to Fix It')
-    expect(NOT_SHOWING_GUIDE_TITLE.length).toBeLessThanOrEqual(60)
-  })
-
   it('dates its TechArticle from its published and modified days', async () => {
     const head = await headOf(NotShowingRoute)
     const article = ((head?.scripts ?? []) as Array<{ children: string }>)

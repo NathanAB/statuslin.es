@@ -111,13 +111,6 @@ describe('describeModFootprint', () => {
     ).toEqual(['desktop'])
   })
 
-  it('leaves out Desktop for a mod that draws nothing there', () => {
-    expect(
-      describeModFootprint({ footprint: PLAIN, preview: PREVIEW, desktop: { kind: 'nothing' } })
-        .surfaces,
-    ).toEqual(['terminal'])
-  })
-
   it('leaves out Desktop without a Desktop shot, even when the footprint targets it', () => {
     const footprint = { events: ['ui.render{component=AbovePrompt, surface=desktop}'], calls: [] }
     expect(

@@ -161,9 +161,14 @@ describe('sitemap lastmod when a listed status line went live last', () => {
 })
 
 describe('sitemap lastmod with an empty gallery', () => {
-  it('lists the best page with no date', async () => {
+  let xml: string
+  beforeAll(async () => {
     await freshDb()
-    const entry = entryFor(await sitemapXml(), '/status-lines/best')
+    xml = await sitemapXml()
+  })
+
+  it('lists the best page with no date', () => {
+    const entry = entryFor(xml, '/status-lines/best')
 
     expect(entry).toContain('<loc>')
     expect(entry).not.toContain('<lastmod>')

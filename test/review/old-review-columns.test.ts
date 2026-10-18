@@ -1,12 +1,12 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { approveAndEmailVersion, rejectAndEmailVersion, setReadsClaudeToken } from '@/review/decide'
 import { REVIEW_STATE_COLUMNS } from '@/submissions/review-state'
 import { submitConfig } from '@/submit/submit'
+import { migratedPGlite } from '../helpers/test-db'
 
 // Until the release that drops them, every review write also lands on config_versions' old review
 // columns, so a pre-#83 image still reads the truth after a rollback, and a decision a machine on the
@@ -16,9 +16,8 @@ let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values({
     id: 'old-columns-author',
     name: 'Author',

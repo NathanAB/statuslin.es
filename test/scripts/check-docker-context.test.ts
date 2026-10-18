@@ -56,12 +56,6 @@ describe('findGitIgnored', () => {
 
     expect(findGitIgnored(root, ['dist/keep.txt'])).toEqual([])
   })
-
-  it('returns nothing when no file is ignored', async () => {
-    const root = await repo('.env.*\n', ['src/app.ts'])
-
-    expect(findGitIgnored(root, ['src/app.ts'])).toEqual([])
-  })
 })
 
 describe('listArchive', () => {

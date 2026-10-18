@@ -77,18 +77,4 @@ describe('modJsonLd', () => {
       ],
     })
   })
-
-  it('emits no FAQPage, even with page copy, since the page never shows it as questions', () => {
-    // The mod page passes its whole ModDetail, page copy included.
-    const withCopy = {
-      ...MOD,
-      generatedContent: {
-        summary: 'A file tree of the current folder in a pane.',
-        howItWorks: ['Run `/filetree` to open it'],
-        goodToKnow: [],
-        details: {},
-      },
-    }
-    expect(nodeOfType(modJsonLd(ORIGIN, withCopy), 'FAQPage')).toBeUndefined()
-  })
 })

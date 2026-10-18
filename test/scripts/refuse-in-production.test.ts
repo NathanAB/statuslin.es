@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { describe, expect, it } from 'vitest'
 
 // These dev-only CLIs ship in the prod image (Dockerfile `COPY . .`) and can forge an admin
@@ -14,11 +14,26 @@ const SCRIPTS = [
   'scripts/loadtest/teardown.ts',
 ]
 
+// Async, so the concurrent tests below run their processes in parallel.
+function runInProduction(script: string): Promise<{ status: number | null; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('bun', [script], {
+      env: { ...process.env, NODE_ENV: 'production' },
+      timeout: 30_000,
+    })
+    let stderr = ''
+    child.stderr.setEncoding('utf8').on('data', (chunk: string) => {
+      stderr += chunk
+    })
+    child.on('error', reject)
+    child.on('close', (status) => resolve({ status, stderr }))
+  })
+}
+
 describe('dev-only DB-mutating CLIs refuse to run in production', () => {
   for (const script of SCRIPTS) {
-    it(`${script} exits non-zero with the guard message under NODE_ENV=production`, () => {
-      const env = { ...process.env, NODE_ENV: 'production' }
-      const res = spawnSync('bun', [script], { env, encoding: 'utf8', timeout: 30_000 })
+    it.concurrent(`${script} exits non-zero with the guard message under NODE_ENV=production`, async () => {
+      const res = await runInProduction(script)
       expect(res.status).not.toBe(0)
       expect(res.stderr).toMatch(/must not run in production/i)
     })

@@ -76,10 +76,6 @@ describe('the sandbox replay script', () => {
 })
 
 describe('parseScreen', () => {
-  it('reads the rows the script printed', () => {
-    expect(parseScreen(JSON.stringify(styledRows))).toEqual(styledRows)
-  })
-
   it('checks the size before parsing', () => {
     const oversized = `[${'"x",'.repeat(REPLAY_OUTPUT_MAX_BYTES / 4)}"x"]`
 

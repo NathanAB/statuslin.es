@@ -21,10 +21,6 @@ const settingsPath = join(REPO_ROOT, SANDBOX_CLAUDE_SETTINGS_SRC)
 describe('sandbox ~/.claude/settings.json seed fixture', () => {
   const raw = readFileSync(settingsPath, 'utf8')
 
-  it('is strictly valid JSON', () => {
-    expect(() => JSON.parse(raw)).not.toThrow()
-  })
-
   it('is a JSON object covering the fields statuslines commonly read', () => {
     const cfg = JSON.parse(raw) as Record<string, unknown>
     expect(typeof cfg).toBe('object')

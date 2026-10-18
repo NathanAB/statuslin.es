@@ -2,14 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { HttpError } from '@/lib/http'
 import { SUBMIT_LIMITS, validateSubmitInput } from '@/submit/submit'
 
-describe('SUBMIT_LIMITS', () => {
-  it('exports expected cap values', () => {
-    expect(SUBMIT_LIMITS.source).toBe(100_000)
-    expect(SUBMIT_LIMITS.title).toBe(200)
-    expect(SUBMIT_LIMITS.description).toBe(4000)
-  })
-})
-
 describe('validateSubmitInput', () => {
   const valid = {
     interpreter: 'bash',

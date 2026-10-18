@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildLlmsTxt } from '@/lib/llms'
 import {
   BUDDY_GUIDE_TITLE,
+  DESKTOP_GUIDE_TITLE_BASE,
   GUIDE_TITLE_BASE,
   MOD_SAFETY_GUIDE_TITLE,
   NOT_SHOWING_GUIDE_TITLE,
@@ -59,7 +60,6 @@ describe('buildLlmsTxt', () => {
   it('links the core pages with absolute per-environment URLs', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     expect(txt).toContain('(https://statuslin.es/)') // gallery home
-    expect(txt).toMatch(/sorted by trending, newest, or most copied/i)
     expect(txt).toContain('(https://statuslin.es/submit)')
     expect(txt).toContain('(https://statuslin.es/guide)')
     expect(txt).toContain('(https://statuslin.es/resources)')
@@ -75,36 +75,16 @@ describe('buildLlmsTxt', () => {
     )
   })
 
-  it('links the Claude Desktop guide', () => {
-    const txt = buildLlmsTxt('https://statuslin.es', facets)
-    expect(txt).toMatch(
-      /\[[^\]]*Claude Desktop[^\]]*\]\(https:\/\/statuslin\.es\/guide\/claude-desktop\)/,
-    )
-  })
-
-  it('links the status lines vs mods and mod safety guides under Browse', () => {
-    const txt = buildLlmsTxt('https://statuslin.es', facets)
-    const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))
-    expect(browse).toContain(
-      `[${STATUS_LINES_VS_MODS_GUIDE_TITLE}](https://statuslin.es/guide/status-lines-vs-mods)`,
-    )
-    expect(browse).toContain(
-      `[${MOD_SAFETY_GUIDE_TITLE}](https://statuslin.es/guide/are-claude-code-mods-safe)`,
-    )
-  })
-
-  it('links the status line not showing guide under Browse', () => {
+  it.each([
+    [DESKTOP_GUIDE_TITLE_BASE, '/guide/claude-desktop'],
+    [STATUS_LINES_VS_MODS_GUIDE_TITLE, '/guide/status-lines-vs-mods'],
+    [MOD_SAFETY_GUIDE_TITLE, '/guide/are-claude-code-mods-safe'],
+    [NOT_SHOWING_GUIDE_TITLE, '/guide/status-line-not-showing'],
+    [BUDDY_GUIDE_TITLE, '/guide/claude-code-buddy'],
+  ])('links the %s guide under Browse', (title, path) => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))
-    expect(browse).toContain(
-      `[${NOT_SHOWING_GUIDE_TITLE}](https://statuslin.es/guide/status-line-not-showing)`,
-    )
-  })
-
-  it('links the Claude Code buddy guide under Browse', () => {
-    const txt = buildLlmsTxt('https://statuslin.es', facets)
-    const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))
-    expect(browse).toContain(`[${BUDDY_GUIDE_TITLE}](https://statuslin.es/guide/claude-code-buddy)`)
+    expect(browse).toContain(`[${title}](https://statuslin.es${path})`)
   })
 
   it('lists each live facet as a markdown link under a Browse-by-feature section', () => {

@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { buildMarketplace } from '@/mods/marketplace'
@@ -13,6 +12,7 @@ import {
   recordModCopy,
   versionIsRendered,
 } from '@/mods/queries'
+import { migratedPGlite } from '../helpers/test-db'
 import { addDesktopPreview, SEEDED_DESKTOP_SHOT } from './seed-mods'
 
 let client: PGlite
@@ -20,9 +20,8 @@ let db: ReturnType<typeof drizzle<typeof schema>>
 let shaSeed = 0
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
 })
 beforeEach(async () => {
   await db.delete(schema.mods)

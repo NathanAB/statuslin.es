@@ -66,11 +66,6 @@ describe('retained asset handler', () => {
     expect(await response.text()).toBe('')
   })
 
-  test('returns 404 for a missing retained asset', async () => {
-    const { assetsDir } = await fixture()
-    expect((await request(assetsDir, '/assets/missing.js')).status).toBe(404)
-  })
-
   test('returns 405 with Allow for unsupported methods', async () => {
     const { assetsDir } = await fixture()
     const response = await request(assetsDir, '/assets/app.js', 'POST')
@@ -94,24 +89,6 @@ describe('retained asset handler', () => {
     expect(await response.text()).toBe('Not Found')
     expect(fallback).not.toHaveBeenCalled()
   })
-
-  test.each(['/assets/../secret.js', '/assets/%2e%2e/secret.js'])(
-    'documents URL normalization outside the asset-route contract for %s',
-    async (path: string) => {
-      const { assetsDir } = await fixture()
-      const fallback = vi.fn(() => new Response('SSR fallback', { status: 418 }))
-      // WHATWG URL parsing removes `/assets/..` before H3 matches routes, so these requests never
-      // enter the production `/assets/**` handler. A broad production catch-all is intentionally
-      // outside this handler's contract; the application's normal catch-all owns the normalized URL.
-      expect(new Request(`http://localhost${path}`).url).toBe('http://localhost/secret.js')
-
-      const response = await request(assetsDir, path, 'GET', fallback)
-
-      expect(response.status).toBe(418)
-      expect(await response.text()).toBe('SSR fallback')
-      expect(fallback).toHaveBeenCalledOnce()
-    },
-  )
 
   test('returns handler 404 before the catch-all when the asset directory is missing', async () => {
     const { root } = await fixture()

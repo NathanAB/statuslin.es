@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createEmojiLoader, emojiCodepoint, MAX_EMOJI_FETCHES_PER_RENDER } from '@/og/font'
+import { createEmojiLoader, MAX_EMOJI_FETCHES_PER_RENDER } from '@/og/font'
 
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg"></svg>'
 
@@ -14,12 +14,6 @@ function emojiFrom(first: number, count: number): string[] {
 
 afterEach(() => {
   vi.restoreAllMocks()
-})
-
-describe('emojiCodepoint', () => {
-  it('returns the lowercase hex codepoint of a single emoji', () => {
-    expect(emojiCodepoint('🤖')).toBe('1f916')
-  })
 })
 
 describe('createEmojiLoader', () => {

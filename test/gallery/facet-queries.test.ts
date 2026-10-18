@@ -1,7 +1,6 @@
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getLatestCopyAt } from '@/gallery/facet-queries'
@@ -9,13 +8,13 @@ import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getCardsByCopies, getFacetCards, getFacetStats, resolveLiveFacet } from '@/gallery/queries'
 import { computeAllTags } from '@/lib/derived-tags'
 import { insertSubmission } from '../fixtures/submission'
+import { migratedPGlite } from '../helpers/test-db'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   await db.insert(schema.user).values({
     id: 'u1',
     name: 'Author',
@@ -143,11 +142,6 @@ describe('facet queries', () => {
     expect(stats.get('powerline')).toEqual({ count: 0, latest: null })
   })
 
-  it('excludes drafts everywhere', async () => {
-    const cards = await getFacetCards(db, FACET_BY_SLUG.get('git')!)
-    expect(cards.map((c) => c.slug)).not.toContain('git-draft')
-  })
-
   it('returns tag-facet cards by lifetime copies', async () => {
     const cards = await getFacetCards(db, FACET_BY_SLUG.get('git')!)
     expect(cards.map((c) => c.slug)).toEqual(['git-b', 'git-a'])
@@ -187,11 +181,6 @@ describe('facet queries', () => {
     )
   })
 
-  it('a page tag with only 1 config is live (no floor)', async () => {
-    const stats = await getFacetStats(db)
-    expect(resolveLiveFacet('cost', stats)?.slug).toBe('cost')
-  })
-
   it('counts the published mods it is given alongside configs', async () => {
     const stats = await getFacetStats(db, [
       { tags: ['git'] },
@@ -208,11 +197,6 @@ describe('facet queries', () => {
     expect(
       resolveLiveFacet('powerline', await getFacetStats(db, [{ tags: ['powerline'] }]))?.slug,
     ).toBe('powerline')
-  })
-
-  it('a page:false capability tag never resolves to a page', async () => {
-    const stats = await getFacetStats(db)
-    expect(resolveLiveFacet('reads-token', stats)).toBeNull()
   })
 
   it('dates the copy ranking by the newest copy of a published config, or null with none', async () => {

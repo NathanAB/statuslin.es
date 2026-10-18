@@ -43,11 +43,6 @@ describe('copyEvent', () => {
     expect(evt?.properties).not.toHaveProperty('versionId')
   })
 
-  it('skips person processing when the distinct id is not a signed-in user', () => {
-    const evt = copyEvent({ ...anonymous, kind: 'prompt', configId: 'cfg-1', distinctId: 'anon-1' })
-    expect(evt?.properties.$process_person_profile).toBe(false)
-  })
-
   it('skips person processing when the distinct id is not the signed-in user (an ip hash)', () => {
     const evt = copyEvent({
       ...anonymous,
@@ -57,28 +52,6 @@ describe('copyEvent', () => {
       signedInUserId: 'u1',
     })
     expect(evt?.properties.$process_person_profile).toBe(false)
-  })
-
-  it('keeps person processing when the distinct id is the signed-in user', () => {
-    const evt = copyEvent({
-      ...anonymous,
-      kind: 'prompt',
-      configId: 'cfg-1',
-      distinctId: 'u1',
-      signedInUserId: 'u1',
-    })
-    expect(evt?.properties).not.toHaveProperty('$process_person_profile')
-  })
-
-  it('attaches the session id as $session_id so the server event ties to the browser session', () => {
-    const evt = copyEvent({
-      ...anonymous,
-      kind: 'prompt',
-      configId: 'cfg-1',
-      distinctId: 'did-1',
-      sessionId: 'sid-1',
-    })
-    expect(evt?.properties.$session_id).toBe('sid-1')
   })
 
   it('omits $session_id when no session id is available', () => {

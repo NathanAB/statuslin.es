@@ -1,14 +1,14 @@
 // Guards the seed-first auto-login guarantee: a seeded author (user + github account
 // row) must be ADOPTED by that person's first real GitHub sign-in — not duplicated.
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
-import { PGlite } from '@electric-sql/pglite'
+import type { PGlite } from '@electric-sql/pglite'
 import { betterAuth } from 'better-auth'
 import { drizzle } from 'drizzle-orm/pglite'
-import { migrate } from 'drizzle-orm/pglite/migrator'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { user as userTable } from '@/db/schema'
 import { ensureSeededAuthor } from '../../scripts/seed-community'
+import { migratedPGlite } from '../helpers/test-db'
 
 const GH_ID = '583231'
 const GH_LOGIN = 'octocat'
@@ -42,9 +42,8 @@ let auth: ReturnType<typeof buildTestAuth>
 const realFetch = globalThis.fetch
 
 beforeAll(async () => {
-  client = new PGlite()
+  client = await migratedPGlite()
   db = drizzle({ client, schema })
-  await migrate(db, { migrationsFolder: './drizzle' })
   auth = buildTestAuth(db)
 })
 

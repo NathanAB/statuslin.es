@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import {
-  canonicalLink,
-  homeCanonicalPath,
-  homePaginationSearch,
-  isFilteredHomeSearch,
-} from '@/lib/canonical'
+import { canonicalLink, homeCanonicalPath, homePaginationSearch } from '@/lib/canonical'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -55,12 +50,5 @@ describe('homePaginationSearch', () => {
 
   it('preserves the kind filter', () => {
     expect(homePaginationSearch(2, { kind: 'mods' })).toEqual({ page: 2, kind: 'mods' })
-  })
-})
-
-describe('isFilteredHomeSearch', () => {
-  it('treats a kind filter as filtered', () => {
-    expect(isFilteredHomeSearch({ kind: 'mods' })).toBe(true)
-    expect(isFilteredHomeSearch({})).toBe(false)
   })
 })

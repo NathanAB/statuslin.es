@@ -102,14 +102,6 @@ describe('AdoptPrompt', () => {
     await waitFor(() => expect(screen.getByText('6 copies')).toBeTruthy())
   })
 
-  it('renders a coral lg "Copy install prompt" button', () => {
-    render(<PromptHarness />)
-    expect(screen.getByText('Copy install prompt')).toBeTruthy()
-    // Coral (default/primary variant) at the large size.
-    expect(promptButton().className).toContain('bg-primary')
-    expect(promptButton().getAttribute('data-size')).toBe('lg')
-  })
-
   it('copies the built Claude prompt and records the copy', async () => {
     render(<PromptHarness />)
 
@@ -121,16 +113,17 @@ describe('AdoptPrompt', () => {
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalled())
   })
 
-  it('does not show "Copied" or record when the clipboard rejects', async () => {
+  it('does not show "Copied", record or toast when the clipboard rejects', async () => {
     writeText.mockRejectedValue(new Error('denied'))
     render(<PromptHarness />)
 
     fireEvent.click(promptButton())
 
     await waitFor(() => expect(writeText).toHaveBeenCalled())
-    // No "Copied" feedback and the record call never fires.
+    // No "Copied" feedback, no toast, and the record call never fires.
     expect(screen.queryByText('Copied')).toBeNull()
     expect(recordCopyFn).not.toHaveBeenCalled()
+    expect(toast).not.toHaveBeenCalled()
   })
 
   it('fires a success toast on prompt copy', async () => {
@@ -143,16 +136,6 @@ describe('AdoptPrompt', () => {
         description: 'Paste it into Claude Code to set up this status line.',
       }),
     )
-  })
-
-  it('does NOT toast when the clipboard rejects', async () => {
-    writeText.mockRejectedValue(new Error('denied'))
-    render(<PromptHarness />)
-
-    fireEvent.click(promptButton())
-
-    await waitFor(() => expect(writeText).toHaveBeenCalled())
-    expect(toast).not.toHaveBeenCalled()
   })
 })
 

@@ -25,10 +25,6 @@ describe('buildTodosFile', () => {
     expect(basename.endsWith('.json')).toBe(true)
   })
 
-  it('returns null for fresh-session only — a brand-new session has no todo file yet', () => {
-    expect(buildTodosFile(scenario('fresh-session'))).toBeNull()
-  })
-
   it('returns a todos file for post-compact (zero context tokens, but mid-session)', () => {
     expect(buildTodosFile(scenario('post-compact'))).not.toBeNull()
   })

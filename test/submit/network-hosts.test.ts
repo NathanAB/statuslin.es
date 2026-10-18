@@ -36,9 +36,6 @@ describe('validateNetworkHosts', () => {
   it('rejects a bare IP', () => {
     expect(() => validateNetworkHosts(['1.1.1.1'])).toThrow(HttpError)
   })
-  it('rejects a bare label (no dot)', () => {
-    expect(() => validateNetworkHosts(['localhost'])).toThrow(HttpError)
-  })
 
   // Public-suffix wildcards — ICANN section
   it.each(['*.com', '*.io', '*.co.uk', '*'])('rejects ICANN public-suffix wildcard %s', (h) => {

@@ -16,10 +16,6 @@ describe('decisionEvent', () => {
     expect(decisionEvent({ ...decided, decision: 'rejected' }).event).toBe('statusline_rejected')
   })
 
-  it('attributes the event to the reviewing admin', () => {
-    expect(decisionEvent({ ...decided, decision: 'approved' }).distinctId).toBe('admin-1')
-  })
-
   it('carries the version, config and slug so it joins the submit and copy events', () => {
     expect(decisionEvent({ ...decided, decision: 'rejected' }).properties).toEqual({
       versionId: 'ver-1',

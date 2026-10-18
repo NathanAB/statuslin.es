@@ -43,39 +43,15 @@ describe('sitemapResponse', () => {
     expect(xml).not.toContain(`<loc>${BASE}/submit</loc>`)
   })
 
-  it('lists the Claude Desktop guide with its modified date', async () => {
+  it.each([
+    ['/guide/claude-desktop', DESKTOP_GUIDE_DATES],
+    ['/guide/status-lines-vs-mods', STATUS_LINES_VS_MODS_GUIDE_DATES],
+    ['/guide/status-line-not-showing', NOT_SHOWING_GUIDE_DATES],
+    ['/guide/are-claude-code-mods-safe', MOD_SAFETY_GUIDE_DATES],
+    ['/guide/claude-code-buddy', BUDDY_GUIDE_DATES],
+  ])('lists the %s guide with its modified date', async (path, dates) => {
     const xml = await sitemapResponse(BASE, [], []).text()
-    expect(entryFor(xml, `${BASE}/guide/claude-desktop`)).toContain(
-      `<lastmod>${DESKTOP_GUIDE_DATES.modified}</lastmod>`,
-    )
-  })
-
-  it('lists the status lines vs mods guide with its modified date', async () => {
-    const xml = await sitemapResponse(BASE, [], []).text()
-    expect(entryFor(xml, `${BASE}/guide/status-lines-vs-mods`)).toContain(
-      `<lastmod>${STATUS_LINES_VS_MODS_GUIDE_DATES.modified}</lastmod>`,
-    )
-  })
-
-  it('lists the status line not showing guide with its modified date', async () => {
-    const xml = await sitemapResponse(BASE, [], []).text()
-    expect(entryFor(xml, `${BASE}/guide/status-line-not-showing`)).toContain(
-      `<lastmod>${NOT_SHOWING_GUIDE_DATES.modified}</lastmod>`,
-    )
-  })
-
-  it('lists the mod safety guide with its modified date', async () => {
-    const xml = await sitemapResponse(BASE, [], []).text()
-    expect(entryFor(xml, `${BASE}/guide/are-claude-code-mods-safe`)).toContain(
-      `<lastmod>${MOD_SAFETY_GUIDE_DATES.modified}</lastmod>`,
-    )
-  })
-
-  it('lists the Claude Code buddy guide with its modified date', async () => {
-    const xml = await sitemapResponse(BASE, [], []).text()
-    expect(entryFor(xml, `${BASE}/guide/claude-code-buddy`)).toContain(
-      `<lastmod>${BUDDY_GUIDE_DATES.modified}</lastmod>`,
-    )
+    expect(entryFor(xml, `${BASE}${path}`)).toContain(`<lastmod>${dates.modified}</lastmod>`)
   })
 
   it('lists unfiltered gallery pages after page 1', async () => {
@@ -115,16 +91,18 @@ describe('sitemapResponse', () => {
     }
   })
 
-  it('xml-escapes ampersands in a slug', async () => {
+  it('xml-escapes ampersands and angle brackets in a slug', async () => {
     const date = new Date('2026-01-02T00:00:00Z')
-    const xml = await sitemapResponse(BASE, [{ slug: 'a&b', updatedAt: date }], []).text()
+    const xml = await sitemapResponse(
+      BASE,
+      [
+        { slug: 'a&b', updatedAt: date },
+        { slug: 'a<b>c', updatedAt: date },
+      ],
+      [],
+    ).text()
     expect(xml).toContain(`<loc>${BASE}/c/a&amp;b</loc>`)
     expect(xml).not.toContain('/c/a&b<')
-  })
-
-  it('xml-escapes angle brackets in a slug', async () => {
-    const date = new Date('2026-01-02T00:00:00Z')
-    const xml = await sitemapResponse(BASE, [{ slug: 'a<b>c', updatedAt: date }], []).text()
     expect(xml).toContain(`<loc>${BASE}/c/a&lt;b&gt;c</loc>`)
   })
 

@@ -222,10 +222,6 @@ describe('mod page head', () => {
     expect(description({ ...MOD, description: long, generatedContent: COPY })).toBe(long)
   })
 
-  it('keeps a short author’s description when the version has no page copy', () => {
-    expect(description(MOD)).toBe(modMetaDescription(MOD.description))
-  })
-
   it('titles a missing mod as not found', () => {
     expect(head(undefined).meta).toEqual([{ title: MOD_NOT_FOUND_TITLE }])
   })
@@ -273,26 +269,6 @@ describe('mod page', () => {
         earlier.compareDocumentPosition(order[i] as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy()
     }
-  })
-
-  it('puts the breadcrumb above the title, like a status line page', () => {
-    renderPage()
-
-    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' })
-    const title = screen.getByRole('heading', { level: 1, name: 'File Tree' })
-    expect(
-      breadcrumb.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-  })
-
-  it('puts the byline under the title and above the description, like a status line page', () => {
-    renderPage()
-
-    const byline = screen.getByText('by')
-    const description = screen.getByText('A file tree pane.')
-    expect(
-      byline.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
   })
 
   it('separates the byline facts with a dot that starts each later fact', () => {

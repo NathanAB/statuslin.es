@@ -83,10 +83,12 @@ describe('submitModFn', () => {
       { link: LINK, title: 'Meter', submittedBy: 'ada' },
       expect.objectContaining({ github: expect.any(Object) }),
     )
-    expect(captureServerEvent).toHaveBeenCalledWith(
-      'mod_submitted',
-      'ada',
-      expect.objectContaining({ slug: 'meter', versionId: 'ver-1', isUpdate: false }),
-    )
+    // versionId joins it to mod_approved / mod_rejected; modId and slug to the install copy events.
+    expect(captureServerEvent).toHaveBeenCalledWith('mod_submitted', 'ada', {
+      slug: 'meter',
+      modId: 'mod-1',
+      versionId: 'ver-1',
+      isUpdate: false,
+    })
   })
 })

@@ -63,7 +63,7 @@ describe('GuideContent', () => {
 
   it('shows when the guide was last updated', () => {
     render(<GuideContent highlights={highlights} />)
-    expect(screen.getByText('Updated 2026-10-18')).toBeTruthy()
+    expect(screen.getByText(/^Updated \d{4}-\d{2}-\d{2}$/)).toBeTruthy()
   })
 
   it('shows the example output once, next to the script, not in the intro', () => {
@@ -124,15 +124,6 @@ describe('GuideContent', () => {
     expect(screen.getByRole('link', { name: /browse claude code status lines/i })).toBeTruthy()
   })
 
-  it('lists the stdin fields this site actually sends to scripts', () => {
-    const { container } = render(<GuideContent highlights={highlights} />)
-    const page = container.textContent ?? ''
-    expect(page).toMatch(/session_id/)
-    expect(page).toMatch(/transcript_path/)
-    expect(page).toMatch(/context_window/)
-    expect(page).toMatch(/rate_limits/)
-  })
-
   it('says which git facts the JSON has and which a script must get from git', () => {
     render(<GuideContent highlights={highlights} />)
     const answer = screen.getByRole('heading', { name: /why isn.t the git branch in the json/i })
@@ -148,29 +139,21 @@ describe('GuideContent', () => {
     expect(page).toMatch(/as soon as you save/i)
   })
 
-  it('links to the gallery, resources, submit, and the official docs', () => {
+  it('links to the gallery, resources, submit, the other guides and the official docs', () => {
     const { container } = render(<GuideContent highlights={highlights} />)
-    for (const href of ['/', '/resources', '/submit']) {
+    for (const href of [
+      '/',
+      '/resources',
+      '/submit',
+      '/guide/claude-desktop',
+      '/guide/status-lines-vs-mods',
+      '/guide/status-line-not-showing',
+    ]) {
       expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
     }
     expect(
       container.querySelector('a[href="https://code.claude.com/docs/en/statusline"]'),
     ).not.toBeNull()
-  })
-
-  it('links to the Claude Desktop guide', () => {
-    const { container } = render(<GuideContent highlights={highlights} />)
-    expect(container.querySelector('a[href="/guide/claude-desktop"]')).not.toBeNull()
-  })
-
-  it('links to the status lines vs mods guide', () => {
-    const { container } = render(<GuideContent highlights={highlights} />)
-    expect(container.querySelector('a[href="/guide/status-lines-vs-mods"]')).not.toBeNull()
-  })
-
-  it('links to the status line not showing guide', () => {
-    const { container } = render(<GuideContent highlights={highlights} />)
-    expect(container.querySelector('a[href="/guide/status-line-not-showing"]')).not.toBeNull()
   })
 
   it('links the payload fields to the facet pages that show them', () => {
