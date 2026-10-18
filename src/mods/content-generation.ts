@@ -53,10 +53,7 @@ const modContentResponseSchema = z.object({
 
 export type ModContentGenerationResponse = z.infer<typeof modContentResponseSchema>
 
-const currentVersion = and(
-  eq(modVersions.id, mods.currentVersionId),
-  eq(modVersions.modId, mods.id),
-)
+const currentVersion = eq(modVersions.id, mods.currentVersionId)
 
 const submittedVersion = alias(modVersions, 'submitted_version')
 

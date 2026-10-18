@@ -170,18 +170,16 @@ export async function getModReviewRows(database: Db): Promise<ModReviewRow[]> {
   const liveRows =
     liveIds.length > 0
       ? await database
-          .select({ ...versionColumns, modId: modVersions.modId })
+          .select(versionColumns)
           .from(modVersions)
           .where(inArray(modVersions.id, liveIds))
       : []
-  const liveById = new Map(
-    liveRows.map(({ modId, ...version }) => [version.id, { modId, version }]),
-  )
+  const liveById = new Map(liveRows.map((version) => [version.id, version]))
   return rows.map(({ mod: { currentVersionId, ...mod }, desktop, ...row }) => {
-    const pointed = currentVersionId ? liveById.get(currentVersionId) : undefined
-    // A pointer at another mod's version is no live version of this one.
     const live =
-      row.version.status === 'pending' && pointed?.modId === mod.id ? pointed.version : undefined
+      row.version.status === 'pending' && currentVersionId
+        ? liveById.get(currentVersionId)
+        : undefined
     return {
       ...row,
       mod,

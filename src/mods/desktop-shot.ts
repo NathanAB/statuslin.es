@@ -21,10 +21,7 @@ export async function getModDesktopShot(db: Db, slug: string): Promise<ModDeskto
   const [row] = await db
     .select({ desktop: desktopPreviewColumns })
     .from(mods)
-    .innerJoin(
-      modVersions,
-      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-    )
+    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row) return { kind: 'unpublished' }
@@ -44,10 +41,7 @@ export async function getModDesktopShotPng(
       height: modDesktopPreviews.height,
     })
     .from(mods)
-    .innerJoin(
-      modVersions,
-      and(eq(modVersions.id, mods.currentVersionId), eq(modVersions.modId, mods.id)),
-    )
+    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
     .innerJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row?.png || !row.width || !row.height) return null

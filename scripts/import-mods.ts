@@ -65,13 +65,7 @@ async function modToRepin(
   const rows = await db
     .select({ id: schema.mods.id, slug: schema.mods.slug })
     .from(schema.mods)
-    .innerJoin(
-      schema.modVersions,
-      and(
-        eq(schema.modVersions.id, schema.mods.currentVersionId),
-        eq(schema.modVersions.modId, schema.mods.id),
-      ),
-    )
+    .innerJoin(schema.modVersions, eq(schema.modVersions.id, schema.mods.currentVersionId))
     .where(
       and(
         eq(schema.mods.pluginName, entry.pluginName),
