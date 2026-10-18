@@ -85,6 +85,13 @@ describe('DesktopGuideContent', () => {
     }
   })
 
+  it('sends a reader whose status line is also missing in the terminal to the terminal fixes', () => {
+    render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
+    expect(screen.getByRole('link', { name: 'the terminal fixes' }).getAttribute('href')).toBe(
+      '/guide/status-line-not-showing',
+    )
+  })
+
   it('links back to the gallery and the setup guide', () => {
     const { container } = render(<DesktopGuideContent statuslineAnywhere={NO_SHOT} />)
     expect(container.querySelector('a[href="/"]')).not.toBeNull()
