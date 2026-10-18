@@ -102,6 +102,7 @@ function updateWarnings(
     current: { ...live, rendered: true },
     onDefaultBranch: true,
     filesChanged: null,
+    comparedToLive: null,
   })
   return guards.filter((guard) => guard.level === 'warn').map((guard) => guard.message)
 }

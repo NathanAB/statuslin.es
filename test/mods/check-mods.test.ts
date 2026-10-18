@@ -25,6 +25,9 @@ function githubWithout(missing: string[]): GitHub {
     filesChanged: async () => {
       throw new Error('check only asks whether commits are fetchable')
     },
+    compareCommits: async () => {
+      throw new Error('check only asks whether commits are fetchable')
+    },
     commitIsFetchable: async (_repo, commit) => !missing.includes(commit),
   }
 }

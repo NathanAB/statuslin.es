@@ -3,6 +3,7 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, type ModStatus, modVersions } from '@/db/schema'
 import { mergeTags } from '@/lib/derived-tags'
 import { COMMIT_SHA } from './curation'
+import type { CommitComparison } from './github'
 import { MOD_SCENARIO_KEY, versionIsRendered } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -92,6 +93,7 @@ export interface PublishFacts extends ListingFacts {
   current: PublishVersion | null
   /** Files changed since `compareBase`; null when there is no base to compare against. */
   filesChanged: string[] | null
+  comparedToLive: CommitComparison | null
 }
 
 /** GitHub compares commits only within one repository, so a move to another repo has no base. */
@@ -170,6 +172,17 @@ function truncationGuards({ current, target, filesChanged }: PublishFacts): Guar
   ]
 }
 
+function aheadOfLiveGuards({ current, target, comparedToLive }: PublishFacts): Guard[] {
+  if (!current || comparedToLive === null || comparedToLive === 'ahead') return []
+  const live = `the live commit ${current.commitSha}`
+  const why = {
+    behind: `is behind ${live}, so publishing it would roll users back`,
+    diverged: `doesn't build on ${live}, so publishing it could drop changes users already have`,
+    identical: `is ${live}`,
+  }[comparedToLive]
+  return [refuse('not-ahead-of-live', `commit ${target.commitSha} ${why}`)]
+}
+
 export function listingGuards({ target, onDefaultBranch }: ListingFacts): Guard[] {
   const offDefault = `commit ${target.commitSha} is not on the repository's default branch`
   const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop)`
@@ -201,6 +214,7 @@ export function publishGuards(facts: PublishFacts): Guard[] {
   return [
     ...(facts.modStatus === 'removed' ? [removedGuard(facts.slug)] : []),
     ...listingGuards(facts),
+    ...aheadOfLiveGuards(facts),
     ...sourceGuards(facts),
     ...truncationGuards(facts),
     ...footprintGuards(facts),

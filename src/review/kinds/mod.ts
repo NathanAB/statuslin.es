@@ -3,10 +3,11 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModStatus, mods, modVersions, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { modPath } from '@/lib/site'
-import type { GitHub } from '@/mods/github'
+import type { CommitComparison, GitHub } from '@/mods/github'
 import { marketplaceName } from '@/mods/listing'
 import {
   alreadyCurrentGuard,
+  compareBase,
   currentChangedGuard,
   loadCurrentVersion,
   loadVersions,
@@ -22,7 +23,7 @@ import type { ApprovalContext, Publish, RejectionContext, ReviewKind } from './k
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /** What approving a mod asks GitHub. */
-export type ModReviewGitHub = Pick<GitHub, 'commitIsOnDefaultBranch'>
+export type ModReviewGitHub = Pick<GitHub, 'commitIsOnDefaultBranch' | 'compareCommits'>
 
 const NOUN = 'mod'
 const NOT_PENDING = 'version not in a reviewable (pending) state'
@@ -79,6 +80,15 @@ function publishStep(target: PublishVersion, read: ReadMod): Publish {
       .set({ slug, ...publishedRow(target, mod.tags) })
       .where(eq(mods.id, read.id))
   }
+}
+
+async function compareToLive(
+  github: ModReviewGitHub,
+  current: PublishVersion | null,
+  target: PublishVersion,
+): Promise<CommitComparison | null> {
+  const base = compareBase(current, target)
+  return base ? github.compareCommits(target.repoUrl, base.commitSha, target.commitSha) : null
 }
 
 /** The live version's number, to refuse rolling the mod back to an older one. */
@@ -138,6 +148,7 @@ export function modReview(github: ModReviewGitHub): ReviewKind {
         onDefaultBranch: await github.commitIsOnDefaultBranch(target.repoUrl, target.commitSha),
         // The file list feeds only a warning, which the /admin card shows with a compare link.
         filesChanged: null,
+        comparedToLive: await compareToLive(github, current, target),
       })
       const refusals = guards.filter((guard) => guard.level === 'refuse')
       if (refusals.length > 0) {

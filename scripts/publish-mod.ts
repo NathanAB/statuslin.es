@@ -33,14 +33,14 @@ import { terminalLine } from '@/mods/terminal-line'
  * mod to 'published', which puts it in /marketplace.json at that commit.
  *
  * Guards. It refuses a SHA that is not 40 lowercase hex, a SHA that matches more than one version of
- * the mod, a commit not on the repo's default branch, a version that has not rendered, a delisted
- * mod (use delist-mod.ts --restore), the version a published mod already points at, and a mod a user
- * submitted (approve it on /admin, which names it and checks its folder). A draft's
- * publish is a first publish, with nothing to compare against. It prints the repository and
- * path, the files changed since the current commit, and the footprint, before and after. It warns
- * when the repository or path changes, when GitHub truncates the file list, when the footprint adds
- * events or $ calls, and when plugin.json's `version` is unchanged (Claude Code then won't update
- * existing installs).
+ * the mod, a commit not on the repo's default branch, a commit not ahead of the live one, a version
+ * that has not rendered, a delisted mod (use delist-mod.ts --restore), the version a published mod
+ * already points at, and a mod a user submitted (approve it on /admin, which names it and checks
+ * its folder). A draft's publish is a first publish, with nothing to compare against. It prints the
+ * repository and path, the files changed since the current commit, and the footprint, before and
+ * after. It warns when the repository or path changes, when GitHub truncates the file list, when
+ * the footprint adds events or $ calls, and when plugin.json's `version` is unchanged (Claude Code
+ * then won't update existing installs).
  *
  * AGENT USAGE — a dry run by default; nothing changes without `--apply --confirm=<slug>`:
  *
@@ -113,6 +113,7 @@ async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
     current,
     onDefaultBranch: await github.commitIsOnDefaultBranch(target.repoUrl, sha),
     filesChanged: base ? await github.filesChanged(target.repoUrl, base.commitSha, sha) : null,
+    comparedToLive: base ? await github.compareCommits(target.repoUrl, base.commitSha, sha) : null,
   }
   return { modId: mod.id, readPointerId: mod.currentVersionId, facts }
 }

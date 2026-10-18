@@ -84,6 +84,16 @@ describe('filesChanged', () => {
   })
 })
 
+describe('compareCommits', () => {
+  it('reads how the head commit stands against the base', async () => {
+    const { fetchFn } = fakeFetch({
+      [api(`/compare/${BASE}...${SHA}`)]: { status: 200, body: { status: 'behind' } },
+    })
+
+    expect(await createGitHub(fetchFn).compareCommits(REPO, BASE, SHA)).toBe('behind')
+  })
+})
+
 describe('commitIsFetchable', () => {
   it.each([
     [200, true],

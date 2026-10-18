@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import type { CommitComparison } from '@/mods/github'
 import { PluginRefusal } from '@/mods/plugin-facts'
 import { type ModSubmitDeps, submitMod } from '@/mods/submit'
 import { createSubmitGuard } from '@/mods/submit-guard'
@@ -34,6 +35,7 @@ interface FakeOptions {
   manifest?: Record<string, unknown>
   tarballError?: Error
   sandboxError?: Error
+  comparedToLive?: CommitComparison
 }
 
 function deps({
@@ -41,6 +43,7 @@ function deps({
   manifest = { name: 'meter', version: '1.0.0', description: 'A context meter.' },
   tarballError,
   sandboxError,
+  comparedToLive = 'ahead',
 }: FakeOptions = {}): ModSubmitDeps & { calls: string[] } {
   const calls: string[] = []
   const sandbox: ModSandbox = {
@@ -70,6 +73,10 @@ function deps({
       },
       async commitIsOnDefaultBranch() {
         return true
+      },
+      async compareCommits(_repo, base, head) {
+        calls.push(`compare:${base}...${head}`)
+        return comparedToLive
       },
       async pluginManifestExists() {
         return true
@@ -289,8 +296,8 @@ describe('submitMod', () => {
 })
 
 describe('a new version of your own mod', () => {
-  async function published() {
-    const first = await submit()
+  async function published(d = deps()) {
+    const first = await submit({}, d)
     // Approval names it.
     await db
       .update(schema.mods)
@@ -317,6 +324,49 @@ describe('a new version of your own mod', () => {
       { versionNumber: 1, status: 'approved', rejectionEmailStatus: null },
       { versionNumber: 2, status: 'pending', rejectionEmailStatus: null },
     ])
+  })
+
+  it('compares an update with the live commit, and a first submission with nothing', async () => {
+    const firstDeps = deps()
+    await published(firstDeps)
+    const updateDeps = deps({ head: sha('b') })
+
+    await submit({ slug: 'meter' }, updateDeps)
+
+    const compares = (calls: string[]) => calls.filter((c) => c.startsWith('compare:'))
+    expect(compares(firstDeps.calls)).toEqual([])
+    expect(compares(updateDeps.calls)).toEqual([`compare:${sha('a')}...${sha('b')}`])
+  })
+
+  it.each([
+    ['behind', 'Commit bbbbbbb is behind the live commit aaaaaaa.'],
+    ['diverged', "Commit bbbbbbb doesn't build on the live commit aaaaaaa."],
+  ] as const)(
+    'refuses an update GitHub compares as %s, before downloading it',
+    async (comparison, message) => {
+      const first = await published()
+      const d = deps({ head: sha('b'), comparedToLive: comparison })
+
+      await expect(submit({ slug: 'meter' }, d)).rejects.toMatchObject({
+        status: 409,
+        message: expect.stringContaining(message),
+      })
+      expect(d.calls.filter((c) => c.startsWith('tarball:'))).toEqual([])
+      expect(await submissionsOf(first.modId)).toHaveLength(1)
+    },
+  )
+
+  it('does not compare a fix to a rejected draft, which has no live version', async () => {
+    const first = await submit()
+    await db
+      .update(schema.submissions)
+      .set({ status: 'rejected', rejectionReason: 'No' })
+      .where(eq(schema.submissions.id, first.versionId))
+    const d = deps({ head: sha('b'), comparedToLive: 'behind' })
+
+    await submit({ slug: first.slug }, d)
+
+    expect(d.calls.filter((c) => c.startsWith('compare:'))).toEqual([])
   })
 
   it('replaces an older pending update', async () => {
