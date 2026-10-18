@@ -10,7 +10,7 @@ import { type CopyKind, copyEvent } from './copy-event'
 // signal, deduped per client so it can't be trivially inflated from a single host (IP rotation or
 // many accounts can still move it).
 export const recordCopyFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { configId: string; kind: CopyKind } & BrowserCopyTracking) => d)
+  .validator((d: { configId: string; kind: CopyKind } & BrowserCopyTracking) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const [{ ipHash, ...tracking }, config] = await Promise.all([

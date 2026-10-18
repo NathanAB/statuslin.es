@@ -11,7 +11,7 @@ import { withHttpStatus } from '@/lib/http.server'
  * offer its author the update form; the author's user id never leaves the server.
  */
 export const getViewerIsAuthor = createServerFn({ method: 'GET' })
-  .inputValidator((d: { slug: string }) => d)
+  .validator((d: { slug: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })

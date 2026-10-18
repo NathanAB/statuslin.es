@@ -9,7 +9,7 @@ import { toggleVote } from './vote'
 import { voteEvent } from './vote-event'
 
 export const toggleVoteFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { configId: string }) => d)
+  .validator((d: { configId: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })

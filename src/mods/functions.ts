@@ -10,7 +10,7 @@ import { getModDetail, recordModCopy } from './queries'
 import { getModRelated, getStatusLineMods } from './related'
 
 export const getModDetailFn = createServerFn({ method: 'GET' })
-  .inputValidator((d: { slug: string }) => d)
+  .validator((d: { slug: string }) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const mod = await getModDetail(db, data.slug)
@@ -21,19 +21,19 @@ export const getModDetailFn = createServerFn({ method: 'GET' })
 /** The mods a status line page links to, from the status line's tags. */
 export const getStatusLineModsFn = createServerFn({ method: 'GET' })
   // Only registry tags, once each: a caller can't grow the query past the registry's size.
-  .inputValidator((d: { tags: string[] }) => ({
+  .validator((d: { tags: string[] }) => ({
     tags: Array.isArray(d.tags) ? [...new Set(d.tags)].filter((tag) => FACET_BY_SLUG.has(tag)) : [],
   }))
   .handler(({ data }) => withHttpStatus(() => getStatusLineMods(db, data)))
 
 /** Only what a guide needs to link a mod: whether it is published, and its Desktop shot. */
 export const getModDesktopShotFn = createServerFn({ method: 'GET' })
-  .inputValidator((d: { slug: string }) => d)
+  .validator((d: { slug: string }) => d)
   .handler(({ data }) => withHttpStatus(() => getModDesktopShot(db, data.slug)))
 
 /** Anonymous on purpose, like config copies: anyone can copy an install command. */
 export const recordModCopyFn = createServerFn({ method: 'POST' })
-  .inputValidator((d: { modId: string; kind: InstallCommandKind } & BrowserCopyTracking) => d)
+  .validator((d: { modId: string; kind: InstallCommandKind } & BrowserCopyTracking) => d)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const { ipHash, ...tracking } = await requestCopyIdentity(data)

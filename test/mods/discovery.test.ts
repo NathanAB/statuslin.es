@@ -16,7 +16,7 @@ vi.mock('@tanstack/react-start', () => ({
   createServerOnlyFn: (handler: () => unknown) => handler,
   createServerFn: () => {
     const handler = () => () => undefined
-    return { handler, inputValidator: () => ({ handler }) }
+    return { handler, validator: () => ({ handler }) }
   },
 }))
 

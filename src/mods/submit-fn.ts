@@ -16,7 +16,7 @@ import { modSubmittedEvent } from './submitted-event'
 
 const DRAFT_KINDS = ['update', 'resubmission'] as const
 export const submitModFn = createServerFn({ method: 'POST' })
-  .inputValidator(validateModSubmitRequest)
+  .validator(validateModSubmitRequest)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })
@@ -41,7 +41,7 @@ export const submitModFn = createServerFn({ method: 'POST' })
   )
 
 export const getModDraftFn = createServerFn({ method: 'GET' })
-  .inputValidator((data: { slug: unknown; kind: unknown }) => {
+  .validator((data: { slug: unknown; kind: unknown }) => {
     if (typeof data.slug !== 'string' || !PLUGIN_NAME.test(data.slug)) {
       throw new HttpError(400, 'invalid mod')
     }

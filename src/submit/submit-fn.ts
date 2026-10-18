@@ -64,7 +64,7 @@ function submitOptions({ rejectedVersionId, updateSlug }: SubmitRequest): Submit
 }
 
 export const submitConfigFn = createServerFn({ method: 'POST' })
-  .inputValidator(validateSubmitRequest)
+  .validator(validateSubmitRequest)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })
@@ -94,7 +94,7 @@ export const submitConfigFn = createServerFn({ method: 'POST' })
   )
 
 export const getResubmissionDraftFn = createServerFn({ method: 'GET' })
-  .inputValidator(validateDraftRequest)
+  .validator(validateDraftRequest)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })
@@ -104,7 +104,7 @@ export const getResubmissionDraftFn = createServerFn({ method: 'GET' })
   )
 
 export const getUpdateDraftFn = createServerFn({ method: 'GET' })
-  .inputValidator(validateDraftRequest)
+  .validator(validateDraftRequest)
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })
