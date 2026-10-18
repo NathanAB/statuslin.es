@@ -50,7 +50,6 @@ interface Seed {
   rendered?: boolean
   path?: string
   inputSteps?: InputStep[]
-  footprint?: schema.ModFootprint
 }
 
 async function seedMod(
@@ -61,7 +60,6 @@ async function seedMod(
     rendered = false,
     path = '',
     inputSteps = [],
-    footprint,
   }: Seed = {},
 ) {
   const modId = await addMod(db, slug, status)
@@ -70,7 +68,6 @@ async function seedMod(
     versionNumber: 1,
     rendered,
     path,
-    ...(footprint ? { footprint } : {}),
   })
   await db
     .update(schema.modVersions)
@@ -517,16 +514,9 @@ describe('renderMods in Claude Desktop', () => {
     expect(lines).toContain('drew nothing token-weather in Claude Desktop')
   })
 
-  it('asks for the mod with its input steps and where its footprint draws', async () => {
+  it('asks for the mod with its input steps', async () => {
     const inputSteps: InputStep[] = [{ type: 'text', text: '/radar' }]
-    await seedMod('radar', {
-      path: 'mods/radar',
-      inputSteps,
-      footprint: {
-        events: ['ui.render{component=Pane, requestId=radar}', 'ui.render{component=AbovePrompt}'],
-        calls: ['$.ui.toast'],
-      },
-    })
+    await seedMod('radar', { path: 'mods/radar', inputSteps })
     const desktopRecorder = new FakeDesktopRecorder()
 
     expect(await run(new FakeModRecorder({ baseline }), {}, desktopRecorder).exitCode).toBe(0)
@@ -535,7 +525,6 @@ describe('renderMods in Claude Desktop', () => {
       {
         mod: { source: { tarball: TARBALL, path: 'mods/radar' }, pluginName: 'radar' },
         inputSteps,
-        draws: ['above-prompt', 'pane', 'toast'],
       },
     ])
   })

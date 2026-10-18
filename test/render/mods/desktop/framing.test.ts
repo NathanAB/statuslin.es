@@ -38,7 +38,6 @@ describe('frameShot with no pane open', () => {
       frameShot({
         changed: null,
         paneOpen: false,
-        draws: ['above-prompt'],
         rows: rows(),
         plate: NO_PLATE,
       }),
@@ -49,7 +48,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed: BAND,
       paneOpen: false,
-      draws: [],
       rows: BAND_ROWS,
       plate: BAND_PLATE,
     })
@@ -64,7 +62,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed: BAND,
       paneOpen: false,
-      draws: [],
       rows: BAND_ROWS,
       plate: BAND_PLATE,
     })
@@ -81,7 +78,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: content,
       plate: rows([732, 812, 1]),
     })
@@ -96,7 +92,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: profile,
       plate: plateOf(profile),
     })
@@ -111,7 +106,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: profile,
       plate: plateOf(profile),
     })
@@ -128,7 +122,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: profile,
       plate: plateOf(profile),
     })
@@ -143,7 +136,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: profile,
       plate: plateOf(profile),
     })
@@ -158,7 +150,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: profile,
       plate: plateOf(profile),
     })
@@ -173,7 +164,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: profile,
       plate: plateOf(profile),
     })
@@ -187,7 +177,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed: toast,
       paneOpen: false,
-      draws: ['toast'],
       rows: rows(),
       plate: NO_PLATE,
     })
@@ -203,7 +192,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed,
       paneOpen: false,
-      draws: [],
       rows: BAND_ROWS,
       plate: BAND_PLATE,
     })
@@ -217,7 +205,6 @@ describe('frameShot with no pane open', () => {
     const frame = frameShot({
       changed: everything,
       paneOpen: false,
-      draws: [],
       rows: rows(),
       plate: NO_PLATE,
     })
@@ -248,7 +235,6 @@ describe('frameShot with a pane open', () => {
     const frame = frameShot({
       changed: null,
       paneOpen: true,
-      draws: ['pane'],
       rows: rows(),
       plate: NO_PLATE,
       pane: paneOf(slug),
@@ -259,20 +245,16 @@ describe('frameShot with a pane open', () => {
     })
   })
 
-  it('cards the pane when the mod also draws elsewhere, still cropping the chat with it', () => {
+  it('crops and cards the pane alone, leaving out the chat beside it', () => {
     const frame = frameShot({
       changed: null,
       paneOpen: true,
-      draws: ['pane', 'toast'],
       rows: rows(),
       plate: NO_PLATE,
       pane: paneOf('flightdeck'),
     })
 
-    expect(frame).toMatchObject({
-      rect: { x: 37, width: 1092 - 37 },
-      card: { ...PANE_INSIDE, y: 85 },
-    })
+    expect(frame).toMatchObject({ rect: PANE_ONLY, card: { ...PANE_INSIDE, y: 85 } })
   })
 
   it('cuts a pane too tall for a card at a blank row', () => {
@@ -281,7 +263,6 @@ describe('frameShot with a pane open', () => {
     const frame = frameShot({
       changed: null,
       paneOpen: true,
-      draws: ['pane'],
       rows: rows(),
       plate: NO_PLATE,
       pane,
@@ -295,7 +276,6 @@ describe('frameShot with a pane open', () => {
       frameShot({
         changed: null,
         paneOpen: true,
-        draws: ['pane'],
         rows: rows(),
         plate: NO_PLATE,
         pane: rows([44, 68, 0.2]),
@@ -307,28 +287,10 @@ describe('frameShot with a pane open', () => {
     })
   })
 
-  it('crops the chat column and the pane together when the mod also draws elsewhere', () => {
-    const frame = frameShot({
-      changed: null,
-      paneOpen: true,
-      draws: ['pane', 'toast'],
-      rows: rows(),
-      plate: NO_PLATE,
-      pane: rows(),
-    })
-
-    expect(frame).toEqual({
-      kind: 'crop',
-      rect: { x: 37, y: 40, width: 1092 - 37, height: CONTENT.bottom - 40 },
-      card: { x: 37, y: 40, width: 1092 - 37, height: CARD_MAX_HEIGHT },
-    })
-  })
-
   it('cards a band above the narrowed prompt box, over the pane', () => {
     const frame = frameShot({
       changed: null,
       paneOpen: true,
-      draws: [],
       rows: BAND_ROWS,
       plate: BAND_PLATE,
       pane: paneOf('pets'),

@@ -7,7 +7,7 @@ import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { type InputStep, inputStepsSchema } from '@/mods/curation'
-import { describeFootprint, type Surface } from '@/mods/footprint'
+import type { Surface } from '@/mods/footprint'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { terminalLine } from '@/mods/terminal-line'
@@ -33,8 +33,8 @@ import type { AnsiSegment } from '@/render/types'
  * Terminal: every mod is recorded in its own offline E2B sandbox and cropped against a baseline
  * recording (the same session, typing the same input steps, with no mod), shared across the run by
  * mods with the same input steps while the Claude Code version matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
- * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames the mod where its
- * footprint says it draws, and stores the PNG, or the fact that it drew nothing.
+ * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames what the mod draws
+ * there, and stores the PNG, or the fact that it drew nothing.
  *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
  * run fails keeps whatever result it had, and the other surface is still stored; nothing is ever
@@ -81,7 +81,6 @@ interface Target {
   commitSha: string
   /** Stored jsonb, parsed in renderTarget so a malformed row fails only its own mod. */
   inputSteps: unknown
-  footprint: schema.ModFootprint
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
@@ -97,7 +96,6 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       path: schema.modVersions.path,
       commitSha: schema.modVersions.commitSha,
       inputSteps: schema.modVersions.inputSteps,
-      footprint: schema.modVersions.footprint,
     })
     .from(schema.mods)
     .innerJoin(schema.modVersions, eq(schema.modVersions.modId, schema.mods.id))
@@ -245,8 +243,7 @@ async function renderDesktop(
   request: ModRequest,
   { db, desktopRecorder }: RenderModsDeps,
 ): Promise<Outcome> {
-  const draws = describeFootprint(target.footprint).draws
-  const recording = await desktopRecorder.record({ ...request, draws })
+  const recording = await desktopRecorder.record(request)
   await storeDesktopPreview(db, target.versionId, recording)
   return { kind: recording.kind === 'shot' ? 'rendered' : 'drew nothing' }
 }

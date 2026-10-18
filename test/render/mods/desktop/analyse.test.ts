@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { analyseShot } from '@/render/mods/desktop/analyse'
 import type { AnalysisSandbox } from '@/render/mods/desktop/desktop-sandbox'
 import {
-  CONTENT,
   PANE_BORDER_GREY,
   PROMPT_BORDER_GREY,
   PROMPT_BOX,
@@ -55,12 +54,24 @@ interface FakeShots {
   /** The shot across the whole crop, and how it differs from the baseline there. */
   cropContent?: string
   changedRows?: string
+  /** Rows a message the user sent fills, in the shot, and in the baseline when it differs. */
+  bubbles?: [number, number][]
+  baselineBubbles?: [number, number][]
   crop?: (width: number, height: number) => Uint8Array
 }
 
 /** What a row-profile command prints: by row change, across the crop, plate, pane or column. */
 function profileFor(command: string, opts: FakeShots): string {
   if (command.includes('difference -composite -crop')) return opts.changedRows ?? profile()
+  const strips = [...command.matchAll(/-crop 6x\d+\+(\d+)\+0 /g)]
+  if (strips.length === 1) {
+    const inBaseline = command.includes('baseline.png')
+    const bubbles = (inBaseline && opts.baselineBubbles) || opts.bubbles || []
+    // A bubble fills the column's right plate strip and leaves its left one blank.
+    return strips[0]?.[1] === String((PROMPT_BOX.x + PROMPT_BOX.width - 5) * SCALE)
+      ? profile(...bubbles)
+      : profile()
+  }
   if (command.includes('-crop 708x')) return opts.pane ?? profile()
   if (command.includes('-crop 1568x'))
     return opts.cropContent ?? opts.content ?? profile(PROMPT_ROWS)
@@ -131,7 +142,10 @@ const BAND_SHOT = {
   compare: BAND,
   content: profile(BAND_ROWS, PROMPT_ROWS),
   plate: profile(BAND_ROWS),
+  changedRows: profile(BAND_ROWS),
 }
+/** A crop of the band alone: its rows and the crop margin above and below. */
+const BAND_HEIGHT = BAND_ROWS[1] + 1 - BAND_ROWS[0] + 2 * 8
 
 describe('analyseShot', () => {
   it('uploads the shot and the baseline into the fresh sandbox', async () => {
@@ -141,7 +155,7 @@ describe('analyseShot', () => {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: false,
-      draws: ['above-prompt'],
+      typedSlashCommand: false,
     })
 
     expect(uploaded).toEqual([
@@ -150,20 +164,20 @@ describe('analyseShot', () => {
     ])
   })
 
-  it('crops the band with the prompt box, and cards the band alone, both re-encoded', async () => {
+  it('crops and cards the band alone, leaving out the prompt box and toolbar, both re-encoded', async () => {
     const { analysis, ran } = fakeAnalysis(BAND_SHOT)
 
     const result = await analyseShot(analysis, {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: false,
-      draws: [],
+      typedSlashCommand: false,
     })
 
     expect(result).toMatchObject({
       kind: 'shot',
       width: 784,
-      height: CONTENT.bottom - 767,
+      height: BAND_HEIGHT,
       card: { width: 784, height: PROMPT_BOX.y - 769 },
     })
     const crops = ran.filter((c) => c.includes('png:-'))
@@ -171,7 +185,7 @@ describe('analyseShot', () => {
     for (const crop of crops) expect(crop).toContain('-strip -define png:exclude-chunks=all')
   })
 
-  it('cuts the empty stretch between the chat and the band down to the gap between messages', async () => {
+  it('keeps a change in the chat and the band, cutting the stretch between them', async () => {
     const chat = profile([300, 340], BAND_ROWS, PROMPT_ROWS)
     const { analysis, ran } = fakeAnalysis({
       compare: '1 1536x1030+333+601',
@@ -185,19 +199,19 @@ describe('analyseShot', () => {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: false,
-      draws: [],
+      typedSlashCommand: false,
     })
 
-    const removed = 775 - 341 - 50
+    const between = 775 - 341 - 16
     expect(result).toMatchObject({
       kind: 'shot',
-      height: CONTENT.bottom - 292 - removed,
+      height: 341 + 8 - 292 + BAND_HEIGHT,
       card: { height: PROMPT_BOX.y - 769 },
     })
-    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${removed * 2}+0+`)
+    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${between * 2}+0+`)
   })
 
-  it('keeps an empty stretch that differs from the baseline, such as where its spinner was', async () => {
+  it('keeps rows that differ from the baseline though they look empty, such as where its spinner was', async () => {
     const chat = profile([300, 340], BAND_ROWS, PROMPT_ROWS)
     const { analysis, ran } = fakeAnalysis({
       compare: '1 1536x1030+333+601',
@@ -207,15 +221,25 @@ describe('analyseShot', () => {
       changedRows: profile([300, 600], BAND_ROWS),
     })
 
-    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] })
+    await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      typedSlashCommand: false,
+    })
 
-    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${(775 - 601 - 50) * 2}+0+`)
+    expect(ran.find((c) => c.includes('-chop'))).toContain(`-chop 0x${(775 - 601 - 16) * 2}+0+`)
   })
 
   it('leaves the prompt text and the scrollbar gutter out of the comparison', async () => {
     const { analysis, ran } = fakeAnalysis(BAND_SHOT)
 
-    await analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] })
+    await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      typedSlashCommand: false,
+    })
 
     const compare = ran.find((c) => c.includes('-compose difference -composite -compose over'))
     expect(compare?.match(/-draw 'rectangle/g)).toHaveLength(2)
@@ -228,7 +252,7 @@ describe('analyseShot', () => {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: false,
-      draws: [],
+      typedSlashCommand: false,
     })
 
     expect(result).toEqual({ kind: 'nothing' })
@@ -244,46 +268,125 @@ describe('analyseShot', () => {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: true,
-      draws: ['above-prompt', 'toast'],
+      typedSlashCommand: false,
     })
 
     expect(result).toEqual({ kind: 'nothing' })
   })
 
-  it("crops a band drawn after input steps from the steps' turns down, and cards the band", async () => {
+  it("crops only the band drawn after input steps, leaving out the steps' turns", async () => {
     const chat = profile([275, 433], BAND_ROWS, PROMPT_ROWS)
     const { analysis } = fakeAnalysis({
       changes: [...STEP_TURNS, { x: 166, y: 775, width: 768, height: 40 }],
       content: chat,
       cropContent: chat,
       plate: profile(BAND_ROWS),
+      changedRows: profile(BAND_ROWS),
     })
 
     const result = await analyseShot(analysis, {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: true,
-      draws: ['above-prompt'],
+      typedSlashCommand: false,
     })
 
     expect(result).toMatchObject({
       kind: 'shot',
-      height: CONTENT.bottom - 267 - (775 - 434 - 50),
+      height: BAND_HEIGHT,
       card: { height: PROMPT_BOX.y - 769 },
     })
+  })
+
+  it('leaves out a message the user sent, though its slash command differs from the baseline', async () => {
+    const bubble: [number, number] = [275, 305]
+    const chat = profile(bubble, BAND_ROWS, PROMPT_ROWS)
+    const { analysis } = fakeAnalysis({
+      changes: [
+        { x: 864, y: 275, width: 70, height: 30 },
+        { x: 166, y: 775, width: 768, height: 40 },
+      ],
+      content: chat,
+      cropContent: chat,
+      plate: profile(BAND_ROWS),
+      changedRows: profile(bubble, BAND_ROWS),
+      bubbles: [bubble],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      typedSlashCommand: true,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot', height: BAND_HEIGHT })
+  })
+
+  it('keeps a message the mod changed, when no slash command was typed', async () => {
+    const message: [number, number] = [275, 305]
+    const chat = profile(message, BAND_ROWS, PROMPT_ROWS)
+    const { analysis } = fakeAnalysis({
+      changes: [
+        { x: 864, y: 275, width: 70, height: 30 },
+        { x: 166, y: 775, width: 768, height: 40 },
+      ],
+      content: chat,
+      cropContent: chat,
+      plate: profile(BAND_ROWS),
+      changedRows: profile(message, BAND_ROWS),
+      bubbles: [message],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      typedSlashCommand: false,
+    })
+
+    expect((result as { height: number }).height).toBeGreaterThan(BAND_HEIGHT)
+  })
+
+  it('keeps what the mod draws on the right where the baseline has no message', async () => {
+    const drawn: [number, number] = [275, 305]
+    const chat = profile(drawn, BAND_ROWS, PROMPT_ROWS)
+    const { analysis } = fakeAnalysis({
+      changes: [
+        { x: 864, y: 275, width: 70, height: 30 },
+        { x: 166, y: 775, width: 768, height: 40 },
+      ],
+      content: chat,
+      cropContent: chat,
+      plate: profile(BAND_ROWS),
+      changedRows: profile(drawn, BAND_ROWS),
+      bubbles: [drawn],
+      baselineBubbles: [[0, 0]],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      typedSlashCommand: false,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot' })
+    expect((result as { height: number }).height).toBeGreaterThan(BAND_HEIGHT)
   })
 
   it('counts a toast beside the chat after input steps', async () => {
     const { analysis } = fakeAnalysis({
       changes: [...STEP_TURNS, { x: 950, y: 90, width: 120, height: 40 }],
       content: profile([275, 433], PROMPT_ROWS),
+      changedRows: profile([90, 129]),
     })
 
     const result = await analyseShot(analysis, {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: true,
-      draws: ['toast'],
+      typedSlashCommand: false,
     })
 
     expect(result).toMatchObject({ kind: 'shot' })
@@ -293,33 +396,34 @@ describe('analyseShot', () => {
     const { analysis } = fakeAnalysis({
       changes: STEP_TURNS,
       content: profile([275, 433], PROMPT_ROWS),
+      changedRows: profile([275, 433]),
     })
 
     const result = await analyseShot(analysis, {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: false,
-      draws: [],
+      typedSlashCommand: false,
     })
 
     expect(result).toMatchObject({ kind: 'shot' })
   })
 
-  it('crops chat and pane without a comparison when a pane is open', async () => {
+  it('crops the pane alone, without a comparison, when a pane is open', async () => {
     const { analysis, ran } = fakeAnalysis({ shot: PANE })
 
     const result = await analyseShot(analysis, {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: false,
-      draws: ['pane', 'toast'],
+      typedSlashCommand: false,
     })
 
     expect(result).toMatchObject({
       kind: 'shot',
-      width: 1055,
-      height: CONTENT.bottom - 40,
-      card: { width: 1055, height: 150 },
+      width: 364,
+      height: 852,
+      card: { width: 364, height: 150 },
     })
     expect(ran.some((c) => c.includes('-compose difference -composite -compose over'))).toBe(false)
   })
@@ -334,7 +438,7 @@ describe('analyseShot', () => {
       shot: SHOT,
       baseline: BASELINE,
       typedSteps: false,
-      draws: ['pane'],
+      typedSlashCommand: false,
     })
 
     expect(result).toMatchObject({ kind: 'shot', card: { width: 354, height: 370 - 85 } })
@@ -345,7 +449,12 @@ describe('analyseShot', () => {
     const { analysis } = fakeAnalysis({ baseline: PANE })
 
     await expect(
-      analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] }),
+      analyseShot(analysis, {
+        shot: SHOT,
+        baseline: BASELINE,
+        typedSteps: false,
+        typedSlashCommand: false,
+      }),
     ).rejects.toThrow(/baseline/)
   })
 
@@ -356,7 +465,12 @@ describe('analyseShot', () => {
     })
 
     await expect(
-      analyseShot(analysis, { shot: SHOT, baseline: BASELINE, typedSteps: false, draws: [] }),
+      analyseShot(analysis, {
+        shot: SHOT,
+        baseline: BASELINE,
+        typedSteps: false,
+        typedSlashCommand: false,
+      }),
     ).rejects.toThrow(/pixels/)
   })
 })
