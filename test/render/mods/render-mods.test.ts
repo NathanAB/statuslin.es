@@ -293,6 +293,28 @@ describe('renderMods', () => {
     expect(modRequests(recorder.requests)).toHaveLength(2)
   })
 
+  it("records the baseline with the mod's input steps, once per distinct list", async () => {
+    const inputSteps: InputStep[] = [{ type: 'text', text: 'Run the tests again' }]
+    await seedMod('skins', { inputSteps })
+    await seedMod('token-weather', { inputSteps })
+    await seedMod('radar')
+    const recorder = new FakeModRecorder({
+      baseline,
+      mods: { skins, 'token-weather': tokenWeather },
+    })
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    const baselines = baselineRequests(recorder.requests)
+    expect(baselines).toHaveLength(2)
+    expect(baselines).toEqual(
+      expect.arrayContaining([
+        { mod: null, inputSteps },
+        { mod: null, inputSteps: [] },
+      ]),
+    )
+  })
+
   it('re-records the baseline when a mod ran a different Claude Code version', async () => {
     await seedMod('skins')
     const newerId = await seedMod('token-weather')
