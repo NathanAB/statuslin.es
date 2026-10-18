@@ -5,10 +5,22 @@ import type * as React from 'react'
  * `tone="error"` uses the destructive tint (validation failure, server error).
  * Closed: no className prop — tone picks all appearance.
  */
-export function Notice({ tone, children }: { tone: 'info' | 'error'; children: React.ReactNode }) {
+export function Notice({
+  tone,
+  live,
+  children,
+}: {
+  tone: 'info' | 'error'
+  live?: boolean
+  children: React.ReactNode
+}) {
   const cls =
     tone === 'error'
       ? 'rounded-md bg-destructive/10 p-3 text-destructive text-sm'
       : 'rounded-md bg-muted p-3 text-foreground text-sm'
-  return <p className={cls}>{children}</p>
+  return (
+    <p className={cls} role={live ? 'alert' : undefined}>
+      {children}
+    </p>
+  )
 }
