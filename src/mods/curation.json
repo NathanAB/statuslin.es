@@ -9,14 +9,14 @@
   {
     "repoUrl": "https://github.com/hamzafer/claude-code-mods",
     "path": "mods/context-bar",
-    "commitSha": "e687416b0f2df0f3ad7f4dfc2065eefe6bc17ea9",
+    "commitSha": "77f1ebcd5d228db98ceecdc7ca9ec063287b9f07",
     "pluginName": "context-bar",
     "title": "Context Bar"
   },
   {
     "repoUrl": "https://github.com/NathanAB/statusline-anywhere",
     "path": "",
-    "commitSha": "93fb965863571fca8140aca0d17277d121a2f9df",
+    "commitSha": "20874c7373ecb09f5b06b90597bd7c4dfb79f44a",
     "pluginName": "statusline-anywhere",
     "title": "Status Line Anywhere"
   },
@@ -67,7 +67,7 @@
   {
     "repoUrl": "https://github.com/furqan-khan07/pixelband",
     "path": "",
-    "commitSha": "20e27f99b023e62c8aa91dace07654442a715c24",
+    "commitSha": "b4c05b0a8017ef0eb41f4fd5373d5c8842944357",
     "pluginName": "pixelband",
     "title": "Pixelband",
     "inputSteps": [
@@ -80,7 +80,7 @@
   {
     "repoUrl": "https://github.com/robdmac/flow",
     "path": "",
-    "commitSha": "9e1dc0fdb0e5d7f2a32b44efe4cd6336f378ff66",
+    "commitSha": "461dea310403ef79d33fa8d6046287f6c454e598",
     "pluginName": "flow-scenes",
     "title": "Flow",
     "inputSteps": [
@@ -93,7 +93,7 @@
   {
     "repoUrl": "https://github.com/augiefra/claude-mods",
     "path": "plugins/token-weather-usage",
-    "commitSha": "969a72449ba2aa84b258af4f25383d5ea44dec48",
+    "commitSha": "550611d4f8092fd4b97358ad6faa8e7bf01ca5bb",
     "pluginName": "token-weather-usage",
     "title": "Token Weather Usage",
     "inputSteps": [
@@ -106,7 +106,7 @@
   {
     "repoUrl": "https://github.com/nvr0x5/claude-deck",
     "path": "",
-    "commitSha": "9a43cd5921ebc4cb4b791e4b8a62768cf1b8e728",
+    "commitSha": "207968c576e819a397212ebbb3e176bea946111d",
     "pluginName": "deck",
     "title": "Deck",
     "inputSteps": [
@@ -159,7 +159,7 @@
   {
     "repoUrl": "https://github.com/NahumLitvin/prismantis",
     "path": "",
-    "commitSha": "01fb39d34e5d973a9dc3ecb2019ebb20514775d3",
+    "commitSha": "6c96c674fe891e609a89aa2246773ea7f303d4c7",
     "pluginName": "prismantis",
     "title": "Prismantis",
     "inputSteps": [
