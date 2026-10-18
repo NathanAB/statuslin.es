@@ -80,6 +80,7 @@ From `.env.schema` (the committed contract, which [varlock](https://varlock.dev)
 | `RESEND_API_KEY` | yes | server-only key used to email submission review decisions |
 | `NOINDEX_SITE` | yes | `true` only on staging, set in `fly.staging.toml` `[env]` (not a secret): every response then carries `X-Robots-Tag: noindex, nofollow` so search engines drop staging. Off when unset or any value but `true`, so production (`fly.toml` leaves it out) stays indexable. robots.txt still allows crawling, or crawlers would never see the header |
 | `GITHUB_TOKEN` | yes, for mod submissions | the web server calls GitHub when a user submits a mod and when an admin approves one; without it those calls share GitHub's 60-requests-an-hour anonymous limit per IP, and run out after a handful of submissions. The operator mod scripts (`import:mods`, `render:mods`, `input-steps:mods`, `publish-mod`, `check-mods`, …) read it from `.env.local` or the shell too. A fine-grained token with public-repository read access (the default, no extra permissions) is enough: never one that can read private repositories |
+| `POSTHOG_API_KEY` | production only, build time | a PostHog personal API key, limited to the statuslin.es project with `error_tracking:write` only. The image build uses it to upload the browser bundle's source maps, so error tracking shows `src/` files; the maps are then deleted, so none is served. Not a Fly secret: `deploy:staging` reads it from `.env.production` and hands it to the Docker build as a build secret. Unset, the build makes no source maps |
 
 No R2 keys — preview data is stored in Postgres (`previews` table), and OG card images are rendered on
 the fly by the app (`src/og`), not stored. R2 isn't used.
@@ -180,6 +181,12 @@ Before any of that, it runs `scripts/check-docker-context.ts`, which needs a run
 The Dockerfile copies the whole build context into the image, so the check builds the context
 locally and aborts if any file in it is git-ignored (a nested worktree's `.env.local`, private
 notes). Fix a failure by adding the listed paths to `.dockerignore`, using `**/` for anything nested.
+
+It also reads `POSTHOG_API_KEY` from `.env.production`, which asks for Touch ID, so run it from a
+real terminal. The build uploads the browser source maps with it: this build makes the image that
+production later runs by digest, so it is the only build that can. If the file doesn't set the key,
+the deploy says so and goes ahead without source maps. If the upload fails, the build fails. The
+build also fails if any `.map` file is left in `.output/public`.
 
 The `release_command` in the Fly config runs `bun run src/db/migrate.ts` against that env's DB before
 the new version goes live. That script applies migrations via `drizzle-orm`'s runtime migrator
