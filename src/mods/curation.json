@@ -226,5 +226,49 @@
         "submit": false
       }
     ]
+  },
+  {
+    "repoUrl": "https://github.com/uppinote20/claude-pets",
+    "path": "",
+    "commitSha": "1f8027d8b211b12027a8d89e659c85b212e0c5f6",
+    "pluginName": "pets",
+    "title": "Claude Pets",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/pet"
+      },
+      {
+        "type": "text",
+        "text": "/pet pat"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/OneWave-AI/claude-code-mods",
+    "path": "code-pet",
+    "commitSha": "e6da26ca36a88eec3be25605d30fa20f2c1c0cec",
+    "pluginName": "code-pet",
+    "title": "Code Pet",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/pet"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/VibeMage/claude-mod-pet",
+    "path": "",
+    "commitSha": "fde0b0c59ce0b592a5d13923bc7f2ad5c56992f8",
+    "pluginName": "pixipet",
+    "title": "Pixipet"
+  },
+  {
+    "repoUrl": "https://github.com/lucenity0/claude-familiar",
+    "path": "",
+    "commitSha": "77930064d5624d7c1a20ed974e80af48f3e1eb43",
+    "pluginName": "familiar",
+    "title": "Familiar"
   }
 ]

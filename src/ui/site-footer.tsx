@@ -1,4 +1,5 @@
 import {
+  BUDDY_GUIDE_PATH,
   DESKTOP_GUIDE_PATH,
   MOD_SAFETY_GUIDE_PATH,
   NOT_SHOWING_GUIDE_PATH,
@@ -15,6 +16,7 @@ const PAGE_LINKS = [
   { to: DESKTOP_GUIDE_PATH, label: 'Claude Desktop' },
   { to: STATUS_LINES_VS_MODS_GUIDE_PATH, label: 'Status lines vs mods' },
   { to: MOD_SAFETY_GUIDE_PATH, label: 'Are mods safe?' },
+  { to: BUDDY_GUIDE_PATH, label: 'Buddy pets' },
   { to: '/resources', label: 'Resources' },
 ] as const
 

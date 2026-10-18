@@ -174,12 +174,27 @@ export const NOT_SHOWING_GUIDE_DATES = { published: '2026-10-18', modified: '202
 export const NOT_SHOWING_GUIDE_DESCRIPTION =
   'Why a Claude Code status line stays blank in the terminal: script permissions, stdout, workspace trust, settings that turn it off, and how to debug it.'
 
+export const BUDDY_GUIDE_PATH = '/guide/claude-code-buddy'
+
+/**
+ * /guide/claude-code-buddy title — the <title> tag and its JSON-LD headline. It leaves out
+ * ` | statuslin.es`, which would push it past 60 characters.
+ */
+export const BUDDY_GUIDE_TITLE = 'Claude Code Buddy Removed? Pet Mods That Replace It'
+
+export const BUDDY_GUIDE_DATES = { published: '2026-10-17', modified: '2026-10-17' } as const
+
+/** /guide/claude-code-buddy meta description — the description tag, OG, and JSON-LD. */
+export const BUDDY_GUIDE_DESCRIPTION =
+  'Claude Code 2.1.97 removed /buddy. These community pet mods put a pixel companion back in your session, each with a real preview and what it can touch.'
+
 /** The live /guide subpages and their last edits. Every other /guide/* path redirects to /guide. */
 export const GUIDE_SUBPAGES: ReadonlyArray<{ path: string; modified: string }> = [
   { path: DESKTOP_GUIDE_PATH, modified: DESKTOP_GUIDE_DATES.modified },
   { path: STATUS_LINES_VS_MODS_GUIDE_PATH, modified: STATUS_LINES_VS_MODS_GUIDE_DATES.modified },
   { path: MOD_SAFETY_GUIDE_PATH, modified: MOD_SAFETY_GUIDE_DATES.modified },
   { path: NOT_SHOWING_GUIDE_PATH, modified: NOT_SHOWING_GUIDE_DATES.modified },
+  { path: BUDDY_GUIDE_PATH, modified: BUDDY_GUIDE_DATES.modified },
 ]
 
 export function resourcesTitle(sections: ResourceSection[]): string {

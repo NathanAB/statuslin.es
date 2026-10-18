@@ -1,5 +1,7 @@
 import type { PageCopy } from '@/content/types'
 import {
+  BUDDY_GUIDE_PATH,
+  BUDDY_GUIDE_TITLE,
   DESKTOP_GUIDE_PATH,
   DESKTOP_GUIDE_TITLE_BASE,
   GUIDE_PATH,
@@ -116,6 +118,7 @@ function corePageLinks(base: string): string[] {
     `- [${DESKTOP_GUIDE_TITLE_BASE}](${base}${DESKTOP_GUIDE_PATH}): why the Code tab skips status lines, and the plugin that shows them`,
     `- [${STATUS_LINES_VS_MODS_GUIDE_TITLE}](${base}${STATUS_LINES_VS_MODS_GUIDE_PATH}): where each one shows up, and when to pick which`,
     `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what a mod can do, and how statuslin.es pins and reviews each one`,
+    `- [${BUDDY_GUIDE_TITLE}](${base}${BUDDY_GUIDE_PATH}): what happened to /buddy, and pet mods that put a companion back, each with a real preview`,
     `- [Resources](${base}/resources): other Claude Code status line tools, generators, and guides`,
   ]
 }
