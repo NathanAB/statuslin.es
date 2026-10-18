@@ -1,9 +1,13 @@
 // @vitest-environment node
 import { createMemoryHistory } from '@tanstack/react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { BUDDY_FAQ } from '@/guide/buddy-faq'
 import { MOD_SAFETY_FAQ } from '@/guide/mod-safety-faq'
 import { STATUS_LINES_VS_MODS_FAQ } from '@/guide/status-lines-vs-mods-faq'
 import {
+  BUDDY_GUIDE_DESCRIPTION,
+  BUDDY_GUIDE_PATH,
+  BUDDY_GUIDE_TITLE,
   MOD_SAFETY_GUIDE_DESCRIPTION,
   MOD_SAFETY_GUIDE_PATH,
   MOD_SAFETY_GUIDE_TITLE,
@@ -13,6 +17,7 @@ import {
 } from '@/lib/page-title'
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { Route as ModSafetyRoute } from '@/routes/guide_.are-claude-code-mods-safe'
+import { Route as BuddyRoute } from '@/routes/guide_.claude-code-buddy'
 import { Route as StatusLinesVsModsRoute } from '@/routes/guide_.status-lines-vs-mods'
 import { serverResult } from './server-result'
 
@@ -24,6 +29,8 @@ vi.mock('@/lib/auth-functions', () => ({
 }))
 const getModDesktopShotFn = vi.hoisted(() => vi.fn().mockResolvedValue({ kind: 'unpublished' }))
 vi.mock('@/mods/functions', () => ({ getModDesktopShotFn }))
+const getBuddyPetsFn = vi.hoisted(() => vi.fn().mockResolvedValue([]))
+vi.mock('@/guide/functions', () => ({ getBuddyPetsFn }))
 
 const { getRouter } = await import('@/router')
 
@@ -48,6 +55,14 @@ const GUIDES = [
     description: MOD_SAFETY_GUIDE_DESCRIPTION,
     faq: MOD_SAFETY_FAQ,
     route: ModSafetyRoute,
+  },
+  {
+    routeId: '/guide_/claude-code-buddy',
+    path: BUDDY_GUIDE_PATH,
+    title: BUDDY_GUIDE_TITLE,
+    description: BUDDY_GUIDE_DESCRIPTION,
+    faq: BUDDY_FAQ,
+    route: BuddyRoute,
   },
 ]
 
@@ -121,5 +136,15 @@ describe('/guide/status-lines-vs-mods loader', () => {
     expect(getModDesktopShotFn).toHaveBeenCalledWith({
       data: { slug: STATUSLINE_ANYWHERE_MOD_SLUG },
     })
+  })
+})
+
+describe('/guide/claude-code-buddy loader', () => {
+  it('loads the published pets through the guide server function', async () => {
+    const pets = [{ slug: 'familiar' }]
+    getBuddyPetsFn.mockResolvedValueOnce(pets)
+    const loader = BuddyRoute.options.loader as (ctx: unknown) => Promise<{ pets: unknown }>
+
+    expect((await loader({})).pets).toBe(pets)
   })
 })

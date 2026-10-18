@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BUDDY_GUIDE_DATES,
   DESKTOP_GUIDE_DATES,
   MOD_SAFETY_GUIDE_DATES,
   STATUS_LINES_VS_MODS_GUIDE_DATES,
@@ -59,6 +60,13 @@ describe('sitemapResponse', () => {
     const xml = await sitemapResponse(BASE, [], []).text()
     expect(entryFor(xml, `${BASE}/guide/are-claude-code-mods-safe`)).toContain(
       `<lastmod>${MOD_SAFETY_GUIDE_DATES.modified}</lastmod>`,
+    )
+  })
+
+  it('lists the Claude Code buddy guide with its modified date', async () => {
+    const xml = await sitemapResponse(BASE, [], []).text()
+    expect(entryFor(xml, `${BASE}/guide/claude-code-buddy`)).toContain(
+      `<lastmod>${BUDDY_GUIDE_DATES.modified}</lastmod>`,
     )
   })
 
