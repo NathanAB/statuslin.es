@@ -21,6 +21,7 @@ import {
   CONTENT,
   type Column,
   CROP_MARGIN,
+  PANE_BODY,
   PANE_CHAT_COLUMN,
   PROMPT_BOX,
   PROMPT_TEXT,
@@ -148,6 +149,7 @@ export async function analyseShot(
     draws,
     rows: await rowProfile(analysis, [column]),
     plate,
+    ...(paneOpen && { pane: await rowProfile(analysis, [PANE_BODY]) }),
   })
   if (frame.kind === 'nothing') return { kind: 'nothing' }
   // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.

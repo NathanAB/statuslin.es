@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { frameShot, readLayout } from '@/render/mods/desktop/framing'
+import { parseRowProfile } from '@/render/mods/desktop/imagemagick'
 import {
   CARD_MAX_HEIGHT,
   CHAT_TOP,
@@ -11,6 +12,7 @@ import {
   SCROLL_GUTTER,
   WINDOW,
 } from '@/render/mods/desktop/screen'
+import paneRows from '../fixtures/desktop-pane-rows.json'
 
 /** A shot's row profile: 0 (page background) everywhere except the given [from, to, share] runs. */
 function rows(...runs: [number, number, number][]): number[] {
@@ -228,10 +230,76 @@ describe('frameShot with no pane open', () => {
 
 describe('frameShot with a pane open', () => {
   const PANE_ONLY = { x: PANE.x - 4, y: PANE.y - 4, width: PANE.width + 8, height: PANE.height + 8 }
+  /** Inside the pane's border, which a card leaves out. */
+  const PANE_INSIDE = { x: PANE.x + 1, width: PANE.width - 2 }
+  /**
+   * Published mods' panes, read across the pane's body from their production shots: the pane's
+   * border and title bar, what the mod draws, and the pane's rounded bottom corners.
+   */
+  const paneOf = (slug: keyof typeof paneRows) => parseRowProfile(paneRows[slug], WINDOW.height)
 
-  it('crops just the pane when the mod draws only there, carding its top', () => {
+  it.each([
+    // [slug, the first and last rows the mod draws in its pane]
+    ['flightdeck', 93, 361],
+    ['pets', 89, 272],
+    ['code-pet', 98, 163],
+    ['filetree', 95, 168],
+  ] as const)('cards all that %s draws in its pane, leaving out the chat', (slug, first, last) => {
+    const frame = frameShot({
+      changed: null,
+      paneOpen: true,
+      draws: ['pane'],
+      rows: rows(),
+      plate: NO_PLATE,
+      pane: paneOf(slug),
+    })
+
+    expect(frame).toMatchObject({
+      card: { ...PANE_INSIDE, y: first - 8, height: last + 1 + 8 - (first - 8) },
+    })
+  })
+
+  it('cards the pane when the mod also draws elsewhere, still cropping the chat with it', () => {
+    const frame = frameShot({
+      changed: null,
+      paneOpen: true,
+      draws: ['pane', 'toast'],
+      rows: rows(),
+      plate: NO_PLATE,
+      pane: paneOf('flightdeck'),
+    })
+
+    expect(frame).toMatchObject({
+      rect: { x: 37, width: 1092 - 37 },
+      card: { ...PANE_INSIDE, y: 85 },
+    })
+  })
+
+  it('cuts a pane too tall for a card at a blank row', () => {
+    const pane = rows([100, 200, 0.4], [210, 700, 0.4])
+
+    const frame = frameShot({
+      changed: null,
+      paneOpen: true,
+      draws: ['pane'],
+      rows: rows(),
+      plate: NO_PLATE,
+      pane,
+    })
+
+    expect(frame).toMatchObject({ card: { y: 92, height: 210 - 92 } })
+  })
+
+  it('cards the pane top when nothing shows in its body', () => {
     expect(
-      frameShot({ changed: null, paneOpen: true, draws: ['pane'], rows: rows(), plate: NO_PLATE }),
+      frameShot({
+        changed: null,
+        paneOpen: true,
+        draws: ['pane'],
+        rows: rows(),
+        plate: NO_PLATE,
+        pane: rows([44, 68, 0.2]),
+      }),
     ).toEqual({
       kind: 'crop',
       rect: PANE_ONLY,
@@ -246,6 +314,7 @@ describe('frameShot with a pane open', () => {
       draws: ['pane', 'toast'],
       rows: rows(),
       plate: NO_PLATE,
+      pane: rows(),
     })
 
     expect(frame).toEqual({
@@ -255,13 +324,14 @@ describe('frameShot with a pane open', () => {
     })
   })
 
-  it('cards a band above the narrowed prompt box', () => {
+  it('cards a band above the narrowed prompt box, over the pane', () => {
     const frame = frameShot({
       changed: null,
       paneOpen: true,
       draws: [],
       rows: BAND_ROWS,
       plate: BAND_PLATE,
+      pane: paneOf('pets'),
     })
 
     expect(frame).toMatchObject({

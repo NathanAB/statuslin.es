@@ -7,9 +7,9 @@ export interface DesktopShotImage {
   height: number
 }
 
-// A card image is recorded to fit a card: the mod's band, or the top of its shot. It shows whole
-// and at its natural size, so its text stays readable; a card narrower than it crops it from the
-// right, and the 300px cap (75 spacing steps of 4px) is only a safety net.
+// A card image is recorded to fit a card: the mod's band, its pane, or the top of its shot. It
+// shows whole and at its natural size, so its text stays readable; a card narrower than it crops
+// it from the right, and the 300px cap (75 spacing steps of 4px) is only a safety net.
 const cardFrame = cva(
   'flex max-h-75 w-fit max-w-full flex-col overflow-hidden rounded-md border border-border',
 )

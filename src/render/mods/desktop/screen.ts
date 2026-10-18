@@ -77,6 +77,17 @@ export const PROMPT_TEXT: Rect = {
 }
 /** A docked pane, from its border, down to the window's bottom; the chat column narrows to its left. */
 export const PANE: Rect = { x: 732, y: 44, width: 356, height: WINDOW.height - 56 }
+/**
+ * A pane's body, where its mod draws: under its title bar, inside its one-pixel border, and clear
+ * of its rounded bottom corners. Its background (grey 26) is close enough to the page's (grey 21)
+ * that a row profile reads its empty rows as blank.
+ */
+export const PANE_BODY: Rect = {
+  x: PANE.x + 1,
+  y: PANE.y + 32,
+  width: PANE.width - 2,
+  height: PANE.height - 32 - 12,
+}
 /** The chat column's left and right edges (its prompt box's borders) while a pane is open. */
 export const PANE_CHAT_LEFT = 45
 export const PANE_CHAT_RIGHT = 693
@@ -120,6 +131,11 @@ export const CROP_MARGIN = 8
 export const PANE_MARGIN = 4
 /** The tallest a card image is when there is no band to show: about two chat messages. */
 export const CARD_MAX_HEIGHT = 150
+/**
+ * The tallest a pane's card is. A pane is narrow, so its card can be taller, but it stays under
+ * the 300px a card frame shows at most (src/ui/desktop-shot.tsx), border included.
+ */
+export const PANE_CARD_MAX_HEIGHT = 290
 
 /**
  * One-pixel columns that are a border's flat grey only in one layout: the prompt box's left border

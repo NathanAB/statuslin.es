@@ -1,13 +1,15 @@
 import type { DrawLocation } from '@/mods/footprint'
 import type { RegionGrey } from './imagemagick'
-import { bandAbovePrompt, cardBottom, type RowProfile, uncutTop } from './rows'
+import { bandAbovePrompt, cardBottom, drawnRows, type RowProfile, uncutTop } from './rows'
 import {
   type BORDER_PROBES,
   CARD_MAX_HEIGHT,
   CONTENT,
   CROP_MARGIN,
   PANE,
+  PANE_BODY,
   PANE_BORDER_GREY,
+  PANE_CARD_MAX_HEIGHT,
   PANE_CHAT_LEFT,
   PANE_CHAT_RIGHT,
   PANE_MARGIN,
@@ -52,6 +54,8 @@ export interface ShotFacts {
   rows: RowProfile
   /** The final shot, row by row, across the plate strips at its chat column's two edges. */
   plate: RowProfile
+  /** The final shot, row by row, across the pane's body: read only when a pane is open. */
+  pane?: RowProfile
 }
 
 /** Where to crop the shot for the mod page, and for its card. */
@@ -104,6 +108,20 @@ function promptCard(plate: RowProfile, left: number, right: number, toolbar: boo
   return clamp(left, top, right, toolbar ? CONTENT.bottom : PROMPT_BOX.y)
 }
 
+/**
+ * The card when a pane is open: the pane's body inside its border, from the first row the mod
+ * draws to the last, down to PANE_CARD_MAX_HEIGHT. Null when nothing shows in the body.
+ */
+function paneCard(pane: RowProfile): Rect | null {
+  const bodyBottom = PANE_BODY.y + PANE_BODY.height
+  const drawn = drawnRows(pane, PANE_BODY.y, bodyBottom)
+  if (!drawn) return null
+  const top = Math.max(PANE_BODY.y, drawn.top - CROP_MARGIN)
+  const end = Math.min(bodyBottom, drawn.bottom + 1 + CROP_MARGIN)
+  const bottom = cardBottom(pane, top, end, PANE_CARD_MAX_HEIGHT)
+  return { x: PANE_BODY.x, y: top, width: PANE_BODY.width, height: bottom - top }
+}
+
 /** The top of the crop, down to about CARD_MAX_HEIGHT. */
 const topCard = (rect: Rect, bottom: number): Rect => ({ ...rect, height: bottom - rect.y })
 
@@ -127,14 +145,16 @@ function chatFrame(changed: Rect, rows: RowProfile, plate: RowProfile): Frame {
 
 /**
  * Where to crop the final shot. With a pane open the chat column narrows, so a comparison with the
- * baseline says nothing and the crop is fixed: the pane alone when the mod draws only there.
+ * baseline says nothing and the crop is fixed: the pane alone when the mod draws only there. Its
+ * card is a band above the prompt box, or else what the mod draws in the pane.
  */
-export function frameShot({ changed, paneOpen, draws, rows, plate }: ShotFacts): Frame {
+export function frameShot({ changed, paneOpen, draws, rows, plate, pane }: ShotFacts): Frame {
   if (paneOpen) {
     const paneOnly = draws.length > 0 && draws.every((d) => d === 'pane')
     const rect = paneOnly ? PANE_ONLY : CHAT_AND_PANE
     const card =
       promptCard(plate, PANE_CHAT_LEFT - CROP_MARGIN, PANE_CHAT_RIGHT + CROP_MARGIN, false) ??
+      (pane && paneCard(pane)) ??
       topCard(rect, rect.y + Math.min(CARD_MAX_HEIGHT, rect.height))
     return { kind: 'crop', rect, card }
   }

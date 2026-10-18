@@ -88,9 +88,28 @@ export function gapCuts(empty: readonly boolean[], top: number, bottom: number):
   return cuts
 }
 
-/** Where a card starting at `top` ends: CARD_MAX_HEIGHT down at most, at a blank row if one is near. */
-export function cardBottom(rows: RowProfile, top: number, limit: number): number {
-  const end = Math.min(top + CARD_MAX_HEIGHT, limit)
+/** The first and last rows in [top, bottom) that hold anything; null when all are blank. */
+export function drawnRows(
+  rows: RowProfile,
+  top: number,
+  bottom: number,
+): { top: number; bottom: number } | null {
+  let first = top
+  while (first < bottom && isBlank(rows[first])) first++
+  if (first === bottom) return null
+  let last = bottom - 1
+  while (isBlank(rows[last])) last--
+  return { top: first, bottom: last }
+}
+
+/** Where a card starting at `top` ends: `maxHeight` down at most, at a blank row if one is near. */
+export function cardBottom(
+  rows: RowProfile,
+  top: number,
+  limit: number,
+  maxHeight: number = CARD_MAX_HEIGHT,
+): number {
+  const end = Math.min(top + maxHeight, limit)
   for (let y = end - 1; y >= top + CARD_MIN_HEIGHT; y--) {
     if (isBlank(rows[y])) return y + 1
   }
