@@ -51,7 +51,7 @@
     "pre-commit": "[ ! -f .env.schema ] || bunx varlock scan --staged && bun run lint && bun run typecheck"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "1.7.7",
+    "@better-auth/drizzle-adapter": "1.7.9",
     "@number-flow/react": "0.6.2",
     "@posthog/react": "1.11.3",
     "@resvg/resvg-js": "2.6.2",
@@ -59,7 +59,7 @@
     "@tanstack/react-router": "1.170.42",
     "@tanstack/react-start": "1.168.61",
     "anser": "2.3.5",
-    "better-auth": "1.7.7",
+    "better-auth": "1.7.9",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "diff": "9.0.0",
