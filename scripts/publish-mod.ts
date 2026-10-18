@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -17,12 +17,14 @@ import {
   loadCurrentVersion,
   loadVersions,
   type PublishFacts,
+  type PublishVersion,
+  publishedRow,
   publishGuards,
-  publishReport,
   refuses,
   removedGuard,
   shaGuards,
 } from '@/mods/publish'
+import { publishReport } from '@/mods/publish-report'
 import { terminalLine } from '@/mods/terminal-line'
 
 /**
@@ -112,7 +114,7 @@ async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
     onDefaultBranch: await github.commitIsOnDefaultBranch(target.repoUrl, sha),
     filesChanged: base ? await github.filesChanged(target.repoUrl, base.commitSha, sha) : null,
   }
-  return { modId: mod.id, targetId: target.id, readPointerId: mod.currentVersionId, facts }
+  return { modId: mod.id, readPointerId: mod.currentVersionId, facts }
 }
 
 function parseArgs(argv: string[]) {
@@ -128,37 +130,37 @@ async function makeCurrent(
   db: Db,
   {
     modId,
-    targetId,
+    target,
     slug,
     readStatus,
     readPointerId,
   }: {
     modId: string
-    targetId: string
+    target: PublishVersion
     slug: string
     readStatus: schema.ModStatus
     readPointerId: string | null
   },
 ): Promise<Guard | null> {
-  const published = await db
-    .update(schema.mods)
-    .set({ currentVersionId: targetId, status: 'published' })
-    .where(
-      and(
-        eq(schema.mods.id, modId),
-        eq(schema.mods.status, readStatus),
-        readPointerId
-          ? eq(schema.mods.currentVersionId, readPointerId)
-          : isNull(schema.mods.currentVersionId),
-      ),
-    )
-    .returning({ id: schema.mods.id })
-  if (published.length > 0) return null
-  const [mod] = await db
-    .select({ status: schema.mods.status })
-    .from(schema.mods)
-    .where(eq(schema.mods.id, modId))
-  return mod?.status === 'removed' ? removedGuard(slug) : currentChangedGuard(slug)
+  return db.transaction(async (tx) => {
+    const [mod] = await tx
+      .select({
+        status: schema.mods.status,
+        currentVersionId: schema.mods.currentVersionId,
+        tags: schema.mods.tags,
+      })
+      .from(schema.mods)
+      .where(eq(schema.mods.id, modId))
+      .for('update')
+    if (mod?.status !== readStatus || mod.currentVersionId !== readPointerId) {
+      return mod?.status === 'removed' ? removedGuard(slug) : currentChangedGuard(slug)
+    }
+    await tx
+      .update(schema.mods)
+      .set(publishedRow(target, mod.tags))
+      .where(eq(schema.mods.id, modId))
+    return null
+  })
 }
 
 export async function runPublish(argv: string[], deps: PublishDeps): Promise<number> {
@@ -181,7 +183,7 @@ export async function runPublish(argv: string[], deps: PublishDeps): Promise<num
     log(guardLine(loaded.refusal))
     return 1
   }
-  const { modId, targetId, readPointerId, facts } = loaded
+  const { modId, readPointerId, facts } = loaded
   const guards = [...publishGuards(facts), ...(apply ? confirmationGuards(slug, argv) : [])]
   for (const line of publishReport(facts)) log(line)
   for (const g of guards) log(guardLine(g))
@@ -193,7 +195,7 @@ export async function runPublish(argv: string[], deps: PublishDeps): Promise<num
   }
   const refusal = await makeCurrent(db, {
     modId,
-    targetId,
+    target: facts.target,
     slug,
     readStatus: facts.modStatus,
     readPointerId,

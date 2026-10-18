@@ -13,6 +13,17 @@ export function modAllTags(tags: string[], footprint: ModFootprint): string[] {
   return mergeTags(tags, footprint.calls.includes('$.http.fetch') ? ['network-access'] : [])
 }
 
+export function publishedRow(
+  target: PublishVersion,
+  tags: string[],
+): { currentVersionId: string; status: ModStatus; allTags: string[] } {
+  return {
+    currentVersionId: target.id,
+    status: 'published',
+    allTags: modAllTags(tags, target.footprint),
+  }
+}
+
 export interface Guard {
   level: 'refuse' | 'warn'
   name: string
@@ -100,7 +111,7 @@ function added(before: string[], after: string[]): string[] {
   return after.filter((item) => !before.includes(item))
 }
 
-function bracketed(items: string[]): string {
+export function bracketed(items: string[]): string {
   return `[${items.join(', ')}]`
 }
 
@@ -207,37 +218,6 @@ export function confirmationGuards(slug: string, argv: string[]): Guard[] {
 
 export function refuses(guards: Guard[]): boolean {
   return guards.some((g) => g.level === 'refuse')
-}
-
-function footprintLine(label: string, footprint: ModFootprint | null): string {
-  if (!footprint) return `footprint ${label}: none (first publish)`
-  return `footprint ${label}: events ${bracketed(footprint.events)} calls ${bracketed(footprint.calls)}`
-}
-
-function sourceLine(label: string, version: PublishVersion | null): string {
-  return `source ${label}: ${version ? sourceLabel(version) : 'none (first publish)'}`
-}
-
-function filesLines({ current, filesChanged }: PublishFacts): string[] {
-  if (filesChanged !== null) {
-    return [`files changed (${filesChanged.length}):`, ...filesChanged.map((f) => `  ${f}`)]
-  }
-  return [
-    `files changed: none to compare (${current ? 'the repository changed' : 'first publish'})`,
-  ]
-}
-
-/** The lines carry author text unescaped; print each through `terminalLine`. */
-export function publishReport(facts: PublishFacts): string[] {
-  return [
-    `${facts.slug}: ${facts.current?.commitSha ?? 'unpublished'} → ${facts.target.commitSha}`,
-    `description: ${facts.description || 'none'}`,
-    sourceLine('before', facts.current),
-    sourceLine('after', facts.target),
-    ...filesLines(facts),
-    footprintLine('before', facts.current?.footprint ?? null),
-    footprintLine('after', facts.target.footprint),
-  ]
 }
 
 export function guardLine(guard: Guard): string {

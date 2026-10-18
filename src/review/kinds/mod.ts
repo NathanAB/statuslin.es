@@ -10,8 +10,8 @@ import {
   currentChangedGuard,
   loadCurrentVersion,
   loadVersions,
-  modAllTags,
   type PublishVersion,
+  publishedRow,
   publishGuards,
   removedGuard,
 } from '@/mods/publish'
@@ -76,12 +76,7 @@ function publishStep(target: PublishVersion, read: ReadMod): Publish {
     const slug = read.status === 'draft' ? await marketplaceName(tx, read, target) : read.slug
     await tx
       .update(mods)
-      .set({
-        slug,
-        currentVersionId: target.id,
-        status: 'published',
-        allTags: modAllTags(mod.tags, target.footprint),
-      })
+      .set({ slug, ...publishedRow(target, mod.tags) })
       .where(eq(mods.id, read.id))
   }
 }

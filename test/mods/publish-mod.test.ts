@@ -100,6 +100,25 @@ describe('publish confirmation', () => {
     expect(exitCode).toBe(0)
     expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: nextId })
   })
+
+  it('derives the network tag from the re-pinned version, keeping the curated tags', async () => {
+    const { modId } = await publishedMod({})
+    await db
+      .update(schema.mods)
+      .set({ tags: ['minimal'], allTags: ['minimal'] })
+      .where(eq(schema.mods.id, modId))
+    await addVersion(db, modId, {
+      commitSha: sha('b'),
+      versionNumber: 2,
+      footprint: { events: [], calls: ['$.http.fetch'] },
+    })
+
+    const { exitCode } = await publish(['meter', sha('b'), '--apply', '--confirm=meter'])
+
+    expect(exitCode).toBe(0)
+    const [mod] = await db.select().from(schema.mods).where(eq(schema.mods.id, modId))
+    expect(mod?.allTags).toEqual(['minimal', 'network-access'])
+  })
 })
 
 describe('first publish of an imported draft', () => {
