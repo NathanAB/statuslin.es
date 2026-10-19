@@ -12,12 +12,16 @@ const REPO_ROOT = join(import.meta.dirname, '..', '..')
 const DEPCRUISE = join(REPO_ROOT, 'node_modules', '.bin', 'depcruise')
 const CONFIG = join(REPO_ROOT, '.dependency-cruiser.cjs')
 const TIMEOUT_MS = 30_000
+// The JSON report of the whole of src is over a megabyte, past spawnSync's default buffer, which
+// cuts the output short and leaves it unparseable.
+const MAX_OUTPUT_BYTES = 64 * 1024 * 1024
 
 function depcruise(cwd: string, extraArgs: string[] = []) {
   return spawnSync(DEPCRUISE, ['src', '--config', CONFIG, ...extraArgs], {
     cwd,
     encoding: 'utf8',
     timeout: TIMEOUT_MS,
+    maxBuffer: MAX_OUTPUT_BYTES,
   })
 }
 
