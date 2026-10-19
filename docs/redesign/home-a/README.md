@@ -285,6 +285,16 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - **One page column (after review), decided by the owner.** The home page's 1280px column had
   become a second width beside the other pages' 1024px, so the header jumped between pages. Every
   page now sits on the one column (`PAGE_COLUMN`), the submit form included.
+- **The submit page (after review): the form with a side panel.** Neither a narrow form at the
+  column's left edge nor a form across the whole column looked right. The form now takes 8 of
+  the 12 columns, and a sticky "What happens next" panel takes the other 4 (sandbox, a person,
+  live plus an email). That follows the research: single-column fields, widths near the expected
+  input, and a side panel where a simple form would leave the column half empty.
+- **One surface level (after review).** The status line, mod, guide and resources pages had kept
+  the old bordered cards, with boxes inside boxes: tiles in cards, cards in cards, black wells on
+  gray. A section is now its heading on the page (`PageSection`). Rows, tiles, code and notes are
+  the only surfaces, with no borders, and a preview strip inside a row is the one exception.
+  `Card` lost its hairline too, and those pages' install button is the hero's pill.
 - **Submit in the header (after review), decided by the owner: a filled pill.** It's the bar's one
   filled button, beside sign-in, and stays in the bar on phones.
 - **The hero picker (after review): picks show at once.** The prototype's half-second fade read

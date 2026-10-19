@@ -30,7 +30,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
 
-The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install steps), and `mt-section` between the home page's sections. Use them only in those redesigned components. The page column is site-wide: `PAGE_COLUMN` (`src/ui/page-column.ts`, `px-gutter` side gutters around up to 1280px, `max-w-page`) is the one width the header, every page's content and the footer sit on, so no page picks a width of its own. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
+The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker, the fact tiles) and `rounded-panel` (every borderless surface: gallery rows, `Card`, `Panel`, `Hint`, `Callout`), and `mt-section` between the home page's sections. Use them only in those redesigned components. The page column is site-wide: `PAGE_COLUMN` (`src/ui/page-column.ts`, `px-gutter` side gutters around up to 1280px, `max-w-page`) is the one width the header, every page's content and the footer sit on, so no page picks a width of its own. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
 
 The gate enforces three sub-rules on `src/styles/app.css`: (a) define-once — no hex literal may be declared twice; (b) theme-alias — every `--color-*` must be `initial` or `var(…)`, never a literal; (c) token-echo — no file in `src/` or `test/` may restate a literal that equals a token value.
 
@@ -86,7 +86,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | File | Notes |
 | --- | --- | --- |
-| `<Card interactive>` | `src/ui/card.tsx` | Adds hover lift / glow + entrance animation + `motion-reduce` handling |
+| `<Card interactive>` | `src/ui/card.tsx` | A borderless surface (`bg-card`, `rounded-panel`); `interactive` adds the entrance, a tone lift on hover and a focus ring, with `motion-reduce` handling |
 | `<CardHeader>`, `<CardContent>`, `<CardFooter>`, `<CardTitle>`, `<CardDescription>`, `<CardAction>` | `src/ui/card.tsx` | Subcomponents for card anatomy |
 | `<StretchedLink to="…">` | `src/ui/stretched-link.tsx` | Full-card clickable overlay with focus ring; place inside `<Card interactive>` |
 | `<GalleryRow to params onOpen title byline facts description>` | `src/ui/gallery-row.tsx` | The redesign's gallery card: one full-width row, title link (it opens the whole row) and byline left, `facts` right, the preview as children, the description clamped to two lines; `onOpen` runs when the row opens (its click analytics). Hover and focus raise the tone; inside another card it starts a tone up. `<RowFacts>` sets the facts in a dotted line, `<RowNote icon>` is a fact with an icon, `<GalleryList>` stacks rows |
@@ -113,16 +113,19 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | File | What it does |
 | --- | --- | --- |
-| `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control; `Copyable` overlays it on a code well |
-| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: "Copy install prompt" button, copy count, toast |
+| `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control (`size="pill"`: the redesign's pill, icon trailing); `Copyable` overlays it on a code well |
+| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: the home hero's "Copy install prompt" pill, copy count, toast |
 | `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display; pass `text` to copy |
 | `<LineDiff lines={…}>` | `src/ui/line-diff.tsx` | Unified line diff in a code well; `DiffLine[]` with +/- markers |
-| `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | Section with header + optional action slot |
-| `<ScenarioRow>` | `src/ui/scenario-row.tsx` | Labeled row for scenario-level content |
+| `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | A titled card with an optional action slot; admin pages only (public pages use `PageSection`) |
+| `<PageSection title>` | `src/ui/page-section.tsx` | One section of a public page (status line, mod, guide): its h2 on the page, then the content. Not a box, so rows, tiles and code inside are the only surface |
+| `<Panel>` | `src/ui/panel.tsx` | A borderless surface straight on the page (the guide's fast paths, the submit side panel). Never inside another surface |
+| `<FormLayout asideTitle aside>` | `src/ui/form-layout.tsx` | A form page: the form over 8 of the column's 12 columns, a sticky side panel on the last 4 (the submit page's "What happens next"); stacked below 1024px |
+| `<ScenarioRow>` | `src/ui/scenario-row.tsx` | A scenario's label beside its preview strip; the label stacks above it on a phone |
 | `<Notice tone="info\|error" live?>` | `src/ui/notice.tsx` | Inline status / error notice; `live` makes it an alert, for an error that appears after the user acts (a failed submit) |
 | `<SelectField options label …>` | `src/ui/select.tsx` | Closed select with `SelectOption[]` |
 | `<Details summary="…">` | `src/ui/details.tsx` | Styled `<details>` / `<summary>` disclosure |
-| `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles; `caution` uses the warning tint |
+| `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles, each one borderless surface; `caution` uses the warning tint |
 | `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
 | `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip; `avatar={false}` shows the byline alone (gallery rows) |

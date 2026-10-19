@@ -14,7 +14,7 @@ const TILES = [{ icon: Globe, label: 'Network', value: 'None' }]
 /** The card's content, found from its h2. */
 function card() {
   const heading = screen.getByRole('heading', { level: 2, name: 'What it does' })
-  const element = heading.closest('[data-slot="card"]')
+  const element = heading.closest('section')
   if (!(element instanceof HTMLElement)) throw new Error('no card around What it does')
   return within(element)
 }

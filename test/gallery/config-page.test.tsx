@@ -138,10 +138,25 @@ describe('status line page', () => {
     ])
   })
 
+  // Nested boxes read as clutter: no section is a card, and the other status lines are the
+  // gallery's own rows, each with its preview, not cards inside a card.
+  it('lists the other status lines as gallery rows, with no box inside a box', () => {
+    const { container } = renderPage(false, [COST_MOD])
+
+    expect(container.querySelector('[data-slot="card"]')).toBeNull()
+    const more = within(screen.getByRole('region', { name: 'More status lines' }))
+    expect(more.getAllByRole('article').map((row) => row.getAttribute('data-slot'))).toEqual([
+      'gallery-row',
+    ])
+    expect(more.getByRole('link', { name: 'Minimal' }).getAttribute('href')).toBe(
+      '/c/minimal-ba63ffb8',
+    )
+  })
+
   it('states the script’s facts and its page copy in What it does', () => {
     renderPage()
 
-    const card = h2('What it does').closest('[data-slot="card"]') as HTMLElement
+    const card = h2('What it does').closest('section') as HTMLElement
     const what = within(card)
     expect(what.getByText('A Powerline bar with the branch and the model.')).toBeTruthy()
     expect(what.getByText('Written in')).toBeTruthy()
@@ -162,7 +177,7 @@ describe('status line page', () => {
   it('links the mods that share its tags after the other status lines', () => {
     renderPage(false, [COST_MOD])
 
-    const card = h2('Related mods').closest('[data-slot="card"]') as HTMLElement
+    const card = h2('Related mods').closest('section') as HTMLElement
     expect(within(card).getByRole('link', { name: 'Cost Meter' }).getAttribute('href')).toBe(
       '/mods/cost-meter',
     )
@@ -191,7 +206,7 @@ describe('status line page', () => {
 
 describe('status line page in Claude Desktop', () => {
   const SHOT = { src: '/config-previews/v/desktop.png?r=1', width: 790, height: 40 }
-  const preview = () => within(h2('Preview').closest('[data-slot="card"]') as HTMLElement)
+  const preview = () => within(h2('Preview').closest('section') as HTMLElement)
 
   it('shows the Desktop shot under the terminal rows, with the plugin that drew it', () => {
     renderPage(false, [], { ...DETAIL, desktop: { kind: 'shot', shot: SHOT } })

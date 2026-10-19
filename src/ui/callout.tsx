@@ -3,8 +3,8 @@ import type * as React from 'react'
 import { cn } from '@/lib/cn'
 import { Heading, Text } from '@/ui/text'
 
-// Closed props (docs/frontend-guidelines.md): no `className`. A titled panel with a coral
-// left-accent + faint tint that pulls the eye — used where a section must not be skipped.
+// Closed props (docs/frontend-guidelines.md): no `className`. A titled panel in a faint coral
+// tint that pulls the eye, with no border: used where a section must not be skipped.
 interface CalloutProps {
   title: string
   icon?: React.ReactNode
@@ -14,9 +14,7 @@ interface CalloutProps {
 
 export function Callout({ title, icon, description, children }: CalloutProps) {
   return (
-    <div
-      className={cn('rounded-lg border border-border border-l-4 border-l-primary bg-primary/5 p-4')}
-    >
+    <div className={cn('rounded-panel bg-primary/8 px-5 py-4.5')}>
       <div className={cn('flex items-center gap-2')}>
         {icon ? <span className={cn('flex text-primary')}>{icon}</span> : null}
         <Heading level={3}>{title}</Heading>
@@ -28,7 +26,7 @@ export function Callout({ title, icon, description, children }: CalloutProps) {
           </Text>
         </div>
       ) : null}
-      {children ? <div className={cn('mt-3 border-border border-t pt-3')}>{children}</div> : null}
+      {children ? <div className={cn('mt-4')}>{children}</div> : null}
     </div>
   )
 }

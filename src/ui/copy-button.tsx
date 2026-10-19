@@ -24,7 +24,8 @@ export function CopyButton({
   text: string
   label?: string | undefined
   copiedLabel?: string | undefined
-  size?: 'sm' | 'lg' | 'icon-sm' | undefined
+  /** `pill`: the redesign's install button, its icon trailing in its own circle. */
+  size?: 'sm' | 'lg' | 'icon-sm' | 'pill' | undefined
   variant?: 'outline' | 'ghost' | 'default' | undefined
   iconOnly?: boolean | undefined
   ariaLabel?: string | undefined
@@ -46,15 +47,29 @@ export function CopyButton({
       })
   }
 
+  const icon = copied ? <Check /> : <Copy />
+  if (size === 'pill' && !iconOnly)
+    return (
+      <Button
+        type="button"
+        variant={variant}
+        size="pill"
+        trailingIcon={icon}
+        onClick={handleClick}
+        aria-label={copied ? copiedLabel : (ariaLabel ?? name)}
+      >
+        {name}
+      </Button>
+    )
   return (
     <Button
       type="button"
       variant={variant}
-      size={iconOnly ? 'icon-sm' : size}
+      size={iconOnly || size === 'pill' ? 'icon-sm' : size}
       onClick={handleClick}
       aria-label={copied ? copiedLabel : (ariaLabel ?? name)}
     >
-      {copied ? <Check /> : <Copy />}
+      {icon}
       {iconOnly ? null : name}
     </Button>
   )

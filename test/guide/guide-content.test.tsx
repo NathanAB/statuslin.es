@@ -117,6 +117,16 @@ describe('GuideContent', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(MINIMAL_SCRIPT))
   })
 
+  // Nested boxes read as clutter: sections are headings on the page, the fast paths one panel each.
+  it('puts no section in a card, and no box inside another', () => {
+    const { container } = render(<GuideContent highlights={highlights} />)
+    expect(container.querySelector('[data-slot="card"]')).toBeNull()
+    expect(screen.getByRole('region', { name: 'Wire up a script by hand' })).toBeTruthy()
+    for (const panel of container.querySelectorAll('[data-slot="panel"]')) {
+      expect(panel.querySelector('[data-slot="panel"]')).toBeNull()
+    }
+  })
+
   it('keeps the gallery fast path a link inside a card, not a card that is a link', () => {
     render(<GuideContent highlights={highlights} />)
     const heading = screen.getByRole('heading', { name: /copy from the gallery/i })

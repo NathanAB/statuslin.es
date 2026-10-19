@@ -7,11 +7,11 @@ import { Heading, Text } from '@/ui/text'
 // Card pieces are pure layout containers — they take only `children` (plus Card's
 // own `size`/`interactive` variants).
 
-// The gallery hover/entrance set (verbatim from index.tsx). `relative` + the z-10
+// The gallery hover/entrance set: the surface lifts a tone under the pointer, as a gallery row does. `relative` + the z-10
 // stacking on interactive children makes a StretchedLink overlay work; interactive
 // siblings inside the card must carry `z-10` to stay clickable above the overlay.
 const INTERACTIVE_CARD =
-  'fade-in slide-in-from-bottom-2 relative animate-in transition-all duration-150 focus-within:ring-3 focus-within:ring-primary/40 hover:ring-3 hover:ring-primary/40 motion-reduce:animate-none'
+  'fade-in slide-in-from-bottom-2 relative animate-in transition-colors duration-150 focus-within:ring-2 focus-within:ring-ring hover:bg-muted motion-reduce:animate-none'
 
 function Card({
   size = 'default',
@@ -27,7 +27,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        'group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-card-foreground text-sm ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-[>img:first-child]:pt-0 has-data-[slot=card-footer]:pb-0 data-[size=sm]:has-data-[slot=card-footer]:pb-0 data-[size=sm]:[--card-spacing:--spacing(3)] *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl',
+        'group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-panel bg-card py-(--card-spacing) text-card-foreground text-sm [--card-spacing:--spacing(4)] has-[>img:first-child]:pt-0 has-data-[slot=card-footer]:pb-0 data-[size=sm]:has-data-[slot=card-footer]:pb-0 data-[size=sm]:[--card-spacing:--spacing(3)] *:[img:first-child]:rounded-t-panel *:[img:last-child]:rounded-b-panel',
         interactive && INTERACTIVE_CARD,
       )}
     >

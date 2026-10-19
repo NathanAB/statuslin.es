@@ -5,6 +5,7 @@ import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { getViewerIsAuthor } from '@/gallery/authorship'
 import { cardClickProperties } from '@/gallery/card-analytics'
+import { CardMeta } from '@/gallery/card-meta'
 import { configFactTiles } from '@/gallery/config-fact-tiles'
 import { ConfigHeader } from '@/gallery/config-header'
 import { DesktopNote } from '@/gallery/desktop-note'
@@ -21,15 +22,13 @@ import { getStatusLineModsFn } from '@/mods/functions'
 import { ModCard } from '@/mods/mod-card'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import { CopyCount } from '@/ui/copy-count'
+import { GalleryList, GalleryRow } from '@/ui/gallery-row'
 import { HighlightedCode } from '@/ui/highlighted-code'
-import { Row, Stack } from '@/ui/layout'
+import { Stack } from '@/ui/layout'
+import { PageSection } from '@/ui/page-section'
 import { ScenarioRow } from '@/ui/scenario-row'
-import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
 import { StatuslinePreview } from '@/ui/statusline-preview'
-import { StretchedLink } from '@/ui/stretched-link'
 import { Text, TextLink } from '@/ui/text'
 
 export const Route = createFileRoute('/c/$slug')({
@@ -162,49 +161,40 @@ function ConfigDetail() {
         related={
           <>
             {detail.related.length > 0 && (
-              <SectionCard title="More status lines" headingLevel={2}>
-                <Stack gap={3}>
+              <PageSection title="More status lines">
+                <GalleryList>
                   {detail.related.map((r, index) => (
-                    <Card key={r.slug} interactive>
-                      <CardHeader>
-                        <Row gap={2}>
-                          <CardTitle>
-                            <StretchedLink
-                              to="/c/$slug"
-                              params={{ slug: r.slug }}
-                              onClick={() =>
-                                posthog.capture(
-                                  'statusline_card_clicked',
-                                  cardClickProperties(
-                                    { configId: r.configId, slug: r.slug },
-                                    { surface: 'related', position: index + 1 },
-                                  ),
-                                )
-                              }
-                            >
-                              {r.title}
-                            </StretchedLink>
-                          </CardTitle>
-                          <CopyCount count={r.copyCount} />
-                        </Row>
-                      </CardHeader>
-                      <CardContent>
-                        {r.preview !== null ? (
-                          <StatuslinePreview segments={r.preview} />
-                        ) : (
-                          <Text muted size="sm">
-                            No preview.
-                          </Text>
-                        )}
-                      </CardContent>
-                    </Card>
+                    <GalleryRow
+                      key={r.slug}
+                      to="/c/$slug"
+                      params={{ slug: r.slug }}
+                      onOpen={() =>
+                        posthog.capture(
+                          'statusline_card_clicked',
+                          cardClickProperties(
+                            { configId: r.configId, slug: r.slug },
+                            { surface: 'related', position: index + 1 },
+                          ),
+                        )
+                      }
+                      title={r.title}
+                      facts={<CardMeta tags={[]} networkHosts={[]} copyCount={r.copyCount} />}
+                    >
+                      {r.preview !== null ? (
+                        <StatuslinePreview segments={r.preview} look="strip" />
+                      ) : (
+                        <Text muted size="sm">
+                          No preview.
+                        </Text>
+                      )}
+                    </GalleryRow>
                   ))}
-                </Stack>
-              </SectionCard>
+                </GalleryList>
+              </PageSection>
             )}
             {mods.length > 0 && (
-              <SectionCard title="Related mods" headingLevel={2}>
-                <Stack gap={3}>
+              <PageSection title="Related mods">
+                <GalleryList>
                   {mods.map((card, index) => (
                     <ModCard
                       key={card.slug}
@@ -212,8 +202,8 @@ function ConfigDetail() {
                       analytics={{ surface: 'related', position: index + 1 }}
                     />
                   ))}
-                </Stack>
-              </SectionCard>
+                </GalleryList>
+              </PageSection>
             )}
           </>
         }

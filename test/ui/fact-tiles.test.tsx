@@ -45,6 +45,14 @@ describe('FactTiles', () => {
     expect(tile('Network').group.dataset.tone).toBe('plain')
   })
 
+  // Tiles sit straight on the page as one surface each: no hairline around them.
+  it('draws each tile as one borderless surface', () => {
+    const { container } = render(<FactTiles tiles={TILES} />)
+    for (const tile of container.querySelectorAll('dl > div')) {
+      expect(tile.className).not.toMatch(/\bborder\b/)
+    }
+  })
+
   it('gives each tile a decorative icon', () => {
     const { container } = render(<FactTiles tiles={TILES} />)
 

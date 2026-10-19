@@ -107,8 +107,8 @@
   /* The redesign's rounder surfaces. Pills use Tailwind's rounded-full. */
   --radius-frame: 1.625rem; /* the terminal's outer frame */
   --radius-screen: 1.1875rem; /* the terminal screen inside that frame */
-  --radius-tile: 1.25rem; /* the status line picker */
-  --radius-panel: 1.125rem; /* gallery cards and the "How installing works" panels */
+  --radius-tile: 1.25rem; /* the status line picker and the fact tiles */
+  --radius-panel: 1.125rem; /* every borderless surface: gallery rows, cards, panels, notes */
 
   /* The page column every page sits on (PAGE_COLUMN): content up to 1280px wide inside side
      gutters that grow with the window (px-gutter, max-w-page). And the space between the home

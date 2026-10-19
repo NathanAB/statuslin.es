@@ -12,11 +12,11 @@ import {
   STATUS_LINES_VS_MODS_GUIDE_PATH,
 } from '@/lib/page-title'
 import type { AnsiSegment } from '@/render/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { FaqSection } from '@/ui/faq-section'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { Grid, Stack } from '@/ui/layout'
-import { SectionCard } from '@/ui/section-card'
+import { PageSection } from '@/ui/page-section'
+import { Panel } from '@/ui/panel'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Heading, Text, TextLink } from '@/ui/text'
 
@@ -58,39 +58,31 @@ export function GuideContent({
       <Stack gap={3}>
         <Heading level={2}>The fast paths</Heading>
         <Grid>
-          <Card>
-            <CardHeader>
-              <CardTitle>Run /statusline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Text muted size="sm">
-                Inside Claude Code, describe what you want, like{' '}
-                <Text inline mono>
-                  /statusline show model, directory, and context usage
-                </Text>
-                . It writes the script to{' '}
-                <Text inline mono>
-                  ~/.claude/
-                </Text>{' '}
-                and updates your settings.
+          <Panel>
+            <Heading level={3}>Run /statusline</Heading>
+            <Text muted size="sm">
+              Inside Claude Code, describe what you want, like{' '}
+              <Text inline mono>
+                /statusline show model, directory, and context usage
               </Text>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Copy from the gallery</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Text muted size="sm">
-                Each status line there shows its real output before you copy it.{' '}
-                <TextLink to="/">Browse Claude Code status lines</TextLink>.
-              </Text>
-            </CardContent>
-          </Card>
+              . It writes the script to{' '}
+              <Text inline mono>
+                ~/.claude/
+              </Text>{' '}
+              and updates your settings.
+            </Text>
+          </Panel>
+          <Panel>
+            <Heading level={3}>Copy from the gallery</Heading>
+            <Text muted size="sm">
+              Each status line there shows its real output before you copy it.{' '}
+              <TextLink to="/">Browse Claude Code status lines</TextLink>.
+            </Text>
+          </Panel>
         </Grid>
       </Stack>
 
-      <SectionCard title="Wire up a script by hand" headingLevel={2}>
+      <PageSection title="Wire up a script by hand">
         <Stack gap={6}>
           <Stack gap={3}>
             <Text muted>
@@ -203,7 +195,7 @@ export function GuideContent({
             </Text>
           </Stack>
         </Stack>
-      </SectionCard>
+      </PageSection>
 
       <FaqSection entries={GUIDE_FAQ} />
 

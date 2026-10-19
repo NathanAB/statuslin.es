@@ -32,7 +32,8 @@ export function GalleryRow({
   title: string
   byline?: ReactNode
   facts: ReactNode
-  description: string
+  /** Left out where the list has none (a status line page's "More status lines"). */
+  description?: string
   /** The preview: the status line, or a mod's Claude Desktop shot. */
   children: ReactNode
 }) {
@@ -56,7 +57,9 @@ export function GalleryRow({
         <div className={ABOVE_OVERLAY_CLASS}>{facts}</div>
       </div>
       <div className="min-w-0">{children}</div>
-      <p className="wrap-anywhere line-clamp-2 text-base text-muted-foreground">{description}</p>
+      {description ? (
+        <p className="wrap-anywhere line-clamp-2 text-base text-muted-foreground">{description}</p>
+      ) : null}
     </article>
   )
 }

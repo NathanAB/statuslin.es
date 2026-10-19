@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { submitPageCopy } from '@/submit/submit-copy'
+import { submitNextSteps, submitPageCopy } from '@/submit/submit-copy'
 
 describe('submitPageCopy', () => {
   it('names the page and button for each kind of submission', () => {
@@ -21,5 +21,18 @@ describe('submitPageCopy', () => {
     expect(submitPageCopy({ kind: 'update' }).intro).toMatch(
       /live version stays up until .*review/i,
     )
+  })
+})
+
+// What happens next, beside the form: true to the pipeline for both kinds, new or an update.
+describe('submitNextSteps', () => {
+  it('says a script that needs the network waits until its hosts are checked', () => {
+    expect(submitNextSteps('status_line', false)[0]).toMatch(/waits until we've checked the hosts/)
+  })
+
+  it('says an approved update replaces the live version', () => {
+    expect(submitNextSteps('status_line', true)[2]).toMatch(/replaces the live version/)
+    expect(submitNextSteps('mod', true)[2]).toMatch(/replaces the live version/)
+    expect(submitNextSteps('mod', false)[2]).toMatch(/goes up in the gallery/)
   })
 })

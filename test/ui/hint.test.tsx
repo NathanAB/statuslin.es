@@ -18,7 +18,9 @@ describe('Hint', () => {
       </Hint>,
     )
     const strip = container.firstElementChild
-    expect(strip?.className.split(' ')).toEqual(expect.arrayContaining(['border', 'bg-card']))
+    // One borderless surface, like the rest of the page.
+    expect(strip?.className.split(' ')).toContain('bg-card')
+    expect(strip?.className).not.toMatch(/\bborder\b/)
     expect(strip?.lastElementChild?.innerHTML).toBe('<button type="button">Act</button>')
     expect(container.textContent).toBe('Some textAct')
   })

@@ -236,12 +236,18 @@ const SHOT = {
 /** The card holding the section whose h2 is `title`. */
 function section(title: string) {
   const heading = screen.getByRole('heading', { level: 2, name: title })
-  const card = heading.closest('[data-slot="card"]')
+  const card = heading.closest('section')
   if (!(card instanceof HTMLElement)) throw new Error(`no card around ${title}`)
   return within(card)
 }
 
 describe('mod page', () => {
+  // Nested boxes read as clutter: no section is a card, so only the rows themselves are surfaces.
+  it('puts none of its sections in a card', () => {
+    const { container } = renderPage()
+    expect(container.querySelector('[data-slot="card"]')).toBeNull()
+  })
+
   it('breadcrumbs home › Mods › the mod, linking Mods to the mods page', () => {
     renderPage()
 

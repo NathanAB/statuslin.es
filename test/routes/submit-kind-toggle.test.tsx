@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -59,6 +59,32 @@ describe('/submit kind toggle analytics', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Mod' }))
 
     expect(capture).not.toHaveBeenCalled()
+  })
+})
+
+// The form keeps a form's width; beside it, what happens to a submission, so the column isn't
+// half empty and a first-time submitter knows what they're agreeing to.
+describe('/submit layout', () => {
+  const next = () =>
+    within(screen.getByRole('complementary', { name: 'What happens next' }))
+      .getAllByRole('listitem')
+      .map((item) => item.textContent)
+
+  it('says what happens to a status line after it is submitted', () => {
+    renderSubmit('status_line')
+    const steps = next()
+    expect(steps).toHaveLength(3)
+    expect(steps[0]).toMatch(/sandbox/)
+    expect(steps[1]).toMatch(/person/)
+    expect(steps[2]).toMatch(/email/)
+  })
+
+  it('says what happens to a mod after it is submitted', () => {
+    renderSubmit('mod')
+    const steps = next()
+    expect(steps).toHaveLength(3)
+    expect(steps[0]).toMatch(/commit/)
+    expect(steps[2]).toMatch(/email/)
   })
 })
 

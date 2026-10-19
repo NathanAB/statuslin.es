@@ -4,10 +4,12 @@ import { canonicalLink } from '@/lib/canonical'
 import { ModSubmitForm, modSubmitPageCopy } from '@/mods/mod-submit-form'
 import { loadModSubmitPage } from '@/mods/submit-page'
 import { staticPageSocialMeta } from '@/og/meta'
-import { submitPageCopy } from '@/submit/submit-copy'
+import { submitNextSteps, submitPageCopy } from '@/submit/submit-copy'
 import { SubmitForm } from '@/submit/submit-form'
 import { loadSubmitPage, validateSubmitSearch } from '@/submit/submit-page'
+import { FormLayout } from '@/ui/form-layout'
 import { Row, Stack } from '@/ui/layout'
+import { NumberedList } from '@/ui/numbered-list'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { PageShell } from '@/ui/shell'
 import { SignInPrompt } from '@/ui/sign-in-prompt'
@@ -73,34 +75,39 @@ function Submit() {
   const copy = data.kind === 'mod' ? modSubmitPageCopy(data.draft) : submitPageCopy(data.initial)
   return (
     <PageShell user={data.user}>
-      <Stack gap={4}>
-        <Heading level={1}>{copy.heading}</Heading>
-        {draft ? null : (
-          // A Row, so the control keeps its own width instead of stretching across the column.
-          <Row gap={2}>
-            <SegmentedControl
-              label="What are you submitting?"
-              options={KIND_OPTIONS}
-              value={data.kind}
-              onValueChange={(kind) => {
-                posthog.capture('submit_kind_changed', { kind, previousKind: data.kind })
-                navigate({ search: kind === 'mod' ? { kind: 'mod' } : {} })
-              }}
+      <FormLayout
+        asideTitle="What happens next"
+        aside={<NumberedList items={submitNextSteps(data.kind, draft?.kind === 'update')} />}
+      >
+        <Stack gap={4}>
+          <Heading level={1}>{copy.heading}</Heading>
+          {draft ? null : (
+            // A Row, so the control keeps its own width instead of stretching across the column.
+            <Row gap={2}>
+              <SegmentedControl
+                label="What are you submitting?"
+                options={KIND_OPTIONS}
+                value={data.kind}
+                onValueChange={(kind) => {
+                  posthog.capture('submit_kind_changed', { kind, previousKind: data.kind })
+                  navigate({ search: kind === 'mod' ? { kind: 'mod' } : {} })
+                }}
+              />
+            </Row>
+          )}
+          <Text muted size="sm">
+            {copy.intro}
+          </Text>
+          {data.kind === 'mod' ? (
+            <ModSubmitForm
+              key={data.draft ? `${data.draft.kind}:${data.draft.slug}` : 'new'}
+              draft={data.draft}
             />
-          </Row>
-        )}
-        <Text muted size="sm">
-          {copy.intro}
-        </Text>
-        {data.kind === 'mod' ? (
-          <ModSubmitForm
-            key={data.draft ? `${data.draft.kind}:${data.draft.slug}` : 'new'}
-            draft={data.draft}
-          />
-        ) : (
-          <SubmitForm user={data.user} initial={data.initial} />
-        )}
-      </Stack>
+          ) : (
+            <SubmitForm user={data.user} initial={data.initial} />
+          )}
+        </Stack>
+      </FormLayout>
     </PageShell>
   )
 }
