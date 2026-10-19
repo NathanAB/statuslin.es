@@ -153,6 +153,12 @@ describe('busy session workspace', () => {
     expect([...files.keys()].filter((path) => path.startsWith('build/'))).toHaveLength(1)
   })
 
+  it("turns off npm's update check, which holds a passing npm 10 run open while offline", () => {
+    const files = new Map(BUSY_WORKSPACE_FILES.map((f) => [f.path, f.data]))
+
+    expect(files.get('.npmrc')).toBe('update-notifier=false\n')
+  })
+
   it("fails its tests until the busy session's Edit lands, then passes them, with fixed output", () => {
     const dir = workspace()
     const edit = feedFile(feedScenario(), null, NOW_MS).busy.find((call) => call.tool === 'Edit')

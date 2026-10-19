@@ -65,6 +65,8 @@ export const BUSY_WORKSPACE_FILES: readonly { path: string; data: string }[] = [
     path: 'test.sh',
     data: `if grep -qF '${FIX}' ${BUSY_SOURCE}; then\n  echo 'Tests: 3 passed, 3 total'\nelse\n  echo 'Tests: 1 failed, 2 passed, 3 total'\n  exit 1\nfi\n`,
   },
+  // npm 10 holds a passing run open on its update check, which never answers in an offline sandbox.
+  { path: '.npmrc', data: 'update-notifier=false\n' },
   { path: BUSY_SOURCE, data: `export function sum(a, b) {\n  ${BUG}\n}\n` },
   { path: 'build/sum.js', data: `export function sum(a, b) {\n  ${BUG}\n}\n` },
 ]
