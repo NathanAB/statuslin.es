@@ -330,7 +330,8 @@ DATABASE_URL='<env pooled url>' bun run render:status-line-desktop
 It records every published status line with no Desktop result, or one recorded with another
 Desktop, engine or statusline-anywhere commit, and prints one outcome per status line. `--slug
 <slug>` limits it to one; `--all` records every one again. Run it after you publish a status line or
-approve an update, after a Desktop upgrade, and after re-pinning statusline-anywhere. A status line's
+approve an update, after a Desktop upgrade, and after re-pinning statusline-anywhere one step at a
+time (`run-repin-mods.ts` runs it for you). A status line's
 sandbox reaches only the hosts the admin approved for it, and the Anthropic usage mock answers a
 Claude token read, as in the terminal render (ADR 0008). A status line that needs a real Anthropic
 host is skipped (`needs an Anthropic host; no Desktop shot`): Desktop holds a fake key. A failed recording keeps its earlier result; rerun it.
@@ -419,7 +420,9 @@ from its own shell; a named pipe holds nothing on disk.
 
 A step that fails stops the run before anything after it, and the per-step commands below pick it
 up from there. Re-pinning `statusline-anywhere` also makes every status line's Desktop shot out of
-date: run `render:status-line-desktop` afterwards (see "Status line Desktop previews").
+date, so when it is among the mods, the run ends by re-recording them, as `render:status-line-desktop`
+does (see "Status line Desktop previews"). A recording that fails exits 1 after everything else has
+published; rerun `render:status-line-desktop` for it.
 
 **One step at a time**, the fallback, each through `DATABASE_URL='<env pooled url>'` or
 `bun run with-env <env>`:

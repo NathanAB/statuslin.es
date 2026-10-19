@@ -138,6 +138,10 @@ function fakes(
     applyContent: async (responses) => {
       calls.push(`apply ${responses}`)
     },
+    renderStatusLineDesktop: async () => {
+      calls.push('desktop shots')
+      return failing === 'desktop shots' ? 1 : 0
+    },
   }
   const io: RepinIo = {
     log: (line) => lines.push(line),
@@ -231,5 +235,52 @@ describe('runRepin', () => {
 
     expect(await runRepin('staging', [], f.steps, f.io)).toBe(0)
     expect(f.calls).toEqual([])
+  })
+
+  describe('when statusline-anywhere is re-pinned', () => {
+    const WITH_ANYWHERE: Repin[] = [
+      { slug: 'meter', commitSha: sha('c') },
+      { slug: 'statusline-anywhere', commitSha: sha('e') },
+    ]
+
+    it('re-records the status line Desktop shots last', async () => {
+      const f = fakes(['publish 2 to staging', '[{"slug":"meter","summary":"x"}]'])
+
+      const code = await runRepin('staging', WITH_ANYWHERE, f.steps, f.io)
+
+      expect(code).toBe(0)
+      expect(f.calls.at(-1)).toBe('desktop shots')
+      expect(f.calls.filter((c) => c === 'desktop shots')).toHaveLength(1)
+    })
+
+    it('re-records them when no mod needs page copy', async () => {
+      const f = fakes(['publish 2 to staging'], { requests: '[]' })
+
+      expect(await runRepin('staging', WITH_ANYWHERE, f.steps, f.io)).toBe(0)
+      expect(f.calls.at(-1)).toBe('desktop shots')
+    })
+
+    it('exits 1 when a recording fails, after everything else ran', async () => {
+      const f = fakes(['publish 2 to staging', '[]'], { failing: 'desktop shots' })
+
+      expect(await runRepin('staging', WITH_ANYWHERE, f.steps, f.io)).toBe(1)
+      expect(f.calls).toContain('prepare')
+    })
+
+    it('leaves them alone when nothing was published', async () => {
+      const f = fakes(['no'])
+
+      await runRepin('staging', WITH_ANYWHERE, f.steps, f.io)
+
+      expect(f.calls).not.toContain('desktop shots')
+    })
+  })
+
+  it('leaves the status line Desktop shots alone when statusline-anywhere is not re-pinned', async () => {
+    const f = fakes(['publish 2 to staging', '[]'])
+
+    await runRepin('staging', REPINS, f.steps, f.io)
+
+    expect(f.calls).not.toContain('desktop shots')
   })
 })

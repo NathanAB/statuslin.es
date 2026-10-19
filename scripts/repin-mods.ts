@@ -1,6 +1,7 @@
 import { and, eq, not } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import type { CurationEntry } from '@/mods/curation'
 import { hasSubmission } from '@/mods/import'
 
@@ -26,6 +27,8 @@ export interface RepinSteps {
   /** The `--all --prepare --mod` request batch, as JSON. */
   prepareContent: () => Promise<string>
   applyContent: (responses: string) => Promise<void>
+  /** Re-records status line Desktop shots made with an older statusline-anywhere commit. */
+  renderStatusLineDesktop: () => Promise<number>
 }
 
 export interface RepinIo {
@@ -122,14 +125,23 @@ export async function runRepin(
     if ((await steps.publishMod(argv, io.log)) !== 0) return stop(io, `${slug} did not publish`)
   }
 
+  return afterPublish(repins, steps, io)
+}
+
+/** Page copy for the newly current versions, then the Desktop shots if statusline-anywhere moved. */
+async function afterPublish(repins: Repin[], steps: RepinSteps, io: RepinIo): Promise<number> {
   const requests = await steps.prepareContent()
   if ((JSON.parse(requests) as unknown[]).length === 0) {
     io.log('every mod has page copy')
-    return 0
+  } else {
+    await io.sendRequests(requests)
+    await steps.applyContent(await io.readInput('send the page-copy response JSON'))
   }
-  await io.sendRequests(requests)
-  await steps.applyContent(await io.readInput('send the page-copy response JSON'))
-  return 0
+
+  // Every status line's Desktop shot is drawn by statusline-anywhere, so re-pinning it dates them all.
+  if (!repins.some((r) => r.slug === STATUSLINE_ANYWHERE_MOD_SLUG)) return 0
+  if ((await steps.renderStatusLineDesktop()) === 0) return 0
+  return stop(io, 'a status line Desktop shot failed to record; rerun render:status-line-desktop')
 }
 
 function stop(io: RepinIo, reason: string): number {
