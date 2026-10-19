@@ -1,0 +1,138 @@
+import { and, eq, not } from 'drizzle-orm'
+import type { PgDatabase } from 'drizzle-orm/pg-core'
+import * as schema from '@/db/schema'
+import type { CurationEntry } from '@/mods/curation'
+import { hasSubmission } from '@/mods/import'
+
+/**
+ * The "Re-pin a mod" runbook (docs/deploy.md) for several mods in one process, so one
+ * `bun run with-env <env>` decrypt covers every step. run-repin-mods.ts wires it to the database,
+ * E2B and the operator's agent; this file holds what it decides.
+ */
+
+// biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
+type Db = PgDatabase<any, typeof import('@/db/schema')>
+
+export interface Repin {
+  slug: string
+  commitSha: string
+}
+
+/** The steps the runbook runs, each with the exit code its own script would return. */
+export interface RepinSteps {
+  importMods: () => Promise<number>
+  renderMod: (slug: string) => Promise<number>
+  publishMod: (argv: string[], log: (line: string) => void) => Promise<number>
+  /** The `--all --prepare --mod` request batch, as JSON. */
+  prepareContent: () => Promise<string>
+  applyContent: (responses: string) => Promise<void>
+}
+
+export interface RepinIo {
+  log: (line: string) => void
+  /** Hands the page-copy requests to the agent. */
+  sendRequests: (json: string) => Promise<void>
+  /** Waits for the next answer: the typed confirmation, then the page-copy responses. */
+  readInput: (prompt: string) => Promise<string>
+}
+
+/** `with-env <env>` sets APP_ENV, so a mismatch means the wrong env file was decrypted. */
+export function assertAppEnv(named: string, appEnv: string | undefined): void {
+  if (appEnv !== named) {
+    throw new Error(
+      `APP_ENV is ${appEnv ?? 'unset'}, not ${named}: run it as bun run with-env ${named} scripts/run-repin-mods.ts ${named}`,
+    )
+  }
+}
+
+/**
+ * Each published curated mod whose curation entry pins a commit other than its live one, matched
+ * the way import-mods.ts re-pins: same plugin name, live version from the same repository, and no
+ * user submission. `slugs`, when given, narrows the list and must all be in it.
+ */
+export async function repinsToRun(
+  db: Db,
+  entries: CurationEntry[],
+  slugs: string[],
+): Promise<Repin[]> {
+  const live = await db
+    .select({
+      slug: schema.mods.slug,
+      pluginName: schema.mods.pluginName,
+      repoUrl: schema.modVersions.repoUrl,
+      commitSha: schema.modVersions.commitSha,
+    })
+    .from(schema.mods)
+    .innerJoin(schema.modVersions, eq(schema.modVersions.id, schema.mods.currentVersionId))
+    .where(and(eq(schema.mods.status, 'published'), not(hasSubmission(db))))
+  const stale = entries.flatMap((entry) => {
+    const mod = live.find((m) => m.pluginName === entry.pluginName && m.repoUrl === entry.repoUrl)
+    return mod && mod.commitSha !== entry.commitSha
+      ? [{ slug: mod.slug, commitSha: entry.commitSha }]
+      : []
+  })
+  if (slugs.length === 0) return stale
+  const missing = slugs.filter((slug) => !stale.some((r) => r.slug === slug))
+  if (missing.length > 0) {
+    throw new Error(
+      `nothing to re-pin for ${missing.join(', ')}: not a published curated mod, or curation.json pins its live commit`,
+    )
+  }
+  return stale.filter((r) => slugs.includes(r.slug))
+}
+
+export const confirmationPhrase = (env: string, count: number) => `publish ${count} to ${env}`
+
+/** Returns 0 when every mod published and its page copy applied, 1 when a step stopped the run. */
+export async function runRepin(
+  env: string,
+  repins: Repin[],
+  steps: RepinSteps,
+  io: RepinIo,
+): Promise<number> {
+  if (repins.length === 0) {
+    io.log('nothing to re-pin: every curated mod is live at its pinned commit')
+    return 0
+  }
+  io.log(`re-pinning on ${env}: ${repins.map((r) => `${r.slug} → ${r.commitSha}`).join(', ')}`)
+
+  if ((await steps.importMods()) !== 0) return stop(io, 'the import refused an entry')
+  for (const { slug } of repins) {
+    if ((await steps.renderMod(slug)) !== 0) return stop(io, `${slug} did not render`)
+  }
+
+  const warnings: string[] = []
+  for (const { slug, commitSha } of repins) {
+    const log = (line: string) => {
+      io.log(line)
+      if (line.startsWith('WARN')) warnings.push(`${slug}: ${line}`)
+    }
+    if ((await steps.publishMod([slug, commitSha], log)) !== 0) {
+      return stop(io, `the ${slug} dry run refused`)
+    }
+  }
+  io.log(warnings.length > 0 ? 'WARN lines from the dry runs:' : 'the dry runs gave no warnings')
+  for (const line of warnings) io.log(`  ${line}`)
+
+  const phrase = confirmationPhrase(env, repins.length)
+  const typed = await io.readInput(`to publish, type: ${phrase}`)
+  if (typed.trim() !== phrase) return stop(io, `the confirmation was not "${phrase}"`)
+  for (const { slug, commitSha } of repins) {
+    const argv = [slug, commitSha, '--apply', `--confirm=${slug}`]
+    if ((await steps.publishMod(argv, io.log)) !== 0) return stop(io, `${slug} did not publish`)
+  }
+
+  const requests = await steps.prepareContent()
+  if ((JSON.parse(requests) as unknown[]).length === 0) {
+    io.log('every mod has page copy')
+    return 0
+  }
+  await io.sendRequests(requests)
+  await steps.applyContent(await io.readInput('send the page-copy response JSON'))
+  return 0
+}
+
+function stop(io: RepinIo, reason: string): number {
+  io.log(`stopped: ${reason}; nothing after it ran`)
+  return 1
+}
