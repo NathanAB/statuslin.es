@@ -35,8 +35,12 @@ The owner reviewed several rounds. These are settled; build them as stated.
   Phones must work (no horizontal page scroll, nothing overlapping, readable text) but get no design
   of their own.
 - **Content width** caps at 1280px plus the side gutters, centred.
-- **Palette unchanged.** Every coral fill gets dark text (`#141413`): light text on coral is 3.7:1
-  and fails WCAG AA; dark is 4.73:1. This is a site-wide fix, not just the home page.
+- **Palette unchanged, plus one deeper coral for fills.** Text on coral stays light; the owner
+  rejected dark text on coral. Light text on `#c96442` is 3.7:1 and fails WCAG AA, so every solid
+  coral fill under text (buttons, the selected filter, the coral closing section) uses a slightly
+  deeper shade, `#b85533` (`--primary-fill`: 4.55:1, APCA Lc 74). Coral as text, links and the
+  wordmark dot stays `#c96442`. This is a site-wide fix, landing in its own PR. It replaces the
+  prototype's dark `--on-accent`.
 - **Type:** Hanken Grotesk 400/500/600 for interface text (the screenshots show Switzer, which its
   licence rules out; see Open questions); the existing StatuslineNerd stays for status lines, code
   and the wordmark. Five sizes: small 13–14px, body 17–19px, lead 20–26px, heading
@@ -180,8 +184,8 @@ Most of the prototype's colours already exist as tokens in `src/styles/app.css`:
 | `--well` `#0c0b0a` | `--sunken` |
 | `--ink` | `--foreground` |
 | `--muted` | `--muted-foreground` |
-| `--accent` | `--primary` |
-| `--on-accent` | `--primary-foreground`: change it to the dark ink. This fixes contrast site-wide. |
+| `--accent` | `--primary` as text or a line; `--primary-fill` as a fill under text |
+| `--on-accent` | `--primary-foreground`, which stays light (see Palette above) |
 
 New tokens to add (once, in `app.css`):
 - `--dim` `#8a877f`, for inactive filter labels.
@@ -227,8 +231,8 @@ a step if it grows past that. Every PR:
 - updates the tests that assert old structure in the same PR
 
 1. **Foundations.** Self-hosted Hanken Grotesk (see the resolved licence question), the type
-   scale, the new tokens, dark text on coral, and the pill `Button` variant. Every page shifts a
-   little; nothing moves. Screenshot several pages.
+   scale, the new tokens, and the pill `Button` variant. Every page shifts a little; nothing moves.
+   Screenshot several pages. The deeper coral fill ships in its own PR.
 2. **Header and footer.** Plain bar: wordmark, links, sign-in or user menu, and a menu button on
    phones. The footer keeps every current link on one quiet line.
 3. **Gallery cards (A2)** on home and facet pages, with the filter as heading, URL-driven sort and

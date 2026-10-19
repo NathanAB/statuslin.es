@@ -17,8 +17,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Subtle / hover / muted surface | `bg-muted`, `bg-secondary` |
 | Code / preview box (near-black) | `bg-sunken` |
 | Coral accent (buttons, links, brand) | `bg-primary` / `text-primary` |
-| Text on a coral fill (dark, for WCAG AA) | `text-primary-foreground` |
-| Coral fill on hover (lighter, never darker) | `hover:bg-primary-hover` |
+| Text on a coral fill | `text-primary-foreground` |
 | Primary text | `text-foreground` |
 | Secondary text | `text-muted-foreground` |
 | Inactive filter labels (dimmer than secondary) | `text-dim` |

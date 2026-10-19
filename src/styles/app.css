@@ -64,10 +64,8 @@
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary-foreground: var(--background); /* dark-on-coral: 4.73:1 passes WCAG AA, light was
-                                              3.7:1 (test/styles/coral-contrast.test.ts) */
-  /* Hover lightens the coral. Darkening it would sink the dark text on it below AA. */
-  --primary-hover: color-mix(in oklab, var(--primary) 88%, var(--foreground));
+  --primary-foreground: var(--foreground); /* light-on-coral; the one pair that could
+                                              legitimately diverge if a light theme ever lands */
   --secondary: var(--muted);
   --secondary-foreground: var(--foreground);
   --accent: var(--muted);
@@ -121,7 +119,6 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
