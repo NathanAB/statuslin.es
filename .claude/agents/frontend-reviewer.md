@@ -20,7 +20,7 @@ Any change under `src/routes`, `src/ui`, `src/styles`, or anything that renders 
 - NO inline `style={{}}` except `src/ui/statusline-preview.tsx` (its colors are script-output data). Everything else uses Tailwind classes.
 - NO raw color literals (`#hex`, `rgb()`, `hsl()`) outside `src/styles/app.css`. Colors come from tokens.
 - NO arbitrary Tailwind values (`w-[437px]`, `text-[#fff]`) in app code (routes/features). Vendored `src/ui` shadcn primitives may use them; hand-written app code may not.
-- Coral accent is `bg-primary`/`text-primary`, never `bg-accent` (accent is a subtle hover surface). Surfaces: `bg-background`/`bg-card`/`bg-muted`/`bg-sunken`. Text: `text-foreground`/`text-muted-foreground`.
+- Coral accent is `text-primary` / `border-primary` for text, lines and rings, and `bg-primary-fill` for a solid fill under text (never `bg-primary`: light text on it fails WCAG AA). Never `bg-accent` (accent is a subtle hover surface). Surfaces: `bg-background`/`bg-card`/`bg-muted`/`bg-sunken`. Text: `text-foreground`/`text-muted-foreground`.
 
 **Components & structure:**
 - Reuses shadcn primitives (`Button`, `Card`, `Badge`, `Input`, …) instead of hand-rolling `<button>`/`<div>` with classes. If a needed primitive is missing, it should be added via `bunx shadcn@latest add`, not hand-built.

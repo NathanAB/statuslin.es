@@ -33,8 +33,8 @@
 
 /* Single source of color. This file is the ONLY place color literals are allowed.
    The shadcn semantic names below ARE our design system; components use them
-   (bg-background, bg-card, bg-primary, text-foreground, text-muted-foreground,
-   border-border, bg-muted, …) plus our extras (bg-sunken, font-mono).
+   (bg-background, bg-card, text-primary, text-foreground, text-muted-foreground,
+   border-border, bg-muted, …) plus our extras (bg-sunken, bg-primary-fill, font-mono).
    Values are the Anthropic "Restrained Claude Dark" palette. We render dark by
    default: :root holds the dark values, so no .dark class is needed. */
 :root {
@@ -46,7 +46,9 @@
   --muted-foreground: #b0aea5; /* dimmed text */
   --dim: #8a877f; /* dimmer still: inactive filter labels */
   --border: #34322d; /* all hairlines, incl. form controls */
-  --primary: #c96442; /* Claude coral (Anthropic's rgb(201,100,66)) */
+  --primary: #c96442; /* Claude coral (Anthropic's rgb(201,100,66)): as text, lines and rings */
+  --primary-fill: #b85533; /* the coral as a solid fill under light text: one step deeper, so the
+                              text passes WCAG AA (4.55:1; on #c96442 it's 3.7:1) */
   --destructive: #e5484d; /* danger — a deliberately distinct red (Radix dark-red 9),
                              clearly not the coral; luminance tracks --primary so
                              text-destructive stays readable, white-on-fill ≥ prior pairing. */
@@ -119,6 +121,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-fill: var(--primary-fill);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

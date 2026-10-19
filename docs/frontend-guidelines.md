@@ -16,7 +16,8 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Card / panel | `bg-card` |
 | Subtle / hover / muted surface | `bg-muted`, `bg-secondary` |
 | Code / preview box (near-black) | `bg-sunken` |
-| Coral accent (buttons, links, brand) | `bg-primary` / `text-primary` |
+| Coral accent as text, lines and rings (links, brand) | `text-primary` / `border-primary` |
+| Coral as a solid fill under text (buttons, selected states) | `bg-primary-fill`, never `bg-primary` (light text on it fails WCAG AA) |
 | Text on a coral fill | `text-primary-foreground` |
 | Primary text | `text-foreground` |
 | Secondary text | `text-muted-foreground` |
@@ -154,6 +155,7 @@ All rules run in `bun run check` and at the hooks listed below.
 | 12 | Centralized font family | A `font-<family>` class (`font-mono`, a typo like `font-heading`, …) outside `src/ui/text.tsx` + the code/header allowlist — text must render through `Text`/`Heading`, which own the font | `check-frontend.ts` — gate error |
 | 13 | Import boundaries | routes ↛ db; `src/ui` ↛ features; `src/gallery` ↛ `src/mods`; no cross-feature value imports | `check-boundaries` (dependency-cruiser) |
 | 14 | Biome lint + format | Style, complexity, naming, import order, `noConsole` | `bun run lint` |
+| 15 | Solid coral fills use `bg-primary-fill` | `bg-primary` / `bg-ring` (or `/50` and up) as a fill, where light text fails WCAG AA | `test/styles/coral-fill.test.ts` (in `bun run check`; not at edit time) |
 
 **Hook schedule:**
 
