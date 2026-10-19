@@ -3,6 +3,8 @@ const FEED_FILE = '/home/user/.statuslines/feed.json'
 const FEED_PLUGIN = 'scenario-feed'
 /** Merged over the engine's own answer, so a requested breakdown still comes back. */
 const MERGED = new Set(['session.usage'])
+/** Well inside the terminal recorder's 2 s of quiet (`SESSION_TIMING` in recorder.ts). */
+const TICK_MS = 500
 
 type Usage = { context?: Record<string, unknown> } & Record<string, unknown>
 type Feed = { target: string | null; answers: Record<string, unknown>; busy: unknown[] }
@@ -10,8 +12,12 @@ type Next = ((e: unknown) => Promise<unknown>) & { origin: { plugin: string } }
 type Engine = {
   fs: { read: (path: string) => Promise<string> }
   tool: { call: (call: never) => Promise<unknown> }
-  clock: { after: (ms: number, fn: () => void) => unknown }
+  clock: {
+    after: (ms: number, fn: () => void) => unknown
+    every: (ms: number, fn: () => void) => { cancel: () => void }
+  }
   command: { register: (spec: { name: string; description: string }) => Promise<unknown> }
+  ui: { status: (text: string | undefined) => void }
 }
 type Hook = ($: Engine, e: unknown, next: Next) => Promise<unknown>
 type On = {
@@ -42,9 +48,20 @@ async function answer($: Engine, event: string, e: unknown, next: Next) {
   return { value: { ...real, ...scenario, context: { ...real.context, ...scenario.context } } }
 }
 
-/** One call at a time, as Claude would make them; each runs through the mod's `tool.call` hooks. */
+/**
+ * One call at a time, as Claude would make them; each runs through the mod's `tool.call` hooks.
+ * The calls draw nothing, and the terminal recorder takes its frame after 2 s of quiet, so a
+ * status ticks until the last call returns, then clears: the frame comes after the whole session.
+ */
 async function playBusy($: Engine) {
+  let tick = 0
+  const ticking = $.clock.every(TICK_MS, () => {
+    tick += 1
+    $.ui.status(`preview ${'.'.repeat(tick % 4)}`)
+  })
   for (const call of (await readFeed($)).busy) await $.tool.call(call as never)
+  ticking.cancel()
+  $.ui.status(undefined)
 }
 
 /**

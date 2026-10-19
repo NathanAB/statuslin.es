@@ -10,6 +10,7 @@ const ENGINE_ANSWER = { value: 'the engine answered' }
 
 function fakeEngine(target: string | null) {
   const pending: (() => void)[] = []
+  const ticks: (() => void)[] = []
   const $ = {
     fs: {
       read: vi.fn(async (path: string) => {
@@ -18,14 +19,21 @@ function fakeEngine(target: string | null) {
       }),
     },
     tool: { call: vi.fn(async (_call: unknown) => ({ text: 'ran' })) },
-    clock: { after: vi.fn((_ms: number, fn: () => void) => pending.push(fn)) },
+    clock: {
+      after: vi.fn((_ms: number, fn: () => void) => pending.push(fn)),
+      every: vi.fn((_ms: number, fn: () => void) => {
+        ticks.push(fn)
+        return { cancel: () => ticks.splice(0) }
+      }),
+    },
     command: { register: vi.fn(async (_spec: unknown) => undefined) },
+    ui: { status: vi.fn((_text: string | undefined) => undefined) },
   }
   const runPending = async () => {
     for (const fn of pending.splice(0)) fn()
     await vi.waitFor(() => expect($.tool.call).toHaveBeenCalledTimes(5))
   }
-  return { $, runPending }
+  return { $, runPending, ticks }
 }
 
 function next(plugin: string): Next {
@@ -110,5 +118,28 @@ describe('scenario feed plugin', () => {
     expect($.tool.call.mock.calls.map(([made]) => made)).toEqual(
       feedFile(feedScenario(), null, 0).busy,
     )
+  })
+
+  it('keeps redrawing its status while the calls run, then clears it', async () => {
+    const { $, runPending, ticks } = fakeEngine(null)
+    let release = () => {}
+    $.tool.call.mockImplementationOnce(
+      () => new Promise((resolve) => (release = () => resolve({ text: 'ran' }))),
+    )
+    await (await hooks()).get('command.run')?.hook($, {}, next('x'))
+    const played = runPending()
+    await vi.waitFor(() => expect($.tool.call).toHaveBeenCalledOnce())
+    expect(ticks).toHaveLength(1)
+
+    for (const tick of [...ticks, ...ticks]) tick()
+    const [first, second] = $.ui.status.mock.calls.map(([text]) => text)
+    expect(first).toEqual(expect.any(String))
+    expect(second).not.toBe(first)
+    expect($.clock.every.mock.calls[0]?.[0]).toBeLessThan(2_000)
+
+    release()
+    await played
+    await vi.waitFor(() => expect($.ui.status).toHaveBeenLastCalledWith(undefined))
+    expect(ticks).toEqual([])
   })
 })
