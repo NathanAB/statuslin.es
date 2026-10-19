@@ -398,13 +398,16 @@ one. Run every step against staging first, then production.
 Authors don't need to ask for a re-pin: we find their releases ourselves, weekly (ADR 0009).
 `updates:mods` compares each curated pin with the head of its repository's default branch and moves
 the pin in `src/mods/curation.json` when plugin.json's `version` changed, printing a compare link per
-release. A commit without a new version is listed and left alone, and so is a head that no longer
-builds on the pin (a force-push). It reads only GitHub, so it needs a token, not a database:
+release (a mod with no version is re-pinned on every new commit). A commit that keeps the version
+is listed and left alone, and so are a head that no longer builds on the pin (a force-push) and a
+repository or pin GitHub no longer serves (`gone`; see "Pinned-commit check"). It reads only GitHub,
+so it needs a token, not a database:
 ```sh
 GITHUB_TOKEN=$(gh auth token) bun run updates:mods
 ```
-Review each compare link for network, exec, filesystem, env, dependency and dynamic-code changes,
-add `inputSteps` if a new version needs them, and merge the `curation.json` change as its own pull
+Put the table it ends with in the `curation.json` pull request's body. Review each compare link for
+network, exec, filesystem, env, dependency and dynamic-code changes, in the mod's folder for a shared
+repository, add `inputSteps` if a new version needs them, and merge the change as its own pull
 request. Then re-pin with the one command below.
 
 To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and

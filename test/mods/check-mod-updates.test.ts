@@ -25,17 +25,34 @@ const entry = (overrides: Record<string, unknown> = {}) => ({
 interface Fakes {
   head?: string
   comparison?: CommitComparison
+  /** Repositories GitHub no longer serves. */
+  goneRepos?: string[]
+  /** Commits GitHub no longer serves. */
+  goneCommits?: string[]
   /** plugin.json versions by `<path>@<sha>`; a missing key reads as no version. */
   versions?: Record<string, string>
 }
 
-function run(raw: unknown, { head = HEAD, comparison = 'ahead', versions = {} }: Fakes = {}) {
+function run(
+  raw: unknown,
+  {
+    head = HEAD,
+    comparison = 'ahead',
+    goneRepos = [],
+    goneCommits = [],
+    versions = {},
+  }: Fakes = {},
+) {
   const calls: string[] = []
   const lines: string[] = []
   const github: CheckUpdatesDeps['github'] = {
-    async repoInfo(repoUrl) {
-      calls.push(`repoInfo:${repoUrl}`)
+    async findRepo(repoUrl) {
+      calls.push(`findRepo:${repoUrl}`)
+      if (goneRepos.includes(repoUrl)) return null
       return { fullName: 'octocat/meters', license: 'MIT', defaultBranch: 'trunk' }
+    },
+    async commitIsFetchable(_repoUrl, sha) {
+      return !goneCommits.includes(sha)
     },
     async resolveCommit(_repoUrl, ref) {
       return ref === 'trunk' ? head : null
@@ -59,7 +76,7 @@ describe('checkModUpdates', () => {
     })
 
     expect(await result).toEqual({ code: 0, updated: [entry({ commitSha: HEAD })] })
-    expect(lines).toEqual([
+    expect(lines.slice(0, 2)).toEqual([
       `release meter 1.2.0 -> 1.3.0: ${REPO}/compare/${PIN}...${HEAD}`,
       `1 release(s) re-pinned in ${FILE}: review each compare link, merge it, then run bun run with-env staging scripts/run-repin-mods.ts staging`,
     ])
@@ -84,11 +101,17 @@ describe('checkModUpdates', () => {
     ])
   })
 
-  it('leaves an entry with no version at the head of its default branch', async () => {
-    const { result, lines } = run([entry()], { versions: { [`plugins/meter@${PIN}`]: '1.2.0' } })
+  // Claude Code versions a plugin without one by its commit, so every commit reaches installs.
+  it.each([
+    ['has no version', {}],
+    ['dropped its version', { [`plugins/meter@${PIN}`]: '1.2.0' }],
+  ])('re-pins every new commit of a mod that %s', async (_case, versions) => {
+    const { result, lines } = run([entry()], { versions })
 
-    expect(await result).toEqual({ code: 0, updated: null })
-    expect(lines[0]).toBe('ahead meter: plugin.json has no version at trunk, not re-pinned')
+    expect((await result).updated).toEqual([entry({ commitSha: HEAD })])
+    expect(lines[0]).toBe(
+      `release meter (no version, so every commit updates installs): ${REPO}/compare/${PIN}...${HEAD}`,
+    )
   })
 
   it.each(['behind', 'diverged'] as const)(
@@ -113,6 +136,49 @@ describe('checkModUpdates', () => {
     expect(await result).toEqual({ code: 0, updated: null })
     expect(lines).toEqual(['no new releases'])
     expect(calls.filter((call) => call.startsWith('compare'))).toEqual([])
+  })
+
+  it('lists a repository GitHub no longer serves and checks the rest', async () => {
+    const other = 'https://github.com/octocat/other'
+    const { result, lines } = run([entry(), entry({ repoUrl: other, pluginName: 'other' })], {
+      goneRepos: [REPO],
+      versions: { [`plugins/meter@${HEAD}`]: '2.0.0' },
+    })
+
+    expect(await result).toEqual({
+      code: 0,
+      updated: [entry(), entry({ repoUrl: other, pluginName: 'other', commitSha: HEAD })],
+    })
+    expect(lines[0]).toBe(
+      `gone meter: GitHub no longer serves ${REPO} (deleted or private), not re-pinned`,
+    )
+    expect(lines[1]).toMatch(/^release other /)
+  })
+
+  it('lists a pin GitHub no longer serves without comparing it', async () => {
+    const { result, lines, calls } = run([entry()], { goneCommits: [PIN] })
+
+    expect(await result).toEqual({ code: 0, updated: null })
+    expect(lines[0]).toBe('gone meter: GitHub no longer serves the pinned aaaaaaa, not re-pinned')
+    expect(calls.filter((call) => call.startsWith('compare'))).toEqual([])
+  })
+
+  it('ends with a table for the curation pull request', async () => {
+    const { result, lines } = run([entry(), entry({ path: '', pluginName: 'gauge' })], {
+      versions: {
+        [`plugins/meter@${PIN}`]: '1.2.0',
+        [`plugins/meter@${HEAD}`]: '1.3.0',
+        [`@${HEAD}`]: '2.0.0 | [click](https://evil.example) `x`',
+      },
+    })
+
+    await result
+    expect(lines.slice(-4)).toEqual([
+      '| Mod | Folder | Version | Changes since the pin |',
+      '| --- | --- | --- | --- |',
+      `| meter | \`plugins/meter\` | \`1.2.0\` → \`1.3.0\` | ${REPO}/compare/${PIN}...${HEAD} |`,
+      `| gauge | the repository root | unversioned → \`2.0.0  [click](https://evil.example) x\` | ${REPO}/compare/${PIN}...${HEAD} |`,
+    ])
   })
 
   it('changes only the commit, keeping every other field and the key order', async () => {
@@ -147,7 +213,7 @@ describe('checkModUpdates', () => {
     )
 
     await result
-    expect(calls).toEqual([`repoInfo:${REPO}`, 'repoInfo:https://github.com/octocat/other'])
+    expect(calls).toEqual([`findRepo:${REPO}`, 'findRepo:https://github.com/octocat/other'])
   })
 
   it('refuses an invalid curation file without reading GitHub or writing anything', async () => {
