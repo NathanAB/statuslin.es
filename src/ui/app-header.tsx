@@ -27,12 +27,14 @@ const HEADER_LINKS: readonly HeaderLink[] = [
   { to: MODS_PATH, label: 'Mods' },
   { to: GUIDE_CRUMB.to, label: GUIDE_CRUMB.name },
   { to: '/resources', label: 'Resources' },
+  // /submit itself asks a signed-out visitor to sign in first.
+  { to: '/submit', label: 'Submit' },
 ]
 
 /**
  * Shared top header, a plain bar: the wordmark home-link, quiet links (Mods, Guide, Resources,
- * Star on GitHub), then GitHub sign-in or the signed-in user's menu. Phones get a menu button
- * instead, which opens the same links full-screen. Submitting lives on the home page, not here.
+ * Submit, Star on GitHub), then GitHub sign-in or the signed-in user's menu. Phones get a menu
+ * button instead, which opens the same links full-screen.
  * `measure` lines it up with the page's content column.
  */
 export function AppHeader({

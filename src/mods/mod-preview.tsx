@@ -70,6 +70,6 @@ export function ModRowPreview({
 }) {
   if (card.desktopShot !== null)
     return <DesktopShot shot={card.desktopShot} alt={desktopAlt(card.title)} fit="card" />
-  if (card.preview !== null) return <StatuslinePreview segments={card.preview} look="bare" />
+  if (card.preview !== null) return <StatuslinePreview segments={card.preview} look="strip" />
   return <NoPreview />
 }

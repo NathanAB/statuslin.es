@@ -56,7 +56,7 @@ export function GalleryRow({
         <div className={ABOVE_OVERLAY_CLASS}>{facts}</div>
       </div>
       <div className="min-w-0">{children}</div>
-      <p className="wrap-anywhere line-clamp-2 text-body text-muted-foreground">{description}</p>
+      <p className="wrap-anywhere line-clamp-2 text-base text-muted-foreground">{description}</p>
     </article>
   )
 }

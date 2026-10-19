@@ -141,12 +141,15 @@ describe('home content', () => {
     expect(HOME_HEADING).toBe('Claude Code status lines and mods')
   })
 
-  it('names the page number in the h1 past page 1', () => {
+  // Search engines and screen readers get each page's own h1; on screen the title stays the same,
+  // since the pager already says which page this is.
+  it('names the page number in the h1 past page 1, without showing it', () => {
     const { container } = renderHome({ page: 2, pageCount: 3 })
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
     expect(h1s[0]?.textContent).toBe('Claude Code status lines and mods, page 2')
+    expect(h1s[0]?.querySelector('.sr-only')?.textContent).toBe(', page 2')
   })
 
   // The hero is the first thing on the page, and the server renders its first state.

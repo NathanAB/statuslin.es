@@ -76,6 +76,19 @@ describe('AppHeader', () => {
     expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  // Submitting has its own place in the header, not only the home page's closing section.
+  it('links to the submit form, after the pages and before Star', () => {
+    render(<AppHeader user={null} />)
+    const submit = screen.getByRole('link', { name: 'Submit' })
+    expect(submit.getAttribute('href')).toBe('/submit')
+    const resources = screen.getByRole('link', { name: 'Resources' })
+    const star = screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })
+    expect(
+      resources.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(submit.compareDocumentPosition(star) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('shows the Star on GitHub link', () => {
     render(<AppHeader user={null} />)
     expect(screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })).toBeTruthy()

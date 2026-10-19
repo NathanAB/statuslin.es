@@ -40,7 +40,7 @@ export function GalleryConfigCard({
       description={card.description}
     >
       {card.preview !== null ? (
-        <StatuslinePreview segments={card.preview} look="bare" />
+        <StatuslinePreview segments={card.preview} look="strip" />
       ) : (
         <Text muted size="sm">
           No preview.

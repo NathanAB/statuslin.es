@@ -80,6 +80,7 @@ describe('the phone menu', () => {
     expect(links.getByRole('link', { name: 'Mods' }).getAttribute('href')).toBe('/mods')
     expect(links.getByRole('link', { name: 'Guide' }).getAttribute('href')).toBe('/guide')
     expect(links.getByRole('link', { name: 'Resources' }).getAttribute('href')).toBe('/resources')
+    expect(links.getByRole('link', { name: 'Submit' }).getAttribute('href')).toBe('/submit')
     expect(links.getByRole('link', { name: 'Star on GitHub' })).toBeTruthy()
     expect(links.getByRole('button', { name: 'Sign in with GitHub' })).toBeTruthy()
   })

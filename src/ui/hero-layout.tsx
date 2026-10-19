@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Heading } from '@/ui/text'
+import { VisuallyHidden } from '@/ui/visually-hidden'
 
 // The prototype's load sequence: each part rises 28px into place over a second, one after another.
 // It's CSS, so it runs from the first paint without waiting for JavaScript; `backwards` holds each
@@ -12,14 +13,17 @@ const RISE =
  * The home hero on a 12-column grid with two left edges: the title over the first eight columns
  * with its one sentence on the last four, then the demo (`stage`) under the title and its controls
  * (`aside`) under the sentence. Below 900px everything stacks. On load they rise in, in that order.
+ * `headingHidden` ends the title for search engines and screen readers only (", page 2").
  */
 export function HeroLayout({
   heading,
+  headingHidden,
   lead,
   stage,
   aside,
 }: {
   heading: string
+  headingHidden?: string | undefined
   lead: string
   stage: ReactNode
   aside: ReactNode
@@ -29,6 +33,7 @@ export function HeroLayout({
       <div className={cn('col-span-12 self-end min-[56.25rem]:col-span-8', RISE, 'delay-[60ms]')}>
         <Heading level={1} size="display">
           {heading}
+          {headingHidden ? <VisuallyHidden>{headingHidden}</VisuallyHidden> : null}
         </Heading>
       </div>
       <p

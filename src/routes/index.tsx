@@ -121,8 +121,10 @@ function Home() {
       }
     >
       <HomeSection first>
+        {/* Each page's h1 names its page for search, but the pager already shows it on screen. */}
         <HomeHero
-          heading={page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
+          heading={HOME_HEADING}
+          headingHidden={page > 1 ? `, page ${page}` : undefined}
           lines={showcase.hero}
         />
       </HomeSection>

@@ -68,7 +68,6 @@ export function ShotCarousel({
   const row = useRef<HTMLUListElement>(null)
   // While the row glides to a chosen shot, the shots it passes don't light up on the way.
   const steering = useRef<{ index: number; until: number } | null>(null)
-  const current = items[lit] ?? items[0]
 
   useEffect(() => {
     const list = row.current
@@ -116,7 +115,7 @@ export function ShotCarousel({
     }
   }
 
-  if (!current) return null
+  if (items.length === 0) return null
   return (
     <section className="mt-section flex flex-col gap-[clamp(2.5rem,5vw,4.5rem)] bg-sunken py-[clamp(5rem,9vw,8.5rem)]">
       <div className={cn('grid grid-cols-12 items-start gap-6', PAGE_MEASURE.wide)}>
@@ -124,19 +123,33 @@ export function ShotCarousel({
           <h2 className="mb-3.5 font-semibold text-foreground text-heading">{heading}</h2>
           <p className="text-body text-foreground">{lead}</p>
         </div>
-        <div data-slot="carousel-lit" className="col-span-12 min-[56.25rem]:col-span-4">
-          <h3 className="mb-2 font-medium text-foreground text-lead tracking-[-0.02em]">
-            <Link
-              to={current.to}
-              {...(current.params !== undefined ? { params: current.params } : {})}
-              onClick={current.onOpen}
-              className="rounded-sm hover:underline hover:underline-offset-4"
-            >
-              {current.title}
-            </Link>
-          </h3>
-          <p className="line-clamp-4 text-body text-muted-foreground">{current.description}</p>
-          <p className="mt-2.5 text-muted-foreground text-small">{current.byline}</p>
+        {/* Every item's text shares one grid cell, so the block is as tall as the longest and the
+            row below never moves as the lit item changes. Only the lit one shows and is read out. */}
+        <div data-slot="carousel-lit" className="col-span-12 grid min-[56.25rem]:col-span-4">
+          {items.map((item, index) =>
+            index === lit ? (
+              <div key={item.key} className="col-start-1 row-start-1">
+                <h3 className="mb-2 font-medium text-foreground text-lead tracking-[-0.02em]">
+                  <Link
+                    to={item.to}
+                    {...(item.params !== undefined ? { params: item.params } : {})}
+                    onClick={item.onOpen}
+                    className="rounded-sm hover:underline hover:underline-offset-4"
+                  >
+                    {item.title}
+                  </Link>
+                </h3>
+                <p className="line-clamp-4 text-body text-muted-foreground">{item.description}</p>
+                <p className="mt-2.5 text-muted-foreground text-small">{item.byline}</p>
+              </div>
+            ) : (
+              <div key={item.key} aria-hidden="true" className="invisible col-start-1 row-start-1">
+                <p className="mb-2 font-medium text-lead tracking-[-0.02em]">{item.title}</p>
+                <p className="line-clamp-4 text-body">{item.description}</p>
+                <p className="mt-2.5 text-small">{item.byline}</p>
+              </div>
+            ),
+          )}
         </div>
         <div className="col-span-12 flex items-center gap-2.5 justify-self-start min-[56.25rem]:col-span-4 min-[56.25rem]:justify-self-end">
           <Button

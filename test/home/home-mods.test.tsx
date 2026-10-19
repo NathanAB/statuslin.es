@@ -97,6 +97,21 @@ describe('HomeMods', () => {
     expect(lit().textContent).toContain('@weather-dev · 3 copies')
   })
 
+  // The text block above the row is as tall as its longest mod, so flipping never moves the row.
+  it("holds every mod's text in one place, the lit one shown and the rest kept out of sight", () => {
+    renderMods()
+
+    const texts = [...lit().children]
+    expect(texts).toHaveLength(3)
+    expect(texts.map((t) => t.getAttribute('aria-hidden'))).toEqual([null, 'true', 'true'])
+    expect(texts[1]?.textContent).toContain('Deck draws something in Claude Desktop.')
+    expect(texts[1]?.querySelector('a')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next mod' }))
+
+    expect(texts.map((t) => t.getAttribute('aria-hidden'))).toEqual(['true', null, 'true'])
+  })
+
   it('steps through the mods with the previous and next buttons', () => {
     renderMods()
     const previous = screen.getByRole('button', { name: 'Previous mod' })
