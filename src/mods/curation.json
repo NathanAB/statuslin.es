@@ -299,7 +299,27 @@
       },
       {
         "type": "text",
-        "text": "/pet demo"
+        "text": "/pet snack"
+      },
+      {
+        "type": "text",
+        "text": "/pet snack"
+      },
+      {
+        "type": "text",
+        "text": "/pet snack"
+      },
+      {
+        "type": "text",
+        "text": "/pet snack"
+      },
+      {
+        "type": "text",
+        "text": "/pet snack"
+      },
+      {
+        "type": "text",
+        "text": "/preview-busy"
       }
     ]
   },
@@ -319,7 +339,7 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/familiar species"
+        "text": "/preview-busy"
       }
     ]
   }
