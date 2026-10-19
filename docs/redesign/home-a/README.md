@@ -39,7 +39,7 @@ The owner reviewed several rounds. These are settled; build them as stated.
   rejected dark text on coral. Light text on `#c96442` is 3.7:1 and fails WCAG AA, so every solid
   coral fill under text (buttons, the selected filter, the coral closing section) uses a slightly
   deeper shade, `#b85533` (`--primary-fill`: 4.55:1, APCA Lc 74). Coral as text, links and the
-  wordmark dot stays `#c96442`. This is a site-wide fix, landing in its own PR. It replaces the
+  wordmark dot stays `#c96442`. This is a site-wide fix, part of step 1. It replaces the
   prototype's dark `--on-accent`.
 - **Type:** Hanken Grotesk 400/500/600 for interface text (the screenshots show Switzer, which its
   licence rules out; see Open questions); the existing StatuslineNerd stays for status lines, code
@@ -222,17 +222,18 @@ Feature code stays in `src/gallery`, `src/mods` and the route.
 
 ## Plan: land it in this order
 
-Each step is its own PR. Keep each to five production files or fewer (CLAUDE.md scope control); split
-a step if it grows past that. Every PR:
+All steps land in one PR, as the owner asked, with a commit or a few per step so each can be
+reviewed on its own. It stays a draft until step 5 is done, so a half-built page never ships. The
+owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - writes tests first for new behaviour (TDD, per CLAUDE.md)
 - passes `bun run check`
 - gets a pass from the `frontend-reviewer` agent
 - shows before and after screenshots taken with the `verify` skill at 1440px and 390px
-- updates the tests that assert old structure in the same PR
+- updates the tests that assert old structure in the same step
 
 1. **Foundations.** Self-hosted Hanken Grotesk (see the resolved licence question), the type
-   scale, the new tokens, and the pill `Button` variant. Every page shifts a little; nothing moves.
-   Screenshot several pages. The deeper coral fill ships in its own PR.
+   scale, the new tokens, the deeper coral fill under light text, and the pill `Button` variant.
+   Every page shifts a little; nothing moves. Screenshot several pages.
 2. **Header and footer.** Plain bar: wordmark, links, sign-in or user menu, and a menu button on
    phones. The footer keeps every current link on one quiet line.
 3. **Gallery cards (A2)** on home and facet pages, with the filter as heading, URL-driven sort and
