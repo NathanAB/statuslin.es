@@ -14,14 +14,21 @@ export interface AgentPipe {
   dir: string
   requests: string
   input: string
-  /** Resolves once the agent has read all of it. */
+  /** Resolves once the agent has read all of it; starts over when a reader leaves early. */
   send: (text: string) => Promise<void>
   /** Resolves with everything the agent wrote, once it closes the pipe. */
   read: () => Promise<string>
   close: () => void
 }
 
-export async function openAgentPipe(): Promise<AgentPipe> {
+/** Past this many readers that leave early, `send` gives up rather than wait forever. */
+const MAX_SENDS = 5
+
+/**
+ * Text longer than the pipe's buffer is still being written when a reader closes its end, which
+ * fails the write with EPIPE. `onReopen` says the agent has to read it again from the start.
+ */
+export async function openAgentPipe(onReopen: () => void = () => {}): Promise<AgentPipe> {
   const dir = mkdtempSync(join(tmpdir(), 'agent-pipe-'))
   const requests = join(dir, 'requests')
   const input = join(dir, 'input')
@@ -34,7 +41,17 @@ export async function openAgentPipe(): Promise<AgentPipe> {
     dir,
     requests,
     input,
-    send: (text) => writeFile(requests, text),
+    send: async (text) => {
+      for (let attempt = 1; ; attempt++) {
+        try {
+          return await writeFile(requests, text)
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'EPIPE' || attempt === MAX_SENDS)
+            throw error
+          onReopen()
+        }
+      }
+    },
     read: () => readFile(input, 'utf8'),
     close: () => rmSync(dir, { recursive: true, force: true }),
   }
