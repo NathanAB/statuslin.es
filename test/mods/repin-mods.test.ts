@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
+import { MOD_CONTENT_SCHEMA_VERSION } from '@/mods/content-generation'
 import type { CurationEntry } from '@/mods/curation'
 import { insertPendingSubmission } from '@/submissions/record'
 import {
@@ -125,6 +126,24 @@ const REPINS: Repin[] = [
   { slug: 'gauge', commitSha: sha('d') },
 ]
 
+const COPY = JSON.stringify([
+  {
+    schemaVersion: MOD_CONTENT_SCHEMA_VERSION,
+    kind: 'mod',
+    slug: 'meter',
+    versionId: 'version-c',
+    commitSha: sha('c'),
+    generatedContent: {
+      summary: 'Shows your token burn as a meter.',
+      howItWorks: ['Reads the session cost', 'Draws a bar'],
+      goodToKnow: ['Needs `jq`'],
+      details: { network: 'Never reaches the network' },
+    },
+    tags: [],
+  },
+])
+const APPLY_COPY = 'apply copy for 1 on staging'
+
 function fakes(
   input: string[],
   { failing = '', requests = '[{"slug":"meter"}]' }: { failing?: string; requests?: string } = {},
@@ -175,7 +194,7 @@ function fakes(
 
 describe('runRepin', () => {
   it('imports, renders, dry-runs, publishes on the typed confirmation, then applies page copy', async () => {
-    const f = fakes(['publish 2 to staging\n', '[{"slug":"meter","summary":"x"}]'])
+    const f = fakes(['publish 2 to staging\n', COPY, `${APPLY_COPY}\n`])
 
     const code = await runRepin('staging', REPINS, f.steps, f.io)
 
@@ -189,10 +208,52 @@ describe('runRepin', () => {
       `publish meter ${sha('c')} --apply --confirm=meter`,
       `publish gauge ${sha('d')} --apply --confirm=gauge`,
       'prepare',
-      'apply [{"slug":"meter","summary":"x"}]',
+      `apply ${COPY}`,
     ])
     expect(f.sent).toEqual(['[{"slug":"meter"}]'])
     expect(f.prompts[0]).toMatch(/publish 2 to staging/)
+  })
+
+  // Page copy is what visitors read on the mod page, so a human sees it before it goes live.
+  it('prints the page copy and asks before applying it', async () => {
+    const f = fakes(['publish 2 to staging', COPY, APPLY_COPY])
+
+    await runRepin('staging', REPINS, f.steps, f.io)
+
+    const shown = f.lines.slice(f.lines.indexOf(`page copy for meter at ${sha('c').slice(0, 7)}:`))
+    expect(shown.slice(0, 7)).toEqual([
+      `page copy for meter at ${sha('c').slice(0, 7)}:`,
+      '  summary: Shows your token burn as a meter.',
+      '  how it works 1: Reads the session cost',
+      '  how it works 2: Draws a bar',
+      '  good to know: Needs `jq`',
+      '  network: Never reaches the network',
+      '  tags: none',
+    ])
+    expect(f.prompts.at(-1)).toBe(`to apply this page copy, type: ${APPLY_COPY}`)
+  })
+
+  it.each([
+    ['nothing typed', ''],
+    ['the wrong env', 'apply copy for 1 on production'],
+    ['the publish phrase again', 'publish 2 to staging'],
+  ])('applies no page copy on %s', async (_name, typed) => {
+    const f = fakes(['publish 2 to staging', COPY, typed])
+
+    const code = await runRepin('staging', REPINS, f.steps, f.io)
+
+    expect(code).toBe(1)
+    expect(f.calls.some((c) => c.startsWith('apply'))).toBe(false)
+  })
+
+  it('applies no page copy that fails validation, and asks nothing', async () => {
+    const f = fakes(['publish 2 to staging', '[{"slug":"meter","summary":"x"}]', APPLY_COPY])
+
+    const code = await runRepin('staging', REPINS, f.steps, f.io)
+
+    expect(code).toBe(1)
+    expect(f.calls.some((c) => c.startsWith('apply'))).toBe(false)
+    expect(f.prompts).toHaveLength(2)
   })
 
   it('repeats the dry runs WARN lines before asking', async () => {
@@ -261,7 +322,7 @@ describe('runRepin', () => {
     ]
 
     it('re-records the status line Desktop shots last', async () => {
-      const f = fakes(['publish 2 to staging', '[{"slug":"meter","summary":"x"}]'])
+      const f = fakes(['publish 2 to staging', COPY, APPLY_COPY])
 
       const code = await runRepin('staging', WITH_ANYWHERE, f.steps, f.io)
 
@@ -278,7 +339,7 @@ describe('runRepin', () => {
     })
 
     it('exits 1 when a recording fails, after everything else ran', async () => {
-      const f = fakes(['publish 2 to staging', '[]'], { failing: 'desktop shots' })
+      const f = fakes(['publish 2 to staging', COPY, APPLY_COPY], { failing: 'desktop shots' })
 
       expect(await runRepin('staging', WITH_ANYWHERE, f.steps, f.io)).toBe(1)
       expect(f.calls).toContain('prepare')

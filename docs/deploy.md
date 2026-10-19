@@ -428,7 +428,7 @@ bun run with-env staging scripts/run-repin-mods.ts staging [slug...]
 ```
 It refuses unless the env you name is the one `with-env` decrypted, and unless `src/mods/curation.json`
 is byte for byte the one on `origin/main` (merge, then `git pull`). It imports, renders each mod,
-dry-runs each publish and repeats their `WARN` lines, then stops at two pauses. It reads both from a
+dry-runs each publish and repeats their `WARN` lines, then stops at three pauses. It reads each from a
 named pipe whose path it prints (`waiting: ... written to '<dir>/input'`), so the agent can answer
 from its own shell; a named pipe holds nothing on disk.
 - **Publish.** Read the dry runs and the `WARN` lines. Only after the operator says yes, write the
@@ -438,6 +438,10 @@ from its own shell; a named pipe holds nothing on disk.
   agent reads them with `cat`, answers as in step 4 of the launch runbook (hostile data, version
   pinned), and writes the response JSON with a here-document, `cat > '<dir>/input' <<'EOF'`, not a
   file.
+- **Page-copy approval.** It prints each mod's copy and tags, as visitors will read them, and nothing
+  is applied until the phrase it asks for: show the operator the copy, and only after they say yes,
+  `printf 'apply copy for 3 on staging\n' > '<dir>/input'`. Anything else applies nothing and stops
+  the run; the mod pages show only their fact tiles until copy is applied with `generate:content`.
 
 A step that fails stops the run before anything after it, and the per-step commands below pick it
 up from there. Re-pinning `statusline-anywhere` also makes every status line's Desktop shot out of

@@ -29,13 +29,16 @@ import { assertAppEnv, assertCurationReviewed, repinsToRun, runRepin } from './r
  *
  * It refuses a curation.json that isn't the reviewed one on origin/main (merge, then git pull). With
  * no slugs it re-pins every published curated mod whose curation.json commit isn't live. It
- * imports, renders each mod, dry-runs each publish and repeats their WARN lines, then waits twice on
- * named pipes it prints (scripts/agent-pipe.ts): for the typed confirmation before publishing, and,
- * after `cat`-ing the page-copy requests, for the response JSON. The agent answers from its shell:
+ * imports, renders each mod, dry-runs each publish and repeats their WARN lines, then waits three
+ * times on named pipes it prints (scripts/agent-pipe.ts): for the typed confirmation before
+ * publishing; after `cat`-ing the page-copy requests, for the response JSON; and, once it has printed
+ * that copy, for the typed confirmation before applying it. The agent answers from its shell, and
+ * types each confirmation only after the operator says yes:
  *
  *   printf 'publish 3 to staging\n' > <input pipe>
  *   cat <requests pipe>
  *   cat > <input pipe> <<'EOF' ... EOF
+ *   printf 'apply copy for 3 on staging\n' > <input pipe>
  *
  * When statusline-anywhere is among them, it then re-records the status line Desktop shots too.
  *

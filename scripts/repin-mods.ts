@@ -2,6 +2,10 @@ import { and, eq, not } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
+import {
+  type ModContentGenerationResponse,
+  parseModContentGenerationResponses,
+} from '@/mods/content-generation'
 import { CURATION_FILE, type CurationEntry } from '@/mods/curation'
 import { hasSubmission } from '@/mods/import'
 
@@ -97,6 +101,7 @@ export async function repinsToRun(
 }
 
 export const confirmationPhrase = (env: string, count: number) => `publish ${count} to ${env}`
+const copyConfirmationPhrase = (env: string, count: number) => `apply copy for ${count} on ${env}`
 
 /** Returns 0 when every mod published and its page copy applied, 1 when a step stopped the run. */
 export async function runRepin(
@@ -137,23 +142,62 @@ export async function runRepin(
     if ((await steps.publishMod(argv, io.log)) !== 0) return stop(io, `${slug} did not publish`)
   }
 
-  return afterPublish(repins, steps, io)
+  return afterPublish(env, repins, steps, io)
 }
 
 /** Page copy for the newly current versions, then the Desktop shots if statusline-anywhere moved. */
-async function afterPublish(repins: Repin[], steps: RepinSteps, io: RepinIo): Promise<number> {
+async function afterPublish(
+  env: string,
+  repins: Repin[],
+  steps: RepinSteps,
+  io: RepinIo,
+): Promise<number> {
   const requests = await steps.prepareContent()
   if ((JSON.parse(requests) as unknown[]).length === 0) {
     io.log('every mod has page copy')
   } else {
     await io.sendRequests(requests)
-    await steps.applyContent(await io.readInput('send the page-copy response JSON'))
+    const copied = await approvePageCopy(env, steps, io)
+    if (copied !== 0) return copied
   }
 
   // Every status line's Desktop shot is drawn by statusline-anywhere, so re-pinning it dates them all.
   if (!repins.some((r) => r.slug === STATUSLINE_ANYWHERE_MOD_SLUG)) return 0
   if ((await steps.renderStatusLineDesktop()) === 0) return 0
   return stop(io, 'a status line Desktop shot failed to record; rerun render:status-line-desktop')
+}
+
+/** Visitors read the copy on the mod page, so a human sees it before it is applied. */
+async function approvePageCopy(env: string, steps: RepinSteps, io: RepinIo): Promise<number> {
+  const raw = await io.readInput('send the page-copy response JSON')
+  let responses: ModContentGenerationResponse[]
+  try {
+    responses = parseModContentGenerationResponses(raw)
+  } catch (error) {
+    return stop(
+      io,
+      `the page copy failed validation: ${error instanceof Error ? error.message : error}`,
+    )
+  }
+  for (const line of pageCopyLines(responses)) io.log(line)
+  const phrase = copyConfirmationPhrase(env, responses.length)
+  const typed = await io.readInput(`to apply this page copy, type: ${phrase}`)
+  if (typed.trim() !== phrase) return stop(io, `the page-copy confirmation was not "${phrase}"`)
+  await steps.applyContent(raw)
+  return 0
+}
+
+function pageCopyLines(responses: ModContentGenerationResponse[]): string[] {
+  return responses.flatMap(({ slug, commitSha, generatedContent: copy, tags }) => [
+    `page copy for ${slug} at ${commitSha.slice(0, 7)}:`,
+    `  summary: ${copy.summary}`,
+    ...copy.howItWorks.map((step, index) => `  how it works ${index + 1}: ${step}`),
+    ...copy.goodToKnow.map((note) => `  good to know: ${note}`),
+    ...Object.entries(copy.details).map(
+      ([tile, wording]) => `  ${tile}: ${Array.isArray(wording) ? wording.join(', ') : wording}`,
+    ),
+    `  tags: ${tags.length > 0 ? tags.join(', ') : 'none'}`,
+  ])
 }
 
 function stop(io: RepinIo, reason: string): number {
