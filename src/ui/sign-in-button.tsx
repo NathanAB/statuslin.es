@@ -2,15 +2,22 @@ import { usePostHog } from '@posthog/react'
 import { startGitHubSignIn } from '@/lib/sign-in'
 import { Button } from './button'
 
+// 'button' is the standalone outlined button (sign-in prompts); 'bar' sits in the header bar as
+// plain text; 'menu' is a big link in the phone menu.
+const LOOK = {
+  button: { variant: 'outline', size: 'nav' },
+  bar: { variant: 'plain', size: 'bar' },
+  menu: { variant: 'plain', size: 'menu' },
+} as const
+
 /** One-click GitHub sign-in — starts the OAuth redirect directly, no intermediate page. */
-export function SignInButton() {
+export function SignInButton({ look = 'button' }: { look?: keyof typeof LOOK }) {
   const posthog = usePostHog()
 
   return (
     <Button
       type="button"
-      variant="outline"
-      size="nav"
+      {...LOOK[look]}
       aria-label="Sign in with GitHub"
       // Return the user to wherever they clicked sign-in from.
       onClick={() => {
@@ -27,9 +34,13 @@ export function SignInButton() {
       }}
     >
       <GitHubMark />
-      <span>
-        Sign in<span className="hidden sm:inline"> with GitHub</span>
-      </span>
+      {look === 'button' ? (
+        <span>
+          Sign in<span className="hidden sm:inline"> with GitHub</span>
+        </span>
+      ) : (
+        <span>Sign in with GitHub</span>
+      )}
     </Button>
   )
 }

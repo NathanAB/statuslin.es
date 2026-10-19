@@ -80,7 +80,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | --- | --- |
 | `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. |
 | `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`. Text always fills its container: there is no line-length cap. |
-| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>` |
+| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer) |
 
 ### Cards and interactive surfaces
 
@@ -94,8 +94,8 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 `Button` and `buttonVariants` are exported. Key variants:
 
-- **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link`
-- **size:** `default` · `xs` · `sm` · `lg` · `trigger` (header user-menu trigger) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`)
+- **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link` · `quiet` (dim text that lights up on hover, no surface: the header's links) · `plain` (full-strength text, no surface)
+- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`)
 - **active:** `true` / `false` — active-tab treatment; pair with `variant="outline"`
 
 ### Other primitives
@@ -115,8 +115,8 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
 | `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip |
-| `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header; used by shells |
-| `<SignInButton>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger |
+| `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header; used by shells. Phones get `SiteMenu` (`src/ui/site-menu.tsx`), a full-screen menu; the bar's account dropdown is `UserMenu` (`src/ui/user-menu.tsx`) |
+| `<SignInButton look>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger. `look`: `button` (default, outlined), `bar` (header bar) or `menu` (phone menu) |
 | `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview |
 
 ## Vendoring procedure for new shadcn components

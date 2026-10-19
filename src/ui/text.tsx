@@ -105,8 +105,10 @@ type TextLinkProps =
       target?: string
       rel?: string
       // 'inherit' (default) emits no text-size class, so the link matches the surrounding
-      // sentence; 'sm' keeps the old fixed-small look (e.g. the footer).
+      // sentence; 'sm' keeps a fixed-small look.
       size?: 'inherit' | 'sm'
+      // 'accent' (default) is the coral link; 'plain' is full-strength text (the footer).
+      tone?: 'accent' | 'plain'
     }
   // External URL; opens in a new tab. Use instead of `to` for off-site links (e.g. docs).
   | {
@@ -119,6 +121,7 @@ type TextLinkProps =
       target?: string
       rel?: string
       size?: 'inherit' | 'sm'
+      tone?: 'accent' | 'plain'
       onClick?: () => void
     }
 
@@ -132,7 +135,8 @@ function hashScrollOptions(): ScrollIntoViewOptions {
 
 export function TextLink(props: TextLinkProps) {
   const className = cn(
-    'text-primary underline-offset-4 hover:underline',
+    'underline-offset-4 hover:underline',
+    props.tone === 'plain' ? 'text-foreground' : 'text-primary',
     props.size === 'sm' && 'text-sm',
   )
   if (props.href !== undefined) {

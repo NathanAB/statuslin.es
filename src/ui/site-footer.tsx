@@ -1,11 +1,12 @@
 import {
   BUDDY_GUIDE_PATH,
   DESKTOP_GUIDE_PATH,
+  HOME_HEADING,
   MOD_SAFETY_GUIDE_PATH,
   NOT_SHOWING_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
 } from '@/lib/page-title'
-import { CONTACT_EMAIL, MODS_PATH, REPO_URL } from '@/lib/site'
+import { CONTACT_EMAIL, MODS_PATH, REPO_URL, SITE_NAME } from '@/lib/site'
 import { TextLink } from '@/ui/text'
 
 const PAGE_LINKS = [
@@ -20,45 +21,46 @@ const PAGE_LINKS = [
   { to: '/resources', label: 'Resources' },
 ] as const
 
-// Each item draws a thin rule in its left gutter, like the bars between a status line's segments.
-// The list is pulled one gutter left inside a clipping box, so the rule before whichever item
-// starts a line is cut off: rules only ever sit between two links, however the row wraps. The
-// box's p-1 keeps link focus rings inside the clip.
-const ITEM =
-  'relative pl-6 before:absolute before:top-1/2 before:left-3 before:h-3.5 before:w-px before:-translate-y-1/2 before:bg-border'
-
 /**
- * Shared bottom footer on every page, aligned with the header: the site's pages, then the GitHub
- * source, a mailto contact (the abuse-report path) and Terms.
+ * Shared bottom footer on every page, a quiet block: what the site is and the copyright on the
+ * left, and beside them every page link, the GitHub source, a mailto contact (the abuse-report
+ * path) and Terms, wrapping onto a second line as the width needs. Phones stack the three parts.
  */
 export function SiteFooter() {
   return (
-    <footer className="mx-auto w-full max-w-5xl px-5 py-5">
-      <div className="overflow-hidden p-1">
-        <ul className="-ml-6 flex flex-wrap gap-y-1">
-          {PAGE_LINKS.map(({ to, label }) => (
-            <li key={to} className={ITEM}>
-              <TextLink to={to} size="sm">
-                {label}
+    <footer className="mx-auto w-full max-w-5xl px-6 pt-16 pb-8 text-small">
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-x-12 lg:gap-y-1.5">
+        <p className="text-muted-foreground">{HOME_HEADING}</p>
+        <nav aria-label="Footer" className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <ul className="flex flex-wrap gap-x-5 gap-y-1.5">
+            {PAGE_LINKS.map(({ to, label }) => (
+              <li key={to}>
+                <TextLink to={to} tone="plain">
+                  {label}
+                </TextLink>
+              </li>
+            ))}
+            <li>
+              <TextLink href={REPO_URL} tone="plain">
+                GitHub
               </TextLink>
             </li>
-          ))}
-          <li className={ITEM}>
-            <TextLink href={REPO_URL} size="sm">
-              GitHub
-            </TextLink>
-          </li>
-          <li className={ITEM}>
-            <TextLink href={`mailto:${CONTACT_EMAIL}`} size="sm">
-              Contact
-            </TextLink>
-          </li>
-          <li className={ITEM}>
-            <TextLink to="/terms" size="sm">
-              Terms
-            </TextLink>
-          </li>
-        </ul>
+            <li>
+              <TextLink href={`mailto:${CONTACT_EMAIL}`} tone="plain">
+                Contact
+              </TextLink>
+            </li>
+            <li>
+              <TextLink to="/terms" tone="plain">
+                Terms
+              </TextLink>
+            </li>
+          </ul>
+        </nav>
+        {/* The year is the visitor's clock; it can only differ from the server's on New Year's. */}
+        <p suppressHydrationWarning className="text-muted-foreground lg:col-start-1 lg:row-start-2">
+          {`© ${new Date().getFullYear()} ${SITE_NAME}`}
+        </p>
       </div>
     </footer>
   )

@@ -1,19 +1,11 @@
-import { usePostHog } from '@posthog/react'
 import { Link } from '@tanstack/react-router'
-import { FileText, LogOut, ShieldCheck } from 'lucide-react'
-import type { PostHog } from 'posthog-js'
-import { authClient } from '@/lib/auth-client'
 import { GUIDE_CRUMB } from '@/lib/breadcrumb-json-ld'
 import { MODS_PATH } from '@/lib/site'
 import { Button } from '@/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/ui/dropdown-menu'
 import { SignInButton } from '@/ui/sign-in-button'
+import { SiteMenu } from '@/ui/site-menu'
 import { StarOnGitHubLink } from '@/ui/star-on-github-link'
+import { UserMenu } from '@/ui/user-menu'
 import { Wordmark } from '@/ui/wordmark'
 
 export interface AppHeaderUser {
@@ -23,96 +15,43 @@ export interface AppHeaderUser {
   role?: string | null | undefined
 }
 
-// Loader data everywhere depends on the session, so after sign-out we do a full
-// reload to home rather than a soft invalidate (the router isn't reachable from src/ui).
-async function handleSignOut(posthog: PostHog) {
-  // Clear the PostHog identity first so the next person on this browser starts as a fresh
-  // anonymous user instead of inheriting the signed-out user's distinct id.
-  posthog.reset()
-  try {
-    await authClient.signOut()
-  } catch {
-    // Sign-out fetch can fail during page teardown; still send them home.
-  } finally {
-    // Even if the sign-out call fails, reload home — the fresh page reflects the real session.
-    window.location.assign('/')
-  }
+export interface HeaderLink {
+  to: string
+  label: string
 }
 
+// The pages the header links, in order. The phone menu lists the same ones.
+const HEADER_LINKS: readonly HeaderLink[] = [
+  { to: MODS_PATH, label: 'Mods' },
+  { to: GUIDE_CRUMB.to, label: GUIDE_CRUMB.name },
+  { to: '/resources', label: 'Resources' },
+]
+
 /**
- * Shared top header: wordmark home-link + nav (Mods, Guide, Resources, Star on GitHub).
- * Signed in: avatar + @username dropdown (Log out, plus Review for admins).
- * Signed out: GitHub sign-in. Submitting lives on the home page CTA, not here.
+ * Shared top header, a plain bar: the wordmark home-link, quiet links (Mods, Guide, Resources,
+ * Star on GitHub), then GitHub sign-in or the signed-in user's menu. Phones get a menu button
+ * instead, which opens the same links full-screen. Submitting lives on the home page, not here.
  */
 export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
   return (
-    <header className="py-4">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-2 px-6">
-        <Link to="/" className="hover:opacity-80">
+    <header className="py-5.5">
+      <div className="mx-auto flex max-w-5xl items-center gap-8 px-6">
+        <Link to="/" className="rounded-sm hover:opacity-80">
           <Wordmark />
         </Link>
-        <nav className="ml-auto flex items-center sm:gap-2">
-          <Button asChild variant="ghost" size="nav">
-            <Link to={MODS_PATH}>Mods</Link>
-          </Button>
-          <Button asChild variant="ghost" size="nav">
-            <Link to={GUIDE_CRUMB.to}>{GUIDE_CRUMB.name}</Link>
-          </Button>
-          <Button asChild variant="ghost" size="nav">
-            <Link to="/resources">Resources</Link>
-          </Button>
-          <StarOnGitHubLink />
-          {user ? <UserMenu user={user} /> : <SignInButton />}
+        <nav aria-label="Main" className="ml-auto hidden items-center gap-7 md:flex">
+          {HEADER_LINKS.map(({ to, label }) => (
+            <Button key={to} asChild variant="quiet" size="bar">
+              <Link to={to}>{label}</Link>
+            </Button>
+          ))}
+          <StarOnGitHubLink look="bar" />
         </nav>
+        <div className="hidden md:flex">
+          {user ? <UserMenu user={user} /> : <SignInButton look="bar" />}
+        </div>
+        <SiteMenu user={user} links={HEADER_LINKS} />
       </div>
     </header>
-  )
-}
-
-function UserMenu({ user }: { user: AppHeaderUser }) {
-  const posthog = usePostHog()
-  // Same byline rule as AuthorChip: prefer @username, fall back to the display name.
-  const label = user.username ? `@${user.username}` : user.name
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        {/* Phones show only the avatar, so the label also names the trigger. */}
-        <Button variant="ghost" size="trigger" aria-label={label}>
-          {user.image ? (
-            <img src={user.image} alt="" className="size-5 shrink-0 rounded-full" />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="flex size-5 shrink-0 items-center justify-center rounded-full bg-sunken font-medium text-muted-foreground text-xs"
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </span>
-          )}
-          <span className="hidden truncate sm:inline">{label}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      {/* Don't refocus the trigger on close — it paints a focus ring after mouse use. */}
-      <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-        <DropdownMenuItem asChild>
-          <Link to="/me">
-            <FileText />
-            My submissions
-          </Link>
-        </DropdownMenuItem>
-        {user.role === 'admin' && (
-          <DropdownMenuItem asChild>
-            <Link to="/admin/review">
-              <ShieldCheck />
-              Review
-            </Link>
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem onSelect={() => handleSignOut(posthog)}>
-          <LogOut />
-          Log out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }

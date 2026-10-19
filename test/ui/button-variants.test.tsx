@@ -61,17 +61,3 @@ describe('Button pill size', () => {
     expect(className).not.toContain('translate-y-px')
   })
 })
-
-describe('Button trigger size', () => {
-  it('uses the header-trigger dimensions', () => {
-    const { container } = render(
-      <Button variant="ghost" size="trigger">
-        @ada
-      </Button>,
-    )
-    const el = container.querySelector('[data-slot=button]') as HTMLElement
-    expect(el.className).toContain('h-9')
-    expect(el.className).toContain('gap-2')
-    expect(el.className).toContain('px-3')
-  })
-})

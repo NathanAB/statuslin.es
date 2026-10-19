@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 // SiteFooter's Terms link uses TanStack Router's <Link>; stub it to a plain anchor.
@@ -11,8 +11,8 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }))
 
-const { CONTACT_EMAIL, MODS_PATH, REPO_URL } = await import('@/lib/site')
-const { GUIDE_SUBPAGES } = await import('@/lib/page-title')
+const { CONTACT_EMAIL, MODS_PATH, REPO_URL, SITE_NAME } = await import('@/lib/site')
+const { GUIDE_SUBPAGES, HOME_HEADING } = await import('@/lib/page-title')
 const { SiteFooter } = await import('@/ui/site-footer')
 
 describe('SiteFooter', () => {
@@ -24,11 +24,17 @@ describe('SiteFooter', () => {
     expect(link.textContent).toBe('Contact')
   })
 
-  it('lists the links one per item, so the separators sit between items', () => {
+  it('keeps every link in the footer navigation', () => {
     const { container } = render(<SiteFooter />)
-    const items = container.querySelectorAll('footer ul > li')
-    expect(items.length).toBe(container.querySelectorAll('a').length)
-    for (const item of items) expect(item.querySelectorAll('a').length).toBe(1)
+    const nav = screen.getByRole('navigation', { name: 'Footer' })
+    expect(nav.querySelectorAll('a').length).toBe(container.querySelectorAll('a').length)
+    expect(nav.querySelectorAll('a').length).toBe(12)
+  })
+
+  it('says what the site is, with a copyright line', () => {
+    render(<SiteFooter />)
+    expect(screen.getByText(HOME_HEADING)).toBeTruthy()
+    expect(screen.getByText(`© ${new Date().getFullYear()} ${SITE_NAME}`)).toBeTruthy()
   })
 
   it('renders a source link to the public repo that opens in a new tab', () => {

@@ -16,7 +16,7 @@ afterEach(() => {
 
 describe('StarOnGitHubLink', () => {
   it('opens the repo in a new tab', () => {
-    render(<StarOnGitHubLink />)
+    render(<StarOnGitHubLink look="bar" />)
     const link = screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })
     expect(link.getAttribute('href')).toBe(REPO_URL)
     expect(link.getAttribute('target')).toBe('_blank')
@@ -24,14 +24,16 @@ describe('StarOnGitHubLink', () => {
   })
 
   it('records the click in PostHog', () => {
-    render(<StarOnGitHubLink />)
+    render(<StarOnGitHubLink look="bar" />)
     fireEvent.click(screen.getByRole('link', { name: 'Star statuslin.es on GitHub' }))
     expect(capture).toHaveBeenCalledWith('github_star_link_clicked')
   })
 
-  it('hides the "Star" text on phones, keeping just the icon', () => {
-    render(<StarOnGitHubLink />)
-    const label = screen.getByText('Star')
-    expect(label.className.split(' ')).toEqual(['hidden', 'sm:inline'])
+  it('says Star in the header bar and Star on GitHub in the phone menu', () => {
+    const { unmount } = render(<StarOnGitHubLink look="bar" />)
+    expect(screen.getByRole('link').textContent).toBe('Star')
+    unmount()
+    render(<StarOnGitHubLink look="menu" />)
+    expect(screen.getByRole('link').textContent).toBe('Star on GitHub')
   })
 })

@@ -19,6 +19,11 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20',
         link: 'text-primary underline-offset-4 hover:underline',
+        // The header's links: dimmed text that lights up on hover, with no surface behind it.
+        quiet:
+          'text-muted-foreground duration-400 ease-settle hover:text-foreground aria-expanded:text-foreground',
+        // Full-strength text with no surface: the header's sign-in and the phone menu's links.
+        plain: 'text-foreground',
       },
       // The active-tab treatment (the gallery sort tabs), paired with variant="outline".
       active: {
@@ -31,10 +36,12 @@ const buttonVariants = cva(
         xs: "h-6 gap-1 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),10px)] px-2 text-xs has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
-        // px-1 below sm keeps the signed-out header (five nav buttons) inside a 320px-wide screen.
+        // The standalone sign-in button (the sign-in prompt pages). px-1 below sm keeps it narrow.
         nav: 'h-9 gap-1.5 px-1 sm:px-2.5',
-        // The header user-menu trigger (avatar + @username).
-        trigger: 'h-9 gap-2 px-3',
+        // Text-sized, with no padding: a link in the header bar.
+        bar: "h-auto gap-2 rounded-sm p-0 font-normal text-small [&_svg:not([class*='size-'])]:size-4",
+        // The phone menu's big links.
+        menu: "h-auto justify-start gap-3 rounded-md p-0 py-1.5 font-semibold text-[2.25rem] tracking-[-0.03em] [&_svg:not([class*='size-'])]:size-7",
         icon: 'size-8',
         'icon-xs':
           "size-6 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),10px)] [&_svg:not([class*='size-'])]:size-3",
@@ -54,7 +61,7 @@ const buttonVariants = cva(
   },
 )
 
-// The pill's icon circle: a dark tint on coral, the page colour on the quiet (secondary) pill.
+// The pill's icon circle: a dark tint on coral, the page colour on the secondary pill.
 // On hover the icon leans toward where the button goes.
 const TRAILING_ICON_CLASS =
   'flex size-8.5 items-center justify-center rounded-full bg-background/16 transition-transform duration-600 ease-settle group-data-[variant=secondary]/button:bg-background motion-safe:group-hover/button:translate-x-0.5 motion-safe:group-hover/button:-translate-y-px motion-safe:group-hover/button:scale-106'
