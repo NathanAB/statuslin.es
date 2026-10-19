@@ -8,14 +8,14 @@ type Hook = ($: unknown, e: unknown, next: Next) => Promise<unknown>
 
 const ENGINE_ANSWER = { value: 'the engine answered' }
 
-function fakeEngine(target: string | null) {
+function fakeEngine(target: string | null, busy = true) {
   const pending: (() => void)[] = []
   const ticks: (() => void)[] = []
   const $ = {
     fs: {
       read: vi.fn(async (path: string) => {
         if (path !== FEED_FILE) throw new Error(`read ${path}`)
-        return JSON.stringify(feedFile(feedScenario(), target, 0))
+        return JSON.stringify(feedFile(feedScenario(), target, 0, busy))
       }),
     },
     tool: { call: vi.fn(async (_call: unknown) => ({ text: 'ran' })) },
@@ -63,34 +63,24 @@ async function call(event: string, $: unknown, e: unknown, n: Next): Promise<unk
 describe('scenario feed plugin', () => {
   beforeEach(() => vi.restoreAllMocks())
 
-  it.each(['model.complete', 'model.fork', 'agent.list'])(
-    "answers the mod under render's %s from the feed",
-    async (event) => {
-      const { $ } = fakeEngine('ctx-handoff')
-      const n = next('ctx-handoff')
+  it("hooks none of the mod's model or agent calls, so the engine answers them for real", async () => {
+    const events = [...(await hooks()).keys()]
 
-      const answered = await call(event, $, {}, n)
+    expect(events.filter((event) => /^(model|agent)\./.test(event))).toEqual([])
+  })
 
-      expect(answered).toEqual({ value: feedFile(feedScenario(), 'ctx-handoff', 0).answers[event] })
-      expect(n).not.toHaveBeenCalled()
-    },
-  )
+  it('answers the mod under render from the feed', async () => {
+    const { $ } = fakeEngine('pixel-cat')
+    const n = next('pixel-cat')
 
-  it.each(['model.complete', 'model.fork', 'agent.list'])(
-    "leaves every other plugin's %s to the engine",
-    async (event) => {
-      const { $ } = fakeEngine('ctx-handoff')
-      const n = next('built-in-plugin')
-
-      expect(await call(event, $, { prompt: 'hi' }, n)).toBe(ENGINE_ANSWER)
-      expect(n).toHaveBeenCalledWith({ prompt: 'hi' })
-    },
-  )
+    expect(await call('session.model', $, {}, n)).toEqual({ value: 'Opus 4.8' })
+    expect(n).not.toHaveBeenCalled()
+  })
 
   it('answers no plugin in the baseline, which names no target', async () => {
     const { $ } = fakeEngine(null)
 
-    expect(await call('model.complete', $, {}, next('ctx-handoff'))).toBe(ENGINE_ANSWER)
+    expect(await call('session.model', $, {}, next('pixel-cat'))).toBe(ENGINE_ANSWER)
   })
 
   it('registers /preview-busy at session start, then lets the session start', async () => {
@@ -125,8 +115,18 @@ describe('scenario feed plugin', () => {
     expect($.tool.call).not.toHaveBeenCalled()
     await runPending()
     expect($.tool.call.mock.calls.map(([made]) => made)).toEqual(
-      feedFile(feedScenario(), null, 0).busy,
+      feedFile(feedScenario(), null, 0, true).busy,
     )
+  })
+
+  it('makes no call in a session whose steps never type /preview-busy, and leaves no status', async () => {
+    const { $ } = fakeEngine('pixel-cat', false)
+    await (await hooks()).get('command.run')?.hook($, {}, next('x'))
+
+    for (const fn of $.clock.after.mock.calls.map(([, fn]) => fn)) fn()
+
+    await vi.waitFor(() => expect($.ui.status).toHaveBeenLastCalledWith(undefined))
+    expect($.tool.call).not.toHaveBeenCalled()
   })
 
   it('keeps redrawing its status while the calls run, then clears it', async () => {

@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/useNamingConvention: env var names and Claude Code config keys are external contracts.
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import type { InputStep } from '@/mods/curation'
 import { SANDBOX_CANNED_MODEL_SERVER_DEST, SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
@@ -82,25 +82,43 @@ export interface SessionSeed {
   target: string | null
   nowMs: number
   claudeCodeVersion: string
+  /** Whether the input steps type `/preview-busy` (`playsBusySession`). */
+  busy: boolean
 }
 
+type SessionFile = { path: string; data: string }
+
 /**
- * The session's settings.json on both surfaces: what `/preview-busy`'s calls need (a call no rule
- * covers would wait on a permission prompt), plus the surface's own keys.
+ * The session's settings.json on both surfaces: in a busy session, what `/preview-busy`'s calls
+ * need (a call no rule covers would wait on a permission prompt), plus the surface's own keys.
+ * None at all when there is nothing to set.
  */
-export function sessionSettings(scenario: Scenario, own: Record<string, unknown> = {}): string {
-  return JSON.stringify({ ...busySettings(scenario), ...own })
+function settingsFiles(
+  scenario: Scenario,
+  busy: boolean,
+  own: Record<string, unknown>,
+): SessionFile[] {
+  const settings = { ...(busy ? busySettings(scenario) : {}), ...own }
+  if (Object.keys(settings).length === 0) return []
+  return [{ path: `${CONFIG_DIR}/settings.json`, data: JSON.stringify(settings) }]
+}
+
+/** Uploaded before setup runs, whose seed commit then holds them. */
+function busyWorkspaceFiles(scenario: Scenario): SessionFile[] {
+  const workspace = feedStdin(scenario).workspace.current_dir
+  return BUSY_WORKSPACE_FILES.map(({ path, data }) => ({ path: `${workspace}/${path}`, data }))
 }
 
 export function sessionFiles(
   scenario: Scenario,
-  { target, nowMs, claudeCodeVersion }: SessionSeed,
+  { target, nowMs, claudeCodeVersion, busy }: SessionSeed,
   ownSettings: Record<string, unknown> = {},
-): { path: string; data: string }[] {
+): SessionFile[] {
   return [
     { path: `${CONFIG_DIR}/.claude.json`, data: claudeJson(scenario, claudeCodeVersion) },
-    { path: `${CONFIG_DIR}/settings.json`, data: sessionSettings(scenario, ownSettings) },
-    { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs)) },
+    ...settingsFiles(scenario, busy, ownSettings),
+    ...(busy ? busyWorkspaceFiles(scenario) : []),
+    { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs, busy)) },
     { path: REPLY_FILE, data: JSON.stringify(cannedReply(scenario)) },
     ...FEED_PLUGIN_ASSETS.map((asset) => ({
       path: `${FEED_PLUGIN_DIR}/${asset}`,
@@ -114,10 +132,7 @@ export function shellQuote(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`
 }
 
-/**
- * The workspace repo, its seed commit holding the files `/preview-busy` works on, then the canned
- * model on loopback, waiting until it answers.
- */
+/** The workspace repo, then the canned model on loopback, waiting until it answers. */
 export function setupCommand(scenario: Scenario): string {
   const { workspace } = feedStdin(scenario)
   const { host, owner, name } = workspace.repo
@@ -128,10 +143,6 @@ export function setupCommand(scenario: Scenario): string {
     `git init -q -b ${shellQuote(branch)}`,
     `git remote add origin ${shellQuote(`https://${host}/${owner}/${name}.git`)}`,
     'echo seed > README.md',
-    ...BUSY_WORKSPACE_FILES.flatMap(({ path, data }) => [
-      `mkdir -p ${shellQuote(dirname(path))}`,
-      `printf '%s' ${shellQuote(data)} > ${shellQuote(path)}`,
-    ]),
     'git add -A',
     'git -c user.email=preview@statuslin.es -c user.name=preview commit -qm seed',
     `(nohup python3 ${SANDBOX_CANNED_MODEL_SERVER_DEST} --listen ${MODEL_HOST} --port ${MODEL_PORT} --canned-reply ${REPLY_FILE} >${WORK_DIR}/model.log 2>&1 &)`,

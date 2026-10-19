@@ -9,6 +9,7 @@ import {
   cannedReply,
   feedFile,
   feedScenario,
+  playsBusySession,
 } from '@/render/mods/scenario-feed'
 import { hm, usage, win } from '@/render/scenario-helpers'
 import { SCENARIO_BY_KEY } from '@/render/scenarios'
@@ -29,7 +30,7 @@ describe('feedScenario', () => {
 
 describe('feedFile', () => {
   it('answers the session calls from the scenario, for the mod under render', () => {
-    const { target, answers } = feedFile(feedScenario(), 'token-weather', NOW_MS)
+    const { target, answers } = feedFile(feedScenario(), 'token-weather', NOW_MS, false)
 
     expect(target).toBe('token-weather')
     expect(answers['session.usage']).toEqual({
@@ -62,7 +63,7 @@ describe('feedFile', () => {
       model: { id: 'claude-sonnet-4-6', display_name: 'Sonnet 4.6' },
     })
 
-    const { answers } = feedFile(scenario, 'context-bar', NOW_MS)
+    const { answers } = feedFile(scenario, 'context-bar', NOW_MS, false)
 
     expect(answers['session.usage']).toEqual({
       startedAt: NOW_MS - 1_000,
@@ -77,42 +78,17 @@ describe('feedFile', () => {
   })
 
   it('names no target for the baseline, so no plugin is answered', () => {
-    expect(feedFile(feedScenario(), null, NOW_MS).target).toBeNull()
+    expect(feedFile(feedScenario(), null, NOW_MS, false).target).toBeNull()
   })
 
-  it("answers the mod's own model calls with one plain reply that costs nothing", () => {
-    const { answers } = feedFile(feedScenario(), 'ctx-handoff', NOW_MS)
-    const reply = {
-      isAnswered: true,
-      text: 'Fixed the bug in src/sum.js, and all 3 tests pass now.',
-      usage: {
-        input_tokens: 0,
-        output_tokens: 0,
-        cache_read_input_tokens: 0,
-        cache_creation_input_tokens: 0,
-      },
-    }
+  it("leaves the mod's model and agent calls to the engine, even in a busy session", () => {
+    const { answers } = feedFile(feedScenario(), 'pixel-cat', NOW_MS, true)
 
-    expect(answers['model.complete']).toEqual(reply)
-    expect(answers['model.fork']).toEqual(reply)
-  })
-
-  it('lists two subagents at work', () => {
-    const { answers } = feedFile(feedScenario(), 'flightdeck', NOW_MS)
-
-    expect(answers['agent.list']).toEqual([
-      {
-        id: 'a1f3c9e0',
-        description: 'Run the test suite',
-        type: 'general-purpose',
-        status: 'running',
-      },
-      { id: 'b72d4e18', description: 'Review the sum fix', type: 'Explore', status: 'running' },
-    ])
+    expect(Object.keys(answers).filter((event) => /^(model|agent)\./.test(event))).toEqual([])
   })
 
   it('plays one fixed busy session in the workspace: a failing test, a fix, a pass, a denied rm -rf', () => {
-    expect(feedFile(feedScenario(), null, NOW_MS).busy).toEqual([
+    expect(feedFile(feedScenario(), null, NOW_MS, true).busy).toEqual([
       { tool: 'Bash', command: 'npm test', description: 'Run the tests' },
       { tool: 'Read', file_path: '/home/user/app/src/sum.js' },
       {
@@ -124,6 +100,24 @@ describe('feedFile', () => {
       { tool: 'Bash', command: 'npm test', description: 'Run the tests' },
       { tool: 'Bash', command: 'rm -rf build', description: 'Remove the build output' },
     ])
+  })
+
+  it('plays nothing in a session whose steps never type /preview-busy', () => {
+    expect(feedFile(feedScenario(), 'pixel-cat', NOW_MS, false).busy).toEqual([])
+  })
+})
+
+describe('playsBusySession', () => {
+  const step = (text: string) => ({ type: 'text' as const, text })
+
+  it.each([
+    { texts: ['/preview-busy'], busy: true },
+    { texts: ['/pet', ' /preview-busy\n'], busy: true },
+    { texts: [], busy: false },
+    { texts: ['/pet'], busy: false },
+    { texts: ['run /preview-busy'], busy: false },
+  ])('is $busy for steps typing $texts', ({ texts, busy }) => {
+    expect(playsBusySession(texts.map(step))).toBe(busy)
   })
 })
 
@@ -161,7 +155,9 @@ describe('busy session workspace', () => {
 
   it("fails its tests until the busy session's Edit lands, then passes them, with fixed output", () => {
     const dir = workspace()
-    const edit = feedFile(feedScenario(), null, NOW_MS).busy.find((call) => call.tool === 'Edit')
+    const edit = feedFile(feedScenario(), null, NOW_MS, true).busy.find(
+      (call) => call.tool === 'Edit',
+    )
     if (edit?.tool !== 'Edit') throw new Error('the busy session makes no Edit')
     const source = join(dir, 'src/sum.js')
 

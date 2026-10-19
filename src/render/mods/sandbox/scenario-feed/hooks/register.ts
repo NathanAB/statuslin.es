@@ -80,9 +80,6 @@ export const register: Register = (on) => {
   on('session.id', ($, e, next) => answer($, 'session.id', e, next))
   on('session.repo', ($, e, next) => answer($, 'session.repo', e, next))
   on('session.version', ($, e, next) => answer($, 'session.version', e, next))
-  on('model.complete', ($, e, next) => answer($, 'model.complete', e, next))
-  on('model.fork', ($, e, next) => answer($, 'model.fork', e, next))
-  on('agent.list', ($, e, next) => answer($, 'agent.list', e, next))
   // Registered in the baseline too, so both sessions type the same steps.
   on('session.start', async ($, e, next) => {
     // A failed registration must not keep the mod's own session.start from running.

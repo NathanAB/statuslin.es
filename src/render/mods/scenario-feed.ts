@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/useNamingConvention: keys mirror Claude Code's status line JSON.
 import { z } from 'zod'
+import type { InputStep } from '@/mods/curation'
 import { SCENARIO_BY_KEY } from '../scenarios'
 import type { Scenario } from '../types'
 
@@ -48,6 +49,16 @@ export interface FeedFile {
   target: string | null
   answers: Record<string, unknown>
   busy: BusyCall[]
+}
+
+const BUSY_STEP = '/preview-busy'
+
+/**
+ * Whether a session's steps type `/preview-busy`. Only such a session gets the busy workspace, its
+ * settings and its calls: a mod that never types it, or a status line, previews as it always has.
+ */
+export function playsBusySession(steps: readonly InputStep[]): boolean {
+  return steps.some((step) => step.text.trim() === BUSY_STEP)
 }
 
 /** The files `/preview-busy` works on, relative to the workspace, in its seed commit. */
@@ -101,24 +112,6 @@ export function busySettings(scenario: Scenario) {
   }
 }
 
-/** The mod's own `$.model` calls get this, at no cost, instead of reaching the canned model. */
-const MODEL_ANSWER = {
-  isAnswered: true,
-  text: 'Fixed the bug in src/sum.js, and all 3 tests pass now.',
-  usage: {
-    input_tokens: 0,
-    output_tokens: 0,
-    cache_read_input_tokens: 0,
-    cache_creation_input_tokens: 0,
-  },
-}
-
-/** `$.agent.list` answers two subagents at work (AgentInfo in the mod API). */
-const RUNNING_AGENTS = [
-  { id: 'a1f3c9e0', description: 'Run the test suite', type: 'general-purpose', status: 'running' },
-  { id: 'b72d4e18', description: 'Review the sum fix', type: 'Explore', status: 'running' },
-]
-
 /** The `--canned-reply` file of the canned model server. */
 export interface CannedReply {
   text: string
@@ -135,8 +128,16 @@ export function feedStdin(scenario: Scenario): FeedStdin {
   return feedStdinSchema.parse(scenario.stdin)
 }
 
-/** `resets_at` in a scenario is an offset in seconds; the mod API's `resetsAt` is ISO 8601. */
-export function feedFile(scenario: Scenario, target: string | null, nowMs: number): FeedFile {
+/**
+ * `resets_at` in a scenario is an offset in seconds; the mod API's `resetsAt` is ISO 8601. `busy`
+ * is whether the session's steps type `/preview-busy` (`playsBusySession`).
+ */
+export function feedFile(
+  scenario: Scenario,
+  target: string | null,
+  nowMs: number,
+  busy: boolean,
+): FeedFile {
   const s = feedStdin(scenario)
   const nowSec = Math.floor(nowMs / 1000)
   const resetsAt = (offsetSec: number) => new Date((nowSec + offsetSec) * 1000).toISOString()
@@ -170,11 +171,8 @@ export function feedFile(scenario: Scenario, target: string | null, nowMs: numbe
         name: null,
       },
       'session.version': { version: s.version, base: s.version },
-      'model.complete': MODEL_ANSWER,
-      'model.fork': MODEL_ANSWER,
-      'agent.list': RUNNING_AGENTS,
     },
-    busy: busyCalls(scenario),
+    busy: busy ? busyCalls(scenario) : [],
   }
 }
 

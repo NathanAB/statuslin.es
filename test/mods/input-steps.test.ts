@@ -81,6 +81,7 @@ describe('prepareInputStepsRequests', () => {
     const [request] = await prepareInputStepsRequests(db, null, readme)
 
     expect(request?.prompt).toMatch(/`\/preview-busy` plays a short busy session/)
+    expect(request?.prompt).not.toMatch(/subagent|model calls/)
   })
 
   it('asks about one mod by slug', async () => {
