@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { PAGE_COLUMN } from '@/ui/page-column'
-import { Reveal } from '@/ui/reveal'
 
 /**
  * The home page's closing section: a full-width coral band, nearly a screen tall, with a big
@@ -26,17 +25,13 @@ export function ClosingBand({
         )}
       >
         <div className="col-span-12 self-start min-[56.25rem]:col-span-5 min-[56.25rem]:self-end">
-          <Reveal>
-            <h2 className="mb-5.5 font-semibold text-display leading-[0.92] tracking-[-0.045em]">
-              {heading}
-            </h2>
-          </Reveal>
-          <Reveal>
-            <p className="text-body">{lead}</p>
-          </Reveal>
+          <h2 className="mb-5.5 font-semibold text-display leading-[0.92] tracking-[-0.045em]">
+            {heading}
+          </h2>
+          <p className="text-body">{lead}</p>
         </div>
         <div className="col-span-12 min-[56.25rem]:col-span-5 min-[56.25rem]:col-start-7">
-          <Reveal>{panel}</Reveal>
+          {panel}
         </div>
       </div>
     </section>

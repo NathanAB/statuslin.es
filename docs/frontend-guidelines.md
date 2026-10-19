@@ -100,7 +100,6 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<StepStrip heading statement steps>` | `src/ui/step-strip.tsx` | A heading and one statement, then a short strip of steps side by side ("How installing works") |
 | `<ClosingBand heading lead panel>` | `src/ui/closing-band.tsx` | The home page's full-width coral closing section, light text on `bg-primary-fill` |
 | `<SubmitChooser signedIn>` | `src/ui/submit-cta.tsx` | Status line or Mod, then continue: a link to `/submit` (or `?kind=mod`) when signed in, GitHub sign-in back to that form when not |
-| `<Reveal>` | `src/ui/reveal.tsx` | A block that rises into place when it first scrolls into view. Only blocks that start below the fold wait, never without JavaScript or under reduced motion, and a block the page jumped past shows at once |
 | `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on the page column, `mt-section` from the one above (`first`: just under the header) |
 
 ### Buttons (`src/ui/button.tsx`)

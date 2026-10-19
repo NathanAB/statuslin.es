@@ -306,6 +306,15 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   `Card` lost its hairline too, and those pages' install button is the hero's pill.
 - **Submit in the header (after review), decided by the owner: a filled pill.** It's the bar's one
   filled button, beside sign-in, and stays in the bar on phones.
+- **No scroll reveal; the hero only slides (after the fresh-eyes review).** Blocks that faded in
+  on scroll stayed hidden when a sort moved them on screen without a scroll, and printed blank, so
+  `Reveal` is gone. The hero still rises in but starts visible, so its title and terminal (the
+  page's largest paint) show at once.
+- **Pages past the first are their results (after the fresh-eyes review).** Page 2 and on show the
+  h1 and the gallery only, since the showcase would repeat page 1, and every page link lands on
+  `#gallery`.
+- **No page scrolls sideways.** `bun run smoke` opens the main pages at 320, 768 and 1024px,
+  signed out and signed in, plus the phone menu at 320px, and fails on any sideways scroll.
 - **The hero picker (after review): picks show at once.** The prototype's half-second fade read
   as lag, so a pick now takes 150ms, and the link under it always reads "Open page" so a long title
   never pushes it under the button.

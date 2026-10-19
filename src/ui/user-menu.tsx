@@ -52,7 +52,8 @@ export function UserMenu({ user }: { user: AppHeaderUser }) {
               {user.name.charAt(0).toUpperCase()}
             </span>
           )}
-          <span className="max-w-48 truncate">{label}</span>
+          {/* Narrower below lg, where the header bar has the least room: a long name truncates. */}
+          <span className="max-w-28 truncate lg:max-w-48">{label}</span>
         </Button>
       </DropdownMenuTrigger>
       {/* Don't refocus the trigger on close — it paints a focus ring after mouse use. */}

@@ -6,6 +6,8 @@ import {
   browserCommandOutput,
   collectInitialBrowserResources,
   EXPECTED_HOME,
+  FIT_WIDTHS,
+  sideScrollFailures,
 } from '../../scripts/smoke'
 
 const validHome = {
@@ -109,5 +111,30 @@ describe('assertFirstPartyResources', () => {
         'https://statuslin.es',
       ),
     ).toThrow(/no same-origin.*resource/i)
+  })
+})
+
+// Two layout bugs only a real browser showed (the phone menu at 320px, a long signed-in name at
+// 768px) scrolled the page sideways. The smoke run now measures every page at these widths.
+describe('sideScrollFailures', () => {
+  it('names each page and width where the document is wider than the window', () => {
+    expect(
+      sideScrollFailures([
+        { path: '/', width: 320, scrollWidth: 320 },
+        { path: '/', width: 768, scrollWidth: 803 },
+        { path: '/guide (phone menu)', width: 320, scrollWidth: 353 },
+      ]),
+    ).toEqual(['/ at 768px is 803px wide', '/guide (phone menu) at 320px is 353px wide'])
+  })
+
+  // A page that never loaded, or a menu that never opened, measures 0: that's a failure, not a fit.
+  it('fails a measurement that found nothing', () => {
+    expect(sideScrollFailures([{ path: '/ (phone menu)', width: 320, scrollWidth: 0 }])).toEqual([
+      '/ (phone menu) at 320px was not measured',
+    ])
+  })
+
+  it('checks a small phone, a tablet and a small laptop', () => {
+    expect(FIT_WIDTHS).toEqual([320, 768, 1024])
   })
 })

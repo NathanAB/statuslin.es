@@ -1,6 +1,7 @@
 import { usePostHog } from '@posthog/react'
 import { Link } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type { ReactNode } from 'react'
 import type { GalleryCardAnalytics } from '@/gallery/card-analytics'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { GalleryControls } from '@/gallery/gallery-controls'
@@ -12,7 +13,6 @@ import { Button } from '@/ui/button'
 import { GalleryList } from '@/ui/gallery-row'
 import { HomeSection } from '@/ui/home-section'
 import { Row, Stack } from '@/ui/layout'
-import { Reveal } from '@/ui/reveal'
 import { Text } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
@@ -22,7 +22,8 @@ const GALLERY_ID = 'gallery'
 /**
  * The home page's gallery: the filter heading and sort, one row per status line or mod, and real
  * links to the pages before and after. `rawKind` and `tags` are the URL's own values, so the page
- * links keep exactly what the URL asked for.
+ * links keep exactly what the URL asked for. `heading` is the page's h1 when the gallery is the
+ * whole page (past page 1): it sits in the gallery's own section, just under the header.
  */
 export function HomeGallery({
   items,
@@ -31,6 +32,7 @@ export function HomeGallery({
   sort,
   rawKind,
   tags,
+  heading,
 }: {
   items: GalleryItem[]
   page: number
@@ -38,6 +40,7 @@ export function HomeGallery({
   sort: GallerySort
   rawKind: GalleryFilter | undefined
   tags: string | undefined
+  heading?: ReactNode
 }) {
   const posthog = usePostHog()
   const kind = rawKind ?? 'all'
@@ -53,30 +56,37 @@ export function HomeGallery({
   })
   const pageLink = (nextPage: number) => ({
     search: homePaginationSearch(nextPage, { sort, tags, kind: rawKind }),
+    // Land on the results, not back at the top of the page.
+    hash: GALLERY_ID,
     onClick: () =>
       posthog.capture('gallery_page_changed', { page: nextPage, sort, selectedTags, kind }),
   })
 
   return (
-    <HomeSection id={GALLERY_ID}>
+    <HomeSection id={GALLERY_ID} first={heading !== undefined}>
       <Stack gap={7}>
+        {heading}
         <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-        <Reveal>
-          <GalleryControls kind={kind} sort={sort} tags={selectedTags} />
-        </Reveal>
+        <GalleryControls kind={kind} sort={sort} tags={selectedTags} />
         {items.length === 0 ? (
           <Text muted>Nothing matches these filters yet.</Text>
         ) : (
           <GalleryList>
-            {items.map((item, index) => (
-              <Reveal key={`${item.kind}:${item.card.slug}`}>
-                {item.kind === 'mod' ? (
-                  <ModCard card={item.card} analytics={cardAnalytics(index)} />
-                ) : (
-                  <GalleryConfigCard card={item.card} analytics={cardAnalytics(index)} />
-                )}
-              </Reveal>
-            ))}
+            {items.map((item, index) =>
+              item.kind === 'mod' ? (
+                <ModCard
+                  key={`mod:${item.card.slug}`}
+                  card={item.card}
+                  analytics={cardAnalytics(index)}
+                />
+              ) : (
+                <GalleryConfigCard
+                  key={`status-line:${item.card.slug}`}
+                  card={item.card}
+                  analytics={cardAnalytics(index)}
+                />
+              ),
+            )}
           </GalleryList>
         )}
         {pageCount > 1 ? (

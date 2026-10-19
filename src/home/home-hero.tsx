@@ -26,16 +26,7 @@ const byline = (line: HeroLine, copies: number) => {
  * line in its Everyday session is the server-rendered state, so the page reads whole without
  * JavaScript. Copy installs the shown one through the same prompt as its own page.
  */
-export function HomeHero({
-  heading,
-  headingHidden,
-  lines,
-}: {
-  heading: string
-  /** Ends the title for search engines and screen readers only (", page 2"). */
-  headingHidden?: string | undefined
-  lines: HeroLine[]
-}) {
+export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[] }) {
   const [slug, setSlug] = useState(lines[0]?.slug ?? '')
   const [sessionKey, setSessionKey] = useState<HeroSessionKey>('clean-main')
   // What the visitor has changed so far: nothing moves until they do.
@@ -49,15 +40,7 @@ export function HomeHero({
 
   // With nothing published yet there is nothing to try on; the title and sentence still stand.
   if (!line || !session)
-    return (
-      <HeroLayout
-        heading={heading}
-        headingHidden={headingHidden}
-        lead={HERO_LEAD}
-        stage={null}
-        aside={null}
-      />
-    )
+    return <HeroLayout heading={heading} lead={HERO_LEAD} stage={null} aside={null} />
 
   const pick = (next: string) => {
     setSlug(next)
@@ -72,7 +55,6 @@ export function HomeHero({
   return (
     <HeroLayout
       heading={heading}
-      headingHidden={headingHidden}
       lead={HERO_LEAD}
       stage={
         <Terminal

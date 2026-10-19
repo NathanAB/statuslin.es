@@ -8,6 +8,7 @@ import { HomeGallery } from '@/home/home-gallery'
 import { HomeHero } from '@/home/home-hero'
 import { HomeInstall } from '@/home/home-install'
 import { HomeMods } from '@/home/home-mods'
+import { HomeResultsHeading } from '@/home/home-results-heading'
 import { loadShowcase } from '@/home/load-showcase'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
@@ -120,14 +121,11 @@ function Home() {
         <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
       }
     >
-      <HomeSection first>
-        {/* Each page's h1 names its page for search, but the pager already shows it on screen. */}
-        <HomeHero
-          heading={HOME_HEADING}
-          headingHidden={page > 1 ? `, page ${page}` : undefined}
-          lines={showcase.hero}
-        />
-      </HomeSection>
+      {page > 1 ? null : (
+        <HomeSection first>
+          <HomeHero heading={HOME_HEADING} lines={showcase.hero} />
+        </HomeSection>
+      )}
       <HomeGallery
         items={items}
         page={page}
@@ -135,10 +133,16 @@ function Home() {
         sort={sort ?? 'trending'}
         rawKind={kind}
         tags={tags}
+        {...(page > 1 ? { heading: <HomeResultsHeading page={page} /> } : {})}
       />
-      <HomeMods featured={showcase.mods.featured} others={showcase.mods.others} total={mods} />
-      <HomeInstall />
-      <HomeClosing signedIn={!!user} />
+      {/* Past page 1 the page is its results: the showcase would only repeat page 1. */}
+      {page > 1 ? null : (
+        <>
+          <HomeMods featured={showcase.mods.featured} others={showcase.mods.others} total={mods} />
+          <HomeInstall />
+          <HomeClosing signedIn={!!user} />
+        </>
+      )}
     </PageShell>
   )
 }

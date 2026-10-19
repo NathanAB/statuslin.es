@@ -152,6 +152,35 @@ describe('home content', () => {
     expect(h1s[0]?.querySelector('.sr-only')?.textContent).toBe(', page 2')
   })
 
+  // The hero's title and terminal are the page's largest paint. They faded in late, holding that
+  // paint back; now their entrance only moves them, so they show with the page's first paint.
+  it('paints the hero title and terminal at once: their entrance moves them, never hides them', () => {
+    const { container } = renderHome()
+    const hero = container.querySelector('section') as HTMLElement
+    const fadesIn = (element: Element | null) => {
+      for (let node = element; node && node !== hero.parentElement; node = node.parentElement) {
+        if (/\bfade-in-0\b/.test(node.getAttribute('class') ?? '')) return true
+      }
+      return false
+    }
+
+    expect(fadesIn(hero.querySelector('h1'))).toBe(false)
+    expect(fadesIn(screen.getByRole('img', { name: /^Claude Code with/ }))).toBe(false)
+  })
+
+  // Past page 1 the page is its results: the showcase around them would only repeat page 1.
+  it('shows only the heading and the gallery past page 1', () => {
+    renderHome({ page: 2, pageCount: 3 }, {}, modCard('weather'), [modCard('deck')])
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Claude Code status lines and mods, page 2',
+    )
+    expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
+      'Status lines and mods',
+    ])
+    expect(screen.queryByText(/A status line is the row under your Claude Code prompt/)).toBeNull()
+  })
+
   // The hero is the first thing on the page, and the server renders its first state.
   it('opens with the hero: the title, its sentence and the top status line running', () => {
     const { container } = renderHome()
@@ -166,20 +195,25 @@ describe('home content', () => {
 })
 
 describe('home pagination', () => {
+  // Each page link lands on the results (#gallery), not back at the top of the page.
   it('links the next page, keeping what the gallery shows, from page 1', () => {
     renderHome({ pageCount: 3 }, { kind: 'mods' })
 
     expect(screen.getByText('Page 1 of 3')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe(
-      '/?page=2&kind=mods',
+      '/?page=2&kind=mods#gallery',
     )
     expect(screen.queryByRole('link', { name: 'Previous page' })).toBeNull()
   })
 
   it('links both ways from a middle page, and only back from the last', () => {
     renderHome({ page: 2, pageCount: 3 })
-    expect(screen.getByRole('link', { name: 'Previous page' }).getAttribute('href')).toBe('/')
-    expect(screen.getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe('/?page=3')
+    expect(screen.getByRole('link', { name: 'Previous page' }).getAttribute('href')).toBe(
+      '/#gallery',
+    )
+    expect(screen.getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe(
+      '/?page=3#gallery',
+    )
   })
 
   it('shows no pager on a single page', () => {

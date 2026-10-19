@@ -43,8 +43,8 @@ const buttonVariants = cva(
         // The header bar's one filled action (Submit): a compact pill, text-sized like the links.
         'bar-pill':
           "h-9 gap-1.5 rounded-full pr-4 pl-3 text-small tracking-[-0.01em] [&_svg:not([class*='size-'])]:size-4",
-        // The phone menu's big links.
-        menu: "h-auto justify-start gap-3 rounded-md p-0 py-1.5 font-semibold text-[2.25rem] tracking-[-0.03em] [&_svg:not([class*='size-'])]:size-7",
+        // The phone menu's big links. They wrap, so the longest ("Sign in with GitHub") fits a 320px phone.
+        menu: "h-auto justify-start gap-3 whitespace-normal rounded-md p-0 py-1.5 text-left font-semibold text-[2.25rem] tracking-[-0.03em] [&_svg:not([class*='size-'])]:size-7",
         icon: 'size-8',
         'icon-xs':
           "size-6 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),10px)] [&_svg:not([class*='size-'])]:size-3",

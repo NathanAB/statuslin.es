@@ -34,6 +34,8 @@ const item = cva(
 )
 
 // `rise`: the hero picker's rows follow its own entrance in, 45ms apart, as the prototype's do.
+// They fade as they rise: small rows, not the page's largest paint, and without the fade each would
+// hang below its tile while it waits its turn.
 // Timed through tw-animate's own variables: Tailwind's `duration-*` and `delay-*` would also time
 // each row's transitions, holding a pick back by its entrance delay.
 const RISE =

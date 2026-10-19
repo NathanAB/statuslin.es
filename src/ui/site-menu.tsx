@@ -71,7 +71,7 @@ export function SiteMenu({
     <StarOnGitHubLink key="star" look="menu" />,
     ...(user
       ? [
-          <p key="user" className="pt-6 text-body text-muted-foreground">
+          <p key="user" className="wrap-anywhere pt-6 text-body text-muted-foreground">
             Signed in as {userLabel(user)}
           </p>,
           <Dialog.Close key="me" asChild>
