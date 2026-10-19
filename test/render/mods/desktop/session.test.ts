@@ -1,13 +1,23 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import {
+  ANTHROPIC_USAGE_CA_PATH,
+  ANTHROPIC_USAGE_PREVIEW_TOKEN,
+} from '@/render/anthropic-usage-mock'
+import {
+  anthropicUsageMockFiles,
+  anthropicUsageSetupScript,
+} from '@/render/anthropic-usage-sandbox'
 import { SANDBOX_DESKTOP_BOOT, SANDBOX_DESKTOP_ENGINE_VERSION } from '@/render/e2b-template'
 import {
   bootCommand,
   deepLink,
   desktopEnv,
   desktopSessionFiles,
+  desktopSessionNetwork,
   ENGINE_VERSION_COMMAND,
   FIT_WINDOW_COMMAND,
+  isAnthropicHost,
   parseVersion,
   repliedCommand,
   stepFiles,
@@ -128,6 +138,90 @@ describe('desktopSessionFiles', () => {
 
   it('has the canned reply in place for the model server Desktop checks while it boots', () => {
     expect([...files.keys()]).toContain(REPLY_FILE)
+  })
+
+  describe('with the Anthropic usage mock', () => {
+    const TOKEN_READER = {
+      source: 'cat ~/.claude/.credentials.json',
+      interpreter: 'bash' as const,
+      networkHosts: ['api.anthropic.com', 'wttr.in'],
+      readsClaudeToken: true,
+    }
+    const mocked = new Map(
+      desktopSessionFiles(scenario, SEED, TOKEN_READER).map((f) => [f.path, f.data]),
+    )
+
+    it('gives only the status line command the preview token and CA, from the real home', () => {
+      // In Desktop's env the engine would inherit the token and leave the gateway for OAuth.
+      expect(settings(mocked).statusLine.command).toBe(
+        `cat | env -u CLAUDE_CONFIG_DIR CLAUDE_CODE_OAUTH_TOKEN=${ANTHROPIC_USAGE_PREVIEW_TOKEN} NODE_EXTRA_CA_CERTS=${ANTHROPIC_USAGE_CA_PATH} bash ${CONFIG_DIR}/statusline.sh`,
+      )
+      expect(desktopEnv(scenario, null)).not.toHaveProperty('CLAUDE_CODE_OAUTH_TOKEN')
+    })
+
+    it("stages the mock's credentials and response with the session's files", () => {
+      for (const { path } of anthropicUsageMockFiles(scenario)) {
+        expect([...mocked.keys()]).toContain(path)
+      }
+    })
+
+    it('leaves a status line that declares hosts but no token read unmocked', () => {
+      const plain = new Map(
+        desktopSessionFiles(scenario, SEED, { ...TOKEN_READER, readsClaudeToken: false }).map(
+          (f) => [f.path, f.data],
+        ),
+      )
+      expect(settings(plain).statusLine.command).toBe(`cat | bash ${CONFIG_DIR}/statusline.sh`)
+      expect([...plain.keys()]).not.toContain('/home/user/.claude/.credentials.json')
+    })
+  })
+})
+
+describe('desktopSessionNetwork', () => {
+  it('keeps a session with no status line, or one with no hosts, offline', () => {
+    expect(desktopSessionNetwork(undefined)).toEqual({ networkHosts: [], rootCommand: null })
+    expect(
+      desktopSessionNetwork({ source: 'echo hi', interpreter: 'bash', networkHosts: [] }),
+    ).toEqual({ networkHosts: [], rootCommand: null })
+  })
+
+  it("allows a status line's approved hosts", () => {
+    expect(
+      desktopSessionNetwork({ source: 'echo hi', interpreter: 'bash', networkHosts: ['wttr.in'] }),
+    ).toEqual({ networkHosts: ['wttr.in'], rootCommand: null })
+  })
+
+  it('serves the mocked usage host on loopback instead of allowing it', () => {
+    expect(
+      desktopSessionNetwork({
+        source: 'echo hi',
+        interpreter: 'bash',
+        networkHosts: ['api.anthropic.com', 'wttr.in'],
+        readsClaudeToken: true,
+      }),
+    ).toEqual({ networkHosts: ['wttr.in'], rootCommand: anthropicUsageSetupScript() })
+  })
+
+  it.each(['api.anthropic.com', 'console.anthropic.com', 'claude.ai', 'claude.com'])(
+    'refuses to let Desktop reach the real %s',
+    (host) => {
+      expect(() =>
+        desktopSessionNetwork({ source: 'echo hi', interpreter: 'bash', networkHosts: [host] }),
+      ).toThrow(/Anthropic host/)
+    },
+  )
+})
+
+describe('isAnthropicHost', () => {
+  it("matches Anthropic's domains and their subdomains, and nothing that only looks like them", () => {
+    expect(
+      ['anthropic.com', 'api.anthropic.com', 'claude.ai', 'x.claude.com'].map(isAnthropicHost),
+    ).toEqual([true, true, true, true])
+    expect(['notanthropic.com', 'claude.ai.example.com', 'wttr.in'].map(isAnthropicHost)).toEqual([
+      false,
+      false,
+      false,
+    ])
   })
 })
 

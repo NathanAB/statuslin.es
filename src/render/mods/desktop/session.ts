@@ -2,6 +2,12 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { InputStep } from '@/mods/curation'
+import { externalNetworkHosts, shouldMockAnthropicUsage } from '../../anthropic-usage-mock'
+import {
+  anthropicUsageMockFiles,
+  anthropicUsageSetupScript,
+  withAnthropicUsageEnv,
+} from '../../anthropic-usage-sandbox'
 import { SANDBOX_DESKTOP_BOOT, SANDBOX_DESKTOP_ENGINE_VERSION } from '../../e2b-template'
 import { RUN_CMD, scriptExtension } from '../../script-extension'
 import type { Scenario } from '../../types'
@@ -87,6 +93,53 @@ const sampleStatusLine = (): StatusLineScript => ({
   interpreter: 'bash',
 })
 
+const ANTHROPIC_DOMAINS = ['anthropic.com', 'claude.ai', 'claude.com']
+
+/** Desktop and its engine hold a fake key, so a session never reaches Anthropic for real. */
+export const isAnthropicHost = (host: string) =>
+  ANTHROPIC_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`))
+
+const mocksUsage = (statusLine: StatusLineScript | undefined) =>
+  statusLine !== undefined &&
+  shouldMockAnthropicUsage({
+    readsClaudeToken: statusLine.readsClaudeToken === true,
+    networkHosts: [...(statusLine.networkHosts ?? [])],
+  })
+
+const reachableHosts = (statusLine: StatusLineScript | undefined) =>
+  externalNetworkHosts([...(statusLine?.networkHosts ?? [])], mocksUsage(statusLine))
+
+/** An Anthropic host the status line would need for real, which no Desktop session can give it. */
+export const realAnthropicHost = (statusLine: StatusLineScript | undefined) =>
+  reachableHosts(statusLine).find(isAnthropicHost)
+
+/**
+ * The hosts a session may reach: the status line's approved ones, less the usage host the mock
+ * serves on loopback, and the root command that starts the mock. Throws on an Anthropic host.
+ */
+export interface SessionNetwork {
+  networkHosts: string[]
+  rootCommand: string | null
+}
+
+export function desktopSessionNetwork(statusLine: StatusLineScript | undefined): SessionNetwork {
+  const anthropic = realAnthropicHost(statusLine)
+  if (anthropic) throw new Error(`Desktop never reaches a real Anthropic host (${anthropic})`)
+  return {
+    networkHosts: reachableHosts(statusLine),
+    rootCommand: mocksUsage(statusLine) ? anthropicUsageSetupScript() : null,
+  }
+}
+
+/**
+ * Only the status line command gets the mock's token: in Desktop's env the engine would leave the
+ * gateway for OAuth. Unsetting the session's config dir sends the script to the real home's
+ * credentials, as on a user's machine.
+ */
+const MOCK_ENV_PREFIX = `env -u CLAUDE_CONFIG_DIR ${Object.entries(withAnthropicUsageEnv({}))
+  .map(([key, value]) => `${key}=${value}`)
+  .join(' ')} `
+
 /**
  * The terminal session's files (the canned reply among them, which Desktop's gateway check needs
  * while it boots), plus a status line, so a mod that shows the user's status line has one to draw:
@@ -100,11 +153,13 @@ export function desktopSessionFiles(
 ): { path: string; data: string }[] {
   const { source, interpreter } = statusLine
   const script = `${configDir(scenario)}/statusline.${scriptExtension(interpreter, source)}`
+  const mock = mocksUsage(statusLine)
   // statusline-anywhere gives the command a socket for stdin on Linux, which a script reading
   // /dev/stdin cannot open; through a pipe it reads the JSON as it does on a Mac.
-  const command = `cat | ${RUN_CMD[interpreter]} ${script}`
+  const command = `cat | ${mock ? MOCK_ENV_PREFIX : ''}${RUN_CMD[interpreter]} ${script}`
   return [
     ...sessionFiles(scenario, seed),
+    ...(mock ? anthropicUsageMockFiles(scenario, seed.nowMs) : []),
     { path: script, data: source },
     {
       path: `${configDir(scenario)}/settings.json`,

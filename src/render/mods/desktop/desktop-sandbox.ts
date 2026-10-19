@@ -51,6 +51,10 @@ export interface RecordingSetup {
   source: ModSource | null
   /** Every file the session needs, uploaded before Desktop, and so any mod code, can start. */
   files: (versions: DesktopVersions) => SandboxFile[]
+  /** The only hosts the session can reach; none keeps it offline. */
+  networkHosts?: readonly string[]
+  /** Run as root after the uploads, before Desktop can start. */
+  rootCommand?: string | null
 }
 
 /** A fresh sandbox no mod code has run in, where a recording's shots are compared and cropped. */
@@ -99,13 +103,24 @@ async function readVersions(sandbox: Sandbox): Promise<DesktopVersions> {
   }
 }
 
+/** The usage mock's setup waits at most about two seconds for its server; the terminal allows 15. */
+export const ROOT_SETUP_TIMEOUT_MS = 15_000
+
+async function runAsRoot(sandbox: Sandbox, command: string): Promise<void> {
+  try {
+    await sandbox.commands.run(command, { user: 'root', timeoutMs: ROOT_SETUP_TIMEOUT_MS })
+  } catch (error) {
+    throw new Error(`root setup failed: ${error instanceof Error ? error.message : error}`)
+  }
+}
+
 /**
  * Cold boots a Desktop sandbox for one session: reads the versions, unpacks the mod (the tarball
- * never touches the host's filesystem) and uploads every file, then hands over a sandbox with no
- * upload left in it.
+ * never touches the host's filesystem), uploads every file and runs the root setup, then hands
+ * over a sandbox with no upload or root command left in it.
  */
 export function withRecordingDesktop<T>(
-  { source, files }: RecordingSetup,
+  { source, files, networkHosts = [], rootCommand = null }: RecordingSetup,
   use: (desktop: RecordingDesktop, versions: DesktopVersions) => Promise<T>,
 ): Promise<T> {
   return withTemplateSandbox(
@@ -115,6 +130,7 @@ export function withRecordingDesktop<T>(
       const versions = await readVersions(sandbox)
       if (source) await unpack(sandbox, source)
       await writeFiles(sandbox, files(versions))
+      if (rootCommand) await runAsRoot(sandbox, rootCommand)
       const desktop: RecordingDesktop = {
         pluginDir: source ? SANDBOX_MOD_PLUGIN_DIR : null,
         run: (command, timeoutMs) => runOnDisplay(sandbox, command, timeoutMs),
@@ -123,6 +139,7 @@ export function withRecordingDesktop<T>(
       }
       return use(desktop, versions)
     },
+    networkHosts,
   )
 }
 
