@@ -87,6 +87,19 @@ describe('describeFootprint', () => {
     })
     expect(phrases).toEqual(['adds slash commands', 'watches tool calls'])
   })
+
+  it("says a mod that calls $.tool.call runs Claude Code's tools, next to running programs", () => {
+    const result = describeFootprint({
+      events: [],
+      calls: ['$.fs.read', '$.tool.call', '$.process.run'],
+    })
+    expect(result.unknown).toEqual([])
+    expect(result.phrases).toEqual([
+      'runs programs',
+      "runs Claude Code's tools, such as Bash and Edit, which still pass the session's permission check",
+      'reads files',
+    ])
+  })
 })
 
 describe('describeModFootprint', () => {
