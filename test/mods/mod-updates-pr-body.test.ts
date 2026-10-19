@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Release } from '../../scripts/check-mod-updates'
-import { fenced, modUpdatesPrBody } from '../../scripts/mod-updates-pr-body'
+import { fenced, MAX_BODY_CHARS, modUpdatesPrBody } from '../../scripts/mod-updates-pr-body'
 
 const REPO = 'https://github.com/octocat/meters'
 const PIN = 'a'.repeat(40)
@@ -71,6 +71,21 @@ describe('modUpdatesPrBody', () => {
     })
 
     expect(body).not.toContain('Not re-pinned')
+  })
+})
+
+describe('modUpdatesPrBody size', () => {
+  it('cuts the reviews to stay under GitHub’s body limit, pointing at the compare links', () => {
+    const releases = Array.from({ length: 12 }, (_, i) => release({ pluginName: `meter-${i}` }))
+    const body = modUpdatesPrBody({
+      releases,
+      reviews: releases.map(() => ({ kind: 'reviewed' as const, text: 'z'.repeat(7_900) })),
+      notes: [],
+    })
+
+    expect(body.length).toBeLessThanOrEqual(MAX_BODY_CHARS)
+    expect(body).toContain('… cut to fit the pull request: read the compare link')
+    for (const r of releases) expect(body).toContain(`### ${r.entry.pluginName}`)
   })
 })
 

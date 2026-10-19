@@ -61,7 +61,7 @@ type Update =
  */
 const PLAIN_VERSION = /^[0-9A-Za-z.+-]{1,64}$/
 
-const isPlain = (version: string | null) => version === null || PLAIN_VERSION.test(version)
+export const isPlain = (version: string | null) => version === null || PLAIN_VERSION.test(version)
 
 interface BranchHead {
   branch: string

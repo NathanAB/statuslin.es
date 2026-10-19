@@ -423,10 +423,13 @@ GITHUB_TOKEN=$(gh auth token) bun run updates:mods
 **The weekly pull request.** `updates:mods:pr` runs that check and opens one pull request,
 `chore(mods): re-pin curated mods to their new releases`, from the `mods/updates` branch. Its body
 has the table and, per mod, the folder, the compare link and an agent's read of the diff: `claude -p`
-with no tools and no MCP servers, told the diff is hostile. That read is advisory. It decides nothing,
-and a failed or skipped one shows as **Not reviewed**. While that pull request is open, later runs add
-new releases to it and rewrite its body, comparing every mod with main's pin, instead of opening
-another. It edits `curation.json` through the GitHub API, so it leaves the checkout alone, and it
+in safe mode, with no tools, no MCP servers and no tokens in its environment, told the diff is
+hostile. It answers one line per check (network, exec, filesystem, env, dependencies, dynamic code,
+input steps) and gives no overall verdict. That read is advisory. It decides nothing, and a failed or
+skipped one, or one that doesn't follow that format, shows as **Not reviewed**. Only a pull request
+from this repository's own `mods/updates` counts, never a fork's. While that pull request is open, later runs add
+new releases to it instead of opening another, and rewrite its body whenever it doesn't match the
+branch. The body compares each mod from main's pin to the commit the branch holds. It edits `curation.json` through the GitHub API, so it leaves the checkout alone, and it
 never merges, publishes or re-pins. It needs `gh` and `claude` signed in on the operator's machine
 (the subscription, not an API key):
 ```sh

@@ -1,4 +1,4 @@
-import type { Review } from '@/mods/release-review'
+import { MAX_REVIEW_CHARS, type Review } from '@/mods/release-review'
 import { compareUrl, type Release, releaseTable } from './check-mod-updates'
 
 /** A fence longer than any run of backticks in `text`, so nothing in it can close the block. */
@@ -18,17 +18,40 @@ function reviewSection(release: Release, review: Review): string {
   return `### ${entry.pluginName}\n\nFolder ${folder}, changes: ${compareUrl(release)}\n\n${read}`
 }
 
-/**
- * The re-pin pull request's body. The agent reviews are model output from a diff the mod's author
- * wrote, so each is fenced and labelled advisory; the human merging reads each compare link.
- */
-export function modUpdatesPrBody(input: {
+/** GitHub refuses a pull request body longer than this. */
+export const MAX_BODY_CHARS = 65_536
+
+interface BodyInput {
   releases: Release[]
   /** One per release, in the same order. */
   reviews: Review[]
   /** The mods updates:mods listed and left alone. */
   notes: string[]
-}): string {
+}
+
+const cutTo = (review: Review, chars: number): Review =>
+  review.kind === 'reviewed' && review.text.length > chars
+    ? {
+        kind: 'reviewed',
+        text: `${review.text.slice(0, chars)}\n… cut to fit the pull request: read the compare link`,
+      }
+    : review
+
+/**
+ * The re-pin pull request's body. The agent reviews are model output from a diff the mod's author
+ * wrote, so each is fenced and labelled advisory; the human merging reads each compare link. When
+ * the body would pass GitHub's limit, every review is cut shorter until it fits.
+ */
+export function modUpdatesPrBody(input: BodyInput): string {
+  let body = render(input)
+  for (let chars = MAX_REVIEW_CHARS; body.length > MAX_BODY_CHARS && chars > 0; ) {
+    chars = Math.floor(chars / 2)
+    body = render({ ...input, reviews: input.reviews.map((review) => cutTo(review, chars)) })
+  }
+  return body
+}
+
+function render(input: BodyInput): string {
   const sections = [
     'Authors of these curated mods have released since their pin, so this moves each pin to the release (ADR 0009). `bun run updates:mods:pr` opened it, and later runs update this pull request instead of opening another.',
     '**Read each compare link before merging.** Your merge is the human review SECURITY.md requires. The agent reviews below are advisory: each is a model reading the diff with no tools, not an approval, and a mod marked "Not reviewed" had no agent read at all.',
