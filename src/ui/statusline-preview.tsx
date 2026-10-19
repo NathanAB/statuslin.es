@@ -1,10 +1,12 @@
 import type { AnsiSegment } from '@/render/types'
 
 // `well` sits the line in a dark code well; `bare` sets it straight on its surface at 15px, in the
-// terminal's text colour, as the gallery rows show it.
+// terminal's text colour, as the gallery rows show it; `terminal` takes the home terminal's text.
 const LOOK_CLASS = {
   well: 'inline-block rounded-md bg-sunken px-3 py-1.5 text-foreground text-sm',
   bare: 'block w-max text-[0.9375rem] text-terminal-foreground leading-normal',
+  // Inside the home terminal, which sets the size and colour.
+  terminal: 'block w-max',
 } as const
 
 /** Renders captured statusline output as escaped, styled spans. NEVER use dangerouslySetInnerHTML —
@@ -18,7 +20,12 @@ export function StatuslinePreview({
   look?: keyof typeof LOOK_CLASS
 }) {
   return (
-    <div className="min-w-0 max-w-full overflow-x-auto">
+    // Inside the terminal, which is one image to a screen reader, an overflowing line must not
+    // become a nameless tab stop (browsers make scrollers focusable).
+    <div
+      className="min-w-0 max-w-full overflow-x-auto"
+      tabIndex={look === 'terminal' ? -1 : undefined}
+    >
       <code className={`whitespace-pre font-mono ${LOOK_CLASS[look]}`}>
         {segments.map((s, i) => (
           <span

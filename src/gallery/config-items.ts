@@ -12,7 +12,7 @@ import { CONFIG_COPY_EVENTS } from './trending'
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /** `new` uses the first publish, so an approved update keeps its place. */
-const CONFIG_RANKING: RankedColumns = {
+export const CONFIG_RANKING: RankedColumns = {
   id: configs.id,
   slug: configs.slug,
   status: configs.status,

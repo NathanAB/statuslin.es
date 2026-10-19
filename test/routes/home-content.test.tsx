@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+import type { HeroLine } from '@/gallery/hero-lines'
 import { HOME_HEADING } from '@/lib/page-title'
 
 const capture = vi.hoisted(() => vi.fn())
@@ -50,6 +51,10 @@ vi.mock('@/gallery/gallery-controls', () => ({
 vi.mock('@/ui/submit-cta', () => ({
   SubmitCta: () => null,
 }))
+// It fetches the script it would install; the hero's own tests cover it.
+vi.mock('@/adopt/install-prompt-button', () => ({
+  InstallPromptButton: () => null,
+}))
 
 const { Route: HomeRoute } = await import('@/routes/index')
 
@@ -75,6 +80,15 @@ const modCard = (slug: string): GalleryModCard => ({
   desktopShot: null,
 })
 
+const heroLine: HeroLine = {
+  configId: 'id-panel',
+  slug: 'panel',
+  title: 'Dreambase Panel',
+  copyCount: 223,
+  author: null,
+  renders: { 'clean-main': [{ text: 'panel clean' }] },
+}
+
 function renderHome(
   overrides: Partial<typeof gallery> = {},
   search: Record<string, string> = {},
@@ -83,6 +97,7 @@ function renderHome(
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
+    hero: [heroLine],
     featuredMod,
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
@@ -110,7 +125,7 @@ describe('home content', () => {
     )
   })
 
-  it('makes the gallery heading the only h1 on the page', () => {
+  it("makes the hero's title the only h1 on the page", () => {
     const { container } = renderHome()
 
     const h1s = container.querySelectorAll('h1')
@@ -127,12 +142,15 @@ describe('home content', () => {
     expect(h1s[0]?.textContent).toBe('Claude Code status lines and mods, page 2')
   })
 
-  it('sits the heading beside the wordmark, with no browse-by-feature row', () => {
+  // The hero is the first thing on the page, and the server renders its first state.
+  it('opens with the hero: the title, its sentence and the top status line running', () => {
     const { container } = renderHome()
 
-    const masthead = container.querySelector('h1')?.parentElement?.parentElement
-    expect(masthead?.textContent).toMatch(/statuslin\.es/)
-    expect(masthead?.textContent).not.toMatch(/32 status lines/)
+    const first = container.querySelector('section')
+    expect(first?.querySelector('h1')?.textContent).toBe(HOME_HEADING)
+    expect(first?.textContent).toContain('A status line is the row under your Claude Code prompt.')
+    expect(first?.textContent).toContain('panel clean')
+    expect(first?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
   })
 })

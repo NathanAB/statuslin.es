@@ -8,7 +8,8 @@ import { cn } from '@/lib/cn'
  * (h1/h2/h3) and a fixed size on one scale. Each level's look is defined once here, so
  * the same level can never render differently on two pages, and headings are never
  * monospace. Level 3 is the card / section-card title. `size="compact"` is the quiet
- * title for a page whose wordmark already carries the visual weight (the home masthead).
+ * title for a page whose wordmark already carries the visual weight. `size="display"` is the home
+ * hero's title.
  */
 const HEADING_CLASS = {
   1: 'text-2xl font-semibold text-foreground',
@@ -16,6 +17,8 @@ const HEADING_CLASS = {
   3: 'text-base font-medium leading-snug text-foreground',
 } as const
 const COMPACT_HEADING_CLASS = 'text-lg font-medium leading-snug text-foreground'
+// The home hero's page title, on the redesign's largest size.
+const DISPLAY_HEADING_CLASS = 'text-balance font-semibold text-display text-foreground'
 
 export function Heading({
   level,
@@ -24,11 +27,16 @@ export function Heading({
   children,
 }: {
   level: 1 | 2 | 3
-  size?: 'default' | 'compact'
+  size?: 'default' | 'compact' | 'display'
   id?: string | undefined
   children: React.ReactNode
 }) {
-  const className = size === 'compact' ? COMPACT_HEADING_CLASS : HEADING_CLASS[level]
+  const className =
+    size === 'compact'
+      ? COMPACT_HEADING_CLASS
+      : size === 'display'
+        ? DISPLAY_HEADING_CLASS
+        : HEADING_CLASS[level]
   if (level === 1)
     return (
       <h1 id={id} className={className}>
@@ -88,12 +96,15 @@ export function Text({
   )
 }
 
-type LinkTone = 'accent' | 'plain' | 'muted'
+type LinkTone = 'accent' | 'plain' | 'muted' | 'underlined'
 
 const LINK_TONE_CLASS: Record<LinkTone, string> = {
   accent: 'text-primary',
   plain: 'text-foreground',
   muted: 'text-muted-foreground hover:text-foreground',
+  // Full-strength text, underlined even at rest: a link that stands alone beside a button.
+  underlined:
+    'text-foreground underline decoration-foreground/35 transition-[text-decoration-color] duration-400 ease-settle hover:decoration-foreground',
 }
 
 /**
@@ -116,7 +127,8 @@ type TextLinkProps =
       // sentence; 'sm' keeps a fixed-small look.
       size?: 'inherit' | 'sm'
       // 'accent' (default) is the coral link; 'plain' is full-strength text (the footer);
-      // 'muted' is dimmed text that lights up on hover (a gallery card's tags).
+      // 'muted' is dimmed text that lights up on hover (a gallery card's tags); 'underlined' is
+      // full-strength text underlined at rest (the hero's "Open …" link).
       tone?: LinkTone
     }
   // External URL; opens in a new tab. Use instead of `to` for off-site links (e.g. docs).

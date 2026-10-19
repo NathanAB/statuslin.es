@@ -1,18 +1,5 @@
 import { kindCount } from '@/gallery/kind-count'
-import { HOME_HEADING } from '@/lib/page-title'
-import { Stack } from '@/ui/layout'
-import { Heading, Text } from '@/ui/text'
-
-export function HomeGalleryIntro({ page }: { page: number }) {
-  return (
-    <Stack gap={3}>
-      <Heading level={1} size="compact">
-        {page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
-      </Heading>
-      <Text size="sm">Community sourced and human reviewed.</Text>
-    </Stack>
-  )
-}
+import { Text } from '@/ui/text'
 
 function utcDateLabel(isoDate: string): string {
   const date = new Date(`${isoDate}T00:00:00.000Z`)

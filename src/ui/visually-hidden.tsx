@@ -15,3 +15,15 @@ export function VisuallyHidden({
 }) {
   return <Tag className="sr-only">{children}</Tag>
 }
+
+/**
+ * A message only screen readers hear, read out politely each time it changes (role="status"):
+ * what an interactive demo now shows. Keep it empty until the visitor changes something.
+ */
+export function LiveMessage({ children }: { children: ReactNode }) {
+  return (
+    <p role="status" className="sr-only">
+      {children}
+    </p>
+  )
+}

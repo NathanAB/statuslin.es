@@ -1,0 +1,95 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import * as schema from '@/db/schema'
+import { getConfigSource } from '@/gallery/config-items'
+import { getHeroLines, HERO_SESSION_KEYS, HERO_SIZE } from '@/gallery/hero-lines'
+import { openTestDb, type TestDb } from '../mods/seed-mods'
+import { addPublishedConfig } from './seed-configs'
+
+let db: TestDb
+let close: () => Promise<void>
+
+const shaOf = (slug: string) => slug.padEnd(64, '0')
+
+async function addPreview(slug: string, scenarioKey: string, text: string) {
+  await db.insert(schema.previews).values({
+    scriptSha: shaOf(slug),
+    scenarioKey,
+    segments: [{ text, fg: null, bg: null, bold: false, italic: false, underline: false }],
+    rawStdout: text,
+    exitCode: 0,
+    timedOut: 0,
+    trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
+  })
+}
+
+async function addCopies(configId: string, count: number) {
+  for (let i = 0; i < count; i++) {
+    await db.insert(schema.copyEvents).values({ configId, ipHash: `${configId}-${i}` })
+  }
+}
+
+beforeAll(async () => {
+  ;({ db, close } = await openTestDb())
+  // Ten published lines, copied different amounts, so Trending has an order of its own.
+  for (let i = 0; i < 10; i++) {
+    const id = await addPublishedConfig(db, `line-${i}`)
+    await addCopies(id, (i * 7) % 10)
+  }
+  await addPublishedConfig(db, 'drafted', { status: 'draft' })
+  await addPreview('line-7', 'clean-main', 'clean')
+  await addPreview('line-7', 'fresh-session', 'fresh')
+  await addPreview('line-7', 'dirty-feature', 'dirty')
+  await addPreview('line-7', 'big-context', 'big')
+  await addPreview('line-7', 'near-full', 'not a hero session')
+})
+afterAll(async () => {
+  await close()
+})
+
+describe('getHeroLines', () => {
+  it('takes the first eight status lines in the order the home gallery ranks them', async () => {
+    const gallery = await getConfigSource(db, { sort: 'trending' })
+    const expected = gallery.items.slice(0, HERO_SIZE).map(({ item }) => item.card.slug)
+
+    const lines = await getHeroLines(db)
+
+    expect(HERO_SIZE).toBe(8)
+    expect(lines.map((line) => line.slug)).toEqual(expected)
+    expect(lines.map((line) => line.slug)).not.toContain('drafted')
+  })
+
+  it("loads each line's render for every hero session, and only those", async () => {
+    const lines = await getHeroLines(db)
+    const line = lines.find((l) => l.slug === 'line-7')
+
+    expect(HERO_SESSION_KEYS).toEqual([
+      'clean-main',
+      'fresh-session',
+      'dirty-feature',
+      'big-context',
+    ])
+    expect(
+      Object.fromEntries(
+        Object.entries(line?.renders ?? {}).map(([key, segments]) => [key, segments?.[0]?.text]),
+      ),
+    ).toEqual({
+      'clean-main': 'clean',
+      'fresh-session': 'fresh',
+      'dirty-feature': 'dirty',
+      'big-context': 'big',
+    })
+    // Segments go out compact: no default style fields.
+    expect(line?.renders['clean-main']?.[0]).toEqual({ text: 'clean' })
+  })
+
+  it('carries what the hero names: title, copy count and author', async () => {
+    const [first] = await getHeroLines(db)
+
+    expect(first).toMatchObject({
+      title: first?.slug,
+      copyCount: expect.any(Number),
+      author: { name: 'Author', username: null, image: null },
+    })
+    expect(first?.configId).toEqual(expect.any(String))
+  })
+})

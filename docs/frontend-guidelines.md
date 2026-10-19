@@ -30,7 +30,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
 
-The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle`, and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install panels), and the home page's measure: `px-gutter` side gutters, `max-w-page` (1280px of content inside them) and `mt-section` between its sections. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
+The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install panels), and the home page's measure: `px-gutter` side gutters, `max-w-page` (1280px of content inside them) and `mt-section` between its sections. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
 
 The gate enforces three sub-rules on `src/styles/app.css`: (a) define-once — no hex literal may be declared twice; (b) theme-alias — every `--color-*` must be `initial` or `var(…)`, never a literal; (c) token-echo — no file in `src/` or `test/` may restate a literal that equals a token value.
 
@@ -78,9 +78,9 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | What it does |
 | --- | --- |
-| `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. |
+| `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. `size="compact"` is a quiet title; `size="display"` is the home hero's title |
 | `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`. Text always fills its container: there is no line-length cap. |
-| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer); `tone="muted"` is dimmed text that lights up on hover (a gallery row's tags) |
+| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer); `tone="muted"` is dimmed text that lights up on hover (a gallery row's tags); `tone="underlined"` is full-strength text underlined at rest (the hero's "Open …" link) |
 
 ### Cards and interactive surfaces
 
@@ -90,6 +90,10 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<CardHeader>`, `<CardContent>`, `<CardFooter>`, `<CardTitle>`, `<CardDescription>`, `<CardAction>` | `src/ui/card.tsx` | Subcomponents for card anatomy |
 | `<StretchedLink to="…">` | `src/ui/stretched-link.tsx` | Full-card clickable overlay with focus ring; place inside `<Card interactive>` |
 | `<GalleryRow to params onOpen title byline facts description>` | `src/ui/gallery-row.tsx` | The redesign's gallery card: one full-width row, title link (it opens the whole row) and byline left, `facts` right, the preview as children, the description clamped to two lines; `onOpen` runs when the row opens (its click analytics). Hover and focus raise the tone; inside another card it starts a tone up. `<RowFacts>` sets the facts in a dotted line, `<RowNote icon>` is a fact with an icon, `<GalleryList>` stacks rows |
+| `<Terminal label toolbar transcript status conversationKey conversationChanged statusKey statusChanged>` | `src/ui/terminal.tsx` | The home hero's Claude Code session: a frame with an optional toolbar (the session switcher and its caption), then a fixed-height screen with the conversation (`TranscriptLine[]`), the input box and the status line. The screen is one image to a screen reader, named by `label`. Nothing moves on the first render; after a change, a new conversation settles in and a new status line glows (`animate-flash`) |
+| `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. `look`: `list` (label and detail on a tile: the hero's picker) or `tray` (small segments: the hero's sessions) |
+| `<HeroLayout heading lead stage aside>`, `<HeroActions>` | `src/ui/hero-layout.tsx` | The home hero's 12-column grid (title and sentence, then the demo and its controls); stacks below 900px |
+| `<LiveMessage>` | `src/ui/visually-hidden.tsx` | A screen-reader-only `role="status"` message, read out when it changes |
 | `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on its measure, `mt-section` from the one above (`first`: just under the header) |
 
 ### Buttons (`src/ui/button.tsx`)
@@ -119,7 +123,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip; `avatar={false}` shows the byline alone (gallery rows) |
 | `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header; used by shells. Phones get `SiteMenu` (`src/ui/site-menu.tsx`), a full-screen menu; the bar's account dropdown is `UserMenu` (`src/ui/user-menu.tsx`) |
 | `<SignInButton look>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger. `look`: `button` (default, outlined), `bar` (header bar) or `menu` (phone menu) |
-| `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview. `look="well"` (default) sits it in a code well; `look="bare"` sets it straight on its surface at 15px (gallery rows) |
+| `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview. `look="well"` (default) sits it in a code well; `look="bare"` sets it straight on its surface at 15px (gallery rows); `look="terminal"` takes the home terminal's text |
 | `<SegmentedControl label options value onValueChange look>` | `src/ui/segmented-control.tsx` | One-of-many segments (a radio group; arrow keys move, Space picks). `look`: `boxed` (default, coral selection), `heading` (big words, the selected one full strength: the gallery's filter heading) or `tray` (small segments in a rounded tray: the gallery sort) |
 
 ## Vendoring procedure for new shadcn components

@@ -1,21 +1,21 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { getGallery, getGalleryConfigs } from '@/gallery/functions'
 import { coerceGalleryFilter, type GalleryFilter, loadGalleryPage } from '@/gallery/gallery-items'
-import { HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
+import { HomeIndexNote } from '@/gallery/home-gallery-intro'
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { HomeGallery } from '@/home/home-gallery'
+import { HomeHero } from '@/home/home-hero'
+import { loadHeroLines } from '@/home/load-hero'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
+import { HOME_HEADING, homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
 import { FeaturedModRow } from '@/mods/featured-mod-row'
 import { getFeaturedModFn, getGalleryModsFn } from '@/mods/gallery-functions'
 import { homeSocialMeta } from '@/og/meta'
-import { HomeHero, HomeMasthead } from '@/ui/home-hero'
 import { HomeSection } from '@/ui/home-section'
-import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { SubmitCta } from '@/ui/submit-cta'
 import { Text, TextLink } from '@/ui/text'
@@ -48,7 +48,7 @@ export const Route = createFileRoute('/')({
     const tags = coerceTags(deps.tags)
     // The "Featured mod" row shows on page 1 whatever the sort, tags or kind, so switching filters
     // doesn't move the controls under it.
-    const [listing, gallery, featuredMod] = await Promise.all([
+    const [listing, gallery, hero, featuredMod] = await Promise.all([
       loadGalleryPage(
         { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
         {
@@ -59,12 +59,14 @@ export const Route = createFileRoute('/')({
         },
       ),
       getGallery(),
+      loadHeroLines(),
       deps.page === undefined ? getFeaturedModFn() : null,
     ])
     if (!listing) throw notFound()
     return {
       user: await getSession(),
       gallery: { ...gallery, ...listing },
+      hero,
       featuredMod,
     }
   },
@@ -108,20 +110,17 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
-  const { user, gallery, featuredMod } = Route.useLoaderData()
+  const { user, gallery, hero, featuredMod } = Route.useLoaderData()
   const { items, page, pageCount, statusLines, mods, copyCount, asOf } = gallery
   const { sort, tags, kind } = Route.useSearch()
 
   return (
     <PageShell user={user} wide>
       <HomeSection first>
-        <Stack gap={6}>
-          <HomeMasthead>
-            <HomeHero />
-            <HomeGalleryIntro page={page} />
-          </HomeMasthead>
-          <SubmitCta signedIn={!!user} />
-        </Stack>
+        <HomeHero
+          heading={page > 1 ? `${HOME_HEADING}, page ${page}` : HOME_HEADING}
+          lines={hero}
+        />
       </HomeSection>
       {featuredMod ? (
         <HomeSection>
@@ -136,6 +135,9 @@ function Home() {
         rawKind={kind}
         tags={tags}
       />
+      <HomeSection>
+        <SubmitCta signedIn={!!user} />
+      </HomeSection>
       <HomeSection>
         <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
       </HomeSection>

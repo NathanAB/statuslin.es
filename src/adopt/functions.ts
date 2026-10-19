@@ -5,6 +5,7 @@ import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { findCopiedConfig, recordCopy } from './copy'
 import { type CopyKind, copyEvent } from './copy-event'
+import { findInstallSource } from './install-source'
 
 // Anonymous (no auth check) — deliberate: anyone can copy. copyCount is an approximate popularity
 // signal, deduped per client so it can't be trivially inflated from a single host (IP rotation or
@@ -26,3 +27,8 @@ export const recordCopyFn = createServerFn({ method: 'POST' })
       return recordCopy(db, data.configId, ipHash)
     }),
   )
+
+/** A published status line's live script, fetched when the home hero is about to install it. */
+export const getInstallSourceFn = createServerFn({ method: 'GET' })
+  .validator((d: { configId: string }) => ({ configId: String(d.configId) }))
+  .handler(({ data }) => withHttpStatus(() => findInstallSource(db, data.configId)))

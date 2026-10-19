@@ -3,7 +3,8 @@ import type * as React from 'react'
 import { useState } from 'react'
 import { Button } from '@/ui/button'
 
-const COPIED_MS = 2000
+/** How long a copy control says Copied. */
+export const COPIED_MS = 2000
 
 /**
  * Clipboard control used by code wells and adopt CTAs. Writes `text`, swaps the
