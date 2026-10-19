@@ -395,9 +395,22 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
 An update is a new version of the mod. The current version stays live until you publish the new
 one. Run every step against staging first, then production.
 
-First, in `src/mods/curation.json`, change each entry's `commitSha` (and `inputSteps` if the new
-version needs them). Keep `pluginName` and `repoUrl`: an entry from another repository imports as a
-new mod, named `<name>-<owner>`. The mod's title and description stay as they were first imported.
+Authors don't need to ask for a re-pin: we find their releases ourselves, weekly (ADR 0009).
+`updates:mods` compares each curated pin with the head of its repository's default branch and moves
+the pin in `src/mods/curation.json` when plugin.json's `version` changed, printing a compare link per
+release. A commit without a new version is listed and left alone, and so is a head that no longer
+builds on the pin (a force-push). It reads only GitHub, so it needs a token, not a database:
+```sh
+GITHUB_TOKEN=$(gh auth token) bun run updates:mods
+```
+Review each compare link for network, exec, filesystem, env, dependency and dynamic-code changes,
+add `inputSteps` if a new version needs them, and merge the `curation.json` change as its own pull
+request. Then re-pin with the one command below.
+
+To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and
+`inputSteps` if the new version needs them). Keep `pluginName` and `repoUrl`: an entry from another
+repository imports as a new mod, named `<name>-<owner>`. The mod's title and description stay as
+they were first imported.
 
 **One command for every step.** `run-repin-mods.ts` runs steps 2–5 below for several mods under one
 `with-env` decrypt, so Touch ID is asked once per env. Run it in the operator's terminal (in the
