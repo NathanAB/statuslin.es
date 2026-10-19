@@ -126,7 +126,7 @@
   {
     "repoUrl": "https://github.com/karanb192/cache-tax",
     "path": "",
-    "commitSha": "5cde9acc806728728cae70836db4f8f0655e0ff2",
+    "commitSha": "b735f3393d630ca848538e974fe415e2c745c21b",
     "pluginName": "cache-tax",
     "title": "Cache Tax",
     "inputSteps": [
@@ -159,7 +159,7 @@
   {
     "repoUrl": "https://github.com/NahumLitvin/prismantis",
     "path": "",
-    "commitSha": "6c96c674fe891e609a89aa2246773ea7f303d4c7",
+    "commitSha": "a5c6755046065ad200a20350b61bf72f282a7f86",
     "pluginName": "prismantis",
     "title": "Prismantis",
     "inputSteps": [
