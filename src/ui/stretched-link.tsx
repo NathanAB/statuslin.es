@@ -2,7 +2,7 @@ import { Link, type LinkProps } from '@tanstack/react-router'
 import type * as React from 'react'
 
 const STRETCHED_LINK_CLASS =
-  'rounded-sm after:absolute after:inset-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+  'rounded-sm after:absolute after:inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
 type StretchedLinkProps = {
   children: React.ReactNode

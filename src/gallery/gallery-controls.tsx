@@ -4,28 +4,24 @@ import { X } from 'lucide-react'
 import type { GalleryFilter } from '@/gallery/gallery-items'
 import type { GallerySort } from '@/gallery/queries'
 import { Button } from '@/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuButtonTrigger,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from '@/ui/dropdown-menu'
 import { Row } from '@/ui/layout'
 import { SegmentedControl } from '@/ui/segmented-control'
 
-const SORT_OPTIONS: { label: string; value: GallerySort }[] = [
+const SORT_OPTIONS: readonly { label: string; value: GallerySort }[] = [
   { label: 'Trending', value: 'trending' },
   { label: 'Top', value: 'top' },
   { label: 'New', value: 'new' },
 ]
-const SORT_LABEL: Record<GallerySort, string> = { trending: 'Trending', top: 'Top', new: 'New' }
 const KIND_OPTIONS: readonly { label: string; value: GalleryFilter }[] = [
   { label: 'All', value: 'all' },
   { label: 'Status lines', value: 'status-lines' },
   { label: 'Mods', value: 'mods' },
 ]
 
+/**
+ * The gallery's heading row: what it shows (All, Status lines, Mods) set as the visible heading,
+ * then a way to clear a tag filter and the sort on the right. Every control writes the URL.
+ */
 export function GalleryControls({
   kind,
   sort,
@@ -75,46 +71,48 @@ export function GalleryControls({
     })
   }
   return (
-    <Row gap={2} wrap>
-      <SegmentedControl label="Show" options={KIND_OPTIONS} value={kind} onValueChange={setKind} />
-
-      <DropdownMenu>
-        <DropdownMenuButtonTrigger label={`Sort: ${SORT_LABEL[sort]}`} />
-        <DropdownMenuContent>
-          <DropdownMenuRadioGroup value={sort} onValueChange={(v) => setSort(v as GallerySort)}>
-            {SORT_OPTIONS.map((o) => (
-              <DropdownMenuRadioItem key={o.value} value={o.value}>
-                {o.label}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {selected.size > 0 ? (
-        <Button asChild variant="outline" size="icon-lg" aria-label="Clear filters">
-          <Link
-            from="/"
-            to="/"
-            resetScroll={false}
-            onClick={() => {
-              posthog.capture('gallery_filter_changed', {
-                action: 'clear',
-                selectedTags: [],
-                sort,
-                page: 1,
-                kind,
-              })
-            }}
-            search={(prev) => {
-              const { page: _page, tags: _tags, ...rest } = prev
-              return rest
-            }}
-          >
-            <X />
-          </Link>
-        </Button>
-      ) : null}
+    <Row gap={4} justify="between" wrap>
+      <SegmentedControl
+        label="Show"
+        look="heading"
+        options={KIND_OPTIONS}
+        value={kind}
+        onValueChange={setKind}
+      />
+      <Row gap={4} wrap>
+        {selected.size > 0 ? (
+          <Button asChild variant="quiet" size="bar">
+            <Link
+              from="/"
+              to="/"
+              resetScroll={false}
+              onClick={() => {
+                posthog.capture('gallery_filter_changed', {
+                  action: 'clear',
+                  selectedTags: [],
+                  sort,
+                  page: 1,
+                  kind,
+                })
+              }}
+              search={(prev) => {
+                const { page: _page, tags: _tags, ...rest } = prev
+                return rest
+              }}
+            >
+              <X />
+              Clear filters
+            </Link>
+          </Button>
+        ) : null}
+        <SegmentedControl
+          label="Sort"
+          look="tray"
+          options={SORT_OPTIONS}
+          value={sort}
+          onValueChange={setSort}
+        />
+      </Row>
     </Row>
   )
 }

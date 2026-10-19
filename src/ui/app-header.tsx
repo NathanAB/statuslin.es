@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router'
 import { GUIDE_CRUMB } from '@/lib/breadcrumb-json-ld'
+import { cn } from '@/lib/cn'
 import { MODS_PATH } from '@/lib/site'
 import { Button } from '@/ui/button'
+import { PAGE_MEASURE, type PageMeasure } from '@/ui/page-measure'
 import { SignInButton } from '@/ui/sign-in-button'
 import { SiteMenu } from '@/ui/site-menu'
 import { StarOnGitHubLink } from '@/ui/star-on-github-link'
@@ -31,11 +33,18 @@ const HEADER_LINKS: readonly HeaderLink[] = [
  * Shared top header, a plain bar: the wordmark home-link, quiet links (Mods, Guide, Resources,
  * Star on GitHub), then GitHub sign-in or the signed-in user's menu. Phones get a menu button
  * instead, which opens the same links full-screen. Submitting lives on the home page, not here.
+ * `measure` lines it up with the page's content column.
  */
-export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
+export function AppHeader({
+  user = null,
+  measure = 'standard',
+}: {
+  user?: AppHeaderUser | null
+  measure?: PageMeasure
+}) {
   return (
     <header className="py-5.5">
-      <div className="mx-auto flex max-w-5xl items-center gap-8 px-6">
+      <div className={cn('flex items-center gap-8', PAGE_MEASURE[measure])}>
         <Link to="/" className="rounded-sm hover:opacity-80">
           <Wordmark />
         </Link>

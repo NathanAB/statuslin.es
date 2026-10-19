@@ -29,27 +29,16 @@ export function iconFor(slug: string): LucideIcon {
   return TAG_ICON[slug] ?? (FACET_BY_SLUG.get(slug)?.group === 'feature' ? Tag : Code)
 }
 
-/** The chips on a gallery card + the detail page: one per tag in the config's allTags,
+/** The tag chips on a detail page: one per tag in the config's allTags,
  *  each linking to its facet page (or the tag-filtered home for tags with no page).
  *  `network-access` additionally carries a tooltip listing the hosts the config declares.
  *  `aboveOverlay` lifts the badge links (and the network tooltip, whose badge takes hover
  *  rather than opening the card) above the card's stretched-link overlay so they stay
- *  clickable; the gaps between them still open the card. Rendered once here so the card and
- *  detail page match.
- *  `align="end"` (gallery card) takes the leftover width beside the title and wraps the chips
- *  right-aligned to more rows, never narrower than the widest chip; `align="start"` (detail
- *  page) packs them left. */
-export function ConfigBadges({
-  tags,
-  networkHosts,
-  align = 'start',
-}: {
-  tags: string[]
-  networkHosts: string[]
-  align?: 'start' | 'end'
-}) {
+ *  clickable; the gaps between them still open the card. Used by the detail pages' headers and
+ *  the facet pages' "More ways to browse". */
+export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHosts: string[] }) {
   return (
-    <Row gap={2} wrap grow={align === 'end'} justify={align} aboveOverlay>
+    <Row gap={2} wrap aboveOverlay>
       {tags.map((slug) => {
         const Icon = iconFor(slug)
         const label = tagLabel(FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)

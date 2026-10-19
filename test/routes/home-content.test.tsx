@@ -137,11 +137,34 @@ describe('home content', () => {
   })
 })
 
+describe('home pagination', () => {
+  it('links the next page, keeping what the gallery shows, from page 1', () => {
+    renderHome({ pageCount: 3 }, { kind: 'mods' })
+
+    expect(screen.getByText('Page 1 of 3')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe(
+      '/?page=2&kind=mods',
+    )
+    expect(screen.queryByRole('link', { name: 'Previous page' })).toBeNull()
+  })
+
+  it('links both ways from a middle page, and only back from the last', () => {
+    renderHome({ page: 2, pageCount: 3 })
+    expect(screen.getByRole('link', { name: 'Previous page' }).getAttribute('href')).toBe('/')
+    expect(screen.getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe('/?page=3')
+  })
+
+  it('shows no pager on a single page', () => {
+    renderHome()
+    expect(screen.queryByText(/Page 1 of/)).toBeNull()
+  })
+})
+
 describe('home analytics', () => {
   it('captures paging with what the gallery shows', () => {
     renderHome({ pageCount: 2 }, { kind: 'mods' })
 
-    fireEvent.click(screen.getByRole('link', { name: 'Next →' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Next page' }))
 
     expect(capture).toHaveBeenCalledWith('gallery_page_changed', {
       page: 2,
@@ -174,7 +197,7 @@ describe('home "Featured mod" row', () => {
     expect(inRow.getByRole('link', { name: 'context-bar' }).getAttribute('href')).toBe(
       '/mods/context-bar',
     )
-    expect(row().querySelectorAll('[data-slot="card"]')).toHaveLength(1)
+    expect(row().querySelectorAll('[data-slot="gallery-row"]')).toHaveLength(1)
     const galleryHeading = screen.getByRole('heading', { name: 'Status lines and mods' })
     expect(
       row().compareDocumentPosition(galleryHeading) & Node.DOCUMENT_POSITION_FOLLOWING,

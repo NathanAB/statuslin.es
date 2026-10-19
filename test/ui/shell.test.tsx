@@ -87,3 +87,22 @@ describe('PageShell narrow', () => {
     expect(main.className).not.toContain('max-w-5xl')
   })
 })
+
+describe('PageShell wide', () => {
+  // The home page lays out its own full-width bands, so main gets no column of its own; the
+  // header and footer widen to the same 1280px measure the home sections use.
+  it('lets main span the window and widens the header and footer to match', () => {
+    const { container } = render(
+      <PageShell user={null} wide>
+        <p>wide</p>
+      </PageShell>,
+    )
+    const main = container.querySelector('main') as HTMLElement
+    expect(main.className).not.toContain('max-w-')
+    expect(main.className).not.toContain('px-')
+    const header = container.querySelector('header > div') as HTMLElement
+    const footer = container.querySelector('footer') as HTMLElement
+    expect(header.className).toContain('max-w-page')
+    expect(footer.className).toContain('max-w-page')
+  })
+})

@@ -1,34 +1,24 @@
-import { usePostHog } from '@posthog/react'
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-import type { GalleryCardAnalytics } from '@/gallery/card-analytics'
-import { GalleryConfigCard } from '@/gallery/config-card'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 import { getGallery, getGalleryConfigs } from '@/gallery/functions'
-import { GalleryControls } from '@/gallery/gallery-controls'
 import { coerceGalleryFilter, type GalleryFilter, loadGalleryPage } from '@/gallery/gallery-items'
 import { HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
+import { HomeGallery } from '@/home/home-gallery'
 import { getSession } from '@/lib/auth-functions'
-import {
-  canonicalLink,
-  homeCanonicalPath,
-  homePaginationSearch,
-  isFilteredHomeSearch,
-} from '@/lib/canonical'
+import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
-import { FeaturedModRow, GALLERY_ID } from '@/mods/featured-mod-row'
+import { FeaturedModRow } from '@/mods/featured-mod-row'
 import { getFeaturedModFn, getGalleryModsFn } from '@/mods/gallery-functions'
-import { ModCard } from '@/mods/mod-card'
 import { homeSocialMeta } from '@/og/meta'
-import { Button } from '@/ui/button'
 import { HomeHero, HomeMasthead } from '@/ui/home-hero'
-import { Row, Stack } from '@/ui/layout'
+import { HomeSection } from '@/ui/home-section'
+import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { SubmitCta } from '@/ui/submit-cta'
 import { Text, TextLink } from '@/ui/text'
-import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
   // sort, page, tags and kind are optional in the URL (defaults: 'trending', page 1, no tags, all
@@ -120,98 +110,35 @@ export const Route = createFileRoute('/')({
 function Home() {
   const { user, gallery, featuredMod } = Route.useLoaderData()
   const { items, page, pageCount, statusLines, mods, copyCount, asOf } = gallery
-  const { sort: rawSort, tags, kind: rawKind } = Route.useSearch()
-  const sort = rawSort ?? 'trending'
-  const kind = rawKind ?? 'all'
-  const selectedTags = tags ? tags.split(',') : []
-  const posthog = usePostHog()
-
-  const pageSearch = (nextPage: number) =>
-    homePaginationSearch(nextPage, { sort, tags, kind: rawKind })
-
-  const cardAnalytics = (index: number): GalleryCardAnalytics => ({
-    surface: 'home',
-    position: index + 1,
-    page,
-    sort,
-    selectedTags,
-    kind,
-  })
-
-  const trackPageChange = (nextPage: number) => {
-    posthog.capture('gallery_page_changed', {
-      page: nextPage,
-      sort,
-      selectedTags,
-      kind,
-    })
-  }
+  const { sort, tags, kind } = Route.useSearch()
 
   return (
-    <PageShell user={user}>
-      <Stack gap={9}>
-        <HomeMasthead>
-          <HomeHero />
-          <HomeGalleryIntro page={page} />
-        </HomeMasthead>
-        <FeaturedModRow mod={featuredMod} />
-        <section id={GALLERY_ID}>
-          <Stack gap={4}>
-            <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-            <Row gap={4} justify="between" wrap>
-              <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
-              <SubmitCta signedIn={!!user} />
-            </Row>
-            {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
-            {items.map((item, index) =>
-              item.kind === 'mod' ? (
-                <ModCard
-                  key={`mod:${item.card.slug}`}
-                  card={item.card}
-                  analytics={cardAnalytics(index)}
-                />
-              ) : (
-                <GalleryConfigCard
-                  key={`status-line:${item.card.slug}`}
-                  card={item.card}
-                  analytics={cardAnalytics(index)}
-                />
-              ),
-            )}
-          </Stack>
-        </section>
-
-        {pageCount > 1 ? (
-          <Row gap={4} align="center" justify="center">
-            {page > 1 ? (
-              <Button asChild variant="ghost" size="sm">
-                <Link
-                  to="/"
-                  onClick={() => trackPageChange(page - 1)}
-                  search={pageSearch(page - 1)}
-                >
-                  ← Previous
-                </Link>
-              </Button>
-            ) : null}
-            <Text muted size="sm">
-              Page {page} of {pageCount}
-            </Text>
-            {page < pageCount ? (
-              <Button asChild variant="ghost" size="sm">
-                <Link
-                  to="/"
-                  onClick={() => trackPageChange(page + 1)}
-                  search={pageSearch(page + 1)}
-                >
-                  Next →
-                </Link>
-              </Button>
-            ) : null}
-          </Row>
-        ) : null}
+    <PageShell user={user} wide>
+      <HomeSection first>
+        <Stack gap={6}>
+          <HomeMasthead>
+            <HomeHero />
+            <HomeGalleryIntro page={page} />
+          </HomeMasthead>
+          <SubmitCta signedIn={!!user} />
+        </Stack>
+      </HomeSection>
+      {featuredMod ? (
+        <HomeSection>
+          <FeaturedModRow mod={featuredMod} />
+        </HomeSection>
+      ) : null}
+      <HomeGallery
+        items={items}
+        page={page}
+        pageCount={pageCount}
+        sort={sort ?? 'trending'}
+        rawKind={kind}
+        tags={tags}
+      />
+      <HomeSection>
         <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
-      </Stack>
+      </HomeSection>
     </PageShell>
   )
 }

@@ -24,4 +24,12 @@ describe('cn with the tokens app.css adds', () => {
   it.each(namesOf('ease'))('lets ease-%s replace an earlier easing', (ease) => {
     expect(cn('ease-in', `ease-${ease}`)).toBe(`ease-${ease}`)
   })
+
+  it.each(namesOf('spacing'))('lets px-%s replace an earlier padding', (space) => {
+    expect(cn('px-6', `px-${space}`)).toBe(`px-${space}`)
+  })
+
+  it.each(namesOf('container'))('lets max-w-%s replace an earlier width', (width) => {
+    expect(cn('max-w-5xl', `max-w-${width}`)).toBe(`max-w-${width}`)
+  })
 })

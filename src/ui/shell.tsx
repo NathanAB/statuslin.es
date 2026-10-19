@@ -10,24 +10,33 @@ import { TooltipProvider } from '@/ui/tooltip'
  *
  * `narrow` switches the main column to max-w-lg — for top-aligned single-column
  * forms like the submit page that are NOT vertically centered (use CenteredShell for that).
+ * `wide` is the home page: main spans the window, since its sections set their own width (some
+ * are full-bleed bands), and the header and footer widen to the home page's measure.
  */
 export function PageShell({
   user,
   narrow = false,
+  wide = false,
   children,
 }: {
   user: AppHeaderUser | null
-  narrow?: boolean
   children: React.ReactNode
-}) {
+} & ({ narrow?: boolean; wide?: never } | { wide?: boolean; narrow?: never })) {
+  const measure = wide ? 'wide' : 'standard'
   return (
     <TooltipProvider>
       <div className="flex min-h-screen flex-col bg-background">
-        <AppHeader user={user} />
-        <main className={`mx-auto w-full flex-1 px-6 py-8 ${narrow ? 'max-w-lg' : 'max-w-5xl'}`}>
+        <AppHeader user={user} measure={measure} />
+        <main
+          className={
+            wide
+              ? 'w-full flex-1'
+              : `mx-auto w-full flex-1 px-6 py-8 ${narrow ? 'max-w-lg' : 'max-w-5xl'}`
+          }
+        >
           {children}
         </main>
-        <SiteFooter />
+        <SiteFooter measure={measure} />
       </div>
     </TooltipProvider>
   )

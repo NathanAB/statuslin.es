@@ -84,17 +84,6 @@ describe('ConfigBadges', () => {
     }
   })
 
-  it("takes a card's leftover header width but stays at least its widest chip wide", () => {
-    const { container } = render(
-      <TooltipProvider>
-        <ConfigBadges tags={['git', 'minimal']} networkHosts={[]} align="end" />
-      </TooltipProvider>,
-    )
-    const classes = (container.firstChild as HTMLElement).className.split(/\s+/)
-    expect(classes).toContain('flex-1')
-    expect(classes).not.toContain('min-w-0')
-  })
-
   it('marks the network-access hosts badge as a tooltip trigger so it keeps its hover above the overlay', () => {
     renderBadges({ tags: ['network-access'], networkHosts: ['wttr.in'] })
     const trigger = screen.getByLabelText('Uses network: wttr.in')

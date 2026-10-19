@@ -31,6 +31,7 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
 - `votes/` — retained legacy voting code · `adopt/` — copy/install a config
 - `og/` — Open Graph card images · `legal/` — terms page
 - `db/` — Drizzle schema + migration client · `lib/` — shared utils (`env.ts`)
+- `home/` — the home page's sections (gallery, hero, mods row), composed from the features above
 - `ui/` — closed design-system components · `styles/` — tokens (`app.css`)
 - `server/` — Nitro server plugins (error context, PostHog, startup render drain) and the in-process render drain
 

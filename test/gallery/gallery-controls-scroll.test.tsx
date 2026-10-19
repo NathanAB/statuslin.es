@@ -8,48 +8,10 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import { Children, cloneElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@posthog/react', () => ({
   usePostHog: () => ({ capture: vi.fn() }),
-}))
-
-// Radix menus don't open on jsdom clicks, so each radio item calls the group's onValueChange.
-vi.mock('@/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuButtonTrigger: ({ label }: { label: string }) => (
-    <button type="button">{label}</button>
-  ),
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuRadioGroup: ({
-    children,
-    onValueChange,
-  }: {
-    children: React.ReactNode
-    onValueChange: (value: string) => void
-  }) => (
-    <div>
-      {Children.map(children, (child) =>
-        cloneElement(child as React.ReactElement<{ onValueChange?: (value: string) => void }>, {
-          onValueChange,
-        }),
-      )}
-    </div>
-  ),
-  DropdownMenuRadioItem: ({
-    children,
-    value,
-    onValueChange,
-  }: {
-    children: React.ReactNode
-    value?: string
-    onValueChange?: (value: string) => void
-  }) => (
-    <button type="button" onClick={() => onValueChange?.(value ?? '')}>
-      {children}
-    </button>
-  ),
 }))
 
 const { GalleryControls } = await import('@/gallery/gallery-controls')
@@ -125,7 +87,7 @@ describe('GalleryControls keep the reader where they are', () => {
     const router = await renderControls('/')
 
     await afterNavigation(router, () => {
-      fireEvent.click(screen.getByRole('button', { name: 'New' }))
+      fireEvent.click(screen.getByRole('radio', { name: 'New' }))
     })
 
     expect(router.state.location.search).toEqual({ sort: 'new' })

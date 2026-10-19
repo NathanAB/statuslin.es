@@ -41,8 +41,8 @@ describe('StretchedLink', () => {
       'after:absolute',
       'after:inset-0',
       'focus-visible:outline-none',
-      'focus-visible:ring-3',
-      'focus-visible:ring-ring/50',
+      'focus-visible:ring-2',
+      'focus-visible:ring-ring',
     ]) {
       expect(a.className.split(/\s+/)).toContain(cls)
     }
@@ -76,8 +76,8 @@ describe('StretchedLink external href', () => {
       'after:absolute',
       'after:inset-0',
       'focus-visible:outline-none',
-      'focus-visible:ring-3',
-      'focus-visible:ring-ring/50',
+      'focus-visible:ring-2',
+      'focus-visible:ring-ring',
     ]) {
       expect(a.className.split(/\s+/)).toContain(cls)
     }

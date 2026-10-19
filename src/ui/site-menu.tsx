@@ -12,7 +12,7 @@ import { Wordmark } from '@/ui/wordmark'
 
 // The round button phones get in place of the header's links, and the same spot's close button.
 const ROUND_BUTTON =
-  'relative size-11 shrink-0 cursor-pointer rounded-full bg-card outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:hidden'
+  'relative size-11 shrink-0 cursor-pointer rounded-full bg-card outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden'
 const LINE = 'absolute inset-x-3.5 h-[1.5px] bg-foreground'
 
 // Each row rises into place a beat after the one above. Motion only when the visitor allows it.

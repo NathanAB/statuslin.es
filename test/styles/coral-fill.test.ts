@@ -69,3 +69,22 @@ describe('solid coral fills', () => {
     expect(offenders, 'replace bg-primary with bg-primary-fill on these lines').toEqual([])
   })
 })
+
+// WCAG 1.4.11: a focus ring needs 3:1 against what it sits on. The coral ring passes at full
+// strength; at half strength (ring-ring/50) it drops to about 2:1.
+describe('focus rings', () => {
+  it('are coral at full strength, which shows on the page and on cards', () => {
+    expect(contrast(color('--ring'), color('--background'))).toBeGreaterThanOrEqual(3)
+    expect(contrast(color('--ring'), color('--card'))).toBeGreaterThanOrEqual(3)
+  })
+
+  it('never use a see-through ring', () => {
+    const faintRing = /\b(?:ring|outline)-ring\/\d+/
+    const offenders = [...sourceFiles('src'), 'src/styles/app.css'].flatMap((path) =>
+      readFileSync(path, 'utf8')
+        .split('\n')
+        .flatMap((line, i) => (faintRing.test(line) ? [`${path}:${i + 1}`] : [])),
+    )
+    expect(offenders, 'use the full-strength ring on these lines').toEqual([])
+  })
+})

@@ -30,7 +30,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
 
-The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle`, and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (gallery cards, the picker) and `rounded-panel`. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
+The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle`, and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install panels), and the home page's measure: `px-gutter` side gutters, `max-w-page` (1280px of content inside them) and `mt-section` between its sections. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
 
 The gate enforces three sub-rules on `src/styles/app.css`: (a) define-once — no hex literal may be declared twice; (b) theme-alias — every `--color-*` must be `initial` or `var(…)`, never a literal; (c) token-echo — no file in `src/` or `test/` may restate a literal that equals a token value.
 
@@ -61,7 +61,7 @@ All primitives live in `src/ui/`. Import them by name; never reach for a raw `<d
 
 | Export | What it does |
 | --- | --- |
-| `<Stack gap={n}>` | `flex-col` with a gap from the 6-step scale (`1 \| 1.5 \| 2 \| 3 \| 4 \| 6`) |
+| `<Stack gap={n}>` | `flex-col` with a gap from the scale (`1 \| 1.5 \| 2 \| 3 \| 4 \| 6 \| 7 \| 9`) |
 | `<Row gap={n} align justify wrap>` | `flex-row` with the same gap scale; `align` / `justify` map to flex-align / flex-justify values |
 | `<Box UNSAFE_className="…">` | Escape hatch only — requires a `// REASON:` comment on the preceding line |
 
@@ -71,7 +71,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | What it does |
 | --- | --- |
-| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + `max-w-5xl` main |
+| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + `max-w-5xl` main. `narrow` makes main `max-w-lg`; `wide` (the home page) lets main span the window and widens the header and footer to the home measure |
 | `<CenteredShell user={user}>` | Centered screen for login / signed-out-submit views |
 
 ### Typography (`src/ui/text.tsx`)
@@ -80,7 +80,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | --- | --- |
 | `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. |
 | `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`. Text always fills its container: there is no line-length cap. |
-| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer) |
+| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer); `tone="muted"` is dimmed text that lights up on hover (a gallery row's tags) |
 
 ### Cards and interactive surfaces
 
@@ -89,13 +89,15 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<Card interactive>` | `src/ui/card.tsx` | Adds hover lift / glow + entrance animation + `motion-reduce` handling |
 | `<CardHeader>`, `<CardContent>`, `<CardFooter>`, `<CardTitle>`, `<CardDescription>`, `<CardAction>` | `src/ui/card.tsx` | Subcomponents for card anatomy |
 | `<StretchedLink to="…">` | `src/ui/stretched-link.tsx` | Full-card clickable overlay with focus ring; place inside `<Card interactive>` |
+| `<GalleryRow to params onOpen title byline facts description>` | `src/ui/gallery-row.tsx` | The redesign's gallery card: one full-width row, title link (it opens the whole row) and byline left, `facts` right, the preview as children, the description clamped to two lines; `onOpen` runs when the row opens (its click analytics). Hover and focus raise the tone; inside another card it starts a tone up. `<RowFacts>` sets the facts in a dotted line, `<RowNote icon>` is a fact with an icon, `<GalleryList>` stacks rows |
+| `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on its measure, `mt-section` from the one above (`first`: just under the header) |
 
 ### Buttons (`src/ui/button.tsx`)
 
 `Button` and `buttonVariants` are exported. Key variants:
 
 - **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link` · `quiet` (dim text that lights up on hover, no surface: the header's links) · `plain` (full-strength text, no surface)
-- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`)
+- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`)
 - **active:** `true` / `false` — active-tab treatment; pair with `variant="outline"`
 
 ### Other primitives
@@ -114,10 +116,11 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles; `caution` uses the warning tint |
 | `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
-| `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip |
+| `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip; `avatar={false}` shows the byline alone (gallery rows) |
 | `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header; used by shells. Phones get `SiteMenu` (`src/ui/site-menu.tsx`), a full-screen menu; the bar's account dropdown is `UserMenu` (`src/ui/user-menu.tsx`) |
 | `<SignInButton look>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger. `look`: `button` (default, outlined), `bar` (header bar) or `menu` (phone menu) |
-| `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview |
+| `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview. `look="well"` (default) sits it in a code well; `look="bare"` sets it straight on its surface at 15px (gallery rows) |
+| `<SegmentedControl label options value onValueChange look>` | `src/ui/segmented-control.tsx` | One-of-many segments (a radio group; arrow keys move, Space picks). `look`: `boxed` (default, coral selection), `heading` (big words, the selected one full strength: the gallery's filter heading) or `tray` (small segments in a rounded tray: the gallery sort) |
 
 ## Vendoring procedure for new shadcn components
 
@@ -132,6 +135,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 - `src/ui/` — primitives only. Imports only `src/ui` / `src/lib`. Type-only imports from elsewhere are allowed (erased at build).
 - `src/<feature>/` — feature code colocated (`src/gallery`, `src/submit`, `src/review`, `src/adopt`, `src/votes`). No cross-feature value imports — go through `src/lib` or `src/ui`.
 - `src/mods/` may import `src/gallery`, the shared listing and ranking code that ranks mods and status lines on one scale. `src/gallery` never imports `src/mods` or any other feature folder; a route maps mod data into the gallery's shapes instead.
+- `src/home/` — the home page's sections, composed from the features (gallery, mods, adopt) the way a route would. No feature folder imports it.
 - `src/routes/` — thin: a loader calling a server function + a component composing `src/ui` primitives. No data shaping, no `@/db` import.
 - Files ≤ 250 lines, one responsibility. Named exports (default exports only in `src/routes/`). Components `PascalCase`, files `kebab-case.tsx`.
 
@@ -156,6 +160,7 @@ All rules run in `bun run check` and at the hooks listed below.
 | 13 | Import boundaries | routes ↛ db; `src/ui` ↛ features; `src/gallery` ↛ `src/mods`; no cross-feature value imports | `check-boundaries` (dependency-cruiser) |
 | 14 | Biome lint + format | Style, complexity, naming, import order, `noConsole` | `bun run lint` |
 | 15 | Solid coral fills use `bg-primary-fill` | `bg-primary` / `bg-ring` (or `/50` and up) as a fill, where light text fails WCAG AA | `test/styles/coral-fill.test.ts` (in `bun run check`; not at edit time) |
+| 16 | Focus rings at full strength | A see-through focus ring (`ring-ring/50`, `outline-ring/50`), which falls under WCAG's 3:1 for a focus indicator | `test/styles/coral-fill.test.ts` (in `bun run check`; not at edit time) |
 
 **Hook schedule:**
 

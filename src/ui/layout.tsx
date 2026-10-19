@@ -1,6 +1,6 @@
 import type * as React from 'react'
 
-export type Gap = 1 | 1.5 | 2 | 3 | 4 | 6 | 9
+export type Gap = 1 | 1.5 | 2 | 3 | 4 | 6 | 7 | 9
 
 // Full literal class strings — never string-build `gap-${gap}` (Tailwind can't see
 // dynamic names; only complete literals survive the content scan).
@@ -12,6 +12,7 @@ const GAP_CLASS_X: Record<Gap, string> = {
   3: 'gap-x-3',
   4: 'gap-x-4',
   6: 'gap-x-6',
+  7: 'gap-x-7',
   9: 'gap-x-9',
 }
 const GAP_CLASS_Y: Record<Gap, string> = {
@@ -22,6 +23,7 @@ const GAP_CLASS_Y: Record<Gap, string> = {
   3: 'gap-y-3',
   4: 'gap-y-4',
   6: 'gap-y-6',
+  7: 'gap-y-7',
   9: 'gap-y-9',
 }
 
@@ -55,15 +57,13 @@ const JUSTIFY_CLASS = {
 
 // pointer-events inherits, so `none` on the row reaches every descendant; the controls
 // (and tooltip triggers, which need hover) switch it back on for themselves.
-const ABOVE_OVERLAY_CLASS = [
+export const ABOVE_OVERLAY_CLASS = [
   'pointer-events-none relative z-10',
   '[&_a]:pointer-events-auto [&_button]:pointer-events-auto',
   '[&_[data-slot=tooltip-trigger]]:pointer-events-auto',
 ].join(' ')
 
 /** Horizontal flex row. `align` defaults to center (the common title/footer case).
- *  `grow` lets the row take the leftover width in a flex parent. It never shrinks below
- *  its min-content, so a `wrap` row wraps down to its widest child and no narrower.
  *  `aboveOverlay` stacks the row over a sibling StretchedLink overlay inside an
  *  interactive Card, so its buttons/links stay clickable (relative z-10). Only `a`,
  *  `button` and tooltip triggers take the click; anything else in the row (gaps, wrap
@@ -74,7 +74,6 @@ export function Row({
   align = 'center',
   justify = 'start',
   wrap = false,
-  grow = false,
   aboveOverlay = false,
   children,
 }: {
@@ -82,13 +81,12 @@ export function Row({
   align?: 'start' | 'center'
   justify?: 'start' | 'between' | 'center' | 'end'
   wrap?: boolean
-  grow?: boolean
   aboveOverlay?: boolean
   children: React.ReactNode
 }) {
   return (
     <div
-      className={`flex ${wrap ? `flex-wrap ${GAP_CLASS_Y[gap]}` : ''} ${grow ? 'flex-1' : ''} ${aboveOverlay ? ABOVE_OVERLAY_CLASS : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
+      className={`flex ${wrap ? `flex-wrap ${GAP_CLASS_Y[gap]}` : ''} ${aboveOverlay ? ABOVE_OVERLAY_CLASS : ''} ${ALIGN_CLASS[align]} ${JUSTIFY_CLASS[justify]} ${GAP_CLASS_X[gap]}`}
     >
       {children}
     </div>

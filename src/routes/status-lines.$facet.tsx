@@ -15,6 +15,7 @@ import { getGalleryModsFn, getPublishedModTagsFn } from '@/mods/gallery-function
 import { ModCard } from '@/mods/mod-card'
 import { staticPageSocialMeta } from '@/og/meta'
 import { FaqSection } from '@/ui/faq-section'
+import { GalleryList } from '@/ui/gallery-row'
 import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
@@ -110,21 +111,23 @@ function FacetPage() {
         </Stack>
         <Stack gap={4}>
           <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-          {items.map((item, index) =>
-            item.kind === 'mod' ? (
-              <ModCard
-                key={`mod:${item.card.slug}`}
-                card={item.card}
-                analytics={{ surface: 'facet', facet: page.slug, position: index + 1 }}
-              />
-            ) : (
-              <GalleryConfigCard
-                key={`status-line:${item.card.slug}`}
-                card={item.card}
-                analytics={{ surface: 'facet', facet: page.slug, position: index + 1 }}
-              />
-            ),
-          )}
+          <GalleryList>
+            {items.map((item, index) =>
+              item.kind === 'mod' ? (
+                <ModCard
+                  key={`mod:${item.card.slug}`}
+                  card={item.card}
+                  analytics={{ surface: 'facet', facet: page.slug, position: index + 1 }}
+                />
+              ) : (
+                <GalleryConfigCard
+                  key={`status-line:${item.card.slug}`}
+                  card={item.card}
+                  analytics={{ surface: 'facet', facet: page.slug, position: index + 1 }}
+                />
+              ),
+            )}
+          </GalleryList>
         </Stack>
         {facet.faq ? <FaqSection entries={facet.faq} /> : null}
         {page.otherFacets.length > 0 ? (

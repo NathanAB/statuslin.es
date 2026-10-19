@@ -19,7 +19,7 @@ vi.mock('@tanstack/react-router', () => ({
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
   }) => (
     <a
-      href={params ? to.replace('$slug', params.slug ?? '') : to}
+      href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}
       onClick={(event) => {
         event.preventDefault()
         onClick?.(event)
@@ -53,59 +53,45 @@ const SHOT = {
 }
 
 describe('ModCard', () => {
-  it('links its title to the mod page', () => {
+  it('links its title to the mod page and says it is a mod', () => {
     render(<ModCard card={card} />)
 
     expect(screen.getByRole('link', { name: 'Meter' }).getAttribute('href')).toBe('/mods/meter')
+    expect(screen.getByText('Mod')).toBeTruthy()
+    expect(screen.getByText('3 copies')).toBeTruthy()
   })
 
-  it('shows the author, with their GitHub avatar, and the terminal preview', () => {
+  it("keeps the author's GitHub link clickable above the card's overlay, with no avatar", () => {
     const { container } = render(<ModCard card={card} />)
-
-    expect(screen.getByText('@octocat')).toBeTruthy()
-    expect(
-      container.querySelector('img[src="https://avatars.githubusercontent.com/octocat?s=40"]'),
-    ).toBeTruthy()
-    expect(screen.getByText('ctx 42%')).toBeTruthy()
-    expect(screen.getByText('Shows the context meter.')).toBeTruthy()
-  })
-
-  it("keeps the author's GitHub link clickable above the card's overlay", () => {
-    render(<ModCard card={card} />)
 
     const author = screen.getByRole('link', { name: '@octocat' })
     expect(author.getAttribute('href')).toBe('https://github.com/octocat')
     expect(author.closest('.z-10')).toBeTruthy()
+    expect(container.querySelector('img')).toBeNull()
   })
 
-  it('labels the terminal preview and leaves out a Desktop slot when there is no shot', () => {
+  it('shows its terminal preview and description while it has no Desktop shot', () => {
     render(<ModCard card={card} />)
 
-    expect(screen.getByText('Terminal')).toBeTruthy()
-    expect(screen.queryByText('Claude Desktop')).toBeNull()
-    expect(screen.queryByRole('img')).toBeNull()
+    expect(screen.getByText('ctx 42%')).toBeTruthy()
+    expect(screen.getByText('Shows the context meter.')).toBeTruthy()
   })
 
-  it('shows the terminal on top and the Desktop shot below it, each labelled', () => {
+  it('shows its Desktop shot in place of the terminal preview, sized and lazy', () => {
     render(<ModCard card={{ ...card, desktopShot: SHOT }} />)
 
-    const terminal = screen.getByText('Terminal')
-    const desktop = screen.getByText('Claude Desktop')
     const image = screen.getByRole('img', { name: 'Meter in Claude Desktop' })
     expect(image.getAttribute('src')).toBe(SHOT.src)
     expect(image.getAttribute('width')).toBe('790')
-    expect(
-      terminal.compareDocumentPosition(desktop) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-    expect(desktop.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(image.getAttribute('height')).toBe('52')
+    expect(image.getAttribute('loading')).toBe('lazy')
+    expect(screen.queryByText('ctx 42%')).toBeNull()
   })
 
-  it('shows only the Desktop shot for a mod that draws nothing in the terminal', () => {
-    render(<ModCard card={{ ...card, preview: null, desktopShot: SHOT }} />)
+  it('says so when it has no preview at all', () => {
+    render(<ModCard card={{ ...card, preview: null }} />)
 
-    expect(screen.queryByText('Terminal')).toBeNull()
-    expect(screen.getByText('Claude Desktop')).toBeTruthy()
-    expect(screen.getByRole('img', { name: 'Meter in Claude Desktop' })).toBeTruthy()
+    expect(screen.getByText('No preview.')).toBeTruthy()
   })
 })
 

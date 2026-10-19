@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { Children, cloneElement } from 'react'
+import { cloneElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const navigate = vi.fn()
@@ -29,60 +29,6 @@ vi.mock('@/ui/button', () => ({
         {children}
       </button>
     ),
-}))
-
-vi.mock('@/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuButtonTrigger: ({ label }: { label: string }) => (
-    <button type="button">{label}</button>
-  ),
-  DropdownMenuCheckboxItem: ({
-    children,
-    checked,
-    onSelect,
-  }: {
-    children: React.ReactNode
-    checked?: boolean
-    onSelect?: (event: { preventDefault: () => void }) => void
-  }) => (
-    <button
-      type="button"
-      aria-checked={checked}
-      role="menuitemcheckbox"
-      onClick={() => onSelect?.({ preventDefault: vi.fn() })}
-    >
-      {children}
-    </button>
-  ),
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuRadioGroup: ({
-    children,
-    onValueChange,
-  }: {
-    children: React.ReactNode
-    onValueChange: (value: string) => void
-  }) => (
-    <div>
-      {Children.map(children, (child) =>
-        cloneElement(child as React.ReactElement<{ onValueChange?: (value: string) => void }>, {
-          onValueChange,
-        }),
-      )}
-    </div>
-  ),
-  DropdownMenuRadioItem: ({
-    children,
-    value,
-    onValueChange,
-  }: {
-    children: React.ReactNode
-    value?: string
-    onValueChange?: (value: string) => void
-  }) => (
-    <button type="button" onClick={() => onValueChange?.(value ?? '')}>
-      {children}
-    </button>
-  ),
 }))
 
 const { GalleryControls } = await import('@/gallery/gallery-controls')
@@ -116,7 +62,7 @@ describe('GalleryControls analytics', () => {
   it('captures sort changes with the active filter state', () => {
     render(<GalleryControls kind="mods" sort="trending" tags={['git']} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Top' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Top' }))
 
     expect(capture).toHaveBeenCalledWith('gallery_sort_changed', {
       sort: 'top',
@@ -137,6 +83,34 @@ describe('GalleryControls analytics', () => {
       sort: 'new',
       selectedTags: ['git'],
     })
+  })
+})
+
+describe('GalleryControls sort', () => {
+  // The sort sits beside the filter as a small segmented control, so "Trending" is always on screen.
+  it('is one segmented control, with the active sort checked', () => {
+    render(<GalleryControls kind="all" sort="top" tags={[]} />)
+
+    const group = screen.getByRole('radiogroup', { name: 'Sort' })
+    expect(
+      within(group)
+        .getAllByRole('radio')
+        .map((r) => [r.textContent, r.getAttribute('aria-checked')]),
+    ).toEqual([
+      ['Trending', 'false'],
+      ['Top', 'true'],
+      ['New', 'false'],
+    ])
+  })
+
+  it('writes the chosen sort to the URL and resets the page', () => {
+    render(<GalleryControls kind="all" sort="trending" tags={['git']} />)
+
+    fireEvent.click(screen.getByRole('radio', { name: 'New' }))
+    const call = navigate.mock.calls[0]?.[0] as
+      | { search: (prev: Record<string, unknown>) => Record<string, unknown> }
+      | undefined
+    expect(call?.search({ tags: 'git', page: 3 })).toEqual({ tags: 'git', sort: 'new' })
   })
 })
 

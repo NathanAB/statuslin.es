@@ -88,6 +88,14 @@ export function Text({
   )
 }
 
+type LinkTone = 'accent' | 'plain' | 'muted'
+
+const LINK_TONE_CLASS: Record<LinkTone, string> = {
+  accent: 'text-primary',
+  plain: 'text-foreground',
+  muted: 'text-muted-foreground hover:text-foreground',
+}
+
 /**
  * Inline router link with the primary-underline styling ("Back to gallery",
  * "Sign in to submit"). `to`/`search` are typed against the registered route table
@@ -107,8 +115,9 @@ type TextLinkProps =
       // 'inherit' (default) emits no text-size class, so the link matches the surrounding
       // sentence; 'sm' keeps a fixed-small look.
       size?: 'inherit' | 'sm'
-      // 'accent' (default) is the coral link; 'plain' is full-strength text (the footer).
-      tone?: 'accent' | 'plain'
+      // 'accent' (default) is the coral link; 'plain' is full-strength text (the footer);
+      // 'muted' is dimmed text that lights up on hover (a gallery card's tags).
+      tone?: LinkTone
     }
   // External URL; opens in a new tab. Use instead of `to` for off-site links (e.g. docs).
   | {
@@ -121,7 +130,7 @@ type TextLinkProps =
       target?: string
       rel?: string
       size?: 'inherit' | 'sm'
-      tone?: 'accent' | 'plain'
+      tone?: LinkTone
       onClick?: () => void
     }
 
@@ -136,7 +145,7 @@ function hashScrollOptions(): ScrollIntoViewOptions {
 export function TextLink(props: TextLinkProps) {
   const className = cn(
     'underline-offset-4 hover:underline',
-    props.tone === 'plain' ? 'text-foreground' : 'text-primary',
+    LINK_TONE_CLASS[props.tone ?? 'accent'],
     props.size === 'sm' && 'text-sm',
   )
   if (props.href !== undefined) {

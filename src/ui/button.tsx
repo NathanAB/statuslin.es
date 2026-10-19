@@ -5,7 +5,7 @@ import type * as React from 'react'
 import { cn } from '@/lib/cn'
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 cursor-pointer select-none items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-clip-padding font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "group/button inline-flex shrink-0 cursor-pointer select-none items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-clip-padding font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -51,6 +51,9 @@ const buttonVariants = cva(
         // The redesign's pill: the label, then the trailing icon in its own circle. It scales
         // down a touch on press instead of nudging down.
         pill: "h-12 gap-3.5 rounded-full pr-1.75 pl-5.5 text-base tracking-[-0.01em] duration-500 ease-settle active:not-aria-[haspopup]:translate-y-0 motion-safe:active:scale-98 [&_svg:not([class*='size-'])]:size-4.5",
+        // The pill's round icon-only partner (previous page, the mods row's arrows); needs an aria-label.
+        round:
+          "size-11 rounded-full duration-500 ease-settle active:not-aria-[haspopup]:translate-y-0 motion-safe:active:scale-94 [&_svg:not([class*='size-'])]:size-5",
       },
     },
     defaultVariants: {

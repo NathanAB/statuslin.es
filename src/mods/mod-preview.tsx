@@ -62,25 +62,14 @@ export function ModPreview({ mod }: { mod: Pick<ModDetail, 'title' | 'preview' |
   )
 }
 
-/** A card's previews: only what the mod drew, the terminal on top and its Desktop card below. */
-export function ModCardPreview({
+/** A gallery row's preview: the mod's Claude Desktop shot, or its terminal line while it has none. */
+export function ModRowPreview({
   card,
 }: {
   card: Pick<GalleryModCard, 'title' | 'preview' | 'desktopShot'>
 }) {
-  if (card.preview === null && card.desktopShot === null) return <NoPreview />
-  return (
-    <Stack gap={3}>
-      {card.preview !== null && (
-        <Labelled surface="terminal">
-          <StatuslinePreview segments={card.preview} />
-        </Labelled>
-      )}
-      {card.desktopShot !== null && (
-        <Labelled surface="desktop">
-          <DesktopShot shot={card.desktopShot} alt={desktopAlt(card.title)} fit="card" />
-        </Labelled>
-      )}
-    </Stack>
-  )
+  if (card.desktopShot !== null)
+    return <DesktopShot shot={card.desktopShot} alt={desktopAlt(card.title)} fit="card" />
+  if (card.preview !== null) return <StatuslinePreview segments={card.preview} look="bare" />
+  return <NoPreview />
 }

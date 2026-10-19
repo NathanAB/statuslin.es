@@ -1,0 +1,26 @@
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/cn'
+import { PAGE_MEASURE } from '@/ui/page-measure'
+
+/**
+ * One section of the home page, on the page measure. The first sits just under the header; every
+ * other one keeps the section gap from the one above.
+ */
+export function HomeSection({
+  id,
+  first = false,
+  children,
+}: {
+  id?: string
+  first?: boolean
+  children: ReactNode
+}) {
+  return (
+    <section
+      id={id}
+      className={cn(PAGE_MEASURE.wide, first ? 'pt-[clamp(1.75rem,4vw,3.5rem)]' : 'mt-section')}
+    >
+      {children}
+    </section>
+  )
+}

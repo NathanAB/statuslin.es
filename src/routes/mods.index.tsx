@@ -10,6 +10,7 @@ import { ModCard } from '@/mods/mod-card'
 import { modsFaq } from '@/mods/mods-page-faq'
 import { staticPageSocialMeta } from '@/og/meta'
 import { FaqSection } from '@/ui/faq-section'
+import { GalleryList } from '@/ui/gallery-row'
 import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
@@ -72,13 +73,15 @@ function ModsPage() {
         {mods.length > 0 ? (
           <Stack gap={4}>
             <VisuallyHidden as="h2">Mods</VisuallyHidden>
-            {mods.map((card, index) => (
-              <ModCard
-                key={card.slug}
-                card={card}
-                analytics={{ surface: 'mods', position: index + 1 }}
-              />
-            ))}
+            <GalleryList>
+              {mods.map((card, index) => (
+                <ModCard
+                  key={card.slug}
+                  card={card}
+                  analytics={{ surface: 'mods', position: index + 1 }}
+                />
+              ))}
+            </GalleryList>
           </Stack>
         ) : (
           <Text muted>No mods yet.</Text>
