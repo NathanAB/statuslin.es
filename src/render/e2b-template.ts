@@ -58,7 +58,7 @@ export const E2B_DESKTOP_TEMPLATE_BUILD_NAME = 'statuslines-desktop-render-build
  * Immutable E2B snapshot selected by every Desktop recording. Updated only after a reviewed build.
  * Created with `secure: true` like the mod template, for the same reason.
  */
-export const E2B_DESKTOP_TEMPLATE_ID = 'q0fljxtraslw7qr04jt6:default'
+export const E2B_DESKTOP_TEMPLATE_ID = 'x1w4t0n3o7gbgw9cgrwf:default'
 
 /** Root-owned files the Desktop template adds: the boot script and Desktop's managed settings. */
 export const SANDBOX_DESKTOP_DIR = '/opt/statuslines/desktop'

@@ -227,10 +227,10 @@ describe('frameShot with a pane open', () => {
 
   it.each([
     // [slug, the first and last rows the mod draws in its pane]
-    ['flightdeck', 93, 361],
-    ['pets', 89, 272],
-    ['code-pet', 98, 163],
-    ['filetree', 95, 168],
+    ['flightdeck', 89, 357],
+    ['pets', 85, 270],
+    ['code-pet', 94, 178],
+    ['filetree', 89, 199],
   ] as const)('cards all that %s draws in its pane, leaving out the chat', (slug, first, last) => {
     const frame = frameShot({
       changed: null,
@@ -254,7 +254,7 @@ describe('frameShot with a pane open', () => {
       pane: paneOf('flightdeck'),
     })
 
-    expect(frame).toMatchObject({ rect: PANE_ONLY, card: { ...PANE_INSIDE, y: 85 } })
+    expect(frame).toMatchObject({ rect: PANE_ONLY, card: { ...PANE_INSIDE, y: 81 } })
   })
 
   it('cuts a pane too tall for a card at a blank row', () => {
@@ -278,7 +278,7 @@ describe('frameShot with a pane open', () => {
         paneOpen: true,
         rows: rows(),
         plate: NO_PLATE,
-        pane: rows([44, 68, 0.2]),
+        pane: rows([40, 64, 0.2]),
       }),
     ).toEqual({
       kind: 'crop',
@@ -297,7 +297,7 @@ describe('frameShot with a pane open', () => {
     })
 
     expect(frame).toMatchObject({
-      card: { x: 37, y: 769, width: 701 - 37, height: PROMPT_BOX.y - 769 },
+      card: { x: 33, y: 769, width: 701 - 33, height: PROMPT_BOX.y - 769 },
     })
   })
 })
