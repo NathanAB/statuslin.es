@@ -27,7 +27,7 @@ const PRINTED_PNG_MAX_BYTES = Math.ceil(PNG_MAX_BYTES / 3) * 4 + 16
  * Recording sandbox lifetime ceiling: the worst case of every bounded wait in a session
  * (drive.ts). The `finally` kill is the real teardown; a measured recording takes under a minute.
  */
-export const DESKTOP_SANDBOX_TIMEOUT_MS = 15 * 60_000
+export const DESKTOP_SANDBOX_TIMEOUT_MS = 25 * 60_000
 /** The analysis sandbox's one upload, and its probe, comparison and crop commands. */
 const ANALYSIS_SANDBOX_TIMEOUT_MS = REQUEST_TIMEOUT_MS + 4 * COMMAND_TIMEOUT_MS
 

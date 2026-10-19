@@ -369,7 +369,9 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
 3. Render each mod's previews. One run records every mod in the terminal and in Claude Desktop and
    prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
    its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
-   it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result:
+   it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result.
+   A published mod's live previews are replaced only after the run prints the new ones beside its
+   README and you answer `y`, so run it in a terminal:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
    ```
@@ -383,7 +385,9 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod   # response JSON on stdin
    ```
 5. Publish each mod. `<sha>` is the entry's `commitSha` in `src/mods/curation.json`. Run the dry
-   run first and read its WARN lines, then apply with the slug typed back:
+   run first: check that each preview it prints (the Desktop shot is a PNG under the temp folder)
+   shows what the README beside it says the mod draws, and read its WARN lines. Then apply with the
+   slug typed back:
    ```sh
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
@@ -399,8 +403,9 @@ commit, edit the entry in `src/mods/curation.json`, then, on staging and then pr
 DATABASE_URL='<env pooled url>' bun run import:mods                 # prints "updated <slug>: new input steps"
 DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
 ```
-The new previews show on the live page as soon as they render; nothing needs publishing. A
-preview types at most 2 steps (the recording's time limit), so pick the 2 that show the most.
+For a published mod, `render:mods` prints the new previews beside the README and asks before it
+replaces the live ones; nothing needs publishing. A
+preview types at most 13 steps (`INPUT_STEPS_MAX`, set by the recording's time limit).
 
 ### Re-pin a mod
 
@@ -530,7 +535,8 @@ published; rerun `render:status-line-desktop` for it.
    ```
 4. Publish it with the new `commitSha`. The dry run lists the files changed since the live commit
    and warns when the footprint grows or plugin.json's `version` is unchanged (existing installs
-   then won't update). Read it, then apply:
+   then won't update). It also prints the new version's previews beside its README: check each
+   shows what the README says the mod draws. Read it, then apply:
    ```sh
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
@@ -560,7 +566,7 @@ out. Nothing renders until you do: mods render from your machine (ADR 0006). Run
    DATABASE_URL='<env pooled url>' bun run input-steps:mods --prepare <slug>
    DATABASE_URL='<env pooled url>' bun run input-steps:mods --apply   # response JSON on stdin
    ```
-3. **Render it** in the terminal and in Claude Desktop (up to 15 minutes):
+3. **Render it** in the terminal and in Claude Desktop (up to 25 minutes):
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
    ```

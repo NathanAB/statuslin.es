@@ -402,13 +402,19 @@ describe('importMods', () => {
         {},
         {
           ...silent,
-          github: deps.github,
+          github: { ...deps.github, readme: async () => null },
           recorder: new FakeModRecorder({ baseline, mods: { skins } }),
           desktopRecorder: new FakeDesktopRecorder(),
+          review: async () => false,
+          writePng: () => 'unused.png',
         },
       )
     const publish = (sha: string, ...flags: string[]) =>
-      runPublish(['skins', sha, ...flags], { ...silent, github: fakeGitHub() })
+      runPublish(['skins', sha, ...flags], {
+        ...silent,
+        github: fakeGitHub(),
+        writePng: () => 'unused.png',
+      })
     const liveCommit = async () => (await getMarketplaceRows(db)).map((row) => row.commitSha)
     await run([entry()], deps)
     await render()
