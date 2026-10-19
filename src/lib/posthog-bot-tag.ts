@@ -21,9 +21,11 @@ export interface BrowserSignals {
 export function isAutomatedBrowser(s: BrowserSignals): boolean {
   if (s.webdriver || s.userAgent.includes('HeadlessChrome')) return true
   // A page as big as the whole screen has no browser window around it: a headless or kiosk run.
-  // One fleet browses like that from data centres (1920x1080, every page, no chrome).
+  // The fleets that browse like that from data centres are all Chrome or Edge. Firefox's and
+  // Safari's privacy modes report the window as the screen, so the rule leaves them out.
+  const chromium = /(Chrome|Chromium)\//.test(s.userAgent)
   const fillsScreen = s.innerWidth === s.screenWidth && s.innerHeight === s.screenHeight
-  return fillsScreen && !s.fullscreen && s.touchPoints === 0
+  return chromium && fillsScreen && !s.fullscreen && s.touchPoints === 0
 }
 
 export function browserSignals(): BrowserSignals {
