@@ -17,6 +17,7 @@ import { runGenerateContentCommand } from './generate-content'
 import { importMods } from './import-mods'
 import { runPublish } from './publish-mod'
 import { renderMods } from './render-mods'
+import { renderStatusLineDesktop } from './render-status-line-desktop'
 import { assertAppEnv, repinsToRun, runRepin } from './repin-mods'
 
 /**
@@ -33,6 +34,8 @@ import { assertAppEnv, repinsToRun, runRepin } from './repin-mods'
  *   printf 'publish 3 to staging\n' > <input pipe>
  *   cat <requests pipe>
  *   cat > <input pipe> <<'EOF' ... EOF
+ *
+ * When statusline-anywhere is among them, it then re-records the status line Desktop shots too.
  *
  * Exit code 0 when every mod published and its copy applied, 1 when a step stopped the run.
  */
@@ -101,6 +104,8 @@ async function main(): Promise<number> {
             writeStdout: log,
             writeStderr: log,
           }),
+        renderStatusLineDesktop: () =>
+          renderStatusLineDesktop({}, { db, desktopRecorder: e2bDesktopRecorder(), github, log }),
       },
       {
         log,
