@@ -12,7 +12,8 @@
       "!**/routeTree.gen.ts",
       "!src/db/auth-schema.ts",
       "!drizzle",
-      "!scripts/seed-data/sources"
+      "!scripts/seed-data/sources",
+      "!docs/redesign/*/prototype"
     ]
   },
   "formatter": {
