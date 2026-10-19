@@ -28,7 +28,27 @@ describe('SiteFooter', () => {
     const { container } = render(<SiteFooter />)
     const nav = screen.getByRole('navigation', { name: 'Footer' })
     expect(nav.querySelectorAll('a').length).toBe(container.querySelectorAll('a').length)
-    expect(nav.querySelectorAll('a').length).toBe(12)
+    expect(nav.querySelectorAll('a').length).toBe(13)
+  })
+
+  // Columns of their own instead of one row that wraps wherever the width happens to break it.
+  it('groups its links under Browse, Guides and About', () => {
+    render(<SiteFooter />)
+    const names = (list: string) =>
+      Array.from(
+        screen.getByRole('list', { name: list }).querySelectorAll('a'),
+        (a) => a.textContent,
+      )
+    expect(names('Browse')).toEqual(['Mods', 'Best status lines', 'Resources', 'Submit'])
+    expect(names('Guides')).toEqual([
+      'Setup guide',
+      'Status line not showing?',
+      'Claude Desktop',
+      'Status lines vs mods',
+      'Are mods safe?',
+      'Buddy pets',
+    ])
+    expect(names('About')).toEqual(['GitHub', 'Contact', 'Terms'])
   })
 
   it('says what the site is, with a copyright line', () => {

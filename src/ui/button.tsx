@@ -40,6 +40,9 @@ const buttonVariants = cva(
         nav: 'h-9 gap-1.5 px-1 sm:px-2.5',
         // Text-sized, with no padding: a link in the header bar.
         bar: "h-auto gap-2 rounded-sm p-0 font-normal text-small [&_svg:not([class*='size-'])]:size-4",
+        // The header bar's one filled action (Submit): a compact pill, text-sized like the links.
+        'bar-pill':
+          "h-9 gap-1.5 rounded-full pr-4 pl-3 text-small tracking-[-0.01em] [&_svg:not([class*='size-'])]:size-4",
         // The phone menu's big links.
         menu: "h-auto justify-start gap-3 rounded-md p-0 py-1.5 font-semibold text-[2.25rem] tracking-[-0.03em] [&_svg:not([class*='size-'])]:size-7",
         icon: 'size-8',

@@ -115,7 +115,7 @@ function Home() {
   return (
     <PageShell
       user={user}
-      wide
+      fullBleed
       footerNote={
         <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
       }

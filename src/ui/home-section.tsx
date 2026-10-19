@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
-import { PAGE_MEASURE } from '@/ui/page-measure'
+import { PAGE_COLUMN } from '@/ui/page-column'
 
 /**
- * One section of the home page, on the page measure. The first sits just under the header; every
+ * One section of the home page, on the page column. The first sits just under the header; every
  * other one keeps the section gap from the one above.
  */
 export function HomeSection({
@@ -18,7 +18,7 @@ export function HomeSection({
   return (
     <section
       id={id}
-      className={cn(PAGE_MEASURE.wide, first ? 'pt-[clamp(1.75rem,4vw,3.5rem)]' : 'mt-section')}
+      className={cn(PAGE_COLUMN, first ? 'pt-[clamp(1.75rem,4vw,3.5rem)]' : 'mt-section')}
     >
       {children}
     </section>

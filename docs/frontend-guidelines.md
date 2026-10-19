@@ -30,7 +30,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
 
-The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install steps), and the home page's measure: `px-gutter` side gutters, `max-w-page` (1280px of content inside them) and `mt-section` between its sections. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
+The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install steps), and `mt-section` between the home page's sections. Use them only in those redesigned components. The page column is site-wide: `PAGE_COLUMN` (`src/ui/page-column.ts`, `px-gutter` side gutters around up to 1280px, `max-w-page`) is the one width the header, every page's content and the footer sit on, so no page picks a width of its own. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
 
 The gate enforces three sub-rules on `src/styles/app.css`: (a) define-once — no hex literal may be declared twice; (b) theme-alias — every `--color-*` must be `initial` or `var(…)`, never a literal; (c) token-echo — no file in `src/` or `test/` may restate a literal that equals a token value.
 
@@ -71,7 +71,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | What it does |
 | --- | --- |
-| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + `max-w-5xl` main. `narrow` makes main `max-w-lg`; `wide` (the home page) lets main span the window and widens the header and footer to the home measure; `footerNote` adds a quiet line of the page's own to the footer (the home page's inventory) |
+| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + main + `SiteFooter`, all on `PAGE_COLUMN`. `fullBleed` (the home page) lets main span the window, each section placing itself on the column; `footerNote` adds a quiet line of the page's own to the footer (the home page's inventory) |
 | `<CenteredShell user={user}>` | Centered screen for login / signed-out-submit views |
 
 ### Typography (`src/ui/text.tsx`)
@@ -80,7 +80,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | --- | --- |
 | `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. `size="compact"` is a quiet title; `size="display"` is the home hero's title |
 | `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`. Text always fills its container: there is no line-length cap. |
-| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer); `tone="muted"` is dimmed text that lights up on hover (a gallery row's tags); `tone="underlined"` is full-strength text underlined at rest (the hero's "Open …" link) |
+| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer); `tone="muted"` is dimmed text that lights up on hover (a gallery row's tags); `tone="underlined"` is full-strength text underlined at rest (the hero's "Open page" link) |
 
 ### Cards and interactive surfaces
 
@@ -99,14 +99,14 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<ClosingBand heading lead panel>` | `src/ui/closing-band.tsx` | The home page's full-width coral closing section, light text on `bg-primary-fill` |
 | `<SubmitChooser signedIn>` | `src/ui/submit-cta.tsx` | Status line or Mod, then continue: a link to `/submit` (or `?kind=mod`) when signed in, GitHub sign-in back to that form when not |
 | `<Reveal>` | `src/ui/reveal.tsx` | A block that rises into place when it first scrolls into view. Only blocks that start below the fold wait, never without JavaScript or under reduced motion, and a block the page jumped past shows at once |
-| `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on its measure, `mt-section` from the one above (`first`: just under the header) |
+| `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on the page column, `mt-section` from the one above (`first`: just under the header) |
 
 ### Buttons (`src/ui/button.tsx`)
 
 `Button` and `buttonVariants` are exported. Key variants:
 
 - **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link` · `quiet` (dim text that lights up on hover, no surface: the header's links) · `plain` (full-strength text, no surface)
-- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`). `aria-disabled` dims a button that can't act right now but keeps it focusable (the mods row's ends); its `onClick` must then do nothing
+- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `bar-pill` (the header's one filled action, Submit: a compact pill) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`). `aria-disabled` dims a button that can't act right now but keeps it focusable (the mods row's ends); its `onClick` must then do nothing
 - **active:** `true` / `false` — active-tab treatment; pair with `variant="outline"`
 
 ### Other primitives
@@ -126,7 +126,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
 | `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip; `avatar={false}` shows the byline alone (gallery rows) |
-| `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header (Mods, Guide, Resources, Submit, Star, then sign-in or the user menu); used by shells. Phones get `SiteMenu` (`src/ui/site-menu.tsx`), a full-screen menu; the bar's account dropdown is `UserMenu` (`src/ui/user-menu.tsx`) |
+| `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header (Mods, Guide, Resources, Star, a filled Submit pill, then sign-in or the user menu); used by shells. Phones keep the wordmark and Submit and get `SiteMenu` (`src/ui/site-menu.tsx`), a full-screen menu of the rest; the bar's account dropdown is `UserMenu` (`src/ui/user-menu.tsx`) |
 | `<SignInButton look>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger. `look`: `button` (default, outlined), `bar` (header bar) or `menu` (phone menu) |
 | `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview. `look="well"` (default) sits it in a code well; `look="strip"` sets it at 15px on a full-width dark strip (gallery rows); `look="terminal"` takes the home terminal's text |
 | `<SegmentedControl label options value onValueChange look>` | `src/ui/segmented-control.tsx` | One-of-many segments (a radio group; arrow keys move, Space picks). `look`: `boxed` (default, coral selection), `heading` (big words, the selected one full strength: the gallery's filter heading) or `tray` (small segments in a rounded tray: the gallery sort) |

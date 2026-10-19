@@ -8,7 +8,7 @@ import { copiesLabel } from '@/ui/copy-count'
 import { HeroActions, HeroLayout } from '@/ui/hero-layout'
 import { Terminal } from '@/ui/terminal'
 import { Heading, Text, TextLink } from '@/ui/text'
-import { LiveMessage } from '@/ui/visually-hidden'
+import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 
 /** The hero's one sentence beside the title. */
 export const HERO_LEAD =
@@ -122,8 +122,9 @@ export function HomeHero({
               title={line.title}
               onCopied={() => copies.record('prompt')}
             />
+            {/* The same visible words for every status line, so a long title never moves the row. */}
             <TextLink to="/c/$slug" params={{ slug: line.slug }} tone="underlined">
-              Open {line.title}
+              Open page<VisuallyHidden>: {line.title}</VisuallyHidden>
             </TextLink>
           </HeroActions>
           <Text muted size="sm">

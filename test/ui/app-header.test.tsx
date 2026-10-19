@@ -76,17 +76,18 @@ describe('AppHeader', () => {
     expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  // Submitting has its own place in the header, not only the home page's closing section.
-  it('links to the submit form, after the pages and before Star', () => {
+  // We want people to submit: Submit is the header's one filled button, beside sign-in, and stays
+  // in the bar on phones, where the other links fold into the menu.
+  it('shows Submit as a filled button between Star and sign-in, outside the folding links', () => {
     render(<AppHeader user={null} />)
     const submit = screen.getByRole('link', { name: 'Submit' })
     expect(submit.getAttribute('href')).toBe('/submit')
-    const resources = screen.getByRole('link', { name: 'Resources' })
+    expect(submit.getAttribute('data-variant')).toBe('default')
+    expect(submit.closest('nav')).toBeNull()
     const star = screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })
-    expect(
-      resources.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-    expect(submit.compareDocumentPosition(star) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const signIn = screen.getByRole('button', { name: 'Sign in with GitHub' })
+    expect(star.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(submit.compareDocumentPosition(signIn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows the Star on GitHub link', () => {

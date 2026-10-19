@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
-import { PAGE_MEASURE } from '@/ui/page-measure'
+import { PAGE_COLUMN } from '@/ui/page-column'
 import { Reveal } from '@/ui/reveal'
 
 /**
@@ -22,7 +22,7 @@ export function ClosingBand({
       <div
         className={cn(
           'grid min-h-[88svh] grid-cols-12 content-between items-center gap-x-6 gap-y-12 py-[clamp(3.5rem,7vw,6rem)] min-[56.25rem]:content-center',
-          PAGE_MEASURE.wide,
+          PAGE_COLUMN,
         )}
       >
         <div className="col-span-12 self-start min-[56.25rem]:col-span-5 min-[56.25rem]:self-end">

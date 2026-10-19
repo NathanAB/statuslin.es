@@ -93,11 +93,25 @@ describe('HomeHero', () => {
 
     expect(statusRow().textContent).toBe('pace clean')
     expect(announced()).toBe('Showing Pace Dot Meters in the Everyday session.')
-    expect(screen.getByRole('link', { name: 'Open Pace Dot Meters' }).getAttribute('href')).toBe(
-      '/c/pace',
-    )
+    expect(
+      screen.getByRole('link', { name: 'Open page: Pace Dot Meters' }).getAttribute('href'),
+    ).toBe('/c/pace')
     expect(screen.getByRole('button', { name: 'Install Pace Dot Meters' })).toBeTruthy()
     expect(screen.getByText('by @pace-dev · 94 copies')).toBeTruthy()
+  })
+
+  // A long title used to push the link under the button: its visible words now never change.
+  it("keeps the page link's visible words the same whatever is picked", () => {
+    renderHero()
+    const visible = () => {
+      const link = screen.getByRole('link', { name: /^Open page: / }).cloneNode(true) as Element
+      for (const hidden of link.querySelectorAll('.sr-only')) hidden.remove()
+      return link.textContent
+    }
+
+    expect(visible()).toBe('Open page')
+    fireEvent.click(within(picker()).getByRole('radio', { name: /^Kanji Rain/ }))
+    expect(visible()).toBe('Open page')
   })
 
   it('switches the conversation, the caption and the data with the session', () => {

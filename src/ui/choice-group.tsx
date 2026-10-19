@@ -14,8 +14,9 @@ const root = cva('', {
   },
 })
 
+// A pick shows at once: the 150ms fade only softens it, where the prototype's half second lagged.
 const item = cva(
-  `${FOCUS_RING} cursor-pointer text-left text-muted-foreground transition-[background-color,color,scale] duration-500 ease-settle hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground`,
+  `${FOCUS_RING} cursor-pointer text-left text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground`,
   {
     variants: {
       look: {
@@ -27,17 +28,19 @@ const item = cva(
 )
 
 // `rise`: the hero picker's rows follow its own entrance in, 45ms apart, as the prototype's do.
+// Timed through tw-animate's own variables: Tailwind's `duration-*` and `delay-*` would also time
+// each row's transitions, holding a pick back by its entrance delay.
 const RISE =
-  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-900 motion-safe:ease-settle motion-safe:fill-mode-backwards'
+  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:animation-duration-900 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 const RISE_DELAYS = [
-  'delay-[420ms]',
-  'delay-[465ms]',
-  'delay-[510ms]',
-  'delay-[555ms]',
-  'delay-[600ms]',
-  'delay-[645ms]',
-  'delay-[690ms]',
-  'delay-[735ms]',
+  '[--tw-animation-delay:420ms]',
+  '[--tw-animation-delay:465ms]',
+  '[--tw-animation-delay:510ms]',
+  '[--tw-animation-delay:555ms]',
+  '[--tw-animation-delay:600ms]',
+  '[--tw-animation-delay:645ms]',
+  '[--tw-animation-delay:690ms]',
+  '[--tw-animation-delay:735ms]',
 ]
 
 /**

@@ -103,7 +103,7 @@ export function SiteMenu({
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger className={cn(ROUND_BUTTON, 'ml-auto')} aria-label="Menu">
+      <Dialog.Trigger className={ROUND_BUTTON} aria-label="Menu">
         <span aria-hidden="true" className={cn(LINE, 'top-[18px]')} />
         <span aria-hidden="true" className={cn(LINE, 'top-[25px]')} />
       </Dialog.Trigger>

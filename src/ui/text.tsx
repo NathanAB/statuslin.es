@@ -129,7 +129,7 @@ type TextLinkProps =
       size?: 'inherit' | 'sm'
       // 'accent' (default) is the coral link; 'plain' is full-strength text (the footer);
       // 'muted' is dimmed text that lights up on hover (a gallery card's tags); 'underlined' is
-      // full-strength text underlined at rest (the hero's "Open …" link).
+      // full-strength text underlined at rest (the hero's "Open page" link).
       tone?: LinkTone
     }
   // External URL; opens in a new tab. Use instead of `to` for off-site links (e.g. docs).

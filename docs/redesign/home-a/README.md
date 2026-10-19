@@ -137,8 +137,9 @@ Measured on the current code. Keep each, or change it on purpose and update its 
 - **Header:** Mods, Guide, Resources, Star on GitHub, then sign-in or the user menu (My submissions,
   Review for admins, Log out).
 - **Footer:** keep every link the current footer has: guides, Best status lines, Resources, GitHub,
-  Contact, Terms. The prototype's one-line footer only shows five, so lay out all of them on that
-  quiet line.
+  Contact, Terms. The prototype's one-line footer only shows five; after review they sit in three
+  named columns (Browse, Guides, About) instead, since one wrapping line broke differently on every
+  page.
 
 ### Analytics (keep names and properties)
 - `gallery_page_changed`, `gallery_sort_changed`, `gallery_kind_changed`, `gallery_filter_changed`.
@@ -281,3 +282,11 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   below the gallery, keeps `surface: 'home_featured_mod'` and stays out of the ItemList. The other
   mods in the row report `surface: 'home_mods_row'`. The row now shows on every gallery page, since
   it doesn't change with the sort, kind, tags or page.
+- **One page column (after review), decided by the owner.** The home page's 1280px column had
+  become a second width beside the other pages' 1024px, so the header jumped between pages. Every
+  page now sits on the one column (`PAGE_COLUMN`), the submit form included.
+- **Submit in the header (after review), decided by the owner: a filled pill.** It's the bar's one
+  filled button, beside sign-in, and stays in the bar on phones.
+- **The hero picker (after review): picks show at once.** The prototype's half-second fade read
+  as lag, so a pick now takes 150ms, and the link under it always reads "Open page" so a long title
+  never pushes it under the button.

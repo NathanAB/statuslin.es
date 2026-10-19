@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 import { prefersReducedMotion } from '@/lib/reduced-motion'
 import { Button } from '@/ui/button'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
-import { PAGE_MEASURE } from '@/ui/page-measure'
+import { PAGE_COLUMN } from '@/ui/page-column'
 import { LiveMessage } from '@/ui/visually-hidden'
 
 export interface CarouselItem {
@@ -118,7 +118,7 @@ export function ShotCarousel({
   if (items.length === 0) return null
   return (
     <section className="mt-section flex flex-col gap-[clamp(2.5rem,5vw,4.5rem)] bg-sunken py-[clamp(5rem,9vw,8.5rem)]">
-      <div className={cn('grid grid-cols-12 items-start gap-6', PAGE_MEASURE.wide)}>
+      <div className={cn('grid grid-cols-12 items-start gap-6', PAGE_COLUMN)}>
         <div className="col-span-12 min-[56.25rem]:col-span-4">
           <h2 className="mb-3.5 font-semibold text-foreground text-heading">{heading}</h2>
           <p className="text-body text-foreground">{lead}</p>

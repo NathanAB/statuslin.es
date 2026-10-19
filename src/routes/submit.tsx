@@ -72,7 +72,7 @@ function Submit() {
   const draft = data.kind === 'mod' ? data.draft : data.initial
   const copy = data.kind === 'mod' ? modSubmitPageCopy(data.draft) : submitPageCopy(data.initial)
   return (
-    <PageShell user={data.user} narrow>
+    <PageShell user={data.user}>
       <Stack gap={4}>
         <Heading level={1}>{copy.heading}</Heading>
         {draft ? null : (
