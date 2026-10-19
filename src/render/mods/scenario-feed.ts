@@ -83,14 +83,19 @@ function busyCalls(scenario: Scenario): BusyCall[] {
 }
 
 /**
- * The session's permission rules: each busy call but the last is allowed, so none waits on a
- * permission prompt, and the last is denied. A path rule's leading `//` makes it absolute.
+ * The settings the busy calls need. Permission rules: each call but the last is allowed, so none
+ * waits on a permission prompt, and the last is denied; a path rule's leading `//` makes it
+ * absolute. Desktop runs its engine's Bash in bubblewrap, which cannot start in the hardened
+ * sandbox and fails every command, so the tests run outside it.
  */
-export function busyPermissions(scenario: Scenario): { allow: string[]; deny: string[] } {
+export function busySettings(scenario: Scenario) {
   const source = `/${feedStdin(scenario).workspace.current_dir}/${BUSY_SOURCE}`
   return {
-    allow: [`Bash(${TEST_COMMAND})`, `Read(${source})`, `Edit(${source})`],
-    deny: ['Bash(rm -rf:*)'],
+    permissions: {
+      allow: [`Bash(${TEST_COMMAND})`, `Read(${source})`, `Edit(${source})`],
+      deny: ['Bash(rm -rf:*)'],
+    },
+    sandbox: { enabled: false, excludedCommands: [TEST_COMMAND] },
   }
 }
 

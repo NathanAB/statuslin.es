@@ -24,7 +24,7 @@ import {
   stepTextPath,
   transcriptLinesCommand,
 } from '@/render/mods/desktop/session'
-import { busyPermissions, cannedReply, feedScenario } from '@/render/mods/scenario-feed'
+import { busySettings, cannedReply, feedScenario } from '@/render/mods/scenario-feed'
 import { FEED_PLUGIN_DIR, REPLY_FILE, sessionEnv } from '@/render/mods/session'
 
 const scenario = feedScenario()
@@ -93,7 +93,7 @@ describe('desktopSessionFiles', () => {
       readFileSync('src/render/mods/desktop/sandbox/statusline.sh', 'utf8'),
     )
     expect(settings(files)).toEqual({
-      permissions: busyPermissions(scenario),
+      ...busySettings(scenario),
       statusLine: { type: 'command', command: `cat | bash ${script}` },
     })
   })

@@ -9,7 +9,7 @@ import {
 } from '@/render/e2b-template'
 import {
   BUSY_WORKSPACE_FILES,
-  busyPermissions,
+  busySettings,
   feedFile,
   feedScenario,
 } from '@/render/mods/scenario-feed'
@@ -130,7 +130,7 @@ describe('sessionFiles', () => {
 
   it("writes the session's settings, with the busy session's permission rules", () => {
     expect(JSON.parse(fileAt(`${env.CLAUDE_CONFIG_DIR}/settings.json`))).toEqual({
-      permissions: busyPermissions(feedScenario()),
+      ...busySettings(feedScenario()),
     })
   })
 
@@ -161,7 +161,7 @@ describe('sessionSettings', () => {
     const statusLine = { type: 'command', command: 'cat | bash /x.sh' }
 
     expect(JSON.parse(sessionSettings(feedScenario(), { statusLine }))).toEqual({
-      permissions: busyPermissions(feedScenario()),
+      ...busySettings(feedScenario()),
       statusLine,
     })
   })

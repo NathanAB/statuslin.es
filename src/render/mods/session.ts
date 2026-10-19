@@ -7,7 +7,7 @@ import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
 import {
   BUSY_WORKSPACE_FILES,
-  busyPermissions,
+  busySettings,
   cannedReply,
   feedFile,
   feedStdin,
@@ -85,11 +85,11 @@ export interface SessionSeed {
 }
 
 /**
- * The session's settings.json on both surfaces: the permission rules `/preview-busy` needs, since
- * a call no rule covers would wait on a permission prompt, plus the surface's own keys.
+ * The session's settings.json on both surfaces: what `/preview-busy`'s calls need (a call no rule
+ * covers would wait on a permission prompt), plus the surface's own keys.
  */
 export function sessionSettings(scenario: Scenario, own: Record<string, unknown> = {}): string {
-  return JSON.stringify({ permissions: busyPermissions(scenario), ...own })
+  return JSON.stringify({ ...busySettings(scenario), ...own })
 }
 
 export function sessionFiles(

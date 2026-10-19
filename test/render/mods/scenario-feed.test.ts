@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   BUSY_WORKSPACE_FILES,
-  busyPermissions,
+  busySettings,
   cannedReply,
   feedFile,
   feedScenario,
@@ -165,15 +165,22 @@ describe('busy session workspace', () => {
   })
 })
 
-describe('busyPermissions', () => {
+describe('busySettings', () => {
   it('allows exactly the busy session calls, and denies every rm -rf', () => {
-    expect(busyPermissions(feedScenario())).toEqual({
+    expect(busySettings(feedScenario()).permissions).toEqual({
       allow: [
         'Bash(npm test)',
         'Read(//home/user/app/src/sum.js)',
         'Edit(//home/user/app/src/sum.js)',
       ],
       deny: ['Bash(rm -rf:*)'],
+    })
+  })
+
+  it("runs the tests outside Desktop's Bash sandbox, which cannot start in a hardened sandbox", () => {
+    expect(busySettings(feedScenario()).sandbox).toEqual({
+      enabled: false,
+      excludedCommands: ['npm test'],
     })
   })
 })
