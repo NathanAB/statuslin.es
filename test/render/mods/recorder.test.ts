@@ -97,9 +97,25 @@ describe('recordInSandbox', () => {
         `${SANDBOX_CLAUDE_CODE_BIN} --version`,
         setupCommand(feedScenario()),
       ])
-      const seed = { target: null, nowMs: 0, claudeCodeVersion: '2.1.296' }
+      const seed = { target: null, nowMs: 0, claudeCodeVersion: '2.1.296', busy: false }
       expect(fake.writtenPaths).toEqual(sessionFiles(feedScenario(), seed).map((f) => f.path))
       expect(fake.pty.killed).toBe(true)
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it.each([
+    { text: '/preview-busy', busy: true },
+    { text: '/pet', busy: false },
+  ])(
+    'uploads the busy workspace only when a step types /preview-busy ($text)',
+    async ({ text, busy }) => {
+      const fake = fakeSandbox(claudeSession, () => {})
+
+      await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [{ type: 'text', text }] }, FAST)
+
+      expect(fake.writtenPaths.includes('/home/user/app/package.json')).toBe(busy)
+      expect(fake.writtenPaths.some((path) => path.endsWith('/settings.json'))).toBe(busy)
     },
     SESSION_TEST_TIMEOUT_MS,
   )

@@ -75,6 +75,15 @@ describe('prepareInputStepsRequests', () => {
     expect(request?.prompt).toContain(`at most ${INPUT_STEPS_MAX} steps`)
   })
 
+  it('offers /preview-busy for a mod that reacts to Claude at work', async () => {
+    await pendingMod('meter')
+
+    const [request] = await prepareInputStepsRequests(db, null, readme)
+
+    expect(request?.prompt).toMatch(/`\/preview-busy` plays a short busy session/)
+    expect(request?.prompt).not.toMatch(/subagent|model calls/)
+  })
+
   it('asks about one mod by slug', async () => {
     await pendingMod('meter')
     await pendingMod('gauge')

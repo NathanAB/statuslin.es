@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { InputStep } from '@/mods/curation'
 import { anthropicUsageSetupScript } from '@/render/anthropic-usage-sandbox'
 import { analyseShot } from '@/render/mods/desktop/analyse'
 import type { RecordingSetup } from '@/render/mods/desktop/desktop-sandbox'
@@ -130,7 +131,7 @@ describe('desktopRecorder status line', () => {
   const VERSIONS = { desktopVersion: '2.31226.1', engineVersion: '2.1.0' }
 
   /** The files each recording session staged: the baseline's, then the mod's. */
-  async function stagedFiles(statusLine?: StatusLineScript) {
+  async function stagedFiles(statusLine?: StatusLineScript, inputSteps: InputStep[] = []) {
     const staged: Map<string, SandboxFile['data']>[] = []
     const sandboxes = {
       withRecordingDesktop: vi.fn().mockImplementation(async (setup: RecordingSetup) => {
@@ -139,7 +140,7 @@ describe('desktopRecorder status line', () => {
       }),
       withAnalysisSandbox: vi.fn().mockImplementation((use: (a: object) => unknown) => use({})),
     }
-    const request = { mod: MOD, inputSteps: [] }
+    const request = { mod: MOD, inputSteps }
     await desktopRecorder(sandboxes).record(statusLine ? { ...request, statusLine } : request)
     return staged
   }
@@ -151,6 +152,31 @@ describe('desktopRecorder status line', () => {
     expect.stringMatching(/\/statusline\.sh$/),
     expect.stringContaining('#!/bin/bash'),
   ]
+
+  const workspaceFiles = (files: Map<string, SandboxFile['data']> | undefined) =>
+    [...(files?.keys() ?? [])].filter((path) => path.startsWith('/home/user/app/'))
+  const settingsKeys = (files: Map<string, SandboxFile['data']> | undefined) => {
+    const settings = [...(files ?? [])].find(([path]) => path.endsWith('/.claude/settings.json'))
+    return Object.keys(JSON.parse(String(settings?.[1])))
+  }
+
+  it('stages the busy workspace and settings for both sessions when the steps type /preview-busy', async () => {
+    const staged = await stagedFiles(undefined, [{ type: 'text', text: '/preview-busy' }])
+
+    for (const files of staged) {
+      expect(workspaceFiles(files)).toContain('/home/user/app/package.json')
+      expect(settingsKeys(files)).toEqual(['permissions', 'sandbox', 'statusLine'])
+    }
+  })
+
+  it('stages only the status line settings, and no workspace file, when the steps never do', async () => {
+    const staged = await stagedFiles(undefined, [{ type: 'text', text: '/pet' }])
+
+    for (const files of staged) {
+      expect(workspaceFiles(files)).toEqual([])
+      expect(settingsKeys(files)).toEqual(['statusLine'])
+    }
+  })
 
   it("stages the given status line for the mod's session, and the sample for the baseline", async () => {
     const [baseline, session] = await stagedFiles({ source: 'print("hi")', interpreter: 'python' })

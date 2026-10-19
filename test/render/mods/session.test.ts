@@ -7,7 +7,12 @@ import {
   SANDBOX_CLAUDE_CODE_BIN,
   SANDBOX_CLAUDE_SETTINGS_DEST,
 } from '@/render/e2b-template'
-import { feedFile, feedScenario } from '@/render/mods/scenario-feed'
+import {
+  BUSY_WORKSPACE_FILES,
+  busySettings,
+  feedFile,
+  feedScenario,
+} from '@/render/mods/scenario-feed'
 import {
   FEED_FILE,
   FEED_PLUGIN_DIR,
@@ -53,9 +58,11 @@ function scenarioWith(value: string): Scenario {
   } as Scenario
 }
 
-function fileAt(path: string, target: string | null = 'token-weather'): string {
-  const seed = { target, nowMs: NOW_MS, claudeCodeVersion: '2.1.296' }
-  const file = sessionFiles(feedScenario(), seed).find((f) => f.path === path)
+const seedFiles = (target: string | null = 'token-weather', busy = false) =>
+  sessionFiles(feedScenario(), { target, nowMs: NOW_MS, claudeCodeVersion: '2.1.296', busy })
+
+function fileAt(path: string, target: string | null = 'token-weather', busy = false): string {
+  const file = seedFiles(target, busy).find((f) => f.path === path)
   if (!file) throw new Error(`no seed file at ${path}`)
   return file.data
 }
@@ -114,12 +121,63 @@ describe('sessionFiles', () => {
   })
 
   it('writes the feed answers for the mod under render, and none for the baseline', () => {
-    expect(JSON.parse(fileAt(FEED_FILE))).toEqual(feedFile(feedScenario(), 'token-weather', NOW_MS))
+    expect(JSON.parse(fileAt(FEED_FILE))).toEqual(
+      feedFile(feedScenario(), 'token-weather', NOW_MS, false),
+    )
     expect(JSON.parse(fileAt(FEED_FILE, null)).target).toBeNull()
   })
 
   it('writes the canned reply with the scenario usage', () => {
     expect(JSON.parse(fileAt(REPLY_FILE)).usage.input_tokens).toBe(37_000)
+  })
+
+  describe('in a session whose steps never type /preview-busy', () => {
+    it('puts no file in the workspace and writes no settings, as before /preview-busy', () => {
+      const paths = seedFiles().map((f) => f.path)
+
+      expect(paths.filter((path) => path.startsWith('/home/user/app/'))).toEqual([])
+      expect(paths).not.toContain(`${env.CLAUDE_CONFIG_DIR}/settings.json`)
+    })
+
+    it('feeds no busy calls', () => {
+      expect(JSON.parse(fileAt(FEED_FILE)).busy).toEqual([])
+    })
+  })
+
+  describe('in a session that types /preview-busy', () => {
+    it("puts the busy session's files in the workspace, before setup commits them", () => {
+      const files = seedFiles('code-pet', true)
+
+      for (const { path, data } of BUSY_WORKSPACE_FILES) {
+        expect(files).toContainEqual({ path: `/home/user/app/${path}`, data })
+      }
+    })
+
+    it("writes the busy session's permission rules and sandbox settings", () => {
+      expect(
+        JSON.parse(fileAt(`${env.CLAUDE_CONFIG_DIR}/settings.json`, 'code-pet', true)),
+      ).toEqual(busySettings(feedScenario()))
+    })
+
+    it('feeds the busy calls', () => {
+      expect(JSON.parse(fileAt(FEED_FILE, 'code-pet', true)).busy).toEqual(
+        feedFile(feedScenario(), 'code-pet', NOW_MS, true).busy,
+      )
+    })
+  })
+
+  it("adds a surface's own settings beside the busy session's, or alone", () => {
+    const statusLine = { type: 'command', command: 'cat | bash /x.sh' }
+    const settings = (busy: boolean) => {
+      const seed = { target: null, nowMs: NOW_MS, claudeCodeVersion: '2.1.296', busy }
+      const file = sessionFiles(feedScenario(), seed, { statusLine }).find((f) =>
+        f.path.endsWith('/settings.json'),
+      )
+      return JSON.parse(String(file?.data))
+    }
+
+    expect(settings(true)).toEqual({ ...busySettings(feedScenario()), statusLine })
+    expect(settings(false)).toEqual({ statusLine })
   })
 
   it('writes the scenario feed plugin', () => {
@@ -137,7 +195,7 @@ describe('scenario feed plugin', () => {
   )
 
   it('hooks every answered event by its literal name, and never by wildcard', () => {
-    const { answers } = feedFile(feedScenario(), 'token-weather', NOW_MS)
+    const { answers } = feedFile(feedScenario(), 'token-weather', NOW_MS, false)
 
     for (const event of Object.keys(answers)) expect(register).toContain(`on('${event}',`)
     expect(register).not.toContain(`on('*'`)

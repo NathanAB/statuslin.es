@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/useNamingConvention: keys mirror Claude Code's status line JSON.
 import { z } from 'zod'
+import type { InputStep } from '@/mods/curation'
 import { SCENARIO_BY_KEY } from '../scenarios'
 import type { Scenario } from '../types'
 
@@ -36,11 +37,79 @@ const feedStdinSchema = z.object({
 
 export type FeedStdin = z.infer<typeof feedStdinSchema>
 
-/** What the scenario feed plugin reads: whose `$` calls to answer, and the answers. */
+/** One tool call of the busy session, as the feed passes it to `$.tool.call`. */
+export type BusyCall =
+  | { tool: 'Bash'; command: string; description: string }
+  | { tool: 'Read'; file_path: string }
+  | { tool: 'Edit'; file_path: string; old_string: string; new_string: string }
+
+/** What the scenario feed plugin reads: whose `$` calls to answer, the answers, and `/preview-busy`'s calls. */
 export interface FeedFile {
   /** The mod under render by its plugin.json name; null for the baseline, which answers no one. */
   target: string | null
   answers: Record<string, unknown>
+  busy: BusyCall[]
+}
+
+const BUSY_STEP = '/preview-busy'
+
+/**
+ * Whether a session's steps type `/preview-busy`. Only such a session gets the busy workspace, its
+ * settings and its calls: a mod that never types it, or a status line, previews as it always has.
+ */
+export function playsBusySession(steps: readonly InputStep[]): boolean {
+  return steps.some((step) => step.text.trim() === BUSY_STEP)
+}
+
+/** The files `/preview-busy` works on, relative to the workspace, in its seed commit. */
+const BUSY_SOURCE = 'src/sum.js'
+const BUG = 'return a - b'
+const FIX = 'return a + b'
+const TEST_COMMAND = 'npm test'
+
+export const BUSY_WORKSPACE_FILES: readonly { path: string; data: string }[] = [
+  {
+    path: 'package.json',
+    data: `${JSON.stringify({ name: 'app', version: '1.0.0', private: true, scripts: { test: 'sh test.sh' } }, null, 2)}\n`,
+  },
+  {
+    path: 'test.sh',
+    data: `if grep -qF '${FIX}' ${BUSY_SOURCE}; then\n  echo 'Tests: 3 passed, 3 total'\nelse\n  echo 'Tests: 1 failed, 2 passed, 3 total'\n  exit 1\nfi\n`,
+  },
+  // npm 10 holds a passing run open on its update check, which never answers in an offline sandbox.
+  { path: '.npmrc', data: 'update-notifier=false\n' },
+  { path: BUSY_SOURCE, data: `export function sum(a, b) {\n  ${BUG}\n}\n` },
+  { path: 'build/sum.js', data: `export function sum(a, b) {\n  ${BUG}\n}\n` },
+]
+
+/** A test run that fails, the fix, a run that passes, then a clean-up the settings deny. */
+function busyCalls(scenario: Scenario): BusyCall[] {
+  const source = `${feedStdin(scenario).workspace.current_dir}/${BUSY_SOURCE}`
+  const runTests: BusyCall = { tool: 'Bash', command: TEST_COMMAND, description: 'Run the tests' }
+  return [
+    runTests,
+    { tool: 'Read', file_path: source },
+    { tool: 'Edit', file_path: source, old_string: BUG, new_string: FIX },
+    runTests,
+    { tool: 'Bash', command: 'rm -rf build', description: 'Remove the build output' },
+  ]
+}
+
+/**
+ * The settings the busy calls need. Permission rules: each call but the last is allowed, so none
+ * waits on a permission prompt, and the last is denied; a path rule's leading `//` makes it
+ * absolute. Desktop runs its engine's Bash in bubblewrap, which cannot start in the hardened
+ * sandbox and fails every command, so the tests run outside it.
+ */
+export function busySettings(scenario: Scenario) {
+  const source = `/${feedStdin(scenario).workspace.current_dir}/${BUSY_SOURCE}`
+  return {
+    permissions: {
+      allow: [`Bash(${TEST_COMMAND})`, `Read(${source})`, `Edit(${source})`],
+      deny: ['Bash(rm -rf:*)'],
+    },
+    sandbox: { enabled: false, excludedCommands: [TEST_COMMAND] },
+  }
 }
 
 /** The `--canned-reply` file of the canned model server. */
@@ -59,8 +128,16 @@ export function feedStdin(scenario: Scenario): FeedStdin {
   return feedStdinSchema.parse(scenario.stdin)
 }
 
-/** `resets_at` in a scenario is an offset in seconds; the mod API's `resetsAt` is ISO 8601. */
-export function feedFile(scenario: Scenario, target: string | null, nowMs: number): FeedFile {
+/**
+ * `resets_at` in a scenario is an offset in seconds; the mod API's `resetsAt` is ISO 8601. `busy`
+ * is whether the session's steps type `/preview-busy` (`playsBusySession`).
+ */
+export function feedFile(
+  scenario: Scenario,
+  target: string | null,
+  nowMs: number,
+  busy: boolean,
+): FeedFile {
   const s = feedStdin(scenario)
   const nowSec = Math.floor(nowMs / 1000)
   const resetsAt = (offsetSec: number) => new Date((nowSec + offsetSec) * 1000).toISOString()
@@ -95,6 +172,7 @@ export function feedFile(scenario: Scenario, target: string | null, nowMs: numbe
       },
       'session.version': { version: s.version, base: s.version },
     },
+    busy: busy ? busyCalls(scenario) : [],
   }
 }
 

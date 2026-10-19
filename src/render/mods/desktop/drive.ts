@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import type { InputStep } from '@/mods/curation'
 import { COMMAND_TIMEOUT_MS, REQUEST_TIMEOUT_MS, type SandboxFile } from '../mod-sandbox'
-import { feedScenario } from '../scenario-feed'
+import { feedScenario, playsBusySession } from '../scenario-feed'
 import { setupCommand } from '../session'
 import {
   DESKTOP_SANDBOX_TIMEOUT_MS,
@@ -93,7 +93,12 @@ export function sessionUploads(
   { target, inputSteps, statusLine }: DriveRequest,
   { engineVersion }: DesktopVersions,
 ): SandboxFile[] {
-  const seed = { target, nowMs: Date.now(), claudeCodeVersion: engineVersion }
+  const seed = {
+    target,
+    nowMs: Date.now(),
+    claudeCodeVersion: engineVersion,
+    busy: playsBusySession(inputSteps),
+  }
   return [...desktopSessionFiles(feedScenario(), seed, statusLine), ...stepFiles(inputSteps)]
 }
 
