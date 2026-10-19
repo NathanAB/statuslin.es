@@ -3,6 +3,7 @@ import { PostHogProvider } from '@posthog/react'
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import { getAnalyticsToken } from '@/lib/analytics-config'
 import { getSession } from '@/lib/auth-functions'
+import { tagAutomatedBrowser } from '@/lib/posthog-bot-tag'
 import { connectPostHogClientErrors } from '@/lib/posthog-client-errors'
 import { dropExtensionExceptions } from '@/lib/posthog-exception-filter'
 import { POSTHOG_INGEST_HOST, POSTHOG_UI_HOST } from '@/lib/posthog-hosts'
@@ -76,7 +77,9 @@ function RootComponent() {
             capture_exceptions: true,
             // Drop exceptions thrown by visitors' browser extensions, which capture_exceptions
             // reports from the page too. Our own errors still report (see posthog-exception-filter).
-            before_send: dropExtensionExceptions,
+            // Then mark events from automated browsers isBot, which reports filter out
+            // (see posthog-bot-tag).
+            before_send: [dropExtensionExceptions, tagAutomatedBrowser()],
             // We only use product analytics, not session replay.
             disable_session_recording: true,
             debug: import.meta.env.DEV,
