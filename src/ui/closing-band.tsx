@@ -32,7 +32,7 @@ export function ClosingBand({
             </h2>
           </Reveal>
           <Reveal>
-            <p className="max-w-[34ch] text-body">{lead}</p>
+            <p className="text-body">{lead}</p>
           </Reveal>
         </div>
         <div className="col-span-12 min-[56.25rem]:col-span-5 min-[56.25rem]:col-start-7">

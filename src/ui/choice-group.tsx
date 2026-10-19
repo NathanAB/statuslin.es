@@ -1,5 +1,6 @@
 import { cva } from 'class-variance-authority'
 import { RadioGroup } from 'radix-ui'
+import { cn } from '@/lib/cn'
 import { FOCUS_RING } from '@/ui/focus-ring'
 
 const root = cva('', {
@@ -25,6 +26,20 @@ const item = cva(
   },
 )
 
+// `rise`: the hero picker's rows follow its own entrance in, 45ms apart, as the prototype's do.
+const RISE =
+  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-900 motion-safe:ease-settle motion-safe:fill-mode-backwards'
+const RISE_DELAYS = [
+  'delay-[420ms]',
+  'delay-[465ms]',
+  'delay-[510ms]',
+  'delay-[555ms]',
+  'delay-[600ms]',
+  'delay-[645ms]',
+  'delay-[690ms]',
+  'delay-[735ms]',
+]
+
 /**
  * Exactly one of a few choices, as a radio group: arrow keys move to the next choice and pick it,
  * the way a radio group works, since picking one only changes what a demo shows. `list` names each
@@ -37,12 +52,14 @@ export function ChoiceGroup<T extends string>({
   value,
   onValueChange,
   look,
+  rise = false,
 }: {
   labelledBy: string
   options: readonly { value: T; label: string; detail?: string }[]
   value: T
   onValueChange: (value: T) => void
   look: 'list' | 'tray'
+  rise?: boolean
 }) {
   return (
     <RadioGroup.Root
@@ -52,8 +69,15 @@ export function ChoiceGroup<T extends string>({
       loop
       className={root({ look })}
     >
-      {options.map((option) => (
-        <RadioGroup.Item key={option.value} value={option.value} className={item({ look })}>
+      {options.map((option, i) => (
+        <RadioGroup.Item
+          key={option.value}
+          value={option.value}
+          className={cn(
+            item({ look }),
+            rise && [RISE, RISE_DELAYS[Math.min(i, RISE_DELAYS.length - 1)]],
+          )}
+        >
           {look === 'list' ? (
             <>
               <span className="font-medium text-body tracking-[-0.01em] max-md:text-base">

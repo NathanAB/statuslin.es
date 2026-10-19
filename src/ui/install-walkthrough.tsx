@@ -42,7 +42,7 @@ export function InstallWalkthrough({
           <h2 className="font-semibold text-foreground text-heading">{heading}</h2>
         </Reveal>
         <Reveal>
-          <p className="mt-2 max-w-[30ch] text-foreground text-lead">{statement}</p>
+          <p className="mt-2 text-foreground text-lead">{statement}</p>
         </Reveal>
         {steps.map((step) => (
           <div key={step.say} className="mt-18 flex min-w-0 flex-col gap-4">

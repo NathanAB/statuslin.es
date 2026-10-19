@@ -88,6 +88,7 @@ export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[
           </Heading>
           <ChoiceGroup
             look="list"
+            rise
             labelledBy={pickerId}
             options={lines.map((l) => ({
               value: l.slug,

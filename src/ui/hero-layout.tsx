@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/cn'
 import { Heading } from '@/ui/text'
+
+// The prototype's load sequence: each part rises 28px into place over a second, one after another.
+// It's CSS, so it runs from the first paint without waiting for JavaScript; `backwards` holds each
+// part out of sight only until its turn. Off for a visitor who asks for less motion.
+const RISE =
+  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 
 /**
  * The home hero on a 12-column grid with two left edges: the title over the first eight columns
  * with its one sentence on the last four, then the demo (`stage`) under the title and its controls
- * (`aside`) under the sentence. Below 900px everything stacks.
+ * (`aside`) under the sentence. Below 900px everything stacks. On load they rise in, in that order.
  */
 export function HeroLayout({
   heading,
@@ -19,16 +26,30 @@ export function HeroLayout({
 }) {
   return (
     <div className="grid grid-cols-12 gap-x-6 gap-y-[clamp(1.75rem,3.4vw,3rem)]">
-      <div className="col-span-12 self-end min-[56.25rem]:col-span-8">
+      <div className={cn('col-span-12 self-end min-[56.25rem]:col-span-8', RISE, 'delay-[60ms]')}>
         <Heading level={1} size="display">
           {heading}
         </Heading>
       </div>
-      <p className="col-span-12 max-w-[30ch] self-end text-foreground text-lead min-[56.25rem]:col-span-4 min-[56.25rem]:max-w-[22em]">
+      <p
+        className={cn(
+          'col-span-12 self-end text-foreground text-lead min-[56.25rem]:col-span-4',
+          RISE,
+          'delay-[240ms]',
+        )}
+      >
         {lead}
       </p>
-      <div className="col-span-12 min-w-0 min-[56.25rem]:col-span-8">{stage}</div>
-      <div className="col-span-12 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:col-span-4">
+      <div className={cn('col-span-12 min-w-0 min-[56.25rem]:col-span-8', RISE, 'delay-[330ms]')}>
+        {stage}
+      </div>
+      <div
+        className={cn(
+          'col-span-12 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:col-span-4',
+          RISE,
+          'delay-[420ms]',
+        )}
+      >
         {aside}
       </div>
     </div>

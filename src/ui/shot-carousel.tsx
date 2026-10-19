@@ -122,7 +122,7 @@ export function ShotCarousel({
       <div className={cn('grid grid-cols-12 items-start gap-6', PAGE_MEASURE.wide)}>
         <div className="col-span-12 min-[56.25rem]:col-span-4">
           <h2 className="mb-3.5 font-semibold text-foreground text-heading">{heading}</h2>
-          <p className="max-w-[28ch] text-body text-foreground">{lead}</p>
+          <p className="text-body text-foreground">{lead}</p>
         </div>
         <div data-slot="carousel-lit" className="col-span-12 min-[56.25rem]:col-span-4">
           <h3 className="mb-2 font-medium text-foreground text-lead tracking-[-0.02em]">
@@ -135,9 +135,7 @@ export function ShotCarousel({
               {current.title}
             </Link>
           </h3>
-          <p className="line-clamp-4 max-w-[36ch] text-body text-muted-foreground">
-            {current.description}
-          </p>
+          <p className="line-clamp-4 text-body text-muted-foreground">{current.description}</p>
           <p className="mt-2.5 text-muted-foreground text-small">{current.byline}</p>
         </div>
         <div className="col-span-12 flex items-center gap-2.5 justify-self-start min-[56.25rem]:col-span-4 min-[56.25rem]:justify-self-end">

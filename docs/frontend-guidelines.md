@@ -174,6 +174,7 @@ All rules run in `bun run check` and at the hooks listed below.
 | 14 | Biome lint + format | Style, complexity, naming, import order, `noConsole` | `bun run lint` |
 | 15 | Solid coral fills use `bg-primary-fill` | `bg-primary` / `bg-ring` (or `/50` and up) as a fill, where light text fails WCAG AA | `test/styles/coral-fill.test.ts` (in `bun run check`; not at edit time) |
 | 16 | Focus rings at full strength | A see-through focus ring (`ring-ring/50`, `outline-ring/50`), which falls under WCAG's 3:1 for a focus indicator | `test/styles/coral-fill.test.ts` (in `bun run check`; not at edit time) |
+| 17 | No line-length caps | A text width in text units (`max-w-[30ch]`, `max-w-[22em]`) or `max-w-prose`: text fills its container | `test/styles/no-text-measure.test.ts` (in `bun run check`; not at edit time) |
 
 **Hook schedule:**
 
