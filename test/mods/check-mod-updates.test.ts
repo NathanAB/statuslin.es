@@ -81,7 +81,11 @@ describe('checkModUpdates', () => {
       versions: { [`plugins/meter@${PIN}`]: '1.2.0', [`plugins/meter@${HEAD}`]: '1.3.0' },
     })
 
-    expect(await result).toEqual({ code: 0, updated: [entry({ commitSha: HEAD })] })
+    expect(await result).toEqual({
+      code: 0,
+      updated: [entry({ commitSha: HEAD })],
+      releases: [{ entry: { ...entry(), inputSteps: [] }, head: HEAD, from: '1.2.0', to: '1.3.0' }],
+    })
     expect(lines.slice(0, 2)).toEqual([
       `release meter: ${REPO}/compare/${PIN}...${HEAD} (1.2.0 -> 1.3.0)`,
       `1 release(s) re-pinned in ${FILE}: review each compare link, merge it, then run bun run with-env staging scripts/run-repin-mods.ts staging`,
@@ -100,7 +104,7 @@ describe('checkModUpdates', () => {
       versions: { [`plugins/meter@${PIN}`]: '1.2.0', [`plugins/meter@${HEAD}`]: '1.2.0' },
     })
 
-    expect(await result).toEqual({ code: 0, updated: null })
+    expect(await result).toEqual({ code: 0, updated: null, releases: [] })
     expect(lines).toEqual([
       'ahead meter: version unchanged (1.2.0), not re-pinned',
       'no new releases',
@@ -128,7 +132,7 @@ describe('checkModUpdates', () => {
         versions: { [`plugins/meter@${HEAD}`]: '9.0.0' },
       })
 
-      expect(await result).toEqual({ code: 0, updated: null })
+      expect(await result).toEqual({ code: 0, updated: null, releases: [] })
       expect(lines).toEqual([
         'diverged meter: trunk no longer builds on aaaaaaa, not re-pinned',
         'no new releases',
@@ -139,7 +143,7 @@ describe('checkModUpdates', () => {
   it('says nothing about an entry pinned at its head, and compares nothing', async () => {
     const { result, lines, calls } = run([entry()], { head: PIN })
 
-    expect(await result).toEqual({ code: 0, updated: null })
+    expect(await result).toEqual({ code: 0, updated: null, releases: [] })
     expect(lines).toEqual(['no new releases'])
     expect(calls.filter((call) => call.startsWith('compare'))).toEqual([])
   })
@@ -154,6 +158,14 @@ describe('checkModUpdates', () => {
     expect(await result).toEqual({
       code: 0,
       updated: [entry(), entry({ repoUrl: other, pluginName: 'other', commitSha: HEAD })],
+      releases: [
+        {
+          entry: { ...entry({ repoUrl: other, pluginName: 'other' }), inputSteps: [] },
+          head: HEAD,
+          from: null,
+          to: '2.0.0',
+        },
+      ],
     })
     expect(lines[0]).toBe(
       `gone meter: GitHub no longer serves ${REPO} (deleted or private), not re-pinned`,
@@ -164,7 +176,7 @@ describe('checkModUpdates', () => {
   it('lists a pin GitHub no longer serves without comparing it', async () => {
     const { result, lines, calls } = run([entry()], { goneCommits: [PIN] })
 
-    expect(await result).toEqual({ code: 0, updated: null })
+    expect(await result).toEqual({ code: 0, updated: null, releases: [] })
     expect(lines[0]).toBe('gone meter: GitHub no longer serves the pinned aaaaaaa, not re-pinned')
     expect(calls.filter((call) => call.startsWith('compare'))).toEqual([])
   })
@@ -201,7 +213,7 @@ describe('checkModUpdates', () => {
         versions: { [`plugins/meter@${PIN}`]: '1.2.0', [`plugins/meter@${HEAD}`]: version },
       })
 
-      expect(await result).toEqual({ code: 0, updated: null })
+      expect(await result).toEqual({ code: 0, updated: null, releases: [] })
       expect(lines).toEqual([
         "unreadable meter: plugin.json's version at trunk is not a plain version, not re-pinned: read it by hand",
         'no new releases',
@@ -215,7 +227,7 @@ describe('checkModUpdates', () => {
       versions: { [`plugins/meter@${PIN}`]: '1.2.0' },
     })
 
-    expect(await result).toEqual({ code: 0, updated: null })
+    expect(await result).toEqual({ code: 0, updated: null, releases: [] })
     expect(lines[0]).toBe('gone meter: trunk has no plugin.json in plugins/meter, not re-pinned')
   })
 
@@ -257,7 +269,7 @@ describe('checkModUpdates', () => {
   it('refuses an invalid curation file without reading GitHub or writing anything', async () => {
     const { result, lines, calls } = run([entry({ commitSha: 'main' })])
 
-    expect(await result).toEqual({ code: 1, updated: null })
+    expect(await result).toEqual({ code: 1, updated: null, releases: [] })
     expect(lines).toEqual([
       'refused entry 1 (meter) commitSha: must be a full 40-character lowercase hex commit SHA',
       'nothing re-pinned: fix the curation file first',

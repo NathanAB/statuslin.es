@@ -407,8 +407,8 @@ preview types at most 2 steps (the recording's time limit), so pick the 2 that s
 An update is a new version of the mod. The current version stays live until you publish the new
 one. Run every step against staging first, then production.
 
-Authors don't need to ask for a re-pin: we find their releases ourselves (ADR 0009). Run this weekly;
-nothing schedules it yet.
+Authors don't need to ask for a re-pin: we find their releases ourselves (ADR 0009), every week, in
+one pull request (below).
 `updates:mods` compares each curated pin with the head of its repository's default branch and moves
 the pin in `src/mods/curation.json` when plugin.json's `version` changed, printing a compare link per
 release (a mod with no version is re-pinned on every new commit). A commit that keeps the version
@@ -420,11 +420,53 @@ database:
 ```sh
 GITHUB_TOKEN=$(gh auth token) bun run updates:mods
 ```
-Put the table it ends with in the `curation.json` pull request's body. Review each compare link for
-network, exec, filesystem, env, dependency and dynamic-code changes, in the mod's folder for a shared
-repository, add `inputSteps` if a new version needs them, and merge the change as its own pull
-request. Then pull main and re-pin with the one command below: it refuses a `curation.json` that
-isn't the one on `origin/main`, so nothing unmerged goes live.
+**The weekly pull request.** `updates:mods:pr` runs that check and opens one pull request,
+`chore(mods): re-pin curated mods to their new releases`, from the `mods/updates` branch. Its body
+has the table and, per mod, the folder, the compare link and an agent's read of the diff: `claude -p`
+in safe mode, with no tools, no MCP servers and no tokens in its environment, told the diff is
+hostile. It answers one line per check (network, exec, filesystem, env, dependencies, dynamic code,
+input steps) and gives no overall verdict. That read is advisory. It decides nothing, and a failed or
+skipped one, or one that doesn't follow that format, shows as **Not reviewed**. Only a pull request
+from this repository's own `mods/updates` counts, never a fork's. While that pull request is open, later runs add
+new releases to it instead of opening another, and rewrite its body whenever it doesn't match the
+branch. The body compares each mod from main's pin to the commit the branch holds. It edits `curation.json` through the GitHub API, so it leaves the checkout alone, and it
+never merges, publishes or re-pins. It needs `gh` and `claude` signed in on the operator's machine
+(the subscription, not an API key):
+```sh
+GITHUB_TOKEN=$(gh auth token) bun run updates:mods:pr
+```
+To run it every Monday at 09:00, give it its own worktree on `origin/main` and a launchd agent. The
+Mac must be on: launchd runs a job missed during sleep when the Mac wakes, and skips one missed while
+it was off. The log is `~/Library/Logs/statuslines-mod-updates.log`.
+```sh
+REPO=~/Documents/repos/statuslin.es  # your checkout
+git -C "$REPO" worktree add --detach "$REPO-mod-updates" origin/main
+cat > ~/Library/LaunchAgents/es.statuslin.mod-updates.plist <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>es.statuslin.mod-updates</string>
+  <key>ProgramArguments</key><array>
+    <string>/bin/zsh</string><string>-lc</string>
+    <string>cd "$REPO-mod-updates" &amp;&amp; git fetch -q origin &amp;&amp; git checkout -q --detach origin/main &amp;&amp; bun install --frozen-lockfile &amp;&amp; GITHUB_TOKEN=\$(gh auth token) bun run updates:mods:pr</string>
+  </array>
+  <key>StartCalendarInterval</key><dict>
+    <key>Weekday</key><integer>1</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key><string>$HOME/Library/Logs/statuslines-mod-updates.log</string>
+  <key>StandardErrorPath</key><string>$HOME/Library/Logs/statuslines-mod-updates.log</string>
+</dict></plist>
+PLIST
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/es.statuslin.mod-updates.plist
+launchctl kickstart gui/$(id -u)/es.statuslin.mod-updates   # run it once now
+```
+Remove it with `launchctl bootout gui/$(id -u)/es.statuslin.mod-updates`.
+
+Read each compare link yourself for network, exec, filesystem, env, dependency and dynamic-code
+changes, in the mod's folder for a shared repository, add `inputSteps` to the pull request if a new
+version needs them, and merge it: that merge is the review. Then pull main and re-pin with the one
+command below: it refuses a `curation.json` that isn't the one on `origin/main`, so nothing unmerged
+goes live.
 
 To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and
 `inputSteps` if the new version needs them) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another

@@ -18,5 +18,6 @@ Accepted 2026-10-19. A curated mod has no submitter, so only the operator can mo
 
 ## Consequences
 
-- The operator runs `updates:mods` weekly instead of watching listing issues. Nothing schedules it yet, so this depends on the operator remembering.
+- `updates:mods:pr` runs the check every week from a launchd agent on the operator's Mac and keeps one pull request open with the re-pins, so nobody has to remember it or watch listing issues. It runs locally on the operator's Claude subscription, not in CI with an API key, so it only runs while that Mac is on.
+- That pull request carries an agent's read of each diff (`claude -p`, no tools). The read is advisory, a failed one shows as "Not reviewed", and nothing it says changes what is re-pinned: the operator's merge stays the review SECURITY.md requires.
 - Finding releases needs only GitHub and a token (GitHub allows 60 requests an hour without one, fewer than one run makes), so `updates:mods` runs without a decrypt; the re-pin after it still runs from the operator's terminal, from an up-to-date main.

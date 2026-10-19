@@ -35,7 +35,8 @@ export interface CheckUpdatesDeps {
   file: string
 }
 
-interface Release {
+export interface Release {
+  /** The entry as pinned before this run. */
   entry: CurationEntry
   head: string
   /** plugin.json's version at the pin and at the head; null when it names none. */
@@ -60,7 +61,7 @@ type Update =
  */
 const PLAIN_VERSION = /^[0-9A-Za-z.+-]{1,64}$/
 
-const isPlain = (version: string | null) => version === null || PLAIN_VERSION.test(version)
+export const isPlain = (version: string | null) => version === null || PLAIN_VERSION.test(version)
 
 interface BranchHead {
   branch: string
@@ -102,7 +103,7 @@ async function checkEntry(
     : { kind: 'release', entry, head, from, to }
 }
 
-const compareUrl = ({ entry, head }: Release) =>
+export const compareUrl = ({ entry, head }: Release) =>
   `${entry.repoUrl}/compare/${entry.commitSha}...${head}`
 
 function describeUpdate(entry: CurationEntry, update: Update): string | null {
@@ -132,7 +133,7 @@ function describeUpdate(entry: CurationEntry, update: Update): string | null {
 const versionCell = (version: string | null) =>
   version === null ? 'unversioned' : `\`${version}\``
 
-function releaseTable(releases: Release[]): string[] {
+export function releaseTable(releases: Release[]): string[] {
   return [
     '| Mod | Folder | Changes since the pin | Version |',
     '| --- | --- | --- | --- |',
@@ -144,17 +145,20 @@ function releaseTable(releases: Release[]): string[] {
   ]
 }
 
-/** `updated` is the curation file's entries with each release's new commit, or null when none. */
+/**
+ * `updated` is the curation file's entries with each release's new commit, or null when none;
+ * `releases` are those releases, in the file's order.
+ */
 export async function checkModUpdates(
   raw: unknown,
   deps: CheckUpdatesDeps,
-): Promise<{ code: number; updated: unknown[] | null }> {
+): Promise<{ code: number; updated: unknown[] | null; releases: Release[] }> {
   const log = (line: string) => deps.log(terminalLine(line))
   const curation = parseCuration(raw)
   if (!curation.ok) {
     for (const error of curation.errors) log(`refused ${error}`)
     log('nothing re-pinned: fix the curation file first')
-    return { code: 1, updated: null }
+    return { code: 1, updated: null, releases: [] }
   }
 
   const heads = new Map<string, Promise<BranchHead | null>>()
@@ -165,12 +169,15 @@ export async function checkModUpdates(
     const update = await checkEntry(entry, await pending, deps.github)
     const line = describeUpdate(entry, update)
     if (line) log(line)
-    if (update.kind === 'release') releases.set(index, update)
+    if (update.kind === 'release') {
+      const { entry, head, from, to } = update
+      releases.set(index, { entry, head, from, to })
+    }
   }
 
   if (releases.size === 0) {
     log('no new releases')
-    return { code: 0, updated: null }
+    return { code: 0, updated: null, releases: [] }
   }
   log(
     `${releases.size} release(s) re-pinned in ${deps.file}: review each compare link, merge it, then run bun run with-env staging scripts/run-repin-mods.ts staging`,
@@ -182,7 +189,7 @@ export async function checkModUpdates(
     const release = releases.get(index)
     return release ? { ...item, commitSha: release.head } : item
   })
-  return { code: 0, updated }
+  return { code: 0, updated, releases: [...releases.values()] }
 }
 
 /** How the curation file is written, so a re-pin's diff is only its commitSha lines. */
