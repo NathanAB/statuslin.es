@@ -400,7 +400,7 @@ DATABASE_URL='<env pooled url>' bun run import:mods                 # prints "up
 DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
 ```
 The new previews show on the live page as soon as they render; nothing needs publishing. A
-preview types at most 2 steps (the recording's time limit), so pick the 2 that show the most.
+preview types at most 13 steps (`INPUT_STEPS_MAX`, set by the recording's time limit).
 
 ### Re-pin a mod
 
@@ -560,7 +560,7 @@ out. Nothing renders until you do: mods render from your machine (ADR 0006). Run
    DATABASE_URL='<env pooled url>' bun run input-steps:mods --prepare <slug>
    DATABASE_URL='<env pooled url>' bun run input-steps:mods --apply   # response JSON on stdin
    ```
-3. **Render it** in the terminal and in Claude Desktop (up to 15 minutes):
+3. **Render it** in the terminal and in Claude Desktop (up to 25 minutes):
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
    ```

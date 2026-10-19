@@ -53,6 +53,12 @@ const stepsOf = async (versionId: string) => {
   return row?.inputSteps
 }
 
+describe('INPUT_STEPS_MAX', () => {
+  it('lets a preview type at least 6 steps on both surfaces', () => {
+    expect(INPUT_STEPS_MAX).toBeGreaterThanOrEqual(6)
+  })
+})
+
 describe('prepareInputStepsRequests', () => {
   it('asks about each pending submitted version, its author text fenced as hostile', async () => {
     const { versionId } = await pendingMod('meter')
