@@ -291,6 +291,10 @@
     "inputSteps": [
       {
         "type": "text",
+        "text": "/pet"
+      },
+      {
+        "type": "text",
         "text": "/pet rename Byte"
       },
       {
