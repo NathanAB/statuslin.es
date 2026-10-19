@@ -1,19 +1,21 @@
 import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/pglite'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as schema from '@/db/schema'
 import type { RenderInput, RenderResult } from '@/render/types'
+import { migratedPGlite } from '../helpers/test-db'
 
-// The drain renders through the app's `@/db`; point it at an in-memory database on the real migrations.
-const pglite = vi.hoisted(async (): Promise<PGlite> => {
-  const { migratedPGlite } = await import('../helpers/test-db')
-  return migratedPGlite()
-})
-vi.mock('@/db', async () => {
-  const { drizzle } = await import('drizzle-orm/pglite')
-  const schema = await import('@/db/schema')
-  const db = drizzle({ client: await pglite, schema })
-  return { db }
-})
+// The drain renders through the app's `@/db`; point it at an in-memory database on the real
+// migrations, made in beforeAll. Keep imports out of vi.hoisted: one there runs while Vitest is
+// still registering the mocks, and an import that overlaps it can load the real `@/db` (CI run
+// 39302710207).
+const testState = vi.hoisted(() => ({ db: null as unknown }))
+vi.mock('@/db', () => ({
+  get db() {
+    return testState.db
+  },
+}))
 // While `hang` is set, a fake render never finishes: the machine shuts down in the middle of it.
 const render = vi.hoisted(() => ({ hang: false }))
 vi.mock('@/render/fake-runner', async (importOriginal) => {
@@ -30,13 +32,21 @@ const captureServerEvent = vi.hoisted(() => vi.fn())
 const captureServerException = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/posthog-server', () => ({ captureServerEvent, captureServerException }))
 
-const { db } = await import('@/db')
-const schema = await import('@/db/schema')
 const { submitConfig } = await import('@/submit/submit')
 const { STALE_RUNNING_JOB_MS } = await import('@/render/job-state')
 const { stopRenderDrain, triggerRenderDrain } = await import('@/server/render-drain')
 
+let client: PGlite
+let db: ReturnType<typeof drizzle<typeof schema>>
+
 beforeAll(async () => {
+  client = await migratedPGlite()
+  db = drizzle({ client, schema })
+  testState.db = db
+  // Stop before any query if the drain would still get a real database. (Not expect().toBe:
+  // diffing two database clients on failure hangs the worker.)
+  if (!Object.is((await import('@/db')).db, db))
+    throw new Error('`@/db` is not mocked: the drain would use a real database')
   await db.insert(schema.user).values({
     id: 'u1',
     name: 'Author One',
@@ -47,7 +57,7 @@ beforeAll(async () => {
   })
 })
 afterAll(async () => {
-  await (await pglite).close()
+  await client.close()
 })
 beforeEach(async () => {
   await db.delete(schema.configs)
