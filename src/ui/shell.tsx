@@ -12,14 +12,17 @@ import { TooltipProvider } from '@/ui/tooltip'
  * forms like the submit page that are NOT vertically centered (use CenteredShell for that).
  * `wide` is the home page: main spans the window, since its sections set their own width (some
  * are full-bleed bands), and the header and footer widen to the home page's measure.
+ * `footerNote` is a quiet line of the page's own in the footer.
  */
 export function PageShell({
   user,
   narrow = false,
   wide = false,
+  footerNote,
   children,
 }: {
   user: AppHeaderUser | null
+  footerNote?: React.ReactNode
   children: React.ReactNode
 } & ({ narrow?: boolean; wide?: never } | { wide?: boolean; narrow?: never })) {
   const measure = wide ? 'wide' : 'standard'
@@ -36,7 +39,7 @@ export function PageShell({
         >
           {children}
         </main>
-        <SiteFooter measure={measure} />
+        <SiteFooter measure={measure} note={footerNote} />
       </div>
     </TooltipProvider>
   )

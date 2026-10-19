@@ -37,6 +37,15 @@ describe('SiteFooter', () => {
     expect(screen.getByText(`© ${new Date().getFullYear()} ${SITE_NAME}`)).toBeTruthy()
   })
 
+  // The home page puts its inventory line here: how many status lines and mods, copied how often.
+  it("adds a page's own note under what the site is", () => {
+    render(<SiteFooter note="32 status lines and 9 mods, copied 148 times." />)
+    const note = screen.getByText('32 status lines and 9 mods, copied 148 times.')
+    const tagline = screen.getByText(HOME_HEADING)
+    expect(tagline.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('navigation', { name: 'Footer' }).contains(note)).toBe(false)
+  })
+
   it('renders a source link to the public repo that opens in a new tab', () => {
     const { container } = render(<SiteFooter />)
     const link = container.querySelector(`a[href="${REPO_URL}"]`) as HTMLAnchorElement

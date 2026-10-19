@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { GalleryModCard } from '@/gallery/gallery-items'
@@ -43,13 +43,20 @@ vi.mock('@tanstack/react-router', async () => {
   }
 })
 vi.mock('@/ui/shell', () => ({
-  PageShell: ({ children }: { children: ReactNode }) => <>{children}</>,
+  PageShell: ({ children, footerNote }: { children: ReactNode; footerNote?: ReactNode }) => (
+    <>
+      <main>{children}</main>
+      <footer>
+        <p>{footerNote}</p>
+      </footer>
+    </>
+  ),
 }))
 vi.mock('@/gallery/gallery-controls', () => ({
   GalleryControls: () => null,
 }))
 vi.mock('@/ui/submit-cta', () => ({
-  SubmitCta: () => null,
+  SubmitChooser: () => <p>submit chooser</p>,
 }))
 // It fetches the script it would install; the hero's own tests cover it.
 vi.mock('@/adopt/install-prompt-button', () => ({
@@ -77,7 +84,7 @@ const modCard = (slug: string): GalleryModCard => ({
   copyCount: 0,
   tags: [],
   preview: null,
-  desktopShot: null,
+  desktopShot: { src: `/shots/${slug}.png`, width: 784, height: 142 },
 })
 
 const heroLine: HeroLine = {
@@ -89,16 +96,28 @@ const heroLine: HeroLine = {
   renders: { 'clean-main': [{ text: 'panel clean' }] },
 }
 
+const walkthrough = {
+  title: 'Dreambase Panel',
+  excerpt: {
+    prompt: 'Set up this Claude Code status line ("Dreambase Panel") for me.',
+    file: '~/.claude/statusline.py',
+    command: 'python3 ~/.claude/statusline.py',
+    lines: 218,
+    executable: false,
+  },
+  render: [{ text: 'panel clean' }],
+}
+
 function renderHome(
   overrides: Partial<typeof gallery> = {},
   search: Record<string, string> = {},
-  featuredMod: GalleryModCard | null = null,
+  featured: GalleryModCard | null = null,
+  others: GalleryModCard[] = [],
 ) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
-    hero: [heroLine],
-    featuredMod,
+    showcase: { hero: [heroLine], walkthrough, mods: { featured, others } },
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
@@ -193,51 +212,54 @@ describe('home analytics', () => {
   })
 })
 
-describe('home "Featured mod" row', () => {
-  const featured = modCard('context-bar')
-  const row = () =>
-    screen
-      .getByRole('heading', { level: 2, name: 'Featured mod' })
-      .closest('section') as HTMLElement
+describe('home sections', () => {
+  const sectionHeadings = () =>
+    [...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())
 
-  // The row sits right above the gallery's filter, so its link switches that filter to mods
-  // instead of leaving for /mods, and scrolls down to the list.
-  it('shows the one mod it is given above the gallery, with a link that filters it to mods', () => {
-    renderHome({}, {}, featured)
+  it('runs hero, gallery, mods, how installing works, then the closing invitation', () => {
+    renderHome({}, {}, modCard('weather'), [modCard('deck')])
 
-    const inRow = within(row())
-    const link = inRow.getByRole('link', { name: 'Browse all mods' })
-    expect(link.getAttribute('href')).toBe('/?kind=mods#gallery')
-    const target = document.getElementById('gallery')
-    expect(target?.contains(screen.getByRole('heading', { name: 'Status lines and mods' }))).toBe(
-      true,
-    )
-    expect(inRow.getByRole('link', { name: 'context-bar' }).getAttribute('href')).toBe(
-      '/mods/context-bar',
-    )
-    expect(row().querySelectorAll('[data-slot="gallery-row"]')).toHaveLength(1)
-    const galleryHeading = screen.getByRole('heading', { name: 'Status lines and mods' })
-    expect(
-      row().compareDocumentPosition(galleryHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
+    expect(sectionHeadings()).toEqual([
+      'Pick a status line',
+      'Status lines and mods',
+      'Mods',
+      'How installing works',
+      'Yours goes here.',
+    ])
+    expect(screen.getByText('submit chooser')).toBeTruthy()
   })
 
-  it('is left out when there is no featured mod', () => {
-    renderHome()
+  // The featured mod leads the mods row now, below the gallery, instead of a row above it.
+  it('leads the mods row with the featured mod, linking every shot to its mod', () => {
+    renderHome({}, {}, modCard('weather'), [modCard('deck')])
 
-    expect(screen.queryByRole('heading', { name: 'Featured mod' })).toBeNull()
+    const row = screen.getByRole('list', { name: 'Mods in Claude Desktop' })
+    expect([...row.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual([
+      '/mods/weather',
+      '/mods/deck',
+    ])
+    expect(screen.getByRole('link', { name: 'All 9 mods' }).getAttribute('href')).toBe('/mods')
   })
 
-  it('reports a card click with the row as its surface', () => {
-    renderHome({}, {}, featured)
+  it('reports the featured mod with its own surface', () => {
+    renderHome({}, {}, modCard('weather'))
 
-    fireEvent.click(screen.getByRole('link', { name: 'context-bar' }))
+    fireEvent.click(screen.getByRole('img', { name: 'weather running in Claude Desktop' }))
 
     expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
-      modId: 'id-context-bar',
-      slug: 'context-bar',
+      modId: 'id-weather',
+      slug: 'weather',
       surface: 'home_featured_mod',
       position: 1,
     })
+  })
+
+  it("walks through installing the hero's first status line with its real prompt", () => {
+    renderHome()
+
+    expect(
+      screen.getByText(/Set up this Claude Code status line \("Dreambase Panel"\)/),
+    ).toBeTruthy()
+    expect(screen.getByText(/Wrote 218 lines to ~\/\.claude\/statusline\.py/)).toBeTruthy()
   })
 })

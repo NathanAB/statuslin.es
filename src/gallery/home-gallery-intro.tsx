@@ -1,5 +1,4 @@
 import { kindCount } from '@/gallery/kind-count'
-import { Text } from '@/ui/text'
 
 function utcDateLabel(isoDate: string): string {
   const date = new Date(`${isoDate}T00:00:00.000Z`)
@@ -11,6 +10,7 @@ function utcDateLabel(isoDate: string): string {
   }).format(date)
 }
 
+/** The home page's inventory, a line in its footer: both kinds, their copies, and as of when. */
 export function HomeIndexNote({
   statusLines,
   mods,
@@ -23,9 +23,9 @@ export function HomeIndexNote({
   asOf: string
 }) {
   return (
-    <Text muted size="xs" center>
+    <>
       {kindCount(statusLines, mods)}, copied {copyCount.toLocaleString('en-US')} times as of{' '}
       <time dateTime={asOf}>{utcDateLabel(asOf)}</time>.
-    </Text>
+    </>
   )
 }

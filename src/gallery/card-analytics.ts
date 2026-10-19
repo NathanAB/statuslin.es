@@ -5,12 +5,14 @@ import type { GallerySort } from '@/gallery/queries'
 export interface GalleryCardAnalytics {
   /**
    * `related` is a status line page's suggestions; `mod_related` is a mod page's "More like this";
-   * `home_featured_mod` is the home page's pinned "Featured mod" row; `buddy_guide` is the pet mods
-   * on /guide/claude-code-buddy.
+   * `home_featured_mod` is the featured mod, first in the home page's mods row, and
+   * `home_mods_row` the other mods in that row; `buddy_guide` is the pet mods on
+   * /guide/claude-code-buddy.
    */
   surface:
     | 'home'
     | 'home_featured_mod'
+    | 'home_mods_row'
     | 'facet'
     | 'best'
     | 'compare'

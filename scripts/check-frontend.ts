@@ -211,7 +211,8 @@ const FONT_FAMILY_ALLOW = [
   'src/ui/line-diff.tsx', // monospace script diff
   'src/ui/statusline-preview.tsx', // ANSI preview (monospace)
   'src/ui/textarea.tsx', // the monospace source-code input
-  'src/ui/terminal.tsx', // the home page's Claude Code terminal and install panels (monospace)
+  'src/ui/terminal.tsx', // the home page's Claude Code terminal (monospace)
+  'src/ui/install-walkthrough.tsx', // the home page's install prompt, JSON and replies (monospace)
   'src/ui/wordmark.tsx', // the statuslin.es wordmark (monospace)
 ]
 // Tailwind `font-<weight>` utilities — these are weights, not families, so they're fine.

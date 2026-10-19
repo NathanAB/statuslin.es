@@ -129,6 +129,7 @@
         "src/render/scenario-helpers.ts",
         "src/render/transcript.ts",
         "src/render/ansi.ts",
+        "src/home/session-json.ts",
         "scripts/loadtest/capture.ts"
       ],
       "linter": {

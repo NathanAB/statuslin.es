@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import {
   BUDDY_GUIDE_PATH,
@@ -27,13 +28,23 @@ const PAGE_LINKS = [
  * Shared bottom footer on every page, a quiet block: what the site is and the copyright on the
  * left, and beside them every page link, the GitHub source, a mailto contact (the abuse-report
  * path) and Terms, wrapping onto a second line as the width needs. Phones stack the three parts.
- * `measure` lines it up with the page's content column.
+ * `measure` lines it up with the page's content column; `note` is a page's own quiet line under
+ * what the site is (the home page's inventory).
  */
-export function SiteFooter({ measure = 'standard' }: { measure?: PageMeasure }) {
+export function SiteFooter({
+  measure = 'standard',
+  note,
+}: {
+  measure?: PageMeasure
+  note?: ReactNode
+}) {
   return (
     <footer className={cn('pt-16 pb-8 text-small', PAGE_MEASURE[measure])}>
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-x-12 lg:gap-y-1.5">
-        <p className="text-muted-foreground">{HOME_HEADING}</p>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-muted-foreground">{HOME_HEADING}</p>
+          {note ? <p className="text-muted-foreground">{note}</p> : null}
+        </div>
         <nav aria-label="Footer" className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <ul className="flex flex-wrap gap-x-5 gap-y-1.5">
             {PAGE_LINKS.map(({ to, label }) => (

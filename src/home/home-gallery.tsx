@@ -7,14 +7,17 @@ import { GalleryControls } from '@/gallery/gallery-controls'
 import type { GalleryFilter, GalleryItem } from '@/gallery/gallery-items'
 import type { GallerySort } from '@/gallery/queries'
 import { homePaginationSearch } from '@/lib/canonical'
-import { GALLERY_ID } from '@/mods/featured-mod-row'
 import { ModCard } from '@/mods/mod-card'
 import { Button } from '@/ui/button'
 import { GalleryList } from '@/ui/gallery-row'
 import { HomeSection } from '@/ui/home-section'
 import { Row, Stack } from '@/ui/layout'
+import { Reveal } from '@/ui/reveal'
 import { Text } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
+
+/** The gallery section's id: /#gallery lands on it. */
+const GALLERY_ID = 'gallery'
 
 /**
  * The home page's gallery: the filter heading and sort, one row per status line or mod, and real
@@ -58,26 +61,22 @@ export function HomeGallery({
     <HomeSection id={GALLERY_ID}>
       <Stack gap={7}>
         <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-        <GalleryControls kind={kind} sort={sort} tags={selectedTags} />
+        <Reveal>
+          <GalleryControls kind={kind} sort={sort} tags={selectedTags} />
+        </Reveal>
         {items.length === 0 ? (
           <Text muted>Nothing matches these filters yet.</Text>
         ) : (
           <GalleryList>
-            {items.map((item, index) =>
-              item.kind === 'mod' ? (
-                <ModCard
-                  key={`mod:${item.card.slug}`}
-                  card={item.card}
-                  analytics={cardAnalytics(index)}
-                />
-              ) : (
-                <GalleryConfigCard
-                  key={`status-line:${item.card.slug}`}
-                  card={item.card}
-                  analytics={cardAnalytics(index)}
-                />
-              ),
-            )}
+            {items.map((item, index) => (
+              <Reveal key={`${item.kind}:${item.card.slug}`}>
+                {item.kind === 'mod' ? (
+                  <ModCard card={item.card} analytics={cardAnalytics(index)} />
+                ) : (
+                  <GalleryConfigCard card={item.card} analytics={cardAnalytics(index)} />
+                )}
+              </Reveal>
+            ))}
           </GalleryList>
         )}
         {pageCount > 1 ? (

@@ -5,7 +5,7 @@ import type * as React from 'react'
 import { cn } from '@/lib/cn'
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 cursor-pointer select-none items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-clip-padding font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "group/button inline-flex shrink-0 cursor-pointer select-none items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-clip-padding font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-disabled:cursor-default aria-disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -83,6 +83,9 @@ interface ButtonBaseProps extends Omit<VariantProps<typeof buttonVariants>, 'siz
   title?: string
   'aria-label'?: string
   'aria-pressed'?: boolean
+  /** Dimmed and said to be unavailable, but still focusable: for a button that can't act right
+   * now while keyboard focus may sit on it (the mods row's ends). Its onClick must do nothing then. */
+  'aria-disabled'?: boolean
   children?: React.ReactNode
 }
 

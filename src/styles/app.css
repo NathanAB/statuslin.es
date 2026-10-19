@@ -56,11 +56,13 @@
                          from the coral accent and the destructive red */
   --sunken: #0c0b0a; /* near-black code/preview wells */
   --field: #211f1b; /* form-control fill — a hair above --card for subtle contrast */
-  /* The home page's Claude Code terminal: its text, dimmed text, input rules, and your turn's fill */
+  /* The home page's Claude Code terminal: its text, dimmed text, input rules, your turn's fill,
+     and lines a tool added */
   --terminal-foreground: #e8e6dc;
   --terminal-muted: #8f8d86;
   --terminal-rule: #3a3833;
   --terminal-turn: #2e2c28;
+  --terminal-added: #7fbf8a; /* lines a tool call added (the install walkthrough's settings.json) */
 
   /* ── Relationships: by reference ONLY. Never restate a hex above. ── */
   --card-foreground: var(--foreground);
@@ -164,6 +166,7 @@
   --color-terminal-muted: var(--terminal-muted);
   --color-terminal-rule: var(--terminal-rule);
   --color-terminal-turn: var(--terminal-turn);
+  --color-terminal-added: var(--terminal-added);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);

@@ -23,6 +23,7 @@ export function StatuslinePreview({
     // Inside the terminal, which is one image to a screen reader, an overflowing line must not
     // become a nameless tab stop (browsers make scrollers focusable).
     <div
+      data-ui=""
       className="min-w-0 max-w-full overflow-x-auto"
       tabIndex={look === 'terminal' ? -1 : undefined}
     >

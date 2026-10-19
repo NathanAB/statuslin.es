@@ -270,7 +270,11 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   Switzer can't be committed here. The owner chose Hanken Grotesk (OFL 1.1) instead: it is the
   closest width measured at the prototype's sizes (headline 99%, body 101% of Switzer). The
   prototype now embeds Hanken Grotesk too; the screenshots still show Switzer.
-- **`HomeIndexNote` (step 5).** The prototype has no "N status lines and M mods, copied X times" line.
-  Drop it, or keep it in the footer line?
-- **Featured mod (step 5).** Is "first panel of the mods row, below the gallery" acceptable, given it
-  moves from above the gallery today?
+- **`HomeIndexNote` (step 5), decided without the owner, who asked for the rest to be built in one
+  go: kept, in the footer.** The dated "N status lines and M mods, copied X times as of …" line is
+  unique, fresh text for search, so it moved to a quiet line under the footer's tagline on the
+  home page only (`PageShell footerNote`). Easy to drop if the owner prefers.
+- **Featured mod (step 5), decided the same way: first panel of the mods row.** It leads the row
+  below the gallery, keeps `surface: 'home_featured_mod'` and stays out of the ItemList. The other
+  mods in the row report `surface: 'home_mods_row'`. The row now shows on every gallery page, since
+  it doesn't change with the sort, kind, tags or page.

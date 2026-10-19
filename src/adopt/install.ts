@@ -49,3 +49,36 @@ export function buildShellInstall({ source, interpreter }: AdoptConfig): string 
   const chmod = interpreter === 'bash' ? `\nchmod +x ${file}` : ''
   return `mkdir -p ~/.claude\ncat > ${file} <<'STATUSLINE_EOF'\n${source}\nSTATUSLINE_EOF${chmod}`
 }
+
+/** A status line's install prompt with only the head of its script, for a walkthrough to show. */
+export interface InstallExcerpt {
+  prompt: string
+  /** Where the prompt saves the script, and the command settings.json runs it with. */
+  file: string
+  command: string
+  /** How many lines the whole script has. */
+  lines: number
+  /** Whether the prompt also makes the script executable (a bash script). */
+  executable: boolean
+}
+
+/**
+ * The real install prompt, with the script cut to its first `headLines` lines and a count of the
+ * rest. The file name and command come from the whole script, as the copied prompt's do.
+ */
+export function installExcerpt(config: AdoptConfig, headLines = 3): InstallExcerpt {
+  const scriptLines = config.source.replace(/\n$/, '').split('\n')
+  const rest = scriptLines.length - headLines
+  const shown =
+    rest > 0
+      ? [...scriptLines.slice(0, headLines), `… ${rest} more lines`].join('\n')
+      : config.source
+  return {
+    // A function, so a script's own $', $$ or $& is not read as a replacement pattern.
+    prompt: buildClaudePrompt(config).replace(config.source, () => shown),
+    file: `~/.claude/${installFilename(config.interpreter, config.source)}`,
+    command: runCommand(config.interpreter, config.source),
+    lines: scriptLines.length,
+    executable: config.interpreter === 'bash',
+  }
+}

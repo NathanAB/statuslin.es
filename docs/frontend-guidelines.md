@@ -22,7 +22,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Primary text | `text-foreground` |
 | Secondary text | `text-muted-foreground` |
 | Inactive filter labels (dimmer than secondary) | `text-dim` |
-| The home page terminal's text, dimmed text, rules, your turn | `text-terminal-foreground`, `text-terminal-muted`, `border-terminal-rule`, `bg-terminal-turn` |
+| The home page terminal's text, dimmed text, rules, your turn, added lines | `text-terminal-foreground`, `text-terminal-muted`, `border-terminal-rule`, `bg-terminal-turn`, `text-terminal-added` |
 | Borders | `border-border` |
 | Destructive | `bg-destructive` / `text-destructive` |
 | Caution (a cost or a risk) | `bg-warning/10` / `text-warning` |
@@ -71,7 +71,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | What it does |
 | --- | --- |
-| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + `max-w-5xl` main. `narrow` makes main `max-w-lg`; `wide` (the home page) lets main span the window and widens the header and footer to the home measure |
+| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + `max-w-5xl` main. `narrow` makes main `max-w-lg`; `wide` (the home page) lets main span the window and widens the header and footer to the home measure; `footerNote` adds a quiet line of the page's own to the footer (the home page's inventory) |
 | `<CenteredShell user={user}>` | Centered screen for login / signed-out-submit views |
 
 ### Typography (`src/ui/text.tsx`)
@@ -90,10 +90,15 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<CardHeader>`, `<CardContent>`, `<CardFooter>`, `<CardTitle>`, `<CardDescription>`, `<CardAction>` | `src/ui/card.tsx` | Subcomponents for card anatomy |
 | `<StretchedLink to="…">` | `src/ui/stretched-link.tsx` | Full-card clickable overlay with focus ring; place inside `<Card interactive>` |
 | `<GalleryRow to params onOpen title byline facts description>` | `src/ui/gallery-row.tsx` | The redesign's gallery card: one full-width row, title link (it opens the whole row) and byline left, `facts` right, the preview as children, the description clamped to two lines; `onOpen` runs when the row opens (its click analytics). Hover and focus raise the tone; inside another card it starts a tone up. `<RowFacts>` sets the facts in a dotted line, `<RowNote icon>` is a fact with an icon, `<GalleryList>` stacks rows |
-| `<Terminal label toolbar transcript status conversationKey conversationChanged statusKey statusChanged>` | `src/ui/terminal.tsx` | The home hero's Claude Code session: a frame with an optional toolbar (the session switcher and its caption), then a fixed-height screen with the conversation (`TranscriptLine[]`), the input box and the status line. The screen is one image to a screen reader, named by `label`. Nothing moves on the first render; after a change, a new conversation settles in and a new status line glows (`animate-flash`) |
+| `<Terminal label toolbar transcript status conversationKey conversationChanged statusKey statusChanged>` | `src/ui/terminal.tsx` | The home hero's Claude Code session: a frame with an optional toolbar (the session switcher and its caption), then a fixed-height screen with the conversation (`TranscriptLine[]`), the input box and the status line. The screen is one image to a screen reader, named by `label`. Nothing moves on the first render; after a change, a new conversation settles in and a new status line glows (`animate-flash`). `height="fit"` drops the fixed height (the walkthrough's last picture). `<Transcript lines>` prints a conversation on its own |
 | `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. `look`: `list` (label and detail on a tile: the hero's picker) or `tray` (small segments: the hero's sessions) |
 | `<HeroLayout heading lead stage aside>`, `<HeroActions>` | `src/ui/hero-layout.tsx` | The home hero's 12-column grid (title and sentence, then the demo and its controls); stacks below 900px |
 | `<LiveMessage>` | `src/ui/visually-hidden.tsx` | A screen-reader-only `role="status"` message, read out when it changes |
+| `<ShotCarousel heading lead listLabel items more>` | `src/ui/shot-carousel.tsx` | The home page's dark band of mod screenshots in a sideways row: the centred one lit and named above it, previous and next buttons, arrow keys; every shot links to its page |
+| `<InstallWalkthrough heading statement steps result>` | `src/ui/install-walkthrough.tsx` | "How installing works": each step's call (the install prompt, JSON, a typed line) and Claude Code's reply, then a closing picture |
+| `<ClosingBand heading lead panel>` | `src/ui/closing-band.tsx` | The home page's full-width coral closing section, light text on `bg-primary-fill` |
+| `<SubmitChooser signedIn>` | `src/ui/submit-cta.tsx` | Status line or Mod, then continue: a link to `/submit` (or `?kind=mod`) when signed in, GitHub sign-in back to that form when not |
+| `<Reveal>` | `src/ui/reveal.tsx` | A block that rises into place when it first scrolls into view. Only blocks that start below the fold wait, never without JavaScript or under reduced motion, and a block the page jumped past shows at once |
 | `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on its measure, `mt-section` from the one above (`first`: just under the header) |
 
 ### Buttons (`src/ui/button.tsx`)
@@ -101,7 +106,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 `Button` and `buttonVariants` are exported. Key variants:
 
 - **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link` · `quiet` (dim text that lights up on hover, no surface: the header's links) · `plain` (full-strength text, no surface)
-- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`)
+- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`). `aria-disabled` dims a button that can't act right now but keeps it focusable (the mods row's ends); its `onClick` must then do nothing
 - **active:** `true` / `false` — active-tab treatment; pair with `variant="outline"`
 
 ### Other primitives
@@ -133,6 +138,10 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 3. **Close the props immediately:** remove `className` from the component's prop interface; narrow `...rest` to the explicit props the app uses (`type`, `disabled`, `value`, `onChange`, aria-attributes, etc.) — no `HTMLAttributes` blanket.
 4. TypeScript now enforces closure at every call site. Add any missing variants rather than reopening `className`.
 5. Commit the closed component. Never ship an open `className` prop into `src/ui/`.
+
+### Product fragments (`data-ui`)
+
+A `src/ui` element that depicts the product itself (a status line render, the hero terminal, a Claude Desktop shot, the walkthrough's typed line and Claude Code's replies) carries `data-ui=""`. It names it as an interface fragment, the way the redesign prototype does: the taste inspector counts it as a picture and leaves its own sizes, rules and shadow out of the page's typography and surface checks. Never put it on page text or around a heading.
 
 ## Structure rules
 

@@ -70,30 +70,31 @@ afterAll(async () => {
 async function loadFeaturedMod(
   search: { page?: number; sort?: 'new'; tags?: string; kind?: 'mods' | 'status-lines' } = {},
 ): Promise<string | null> {
-  return (await loadHome(search)).featuredMod?.slug ?? null
+  return (await loadHome(search)).showcase.mods.featured?.slug ?? null
 }
 
 type HomeSearch = { page?: number; sort?: 'new'; tags?: string; kind?: 'mods' | 'status-lines' }
 
 function loadHome(search: HomeSearch) {
   const loader = HomeRoute.options.loader as (ctx: unknown) => Promise<{
-    featuredMod: GalleryModCard | null
+    showcase: { mods: { featured: GalleryModCard | null; others: GalleryModCard[] } }
     gallery: { items: Array<{ kind: string; card: { slug: string } }> }
   }>
   return loader({ deps: search })
 }
 
-describe('home "Featured mod" row loader', () => {
+describe('home mods row loader', () => {
   it('features the chosen mod on the default first page', async () => {
     expect(await loadFeaturedMod()).toBe(FEATURED_MOD_SLUG)
   })
 
-  // Switching sort, tags or kind keeps the row in place, so the filter buttons below it don't jump.
-  it('features the same mod on every sort, tag and kind of page 1', async () => {
+  // The mods row sits below the gallery and doesn't change with what the gallery shows.
+  it('features the same mod whatever the sort, tags, kind or page', async () => {
     expect(await loadFeaturedMod({ sort: 'new' })).toBe(FEATURED_MOD_SLUG)
     expect(await loadFeaturedMod({ tags: 'git' })).toBe(FEATURED_MOD_SLUG)
     expect(await loadFeaturedMod({ kind: 'mods' })).toBe(FEATURED_MOD_SLUG)
     expect(await loadFeaturedMod({ kind: 'status-lines' })).toBe(FEATURED_MOD_SLUG)
+    expect(await loadFeaturedMod({ page: 2 })).toBe(FEATURED_MOD_SLUG)
   })
 
   it('never lists the featured mod in the grid, so it shows once', async () => {
@@ -105,7 +106,8 @@ describe('home "Featured mod" row loader', () => {
     expect(gallery.items.map((item) => item.card.slug)).toEqual(['other-mod'])
   })
 
-  it('features none past page 1', async () => {
-    expect(await loadFeaturedMod({ page: 2 })).toBeNull()
+  it('lists the other mods after it, without it', async () => {
+    const { showcase } = await loadHome({})
+    expect(showcase.mods.others.map((mod) => mod.slug)).toEqual(['other-mod'])
   })
 })

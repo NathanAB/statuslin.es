@@ -106,3 +106,16 @@ describe('PageShell wide', () => {
     expect(footer.className).toContain('max-w-page')
   })
 })
+
+describe('PageShell footerNote', () => {
+  it("passes the page's note to the footer", () => {
+    const { container } = render(
+      <PageShell user={null} wide footerNote="12 status lines, copied 3 times.">
+        <p>home</p>
+      </PageShell>,
+    )
+    expect(container.querySelector('footer')?.textContent).toContain(
+      '12 status lines, copied 3 times.',
+    )
+  })
+})

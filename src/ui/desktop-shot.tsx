@@ -30,6 +30,7 @@ export function DesktopShot({
   if (fit === 'whole') {
     return (
       <img
+        data-ui=""
         src={shot.src}
         alt={alt}
         width={shot.width}
@@ -39,7 +40,7 @@ export function DesktopShot({
     )
   }
   return (
-    <div className={cardFrame()}>
+    <div data-ui="" className={cardFrame()}>
       <img
         src={shot.src}
         alt={alt}

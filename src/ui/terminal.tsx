@@ -15,28 +15,60 @@ export type TranscriptLine =
   | { kind: 'say'; lines: string[] }
   /** A dimmed line of its own (the welcome, how long a turn took). */
   | { kind: 'note'; text: string }
+  /** Lines a tool call added to a file, in green. */
+  | { kind: 'added'; lines: string[] }
 
 // After a change, new content settles in from just below. Motion only when the visitor allows it.
 const SETTLE =
   'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1.5 motion-safe:duration-700 motion-safe:ease-settle'
 
+// Claude Code's own marks (❯ your turn, ● a step, ⎿ its result) are decoration to a screen reader.
+const mark = (glyph: string) => <span aria-hidden="true">{glyph}</span>
+
 function TranscriptRow({ line }: { line: TranscriptLine }) {
   switch (line.kind) {
     case 'prompt':
-      return <span className="bg-terminal-turn text-foreground">❯ {line.text}</span>
+      return (
+        <span className="bg-terminal-turn text-foreground">
+          {mark('❯')} {line.text}
+        </span>
+      )
     case 'tool':
       return (
         <>
-          ● {line.name}({line.target})
+          {mark('●')} {line.name}({line.target})
         </>
       )
     case 'result':
-      return <span className="text-terminal-muted">{`  ⎿  ${line.text}`}</span>
+      return (
+        <span className="text-terminal-muted">
+          {'  '}
+          {mark('⎿')}
+          {`  ${line.text}`}
+        </span>
+      )
     case 'say':
-      return <>{line.lines.map((text, i) => (i === 0 ? `● ${text}` : `\n  ${text}`))}</>
+      return (
+        <>
+          {mark('●')} {line.lines.join('\n  ')}
+        </>
+      )
     case 'note':
       return <span className="text-terminal-muted">{line.text}</span>
+    case 'added':
+      return <span className="text-terminal-added">{line.lines.join('\n')}</span>
   }
+}
+
+/** A sample conversation's lines, one under another, as Claude Code prints them. */
+export function Transcript({ lines }: { lines: TranscriptLine[] }) {
+  return lines.map((line, i) => (
+    // biome-ignore lint/suspicious/noArrayIndexKey: a fixed transcript, ordered, with no ids.
+    <span key={i}>
+      {i > 0 ? '\n' : null}
+      <TranscriptRow line={line} />
+    </span>
+  ))
 }
 
 /**
@@ -44,6 +76,7 @@ function TranscriptRow({ line }: { line: TranscriptLine }) {
  * switcher), then the screen, a fixed height so nothing below it moves, with the conversation, the
  * input box and the status line under it, as Claude Code lays them out. The screen is one picture
  * to a screen reader, named by `label`, so it never reads out box-drawing characters.
+ * `height="fit"` (the install walkthrough) lets the screen take its content's height instead.
  * Nothing moves on the first render. Once `conversationChanged`, each new conversation (named by
  * `conversationKey`) settles in with its caption; once `statusChanged`, each new status line
  * (named by `statusKey`) glows for a moment.
@@ -57,8 +90,10 @@ export function Terminal({
   conversationChanged,
   statusKey,
   statusChanged,
+  height = 'fixed',
 }: {
   label: string
+  height?: 'fixed' | 'fit'
   toolbar?: { title: string; titleId: string; control: ReactNode; caption: string }
   transcript: TranscriptLine[]
   /** The status line's render, or null when it has none for this session. */
@@ -93,19 +128,17 @@ export function Terminal({
       <div
         role="img"
         aria-label={label}
-        className="flex h-[clamp(23.75rem,31vw,27.875rem)] flex-col justify-end overflow-hidden rounded-screen bg-sunken px-6 pt-5.5 pb-5 font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:h-85 max-md:px-4 max-md:pt-4 max-md:pb-3.5 max-md:text-[0.8125rem]"
+        data-ui=""
+        className={cn(
+          'flex flex-col justify-end overflow-hidden rounded-screen bg-sunken px-6 pt-5.5 pb-5 font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:px-4 max-md:pt-4 max-md:pb-3.5 max-md:text-[0.8125rem]',
+          height === 'fixed' && 'h-[clamp(23.75rem,31vw,27.875rem)] max-md:h-85',
+        )}
       >
         <pre
           key={conversationKey}
           className={cn('min-h-0 shrink overflow-hidden whitespace-pre font-mono', settle)}
         >
-          {transcript.map((line, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: a fixed transcript, ordered, with no ids.
-            <span key={i}>
-              {i > 0 ? '\n' : null}
-              <TranscriptRow line={line} />
-            </span>
-          ))}
+          <Transcript lines={transcript} />
         </pre>
         <div className="mt-3 shrink-0 border-terminal-rule border-y py-1.5 text-foreground">
           <span className="text-terminal-muted">❯</span>{' '}

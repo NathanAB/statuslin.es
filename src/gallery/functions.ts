@@ -10,7 +10,6 @@ import { newestDate, type SitemapMod, type SitemapPage, sitemapResponse } from '
 import { getConfigSource, getPublishedConfigCatalog, getPublishedConfigs } from './config-items'
 import { type FacetMod, getLatestCopyAt } from './facet-queries'
 import type { GallerySource } from './gallery-items'
-import { getHeroLines } from './hero-lines'
 import { getPublishedInventory } from './inventory'
 import {
   getCardsByCopies,
@@ -163,11 +162,6 @@ function coerceModTags(value: unknown): FacetMod[] {
 export const getGalleryConfigs = createServerFn({ method: 'GET' })
   .validator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
-
-/** The home hero's status lines, with their renders for each session it switches between. */
-export const getHeroLinesFn = createServerFn({ method: 'GET' }).handler(() =>
-  withHttpStatus(() => getHeroLines(db)),
-)
 
 export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(async () => {
