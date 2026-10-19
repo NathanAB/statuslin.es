@@ -105,6 +105,15 @@ describe('scenario feed plugin', () => {
     expect(n).toHaveBeenCalledWith({ source: 'startup' })
   })
 
+  it('lets the session start when /preview-busy cannot be registered', async () => {
+    const { $ } = fakeEngine(null)
+    $.command.register.mockRejectedValueOnce(new Error('name taken'))
+    const n = next('scenario-feed')
+
+    expect(await call('session.start', $, { source: 'startup' }, n)).toBe(ENGINE_ANSWER)
+    expect(n).toHaveBeenCalledWith({ source: 'startup' })
+  })
+
   it('answers /preview-busy with no output, then plays the busy calls in order', async () => {
     const { $, runPending } = fakeEngine(null)
     const entry = (await hooks()).get('command.run')
@@ -139,6 +148,17 @@ describe('scenario feed plugin', () => {
 
     release()
     await played
+    await vi.waitFor(() => expect($.ui.status).toHaveBeenLastCalledWith(undefined))
+    expect(ticks).toEqual([])
+  })
+
+  it('stops redrawing and clears its status when a call fails', async () => {
+    const { $, ticks } = fakeEngine(null)
+    $.tool.call.mockRejectedValueOnce(new Error("the mod's hook threw"))
+    await (await hooks()).get('command.run')?.hook($, {}, next('x'))
+
+    for (const fn of $.clock.after.mock.calls.map(([, fn]) => fn)) fn()
+
     await vi.waitFor(() => expect($.ui.status).toHaveBeenLastCalledWith(undefined))
     expect(ticks).toEqual([])
   })

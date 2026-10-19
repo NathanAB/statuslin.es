@@ -59,9 +59,12 @@ async function playBusy($: Engine) {
     tick += 1
     $.ui.status(`preview ${'.'.repeat(tick % 4)}`)
   })
-  for (const call of (await readFeed($)).busy) await $.tool.call(call as never)
-  ticking.cancel()
-  $.ui.status(undefined)
+  try {
+    for (const call of (await readFeed($)).busy) await $.tool.call(call as never)
+  } finally {
+    ticking.cancel()
+    $.ui.status(undefined)
+  }
 }
 
 /**
@@ -82,10 +85,13 @@ export const register: Register = (on) => {
   on('agent.list', ($, e, next) => answer($, 'agent.list', e, next))
   // Registered in the baseline too, so both sessions type the same steps.
   on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: 'preview-busy',
-      description: 'Plays a short busy session for the statuslin.es preview.',
-    })
+    // A failed registration must not keep the mod's own session.start from running.
+    await $.command
+      .register({
+        name: 'preview-busy',
+        description: 'Plays a short busy session for the statuslin.es preview.',
+      })
+      .catch(() => undefined)
     return next(e)
   })
   // An empty text draws one bare reply row; no text at all draws nothing, but leaves no transcript
@@ -93,7 +99,8 @@ export const register: Register = (on) => {
   // rows of their own, and run once the command has answered.
   on('command.run', { command: 'preview-busy' }, async ($) => {
     $.clock.after(0, () => {
-      void playBusy($)
+      // A mod's hook may throw mid-sequence; the frame then shows where the sequence stopped.
+      playBusy($).catch(() => undefined)
     })
     return { text: '' }
   })
