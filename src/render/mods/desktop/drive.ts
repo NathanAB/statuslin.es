@@ -7,6 +7,7 @@ import {
   DESKTOP_SANDBOX_TIMEOUT_MS,
   type DesktopVersions,
   type RecordingDesktop,
+  ROOT_SETUP_TIMEOUT_MS,
 } from './desktop-sandbox'
 import type { QuietOptions } from './imagemagick'
 import { clickCommand, keyCommand, moveCommand, typeFileCommand, typingMs } from './input'
@@ -57,8 +58,11 @@ const FINAL_SETTLE: QuietOptions = { quietMs: 2_000, maxMs: 10_000, pollMs: 500 
 /** Typed a character at a time, so a step's text is bounded to keep its typing bounded. */
 export const MAX_STEP_CHARS = 200
 
-/** Uploads (tarball, session files) and commands (two versions, unpack, setup) at their timeouts. */
-const SETUP_MAX_MS = 2 * REQUEST_TIMEOUT_MS + 4 * COMMAND_TIMEOUT_MS
+/**
+ * Uploads (tarball, session files) and commands (two versions, unpack, setup, then the root setup)
+ * at their timeouts.
+ */
+const SETUP_MAX_MS = 2 * REQUEST_TIMEOUT_MS + 4 * COMMAND_TIMEOUT_MS + ROOT_SETUP_TIMEOUT_MS
 const SESSION_MAX_MS =
   WINDOW_MAX_MS +
   WELCOME.maxMs +

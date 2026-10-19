@@ -160,7 +160,12 @@ describe('renderStatusLineDesktop', () => {
           pluginName: STATUSLINE_ANYWHERE_MOD_SLUG,
         },
         inputSteps: [],
-        statusLine: { source: 'print("hi")', interpreter: 'python' },
+        statusLine: {
+          source: 'print("hi")',
+          interpreter: 'python',
+          networkHosts: [],
+          readsClaudeToken: false,
+        },
       },
     ])
   })
@@ -185,9 +190,28 @@ describe('renderStatusLineDesktop', () => {
     expect(lines).toEqual(['drew nothing blank in Claude Desktop'])
   })
 
-  it('skips a status line that needs the internet, and says so', async () => {
+  it('records a status line with network hosts, passing its hosts and token read', async () => {
     await seedStatuslineAnywhere()
-    const versionId = await seedConfig('weather', { networkHosts: ['wttr.in'] })
+    await seedConfig('weather', { networkHosts: ['wttr.in'] })
+    await seedConfig('usage', { networkHosts: ['api.anthropic.com'], readsClaudeToken: true })
+    const recorder = new FakeDesktopRecorder({}, VERSIONS)
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(0)
+    expect(recorder.requests.map((r) => r.statusLine)).toEqual([
+      expect.objectContaining({ networkHosts: ['api.anthropic.com'], readsClaudeToken: true }),
+      expect.objectContaining({ networkHosts: ['wttr.in'], readsClaudeToken: false }),
+    ])
+    expect(lines).toEqual([
+      'drew nothing usage in Claude Desktop',
+      'drew nothing weather in Claude Desktop',
+    ])
+  })
+
+  it('skips a status line that needs a real Anthropic host, and says so', async () => {
+    await seedStatuslineAnywhere()
+    const versionId = await seedConfig('console', { networkHosts: ['api.anthropic.com'] })
     const recorder = new FakeDesktopRecorder({}, VERSIONS)
 
     const { exitCode, lines } = run(recorder)
@@ -195,7 +219,7 @@ describe('renderStatusLineDesktop', () => {
     expect(await exitCode).toBe(0)
     expect(recorder.requests).toEqual([])
     expect(await stored(versionId)).toEqual([])
-    expect(lines).toEqual(['skipped weather: needs the internet; no Desktop shot'])
+    expect(lines).toEqual(['skipped console: needs an Anthropic host; no Desktop shot'])
   })
 
   it('leaves out status lines that are not published', async () => {

@@ -66,4 +66,5 @@ what gets published doesn't come from trusting the author: it comes from the cod
 being **open source**, **human-reviewed before it goes live**, and pinned to a
 **content hash** so the exact reviewed bytes are what gets served and copied.
 Published versions are immutable. There's no path to swap in unreviewed code
-after approval. See the README for more.
+after approval. A script that declares network hosts can reach only those hosts,
+in the terminal render and in the Claude Desktop render. See the README for more.

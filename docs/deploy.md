@@ -330,9 +330,10 @@ DATABASE_URL='<env pooled url>' bun run render:status-line-desktop
 It records every published status line with no Desktop result, or one recorded with another
 Desktop, engine or statusline-anywhere commit, and prints one outcome per status line. `--slug
 <slug>` limits it to one; `--all` records every one again. Run it after you publish a status line or
-approve an update, after a Desktop upgrade, and after re-pinning statusline-anywhere. A status line
-with network hosts is skipped (`needs the internet; no Desktop shot`): Desktop sandboxes are
-offline. A failed recording keeps its earlier result; rerun it.
+approve an update, after a Desktop upgrade, and after re-pinning statusline-anywhere. A status line's
+sandbox reaches only the hosts the admin approved for it, and the Anthropic usage mock answers a
+Claude token read, as in the terminal render (ADR 0008). A status line that needs a real Anthropic
+host is skipped (`needs an Anthropic host; no Desktop shot`): Desktop holds a fake key. A failed recording keeps its earlier result; rerun it.
 
 ### Launch runbook
 
