@@ -2,7 +2,7 @@ import { and, eq, not } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
-import type { CurationEntry } from '@/mods/curation'
+import { CURATION_FILE, type CurationEntry } from '@/mods/curation'
 import { hasSubmission } from '@/mods/import'
 
 /**
@@ -44,6 +44,18 @@ export function assertAppEnv(named: string, appEnv: string | undefined): void {
   if (appEnv !== named) {
     throw new Error(
       `APP_ENV is ${appEnv ?? 'unset'}, not ${named}: run it as bun run with-env ${named} scripts/run-repin-mods.ts ${named}`,
+    )
+  }
+}
+
+/**
+ * Publishes only a curation file a human merged: updates:mods moves pins in the working copy, and
+ * those commits haven't been reviewed until their pull request is merged into main.
+ */
+export function assertCurationReviewed(onDisk: string, onMain: string | null): void {
+  if (onDisk !== onMain) {
+    throw new Error(
+      `${CURATION_FILE} is not the reviewed one on origin/main: merge its pull request, then git pull and rerun`,
     )
   }
 }

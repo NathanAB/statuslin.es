@@ -15,7 +15,8 @@ import { terminalLine } from '@/mods/terminal-line'
  * diff, merges it, and then runs run-repin-mods.ts. Any other GitHub error (rate limit, outage)
  * aborts the run before anything is written.
  *
- * AGENT USAGE — needs only GitHub, no DATABASE_URL; the token raises the rate limit:
+ * AGENT USAGE — needs only GitHub, no DATABASE_URL, but a token: one run makes more requests than
+ * GitHub allows an hour without one:
  *
  *   GITHUB_TOKEN=$(gh auth token) bun run updates:mods [curation-file]   # default src/mods/curation.json
  *
@@ -24,7 +25,10 @@ import { terminalLine } from '@/mods/terminal-line'
  */
 
 export interface CheckUpdatesDeps {
-  github: Pick<GitHubSource, 'findRepo' | 'resolveCommit' | 'pluginVersion'> &
+  github: Pick<
+    GitHubSource,
+    'findRepo' | 'resolveCommit' | 'pluginManifestExists' | 'pluginVersion'
+  > &
     Pick<GitHub, 'compareCommits' | 'commitIsFetchable'>
   log: (line: string) => void
   /** Named in the summary. */
@@ -44,8 +48,19 @@ type Update =
   | ({ kind: 'release' } & Release)
   | { kind: 'unreleased'; version: string }
   | { kind: 'diverged'; branch: string }
+  | { kind: 'unreadable'; branch: string }
+  | { kind: 'manifest gone'; branch: string }
   | { kind: 'repo gone' }
   | { kind: 'pin gone' }
+
+/**
+ * The author writes plugin.json's version, and it is printed next to the compare link the reviewer
+ * clicks, so anything past a plain version (a sentence, another link, padding that pushes the real
+ * link out of the line) is never printed or acted on.
+ */
+const PLAIN_VERSION = /^[0-9A-Za-z.+-]{1,64}$/
+
+const isPlain = (version: string | null) => version === null || PLAIN_VERSION.test(version)
 
 interface BranchHead {
   branch: string
@@ -77,7 +92,11 @@ async function checkEntry(
     return { kind: 'diverged', branch }
   }
   const to = await github.pluginVersion(entry.repoUrl, entry.path, head)
+  if (to === null && !(await github.pluginManifestExists(entry.repoUrl, entry.path, head))) {
+    return { kind: 'manifest gone', branch }
+  }
   const from = await github.pluginVersion(entry.repoUrl, entry.path, pin)
+  if (!isPlain(to) || !isPlain(from)) return { kind: 'unreadable', branch }
   return to !== null && to === from
     ? { kind: 'unreleased', version: to }
     : { kind: 'release', entry, head, from, to }
@@ -93,12 +112,16 @@ function describeUpdate(entry: CurationEntry, update: Update): string | null {
       return null
     case 'release':
       return update.to === null
-        ? `release ${name} (no version, so every commit updates installs): ${compareUrl(update)}`
-        : `release ${name} ${update.from ?? 'unversioned'} -> ${update.to}: ${compareUrl(update)}`
+        ? `release ${name}: ${compareUrl(update)} (no version, so every commit updates installs)`
+        : `release ${name}: ${compareUrl(update)} (${update.from ?? 'unversioned'} -> ${update.to})`
     case 'unreleased':
       return `ahead ${name}: version unchanged (${update.version}), not re-pinned`
     case 'diverged':
       return `diverged ${name}: ${update.branch} no longer builds on ${entry.commitSha.slice(0, 7)}, not re-pinned`
+    case 'unreadable':
+      return `unreadable ${name}: plugin.json's version at ${update.branch} is not a plain version, not re-pinned: read it by hand`
+    case 'manifest gone':
+      return `gone ${name}: ${update.branch} has no plugin.json in ${entry.path || 'the repository root'}, not re-pinned`
     case 'repo gone':
       return `gone ${name}: GitHub no longer serves ${entry.repoUrl} (deleted or private), not re-pinned`
     case 'pin gone':
@@ -106,19 +129,17 @@ function describeUpdate(entry: CurationEntry, update: Update): string | null {
   }
 }
 
-/** The author writes the version, and it lands in a pull request body: keep it inert there. */
-function versionCell(version: string | null): string {
-  return version === null ? 'unversioned' : `\`${version.replace(/[`|]/g, '')}\``
-}
+const versionCell = (version: string | null) =>
+  version === null ? 'unversioned' : `\`${version}\``
 
 function releaseTable(releases: Release[]): string[] {
   return [
-    '| Mod | Folder | Version | Changes since the pin |',
+    '| Mod | Folder | Changes since the pin | Version |',
     '| --- | --- | --- | --- |',
     ...releases.map((release) => {
       const { entry, from, to } = release
       const folder = entry.path === '' ? 'the repository root' : `\`${entry.path}\``
-      return `| ${entry.pluginName} | ${folder} | ${versionCell(from)} → ${versionCell(to)} | ${compareUrl(release)} |`
+      return `| ${entry.pluginName} | ${folder} | ${compareUrl(release)} | ${versionCell(from)} → ${versionCell(to)} |`
     }),
   ]
 }

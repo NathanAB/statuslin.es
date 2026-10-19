@@ -29,6 +29,8 @@ interface Fakes {
   goneRepos?: string[]
   /** Commits GitHub no longer serves. */
   goneCommits?: string[]
+  /** Commits whose plugin folder has no plugin.json. */
+  noManifest?: string[]
   /** plugin.json versions by `<path>@<sha>`; a missing key reads as no version. */
   versions?: Record<string, string>
 }
@@ -40,6 +42,7 @@ function run(
     comparison = 'ahead',
     goneRepos = [],
     goneCommits = [],
+    noManifest = [],
     versions = {},
   }: Fakes = {},
 ) {
@@ -61,6 +64,9 @@ function run(
       calls.push(`compare:${base.slice(0, 1)}...${compared.slice(0, 1)}`)
       return comparison
     },
+    async pluginManifestExists(_repoUrl, _path, sha) {
+      return !noManifest.includes(sha)
+    },
     async pluginVersion(_repoUrl, path, sha) {
       return versions[`${path}@${sha}`] ?? null
     },
@@ -77,7 +83,7 @@ describe('checkModUpdates', () => {
 
     expect(await result).toEqual({ code: 0, updated: [entry({ commitSha: HEAD })] })
     expect(lines.slice(0, 2)).toEqual([
-      `release meter 1.2.0 -> 1.3.0: ${REPO}/compare/${PIN}...${HEAD}`,
+      `release meter: ${REPO}/compare/${PIN}...${HEAD} (1.2.0 -> 1.3.0)`,
       `1 release(s) re-pinned in ${FILE}: review each compare link, merge it, then run bun run with-env staging scripts/run-repin-mods.ts staging`,
     ])
   })
@@ -86,7 +92,7 @@ describe('checkModUpdates', () => {
     const { result, lines } = run([entry()], { versions: { [`plugins/meter@${HEAD}`]: '1.0.0' } })
 
     expect((await result).updated).toEqual([entry({ commitSha: HEAD })])
-    expect(lines[0]).toBe(`release meter unversioned -> 1.0.0: ${REPO}/compare/${PIN}...${HEAD}`)
+    expect(lines[0]).toBe(`release meter: ${REPO}/compare/${PIN}...${HEAD} (unversioned -> 1.0.0)`)
   })
 
   it('leaves an entry whose new commits keep the same version', async () => {
@@ -110,7 +116,7 @@ describe('checkModUpdates', () => {
 
     expect((await result).updated).toEqual([entry({ commitSha: HEAD })])
     expect(lines[0]).toBe(
-      `release meter (no version, so every commit updates installs): ${REPO}/compare/${PIN}...${HEAD}`,
+      `release meter: ${REPO}/compare/${PIN}...${HEAD} (no version, so every commit updates installs)`,
     )
   })
 
@@ -152,7 +158,7 @@ describe('checkModUpdates', () => {
     expect(lines[0]).toBe(
       `gone meter: GitHub no longer serves ${REPO} (deleted or private), not re-pinned`,
     )
-    expect(lines[1]).toMatch(/^release other /)
+    expect(lines[1]).toMatch(/^release other: /)
   })
 
   it('lists a pin GitHub no longer serves without comparing it', async () => {
@@ -163,22 +169,54 @@ describe('checkModUpdates', () => {
     expect(calls.filter((call) => call.startsWith('compare'))).toEqual([])
   })
 
-  it('ends with a table for the curation pull request', async () => {
+  it('ends with a table for the curation pull request, the compare link first', async () => {
     const { result, lines } = run([entry(), entry({ path: '', pluginName: 'gauge' })], {
       versions: {
         [`plugins/meter@${PIN}`]: '1.2.0',
-        [`plugins/meter@${HEAD}`]: '1.3.0',
-        [`@${HEAD}`]: '2.0.0 | [click](https://evil.example) `x`',
+        [`plugins/meter@${HEAD}`]: '1.3.0-beta.1+build.5',
+        [`@${HEAD}`]: '2.0.0',
       },
     })
 
     await result
     expect(lines.slice(-4)).toEqual([
-      '| Mod | Folder | Version | Changes since the pin |',
+      '| Mod | Folder | Changes since the pin | Version |',
       '| --- | --- | --- | --- |',
-      `| meter | \`plugins/meter\` | \`1.2.0\` → \`1.3.0\` | ${REPO}/compare/${PIN}...${HEAD} |`,
-      `| gauge | the repository root | unversioned → \`2.0.0  [click](https://evil.example) x\` | ${REPO}/compare/${PIN}...${HEAD} |`,
+      `| meter | \`plugins/meter\` | ${REPO}/compare/${PIN}...${HEAD} | \`1.2.0\` → \`1.3.0-beta.1+build.5\` |`,
+      `| gauge | the repository root | ${REPO}/compare/${PIN}...${HEAD} | unversioned → \`2.0.0\` |`,
     ])
+  })
+
+  // The author writes the version; past a plain version it could push the real link out of view.
+  it.each([
+    [
+      'a sentence with a link',
+      '0.2.0 reviewed, safe to merge; see https://github.com/o/r/compare/x...y',
+    ],
+    ['a long string', `1.0.0${'0'.repeat(80)}`],
+  ])(
+    'leaves a mod whose version at the head is %s, without printing it',
+    async (_case, version) => {
+      const { result, lines } = run([entry()], {
+        versions: { [`plugins/meter@${PIN}`]: '1.2.0', [`plugins/meter@${HEAD}`]: version },
+      })
+
+      expect(await result).toEqual({ code: 0, updated: null })
+      expect(lines).toEqual([
+        "unreadable meter: plugin.json's version at trunk is not a plain version, not re-pinned: read it by hand",
+        'no new releases',
+      ])
+    },
+  )
+
+  it('lists a mod whose plugin.json is gone at the head instead of re-pinning it', async () => {
+    const { result, lines } = run([entry()], {
+      noManifest: [HEAD],
+      versions: { [`plugins/meter@${PIN}`]: '1.2.0' },
+    })
+
+    expect(await result).toEqual({ code: 0, updated: null })
+    expect(lines[0]).toBe('gone meter: trunk has no plugin.json in plugins/meter, not re-pinned')
   })
 
   it('changes only the commit, keeping every other field and the key order', async () => {

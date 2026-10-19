@@ -4,6 +4,7 @@ import type { CurationEntry } from '@/mods/curation'
 import { insertPendingSubmission } from '@/submissions/record'
 import {
   assertAppEnv,
+  assertCurationReviewed,
   type Repin,
   type RepinIo,
   type RepinSteps,
@@ -43,6 +44,22 @@ describe('assertAppEnv', () => {
     ['no env', undefined],
   ])('refuses %s', (_name, appEnv) => {
     expect(() => assertAppEnv('staging', appEnv)).toThrow(/APP_ENV/)
+  })
+})
+
+// updates:mods moves pins in the working copy; only the reviewed, merged file may go live.
+describe('assertCurationReviewed', () => {
+  it('passes when the curation file is the one on main', () => {
+    expect(() => assertCurationReviewed('[1]\n', '[1]\n')).not.toThrow()
+  })
+
+  it.each([
+    ['differs from main', '[2]\n'],
+    ['is not on main', null],
+  ])('refuses a curation file that %s', (_case, onMain) => {
+    expect(() => assertCurationReviewed('[1]\n', onMain)).toThrow(
+      /src\/mods\/curation\.json is not the reviewed one on origin\/main/,
+    )
   })
 })
 
