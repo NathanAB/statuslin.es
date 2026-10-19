@@ -46,7 +46,7 @@
       },
       {
         "type": "text",
-        "text": "Email jane.doe@acme.com the $4,200 invoice"
+        "text": "Email jane.doe@acme.com: Jane Doe's Q3 revenue was $1.2M at a 40% margin. Call her on 415-555-0142 or visit 221 Market Street."
       }
     ]
   },
@@ -96,7 +96,7 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/flow 8"
+        "text": "/flow 10"
       }
     ]
   },
@@ -105,13 +105,7 @@
     "path": "plugins/token-weather-usage",
     "commitSha": "550611d4f8092fd4b97358ad6faa8e7bf01ca5bb",
     "pluginName": "token-weather-usage",
-    "title": "Token Weather Usage",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "Run the tests again"
-      }
-    ]
+    "title": "Token Weather Usage"
   },
   {
     "repoUrl": "https://github.com/nvr0x5/claude-deck",
@@ -209,7 +203,19 @@
       },
       {
         "type": "text",
-        "text": "/after run the tests"
+        "text": "/after refactor the parser"
+      },
+      {
+        "type": "text",
+        "text": "/after write unit tests"
+      },
+      {
+        "type": "text",
+        "text": "/after update the README"
+      },
+      {
+        "type": "text",
+        "text": "/before fix the lint errors first"
       }
     ]
   },
@@ -268,6 +274,10 @@
       },
       {
         "type": "text",
+        "text": "/pet name Mochi"
+      },
+      {
+        "type": "text",
         "text": "/pet pat"
       }
     ]
@@ -279,6 +289,14 @@
     "pluginName": "code-pet",
     "title": "Code Pet",
     "inputSteps": [
+      {
+        "type": "text",
+        "text": "/pet rename Byte"
+      },
+      {
+        "type": "text",
+        "text": "/pet snack"
+      },
       {
         "type": "text",
         "text": "/pet demo"
@@ -301,7 +319,7 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/familiar pet"
+        "text": "/familiar species"
       }
     ]
   }
