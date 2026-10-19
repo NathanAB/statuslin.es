@@ -35,7 +35,9 @@ describe('sendApprovalEmail', () => {
         to: 'ada@example.com',
         replyTo: 'hello@statuslin.es',
         subject: 'Your statuslin.es submission was approved',
-        text: expect.stringContaining('Your status line "Ada status line" was approved.'),
+        text: expect.stringContaining(
+          'Your status line "Ada status line" was approved and is live.',
+        ),
       }),
       { idempotencyKey: 'approval/version-2' },
     )
@@ -127,7 +129,7 @@ describe('sendApprovalEmail', () => {
     )
 
     const message = send.mock.calls[0]?.[0].text
-    expect(message).toContain('Your mod "Pixel cat" was approved.')
+    expect(message).toContain('Your mod "Pixel cat" was approved and is live.')
     expect(message).toContain('View it: https://statuslin.es/mods/pixel-cat')
   })
 

@@ -195,7 +195,7 @@ export function GuideContent({
               <Text inline mono>
                 bash statusline.sh &lt; sample.json
               </Text>
-              . This site's tests run this script on every commit.
+              . This site's tests run this script on every pull request.
             </Text>
           </Stack>
         </Stack>

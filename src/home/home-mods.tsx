@@ -58,7 +58,7 @@ export function HomeMods({
   return (
     <ShotCarousel
       heading="Mods"
-      lead="Plugins that change more than the line: the prompt, the transcript, Claude Desktop."
+      lead="Plugins that change more than the status line: the prompt, the transcript, Claude Desktop."
       listLabel="Mods in Claude Desktop"
       items={items}
       more={

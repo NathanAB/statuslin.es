@@ -125,7 +125,7 @@ export function StatusLineNotShowingContent() {
           <TextLink to="/status-lines/$facet" params={{ facet: 'bash' }}>
             bash status lines
           </TextLink>
-          , or <TextLink to={GUIDE_PATH}>set one up by hand</TextLink>.
+          , or <TextLink to={GUIDE_PATH}>write your own</TextLink>.
         </Text>
       </Stack>
     </Stack>

@@ -12,7 +12,7 @@ const STEPS = [
   },
   {
     title: 'It runs under every prompt',
-    text: 'Claude Code sends it your session (model, branch, context, cost) and shows what it prints.',
+    text: 'Claude Code sends it your session (model, folder, context, cost) and shows what it prints.',
   },
 ] as const
 

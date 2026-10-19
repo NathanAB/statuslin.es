@@ -62,13 +62,15 @@ const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     '$.env.get': { phrase: 'reads environment variables' },
     '$.settings.read': { phrase: 'reads your settings' },
     '$.config.list': { phrase: 'reads your settings' },
-    'config.set': { phrase: 'watches settings changes' },
+    'config.set': { phrase: 'sees each change to /config and can block or rewrite it' },
     '$.session.messages': { phrase: 'reads the conversation' },
     '$.session.turns': { phrase: 'reads the conversation' },
-    'prompt.submit': { phrase: 'reads the prompts you send' },
+    'prompt.submit': { phrase: 'sees each prompt you send and can change or drop it' },
     'prompt.edit': { phrase: 'reads your prompt as you type' },
     '$.prompt.read': { phrase: 'reads your prompt as you type' },
-    'prompt.attachment': { phrase: 'adds context to your prompts' },
+    'prompt.attachment': {
+      phrase: 'can change or remove the reminders Claude Code adds for Claude',
+    },
     '$.store.get': { phrase: 'remembers data between sessions' },
     '$.store.set': { phrase: 'remembers data between sessions' },
     '$.ui.copy': { phrase: 'copies to your clipboard' },
@@ -84,10 +86,14 @@ const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     'tool.call': {
       phrase: (args) => {
         const name = literalMatcherValue(args.tool)
-        return name ? `watches ${name} tool calls` : 'watches tool calls'
+        return name
+          ? `sees each ${name} tool call before it runs and can block or change it`
+          : 'sees each tool call before it runs and can block or change it'
       },
     },
-    'agent.spawn': { phrase: 'watches subagents start' },
+    'agent.spawn': {
+      phrase: 'sees each subagent before it starts and can stop it or pick its model',
+    },
     '$.agent.list': { phrase: 'lists running subagents' },
     '$.clock.every': { phrase: 'runs on a timer' },
     '$.clock.after': { phrase: 'runs on a timer' },

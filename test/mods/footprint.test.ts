@@ -30,7 +30,7 @@ describe('describeFootprint', () => {
       'runs programs',
       'reads files',
       'adds the /filetree command',
-      'watches Read tool calls',
+      'sees each Read tool call before it runs and can block or change it',
       'runs on a timer',
       'reacts to classic hook events',
     ])
@@ -85,7 +85,10 @@ describe('describeFootprint', () => {
       events: ['tool.call{tool=/"^mcp__skins__design$"/}', 'command.run'],
       calls: [],
     })
-    expect(phrases).toEqual(['adds slash commands', 'watches tool calls'])
+    expect(phrases).toEqual([
+      'adds slash commands',
+      'sees each tool call before it runs and can block or change it',
+    ])
   })
 })
 

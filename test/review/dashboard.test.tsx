@@ -95,6 +95,17 @@ describe('SubmissionCard', () => {
     expect(html).not.toContain('Approve')
   })
 
+  it('counts attempts on a failed render only when there were several', () => {
+    const once = row({ status: 'failed' })
+    once.renderJob.attempts = 1
+    const html = renderToStaticMarkup(<SubmissionCard row={once} />)
+    expect(html).toContain('Render failed')
+    expect(html).not.toContain('1 attempts')
+    expect(renderToStaticMarkup(<SubmissionCard row={row({ status: 'failed' })} />)).toContain(
+      'Render failed after 2 attempts',
+    )
+  })
+
   it('shows Approve/Reject and the preview on a ready (done) row, no Re-queue', () => {
     const html = renderToStaticMarkup(
       <SubmissionCard row={row({ status: 'done', withPreview: true })} />,

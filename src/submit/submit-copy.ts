@@ -19,7 +19,7 @@ const COPY: Record<SubmitDraft['kind'] | 'new', SubmitPageCopy> = {
   },
   update: {
     heading: 'Submit an update',
-    intro: "Your live version stays up until we've reviewed the update.",
+    intro: 'Your live version stays up while we review the update.',
     button: 'Submit update',
   },
 }

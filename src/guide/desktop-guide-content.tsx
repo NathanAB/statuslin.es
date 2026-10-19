@@ -91,7 +91,7 @@ export function DesktopGuideContent({
         <Heading level={2}>No status line yet?</Heading>
         <Text muted>
           <TextLink to="/">Pick one from the gallery</TextLink>, or{' '}
-          <TextLink to="/guide">set one up by hand</TextLink>.
+          <TextLink to="/guide">write your own</TextLink>.
         </Text>
       </Stack>
     </Stack>

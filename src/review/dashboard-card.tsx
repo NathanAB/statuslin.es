@@ -57,7 +57,7 @@ function statusHeadline(renderJob: DashboardRow['renderJob']): ReactNode {
     case 'running':
       return 'Rendering now…'
     case 'failed':
-      return renderJob.attempts > 0
+      return renderJob.attempts > 1
         ? `Render failed after ${renderJob.attempts} attempts`
         : 'Render failed'
     case 'done':

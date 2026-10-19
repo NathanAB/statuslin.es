@@ -60,8 +60,8 @@ function rejectionEmailText(input: RejectionEmailInput): string {
     input.reason,
     '',
     ...wording.note,
-    `View your submissions: ${origin}/me`,
     `${wording.nextStep}: ${siteLink(origin, input.nextStepPath)}`,
+    `View your submissions: ${origin}/me`,
     '',
     'Questions? Reply to this email.',
   ].join('\n')

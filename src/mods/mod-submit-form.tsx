@@ -102,7 +102,7 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
           />
           <Text muted size="sm">
             The plugin’s folder, its .claude-plugin/plugin.json, or a commit. A branch is pinned to
-            its newest commit, which must be on the default branch.
+            its newest commit. The pinned commit must be on the default branch.
           </Text>
         </Stack>
         {keepsTitle ? null : (

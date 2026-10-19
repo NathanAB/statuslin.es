@@ -146,7 +146,7 @@ function SubmitFormFields({
             tall
           />
           <Text muted size="sm">
-            Your script reads the session JSON from stdin and prints one line. See the{' '}
+            Your script reads the session JSON from stdin and prints one or more lines. See the{' '}
             <TextLink href="https://code.claude.com/docs/en/statusline">status line docs</TextLink>.
           </Text>
         </Stack>

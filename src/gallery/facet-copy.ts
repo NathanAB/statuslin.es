@@ -16,7 +16,7 @@ export const FACET_INTRO = {
     'Claude Code sends each status line script the running cost of the session. Some show it as a plain number, others change color as the session gets expensive.',
   ],
   quota: [
-    'Claude plans limit usage in a five-hour window and a weekly one. Pick one that shows the five-hour window if you hit limits during a workday, or both if you watch the week.',
+    'Claude Pro and Max plans limit usage in a five-hour window and a weekly one. Pick a status line that shows the five-hour window if you hit limits during a workday, or one that shows both if you watch the week.',
   ],
   'burn-rate': [
     'These status lines show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
@@ -25,7 +25,7 @@ export const FACET_INTRO = {
     'These status lines put the local weather beside your session. They call a weather API, so check the network hosts each one declares before you copy it.',
   ],
   markets: [
-    'These status lines show a crypto price, a stock or an exchange rate beside your session. They call a market data API, so check the network hosts each one declares before you copy it.',
+    'These status lines show crypto prices, stock quotes or exchange rates beside your session. They call a market data API, so check the network hosts each one declares before you copy it.',
   ],
   minimal: ['These show only the essentials, usually the model, the directory and one number.'],
   'multi-line': [

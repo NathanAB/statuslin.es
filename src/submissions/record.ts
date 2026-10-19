@@ -23,7 +23,10 @@ export async function assertUnderRateLimit(database: Db, submittedBy: string): P
     .from(submissions)
     .where(and(eq(submissions.submittedBy, submittedBy), gt(submissions.createdAt, windowStart)))
   if ((recent?.count ?? 0) >= SUBMISSION_RATE_LIMIT) {
-    throw new HttpError(429, 'Rate limit: too many submissions, try again later')
+    throw new HttpError(
+      429,
+      `You can send ${SUBMISSION_RATE_LIMIT} submissions an hour. Try again later.`,
+    )
   }
 }
 

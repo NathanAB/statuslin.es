@@ -22,7 +22,7 @@ export function ModInstallPrompt({
       prompt={modInstallPrompt(origin, slug)}
       title={title}
       count={controller.count}
-      pasteHint={`Paste it into Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`}
+      pasteHint={`Paste it into Claude Code or Claude Desktop. Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`}
       onCopied={() => controller.record('prompt')}
     />
   )

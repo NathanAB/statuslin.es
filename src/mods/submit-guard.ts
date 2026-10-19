@@ -38,7 +38,7 @@ export function createSubmitGuard({
       const since = now() - HOUR_MS
       const recent = (attempts.get(userId) ?? []).filter((at) => at > since)
       if (recent.length >= perUserPerHour) {
-        throw new HttpError(429, 'Rate limit: too many mod submissions, try again later')
+        throw new HttpError(429, "You've checked too many mods in the last hour. Try again later.")
       }
       if (running.size >= inFlight) {
         throw new HttpError(503, 'Too many mods are being checked right now; try again shortly.')

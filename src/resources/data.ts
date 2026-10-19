@@ -73,7 +73,7 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
       {
         name: 'claude-code-statusline (sotayamashita)',
         url: 'https://github.com/sotayamashita/claude-code-statusline',
-        description: 'Written in Rust and configured like starship.',
+        description: 'Written in Rust and configured like Starship.',
       },
       {
         name: 'claude-code-statusline (levz0r)',

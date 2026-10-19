@@ -384,7 +384,7 @@ describe('mod page', () => {
       data: { modId: MOD.id, kind: 'prompt', distinctId: 'did-test', sessionId: 'sid-test' },
     })
     expect(toast).toHaveBeenCalledWith('Prompt copied', {
-      description: `Paste it into Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,
+      description: `Paste it into Claude Code or Claude Desktop. Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,
     })
   })
 
