@@ -13,6 +13,7 @@ export const TARBALL_MAX_FILES = 2_000
 export const GITHUB_JSON_MAX_BYTES = 10 * 1024 * 1024
 /** A bare commit hash, with room for a newline. */
 const SHA_MAX_BYTES = 64
+export const PLUGIN_MANIFEST_MAX_BYTES = 64 * 1024
 export interface RepoInfo {
   /** `owner/repo` as GitHub spells it, the canonical form of the repository URL. */
   fullName: string
@@ -29,6 +30,8 @@ export interface GitHubSource {
   resolveCommit(repoUrl: string, ref: string): Promise<string | null>
   /** Whether `path` holds `.claude-plugin/plugin.json` at `sha`; '' is the repository root. */
   pluginManifestExists(repoUrl: string, path: string, sha: string): Promise<boolean>
+  /** The `version` string in `path`'s plugin.json at `sha`; null when absent or past 64 KiB. */
+  pluginVersion(repoUrl: string, path: string, sha: string): Promise<string | null>
   /**
    * The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. Downloaded
    * once per repository and commit for the life of this source; a failed download stays failed.
@@ -76,6 +79,11 @@ function encodeParts(value: string): string {
     throw new Error(`"${value}" has an empty, "." or ".." part`)
   }
   return parts.map(encodeURIComponent).join('/')
+}
+
+function manifestUrl(repoUrl: string, path: string, sha: string): string {
+  const file = encodeParts(path === '' ? PLUGIN_MANIFEST : `${path}/${PLUGIN_MANIFEST}`)
+  return `${repoApiUrl(repoUrl)}/contents/${file}?ref=${sha}`
 }
 
 /**
@@ -172,14 +180,27 @@ export function createGitHub(
     },
 
     async pluginManifestExists(repoUrl, path, sha) {
-      const file = encodeParts(path === '' ? PLUGIN_MANIFEST : `${path}/${PLUGIN_MANIFEST}`)
-      const url = `${repoApiUrl(repoUrl)}/contents/${file}?ref=${sha}`
+      const url = manifestUrl(repoUrl, path, sha)
       const res = await send(url)
       // Only whether it is there matters, so the file itself is never read.
       await res.body?.cancel()
       if (res.status === 404) return false
       if (!res.ok) throw failure(res, url)
       return true
+    },
+
+    async pluginVersion(repoUrl, path, sha) {
+      const url = manifestUrl(repoUrl, path, sha)
+      const res = await send(url, 'application/vnd.github.raw+json')
+      if (res.status === 404) return null
+      if (!res.ok) throw failure(res, url)
+      const { bytes, truncated } = await readUpTo(res, PLUGIN_MANIFEST_MAX_BYTES)
+      try {
+        const { version } = JSON.parse(new TextDecoder().decode(bytes)) as { version?: unknown }
+        return !truncated && typeof version === 'string' ? version : null
+      } catch {
+        return null
+      }
     },
 
     async commitIsOnDefaultBranch(repoUrl, sha, defaultBranch) {

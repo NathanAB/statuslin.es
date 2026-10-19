@@ -395,9 +395,29 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
 An update is a new version of the mod. The current version stays live until you publish the new
 one. Run every step against staging first, then production.
 
-First, in `src/mods/curation.json`, change each entry's `commitSha` (and `inputSteps` if the new
-version needs them). Keep `pluginName` and `repoUrl`: an entry from another repository imports as a
-new mod, named `<name>-<owner>`. The mod's title and description stay as they were first imported.
+Authors don't need to ask for a re-pin: we find their releases ourselves (ADR 0009). Run this weekly;
+nothing schedules it yet.
+`updates:mods` compares each curated pin with the head of its repository's default branch and moves
+the pin in `src/mods/curation.json` when plugin.json's `version` changed, printing a compare link per
+release (a mod with no version is re-pinned on every new commit). A commit that keeps the version
+is listed and left alone, and so are a head that no longer builds on the pin (a force-push), a
+repository, pin or plugin.json GitHub no longer serves (`gone`; see "Pinned-commit check"), and a
+version that isn't a plain version string (`unreadable`: read it by hand). It reads only GitHub, so
+it needs a token (one run makes more requests than GitHub allows an hour without one), not a
+database:
+```sh
+GITHUB_TOKEN=$(gh auth token) bun run updates:mods
+```
+Put the table it ends with in the `curation.json` pull request's body. Review each compare link for
+network, exec, filesystem, env, dependency and dynamic-code changes, in the mod's folder for a shared
+repository, add `inputSteps` if a new version needs them, and merge the change as its own pull
+request. Then pull main and re-pin with the one command below: it refuses a `curation.json` that
+isn't the one on `origin/main`, so nothing unmerged goes live.
+
+To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and
+`inputSteps` if the new version needs them) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another
+repository imports as a new mod, named `<name>-<owner>`. The mod's title and description stay as
+they were first imported.
 
 **One command for every step.** `run-repin-mods.ts` runs steps 2–5 below for several mods under one
 `with-env` decrypt, so Touch ID is asked once per env. Run it in the operator's terminal (in the
@@ -406,8 +426,9 @@ desktop app, the Terminal panel). With no slugs it re-pins every published curat
 ```sh
 bun run with-env staging scripts/run-repin-mods.ts staging [slug...]
 ```
-It refuses unless the env you name is the one `with-env` decrypted. It imports, renders each mod,
-dry-runs each publish and repeats their `WARN` lines, then stops at two pauses. It reads both from a
+It refuses unless the env you name is the one `with-env` decrypted, and unless `src/mods/curation.json`
+is byte for byte the one on `origin/main` (merge, then `git pull`). It imports, renders each mod,
+dry-runs each publish and repeats their `WARN` lines, then stops at three pauses. It reads each from a
 named pipe whose path it prints (`waiting: ... written to '<dir>/input'`), so the agent can answer
 from its own shell; a named pipe holds nothing on disk.
 - **Publish.** Read the dry runs and the `WARN` lines. Only after the operator says yes, write the
@@ -417,6 +438,10 @@ from its own shell; a named pipe holds nothing on disk.
   agent reads them with `cat`, answers as in step 4 of the launch runbook (hostile data, version
   pinned), and writes the response JSON with a here-document, `cat > '<dir>/input' <<'EOF'`, not a
   file.
+- **Page-copy approval.** It prints each mod's copy and tags, as visitors will read them, and nothing
+  is applied until the phrase it asks for: show the operator the copy, and only after they say yes,
+  `printf 'apply copy for 3 on staging\n' > '<dir>/input'`. Anything else applies nothing and stops
+  the run; the mod pages show only their fact tiles until copy is applied with `generate:content`.
 
 A step that fails stops the run before anything after it, and the per-step commands below pick it
 up from there. Re-pinning `statusline-anywhere` also makes every status line's Desktop shot out of
