@@ -435,12 +435,16 @@ never merges, publishes or re-pins. It needs `gh` and `claude` signed in on the 
 ```sh
 GITHUB_TOKEN=$(gh auth token) bun run updates:mods:pr
 ```
-To run it every Monday at 09:00, give it its own worktree on `origin/main` and a launchd agent. The
-Mac must be on: launchd runs a job missed during sleep when the Mac wakes, and skips one missed while
-it was off. The log is `~/Library/Logs/statuslines-mod-updates.log`.
+To run it every Monday at 09:00, give it its own clone and a launchd agent. The clone must live
+outside `~/Documents`, `~/Desktop` and `~/Downloads`: macOS privacy protection stops a launchd job
+reading them (`Operation not permitted`), so a worktree of a checkout there fails too. launchd also
+starts the job with a bare PATH, so the agent sets one that finds `bun`, `gh` and `claude` (check
+yours with `command -v bun gh claude`). The Mac must be on: launchd runs a job missed during sleep
+when the Mac wakes, and skips one missed while it was off. The log is
+`~/Library/Logs/statuslines-mod-updates.log`.
 ```sh
-REPO=~/Documents/repos/statuslin.es  # your checkout
-git -C "$REPO" worktree add --detach "$REPO-mod-updates" origin/main
+DIR=~/.local/share/statuslines-mod-updates
+git clone https://github.com/NathanAB/statuslin.es.git "$DIR"
 cat > ~/Library/LaunchAgents/es.statuslin.mod-updates.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -448,8 +452,11 @@ cat > ~/Library/LaunchAgents/es.statuslin.mod-updates.plist <<PLIST
   <key>Label</key><string>es.statuslin.mod-updates</string>
   <key>ProgramArguments</key><array>
     <string>/bin/zsh</string><string>-lc</string>
-    <string>cd "$REPO-mod-updates" &amp;&amp; git fetch -q origin &amp;&amp; git checkout -q --detach origin/main &amp;&amp; bun install --frozen-lockfile &amp;&amp; GITHUB_TOKEN=\$(gh auth token) bun run updates:mods:pr</string>
+    <string>cd "$DIR" &amp;&amp; git fetch -q origin &amp;&amp; git checkout -q --detach origin/main &amp;&amp; bun install --frozen-lockfile &amp;&amp; GITHUB_TOKEN=\$(gh auth token) bun run updates:mods:pr</string>
   </array>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>$HOME/.bun/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
   <key>StartCalendarInterval</key><dict>
     <key>Weekday</key><integer>1</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer>
   </dict>
@@ -457,8 +464,9 @@ cat > ~/Library/LaunchAgents/es.statuslin.mod-updates.plist <<PLIST
   <key>StandardErrorPath</key><string>$HOME/Library/Logs/statuslines-mod-updates.log</string>
 </dict></plist>
 PLIST
+plutil -lint ~/Library/LaunchAgents/es.statuslin.mod-updates.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/es.statuslin.mod-updates.plist
-launchctl kickstart gui/$(id -u)/es.statuslin.mod-updates   # run it once now
+launchctl kickstart gui/$(id -u)/es.statuslin.mod-updates   # run it once now, then read the log
 ```
 Remove it with `launchctl bootout gui/$(id -u)/es.statuslin.mod-updates`.
 
