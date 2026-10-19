@@ -10,6 +10,7 @@ interface ConfigSeed {
   source?: string
   interpreter?: string
   networkHosts?: string[]
+  readsClaudeToken?: boolean
 }
 
 /**
@@ -53,6 +54,7 @@ export async function addPublishedConfig(
       source: opts.source ?? 'echo hi',
       interpreter: opts.interpreter ?? 'bash',
       networkHosts: opts.networkHosts ?? [],
+      readsClaudeToken: opts.readsClaudeToken ?? false,
       contentSha256: slug.padEnd(64, '0'),
       status: 'approved',
     })

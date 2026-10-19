@@ -17,6 +17,7 @@ import {
 import { SCREEN_PNG_COMMAND } from './imagemagick'
 import { checkedPng } from './png'
 import { SCALE, WINDOW } from './screen'
+import { desktopSessionNetwork, type SessionNetwork } from './session'
 import type { DesktopRecorder, DesktopRecording } from './types'
 
 const FULL_SHOT = { width: WINDOW.width * SCALE, height: WINDOW.height * SCALE }
@@ -61,8 +62,13 @@ function recordFullShot(
   { withRecordingDesktop }: Sandboxes,
   source: ModSource | null,
   request: DriveRequest,
+  network: SessionNetwork = desktopSessionNetwork(undefined),
 ): Promise<FullShot> {
-  const setup = { source, files: (versions: DesktopVersions) => sessionUploads(request, versions) }
+  const setup = {
+    source,
+    files: (versions: DesktopVersions) => sessionUploads(request, versions),
+    ...network,
+  }
   return withRecordingDesktop(setup, async (desktop, versions) => {
     await driveSession(desktop, request.inputSteps)
     const png = checkedPng(await desktop.readPng(SCREEN_PNG_COMMAND), FULL_SHOT)
@@ -95,14 +101,16 @@ export function desktopRecorder(
     baseline,
     record: async ({ mod, inputSteps, statusLine }): Promise<DesktopRecording> => {
       checkInputSteps(inputSteps)
+      const network = desktopSessionNetwork(statusLine)
       // Started now, alongside the mod's session; awaited only to frame its shot.
       const pendingBaseline = baseline(inputSteps)
       pendingBaseline.catch(() => {})
-      const shot = await recordFullShot(sandboxes, mod.source, {
-        target: mod.pluginName,
-        inputSteps,
-        statusLine,
-      })
+      const shot = await recordFullShot(
+        sandboxes,
+        mod.source,
+        { target: mod.pluginName, inputSteps, statusLine },
+        network,
+      )
       const base = await pendingBaseline
       const versions = { desktopVersion: shot.desktopVersion, engineVersion: shot.engineVersion }
       if (!sameVersions(versions, base)) {

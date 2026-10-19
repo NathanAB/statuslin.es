@@ -13,10 +13,12 @@ import { createGitHub, type GitHubSource } from '@/mods/github'
 import { terminalLine } from '@/mods/terminal-line'
 import type { DesktopVersions } from '@/render/mods/desktop/desktop-sandbox'
 import { e2bDesktopRecorder } from '@/render/mods/desktop/recorder'
+import { realAnthropicHost } from '@/render/mods/desktop/session'
 import type {
   DesktopRecorder,
   DesktopRecording,
   DesktopRecordRequest,
+  StatusLineScript,
 } from '@/render/mods/desktop/types'
 import { INTERPRETERS, type Interpreter } from '@/render/types'
 
@@ -25,12 +27,13 @@ import { INTERPRETERS, type Interpreter } from '@/render/types'
  * statusline-anywhere, the mod that runs your `statusLine` command there, at the commit its
  * current mod version pins. Each status line is recorded in its own E2B Desktop sandbox and framed
  * against one no-mod baseline, and the band above the prompt is stored, or the fact that it drew
- * nothing (it printed nothing for Desktop's input).
+ * nothing (it printed nothing for Desktop's input). A status line's sandbox reaches only the hosts
+ * the admin approved for it (ADR 0008), and the Anthropic usage mock answers a Claude token read.
  *
  * Records the current version of every published status line whose stored result was made with
  * another Desktop, engine or statusline-anywhere commit than now, or that has none. A status line
- * with network hosts is skipped: Desktop sandboxes are offline, so it could not fetch what it
- * shows. Each result is replaced in one statement; a recording that fails keeps the old result.
+ * that needs a real Anthropic host is skipped: Desktop holds a fake key, so it never reaches one.
+ * Each result is replaced in one statement; a recording that fails keeps the old result.
  * Refuses to run without E2B_API_KEY: a fake run would store "draws nothing" over every real shot.
  *
  * AGENT USAGE (needs DATABASE_URL and E2B_API_KEY; GITHUB_TOKEN is optional):
@@ -84,6 +87,7 @@ async function targets(db: Db, slug: string | undefined) {
         source: schema.configVersions.source,
         interpreter: schema.configVersions.interpreter,
         networkHosts: schema.configVersions.networkHosts,
+        readsClaudeToken: schema.configVersions.readsClaudeToken,
         stored: {
           desktopVersion: schema.configDesktopPreviews.desktopVersion,
           engineVersion: schema.configDesktopPreviews.engineVersion,
@@ -125,6 +129,15 @@ function interpreterOf(value: string): Interpreter {
   const interpreter = INTERPRETERS.find((known) => known === value)
   if (!interpreter) throw new Error(`unknown interpreter "${value}"`)
   return interpreter
+}
+
+function statusLineOf(target: Target): StatusLineScript {
+  return {
+    source: target.source,
+    interpreter: interpreterOf(target.interpreter),
+    networkHosts: target.networkHosts,
+    readsClaudeToken: target.readsClaudeToken,
+  }
 }
 
 /** Stores the card crop, the band statusline-anywhere draws above the prompt, not the full shot. */
@@ -178,8 +191,8 @@ export async function renderStatusLineDesktop(
 
   const todo: Target[] = []
   for (const target of published) {
-    if (target.networkHosts.length > 0) {
-      log(`skipped ${target.slug}: needs the internet; no Desktop shot`)
+    if (realAnthropicHost(statusLineOf(target))) {
+      log(`skipped ${target.slug}: needs an Anthropic host; no Desktop shot`)
     } else if (!options.all && isCurrent(target.stored, now)) {
       log(`up to date ${target.slug} in Claude Desktop`)
     } else {
@@ -190,8 +203,10 @@ export async function renderStatusLineDesktop(
   let failed = 0
   await forEachConcurrently(todo, CONCURRENCY, async (target) => {
     try {
-      const statusLine = { source: target.source, interpreter: interpreterOf(target.interpreter) }
-      const recording = await deps.desktopRecorder.record({ ...request, statusLine })
+      const recording = await deps.desktopRecorder.record({
+        ...request,
+        statusLine: statusLineOf(target),
+      })
       await store(deps.db, target.versionId, recording, now.modCommitSha)
       log(
         `${recording.kind === 'shot' ? 'rendered' : 'drew nothing'} ${target.slug} in Claude Desktop`,

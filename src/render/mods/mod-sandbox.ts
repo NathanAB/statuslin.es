@@ -184,15 +184,16 @@ async function openTerminal(sandbox: Sandbox, options: TerminalOptions): Promise
   }
 }
 
-/** An offline sandbox from `templateId`, killed once `use` settles. */
+/** A sandbox from `templateId`, offline unless given hosts, killed once `use` settles. */
 export async function withTemplateSandbox<T>(
   templateId: string,
   timeoutMs: number,
   use: (sandbox: Sandbox) => Promise<T>,
+  networkHosts: readonly string[] = [],
 ): Promise<T> {
   const sandbox = await Sandbox.create(templateId, {
     apiKey: requireEnv('E2B_API_KEY'),
-    ...buildNetworkOption([]),
+    ...buildNetworkOption([...networkHosts]),
     timeoutMs,
     requestTimeoutMs: REQUEST_TIMEOUT_MS,
     secure: true,

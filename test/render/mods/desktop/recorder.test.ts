@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { anthropicUsageSetupScript } from '@/render/anthropic-usage-sandbox'
 import { analyseShot } from '@/render/mods/desktop/analyse'
 import type { RecordingSetup } from '@/render/mods/desktop/desktop-sandbox'
 import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
@@ -158,6 +159,42 @@ describe('desktopRecorder status line', () => {
       [expect.stringMatching(/\/statusline\.py$/), 'print("hi")'],
     ])
     expect(statusLineFiles(baseline)).toEqual([SAMPLE])
+  })
+
+  it("opens the status line's hosts and mock for the mod's session, and keeps the baseline offline", async () => {
+    const setups: RecordingSetup[] = []
+    const sandboxes = {
+      withRecordingDesktop: vi.fn().mockImplementation(async (setup: RecordingSetup) => {
+        setups.push(setup)
+        return FULL_SHOT
+      }),
+      withAnalysisSandbox: vi.fn().mockImplementation((use: (a: object) => unknown) => use({})),
+    }
+    const statusLine = {
+      source: 'cat ~/.claude/.credentials.json',
+      interpreter: 'bash' as const,
+      networkHosts: ['api.anthropic.com', 'wttr.in'],
+      readsClaudeToken: true,
+    }
+
+    await desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: [], statusLine })
+
+    const [baseline, session] = setups
+    expect(baseline).toMatchObject({ networkHosts: [], rootCommand: null })
+    expect(session).toMatchObject({
+      networkHosts: ['wttr.in'],
+      rootCommand: anthropicUsageSetupScript(),
+    })
+  })
+
+  it('refuses a status line that needs a real Anthropic host, before opening a sandbox', async () => {
+    const sandboxes = { withRecordingDesktop: vi.fn(), withAnalysisSandbox: vi.fn() }
+    const statusLine = { source: 'echo', interpreter: 'bash' as const, networkHosts: ['claude.ai'] }
+
+    await expect(
+      desktopRecorder(sandboxes).record({ mod: MOD, inputSteps: [], statusLine }),
+    ).rejects.toThrow(/Anthropic host/)
+    expect(sandboxes.withRecordingDesktop).not.toHaveBeenCalled()
   })
 
   it('stages the sample for a mod recording with no status line', async () => {

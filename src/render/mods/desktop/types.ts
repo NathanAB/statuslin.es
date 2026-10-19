@@ -6,6 +6,9 @@ import type { ModUnderRender } from '../recorder'
 export interface StatusLineScript {
   source: string
   interpreter: Interpreter
+  /** The hosts the admin approved for it; none keeps the session offline. */
+  networkHosts?: readonly string[]
+  readsClaudeToken?: boolean
 }
 
 export interface DesktopRecordRequest {

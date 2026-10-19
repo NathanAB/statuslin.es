@@ -99,6 +99,55 @@ describe('withRecordingDesktop', () => {
       expect.objectContaining({ allowInternetAccess: false, secure: true }),
     )
   })
+
+  it("lets the session reach exactly the status line's approved hosts, and nothing else", async () => {
+    await withRecordingDesktop(
+      { source: null, files: () => [], networkHosts: ['wttr.in'] },
+      async () => {},
+    )
+
+    const [, options] = fake.create.mock.calls[0] ?? []
+    expect(options).toMatchObject({
+      network: { denyOut: expect.arrayContaining(['0.0.0.0/0']), allowOut: ['wttr.in'] },
+      secure: true,
+    })
+    expect(options).not.toHaveProperty('allowInternetAccess')
+  })
+
+  it('runs the root setup as root after the uploads, before the session can start', async () => {
+    await withRecordingDesktop(
+      { source: null, files: () => [{ path: '/tmp/x', data: '' }], rootCommand: 'echo mock' },
+      async () => {
+        fake.events.push('use')
+      },
+    )
+
+    const root = fake.events.indexOf('run echo mock')
+    expect(fake.events.findIndex((e) => e.startsWith('upload'))).toBeLessThan(root)
+    expect(root).toBeLessThan(fake.events.indexOf('use'))
+    const call = fake.sandbox.commands.run.mock.calls.find(([c]) => c === 'echo mock')
+    expect(call?.[1]).toMatchObject({ user: 'root' })
+  })
+
+  it('fails, and kills the sandbox, when the root setup fails', async () => {
+    const use = vi.fn()
+    fake.sandbox.commands.run.mockImplementation(async (command: string) => {
+      fake.events.push(`run ${command}`)
+      if (command === 'echo mock') throw new Error('exit status 1')
+      const stdout = answer(command)
+      return {
+        disconnect: vi.fn(async () => {}),
+        kill: vi.fn(async () => true),
+        wait: async () => ({ exitCode: 0, stdout, stderr: '' }),
+      }
+    })
+
+    await expect(
+      withRecordingDesktop({ source: null, files: () => [], rootCommand: 'echo mock' }, use),
+    ).rejects.toThrow(/root setup failed/)
+    expect(use).not.toHaveBeenCalled()
+    expect(fake.events.at(-1)).toBe('kill')
+  })
 })
 
 describe('withAnalysisSandbox', () => {
