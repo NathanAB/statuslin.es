@@ -70,7 +70,9 @@ async function main(): Promise<number> {
   const client = postgres(url, isPooledUrl(url) ? { prepare: false } : {})
   const db = drizzle({ client, schema }) as unknown as Db
   const github = createGitHub()
-  const pipe = await openAgentPipe()
+  const pipe = await openAgentPipe(() =>
+    log(`the page-copy requests were not all read; run cat '${pipe.requests}' again`),
+  )
   try {
     const repins = await repinsToRun(db, curation.entries, slugs)
     return await runRepin(

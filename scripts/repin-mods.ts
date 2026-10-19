@@ -152,13 +152,23 @@ async function afterPublish(
   steps: RepinSteps,
   io: RepinIo,
 ): Promise<number> {
-  const requests = await steps.prepareContent()
-  if ((JSON.parse(requests) as unknown[]).length === 0) {
-    io.log('every mod has page copy')
-  } else {
-    await io.sendRequests(requests)
-    const copied = await approvePageCopy(env, steps, io)
-    if (copied !== 0) return copied
+  try {
+    const requests = await steps.prepareContent()
+    if ((JSON.parse(requests) as unknown[]).length === 0) {
+      io.log('every mod has page copy')
+    } else {
+      await io.sendRequests(requests)
+      const copied = await approvePageCopy(env, steps, io)
+      if (copied !== 0) return copied
+    }
+  } catch (error) {
+    // The mods are already live, so say how to finish instead of only crashing.
+    const reason = error instanceof Error ? error.message : String(error)
+    const command = `bun run with-env ${env} scripts/generate-content.ts`
+    return stop(
+      io,
+      `the page copy was not applied (${reason}); the mods are published, so finish with ${command} --all --prepare --mod, then ${command} --apply --mod`,
+    )
   }
 
   // Every status line's Desktop shot is drawn by statusline-anywhere, so re-pinning it dates them all.

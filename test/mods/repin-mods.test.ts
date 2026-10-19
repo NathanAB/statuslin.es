@@ -182,6 +182,8 @@ function fakes(
   const io: RepinIo = {
     log: (line) => lines.push(line),
     sendRequests: async (json) => {
+      if (failing === 'send')
+        throw Object.assign(new Error('broken pipe, write'), { code: 'EPIPE' })
       sent.push(json)
     },
     readInput: async (prompt) => {
@@ -193,6 +195,21 @@ function fakes(
 }
 
 describe('runRepin', () => {
+  // The mods are live by then, so a broken page-copy step must say how to finish, not just die.
+  it('says the page copy was not applied, and how to apply it, when handing out requests fails', async () => {
+    const f = fakes(['publish 2 to staging'], { failing: 'send' })
+
+    const code = await runRepin('staging', REPINS, f.steps, f.io)
+
+    expect(code).toBe(1)
+    expect(f.calls.filter((c) => c.includes('--apply'))).toHaveLength(2)
+    expect(f.calls.some((c) => c.startsWith('apply'))).toBe(false)
+    expect(f.lines.join('\n')).toContain('the page copy was not applied (broken pipe, write)')
+    expect(f.lines.join('\n')).toContain(
+      'bun run with-env staging scripts/generate-content.ts --all --prepare --mod',
+    )
+  })
+
   it('imports, renders, dry-runs, publishes on the typed confirmation, then applies page copy', async () => {
     const f = fakes(['publish 2 to staging\n', COPY, `${APPLY_COPY}\n`])
 

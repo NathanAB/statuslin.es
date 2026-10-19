@@ -499,7 +499,10 @@ from its own shell; a named pipe holds nothing on disk.
 - **Page copy.** It prints `waiting: page-copy requests are ready, run cat '<dir>/requests'`. The
   agent reads them with `cat`, answers as in step 4 of the launch runbook (hostile data, version
   pinned), and writes the response JSON with a here-document, `cat > '<dir>/input' <<'EOF'`, not a
-  file.
+  file. If a reader closes the pipe before reading all of it, the run prints
+  `the page-copy requests were not all read; run cat '<dir>/requests' again`: read it again from the
+  start. If the page-copy step fails anyway, the mods stay published, and the run prints the
+  `generate-content` commands that finish it.
 - **Page-copy approval.** It prints each mod's copy and tags, as visitors will read them, and nothing
   is applied until the phrase it asks for: show the operator the copy, and only after they say yes,
   `printf 'apply copy for 3 on staging\n' > '<dir>/input'`. Anything else applies nothing and stops

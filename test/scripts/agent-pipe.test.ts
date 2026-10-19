@@ -38,4 +38,19 @@ describe('openAgentPipe', () => {
     pipe.close()
     expect(existsSync(pipe.dir)).toBe(false)
   })
+
+  // Production's requests outgrew the pipe buffer and a reader left early, which killed the run.
+  it('hands the requests out again when a reader closes the pipe before reading all of it', async () => {
+    const reopened: string[] = []
+    const pipe = await openAgentPipe(() => reopened.push('again'))
+    const text = 'x'.repeat(300_000)
+
+    const sending = pipe.send(text)
+    await shell(`head -c 10 '${pipe.requests}' > /dev/null`)
+    const [, received] = await Promise.all([sending, shell(`cat '${pipe.requests}'`)])
+
+    expect(received).toBe(text)
+    expect(reopened).toEqual(['again'])
+    pipe.close()
+  })
 })
