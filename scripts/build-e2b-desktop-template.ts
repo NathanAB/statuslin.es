@@ -24,19 +24,19 @@ import { buildSnapshot, hardenSnapshot } from './build-e2b-template'
  * - The mod hardening is applied as-is. Stripping setuid takes chrome-sandbox's bit and user
  *   namespaces are off, so Electron's own sandbox cannot start: Desktop runs with --no-sandbox.
  *
- * Upgrading Desktop: update both pins, rebuild, run `bun run smoke:desktop` to check the fixed
- * click positions in src/render/mods/desktop/screen.ts still land, then re-render every mod.
+ * Upgrading Desktop: update both pins, rebuild, run `bun run smoke:desktop <out-dir>` to check the
+ * fixed click positions in src/render/mods/desktop/screen.ts still land, then re-render every mod.
  *
  * Run:  bun run build:e2b-desktop-template
  */
 
-export const DESKTOP_VERSION = '2.31226.1'
-export const DESKTOP_DEB_SHA256 = '5a9bebdfcb1df6ce38767b373f3a7fabf77156a2ddd8a3f5d04961da5bde305e'
+export const DESKTOP_VERSION = '2.42304.2'
+export const DESKTOP_DEB_SHA256 = '38a7d58b58a976c88ca652eaa2f7ac02c87c4a388ae30f468d72b790e6b57f90'
 const DESKTOP_DEB_URL = `https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_${DESKTOP_VERSION}_amd64.deb`
-/** The engine pin compiled into Desktop 2.31226.1; Desktop installs only this preseed. */
-export const DESKTOP_ENGINE_VERSION = '2.1.295'
+/** The engine pin compiled into Desktop 2.42304.2; Desktop installs only this preseed. */
+export const DESKTOP_ENGINE_VERSION = '2.1.299'
 export const DESKTOP_ENGINE_SHA256 =
-  '71164c85f9d226928dec7acda1baf000f1991eb14fcec106536d84bd914032f8'
+  '20ca25213130255bacdcae3ed5df3fc99e1d8e86cdf46e9188b7ff9c1b478fa4'
 const DESKTOP_ENGINE_URL = `https://downloads.claude.ai/claude-code-releases/${DESKTOP_ENGINE_VERSION}/linux-x64/claude.zst`
 const DESKTOP_INSTALL_DIR = '/usr/lib/claude-desktop'
 const DESKTOP_BINARY = `${DESKTOP_INSTALL_DIR}/claude-desktop`

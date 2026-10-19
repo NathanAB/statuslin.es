@@ -1,7 +1,8 @@
 /**
  * Every fixed screen position the Desktop recorder clicks, probes or crops, in CSS pixels of
- * Claude Desktop 2.31226.1 in dark theme with its sidebar collapsed. Measured on recorded
- * screenshots; a Desktop upgrade means re-measuring here and running `bun run smoke:desktop`.
+ * Claude Desktop 2.42304.2 in dark theme with its sidebar collapsed. Measured on recorded
+ * screenshots; a Desktop upgrade means re-measuring here and running
+ * `bun run smoke:desktop <out-dir>`.
  */
 
 export interface Point {
@@ -63,11 +64,11 @@ export const BLUR: Point = { x: 20, y: WINDOW.height - 170 }
 /** Where the mouse rests for screenshots: on the window's right edge, over nothing that hovers. */
 export const MOUSE_REST: Point = { x: WINDOW.width - 1, y: CENTER.y }
 
-/** The window's content, inside the light frame Desktop draws on Linux. */
-export const CONTENT = { left: 4, top: 0, right: WINDOW.width - 4, bottom: WINDOW.height - 4 }
+/** The window's content: Desktop draws no frame around it on Linux. */
+export const CONTENT = { left: 0, top: 0, right: WINDOW.width, bottom: WINDOW.height }
 
 /** The prompt box with no pane open, on the window's bottom; the chat column is its width. */
-export const PROMPT_BOX: Rect = { x: 166, y: WINDOW.height - 79, width: 768, height: 40 }
+export const PROMPT_BOX: Rect = { x: 166, y: WINDOW.height - 75, width: 768, height: 40 }
 /** What the input steps type into: left out of the comparison with the baseline. */
 export const PROMPT_TEXT: Rect = {
   x: PROMPT_BOX.x + 2,
@@ -76,7 +77,7 @@ export const PROMPT_TEXT: Rect = {
   height: PROMPT_BOX.height - 4,
 }
 /** A docked pane, from its border, down to the window's bottom; the chat column narrows to its left. */
-export const PANE: Rect = { x: 732, y: 44, width: 356, height: WINDOW.height - 56 }
+export const PANE: Rect = { x: 733, y: 40, width: 359, height: WINDOW.height - 48 }
 /**
  * A pane's body, where its mod draws: under its title bar, inside its one-pixel border, and clear
  * of its rounded bottom corners. Its background (grey 26) is close enough to the page's (grey 21)
@@ -89,7 +90,7 @@ export const PANE_BODY: Rect = {
   height: PANE.height - 32 - 12,
 }
 /** The chat column's left and right edges (its prompt box's borders) while a pane is open. */
-export const PANE_CHAT_LEFT = 45
+export const PANE_CHAT_LEFT = 41
 export const PANE_CHAT_RIGHT = 693
 
 export interface Column {
@@ -118,13 +119,13 @@ export const plateStrips = ({ x, width }: Column): Column[] => [
  * comparison and of every crop.
  */
 export const SCROLL_GUTTER: Rect = {
-  x: 1084,
+  x: 1088,
   y: 0,
-  width: WINDOW.width - 1084,
+  width: WINDOW.width - 1088,
   height: WINDOW.height,
 }
 /** The top of the chat's scrolling area, just under the session header. */
-export const CHAT_TOP = 76
+export const CHAT_TOP = 40
 
 /** Space kept around a crop's content so a border is not flush with the edge. */
 export const CROP_MARGIN = 8
@@ -142,8 +143,8 @@ export const PANE_CARD_MAX_HEIGHT = 290
  * with no pane, the prompt box's left border beside a pane, and the pane's left border.
  */
 export const BORDER_PROBES = {
-  prompt: { x: PROMPT_BOX.x, y: PROMPT_BOX.y + 10, width: 1, height: 20 },
-  promptBesidePane: { x: PANE_CHAT_LEFT, y: PROMPT_BOX.y + 10, width: 1, height: 20 },
+  prompt: { x: PROMPT_BOX.x, y: PROMPT_BOX.y + 12, width: 1, height: 16 },
+  promptBesidePane: { x: PANE_CHAT_LEFT, y: PROMPT_BOX.y + 12, width: 1, height: 16 },
   pane: { x: PANE.x, y: 200, width: 1, height: 400 },
 } satisfies Record<string, Rect>
 

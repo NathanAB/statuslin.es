@@ -311,9 +311,11 @@ The Desktop recorder drives the session by clicking fixed screen positions, so a
 can move what it clicks. For each Desktop upgrade:
 1. Bump the Desktop version in `scripts/build-e2b-desktop-template.ts`, rebuild the template and
    commit its new ID.
-2. Check that the scripted clicks still land:
+2. Check that the scripted clicks still land. It records the no-mod baseline and every curated mod
+   (or the plugin names you give it) and writes each PNG to the folder you name; look at them. When
+   a position has moved, re-measure `src/render/mods/desktop/screen.ts` and run it again:
    ```sh
-   bun run smoke:desktop
+   bun run smoke:desktop <out-dir> [plugin-name...]
    ```
 3. Re-render every mod (launch runbook step 3), then every status line's Desktop preview (below), on
    staging, then production, so each Desktop preview comes from the new Desktop.
