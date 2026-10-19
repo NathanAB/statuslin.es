@@ -392,10 +392,10 @@ describe('mod page', () => {
     recordModCopyFn.mockResolvedValue(4)
     renderPage({ copyCount: 3 })
 
-    expect(screen.getByText('3 copies')).toBeTruthy()
+    expect(screen.getByText('3 installs')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: PROMPT_BUTTON }))
 
-    expect(await screen.findByText('4 copies')).toBeTruthy()
+    expect(await screen.findByText('4 installs')).toBeTruthy()
   })
 
   // Installs count only through the copy button, so the page shows no command to run by hand.

@@ -67,21 +67,21 @@ describe('HomeHero', () => {
     expect(html).toContain(`<h1`)
     expect(html).toContain(heading)
     expect(html).toContain(
-      'A status line is the row under your Claude Code prompt. Pick one the community made and watch it run.',
+      'A status line is the row under your Claude Code prompt. Pick one the community made and see how it looks in a session.',
     )
     expect(html).toContain('panel clean')
     expect(html).toContain('Fix the flaky date test in utils')
     expect(html).toContain('Opus 4.8 · clean main · 22% of context')
   })
 
-  it('lists the status lines as one radio group, with their copy counts', () => {
+  it('lists the status lines as one radio group, with their install counts', () => {
     renderHero()
 
     const radios = within(picker()).getAllByRole('radio')
     expect(radios.map((r) => r.textContent)).toEqual([
-      'Dreambase Panel223 copies',
-      'Pace Dot Meters94 copies',
-      'Kanji Rain1 copy',
+      'Dreambase Panel223 installs',
+      'Pace Dot Meters94 installs',
+      'Kanji Rain1 install',
     ])
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false'])
   })
@@ -97,7 +97,7 @@ describe('HomeHero', () => {
       screen.getByRole('link', { name: 'Open page: Pace Dot Meters' }).getAttribute('href'),
     ).toBe('/c/pace')
     expect(screen.getByRole('button', { name: 'Install Pace Dot Meters' })).toBeTruthy()
-    expect(screen.getByText('by @pace-dev · 94 copies')).toBeTruthy()
+    expect(screen.getByText('by @pace-dev · 94 installs')).toBeTruthy()
   })
 
   // A long title used to push the link under the button: its visible words now never change.
@@ -165,9 +165,9 @@ describe('HomeHero', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Install Dreambase Panel' }))
 
-    expect(screen.getByText('by @panel-dev · 224 copies')).toBeTruthy()
+    expect(screen.getByText('by @panel-dev · 224 installs')).toBeTruthy()
     expect(within(picker()).getByRole('radio', { name: /^Dreambase Panel/ }).textContent).toBe(
-      'Dreambase Panel224 copies',
+      'Dreambase Panel224 installs',
     )
   })
 

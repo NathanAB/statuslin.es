@@ -125,13 +125,13 @@ describe('buildLlmsTxt', () => {
     ])
     expect(txt).toMatch(/^## Top status lines/m)
     expect(txt).toContain(
-      '- [Everything Bar](https://statuslin.es/c/everything-bar): Model, branch, and cost. Colors shift as cost grows. Copied 12 times.\n',
+      '- [Everything Bar](https://statuslin.es/c/everything-bar): Model, branch, and cost. Colors shift as cost grows. Installed 12 times.\n',
     )
     expect(txt).toContain(
-      '- [Usage Dot Bars](https://statuslin.es/c/usage-dot-bars): Copied 1 time.\n',
+      '- [Usage Dot Bars](https://statuslin.es/c/usage-dot-bars): Installed 1 time.\n',
     )
     expect(txt).toContain(
-      '- [Dots](https://statuslin.es/c/dots): Dots per quota window. Copied 2 times.\n',
+      '- [Dots](https://statuslin.es/c/dots): Dots per quota window. Installed 2 times.\n',
     )
   })
 

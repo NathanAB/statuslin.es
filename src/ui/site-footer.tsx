@@ -4,6 +4,8 @@ import { cn } from '@/lib/cn'
 import {
   BUDDY_GUIDE_PATH,
   DESKTOP_GUIDE_PATH,
+  GUIDE_LINK_LABEL,
+  GUIDE_PATH,
   HOME_HEADING,
   MOD_SAFETY_GUIDE_PATH,
   NOT_SHOWING_GUIDE_PATH,
@@ -30,7 +32,7 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
   {
     title: 'Guides',
     links: [
-      { to: '/guide', label: 'Setup guide' },
+      { to: GUIDE_PATH, label: GUIDE_LINK_LABEL },
       { to: NOT_SHOWING_GUIDE_PATH, label: 'Status line not showing?' },
       { to: DESKTOP_GUIDE_PATH, label: 'Claude Desktop' },
       { to: STATUS_LINES_VS_MODS_GUIDE_PATH, label: 'Status lines vs mods' },

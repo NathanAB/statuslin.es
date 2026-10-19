@@ -79,12 +79,12 @@ describe('/status-lines/best', () => {
     vi.spyOn(BestRoute, 'useLoaderData').mockReturnValue(loaderData(null, 1))
     const BestPage = BestRoute.options.component
     const { unmount } = render(BestPage ? <BestPage /> : null)
-    expect(screen.getByText(/^The most-copied status line on statuslin\.es\./)).toBeTruthy()
+    expect(screen.getByText(/^The most-installed status line on statuslin\.es\./)).toBeTruthy()
     unmount()
 
     vi.spyOn(BestRoute, 'useLoaderData').mockReturnValue(loaderData(null, 10))
     render(BestPage ? <BestPage /> : null)
-    expect(screen.getByText(/^The 10 most-copied status lines on statuslin\.es\./)).toBeTruthy()
+    expect(screen.getByText(/^The 10 most-installed status lines on statuslin\.es\./)).toBeTruthy()
   })
 
   it('leaves the date out before anything has been copied', async () => {

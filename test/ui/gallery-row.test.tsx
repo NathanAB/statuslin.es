@@ -41,7 +41,7 @@ function renderRow(onOpen = vi.fn()) {
               <RowNote key="net" icon={Globe}>
                 Network Access
               </RowNote>,
-              '3 copies',
+              '3 installs',
             ]}
           </RowFacts>
         }
@@ -76,7 +76,7 @@ describe('GalleryRow', () => {
     renderRow()
 
     const items = screen.getAllByRole('listitem')
-    expect(items.map((item) => item.textContent)).toEqual(['Network Access', '·3 copies'])
+    expect(items.map((item) => item.textContent)).toEqual(['Network Access', '·3 installs'])
     expect(items[1]?.querySelector('[aria-hidden="true"]')?.textContent).toBe('·')
   })
 

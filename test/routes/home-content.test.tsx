@@ -120,7 +120,7 @@ describe('home content', () => {
     renderHome()
 
     expect(inventoryNote()?.textContent).toBe(
-      '32 status lines and 9 mods, copied 148 times as of Sep 8, 2026.',
+      '32 status lines and 9 mods, installed 148 times as of Sep 8, 2026.',
     )
   })
 
@@ -128,7 +128,7 @@ describe('home content', () => {
     renderHome({ mods: 0 })
 
     expect(inventoryNote()?.textContent).toBe(
-      '32 status lines, copied 148 times as of Sep 8, 2026.',
+      '32 status lines, installed 148 times as of Sep 8, 2026.',
     )
   })
 

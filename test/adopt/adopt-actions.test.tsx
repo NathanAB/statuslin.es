@@ -92,14 +92,14 @@ describe('AdoptPrompt', () => {
     render(<SharedCopyActions />)
 
     fireEvent.click(promptButton())
-    await waitFor(() => expect(screen.getByText('6 copies')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('6 installs')).toBeTruthy())
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalledTimes(2))
-    await waitFor(() => expect(screen.getByText('7 copies')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('7 installs')).toBeTruthy())
 
     resolveScriptCopy(6)
-    await waitFor(() => expect(screen.getByText('6 copies')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('6 installs')).toBeTruthy())
   })
 
   it('copies the built Claude prompt and records the copy', async () => {

@@ -4,19 +4,19 @@ import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import type { HeroLine, HeroSessionKey } from '@/gallery/hero-lines'
 import { HERO_SESSIONS } from '@/home/hero-sessions'
 import { ChoiceGroup } from '@/ui/choice-group'
-import { copiesLabel } from '@/ui/copy-count'
 import { HeroActions, HeroLayout } from '@/ui/hero-layout'
+import { installsLabel } from '@/ui/install-count'
 import { Terminal } from '@/ui/terminal'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 
 /** The hero's one sentence beside the title. */
 export const HERO_LEAD =
-  'A status line is the row under your Claude Code prompt. Pick one the community made and watch it run.'
+  'A status line is the row under your Claude Code prompt. Pick one the community made and see how it looks in a session.'
 
 const byline = (line: HeroLine, copies: number) => {
   const author = line.author?.username ? `@${line.author.username}` : line.author?.name
-  return author ? `by ${author} · ${copiesLabel(copies)}` : copiesLabel(copies)
+  return author ? `by ${author} · ${installsLabel(copies)}` : installsLabel(copies)
 }
 
 /**
@@ -111,7 +111,7 @@ export function HomeHero({
             options={lines.map((l) => ({
               value: l.slug,
               label: l.title,
-              detail: copiesLabel(l.slug === line.slug ? copies.count : l.copyCount),
+              detail: installsLabel(l.slug === line.slug ? copies.count : l.copyCount),
             }))}
             value={line.slug}
             onValueChange={pick}

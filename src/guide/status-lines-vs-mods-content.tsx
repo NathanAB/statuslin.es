@@ -63,8 +63,8 @@ export function StatusLinesVsModsContent({
         <Text muted>
           Pick a status line for session facts at the bottom of the terminal, such as the model, git
           branch, context use and cost. A few lines of bash is enough. The{' '}
-          <TextLink to={GUIDE_PATH}>setup guide</TextLink> has a working script, and the{' '}
-          <TextLink to="/">gallery</TextLink> shows each one's real output before you copy it.
+          <TextLink to={GUIDE_PATH}>guide to writing your own</TextLink> has a working script, and
+          the <TextLink to="/">gallery</TextLink> shows each one's real output before you copy it.
         </Text>
         <Text muted>
           Pick a mod for what a status line can't do: a pane, a toast, a slash command, or a display

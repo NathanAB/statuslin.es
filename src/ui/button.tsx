@@ -59,6 +59,14 @@ const buttonVariants = cva(
           "size-11 rounded-full duration-500 ease-settle active:not-aria-[haspopup]:translate-y-0 motion-safe:active:scale-94 [&_svg:not([class*='size-'])]:size-5",
       },
     },
+    // The coral pills (the install pill, the header's Submit) deepen to a solid shade on hover.
+    compoundVariants: [
+      {
+        variant: 'default',
+        size: ['pill', 'bar-pill'],
+        class: 'hover:bg-primary-fill-deep',
+      },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
@@ -67,10 +75,10 @@ const buttonVariants = cva(
   },
 )
 
-// The pill's icon circle: a dark tint on coral, the page colour on the secondary pill.
-// On hover the icon leans toward where the button goes.
+// The pill's icon circle: a dark tint on coral, the page colour on the secondary pill. It holds
+// still on hover; being a tint, it deepens with the pill around it.
 const TRAILING_ICON_CLASS =
-  'flex size-8.5 items-center justify-center rounded-full bg-background/16 transition-transform duration-600 ease-settle group-data-[variant=secondary]/button:bg-background motion-safe:group-hover/button:translate-x-0.5 motion-safe:group-hover/button:-translate-y-px motion-safe:group-hover/button:scale-106'
+  'flex size-8.5 items-center justify-center rounded-full bg-background/16 group-data-[variant=secondary]/button:bg-background'
 
 type ButtonSize = VariantProps<typeof buttonVariants>['size']
 

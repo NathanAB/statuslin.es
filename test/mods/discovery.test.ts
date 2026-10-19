@@ -137,7 +137,7 @@ describe('llms.txt with mods', () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
     expect(txt).toMatch(
-      /\n## Mods\n\n- \[Context Meter\]\(https:\/\/staging\.statuslin\.es\/mods\/context-meter\): Shows how full the context is\. Copied 3 times\.\n\n## Optional\n/,
+      /\n## Mods\n\n- \[Context Meter\]\(https:\/\/staging\.statuslin\.es\/mods\/context-meter\): Shows how full the context is\. Installed 3 times\.\n\n## Optional\n/,
     )
     expect(txt).not.toContain('draft-mod')
     expect(txt).not.toContain('removed-mod')
@@ -187,7 +187,7 @@ describe('llms-full.txt with mods', () => {
         `### [Context Meter](${BASE}/mods/context-meter)`,
         '',
         '- Description: Shows how full the context is',
-        '- Copied 3 times.',
+        '- Installed 3 times.',
         '- Tags: minimal',
         '- Summary: Shows how full the context window is.',
         '- How it works:',

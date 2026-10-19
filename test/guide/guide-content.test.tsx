@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@tanstack/react-router', () => ({
@@ -32,7 +32,10 @@ describe('GuideContent', () => {
   it('renders the h1 and all section headings', () => {
     render(<GuideContent highlights={highlights} />)
     expect(
-      screen.getByRole('heading', { level: 1, name: /how to set up a claude code status line/i }),
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'How to write your own Claude Code status line',
+      }),
     ).toBeTruthy()
     for (const heading of [
       /the fast paths/i,
@@ -59,6 +62,15 @@ describe('GuideContent', () => {
       screen.getByRole('heading', { name: /why is used_percentage null/i }).nextElementSibling
         ?.textContent,
     ).toMatch(/\/\/ 0/)
+  })
+
+  // "Guide" read as "how to install one"; it's for writing your own, and says where installing is.
+  it('says up top that it is for writing your own, and sends installers to the gallery', () => {
+    render(<GuideContent highlights={highlights} />)
+    const lead = screen.getByText(/This guide is for writing your own from scratch/)
+    expect(
+      within(lead).getByRole('link', { name: 'install one from the gallery' }).getAttribute('href'),
+    ).toBe('/')
   })
 
   it('shows when the guide was last updated', () => {

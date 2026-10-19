@@ -46,7 +46,7 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
         </Text>
         <Text muted>
           Copy a reviewed script from <TextLink to="/">the gallery</TextLink> to see its real output
-          first. Try the <TextLink to="/status-lines/best">most-copied</TextLink>,{' '}
+          first. Try the <TextLink to="/status-lines/best">most-installed</TextLink>,{' '}
           <TextLink to="/c/$slug" params={{ slug: 'powerline-dracula-6936b97c' }}>
             Powerline Dracula
           </TextLink>{' '}
@@ -61,8 +61,9 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
           is the reviewed copy of ohugonnot/claude-code-statusline.
         </Text>
         <Text muted>
-          Write your own to control every field. The <TextLink to="/guide">setup guide</TextLink>{' '}
-          walks through the JSON Claude Code sends, with a script our tests run on every commit.
+          Write your own to control every field. The{' '}
+          <TextLink to="/guide">guide to writing one</TextLink> walks through the JSON Claude Code
+          sends, with a script our tests run on every commit.
         </Text>
       </Stack>
 

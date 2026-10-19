@@ -13,6 +13,6 @@ describe('InstallPrompt', () => {
     const button = screen.getByRole('button', { name: 'Copy install prompt for Pace' })
     expect(button.getAttribute('data-size')).toBe('pill')
     expect(button.getAttribute('data-variant')).toBe('default')
-    expect(screen.getByText('3 copies')).toBeTruthy()
+    expect(screen.getByText('3 installs')).toBeTruthy()
   })
 })

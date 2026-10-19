@@ -10,7 +10,7 @@ function utcDateLabel(isoDate: string): string {
   }).format(date)
 }
 
-/** The home page's inventory, a line in its footer: both kinds, their copies, and as of when. */
+/** The home page's inventory, a line in its footer: both kinds, their installs, and as of when. */
 export function HomeIndexNote({
   statusLines,
   mods,
@@ -24,7 +24,7 @@ export function HomeIndexNote({
 }) {
   return (
     <>
-      {kindCount(statusLines, mods)}, copied {copyCount.toLocaleString('en-US')} times as of{' '}
+      {kindCount(statusLines, mods)}, installed {copyCount.toLocaleString('en-US')} times as of{' '}
       <time dateTime={asOf}>{utcDateLabel(asOf)}</time>.
     </>
   )

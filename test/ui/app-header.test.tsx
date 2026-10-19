@@ -67,11 +67,12 @@ describe('AppHeader', () => {
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
-  it('links to the mods page ahead of the guide', () => {
+  // The guide is for writing your own status line; "Guide" alone read as how to install one.
+  it('links to the mods page ahead of the guide, which says it is for writing your own', () => {
     render(<AppHeader user={null} />)
     const mods = screen.getByRole('link', { name: 'Mods' })
     expect(mods.getAttribute('href')).toBe('/mods')
-    const guide = screen.getByRole('link', { name: 'Guide' })
+    const guide = screen.getByRole('link', { name: 'Write your own' })
     expect(guide.getAttribute('href')).toBe('/guide')
     expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })

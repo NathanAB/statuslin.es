@@ -62,6 +62,38 @@ describe('/submit kind toggle analytics', () => {
   })
 })
 
+// The heading used to say "Submit a status line" over a small toggle, so the choice read as made
+// and people skimmed past Mod. Now the page asks first, with each kind described.
+describe('/submit kind choice', () => {
+  it('asks what you are submitting before the form, under a heading that names both kinds', () => {
+    renderSubmit('status_line')
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Submit a status line or mod',
+    )
+    const choice = screen.getByRole('radiogroup', { name: 'What are you submitting?' })
+    const radios = within(choice).getAllByRole('radio')
+    expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual(['true', 'false'])
+    expect(screen.getByRole('radio', { name: 'Status line' })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: 'Mod' }).getAttribute('aria-describedby')).toBeTruthy()
+    expect(
+      choice.compareDocumentPosition(screen.getByText(/Paste your script/)) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('describes each kind so the difference is clear at a glance', () => {
+    renderSubmit('mod')
+
+    const described = (name: string) => {
+      const id = screen.getByRole('radio', { name }).getAttribute('aria-describedby') ?? ''
+      return document.getElementById(id)?.textContent
+    }
+    expect(described('Status line')).toMatch(/script/)
+    expect(described('Mod')).toMatch(/plugin/)
+  })
+})
+
 // The form keeps a form's width; beside it, what happens to a submission, so the column isn't
 // half empty and a first-time submitter knows what they're agreeing to.
 describe('/submit layout', () => {

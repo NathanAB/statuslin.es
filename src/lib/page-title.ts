@@ -107,6 +107,8 @@ export function homeMetaDescription(page: number, pageCount: number): string {
 export const BEST_PAGE_TITLE_BASE = 'Best Claude Code Status Line Examples'
 
 export const GUIDE_PATH = '/guide'
+/** What the header and footer call the guide: it's for writing your own, not installing one. */
+export const GUIDE_LINK_LABEL = 'Write your own'
 
 /** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'

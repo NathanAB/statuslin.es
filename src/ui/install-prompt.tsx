@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 import { CopyButton } from '@/ui/copy-button'
-import { CopyCount } from '@/ui/copy-count'
+import { InstallCount } from '@/ui/install-count'
 import { Row } from '@/ui/layout'
 
 /**
@@ -35,7 +35,7 @@ export function InstallPrompt({
         ariaLabel={`Copy install prompt for ${title}`}
         onCopied={handleCopied}
       />
-      <CopyCount count={count} />
+      <InstallCount count={count} />
     </Row>
   )
 }

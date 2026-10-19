@@ -119,7 +119,7 @@ describe('GalleryConfigCard analytics', () => {
     )
 
     fireEvent.click(screen.getByRole('link', { name: 'Example' }))
-    expect(screen.getByText('2 copies')).toBeTruthy()
+    expect(screen.getByText('2 installs')).toBeTruthy()
     expect(screen.queryByText(/⇧|upvote/i)).toBeNull()
 
     expect(capture).toHaveBeenCalledWith('statusline_card_clicked', {

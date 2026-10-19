@@ -60,4 +60,27 @@ describe('Button pill size', () => {
     expect(className).toContain('active:scale-98')
     expect(className).not.toContain('translate-y-px')
   })
+
+  // The circle used to grow and shift toward the pill's near edge on hover, which read as broken.
+  it('keeps the icon circle still on hover', () => {
+    render(
+      <Button size="pill" trailingIcon={icon}>
+        Copy install prompt
+      </Button>,
+    )
+    const circle = screen.getByTestId('icon').parentElement as HTMLElement
+    expect(circle.className).not.toMatch(/hover\/button:(-?translate|scale)/)
+  })
+
+  // A see-through fill over the dark page turned the coral muddy; hover deepens it, solid.
+  it('deepens the coral pill to a solid shade on hover', () => {
+    render(
+      <Button size="pill" trailingIcon={icon}>
+        Copy install prompt
+      </Button>,
+    )
+    const { className } = screen.getByRole('button')
+    expect(className).not.toContain('hover:bg-primary-fill/80')
+    expect(className).toContain('hover:bg-primary-fill-deep')
+  })
 })

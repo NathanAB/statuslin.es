@@ -41,7 +41,7 @@ describe('SiteFooter', () => {
       )
     expect(names('Browse')).toEqual(['Mods', 'Best status lines', 'Resources', 'Submit'])
     expect(names('Guides')).toEqual([
-      'Setup guide',
+      'Write your own',
       'Status line not showing?',
       'Claude Desktop',
       'Status lines vs mods',
@@ -59,8 +59,8 @@ describe('SiteFooter', () => {
 
   // The home page puts its inventory line here: how many status lines and mods, copied how often.
   it("adds a page's own note under what the site is", () => {
-    render(<SiteFooter note="32 status lines and 9 mods, copied 148 times." />)
-    const note = screen.getByText('32 status lines and 9 mods, copied 148 times.')
+    render(<SiteFooter note="32 status lines and 9 mods, installed 148 times." />)
+    const note = screen.getByText('32 status lines and 9 mods, installed 148 times.')
     const tagline = screen.getByText(HOME_HEADING)
     expect(tagline.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.getByRole('navigation', { name: 'Footer' }).contains(note)).toBe(false)
@@ -93,7 +93,7 @@ describe('SiteFooter', () => {
     const { container } = render(<SiteFooter />)
     const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement
     expect(guide).not.toBeNull()
-    expect(guide.textContent).toMatch(/guide/i)
+    expect(guide.textContent).toBe('Write your own')
   })
 
   it('links the mods gallery and the best status lines', () => {

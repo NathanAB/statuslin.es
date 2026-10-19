@@ -14,7 +14,7 @@ import { Heading, Text, TextLink } from '@/ui/text'
 
 const PATH = '/status-lines/best'
 const DESCRIPTION =
-  'The most-copied Claude Code status lines on statuslin.es, ranked by copies, each with a preview rendered from the real script and a one-paste install.'
+  'The most-installed Claude Code status lines on statuslin.es, ranked by installs, each with a preview rendered from the real script and a one-paste install.'
 
 const MONTH = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 
@@ -24,7 +24,7 @@ function monthSuffix(latestCopy: string | null): string {
 }
 
 function rankedLines(count: number): string {
-  return count === 1 ? 'The most-copied status line' : `The ${count} most-copied status lines`
+  return count === 1 ? 'The most-installed status line' : `The ${count} most-installed status lines`
 }
 
 export const Route = createFileRoute('/status-lines/best')({

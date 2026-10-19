@@ -94,7 +94,7 @@ describe('HomeMods', () => {
       within(lit()).getByRole('link', { name: 'Token Weather Usage' }).getAttribute('href'),
     ).toBe('/mods/weather')
     expect(lit().textContent).toContain('Token Weather Usage draws something in Claude Desktop.')
-    expect(lit().textContent).toContain('@weather-dev · 3 copies')
+    expect(lit().textContent).toContain('@weather-dev · 3 installs')
   })
 
   // The text block above the row is as tall as its longest mod, so flipping never moves the row.

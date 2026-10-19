@@ -109,7 +109,7 @@ function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
 
 function corePageLinks(base: string): string[] {
   return [
-    `- [Gallery](${base}/): every published status line and mod, sorted by trending, newest, or most copied`,
+    `- [Gallery](${base}/): every published status line and mod, sorted by trending, newest, or most installed`,
     `- [Mods](${base}${MODS_PATH}): every published mod`,
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
     `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
@@ -137,13 +137,13 @@ function summaryLink(
 ): string {
   const summary = escapeMarkdownLinks(oneLine(item.description))
   // A count of 0 tells a reader nothing, so a new entry carries none.
-  const copies = item.copyCount > 0 ? copiedTimes(item.copyCount) : ''
-  const text = [summary, copies].filter(Boolean).join(' ')
+  const installs = item.copyCount > 0 ? installedTimes(item.copyCount) : ''
+  const text = [summary, installs].filter(Boolean).join(' ')
   return `- [${untrusted(item.title)}](${url})${text ? `: ${text}` : ''}`
 }
 
-function copiedTimes(count: number): string {
-  return `Copied ${count} ${count === 1 ? 'time' : 'times'}.`
+function installedTimes(count: number): string {
+  return `Installed ${count} ${count === 1 ? 'time' : 'times'}.`
 }
 
 function catalogSection(
@@ -160,7 +160,7 @@ function catalogEntry(url: string, entry: LlmsCatalogEntry): string {
   const lines = [
     flat(entry.description) ? `- Description: ${untrusted(entry.description)}` : '',
     // As in llms.txt, a count of 0 tells a reader nothing.
-    entry.copyCount > 0 ? `- ${copiedTimes(entry.copyCount)}` : '',
+    entry.copyCount > 0 ? `- ${installedTimes(entry.copyCount)}` : '',
     entry.tagLabels.length > 0 ? `- Tags: ${entry.tagLabels.map(untrusted).join(', ')}` : '',
     ...(entry.generatedContent ? pageCopyLines(entry.generatedContent) : []),
   ].filter(Boolean)

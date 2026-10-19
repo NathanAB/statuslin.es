@@ -58,7 +58,7 @@ describe('ModCard', () => {
 
     expect(screen.getByRole('link', { name: 'Meter' }).getAttribute('href')).toBe('/mods/meter')
     expect(screen.getByText('Mod')).toBeTruthy()
-    expect(screen.getByText('3 copies')).toBeTruthy()
+    expect(screen.getByText('3 installs')).toBeTruthy()
   })
 
   it("keeps the author's GitHub link clickable above the card's overlay, with no avatar", () => {

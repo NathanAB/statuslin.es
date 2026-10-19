@@ -18,6 +18,8 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Code / preview box (near-black) | `bg-sunken` |
 | Coral accent as text, lines and rings (links, brand) | `text-primary` / `border-primary` |
 | Coral as a solid fill under text (buttons, selected states) | `bg-primary-fill`, never `bg-primary` (light text on it fails WCAG AA) |
+| A coral pill under the pointer | `hover:bg-primary-fill-deep` (the fill deepened toward the page, solid; set by `Button`'s pill sizes) |
+| A picked choice on a card | `bg-primary/12`, a faint coral tint, with a filled radio dot; the coral ring stays the focus cue |
 | Text on a coral fill | `text-primary-foreground` |
 | Primary text | `text-foreground` |
 | Secondary text | `text-muted-foreground` |
@@ -91,7 +93,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<StretchedLink to="…">` | `src/ui/stretched-link.tsx` | Full-card clickable overlay with focus ring; place inside `<Card interactive>` |
 | `<GalleryRow to params onOpen title byline facts description>` | `src/ui/gallery-row.tsx` | The redesign's gallery card: one full-width row, title link (it opens the whole row) and byline left, `facts` right, the preview as children, the description clamped to two lines; `onOpen` runs when the row opens (its click analytics). Hover and focus raise the tone; inside another card it starts a tone up. `<RowFacts>` sets the facts in a dotted line, `<RowNote icon>` is a fact with an icon, `<GalleryList>` stacks rows |
 | `<Terminal label toolbar transcript status conversationKey conversationChanged statusKey statusChanged>` | `src/ui/terminal.tsx` | The home hero's Claude Code session: a frame with an optional toolbar (the session switcher and its caption), then a fixed-height screen with the conversation (`TranscriptLine[]`), the input box and the status line. The screen is one image to a screen reader, named by `label`. Nothing moves on the first render; after a change, a new conversation settles in and a new status line glows (`animate-flash`). |
-| `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. `look`: `list` (label and detail on a tile: the hero's picker) or `tray` (small segments: the hero's sessions) |
+| `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. `look`: `list` (label and detail on a tile: the hero's picker), `tray` (small segments: the hero's sessions) or `cards` (big side-by-side cards, each named by its label and described by its detail, with a radio dot: the submit page's "What are you submitting?") |
 | `<HeroLayout heading lead stage aside>`, `<HeroActions>` | `src/ui/hero-layout.tsx` | The home hero's 12-column grid (title and sentence, then the demo and its controls); stacks below 900px |
 | `<LiveMessage>` | `src/ui/visually-hidden.tsx` | A screen-reader-only `role="status"` message, read out when it changes |
 | `<ShotCarousel heading lead listLabel items more>` | `src/ui/shot-carousel.tsx` | The home page's dark band of mod screenshots in a sideways row: the centred one lit and named above it, previous and next buttons, arrow keys; every shot links to its page |
@@ -114,7 +116,8 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | Export | File | What it does |
 | --- | --- | --- |
 | `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control (`size="pill"`: the redesign's pill, icon trailing); `Copyable` overlays it on a code well |
-| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: the home hero's "Copy install prompt" pill, copy count, toast |
+| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: the home hero's "Copy install prompt" pill, install count, toast |
+| `<InstallCount count>` / `installsLabel(n)` | `src/ui/install-count.tsx` | "1 install", "223 installs": how every surface words the count (the data calls it `copyCount`) |
 | `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display; pass `text` to copy |
 | `<LineDiff lines={…}>` | `src/ui/line-diff.tsx` | Unified line diff in a code well; `DiffLine[]` with +/- markers |
 | `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | A titled card with an optional action slot; admin pages only (public pages use `PageSection`) |

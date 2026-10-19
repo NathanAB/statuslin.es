@@ -5,7 +5,6 @@ import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { getViewerIsAuthor } from '@/gallery/authorship'
 import { cardClickProperties } from '@/gallery/card-analytics'
-import { CardMeta } from '@/gallery/card-meta'
 import { configFactTiles } from '@/gallery/config-fact-tiles'
 import { ConfigHeader } from '@/gallery/config-header'
 import { DesktopNote } from '@/gallery/desktop-note'
@@ -22,8 +21,9 @@ import { getStatusLineModsFn } from '@/mods/functions'
 import { ModCard } from '@/mods/mod-card'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
-import { GalleryList, GalleryRow } from '@/ui/gallery-row'
+import { GalleryList, GalleryRow, RowFacts } from '@/ui/gallery-row'
 import { HighlightedCode } from '@/ui/highlighted-code'
+import { installsLabel } from '@/ui/install-count'
 import { Stack } from '@/ui/layout'
 import { PageSection } from '@/ui/page-section'
 import { ScenarioRow } from '@/ui/scenario-row'
@@ -178,7 +178,7 @@ function ConfigDetail() {
                         )
                       }
                       title={r.title}
-                      facts={<CardMeta tags={[]} networkHosts={[]} copyCount={r.copyCount} />}
+                      facts={<RowFacts>{[installsLabel(r.copyCount)]}</RowFacts>}
                     >
                       {r.preview !== null ? (
                         <StatuslinePreview segments={r.preview} look="strip" />

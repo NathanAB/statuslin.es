@@ -1,7 +1,7 @@
 import { iconFor } from '@/gallery/config-badges'
 import { FACET_BY_SLUG, tagHref, tagLabel } from '@/gallery/facets'
-import { copiesLabel } from '@/ui/copy-count'
 import { RowFacts, RowNote } from '@/ui/gallery-row'
+import { installsLabel } from '@/ui/install-count'
 import { Stack } from '@/ui/layout'
 import { Text, TextLink } from '@/ui/text'
 import { Tooltip } from '@/ui/tooltip'
@@ -66,7 +66,7 @@ export function CardMeta({
             label(slug)
           ),
         ),
-        copiesLabel(copyCount),
+        installsLabel(copyCount),
       ]}
     </RowFacts>
   )

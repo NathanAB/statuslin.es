@@ -43,7 +43,7 @@ export function CompareContent({ page }: { page: ComparePage }) {
               </TextLink>
             ),
           )}
-          <TextLink to="/status-lines/best">Most-copied status lines</TextLink>
+          <TextLink to="/status-lines/best">Most-installed status lines</TextLink>
           <TextLink to="/resources">All status line tools</TextLink>
         </Row>
       </Stack>

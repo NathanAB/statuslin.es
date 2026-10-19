@@ -41,11 +41,11 @@ describe('CardMeta', () => {
       ['Cost', '/status-lines/cost'],
       ['Bash', '/status-lines/bash'],
     ])
-    expect(meta.textContent).toBe('Git·Cost·Bash·223 copies')
+    expect(meta.textContent).toBe('Git·Cost·Bash·223 installs')
   })
 
   it('counts one copy in the singular', () => {
-    expect(renderMeta({ tags: [], networkHosts: [], copyCount: 1 }).textContent).toBe('1 copy')
+    expect(renderMeta({ tags: [], networkHosts: [], copyCount: 1 }).textContent).toBe('1 install')
   })
 
   // They're trust signals for running someone else's script, so they stay visible, but they
@@ -57,7 +57,7 @@ describe('CardMeta', () => {
       copyCount: 2,
     })
 
-    expect(meta.textContent).toBe('Network Access·Reads Token·Git·2 copies')
+    expect(meta.textContent).toBe('Network Access·Reads Token·Git·2 installs')
     expect(
       within(meta)
         .getAllByRole('link')
@@ -69,7 +69,7 @@ describe('CardMeta', () => {
   it('starts a mod card with the word Mod', () => {
     const meta = renderMeta({ kind: 'Mod', tags: ['git'], networkHosts: [], copyCount: 0 })
 
-    expect(meta.textContent).toBe('Mod·Git·0 copies')
+    expect(meta.textContent).toBe('Mod·Git·0 installs')
   })
 
   it('keeps the separators out of what a screen reader hears', () => {

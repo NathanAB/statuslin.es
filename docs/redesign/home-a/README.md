@@ -290,6 +290,15 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   the 12 columns, and a sticky "What happens next" panel takes the other 4 (sandbox, a person,
   live plus an email). That follows the research: single-column fields, widths near the expected
   input, and a side panel where a simple form would leave the column half empty.
+- **Wording (after review), decided by the owner.** Counts read "installs", not "copies"
+  (`installsLabel`); the data and analytics keep their copy names. The header and footer say
+  "Write your own" for the guide, whose visible title and first lines now say it's for writing a
+  status line from scratch (its `<title>` and meta keep "set up"). The hero says "see how it looks
+  in a session": nothing runs live.
+- **The pill's hover (after review).** The icon circle no longer grows and shifts toward the edge;
+  the coral pills deepen to a solid shade (`primary-fill-deep`) instead of turning see-through.
+- **Submit kind (after review).** "Submit a status line" over a small toggle read as decided, so
+  the page now asks "What are you submitting?" with two described cards before the form.
 - **One surface level (after review).** The status line, mod, guide and resources pages had kept
   the old bordered cards, with boxes inside boxes: tiles in cards, cards in cards, black wells on
   gray. A section is now its heading on the page (`PageSection`). Rows, tiles, code and notes are

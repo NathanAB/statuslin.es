@@ -68,6 +68,9 @@
   --popover-foreground: var(--foreground);
   --primary-foreground: var(--foreground); /* light-on-coral; the one pair that could
                                               legitimately diverge if a light theme ever lands */
+  /* The coral pill under the pointer: the fill deepened toward the page, solid, so it stays
+     coral (a see-through fill over the page turns muddy) and its light text gains contrast. */
+  --primary-fill-deep: color-mix(in oklab, var(--primary-fill) 86%, var(--background));
   --secondary: var(--muted);
   --secondary-foreground: var(--foreground);
   --accent: var(--muted);
@@ -147,6 +150,7 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-fill: var(--primary-fill);
+  --color-primary-fill-deep: var(--primary-fill-deep);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

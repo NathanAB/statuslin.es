@@ -66,7 +66,8 @@ export function StatusLineNotShowingContent() {
         </Text>
         <Text muted>
           Test the script outside Claude Code with mock JSON on stdin. The{' '}
-          <TextLink to={GUIDE_PATH}>setup guide</TextLink> shows the JSON Claude Code sends.
+          <TextLink to={GUIDE_PATH}>guide to writing your own</TextLink> shows the JSON Claude Code
+          sends.
         </Text>
       </Stack>
 
