@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createGitHub,
   GITHUB_JSON_MAX_BYTES,
+  PLUGIN_MANIFEST_MAX_BYTES,
   README_MAX_BYTES,
   TARBALL_MAX_BYTES,
   TARBALL_MAX_FILES,
@@ -517,6 +518,74 @@ describe('pluginManifestExists', () => {
     const { fetchFn } = fakeFetch({})
 
     expect(await createGitHub(fetchFn).pluginManifestExists(REPO, 'docs', SHA)).toBe(false)
+  })
+})
+
+describe('pluginVersion', () => {
+  const rootManifest = api(`/contents/.claude-plugin/plugin.json?ref=${SHA}`)
+
+  it.each([
+    [
+      'a folder',
+      'plugins/meter',
+      api(`/contents/plugins/meter/.claude-plugin/plugin.json?ref=${SHA}`),
+    ],
+    ['the root', '', rootManifest],
+  ])('reads the version from plugin.json in %s at the commit', async (_name, path, url) => {
+    const { fetchFn } = fakeFetch({ [url]: { status: 200, body: { version: '1.3.0' } } })
+
+    expect(await createGitHub(fetchFn).pluginVersion(REPO, path, SHA)).toBe('1.3.0')
+  })
+
+  it('asks for the raw file, not its base64 listing', async () => {
+    const { fetchFn: routed } = fakeFetch({
+      [rootManifest]: { status: 200, body: { version: '1.3.0' } },
+    })
+    const accepts: (string | null)[] = []
+    const fetchFn = ((url: string, init?: RequestInit) => {
+      accepts.push(new Headers(init?.headers).get('accept'))
+      return routed(url)
+    }) as typeof fetch
+
+    await createGitHub(fetchFn).pluginVersion(REPO, '', SHA)
+
+    expect(accepts).toEqual(['application/vnd.github.raw+json'])
+  })
+
+  it.each([
+    ['there is no plugin.json', {}],
+    ['plugin.json has no version', { [rootManifest]: { status: 200, body: { name: 'meter' } } }],
+    ['the version is not a string', { [rootManifest]: { status: 200, body: { version: 13 } } }],
+    [
+      'plugin.json is not JSON',
+      { [rootManifest]: { status: 200, body: new TextEncoder().encode('{"version":') } },
+    ],
+  ])('answers null when %s', async (_name, routes: Record<string, Route>) => {
+    const { fetchFn } = fakeFetch(routes)
+
+    expect(await createGitHub(fetchFn).pluginVersion(REPO, '', SHA)).toBeNull()
+  })
+
+  it('stops reading a huge plugin.json at the byte cap and answers null', async () => {
+    const CHUNK = 1024
+    let pulled = 0
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled++
+        const text = pulled === 1 ? '{"version":"1.3.0","pad":"' : 'a'.repeat(CHUNK)
+        controller.enqueue(new TextEncoder().encode(text))
+      },
+    })
+    const fetchFn = (async () => new Response(body)) as unknown as typeof fetch
+
+    expect(await createGitHub(fetchFn).pluginVersion(REPO, '', SHA)).toBeNull()
+    expect(pulled).toBeLessThanOrEqual(Math.ceil(PLUGIN_MANIFEST_MAX_BYTES / CHUNK) + 2)
+  })
+
+  it('throws on other GitHub failures', async () => {
+    const { fetchFn } = fakeFetch({ [rootManifest]: { status: 500 } })
+
+    await expect(createGitHub(fetchFn).pluginVersion(REPO, '', SHA)).rejects.toThrow(/500/)
   })
 })
 
