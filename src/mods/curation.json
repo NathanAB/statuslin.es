@@ -172,7 +172,7 @@
   {
     "repoUrl": "https://github.com/cablate/ctx-handoff-mod",
     "path": "",
-    "commitSha": "5382e94e78b4a8e7b24d973b481add83e406e7ee",
+    "commitSha": "7d297732f771a8bb217674b57f376f79da55b05e",
     "pluginName": "ctx-handoff",
     "title": "Ctx Handoff",
     "inputSteps": [
