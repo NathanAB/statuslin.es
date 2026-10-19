@@ -390,6 +390,18 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```
    To move a published mod to a newer commit, follow "Re-pin a mod" below.
 
+### Change a mod's input steps
+
+A curated mod's `inputSteps` are what its previews type, and they should show what the mod is for,
+the way its README presents it, not an empty first-run state. To change them without moving its
+commit, edit the entry in `src/mods/curation.json`, then, on staging and then production:
+```sh
+DATABASE_URL='<env pooled url>' bun run import:mods                 # prints "updated <slug>: new input steps"
+DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
+```
+The new previews show on the live page as soon as they render; nothing needs publishing. A
+preview types at most 2 steps (the recording's time limit), so pick the 2 that show the most.
+
 ### Re-pin a mod
 
 An update is a new version of the mod. The current version stays live until you publish the new

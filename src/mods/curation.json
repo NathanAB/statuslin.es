@@ -25,7 +25,13 @@
     "path": "burn-meter",
     "commitSha": "e6da26ca36a88eec3be25605d30fa20f2c1c0cec",
     "pluginName": "burn-meter",
-    "title": "Burn Meter"
+    "title": "Burn Meter",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/burn demo"
+      }
+    ]
   },
   {
     "repoUrl": "https://github.com/nateherkai/claude-code-mods",
@@ -73,7 +79,11 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/pixelband scene city"
+        "text": "/pixelband scene creation"
+      },
+      {
+        "type": "text",
+        "text": "/pixelband size 10"
       }
     ]
   },
@@ -133,6 +143,10 @@
       {
         "type": "text",
         "text": "/keepwarm"
+      },
+      {
+        "type": "text",
+        "text": "/cache-tax"
       }
     ]
   },
@@ -211,7 +225,17 @@
     "path": "plugins/token-meter",
     "commitSha": "c2ee6a456c8dfb540dc1f0763c58ebf486d0b60d",
     "pluginName": "token-meter",
-    "title": "Token Meter"
+    "title": "Token Meter",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "Run the tests again"
+      },
+      {
+        "type": "text",
+        "text": "Check the lint too"
+      }
+    ]
   },
   {
     "repoUrl": "https://github.com/midudev/better-claude",
@@ -222,7 +246,11 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "_summarize the last commit",
+        "text": "_summarize the last commit"
+      },
+      {
+        "type": "text",
+        "text": "_which model are you?",
         "submit": false
       }
     ]
@@ -253,7 +281,7 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/pet"
+        "text": "/pet demo"
       }
     ]
   },
@@ -269,6 +297,12 @@
     "path": "",
     "commitSha": "77930064d5624d7c1a20ed974e80af48f3e1eb43",
     "pluginName": "familiar",
-    "title": "Familiar"
+    "title": "Familiar",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/familiar pet"
+      }
+    ]
   }
 ]
