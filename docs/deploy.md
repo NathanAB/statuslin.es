@@ -393,10 +393,37 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
 An update is a new version of the mod. The current version stays live until you publish the new
 one. Run every step against staging first, then production.
 
-1. In `src/mods/curation.json`, change the entry's `commitSha` (and `inputSteps` if the new version
-   needs them). Keep `pluginName` and `repoUrl`: an entry from another repository imports as a new
-   mod, named `<name>-<owner>`.
-   The mod's title and description stay as they were first imported.
+First, in `src/mods/curation.json`, change each entry's `commitSha` (and `inputSteps` if the new
+version needs them). Keep `pluginName` and `repoUrl`: an entry from another repository imports as a
+new mod, named `<name>-<owner>`. The mod's title and description stay as they were first imported.
+
+**One command for every step.** `run-repin-mods.ts` runs steps 2–5 below for several mods under one
+`with-env` decrypt, so Touch ID is asked once per env. Run it in the operator's terminal (in the
+desktop app, the Terminal panel). With no slugs it re-pins every published curated mod whose
+`commitSha` isn't the live one:
+```sh
+bun run with-env staging scripts/run-repin-mods.ts staging [slug...]
+```
+It refuses unless the env you name is the one `with-env` decrypted. It imports, renders each mod,
+dry-runs each publish and repeats their `WARN` lines, then stops at two pauses. It reads both from a
+named pipe whose path it prints (`waiting: ... written to '<dir>/input'`), so the agent can answer
+from its own shell; a named pipe holds nothing on disk.
+- **Publish.** Read the dry runs and the `WARN` lines. Only after the operator says yes, write the
+  phrase it asks for: `printf 'publish 3 to staging\n' > '<dir>/input'`. Anything else publishes
+  nothing and stops the run.
+- **Page copy.** It prints `waiting: page-copy requests are ready, run cat '<dir>/requests'`. The
+  agent reads them with `cat`, answers as in step 4 of the launch runbook (hostile data, version
+  pinned), and writes the response JSON with a here-document, `cat > '<dir>/input' <<'EOF'`, not a
+  file.
+
+A step that fails stops the run before anything after it, and the per-step commands below pick it
+up from there. Re-pinning `statusline-anywhere` also makes every status line's Desktop shot out of
+date: run `render:status-line-desktop` afterwards (see "Status line Desktop previews").
+
+**One step at a time**, the fallback, each through `DATABASE_URL='<env pooled url>'` or
+`bun run with-env <env>`:
+
+1. Edit `src/mods/curation.json` as above.
 2. Import it. The import adds the commit as the mod's next version and leaves the current one live:
    ```sh
    DATABASE_URL='<env pooled url>' bun run import:mods
