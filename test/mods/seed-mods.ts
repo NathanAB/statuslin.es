@@ -2,7 +2,7 @@ import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
 import * as schema from '@/db/schema'
-import type { CommitComparison, GitHub } from '@/mods/github'
+import type { CommitComparison, GitHub, GitHubSource } from '@/mods/github'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { migratedPGlite } from '../helpers/test-db'
 
@@ -151,7 +151,7 @@ export async function modState(db: TestDb, slug: string) {
   return row
 }
 
-export interface FakeGitHub extends GitHub {
+export interface FakeGitHub extends GitHub, Pick<GitHubSource, 'readme'> {
   calls: string[]
 }
 
@@ -159,6 +159,7 @@ interface FakeGitHubOptions {
   onDefaultBranch?: boolean
   filesChanged?: string[]
   comparedToLive?: CommitComparison
+  readme?: string | null
   /** Runs inside the default-branch lookup, between the script's reads and its write. */
   meanwhile?: () => Promise<void>
 }
@@ -182,6 +183,9 @@ export function fakeGitHub(opts: FakeGitHubOptions = {}): FakeGitHub {
     },
     async commitIsFetchable() {
       throw new Error('publish and restore never ask whether a commit is fetchable')
+    },
+    async readme() {
+      return opts.readme ?? null
     },
   }
 }

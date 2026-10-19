@@ -8,6 +8,7 @@ import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, parseCuration } from '@/mods/curation'
 import { createGitHub } from '@/mods/github'
+import { writeTmpPng } from '@/mods/preview-review'
 import { terminalLine } from '@/mods/terminal-line'
 import { e2bDesktopRecorder } from '@/render/mods/desktop/recorder'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
@@ -95,9 +96,14 @@ async function main(): Promise<number> {
               desktopRecorder: e2bDesktopRecorder(),
               github,
               log,
+              // The live version's new previews are never stored unreviewed here; the newly pinned
+              // version is reviewed against its README at its publish step.
+              review: async () => false,
+              writePng: writeTmpPng,
             },
           ),
-        publishMod: (argv, publishLog) => runPublish(argv, { db, github, log: publishLog }),
+        publishMod: (argv, publishLog) =>
+          runPublish(argv, { db, github, log: publishLog, writePng: writeTmpPng }),
         prepareContent: async () => {
           let requests = ''
           await runGenerateContentCommand(
