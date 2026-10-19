@@ -24,7 +24,7 @@ import {
   stepTextPath,
   transcriptLinesCommand,
 } from '@/render/mods/desktop/session'
-import { cannedReply, feedScenario } from '@/render/mods/scenario-feed'
+import { busyPermissions, cannedReply, feedScenario } from '@/render/mods/scenario-feed'
 import { FEED_PLUGIN_DIR, REPLY_FILE, sessionEnv } from '@/render/mods/session'
 
 const scenario = feedScenario()
@@ -93,8 +93,15 @@ describe('desktopSessionFiles', () => {
       readFileSync('src/render/mods/desktop/sandbox/statusline.sh', 'utf8'),
     )
     expect(settings(files)).toEqual({
+      permissions: busyPermissions(scenario),
       statusLine: { type: 'command', command: `cat | bash ${script}` },
     })
+  })
+
+  it('writes one settings.json, the terminal session rules merged with the status line', () => {
+    const paths = desktopSessionFiles(scenario, SEED).map((f) => f.path)
+
+    expect(paths.filter((path) => path === `${CONFIG_DIR}/settings.json`)).toHaveLength(1)
   })
 
   it.each([

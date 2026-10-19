@@ -1,11 +1,17 @@
 // biome-ignore-all lint/style/useNamingConvention: env var names and Claude Code config keys are external contracts.
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import type { InputStep } from '@/mods/curation'
 import { SANDBOX_CANNED_MODEL_SERVER_DEST, SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
-import { cannedReply, feedFile, feedStdin } from './scenario-feed'
+import {
+  BUSY_WORKSPACE_FILES,
+  busyPermissions,
+  cannedReply,
+  feedFile,
+  feedStdin,
+} from './scenario-feed'
 
 export const TERMINAL = { cols: 100, rows: 30 }
 
@@ -78,12 +84,22 @@ export interface SessionSeed {
   claudeCodeVersion: string
 }
 
+/**
+ * The session's settings.json on both surfaces: the permission rules `/preview-busy` needs, since
+ * a call no rule covers would wait on a permission prompt, plus the surface's own keys.
+ */
+export function sessionSettings(scenario: Scenario, own: Record<string, unknown> = {}): string {
+  return JSON.stringify({ permissions: busyPermissions(scenario), ...own })
+}
+
 export function sessionFiles(
   scenario: Scenario,
   { target, nowMs, claudeCodeVersion }: SessionSeed,
+  ownSettings: Record<string, unknown> = {},
 ): { path: string; data: string }[] {
   return [
     { path: `${CONFIG_DIR}/.claude.json`, data: claudeJson(scenario, claudeCodeVersion) },
+    { path: `${CONFIG_DIR}/settings.json`, data: sessionSettings(scenario, ownSettings) },
     { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs)) },
     { path: REPLY_FILE, data: JSON.stringify(cannedReply(scenario)) },
     ...FEED_PLUGIN_ASSETS.map((asset) => ({
@@ -98,7 +114,10 @@ export function shellQuote(value: string): string {
   return `'${value.replaceAll("'", `'\\''`)}'`
 }
 
-/** The workspace repo, then the canned model on loopback, waiting until it answers. */
+/**
+ * The workspace repo, its seed commit holding the files `/preview-busy` works on, then the canned
+ * model on loopback, waiting until it answers.
+ */
 export function setupCommand(scenario: Scenario): string {
   const { workspace } = feedStdin(scenario)
   const { host, owner, name } = workspace.repo
@@ -109,6 +128,10 @@ export function setupCommand(scenario: Scenario): string {
     `git init -q -b ${shellQuote(branch)}`,
     `git remote add origin ${shellQuote(`https://${host}/${owner}/${name}.git`)}`,
     'echo seed > README.md',
+    ...BUSY_WORKSPACE_FILES.flatMap(({ path, data }) => [
+      `mkdir -p ${shellQuote(dirname(path))}`,
+      `printf '%s' ${shellQuote(data)} > ${shellQuote(path)}`,
+    ]),
     'git add -A',
     'git -c user.email=preview@statuslin.es -c user.name=preview commit -qm seed',
     `(nohup python3 ${SANDBOX_CANNED_MODEL_SERVER_DEST} --listen ${MODEL_HOST} --port ${MODEL_PORT} --canned-reply ${REPLY_FILE} >${WORK_DIR}/model.log 2>&1 &)`,

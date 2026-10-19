@@ -5,13 +5,27 @@ const FEED_PLUGIN = 'scenario-feed'
 const MERGED = new Set(['session.usage'])
 
 type Usage = { context?: Record<string, unknown> } & Record<string, unknown>
-type Feed = { target: string | null; answers: Record<string, unknown> }
+type Feed = { target: string | null; answers: Record<string, unknown>; busy: unknown[] }
 type Next = ((e: unknown) => Promise<unknown>) & { origin: { plugin: string } }
-type Engine = { fs: { read: (path: string) => Promise<string> } }
+type Engine = {
+  fs: { read: (path: string) => Promise<string> }
+  tool: { call: (call: never) => Promise<unknown> }
+  clock: { after: (ms: number, fn: () => void) => unknown }
+  command: { register: (spec: { name: string; description: string }) => Promise<unknown> }
+}
 type Hook = ($: Engine, e: unknown, next: Next) => Promise<unknown>
-type Register = (on: (event: string, hook: Hook) => void) => void
+type On = {
+  (event: string, hook: Hook): void
+  (event: string, matcher: { command: string }, hook: Hook): void
+}
+type Register = (on: On) => void
 
 let feed: Feed | undefined
+
+async function readFeed($: Engine): Promise<Feed> {
+  feed ??= JSON.parse(await $.fs.read(FEED_FILE)) as Feed
+  return feed
+}
 
 /**
  * Answers only the mod under render: Claude Code's built-in plugins call `$` too, and must get the
@@ -20,12 +34,17 @@ let feed: Feed | undefined
 async function answer($: Engine, event: string, e: unknown, next: Next) {
   const plugin = next.origin.plugin
   if (plugin === FEED_PLUGIN) return next(e)
-  feed ??= JSON.parse(await $.fs.read(FEED_FILE)) as Feed
-  if (plugin !== feed.target || !Object.hasOwn(feed.answers, event)) return next(e)
-  if (!MERGED.has(event)) return { value: feed.answers[event] }
+  const { target, answers } = await readFeed($)
+  if (plugin !== target || !Object.hasOwn(answers, event)) return next(e)
+  if (!MERGED.has(event)) return { value: answers[event] }
   const real = ((await next(e)) as { value?: Usage }).value ?? {}
-  const scenario = feed.answers[event] as Usage
+  const scenario = answers[event] as Usage
   return { value: { ...real, ...scenario, context: { ...real.context, ...scenario.context } } }
+}
+
+/** One call at a time, as Claude would make them; each runs through the mod's `tool.call` hooks. */
+async function playBusy($: Engine) {
+  for (const call of (await readFeed($)).busy) await $.tool.call(call as never)
 }
 
 /**
@@ -41,4 +60,24 @@ export const register: Register = (on) => {
   on('session.id', ($, e, next) => answer($, 'session.id', e, next))
   on('session.repo', ($, e, next) => answer($, 'session.repo', e, next))
   on('session.version', ($, e, next) => answer($, 'session.version', e, next))
+  on('model.complete', ($, e, next) => answer($, 'model.complete', e, next))
+  on('model.fork', ($, e, next) => answer($, 'model.fork', e, next))
+  on('agent.list', ($, e, next) => answer($, 'agent.list', e, next))
+  // Registered in the baseline too, so both sessions type the same steps.
+  on('session.start', async ($, e, next) => {
+    await $.command.register({
+      name: 'preview-busy',
+      description: 'Plays a short busy session for the statuslin.es preview.',
+    })
+    return next(e)
+  })
+  // An empty text draws one bare reply row; no text at all draws nothing, but leaves no transcript
+  // line either, and Desktop's recorder waits on one to know a step was sent. The calls draw no
+  // rows of their own, and run once the command has answered.
+  on('command.run', { command: 'preview-busy' }, async ($) => {
+    $.clock.after(0, () => {
+      void playBusy($)
+    })
+    return { text: '' }
+  })
 }

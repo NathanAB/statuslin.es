@@ -1,5 +1,15 @@
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { cannedReply, feedFile, feedScenario } from '@/render/mods/scenario-feed'
+import {
+  BUSY_WORKSPACE_FILES,
+  busyPermissions,
+  cannedReply,
+  feedFile,
+  feedScenario,
+} from '@/render/mods/scenario-feed'
 import { hm, usage, win } from '@/render/scenario-helpers'
 import { SCENARIO_BY_KEY } from '@/render/scenarios'
 import type { Scenario } from '@/render/types'
@@ -68,6 +78,103 @@ describe('feedFile', () => {
 
   it('names no target for the baseline, so no plugin is answered', () => {
     expect(feedFile(feedScenario(), null, NOW_MS).target).toBeNull()
+  })
+
+  it("answers the mod's own model calls with one plain reply that costs nothing", () => {
+    const { answers } = feedFile(feedScenario(), 'ctx-handoff', NOW_MS)
+    const reply = {
+      isAnswered: true,
+      text: 'Fixed the bug in src/sum.js, and all 3 tests pass now.',
+      usage: {
+        input_tokens: 0,
+        output_tokens: 0,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+      },
+    }
+
+    expect(answers['model.complete']).toEqual(reply)
+    expect(answers['model.fork']).toEqual(reply)
+  })
+
+  it('lists two subagents at work', () => {
+    const { answers } = feedFile(feedScenario(), 'flightdeck', NOW_MS)
+
+    expect(answers['agent.list']).toEqual([
+      {
+        id: 'a1f3c9e0',
+        description: 'Run the test suite',
+        type: 'general-purpose',
+        status: 'running',
+      },
+      { id: 'b72d4e18', description: 'Review the sum fix', type: 'Explore', status: 'running' },
+    ])
+  })
+
+  it('plays one fixed busy session in the workspace: a failing test, a fix, a pass, a denied rm -rf', () => {
+    expect(feedFile(feedScenario(), null, NOW_MS).busy).toEqual([
+      { tool: 'Bash', command: 'npm test', description: 'Run the tests' },
+      { tool: 'Read', file_path: '/home/user/app/src/sum.js' },
+      {
+        tool: 'Edit',
+        file_path: '/home/user/app/src/sum.js',
+        old_string: 'return a - b',
+        new_string: 'return a + b',
+      },
+      { tool: 'Bash', command: 'npm test', description: 'Run the tests' },
+      { tool: 'Bash', command: 'rm -rf build', description: 'Remove the build output' },
+    ])
+  })
+})
+
+describe('busy session workspace', () => {
+  function workspace(): string {
+    const dir = mkdtempSync(join(tmpdir(), 'busy-'))
+    for (const { path, data } of BUSY_WORKSPACE_FILES) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true })
+      writeFileSync(join(dir, path), data)
+    }
+    return dir
+  }
+
+  function runTests(dir: string): { status: number; stdout: string } {
+    try {
+      return { status: 0, stdout: execFileSync('sh', ['test.sh'], { cwd: dir, encoding: 'utf8' }) }
+    } catch (error) {
+      const failed = error as { status: number; stdout: string }
+      return { status: failed.status, stdout: failed.stdout }
+    }
+  }
+
+  it('runs test.sh as its npm test script, and has a build folder to remove', () => {
+    const files = new Map(BUSY_WORKSPACE_FILES.map((f) => [f.path, f.data]))
+
+    expect(JSON.parse(String(files.get('package.json'))).scripts).toEqual({ test: 'sh test.sh' })
+    expect([...files.keys()].filter((path) => path.startsWith('build/'))).toHaveLength(1)
+  })
+
+  it("fails its tests until the busy session's Edit lands, then passes them, with fixed output", () => {
+    const dir = workspace()
+    const edit = feedFile(feedScenario(), null, NOW_MS).busy.find((call) => call.tool === 'Edit')
+    if (edit?.tool !== 'Edit') throw new Error('the busy session makes no Edit')
+    const source = join(dir, 'src/sum.js')
+
+    expect(runTests(dir)).toEqual({ status: 1, stdout: 'Tests: 1 failed, 2 passed, 3 total\n' })
+    writeFileSync(source, readFileSync(source, 'utf8').replace(edit.old_string, edit.new_string))
+    expect(runTests(dir)).toEqual({ status: 0, stdout: 'Tests: 3 passed, 3 total\n' })
+  })
+})
+
+describe('busyPermissions', () => {
+  it('allows exactly the busy session calls, and denies every rm -rf', () => {
+    expect(busyPermissions(feedScenario())).toEqual({
+      allow: [
+        'Bash(npm test)',
+        'Read(//home/user/app/src/sum.js)',
+        'Edit(//home/user/app/src/sum.js)',
+      ],
+      deny: ['Bash(rm -rf:*)'],
+    })
   })
 })
 

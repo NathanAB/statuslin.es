@@ -7,7 +7,12 @@ import {
   SANDBOX_CLAUDE_CODE_BIN,
   SANDBOX_CLAUDE_SETTINGS_DEST,
 } from '@/render/e2b-template'
-import { feedFile, feedScenario } from '@/render/mods/scenario-feed'
+import {
+  BUSY_WORKSPACE_FILES,
+  busyPermissions,
+  feedFile,
+  feedScenario,
+} from '@/render/mods/scenario-feed'
 import {
   FEED_FILE,
   FEED_PLUGIN_DIR,
@@ -16,6 +21,7 @@ import {
   REPLY_FILE,
   sessionEnv,
   sessionFiles,
+  sessionSettings,
   setupCommand,
   shellQuote,
 } from '@/render/mods/session'
@@ -122,6 +128,12 @@ describe('sessionFiles', () => {
     expect(JSON.parse(fileAt(REPLY_FILE)).usage.input_tokens).toBe(37_000)
   })
 
+  it("writes the session's settings, with the busy session's permission rules", () => {
+    expect(JSON.parse(fileAt(`${env.CLAUDE_CONFIG_DIR}/settings.json`))).toEqual({
+      permissions: busyPermissions(feedScenario()),
+    })
+  })
+
   it('writes the scenario feed plugin', () => {
     const manifest = JSON.parse(fileAt(`${FEED_PLUGIN_DIR}/.claude-plugin/plugin.json`))
 
@@ -141,6 +153,17 @@ describe('scenario feed plugin', () => {
 
     for (const event of Object.keys(answers)) expect(register).toContain(`on('${event}',`)
     expect(register).not.toContain(`on('*'`)
+  })
+})
+
+describe('sessionSettings', () => {
+  it("adds a surface's own keys beside the permission rules both surfaces share", () => {
+    const statusLine = { type: 'command', command: 'cat | bash /x.sh' }
+
+    expect(JSON.parse(sessionSettings(feedScenario(), { statusLine }))).toEqual({
+      permissions: busyPermissions(feedScenario()),
+      statusLine,
+    })
   })
 })
 
@@ -172,6 +195,18 @@ describe('setupCommand', () => {
     expect(hostile).toContain(
       `git remote add origin ${shellQuote(`https://${value}/${value}/${value}.git`)}`,
     )
+  })
+
+  it("commits the busy session's workspace files with the seed", () => {
+    const commit = command.indexOf('git add -A')
+
+    for (const { path, data } of BUSY_WORKSPACE_FILES) {
+      const write = command.indexOf(`printf '%s' ${shellQuote(data)} > ${shellQuote(path)}`)
+      expect(write).toBeGreaterThan(command.indexOf("cd '/home/user/app'"))
+      expect(write).toBeLessThan(commit)
+    }
+    expect(command).toContain("mkdir -p 'src'")
+    expect(command).toContain("mkdir -p 'build'")
   })
 
   it('starts the canned model on loopback with the reply file', () => {

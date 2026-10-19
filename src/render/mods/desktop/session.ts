@@ -143,7 +143,8 @@ const MOCK_ENV_PREFIX = `env -u CLAUDE_CONFIG_DIR ${Object.entries(withAnthropic
 /**
  * The terminal session's files (the canned reply among them, which Desktop's gateway check needs
  * while it boots), plus a status line, so a mod that shows the user's status line has one to draw:
- * the given one, else the committed sample. Then Desktop's dark theme. Uploaded before Desktop
+ * the given one, else the committed sample, set in the terminal session's settings.json beside its
+ * permission rules. Then Desktop's dark theme. Uploaded before Desktop
  * starts: once a mod's code may be running, nothing more is uploaded into its sandbox.
  */
 export function desktopSessionFiles(
@@ -158,13 +159,9 @@ export function desktopSessionFiles(
   // /dev/stdin cannot open; through a pipe it reads the JSON as it does on a Mac.
   const command = `cat | ${mock ? MOCK_ENV_PREFIX : ''}${RUN_CMD[interpreter]} ${script}`
   return [
-    ...sessionFiles(scenario, seed),
+    ...sessionFiles(scenario, seed, { statusLine: { type: 'command', command } }),
     ...(mock ? anthropicUsageMockFiles(scenario, seed.nowMs) : []),
     { path: script, data: source },
-    {
-      path: `${configDir(scenario)}/settings.json`,
-      data: JSON.stringify({ statusLine: { type: 'command', command } }),
-    },
     DARK_THEME,
   ]
 }
