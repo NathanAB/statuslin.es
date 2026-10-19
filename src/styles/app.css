@@ -12,6 +12,16 @@
   font-display: swap;
 }
 
+/* Interface text (OFL, see fonts/LICENSE-OFL-HankenGrotesk.txt). One variable file covers every
+   weight. __root.tsx preloads this same file, so it usually arrives before first paint. */
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("./fonts/hanken-grotesk-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @font-face {
   font-family: "StatuslineLegacySymbols";
   src: url("../og/fonts/statusline-legacy-symbols.ttf") format("truetype");
@@ -34,6 +44,7 @@
   --card: #1c1b18; /* raised surface (cards, popovers) */
   --muted: #262420; /* interactive surface (chips, hovers, secondary buttons) */
   --muted-foreground: #b0aea5; /* dimmed text */
+  --dim: #8a877f; /* dimmer still: inactive filter labels */
   --border: #34322d; /* all hairlines, incl. form controls */
   --primary: #c96442; /* Claude coral (Anthropic's rgb(201,100,66)) */
   --destructive: #e5484d; /* danger — a deliberately distinct red (Radix dark-red 9),
@@ -43,13 +54,20 @@
                          from the coral accent and the destructive red */
   --sunken: #0c0b0a; /* near-black code/preview wells */
   --field: #211f1b; /* form-control fill — a hair above --card for subtle contrast */
+  /* The home page's Claude Code terminal: its text, dimmed text, input rules, and your turn's fill */
+  --terminal-foreground: #e8e6dc;
+  --terminal-muted: #8f8d86;
+  --terminal-rule: #3a3833;
+  --terminal-turn: #2e2c28;
 
   /* ── Relationships: by reference ONLY. Never restate a hex above. ── */
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary-foreground: var(--foreground); /* light-on-coral; the one pair that could
-                                              legitimately diverge if a light theme ever lands */
+  --primary-foreground: var(--background); /* dark-on-coral: 4.73:1 passes WCAG AA, light was
+                                              3.7:1 (test/styles/coral-contrast.test.ts) */
+  /* Hover lightens the coral. Darkening it would sink the dark text on it below AA. */
+  --primary-hover: color-mix(in oklab, var(--primary) 88%, var(--foreground));
   --secondary: var(--muted);
   --secondary-foreground: var(--foreground);
   --accent: var(--muted);
@@ -64,9 +82,33 @@
   /* wipe Tailwind's default palette so only our colors generate utilities */
   --color-*: initial;
 
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono:
     "StatuslineNerd", "StatuslineLegacySymbols", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* The redesign's five text sizes (text-small … text-display). Each grows with the viewport
+     between a phone and a 1440px screen. */
+  --text-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --text-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --text-body--line-height: 1.5;
+  --text-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
+  --text-lead--line-height: 1.3;
+  --text-lead--letter-spacing: -0.015em;
+  --text-heading: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+  --text-heading--line-height: 1;
+  --text-heading--letter-spacing: -0.04em;
+  --text-display: clamp(2.25rem, 0.9rem + 4vw, 4.75rem);
+  --text-display--line-height: 0.95;
+  --text-display--letter-spacing: -0.04em;
+
+  /* The one motion curve: a quick start that settles slowly into place (ease-settle). */
+  --ease-settle: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* The redesign's rounder surfaces. Pills use Tailwind's rounded-full. */
+  --radius-frame: 1.625rem; /* the terminal's outer frame */
+  --radius-screen: 1.1875rem; /* the terminal screen inside that frame */
+  --radius-tile: 1.25rem; /* gallery cards and the status line picker */
+  --radius-panel: 1.125rem; /* the "How installing works" panels */
 }
 
 @theme inline {
@@ -79,10 +121,12 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-dim: var(--dim);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -92,6 +136,10 @@
   --color-ring: var(--ring);
   --color-sunken: var(--sunken);
   --color-field: var(--field);
+  --color-terminal-foreground: var(--terminal-foreground);
+  --color-terminal-muted: var(--terminal-muted);
+  --color-terminal-rule: var(--terminal-rule);
+  --color-terminal-turn: var(--terminal-turn);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);

@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
+        default: 'bg-primary text-primary-foreground hover:bg-primary-hover',
         outline:
           'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground',
         secondary:
@@ -41,6 +41,9 @@ const buttonVariants = cva(
         'icon-sm':
           'size-7 in-data-[slot=button-group]:rounded-lg rounded-[min(var(--radius-md),12px)]',
         'icon-lg': 'size-9',
+        // The redesign's pill: the label, then the trailing icon in its own circle. It scales
+        // down a touch on press instead of nudging down.
+        pill: "h-12 gap-3.5 rounded-full pr-1.75 pl-5.5 text-base tracking-[-0.01em] duration-500 ease-settle active:not-aria-[haspopup]:translate-y-0 motion-safe:active:scale-98 [&_svg:not([class*='size-'])]:size-4.5",
       },
     },
     defaultVariants: {
@@ -51,10 +54,17 @@ const buttonVariants = cva(
   },
 )
 
+// The pill's icon circle: a dark tint on coral, the page colour on the quiet (secondary) pill.
+// On hover the icon leans toward where the button goes.
+const TRAILING_ICON_CLASS =
+  'flex size-8.5 items-center justify-center rounded-full bg-background/16 transition-transform duration-600 ease-settle group-data-[variant=secondary]/button:bg-background motion-safe:group-hover/button:translate-x-0.5 motion-safe:group-hover/button:-translate-y-px motion-safe:group-hover/button:scale-106'
+
+type ButtonSize = VariantProps<typeof buttonVariants>['size']
+
 // Closed props: every attribute a caller may pass is named here. No `className`,
 // no blanket `...rest` onto the DOM — see docs/frontend-guidelines.md (closed src/ui).
 // `asChild` lets Button wrap a Link; Slot merges the child's own props/children.
-interface ButtonProps extends VariantProps<typeof buttonVariants> {
+interface ButtonBaseProps extends Omit<VariantProps<typeof buttonVariants>, 'size'> {
   id?: string
   type?: 'button' | 'submit' | 'reset'
   onClick?: React.MouseEventHandler<HTMLButtonElement>
@@ -66,11 +76,20 @@ interface ButtonProps extends VariantProps<typeof buttonVariants> {
   children?: React.ReactNode
 }
 
+// A pill always carries its trailing icon, and no other size takes one.
+type ButtonProps = ButtonBaseProps &
+  (
+    | { size: 'pill'; trailingIcon: React.ReactElement }
+    | { size?: Exclude<ButtonSize, 'pill'>; trailingIcon?: never }
+  )
+
 function Button({
   variant = 'default',
   size = 'default',
   active = false,
   asChild = false,
+  trailingIcon,
+  children,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot.Root : 'button'
@@ -82,7 +101,18 @@ function Button({
       data-size={size}
       className={cn(buttonVariants({ variant, size, active }))}
       {...props}
-    />
+    >
+      {/* Slot counts every child, so the icon is only added when there is one. Slottable marks
+          which child is the wrapped Link, so the circle lands inside it. */}
+      {trailingIcon === undefined
+        ? children
+        : [
+            <Slot.Slottable key="label">{children}</Slot.Slottable>,
+            <span key="icon" aria-hidden="true" className={TRAILING_ICON_CLASS}>
+              {trailingIcon}
+            </span>,
+          ]}
+    </Comp>
   )
 }
 

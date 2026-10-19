@@ -7,7 +7,7 @@ export function RouteError(_props: ErrorComponentProps) {
         <h1 className="font-semibold text-2xl text-foreground">This page couldn’t load</h1>
         <button
           type="button"
-          className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg bg-primary px-2.5 font-medium text-primary-foreground text-sm hover:bg-primary/80"
+          className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg bg-primary px-2.5 font-medium text-primary-foreground text-sm hover:bg-primary-hover"
           onClick={() => location.reload()}
         >
           Reload

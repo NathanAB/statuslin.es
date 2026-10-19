@@ -17,15 +17,20 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Subtle / hover / muted surface | `bg-muted`, `bg-secondary` |
 | Code / preview box (near-black) | `bg-sunken` |
 | Coral accent (buttons, links, brand) | `bg-primary` / `text-primary` |
-| Text on a coral fill | `text-primary-foreground` |
+| Text on a coral fill (dark, for WCAG AA) | `text-primary-foreground` |
+| Coral fill on hover (lighter, never darker) | `hover:bg-primary-hover` |
 | Primary text | `text-foreground` |
 | Secondary text | `text-muted-foreground` |
+| Inactive filter labels (dimmer than secondary) | `text-dim` |
+| The home page terminal's text, dimmed text, rules, your turn | `text-terminal-foreground`, `text-terminal-muted`, `border-terminal-rule`, `bg-terminal-turn` |
 | Borders | `border-border` |
 | Destructive | `bg-destructive` / `text-destructive` |
 | Caution (a cost or a risk) | `bg-warning/10` / `text-warning` |
 | Monospace (status line output, code) | `font-mono` |
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
+
+The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle`, and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (gallery cards, the picker) and `rounded-panel`. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
 
 The gate enforces three sub-rules on `src/styles/app.css`: (a) define-once — no hex literal may be declared twice; (b) theme-alias — every `--color-*` must be `initial` or `var(…)`, never a literal; (c) token-echo — no file in `src/` or `test/` may restate a literal that equals a token value.
 
@@ -90,7 +95,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 `Button` and `buttonVariants` are exported. Key variants:
 
 - **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link`
-- **size:** `default` · `xs` · `sm` · `lg` · `trigger` (header user-menu trigger) · `icon` · `icon-xs` · `icon-sm` · `icon-lg`
+- **size:** `default` · `xs` · `sm` · `lg` · `trigger` (header user-menu trigger) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`)
 - **active:** `true` / `false` — active-tab treatment; pair with `variant="outline"`
 
 ### Other primitives

@@ -9,6 +9,7 @@ import { POSTHOG_INGEST_HOST, POSTHOG_UI_HOST } from '@/lib/posthog-hosts'
 import { identifyPostHogUser } from '@/lib/posthog-identity'
 import { BRAND_ICON_PATH, SITE_NAME } from '@/lib/site'
 import { rootSocialMeta } from '@/og/meta'
+import interfaceFontUrl from '@/styles/fonts/hanken-grotesk-latin-wght-normal.woff2?url'
 import { Toaster } from '@/ui/sonner'
 
 export const Route = createRootRoute({
@@ -30,6 +31,15 @@ export const Route = createRootRoute({
       // Google Search shows no SVG favicon; it takes this PNG (square, over 48px).
       { rel: 'icon', href: '/favicon.png', type: 'image/png', sizes: '192x192' },
       { rel: 'apple-touch-icon', href: BRAND_ICON_PATH },
+      // The interface font starts downloading with the HTML, so text rarely paints in a fallback
+      // and then shifts. Font preloads need crossOrigin even on the same origin.
+      {
+        rel: 'preload',
+        href: interfaceFontUrl,
+        as: 'font',
+        type: 'font/woff2',
+        crossOrigin: 'anonymous',
+      },
     ],
   }),
   shellComponent: RootDocument,
