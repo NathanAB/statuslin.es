@@ -62,7 +62,8 @@ lines through E2B, in the background ([ADR 0006](./adr/0006-renders-run-on-deman
 - A job cut off on its third attempt (`MAX_RENDER_ATTEMPTS`), or after its submission was decided,
   fails instead.
 
-There is no worker process. Mod previews render from the operator's machine (`render:mods`).
+There is no worker process. Mod previews and status lines' Claude Desktop previews render from the
+operator's machine (`render:mods`, `render:status-line-desktop`).
 
 ## The environment variables
 
@@ -314,8 +315,24 @@ can move what it clicks. For each Desktop upgrade:
    ```sh
    bun run smoke:desktop
    ```
-3. Re-render every mod (launch runbook step 3) on staging, then production, so each Desktop preview
-   comes from the new Desktop.
+3. Re-render every mod (launch runbook step 3), then every status line's Desktop preview (below), on
+   staging, then production, so each Desktop preview comes from the new Desktop.
+
+### Status line Desktop previews
+
+A status line's page shows how it looks in Claude Desktop, drawn above the prompt by
+statusline-anywhere at the commit its current mod version pins. Like mod previews, these record
+from your machine, never on a deployed server. Run it against staging first, then production; it
+needs `E2B_API_KEY`, and statusline-anywhere imported (launch runbook step 2):
+```sh
+DATABASE_URL='<env pooled url>' bun run render:status-line-desktop
+```
+It records every published status line with no Desktop result, or one recorded with another
+Desktop, engine or statusline-anywhere commit, and prints one outcome per status line. `--slug
+<slug>` limits it to one; `--all` records every one again. Run it after you publish a status line or
+approve an update, after a Desktop upgrade, and after re-pinning statusline-anywhere. A status line
+with network hosts is skipped (`needs the internet; no Desktop shot`): Desktop sandboxes are
+offline. A failed recording keeps its earlier result; rerun it.
 
 ### Launch runbook
 

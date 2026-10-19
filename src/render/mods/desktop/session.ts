@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { InputStep } from '@/mods/curation'
 import { SANDBOX_DESKTOP_BOOT, SANDBOX_DESKTOP_ENGINE_VERSION } from '../../e2b-template'
+import { RUN_CMD, scriptExtension } from '../../script-extension'
 import type { Scenario } from '../../types'
 import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import { cannedReply, feedStdin } from '../scenario-feed'
@@ -15,6 +16,7 @@ import {
   shellQuote,
 } from '../session'
 import { SCALE, WINDOW } from './screen'
+import type { StatusLineScript } from './types'
 
 /** The virtual display Desktop runs on, the size of its window. */
 export const DISPLAY = ':99'
@@ -80,23 +82,33 @@ const DARK_THEME = {
   data: JSON.stringify({ userThemeMode: 'dark' }),
 }
 
+const sampleStatusLine = (): StatusLineScript => ({
+  source: readFileSync(STATUS_LINE_SRC, 'utf8'),
+  interpreter: 'bash',
+})
+
 /**
  * The terminal session's files (the canned reply among them, which Desktop's gateway check needs
- * while it boots), plus the committed sample status line, so a mod that shows the user's status
- * line has one to draw, and Desktop's dark theme. Uploaded before Desktop starts: once a mod's
- * code may be running, nothing more is uploaded into its sandbox.
+ * while it boots), plus a status line, so a mod that shows the user's status line has one to draw:
+ * the given one, else the committed sample. Then Desktop's dark theme. Uploaded before Desktop
+ * starts: once a mod's code may be running, nothing more is uploaded into its sandbox.
  */
 export function desktopSessionFiles(
   scenario: Scenario,
   seed: SessionSeed,
+  statusLine: StatusLineScript = sampleStatusLine(),
 ): { path: string; data: string }[] {
-  const statusLine = `${configDir(scenario)}/statusline.sh`
+  const { source, interpreter } = statusLine
+  const script = `${configDir(scenario)}/statusline.${scriptExtension(interpreter, source)}`
+  // statusline-anywhere gives the command a socket for stdin on Linux, which a script reading
+  // /dev/stdin cannot open; through a pipe it reads the JSON as it does on a Mac.
+  const command = `cat | ${RUN_CMD[interpreter]} ${script}`
   return [
     ...sessionFiles(scenario, seed),
-    { path: statusLine, data: readFileSync(STATUS_LINE_SRC, 'utf8') },
+    { path: script, data: source },
     {
       path: `${configDir(scenario)}/settings.json`,
-      data: JSON.stringify({ statusLine: { type: 'command', command: `bash ${statusLine}` } }),
+      data: JSON.stringify({ statusLine: { type: 'command', command } }),
     },
     DARK_THEME,
   ]

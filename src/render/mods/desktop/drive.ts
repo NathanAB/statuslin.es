@@ -38,6 +38,7 @@ import {
   stepFiles,
   stepTextPath,
 } from './session'
+import type { StatusLineScript } from './types'
 
 const WINDOW_MAX_MS = 30_000
 /** Desktop's welcome paints, reloads, then paints again; a click during the first paint is lost. */
@@ -80,15 +81,16 @@ export interface DriveRequest {
   /** The mod's plugin.json name, which the scenario feed answers; null for the baseline. */
   target: string | null
   inputSteps: readonly InputStep[]
+  statusLine?: StatusLineScript | undefined
 }
 
 /** Every file a session needs, staged before Desktop starts: the session's, and the steps' text. */
 export function sessionUploads(
-  { target, inputSteps }: DriveRequest,
+  { target, inputSteps, statusLine }: DriveRequest,
   { engineVersion }: DesktopVersions,
 ): SandboxFile[] {
   const seed = { target, nowMs: Date.now(), claudeCodeVersion: engineVersion }
-  return [...desktopSessionFiles(feedScenario(), seed), ...stepFiles(inputSteps)]
+  return [...desktopSessionFiles(feedScenario(), seed, statusLine), ...stepFiles(inputSteps)]
 }
 
 async function bootDesktop(desktop: RecordingDesktop): Promise<void> {

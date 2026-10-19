@@ -7,17 +7,17 @@ import type { Plugin } from 'vite'
 import { loadEnv } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
 import { binaryArrayBuffer } from './src/lib/binary-arraybuffer-plugin'
+import { DEV_IMAGE_ROUTE_PREFIXES } from './src/lib/dev-image-routes'
 import { GITHUB_AVATARS_ORIGIN } from './src/lib/github-avatars'
 import { POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST } from './src/lib/posthog-hosts'
 
 // Dev only. Nitro's dev server hands a request to the app only when it matches a Nitro route, and
 // every TanStack route sits behind Nitro's `/**` catch-all. So it guesses: a browser's <img> request
 // (Sec-Fetch-Dest: image, or a .png path without Accept: text/html) is taken for a static file and
-// 404s before the app sees it. These are the app's image routes (src/routes/og.*[.]png.ts,
-// mod-previews.$versionId.desktop[.]png.ts and its admin twin under admin/); dressing their requests
-// as page loads makes Nitro pass them on. The production server has no such guess: its static
-// middleware falls through on a miss.
-const DEV_IMAGE_ROUTE_PREFIXES = ['/og/', '/mod-previews/', '/admin/mod-previews/']
+// 404s before the app sees it. DEV_IMAGE_ROUTE_PREFIXES names the app's image routes
+// (src/routes/*[.]png.ts, a test keeps it complete); dressing their requests as page loads makes
+// Nitro pass them on. The production server has no such guess: its static middleware falls through
+// on a miss.
 
 function devImageRoutes(): Plugin {
   return {

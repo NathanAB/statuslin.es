@@ -1,5 +1,6 @@
 // App tables (configs/votes/etc.) arrive in later slices.
 export * from './auth-schema'
+export * from './config-desktop-preview-schema'
 export * from './mod-schema'
 export * from './submission-schema'
 

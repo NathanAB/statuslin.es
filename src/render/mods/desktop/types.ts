@@ -1,9 +1,18 @@
 import type { InputStep } from '@/mods/curation'
+import type { Interpreter } from '../../types'
 import type { ModUnderRender } from '../recorder'
+
+/** A status line script, as a config version stores it. */
+export interface StatusLineScript {
+  source: string
+  interpreter: Interpreter
+}
 
 export interface DesktopRecordRequest {
   mod: ModUnderRender
   inputSteps: readonly InputStep[]
+  /** The status line the session's settings run, in place of the committed sample. */
+  statusLine?: StatusLineScript
 }
 
 interface DesktopVersions {

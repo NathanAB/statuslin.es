@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub } from '@/mods/github'
 import { terminalLine } from '@/mods/terminal-line'
@@ -26,14 +27,6 @@ interface Outcome {
   mod: string
   ms: number
   result: string
-}
-
-async function forEachConcurrently<T>(items: T[], limit: number, work: (item: T) => Promise<void>) {
-  const queue = [...items]
-  const worker = async () => {
-    for (let item = queue.shift(); item !== undefined; item = queue.shift()) await work(item)
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
 }
 
 function describe(recording: DesktopRecording): string {

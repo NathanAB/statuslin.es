@@ -93,7 +93,7 @@ export function desktopRecorder(
   }
   return {
     baseline,
-    record: async ({ mod, inputSteps }): Promise<DesktopRecording> => {
+    record: async ({ mod, inputSteps, statusLine }): Promise<DesktopRecording> => {
       checkInputSteps(inputSteps)
       // Started now, alongside the mod's session; awaited only to frame its shot.
       const pendingBaseline = baseline(inputSteps)
@@ -101,6 +101,7 @@ export function desktopRecorder(
       const shot = await recordFullShot(sandboxes, mod.source, {
         target: mod.pluginName,
         inputSteps,
+        statusLine,
       })
       const base = await pendingBaseline
       const versions = { desktopVersion: shot.desktopVersion, engineVersion: shot.engineVersion }
@@ -122,4 +123,4 @@ export function desktopRecorder(
   }
 }
 
-export const e2bDesktopRecorder = (): DesktopRecorder => desktopRecorder(E2B_DESKTOP_SANDBOXES)
+export const e2bDesktopRecorder = () => desktopRecorder(E2B_DESKTOP_SANDBOXES)

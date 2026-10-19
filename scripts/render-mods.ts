@@ -6,6 +6,7 @@ import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
+import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { type InputStep, inputStepsSchema } from '@/mods/curation'
 import type { Surface } from '@/mods/footprint'
 import { createGitHub, type GitHubSource } from '@/mods/github'
@@ -273,14 +274,6 @@ async function renderTarget(
     renderDesktop(target, request, deps).catch(failure),
   ])
   return { terminal, desktop }
-}
-
-async function forEachConcurrently<T>(items: T[], limit: number, work: (item: T) => Promise<void>) {
-  const queue = [...items]
-  const worker = async () => {
-    for (let item = queue.shift(); item !== undefined; item = queue.shift()) await work(item)
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
 }
 
 export async function renderMods(

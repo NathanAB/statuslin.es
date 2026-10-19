@@ -38,6 +38,7 @@ import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ConfigPreviewsVersionIdDesktopDotpngRouteImport } from './routes/config-previews.$versionId.desktop[.]png'
 import { Route as ModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/mod-previews.$versionId.desktop[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
@@ -191,6 +192,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfigPreviewsVersionIdDesktopDotpngRoute =
+  ConfigPreviewsVersionIdDesktopDotpngRouteImport.update({
+    id: '/config-previews/$versionId/desktop.png',
+    path: '/config-previews/$versionId/desktop.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ModPreviewsVersionIdDesktopDotpngRoute =
   ModPreviewsVersionIdDesktopDotpngRouteImport.update({
     id: '/mod-previews/$versionId/desktop.png',
@@ -246,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
@@ -281,6 +289,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/mods': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
@@ -317,6 +326,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/mods/'
     | '/api/auth/$'
+    | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/mods'
     | '/api/auth/$'
+    | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
@@ -424,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/mods/'
     | '/api/auth/$'
+    | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
@@ -460,6 +473,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ModsIndexRoute: typeof ModsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ConfigPreviewsVersionIdDesktopDotpngRoute: typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
   OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
@@ -671,6 +685,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/config-previews/$versionId/desktop.png': {
+      id: '/config-previews/$versionId/desktop.png'
+      path: '/config-previews/$versionId/desktop.png'
+      fullPath: '/config-previews/$versionId/desktop.png'
+      preLoaderRoute: typeof ConfigPreviewsVersionIdDesktopDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mod-previews/$versionId/desktop.png': {
       id: '/mod-previews/$versionId/desktop.png'
       path: '/mod-previews/$versionId/desktop.png'
@@ -732,6 +753,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ModsIndexRoute: ModsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ConfigPreviewsVersionIdDesktopDotpngRoute:
+    ConfigPreviewsVersionIdDesktopDotpngRoute,
   ModPreviewsVersionIdDesktopDotpngRoute:
     ModPreviewsVersionIdDesktopDotpngRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
