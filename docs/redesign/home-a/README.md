@@ -274,6 +274,9 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   go: kept, in the footer.** The dated "N status lines and M mods, copied X times as of …" line is
   unique, fresh text for search, so it moved to a quiet line under the footer's tagline on the
   home page only (`PageShell footerNote`). Easy to drop if the owner prefers.
+- **"How installing works" (after review), decided by the owner: a short strip.** The prototype's
+  long walkthrough (the full prompt, Claude Code's reply, the session JSON and a second terminal)
+  became the trust statement and three short steps side by side.
 - **Featured mod (step 5), decided the same way: first panel of the mods row.** It leads the row
   below the gallery, keeps `surface: 'home_featured_mod'` and stays out of the ItemList. The other
   mods in the row report `surface: 'home_mods_row'`. The row now shows on every gallery page, since

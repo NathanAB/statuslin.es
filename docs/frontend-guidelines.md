@@ -22,7 +22,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Primary text | `text-foreground` |
 | Secondary text | `text-muted-foreground` |
 | Inactive filter labels (dimmer than secondary) | `text-dim` |
-| The home page terminal's text, dimmed text, rules, your turn, added lines | `text-terminal-foreground`, `text-terminal-muted`, `border-terminal-rule`, `bg-terminal-turn`, `text-terminal-added` |
+| The home page terminal's text, dimmed text, rules, your turn | `text-terminal-foreground`, `text-terminal-muted`, `border-terminal-rule`, `bg-terminal-turn` |
 | Borders | `border-border` |
 | Destructive | `bg-destructive` / `text-destructive` |
 | Caution (a cost or a risk) | `bg-warning/10` / `text-warning` |
@@ -30,7 +30,7 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
 
-The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install panels), and the home page's measure: `px-gutter` side gutters, `max-w-page` (1280px of content inside them) and `mt-section` between its sections. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
+The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker) and `rounded-panel` (gallery rows, the install steps), and the home page's measure: `px-gutter` side gutters, `max-w-page` (1280px of content inside them) and `mt-section` between its sections. Use them only in those redesigned components. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
 
 The gate enforces three sub-rules on `src/styles/app.css`: (a) define-once — no hex literal may be declared twice; (b) theme-alias — every `--color-*` must be `initial` or `var(…)`, never a literal; (c) token-echo — no file in `src/` or `test/` may restate a literal that equals a token value.
 
@@ -90,12 +90,12 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<CardHeader>`, `<CardContent>`, `<CardFooter>`, `<CardTitle>`, `<CardDescription>`, `<CardAction>` | `src/ui/card.tsx` | Subcomponents for card anatomy |
 | `<StretchedLink to="…">` | `src/ui/stretched-link.tsx` | Full-card clickable overlay with focus ring; place inside `<Card interactive>` |
 | `<GalleryRow to params onOpen title byline facts description>` | `src/ui/gallery-row.tsx` | The redesign's gallery card: one full-width row, title link (it opens the whole row) and byline left, `facts` right, the preview as children, the description clamped to two lines; `onOpen` runs when the row opens (its click analytics). Hover and focus raise the tone; inside another card it starts a tone up. `<RowFacts>` sets the facts in a dotted line, `<RowNote icon>` is a fact with an icon, `<GalleryList>` stacks rows |
-| `<Terminal label toolbar transcript status conversationKey conversationChanged statusKey statusChanged>` | `src/ui/terminal.tsx` | The home hero's Claude Code session: a frame with an optional toolbar (the session switcher and its caption), then a fixed-height screen with the conversation (`TranscriptLine[]`), the input box and the status line. The screen is one image to a screen reader, named by `label`. Nothing moves on the first render; after a change, a new conversation settles in and a new status line glows (`animate-flash`). `height="fit"` drops the fixed height (the walkthrough's last picture). `<Transcript lines>` prints a conversation on its own |
+| `<Terminal label toolbar transcript status conversationKey conversationChanged statusKey statusChanged>` | `src/ui/terminal.tsx` | The home hero's Claude Code session: a frame with an optional toolbar (the session switcher and its caption), then a fixed-height screen with the conversation (`TranscriptLine[]`), the input box and the status line. The screen is one image to a screen reader, named by `label`. Nothing moves on the first render; after a change, a new conversation settles in and a new status line glows (`animate-flash`). |
 | `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. `look`: `list` (label and detail on a tile: the hero's picker) or `tray` (small segments: the hero's sessions) |
 | `<HeroLayout heading lead stage aside>`, `<HeroActions>` | `src/ui/hero-layout.tsx` | The home hero's 12-column grid (title and sentence, then the demo and its controls); stacks below 900px |
 | `<LiveMessage>` | `src/ui/visually-hidden.tsx` | A screen-reader-only `role="status"` message, read out when it changes |
 | `<ShotCarousel heading lead listLabel items more>` | `src/ui/shot-carousel.tsx` | The home page's dark band of mod screenshots in a sideways row: the centred one lit and named above it, previous and next buttons, arrow keys; every shot links to its page |
-| `<InstallWalkthrough heading statement steps result>` | `src/ui/install-walkthrough.tsx` | "How installing works": each step's call (the install prompt, JSON, a typed line) and Claude Code's reply, then a closing picture |
+| `<StepStrip heading statement steps>` | `src/ui/step-strip.tsx` | A heading and one statement, then a short strip of steps side by side ("How installing works") |
 | `<ClosingBand heading lead panel>` | `src/ui/closing-band.tsx` | The home page's full-width coral closing section, light text on `bg-primary-fill` |
 | `<SubmitChooser signedIn>` | `src/ui/submit-cta.tsx` | Status line or Mod, then continue: a link to `/submit` (or `?kind=mod`) when signed in, GitHub sign-in back to that form when not |
 | `<Reveal>` | `src/ui/reveal.tsx` | A block that rises into place when it first scrolls into view. Only blocks that start below the fold wait, never without JavaScript or under reduced motion, and a block the page jumped past shows at once |
@@ -141,7 +141,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 ### Product fragments (`data-ui`)
 
-A `src/ui` element that depicts the product itself (a status line render, the hero terminal, a Claude Desktop shot, the walkthrough's typed line and Claude Code's replies) carries `data-ui=""`. It names it as an interface fragment, the way the redesign prototype does: the taste inspector counts it as a picture and leaves its own sizes, rules and shadow out of the page's typography and surface checks. Never put it on page text or around a heading.
+A `src/ui` element that depicts the product itself (a status line render, the hero terminal, a Claude Desktop shot) carries `data-ui=""`. It names it as an interface fragment, the way the redesign prototype does: the taste inspector counts it as a picture and leaves its own sizes, rules and shadow out of the page's typography and surface checks. Never put it on page text or around a heading.
 
 ## Structure rules
 

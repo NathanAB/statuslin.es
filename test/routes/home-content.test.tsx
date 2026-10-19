@@ -96,18 +96,6 @@ const heroLine: HeroLine = {
   renders: { 'clean-main': [{ text: 'panel clean' }] },
 }
 
-const walkthrough = {
-  title: 'Dreambase Panel',
-  excerpt: {
-    prompt: 'Set up this Claude Code status line ("Dreambase Panel") for me.',
-    file: '~/.claude/statusline.py',
-    command: 'python3 ~/.claude/statusline.py',
-    lines: 218,
-    executable: false,
-  },
-  render: [{ text: 'panel clean' }],
-}
-
 function renderHome(
   overrides: Partial<typeof gallery> = {},
   search: Record<string, string> = {},
@@ -117,7 +105,7 @@ function renderHome(
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
-    showcase: { hero: [heroLine], walkthrough, mods: { featured, others } },
+    showcase: { hero: [heroLine], mods: { featured, others } },
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
@@ -254,12 +242,11 @@ describe('home sections', () => {
     })
   })
 
-  it("walks through installing the hero's first status line with its real prompt", () => {
+  it('explains installing in three short steps', () => {
     renderHome()
 
-    expect(
-      screen.getByText(/Set up this Claude Code status line \("Dreambase Panel"\)/),
-    ).toBeTruthy()
-    expect(screen.getByText(/Wrote 218 lines to ~\/\.claude\/statusline\.py/)).toBeTruthy()
+    const install = screen.getByRole('heading', { level: 2, name: 'How installing works' })
+    const steps = install.closest('section')?.querySelectorAll('h3')
+    expect(steps).toHaveLength(3)
   })
 })

@@ -15,8 +15,6 @@ export type TranscriptLine =
   | { kind: 'say'; lines: string[] }
   /** A dimmed line of its own (the welcome, how long a turn took). */
   | { kind: 'note'; text: string }
-  /** Lines a tool call added to a file, in green. */
-  | { kind: 'added'; lines: string[] }
 
 // After a change, new content settles in from just below. Motion only when the visitor allows it.
 const SETTLE =
@@ -55,13 +53,11 @@ function TranscriptRow({ line }: { line: TranscriptLine }) {
       )
     case 'note':
       return <span className="text-terminal-muted">{line.text}</span>
-    case 'added':
-      return <span className="text-terminal-added">{line.lines.join('\n')}</span>
   }
 }
 
 /** A sample conversation's lines, one under another, as Claude Code prints them. */
-export function Transcript({ lines }: { lines: TranscriptLine[] }) {
+function Transcript({ lines }: { lines: TranscriptLine[] }) {
   return lines.map((line, i) => (
     // biome-ignore lint/suspicious/noArrayIndexKey: a fixed transcript, ordered, with no ids.
     <span key={i}>
@@ -76,7 +72,6 @@ export function Transcript({ lines }: { lines: TranscriptLine[] }) {
  * switcher), then the screen, a fixed height so nothing below it moves, with the conversation, the
  * input box and the status line under it, as Claude Code lays them out. The screen is one picture
  * to a screen reader, named by `label`, so it never reads out box-drawing characters.
- * `height="fit"` (the install walkthrough) lets the screen take its content's height instead.
  * Nothing moves on the first render. Once `conversationChanged`, each new conversation (named by
  * `conversationKey`) settles in with its caption; once `statusChanged`, each new status line
  * (named by `statusKey`) glows for a moment.
@@ -90,10 +85,8 @@ export function Terminal({
   conversationChanged,
   statusKey,
   statusChanged,
-  height = 'fixed',
 }: {
   label: string
-  height?: 'fixed' | 'fit'
   toolbar?: { title: string; titleId: string; control: ReactNode; caption: string }
   transcript: TranscriptLine[]
   /** The status line's render, or null when it has none for this session. */
@@ -129,10 +122,7 @@ export function Terminal({
         role="img"
         aria-label={label}
         data-ui=""
-        className={cn(
-          'flex flex-col justify-end overflow-hidden rounded-screen bg-sunken px-6 pt-5.5 pb-5 font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:px-4 max-md:pt-4 max-md:pb-3.5 max-md:text-[0.8125rem]',
-          height === 'fixed' && 'h-[clamp(23.75rem,31vw,27.875rem)] max-md:h-85',
-        )}
+        className="flex h-[clamp(23.75rem,31vw,27.875rem)] flex-col justify-end overflow-hidden rounded-screen bg-sunken px-6 pt-5.5 pb-5 font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:h-85 max-md:px-4 max-md:pt-4 max-md:pb-3.5 max-md:text-[0.8125rem]"
       >
         <pre
           key={conversationKey}

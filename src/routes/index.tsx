@@ -47,7 +47,7 @@ export const Route = createFileRoute('/')({
   loader: async ({ deps }) => {
     const sort = deps.sort ?? 'trending'
     const tags = coerceTags(deps.tags)
-    // The showcase (hero, mods row, install walkthrough) is the same whatever the gallery shows.
+    // The showcase (the hero's lines, the mods row) is the same whatever the gallery shows.
     const [listing, gallery, showcase] = await Promise.all([
       loadGalleryPage(
         { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
@@ -135,7 +135,7 @@ function Home() {
         tags={tags}
       />
       <HomeMods featured={showcase.mods.featured} others={showcase.mods.others} total={mods} />
-      <HomeInstall walkthrough={showcase.walkthrough} />
+      <HomeInstall />
       <HomeClosing signedIn={!!user} />
     </PageShell>
   )

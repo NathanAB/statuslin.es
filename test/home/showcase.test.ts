@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { installExcerpt } from '@/adopt/install'
 import * as schema from '@/db/schema'
 import { getHeroLines } from '@/gallery/hero-lines'
 import { getHomeShowcase } from '@/home/showcase'
@@ -55,16 +54,6 @@ describe('getHomeShowcase', () => {
     const showcase = await getHomeShowcase(db)
     expect(showcase.hero).toEqual(await getHeroLines(db))
     expect(showcase.hero[0]?.slug).toBe('top-line')
-  })
-
-  it("walks through installing the hero's first status line, with its real prompt", async () => {
-    const { walkthrough } = await getHomeShowcase(db)
-
-    expect(walkthrough).toEqual({
-      title: 'top-line',
-      excerpt: installExcerpt({ source: SOURCE, interpreter: 'bash', title: 'top-line' }),
-      render: [{ text: 'top clean' }],
-    })
   })
 
   it('puts the featured mod apart from the rest, which leave it out', async () => {
