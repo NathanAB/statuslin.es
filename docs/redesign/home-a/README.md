@@ -326,8 +326,10 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   needs a signal the data doesn't have yet.
 - **No scroll reveal; the hero only slides (after the fresh-eyes review).** Blocks that faded in
   on scroll stayed hidden when a sort moved them on screen without a scroll, and printed blank, so
-  `Reveal` is gone. The hero still rises in but starts visible, so its title and terminal (the
-  page's largest paint) show at once.
+  `Reveal` is gone. The hero still rises in. Its title and terminal (the page's largest paint)
+  start visible and show at once. The controls fade in with their rows, as in the prototype:
+  with only the rows fading, the picker's tile and the install button showed for half a second
+  with an empty box between them.
 - **Pages past the first are their results (after the fresh-eyes review).** Page 2 and on show the
   h1 and the gallery only, since the showcase would repeat page 1, and every page link lands on
   `#gallery`.

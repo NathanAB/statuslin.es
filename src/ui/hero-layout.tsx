@@ -3,9 +3,10 @@ import { cn } from '@/lib/cn'
 import { Heading } from '@/ui/text'
 
 // The prototype's load sequence: each part rises 28px into place over a second, one after another.
-// It's CSS, so it runs from the first paint without waiting for JavaScript. It only moves: nothing
-// starts hidden, so the title and the terminal paint at once (they're the page's largest paint).
-// Off for a visitor who asks for less motion.
+// It's CSS, so it runs from the first paint without waiting for JavaScript. The title, sentence and
+// terminal only move, so they paint at once (they're the page's largest paint). The controls also
+// fade, as the prototype's do: their rows fade in one by one, and a tile and an install button
+// showing before them read as an empty box. Off for a visitor who asks for less motion.
 const RISE =
   'motion-safe:animate-in motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 
@@ -54,7 +55,7 @@ export function HeroLayout({
         className={cn(
           'col-span-12 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:col-span-4',
           RISE,
-          'delay-[420ms]',
+          'motion-safe:fade-in-0 delay-[420ms]',
         )}
       >
         <div className="order-2 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:order-1">{picker}</div>
