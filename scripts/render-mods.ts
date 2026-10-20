@@ -13,6 +13,7 @@ import type { Surface } from '@/mods/footprint'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import { type PngWriter, previewReviewLines, writeTmpPng } from '@/mods/preview-review'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
+import { parseReplaceAnswer, replaceQuestion } from '@/mods/replace-live-previews'
 import { terminalLine } from '@/mods/terminal-line'
 import { boundRecording } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
@@ -40,9 +41,11 @@ import type { AnsiSegment } from '@/render/types'
  * there, and stores the PNG, or the fact that it drew nothing.
  *
  * A published mod's current version is live, so its new results are held until the run ends. Then
- * each is printed beside the mod's README, fenced as untrusted, and stored only when the operator
- * answers yes; otherwise, or when either surface failed, its live previews stay. Every other
- * version stores as it renders.
+ * each held mod is printed beside its README, fenced as untrusted, in slug order, and one question
+ * lists them all: `y` replaces every one, `n` or an empty answer none, and a list of slugs leaves
+ * those out and replaces the rest. A slug the run did not hold replaces none. A live mod whose
+ * surface failed keeps its live previews, and so does every mod off a terminal. Every other version
+ * stores as it renders.
  *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
  * run fails keeps whatever result it had, and the other surface is still stored; nothing is ever
@@ -67,8 +70,8 @@ export interface RenderModsDeps {
   desktopRecorder: DesktopRecorder
   github: Pick<GitHubSource, 'tarball' | 'readme'>
   log: (line: string) => void
-  /** Shows the operator the review lines, the question last, and returns their answer. */
-  review: (lines: string[]) => Promise<boolean>
+  /** Shows the operator the review lines, then asks the question, and returns their raw answer. */
+  review: (lines: string[], question: string) => Promise<string>
   writePng: PngWriter
 }
 
@@ -357,55 +360,73 @@ export async function renderMods(
       held.push({ target, terminal: hold.terminal, desktop: hold.desktop })
     else log(`kept the live previews of ${target.slug}: a surface failed`)
   })
-  for (const hold of held) {
-    if (!(await replaceLivePreviews(hold, deps))) failed++
-  }
+  failed += await replaceLivePreviews(held, deps)
   return failed === 0 ? 0 : 1
 }
 
-/** Asks the operator about one live version's held results; false when that step failed. */
-async function replaceLivePreviews(
-  { target, terminal, desktop }: Held,
-  deps: RenderModsDeps,
-): Promise<boolean> {
+const message = (error: unknown) => (error instanceof Error ? error.message : String(error))
+
+/** Asks the operator once about every live version's held results; returns how many steps failed. */
+async function replaceLivePreviews(held: Held[], deps: RenderModsDeps): Promise<number> {
   const log = (line: string) => deps.log(terminalLine(line))
-  try {
-    const review = {
-      pin: { slug: target.slug, versionId: target.versionId, commitSha: target.commitSha },
-      readme: await deps.github.readme(target.repoUrl, target.path, target.commitSha),
-      terminal: terminal.segments,
-      desktopPng: desktop.kind === 'shot' ? desktop.png : null,
+  let failed = 0
+  const reviewed: Held[] = []
+  const lines: string[] = []
+  for (const hold of [...held].sort((a, b) => a.target.slug.localeCompare(b.target.slug))) {
+    const { target, terminal, desktop } = hold
+    try {
+      const review = {
+        pin: { slug: target.slug, versionId: target.versionId, commitSha: target.commitSha },
+        readme: await deps.github.readme(target.repoUrl, target.path, target.commitSha),
+        terminal: terminal.segments,
+        desktopPng: desktop.kind === 'shot' ? desktop.png : null,
+      }
+      lines.push(...previewReviewLines(review, deps.writePng).map(terminalLine))
+      reviewed.push(hold)
+    } catch (error) {
+      failed++
+      log(`failed ${target.slug} review: ${message(error)}`)
     }
-    const lines = previewReviewLines(review, deps.writePng).map(terminalLine)
-    const question = `Replace the live previews of ${target.slug}? [y/N]`
-    if (!(await deps.review([...lines, terminalLine(question)]))) {
-      log(`kept the live previews of ${target.slug}`)
-      return true
-    }
-    const results = storeResults(deps.db, target.versionId)
-    await results.terminal(terminal)
-    await results.desktop(desktop)
-    log(`replaced the live previews of ${target.slug}`)
-    return true
-  } catch (error) {
-    log(`failed ${target.slug} review: ${error instanceof Error ? error.message : error}`)
-    return false
   }
+  if (reviewed.length === 0) return failed
+
+  const slugs = reviewed.map((hold) => hold.target.slug)
+  const answer = await deps.review(lines, terminalLine(replaceQuestion(slugs)))
+  const parsed = parseReplaceAnswer(answer, slugs)
+  if ('unknown' in parsed) {
+    log(`replaced none: did not recognise ${parsed.unknown.map((slug) => `"${slug}"`).join(', ')}`)
+  }
+  const replace = 'replace' in parsed ? parsed.replace : []
+  for (const { target, terminal, desktop } of reviewed) {
+    if (!replace.includes(target.slug)) {
+      log(`kept the live previews of ${target.slug}`)
+      continue
+    }
+    try {
+      const results = storeResults(deps.db, target.versionId)
+      await results.terminal(terminal)
+      await results.desktop(desktop)
+      log(`replaced the live previews of ${target.slug}`)
+    } catch (error) {
+      failed++
+      log(`failed to replace the live previews of ${target.slug}: ${message(error)}`)
+    }
+  }
+  return failed
 }
 
-/** A y/N question on a terminal; anywhere else the answer is no, so nothing replaces unreviewed. */
-async function askInTerminal(lines: string[]): Promise<boolean> {
-  const question = lines.at(-1) ?? ''
-  for (const line of lines.slice(0, -1)) console.log(line)
+/** One question on a terminal; anywhere else the answer is none, so nothing replaces unreviewed. */
+async function askInTerminal(lines: string[], question: string): Promise<string> {
+  for (const line of lines) console.log(line)
   if (!process.stdin.isTTY) {
     console.log(
-      `${question} no: stdin is not a terminal, so the live previews stay. Rerun render:mods --slug <slug> in a terminal to review them.`,
+      `${question} n: stdin is not a terminal, so the live previews stay. Rerun render:mods in a terminal to review them.`,
     )
-    return false
+    return ''
   }
   const prompt = createInterface({ input: process.stdin, output: process.stdout })
   try {
-    return /^y(es)?$/i.test((await prompt.question(`${question} `)).trim())
+    return await prompt.question(`${question} `)
   } finally {
     prompt.close()
   }

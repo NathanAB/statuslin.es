@@ -98,7 +98,7 @@ async function main(): Promise<number> {
               log,
               // The live version's new previews are never stored unreviewed here; the newly pinned
               // version is reviewed against its README at its publish step.
-              review: async () => false,
+              review: async () => '',
               writePng: writeTmpPng,
             },
           ),

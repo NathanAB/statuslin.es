@@ -405,7 +405,7 @@ describe('importMods', () => {
           github: { ...deps.github, readme: async () => null },
           recorder: new FakeModRecorder({ baseline, mods: { skins } }),
           desktopRecorder: new FakeDesktopRecorder(),
-          review: async () => false,
+          review: async () => '',
           writePng: () => 'unused.png',
         },
       )
