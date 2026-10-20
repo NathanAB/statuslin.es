@@ -47,11 +47,13 @@ function renderHero() {
 }
 
 describe('HeroLayout entrance', () => {
-  // The title and the demo are the page's largest paint, so they only move.
-  it('paints the title and the demo at once', () => {
+  // A part that slid up without fading, beside the picker fading in, read as nonsensical: every
+  // part fades as it rises, as the prototype does.
+  it('fades the title, the sentence and the demo in as they rise', () => {
     renderHero()
-    expect(fades(screen.getByRole('heading', { level: 1 }))).toBe(false)
-    expect(fades(screen.getByTestId('stage'))).toBe(false)
+    expect(fades(screen.getByRole('heading', { level: 1 }))).toBe(true)
+    expect(fades(screen.getByText('A status line is the row under your prompt.'))).toBe(true)
+    expect(fades(screen.getByTestId('stage'))).toBe(true)
   })
 
   // The picker's rows fade in one by one. A tile and an install button showing before them read as

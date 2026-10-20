@@ -154,9 +154,9 @@ describe('home content', () => {
     expect(h1s[0]?.querySelector('.sr-only')?.textContent).toBe(', page 2')
   })
 
-  // The hero's title and terminal are the page's largest paint. They faded in late, holding that
-  // paint back; now their entrance only moves them, so they show with the page's first paint.
-  it('paints the hero title and terminal at once: their entrance moves them, never hides them', () => {
+  // Sliding up without a fade read as nonsensical next to the picker fading in: every part of the
+  // hero fades as it rises, as the prototype does.
+  it('fades the hero title and terminal in as they rise, like the rest of the hero', () => {
     const { container } = renderHome()
     const hero = container.querySelector('section') as HTMLElement
     const fadesIn = (element: Element | null) => {
@@ -166,8 +166,8 @@ describe('home content', () => {
       return false
     }
 
-    expect(fadesIn(hero.querySelector('h1'))).toBe(false)
-    expect(fadesIn(screen.getByRole('img', { name: /^Claude Code with/ }))).toBe(false)
+    expect(fadesIn(hero.querySelector('h1'))).toBe(true)
+    expect(fadesIn(screen.getByRole('img', { name: /^Claude Code with/ }))).toBe(true)
   })
 
   // Past page 1 the page is its results: the showcase around them would only repeat page 1.

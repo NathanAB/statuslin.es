@@ -2,13 +2,12 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Heading } from '@/ui/text'
 
-// The prototype's load sequence: each part rises 28px into place over a second, one after another.
-// It's CSS, so it runs from the first paint without waiting for JavaScript. The title, sentence and
-// terminal only move, so they paint at once (they're the page's largest paint). The controls also
-// fade, as the prototype's do: their rows fade in one by one, and a tile and an install button
-// showing before them read as an empty box. Off for a visitor who asks for less motion.
+// The prototype's load sequence: each part fades in as it rises 28px into place over a second, one
+// after another. It's CSS, so it runs from the first paint without waiting for JavaScript. Every
+// part fades: one sliding up without a fade, beside the others fading in, read as nonsensical.
+// Off for a visitor who asks for less motion, so the page shows at once.
 const RISE =
-  'motion-safe:animate-in motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
+  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 
 /**
  * The home hero on a 12-column grid with two left edges: the title over the first eight columns
@@ -55,7 +54,7 @@ export function HeroLayout({
         className={cn(
           'col-span-12 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:col-span-4',
           RISE,
-          'motion-safe:fade-in-0 delay-[420ms]',
+          'delay-[420ms]',
         )}
       >
         <div className="order-2 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:order-1">{picker}</div>

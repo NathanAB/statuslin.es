@@ -324,12 +324,12 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   is only its first tag in registry order (git first), so ranking a topic's own lines first pushed
   0-install mods above 223-install lines on /status-lines/token-usage. A real per-topic ranking
   needs a signal the data doesn't have yet.
-- **No scroll reveal; the hero only slides (after the fresh-eyes review).** Blocks that faded in
-  on scroll stayed hidden when a sort moved them on screen without a scroll, and printed blank, so
-  `Reveal` is gone. The hero still rises in. Its title and terminal (the page's largest paint)
-  start visible and show at once. The controls fade in with their rows, as in the prototype:
-  with only the rows fading, the picker's tile and the install button showed for half a second
-  with an empty box between them.
+- **No scroll reveal (after the fresh-eyes review).** Blocks that faded in on scroll stayed hidden
+  when a sort moved them on screen without a scroll, and printed blank, so `Reveal` is gone.
+- **The hero fades in as it rises, every part (after review).** Making the title and terminal only
+  slide, so they'd count as painted sooner, read as nonsensical: a slide with no fade, beside a
+  picker that faded. Every part now fades as it rises, as in the prototype, and the picker's
+  tile and button fade with its rows, so it never shows as an empty box.
 - **Pages past the first are their results (after the fresh-eyes review).** Page 2 and on show the
   h1 and the gallery only, since the showcase would repeat page 1, and every page link lands on
   `#gallery`.
