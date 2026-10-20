@@ -1,11 +1,31 @@
 import { Check, Copy } from 'lucide-react'
 import type * as React from 'react'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/ui/button'
 import { SwapLabel } from '@/ui/swap-label'
 
 /** How long a copy control says Copied. */
 export const COPIED_MS = 2000
+
+/**
+ * A copy control's Copied state: `flash()` turns it on for COPIED_MS. The timer is dropped when the
+ * control unmounts, so it never fires on a page the visitor has left.
+ */
+export function useCopied(): [copied: boolean, flash: () => void, reset: () => void] {
+  const [copied, setCopied] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const reset = useCallback(() => {
+    clearTimeout(timer.current)
+    setCopied(false)
+  }, [])
+  const flash = useCallback(() => {
+    clearTimeout(timer.current)
+    setCopied(true)
+    timer.current = setTimeout(() => setCopied(false), COPIED_MS)
+  }, [])
+  useEffect(() => () => clearTimeout(timer.current), [])
+  return [copied, flash, reset]
+}
 
 /**
  * Clipboard control used by code wells and adopt CTAs. Writes `text`, swaps the
@@ -32,15 +52,14 @@ export function CopyButton({
   ariaLabel?: string | undefined
   onCopied?: (() => void) | undefined
 }) {
-  const [copied, setCopied] = useState(false)
+  const [copied, flash] = useCopied()
   const name = copied ? copiedLabel : label
 
   function handleClick() {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), COPIED_MS)
+        flash()
         onCopied?.()
       })
       .catch(() => {

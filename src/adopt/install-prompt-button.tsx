@@ -1,12 +1,12 @@
 import { Check, Copy } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { STATUS_LINE_PASTE_HINT } from '@/adopt/adopt-actions'
 import { getInstallSourceFn } from '@/adopt/functions'
 import { buildClaudePrompt } from '@/adopt/install'
 import type { InstallSource } from '@/adopt/install-source'
 import { Button } from '@/ui/button'
-import { COPIED_MS } from '@/ui/copy-button'
+import { useCopied } from '@/ui/copy-button'
 import { SwapLabel } from '@/ui/swap-label'
 
 /**
@@ -26,7 +26,7 @@ export function InstallPromptButton({
 }) {
   const ready = useRef(new Map<string, InstallSource>())
   const pending = useRef(new Map<string, Promise<InstallSource | null>>())
-  const [copied, setCopied] = useState(false)
+  const [copied, flash, resetCopied] = useCopied()
 
   // A failed fetch is forgotten, so the next click tries again.
   const load = useCallback((id: string): Promise<InstallSource | null> => {
@@ -44,16 +44,15 @@ export function InstallPromptButton({
   }, [])
 
   useEffect(() => {
-    setCopied(false)
+    resetCopied()
     void load(configId)
-  }, [configId, load])
+  }, [configId, load, resetCopied])
 
   function write(source: InstallSource) {
     navigator.clipboard
       .writeText(buildClaudePrompt(source))
       .then(() => {
-        setCopied(true)
-        setTimeout(() => setCopied(false), COPIED_MS)
+        flash()
         onCopied()
         toast('Prompt copied', { description: STATUS_LINE_PASTE_HINT })
       })

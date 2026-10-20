@@ -29,6 +29,7 @@ beforeEach(() => {
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
 })
 afterEach(() => {
+  vi.useRealTimers()
   toast.mockClear()
   toast.error.mockClear()
 })
@@ -65,6 +66,21 @@ describe('InstallPromptButton', () => {
     const held = screen.getByText('Copy install prompt')
     expect(held.getAttribute('aria-hidden')).toBe('true')
     expect(held.className).toContain('invisible')
+  })
+
+  it('drops its Copied timer when it unmounts', async () => {
+    const { unmount } = render(
+      <InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />,
+    )
+    await waitFor(() => expect(getInstallSourceFn).toHaveBeenCalledTimes(1))
+    vi.useFakeTimers()
+    await act(async () => {
+      fireEvent.click(button('Meter'))
+    })
+    expect(vi.getTimerCount()).toBe(1)
+
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('fetches the next one when the status line changes, and copies that', async () => {

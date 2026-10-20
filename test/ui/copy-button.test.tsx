@@ -41,6 +41,19 @@ describe('CopyButton', () => {
     expect(screen.getByText('Copied').getAttribute('aria-hidden')).toBeNull()
   })
 
+  // The reset timer outlived the button: it fired on a page the visitor had left, and in CI after
+  // the test file's window was gone.
+  it('drops its Copied timer when it unmounts', async () => {
+    vi.useFakeTimers()
+    const { unmount } = render(<CopyButton text="echo hi" label="Copy script" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
+    await vi.waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy())
+    expect(vi.getTimerCount()).toBe(1)
+
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
   it('announces Copied after copying, even with a custom accessible name', async () => {
     render(<CopyButton text="echo hi" ariaLabel="Copy command: From a shell" />)
 
