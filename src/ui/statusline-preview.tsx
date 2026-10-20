@@ -6,7 +6,7 @@ import type { AnsiSegment } from '@/render/types'
 export function StatuslinePreview({ segments }: { segments: AnsiSegment[] }) {
   return (
     <div className="min-w-0 max-w-full overflow-x-auto">
-      <code className="inline-block whitespace-pre rounded-md bg-sunken px-3 py-1.5 font-mono text-foreground text-sm">
+      <code className="inline-block whitespace-pre rounded-md bg-sunken px-3 py-1.5 font-mono text-foreground text-sm leading-terminal">
         {segments.map((s, i) => (
           <span
             // biome-ignore lint/suspicious/noArrayIndexKey: fixed ordered render, no identity beyond position.
