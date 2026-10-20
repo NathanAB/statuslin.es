@@ -33,7 +33,7 @@ export function GalleryConfigCard({
         )
       }}
       title={card.title}
-      byline={<AuthorChip author={card.author} avatar={false} />}
+      byline={<AuthorChip author={card.author} />}
       facts={
         <CardMeta tags={card.tags} networkHosts={card.networkHosts} copyCount={card.copyCount} />
       }

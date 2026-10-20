@@ -195,6 +195,13 @@ body {
   section[id] {
     scroll-margin-top: calc(var(--spacing) * 6);
   }
+  /* A page with a contents list (DocLayout) glides to the section picked, so the reader sees
+     where it went and the list's marker slides along with it. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:has([data-doc-contents]) {
+      scroll-behavior: smooth;
+    }
+  }
 }
 
 /* Shiki source block (src/ui/highlighted-code.tsx): match the site's code wells. The highlighter

@@ -121,7 +121,7 @@ describe('AdoptPrompt', () => {
 
     await waitFor(() => expect(writeText).toHaveBeenCalled())
     // No "Copied" feedback, no toast, and the record call never fires.
-    expect(screen.queryByText('Copied')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull()
     expect(recordCopyFn).not.toHaveBeenCalled()
     expect(toast).not.toHaveBeenCalled()
   })

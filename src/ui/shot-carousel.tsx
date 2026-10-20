@@ -15,7 +15,8 @@ export interface CarouselItem {
   onOpen?: () => void
   title: string
   description: string
-  byline: string
+  /** Who made it, with its avatar and GitHub link, and its installs. */
+  byline: ReactNode
   shot: DesktopShotImage
   alt: string
 }
@@ -124,7 +125,8 @@ export function ShotCarousel({
           <p className="text-body text-foreground">{lead}</p>
         </div>
         {/* Every item's text shares one grid cell, so the block is as tall as the longest and the
-            row below never moves as the lit item changes. Only the lit one shows and is read out. */}
+            row below never moves as the lit item changes. Only the lit one shows and is read out;
+            the rest are inert, so their author links can't be reached. */}
         <div data-slot="carousel-lit" className="col-span-12 grid min-[56.25rem]:col-span-4">
           {items.map((item, index) =>
             index === lit ? (
@@ -140,13 +142,18 @@ export function ShotCarousel({
                   </Link>
                 </h3>
                 <p className="line-clamp-4 text-body text-muted-foreground">{item.description}</p>
-                <p className="mt-2.5 text-muted-foreground text-small">{item.byline}</p>
+                <div className="mt-2.5">{item.byline}</div>
               </div>
             ) : (
-              <div key={item.key} aria-hidden="true" className="invisible col-start-1 row-start-1">
+              <div
+                key={item.key}
+                aria-hidden="true"
+                inert
+                className="invisible col-start-1 row-start-1"
+              >
                 <p className="mb-2 font-medium text-lead tracking-[-0.02em]">{item.title}</p>
                 <p className="line-clamp-4 text-body">{item.description}</p>
-                <p className="mt-2.5 text-small">{item.byline}</p>
+                <div className="mt-2.5">{item.byline}</div>
               </div>
             ),
           )}

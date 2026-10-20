@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import { InstallPromptButton } from '@/adopt/install-prompt-button'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { reachFacts } from '@/gallery/config-install-facts'
+import { AuthorByline } from '@/gallery/detail-byline'
 import type { HeroLine, HeroSessionKey } from '@/gallery/hero-lines'
 import { HERO_SESSIONS } from '@/home/hero-sessions'
 import { ChoiceGroup } from '@/ui/choice-group'
@@ -15,11 +16,6 @@ import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 /** The hero's one sentence beside the title. */
 export const HERO_LEAD =
   'A status line is the row under your Claude Code prompt. Pick one the community made and see how it looks in a session.'
-
-const byline = (line: HeroLine, copies: number) => {
-  const author = line.author?.username ? `@${line.author.username}` : line.author?.name
-  return author ? `by ${author} · ${installsLabel(copies)}` : installsLabel(copies)
-}
 
 /**
  * The home page's first screen: a Claude Code session where the visitor tries on the community's
@@ -117,9 +113,7 @@ export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[
               Open page<VisuallyHidden>: {line.title}</VisuallyHidden>
             </TextLink>
           </HeroActions>
-          <Text muted size="sm">
-            {byline(line, copies.count)}
-          </Text>
+          <AuthorByline author={line.author} after={installsLabel(copies.count)} />
           <FactLine label="What this status line can reach" facts={reachFacts(line)} />
           <Text muted size="sm">
             Every line here was read by a person and rendered in a sandbox.

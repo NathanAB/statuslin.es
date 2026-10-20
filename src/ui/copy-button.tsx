@@ -2,6 +2,7 @@ import { Check, Copy } from 'lucide-react'
 import type * as React from 'react'
 import { useState } from 'react'
 import { Button } from '@/ui/button'
+import { SwapLabel } from '@/ui/swap-label'
 
 /** How long a copy control says Copied. */
 export const COPIED_MS = 2000
@@ -58,7 +59,7 @@ export function CopyButton({
         onClick={handleClick}
         aria-label={copied ? copiedLabel : (ariaLabel ?? name)}
       >
-        {name}
+        <SwapLabel label={label} swapped={copied} swappedLabel={copiedLabel} />
       </Button>
     )
   return (
@@ -70,7 +71,7 @@ export function CopyButton({
       aria-label={copied ? copiedLabel : (ariaLabel ?? name)}
     >
       {icon}
-      {iconOnly ? null : name}
+      {iconOnly ? null : <SwapLabel label={label} swapped={copied} swappedLabel={copiedLabel} />}
     </Button>
   )
 }

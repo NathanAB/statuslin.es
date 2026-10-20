@@ -7,6 +7,7 @@ import { buildClaudePrompt } from '@/adopt/install'
 import type { InstallSource } from '@/adopt/install-source'
 import { Button } from '@/ui/button'
 import { COPIED_MS } from '@/ui/copy-button'
+import { SwapLabel } from '@/ui/swap-label'
 
 /**
  * The home hero's "Copy install prompt": the same prompt as a status line's page; `onCopied` records
@@ -82,7 +83,7 @@ export function InstallPromptButton({
       onClick={copy}
       aria-label={copied ? 'Copied' : `Copy install prompt for ${title}`}
     >
-      {copied ? 'Copied' : 'Copy install prompt'}
+      <SwapLabel label="Copy install prompt" swapped={copied} swappedLabel="Copied" />
     </Button>
   )
 }

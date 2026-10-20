@@ -3,6 +3,7 @@ import { cardClickProperties, type GalleryCardAnalytics } from '@/gallery/card-a
 import { CardMeta } from '@/gallery/card-meta'
 import type { GalleryModCard } from '@/gallery/gallery-items'
 import { MOD_ROUTE } from '@/lib/site'
+import { modAuthor } from '@/mods/mod-author'
 import { AuthorChip } from '@/ui/author-chip'
 import { GalleryRow } from '@/ui/gallery-row'
 import { ModRowPreview } from './mod-preview'
@@ -32,12 +33,7 @@ export function ModCard({
         )
       }}
       title={card.title}
-      byline={
-        <AuthorChip
-          author={{ name: card.authorGithub, username: card.authorGithub, image: null }}
-          avatar={false}
-        />
-      }
+      byline={<AuthorChip author={modAuthor(card.authorGithub)} />}
       facts={<CardMeta kind="Mod" tags={card.tags} networkHosts={[]} copyCount={card.copyCount} />}
       description={card.description}
     >

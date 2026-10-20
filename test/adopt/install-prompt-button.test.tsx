@@ -55,6 +55,18 @@ describe('InstallPromptButton', () => {
     expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy()
   })
 
+  it('keeps its width when it swaps to Copied', async () => {
+    render(<InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />)
+    await waitFor(() => expect(getInstallSourceFn).toHaveBeenCalledTimes(1))
+    await act(async () => {
+      fireEvent.click(button('Meter'))
+    })
+
+    const held = screen.getByText('Copy install prompt')
+    expect(held.getAttribute('aria-hidden')).toBe('true')
+    expect(held.className).toContain('invisible')
+  })
+
   it('fetches the next one when the status line changes, and copies that', async () => {
     const { rerender } = render(
       <InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />,

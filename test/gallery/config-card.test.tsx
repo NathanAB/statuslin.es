@@ -67,7 +67,7 @@ describe('GalleryConfigCard', () => {
     expect(screen.queryByText('Status line')).toBeNull()
   })
 
-  it("keeps the author's GitHub link clickable above the card's overlay, with no avatar", () => {
+  it("keeps the author's GitHub link, with their avatar, clickable above the card's overlay", () => {
     const { container } = render(
       <GalleryConfigCard
         card={{ ...exampleCard, author: { name: 'Octo', username: 'octocat', image: 'a.png' } }}
@@ -77,7 +77,8 @@ describe('GalleryConfigCard', () => {
     const author = screen.getByRole('link', { name: '@octocat' })
     expect(author.getAttribute('href')).toBe('https://github.com/octocat')
     expect(author.closest('.z-10')).toBeTruthy()
-    expect(container.querySelector('img')).toBeNull()
+    expect(author.querySelector('img')?.getAttribute('src')).toBe('a.png')
+    expect(container.querySelectorAll('img')).toHaveLength(1)
   })
 
   it('shows the status line, then the whole description', () => {

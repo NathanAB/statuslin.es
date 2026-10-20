@@ -394,7 +394,7 @@ describe('mod page', () => {
 
     const button = screen.getByRole('button', { name: PROMPT_BUTTON })
     expect(button.dataset.variant).toBe('default')
-    expect(button.textContent).toBe('Copy install prompt')
+    expect(within(button).getByText('Copy install prompt').getAttribute('aria-hidden')).toBeNull()
     fireEvent.click(button)
 
     await waitFor(() => expect(recordModCopyFn).toHaveBeenCalledTimes(1))

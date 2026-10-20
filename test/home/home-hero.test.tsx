@@ -65,6 +65,8 @@ const picker = () => screen.getByRole('radiogroup', { name: 'Pick a status line'
 const sessions = () => screen.getByRole('radiogroup', { name: 'Session' })
 const statusRow = () => document.querySelector('[data-slot="terminal-status"]') as HTMLElement
 const announced = () => screen.getByRole('status').textContent
+/** The line under the install button that credits the shown status line's author. */
+const byline = () => screen.getByText('by').parentElement?.parentElement as HTMLElement
 
 describe('HomeHero', () => {
   // You could copy a line that reads your Claude login without being told: the picked line's reach
@@ -120,7 +122,10 @@ describe('HomeHero', () => {
       screen.getByRole('link', { name: 'Open page: Pace Dot Meters' }).getAttribute('href'),
     ).toBe('/c/pace')
     expect(screen.getByRole('button', { name: 'Install Pace Dot Meters' })).toBeTruthy()
-    expect(screen.getByText('by @pace-dev · 94 installs')).toBeTruthy()
+    expect(screen.getByRole('link', { name: '@pace-dev' }).getAttribute('href')).toBe(
+      'https://github.com/pace-dev',
+    )
+    expect(byline().textContent).toContain('94 installs')
   })
 
   // A long title used to push the link under the button: its visible words now never change.
@@ -188,7 +193,7 @@ describe('HomeHero', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Install Dreambase Panel' }))
 
-    expect(screen.getByText('by @panel-dev · 224 installs')).toBeTruthy()
+    expect(byline().textContent).toContain('224 installs')
     expect(within(picker()).getByRole('radio', { name: /^Dreambase Panel/ }).textContent).toBe(
       'Dreambase Panel224 installs',
     )

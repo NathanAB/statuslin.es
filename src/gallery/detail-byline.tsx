@@ -30,22 +30,38 @@ function LaterFact({ children }: { children: React.ReactNode }) {
   )
 }
 
+/** "by" and the author's avatar and GitHub link. */
+function ByAuthor({ author }: { author: ConfigAuthor }) {
+  return (
+    <Row gap={1.5}>
+      <Text muted size="sm">
+        by
+      </Text>
+      <AuthorChip author={author} />
+    </Row>
+  )
+}
+
+/** "by @author · 224 installs": the hero's and the mods row's line under a name. */
+export function AuthorByline({ author, after }: { author: ConfigAuthor | null; after: string }) {
+  const fact = (
+    <Text muted size="sm">
+      {after}
+    </Text>
+  )
+  if (!author) return fact
+  return (
+    <Row gap={3} wrap>
+      <ByAuthor author={author} />
+      <LaterFact>{fact}</LaterFact>
+    </Row>
+  )
+}
+
 /** "by @author · source · licence", dot-separated. Each fact wraps as a unit with its dot. */
 export function DetailByline({ author, source, license }: Byline) {
   const facts: Array<{ key: string; fact: React.ReactNode }> = []
-  if (author) {
-    facts.push({
-      key: 'author',
-      fact: (
-        <Row gap={1.5}>
-          <Text muted size="sm">
-            by
-          </Text>
-          <AuthorChip author={author} />
-        </Row>
-      ),
-    })
-  }
+  if (author) facts.push({ key: 'author', fact: <ByAuthor author={author} /> })
   if (source) {
     facts.push({
       key: 'source',

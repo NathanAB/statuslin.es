@@ -338,3 +338,13 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - **The hero picker (after review): picks show at once.** The prototype's half-second fade read
   as lag, so a pick now takes 150ms, and the link under it always reads "Open page" so a long title
   never pushes it under the button.
+- **Copy buttons keep their width.** "Copied" is shorter than most labels, so the button shrank
+  and the link beside it jumped. Both labels share one grid cell (`SwapLabel`), and the one not
+  shown stays there, invisible.
+- **Every username has its avatar and GitHub link,** as on main: the gallery rows, the hero
+  byline and the mods row too, not just the detail pages.
+- **No Mods link in the header.** Beside no Status lines link it read as out of place. The home
+  page lists both kinds, and the footer links Mods.
+- **The guide's contents follow the reader.** The section being read is marked current and a coral
+  marker slides along the list's rail to it. Picking an entry glides there, unless the visitor
+  asks for less motion.

@@ -2,6 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+import { githubAvatarUrl } from '@/lib/github-avatars'
 
 const capture = vi.fn()
 vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
@@ -61,13 +62,13 @@ describe('ModCard', () => {
     expect(screen.getByText('3 installs')).toBeTruthy()
   })
 
-  it("keeps the author's GitHub link clickable above the card's overlay, with no avatar", () => {
-    const { container } = render(<ModCard card={card} />)
+  it("keeps the author's GitHub link, with their avatar, clickable above the card's overlay", () => {
+    render(<ModCard card={card} />)
 
     const author = screen.getByRole('link', { name: '@octocat' })
     expect(author.getAttribute('href')).toBe('https://github.com/octocat')
     expect(author.closest('.z-10')).toBeTruthy()
-    expect(container.querySelector('img')).toBeNull()
+    expect(author.querySelector('img')?.getAttribute('src')).toBe(githubAvatarUrl('octocat'))
   })
 
   it('shows its terminal preview and description while it has no Desktop shot', () => {

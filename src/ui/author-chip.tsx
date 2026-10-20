@@ -1,21 +1,14 @@
 import type { ConfigAuthor } from '@/gallery/queries'
 
 /** Author avatar + byline. Renders nothing for a null author (pre-FK data only).
- *  `avatar={false}` drops the picture: the gallery rows show the byline alone.
  *  With a GitHub username it links to the profile and shows `@username`; without
  *  one it falls back to the display name with no link.
  *  alt="" is intentional: the name sits adjacent, so alt text would duplicate it.
  *  loading="lazy" also stops React SSR hoisting a preload link per avatar into <head>. */
-export function AuthorChip({
-  author,
-  avatar: showAvatar = true,
-}: {
-  author: ConfigAuthor | null
-  avatar?: boolean
-}) {
+export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
   if (!author) return null
 
-  const avatar = !showAvatar ? null : author.image ? (
+  const avatar = author.image ? (
     <img
       src={author.image}
       alt=""

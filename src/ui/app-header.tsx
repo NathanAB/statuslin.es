@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { GUIDE_LINK_LABEL, GUIDE_PATH } from '@/lib/page-title'
-import { MODS_PATH } from '@/lib/site'
 import { Button } from '@/ui/button'
 import { PAGE_COLUMN } from '@/ui/page-column'
 import { SignInButton } from '@/ui/sign-in-button'
@@ -23,9 +22,9 @@ export interface HeaderLink {
   label: string
 }
 
-// The pages the header links, in order. The phone menu lists the same ones, then Submit.
+// The pages the header links, in order. The phone menu lists the same ones, then Submit. No Mods:
+// beside no Status lines link it read as out of place, and the home page lists both.
 const HEADER_LINKS: readonly HeaderLink[] = [
-  { to: MODS_PATH, label: 'Mods' },
   { to: GUIDE_PATH, label: GUIDE_LINK_LABEL },
   { to: '/resources', label: 'Resources' },
 ]
@@ -34,8 +33,8 @@ const SUBMIT_LINK: HeaderLink = { to: '/submit', label: 'Submit' }
 const MENU_LINKS = [...HEADER_LINKS, SUBMIT_LINK]
 
 /**
- * Shared top header, a plain bar on the page column: the wordmark home-link, quiet links (Mods,
- * Write your own, Resources, Star on GitHub), Submit as the bar's one filled button, then GitHub sign-in or
+ * Shared top header, a plain bar on the page column: the wordmark home-link, quiet links (Write
+ * your own, Resources, Star on GitHub), Submit as the bar's one filled button, then GitHub sign-in or
  * the signed-in user's menu. Phones keep the wordmark and Submit, and get a menu button for the
  * rest, which opens the links full-screen.
  */

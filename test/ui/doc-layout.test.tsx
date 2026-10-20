@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DocLayout } from '@/ui/doc-layout'
 
 const CONTENTS = [
@@ -43,5 +43,66 @@ describe('DocLayout', () => {
     ])
     const setup = within(nav).getByRole('link', { name: 'Setup' }).closest('li')
     expect(setup && within(setup).getByRole('link', { name: 'Install' })).toBeTruthy()
+  })
+})
+
+const SPY_CONTENTS = [
+  { id: 'one', title: 'One' },
+  { id: 'two', title: 'Two', children: [{ id: 'two-a', title: 'Two A' }] },
+  { id: 'three', title: 'Three' },
+]
+
+// Where each section's top sits in the window, as the reader scrolls.
+let tops: Record<string, number> = {}
+
+function renderDoc() {
+  // A section's top is wherever the test has scrolled it; jsdom lays nothing out.
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    return { top: tops[this.id] ?? 0, height: 0 } as DOMRect
+  })
+  render(
+    <DocLayout intro={<h1>Guide</h1>} contents={SPY_CONTENTS}>
+      {['one', 'two', 'two-a', 'three'].map((id) => (
+        <section key={id} id={id}>
+          {id}
+        </section>
+      ))}
+    </DocLayout>,
+  )
+}
+
+function scrollTo(next: Record<string, number>) {
+  tops = next
+  act(() => {
+    window.dispatchEvent(new Event('scroll'))
+  })
+}
+
+const current = () =>
+  screen
+    .getAllByRole('link')
+    .filter((link) => link.getAttribute('aria-current'))
+    .map((link) => link.textContent)
+
+afterEach(() => {
+  tops = {}
+  vi.restoreAllMocks()
+})
+
+describe('DocLayout contents', () => {
+  it('marks the section being read as the current one, and follows the scroll', async () => {
+    tops = { one: 40, two: 900, 'two-a': 1300, three: 2000 }
+    renderDoc()
+    expect(current()).toEqual(['One'])
+    expect(screen.getByRole('link', { name: 'One' }).getAttribute('aria-current')).toBe('location')
+
+    scrollTo({ one: -900, two: -200, 'two-a': 60, three: 300 })
+    await waitFor(() => expect(current()).toEqual(['Two A']))
+  })
+
+  it('marks none while the reader is still in the intro', () => {
+    tops = { one: 2000, two: 2900, 'two-a': 3300, three: 4000 }
+    renderDoc()
+    expect(current()).toEqual([])
   })
 })

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 // Radix DropdownMenu opens on pointerdown (left button), not a plain click — open it
@@ -67,14 +67,15 @@ describe('AppHeader', () => {
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
-  // The guide is for writing your own status line; "Guide" alone read as how to install one.
-  it('links to the mods page ahead of the guide, which says it is for writing your own', () => {
-    render(<AppHeader user={null} />)
-    const mods = screen.getByRole('link', { name: 'Mods' })
-    expect(mods.getAttribute('href')).toBe('/mods')
-    const guide = screen.getByRole('link', { name: 'Write your own' })
-    expect(guide.getAttribute('href')).toBe('/guide')
-    expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  // The guide is for writing your own status line; "Guide" alone read as how to install one. A Mods
+  // link with no Status lines link beside it read as out of place, so the bar has neither: the home
+  // page lists both, and the footer links Mods.
+  it('leads with the guide, which says it is for writing your own, and links no Mods page', () => {
+    const { container } = render(<AppHeader user={null} />)
+    const nav = screen.getByRole('navigation')
+    expect(within(nav).getAllByRole('link')[0]?.textContent).toBe('Write your own')
+    expect(screen.getByRole('link', { name: 'Write your own' }).getAttribute('href')).toBe('/guide')
+    expect(container.querySelector('a[href="/mods"]')).toBeNull()
   })
 
   // We want people to submit: Submit is the header's one filled button, beside sign-in, and stays

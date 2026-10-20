@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+import { githubAvatarUrl } from '@/lib/github-avatars'
 
 const capture = vi.fn()
 vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
@@ -94,7 +95,10 @@ describe('HomeMods', () => {
       within(lit()).getByRole('link', { name: 'Token Weather Usage' }).getAttribute('href'),
     ).toBe('/mods/weather')
     expect(lit().textContent).toContain('Token Weather Usage draws something in Claude Desktop.')
-    expect(lit().textContent).toContain('@weather-dev · 3 installs')
+    const author = within(lit()).getByRole('link', { name: '@weather-dev' })
+    expect(author.getAttribute('href')).toBe('https://github.com/weather-dev')
+    expect(author.querySelector('img')?.getAttribute('src')).toBe(githubAvatarUrl('weather-dev'))
+    expect(lit().textContent).toContain('3 installs')
   })
 
   // The text block above the row is as tall as its longest mod, so flipping never moves the row.
@@ -105,7 +109,9 @@ describe('HomeMods', () => {
     expect(texts).toHaveLength(3)
     expect(texts.map((t) => t.getAttribute('aria-hidden'))).toEqual([null, 'true', 'true'])
     expect(texts[1]?.textContent).toContain('Deck draws something in Claude Desktop.')
-    expect(texts[1]?.querySelector('a')).toBeNull()
+    // Its author link stays in the copy so the block keeps its height, but nothing in it can be
+    // reached.
+    expect(texts[1]?.hasAttribute('inert')).toBe(true)
 
     fireEvent.click(screen.getByRole('button', { name: 'Next mod' }))
 

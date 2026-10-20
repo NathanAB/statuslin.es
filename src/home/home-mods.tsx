@@ -1,7 +1,9 @@
 import { usePostHog } from '@posthog/react'
 import { cardClickProperties, type GalleryCardAnalytics } from '@/gallery/card-analytics'
+import { AuthorByline } from '@/gallery/detail-byline'
 import type { GalleryModCard } from '@/gallery/gallery-items'
 import { MOD_ROUTE, MODS_PATH } from '@/lib/site'
+import { modAuthor } from '@/mods/mod-author'
 import { installsLabel } from '@/ui/install-count'
 import { type CarouselItem, ShotCarousel } from '@/ui/shot-carousel'
 import { TextLink } from '@/ui/text'
@@ -47,7 +49,9 @@ export function HomeMods({
           ),
         title: mod.title,
         description: mod.description,
-        byline: `@${mod.authorGithub} · ${installsLabel(mod.copyCount)}`,
+        byline: (
+          <AuthorByline author={modAuthor(mod.authorGithub)} after={installsLabel(mod.copyCount)} />
+        ),
         shot: mod.desktopShot,
         alt: `${mod.title} running in Claude Desktop`,
       },

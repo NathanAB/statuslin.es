@@ -77,7 +77,7 @@ describe('the phone menu', () => {
 
     expect(button.getAttribute('aria-expanded')).toBe('true')
     const links = within(menu)
-    expect(links.getByRole('link', { name: 'Mods' }).getAttribute('href')).toBe('/mods')
+    expect(links.queryByRole('link', { name: 'Mods' })).toBeNull()
     expect(links.getByRole('link', { name: 'Write your own' }).getAttribute('href')).toBe('/guide')
     expect(links.getByRole('link', { name: 'Resources' }).getAttribute('href')).toBe('/resources')
     expect(links.getByRole('link', { name: 'Submit' }).getAttribute('href')).toBe('/submit')
