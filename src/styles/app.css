@@ -67,6 +67,9 @@
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-mono:
     "StatuslineNerd", "StatuslineLegacySymbols", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* One terminal row for text-sm (14px): 18px, just under the Nerd Font's 1.32em cell (LINE_EM in
+     src/og/fit.ts) and on whole pixels, so ▀ rows touch with no seam, as in a terminal. */
+  --leading-terminal: 1.125rem;
 }
 
 @theme inline {
