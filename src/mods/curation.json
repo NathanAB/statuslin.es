@@ -149,7 +149,13 @@
     "path": "",
     "commitSha": "1b3e72ce1bd265b0a9aeedb993bdf848139e29cc",
     "pluginName": "filetree",
-    "title": "Filetree"
+    "title": "Filetree",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      }
+    ]
   },
   {
     "repoUrl": "https://github.com/scasella/claude-flightdeck",
@@ -161,6 +167,10 @@
       {
         "type": "text",
         "text": "/flightdeck open"
+      },
+      {
+        "type": "text",
+        "text": "/preview-busy"
       }
     ]
   },
