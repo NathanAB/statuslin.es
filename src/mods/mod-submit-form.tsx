@@ -19,7 +19,7 @@ interface ModSubmitCopy {
 
 const COPY: Record<ModDraft['kind'] | 'new', ModSubmitCopy> = {
   new: {
-    heading: 'Submit a status line or mod',
+    heading: 'Submit a mod',
     intro:
       'Paste a GitHub link to a Claude Code plugin. We pin it to a commit, check it in a sandbox, render it, and review it before it goes live.',
     button: 'Submit',

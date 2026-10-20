@@ -16,11 +16,12 @@ import { PageShell } from '@/ui/shell'
 import { SignInPrompt } from '@/ui/sign-in-prompt'
 import { Heading, Text } from '@/ui/text'
 
-// /submit opens on the status line form and asks which kind first, so its own page names both kinds.
+// /submit opens on the status line form and asks which kind first, so its description names both
+// kinds. Its title says "mod", the word the site uses for both.
 const SUBMIT_PAGE = {
-  title: 'Submit a status line or mod',
+  title: 'Submit a mod',
   description:
-    'Share a Claude Code status line or mod. We review every submission before it goes live.',
+    'Share a Claude Code mod or status line. We review every submission before it goes live.',
 }
 const MOD_PAGE = {
   title: 'Submit a mod',
@@ -73,13 +74,7 @@ function Submit() {
   const posthog = usePostHog()
   const kindId = useId()
   if (!data.user) {
-    return (
-      <SignInPrompt
-        title={
-          data.kind === 'mod' ? 'Sign in to submit a mod' : 'Sign in to submit a status line or mod'
-        }
-      />
-    )
+    return <SignInPrompt title="Sign in to submit a mod" />
   }
 
   const draft = data.kind === 'mod' ? data.draft : data.initial

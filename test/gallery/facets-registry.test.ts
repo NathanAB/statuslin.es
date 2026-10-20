@@ -32,8 +32,11 @@ describe('tag registry', () => {
     ])
     for (const copy of Object.values(FACET_MOD_COPY)) {
       expect(brandedPageTitle(copy.titleBase)).toMatch(/ \| statuslin\.es$/)
-      expect(copy.titleBase).toContain('Status Lines & Mods')
-      expect(copy.heading).toContain('status lines and mods')
+      expect(copy.titleBase).toMatch(/ Mods$/)
+      expect(copy.heading).toMatch(/ mods( |$)/)
+      expect(`${copy.titleBase} ${copy.heading} ${copy.metaDescription}`).not.toMatch(
+        /status lines? (and|&) mods/i,
+      )
       expect(copy.metaDescription.length).toBeLessThanOrEqual(160)
     }
   })

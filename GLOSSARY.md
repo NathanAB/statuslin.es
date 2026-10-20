@@ -1,6 +1,6 @@
 # statuslin.es
 
-A community gallery of ways to change what Claude Code shows: status lines and mods, each previewed and installable from the site.
+A community gallery of Claude Code mods, each previewed and installable from the site. Its own copy uses "mod" in the plain sense, with status lines as one kind (the home page, topic pages, submit, terms and `llms.txt`). In the code, and on every page only about status lines, **Mod** and **Status line** below stay two kinds.
 
 ## Language
 
@@ -37,7 +37,7 @@ Re-sending a rejected config or mod that was never published.
 _Avoid_: update
 
 **Mod**:
-A Claude Code plugin whose code runs inside Claude Code and can draw interface. A mod that shows session usage is still just a mod.
+A Claude Code plugin whose code runs inside Claude Code and can draw interface. A mod that shows session usage is still just a mod. Site copy that says "mods" for the whole gallery counts status lines among them; never call one status line a mod.
 _Avoid_: meter, usage mod, status line mod
 
 **Scenario**:

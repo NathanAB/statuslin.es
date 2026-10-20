@@ -154,7 +154,7 @@ describe('llms.txt with mods', () => {
 
     expect(txt).not.toMatch(/every submission is a shell script/i)
     expect(txt).toContain('Status lines are scripts')
-    expect(txt).toContain('Mods are Claude Code plugins')
+    expect(txt).toContain('mods are Claude Code plugins')
   })
 
   it('keeps the llms.txt content type', async () => {

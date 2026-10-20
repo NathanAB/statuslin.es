@@ -32,11 +32,11 @@ describe('static page social metadata', () => {
     expect(head?.meta).toEqual(
       expect.arrayContaining([
         { property: 'og:url', content: 'https://statuslin.es/submit' },
-        { property: 'og:title', content: 'Submit a status line or mod' },
+        { property: 'og:title', content: 'Submit a mod' },
         {
           property: 'og:description',
           content:
-            'Share a Claude Code status line or mod. We review every submission before it goes live.',
+            'Share a Claude Code mod or status line. We review every submission before it goes live.',
         },
       ]),
     )
@@ -61,7 +61,7 @@ describe('static page social metadata', () => {
         { property: 'og:title', content: 'Terms' },
         {
           property: 'og:description',
-          content: 'Licensing and takedown terms for the status lines and mods on statuslin.es.',
+          content: 'Licensing and takedown terms for the mods on statuslin.es.',
         },
       ]),
     )

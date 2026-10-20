@@ -1,19 +1,31 @@
+import { Fragment } from 'react'
+import type { ResourcesShowcase } from '@/compare/pages'
+import { RankedCardList } from '@/gallery/ranked-card-list'
 import { CONTACT_EMAIL } from '@/lib/site'
-import { RESOURCE_SECTIONS, resourceAnchor } from '@/resources/data'
+import { RESOURCE_SECTIONS, type Resource, resourceAnchor } from '@/resources/data'
 import { Badge } from '@/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { Grid, Row, Stack } from '@/ui/layout'
 import { StretchedLink } from '@/ui/stretched-link'
 import { SubmitCta } from '@/ui/submit-cta'
 import { Heading, Text, TextLink } from '@/ui/text'
+import { VisuallyHidden } from '@/ui/visually-hidden'
 
 /**
  * The /resources page body: the curated list from src/resources/data.ts rendered as
  * cards by section, framed by an intro that cross-links the guide and gallery, and a
  * closing "get listed" call-to-action. A component (not inline in the route) so it's
- * unit-testable — same pattern as TermsContent.
+ * unit-testable — same pattern as TermsContent. `showcase` turns the tool list into something to
+ * act on: rendered status lines that do the same jobs, and a compared tool's card opening its
+ * alternatives page before its repo.
  */
-export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
+export function ResourcesContent({
+  signedIn,
+  showcase,
+}: {
+  signedIn: boolean
+  showcase: ResourcesShowcase
+}) {
   return (
     <Stack gap={6}>
       <Heading level={1}>Claude Code status line tools & resources</Heading>
@@ -68,28 +80,28 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
       </Stack>
 
       {RESOURCE_SECTIONS.map((section) => (
-        <Stack gap={3} key={section.key}>
-          <Heading level={2}>{section.title}</Heading>
-          <Grid>
-            {section.resources.map((r) => (
-              <Card key={r.url} interactive>
-                <CardHeader>
-                  <Row gap={2} justify="between">
-                    <CardTitle id={resourceAnchor(r.name)}>
-                      <StretchedLink href={r.url}>{r.name}</StretchedLink>
-                    </CardTitle>
-                    <Badge variant="outline">{domainLabel(r.url)}</Badge>
-                  </Row>
-                </CardHeader>
-                <CardContent>
-                  <Text muted size="sm">
-                    {r.description}
-                  </Text>
-                </CardContent>
-              </Card>
-            ))}
-          </Grid>
-        </Stack>
+        <Fragment key={section.key}>
+          <Stack gap={3}>
+            <Heading level={2}>{section.title}</Heading>
+            <Grid>
+              {section.resources.map((r) => (
+                <ResourceCard key={r.url} resource={r} tool={showcase.alternatives[r.url]} />
+              ))}
+            </Grid>
+          </Stack>
+          {section.key === 'tools' && showcase.cards.length > 0 ? (
+            <Stack gap={4}>
+              <Stack gap={2}>
+                <Heading level={2}>Status lines that do the same job</Heading>
+                <Text muted>
+                  Single scripts from the gallery that cover at least three of the same features as
+                  these tools, each shown with its real output. Copy one in a single paste.
+                </Text>
+              </Stack>
+              <RankedCardList items={showcase.cards} surface="resources" />
+            </Stack>
+          ) : null}
+        </Fragment>
       ))}
 
       <Card>
@@ -108,6 +120,50 @@ export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
         </CardContent>
       </Card>
     </Stack>
+  )
+}
+
+/**
+ * One listed resource. A compared tool (`tool`, its alternatives page) opens that page, where its
+ * rendered alternatives sit beside its facts; its repo stays a link in the corner. Anything else
+ * opens off-site.
+ */
+function ResourceCard({ resource: r, tool }: { resource: Resource; tool: string | undefined }) {
+  return (
+    <Card interactive>
+      <CardHeader>
+        <Row gap={2} justify="between">
+          <CardTitle id={resourceAnchor(r.name)}>
+            {tool ? (
+              <StretchedLink to="/alternatives/$tool" params={{ tool }}>
+                {r.name} <VisuallyHidden>alternatives</VisuallyHidden>
+              </StretchedLink>
+            ) : (
+              <StretchedLink href={r.url}>{r.name}</StretchedLink>
+            )}
+          </CardTitle>
+          {tool ? (
+            <Row gap={1} aboveOverlay>
+              <TextLink href={r.url} size="sm">
+                {domainLabel(r.url)}
+              </TextLink>
+            </Row>
+          ) : (
+            <Badge variant="outline">{domainLabel(r.url)}</Badge>
+          )}
+        </Row>
+      </CardHeader>
+      <CardContent>
+        <Stack gap={2}>
+          <Text muted size="sm">
+            {r.description}
+          </Text>
+          {tool ? (
+            <Text size="sm">Compare it with rendered status lines that do the same job.</Text>
+          ) : null}
+        </Stack>
+      </CardContent>
+    </Card>
   )
 }
 

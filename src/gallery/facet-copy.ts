@@ -107,36 +107,36 @@ export const FACET_KIND_NOTE =
 
 /**
  * Title, heading and description for a facet page that lists mods too, keyed by facet slug. Only
- * facets a published mod carries get an entry (checked against production on 2026-10-15).
+ * facets a published mod carries get an entry (checked against production on 2026-10-15). The site
+ * counts status lines as one kind of mod, so these say "mods"; FACET_KIND_NOTE names the kinds.
  */
 export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
   'token-usage': {
-    titleBase: 'Claude Code Token Usage: Status Lines & Mods',
-    heading: 'Claude Code status lines and mods that show token usage',
-    metaDescription:
-      'Claude Code status lines and mods that show context window usage, as token counts or meters.',
+    titleBase: 'Claude Code Token Usage Mods',
+    heading: 'Claude Code mods that show token usage',
+    metaDescription: 'Claude Code mods that show context window usage, as token counts or meters.',
   },
   cost: {
-    titleBase: 'Claude Code Session Cost: Status Lines & Mods',
-    heading: 'Claude Code status lines and mods that track cost',
+    titleBase: 'Claude Code Session Cost Mods',
+    heading: 'Claude Code mods that track cost',
     metaDescription:
-      'Claude Code status lines and mods that show session cost, from dollar figures to burn-rate meters.',
+      'Claude Code mods that show session cost, from dollar figures to burn-rate meters.',
   },
   quota: {
-    titleBase: 'Claude Code Usage Limits: Status Lines & Mods',
-    heading: 'Claude Code status lines and mods that track usage limits',
+    titleBase: 'Claude Code Usage Limit Mods',
+    heading: 'Claude Code mods that track usage limits',
     metaDescription:
-      'Claude Code status lines and mods that show your 5-hour and weekly usage limits and when they reset.',
+      'Claude Code mods that show your 5-hour and weekly usage limits and when they reset.',
   },
   minimal: {
-    titleBase: 'Minimal Claude Code Status Lines & Mods',
-    heading: 'Minimal Claude Code status lines and mods',
-    metaDescription: 'Single-line Claude Code status lines and mods that show only the essentials.',
+    titleBase: 'Minimal Claude Code Mods',
+    heading: 'Minimal Claude Code mods',
+    metaDescription: 'Single-line Claude Code mods that show only the essentials.',
   },
   'multi-line': {
-    titleBase: 'Multi-Line Claude Code Status Lines & Mods',
-    heading: 'Multi-line Claude Code status lines and mods',
+    titleBase: 'Multi-Line Claude Code Mods',
+    heading: 'Multi-line Claude Code mods',
     metaDescription:
-      'Claude Code status lines and mods that use two or more lines to show tokens, cost and usage limits.',
+      'Claude Code mods that use two or more lines to show tokens, cost and usage limits.',
   },
 }

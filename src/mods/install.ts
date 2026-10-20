@@ -38,6 +38,14 @@ export function modInstallCommands(origin: string, entryName: string, claude = '
   ]
 }
 
+/**
+ * What a terminal Claude Code session runs to add the site's marketplace, so `/plugin` lists every
+ * reviewed mod. Adding it installs nothing, and Desktop has no `/plugin` command.
+ */
+export function marketplaceAddCommand(origin: string): string {
+  return `/plugin marketplace add ${origin}${MARKETPLACE_PATH}`
+}
+
 /** The mod's folder on GitHub at its pinned commit. */
 export function modSourceUrl(pin: { repoUrl: string; path: string; commitSha: string }): string {
   const tree = `${pin.repoUrl}/tree/${pin.commitSha}`

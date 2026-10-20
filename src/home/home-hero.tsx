@@ -15,7 +15,7 @@ import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 
 /** The hero's one sentence beside the title. */
 export const HERO_LEAD =
-  'A status line is the row under your Claude Code prompt. Pick one the community made and see how it looks in a session.'
+  'Mods change what Claude Code shows. The status line is the row under your prompt: pick one the community made and see how it looks in a session.'
 
 /**
  * The home page's first screen: a Claude Code session where the visitor tries on the community's

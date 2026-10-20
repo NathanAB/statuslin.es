@@ -45,8 +45,9 @@ describe('configPageTitle', () => {
     expect(homePageTitle(20).length).toBeLessThanOrEqual(60)
   })
 
-  it('describes the home page status lines first, inside the length Google shows', () => {
-    expect(homeMetaDescription(1, 1)).toMatch(/\bstatus lines\b.*\bmods\b/)
+  // The site calls itself a mods site, with status lines as one kind (growth plan #26).
+  it('describes the home page as Claude Code mods, inside the length Google shows', () => {
+    expect(homeMetaDescription(1, 1)).toMatch(/^Claude Code mods\b/)
     expect(homeMetaDescription(1, 1).length).toBeLessThanOrEqual(160)
     expect(homeMetaDescription(20, 20).length).toBeLessThanOrEqual(160)
   })

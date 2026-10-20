@@ -31,18 +31,26 @@ describe('buildLlmsTxt', () => {
     const lines = txt.split('\n')
     expect(lines[0]).toBe('# statuslin.es')
     const summary = lines.find((line) => line.startsWith('> ')) ?? ''
-    expect(summary).toMatch(/status lines.*\bmods\b/)
+    expect(summary).toMatch(/\bmods, status lines included\b/)
     expect(summary).not.toMatch(/curat|pick|chose|behalf/i)
     expect(txt).not.toMatch(/two kinds of submission/i)
     expect(txt).toMatch(/cop(?:y|ied|ies)/i)
     expect(txt).not.toMatch(/upvote/i)
   })
 
+  it('calls the site a gallery of mods, naming status lines once as one kind', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    expect(txt).toContain(
+      '> A gallery of Claude Code mods, status lines included, each with a real preview.',
+    )
+    expect(txt).not.toMatch(/status lines? (and|&) mods/i)
+  })
+
   it('describes both kinds of entry without assuming a status line', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     const intro = txt.slice(txt.indexOf('> '), txt.indexOf('## Browse'))
     expect(intro).toMatch(/Status lines are/)
-    expect(intro).toMatch(/Mods are Claude Code plugins/)
+    expect(intro).toMatch(/The other mods are Claude Code plugins/)
     expect(intro).not.toMatch(/curat|gallery of status lines for/i)
     expect(intro).not.toMatch(/submitted by the community/i)
   })
@@ -70,9 +78,7 @@ describe('buildLlmsTxt', () => {
     const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))
     expect(browse).toContain('(https://statuslin.es/mods)')
     expect(browse).toContain('(https://statuslin.es/marketplace.json)')
-    expect(browse).toMatch(
-      /\[Gallery\]\(https:\/\/statuslin\.es\/\): every published status line and mod/,
-    )
+    expect(browse).toMatch(/\[Gallery\]\(https:\/\/statuslin\.es\/\): every published mod, sorted/)
   })
 
   it.each([

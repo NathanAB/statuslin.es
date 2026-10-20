@@ -85,9 +85,7 @@ describe('status line topics hub', () => {
     expect(linkTo('Claude Code status lines that show git status')).toBe('/status-lines/git')
     expect(screen.getByText('4 status lines')).toBeTruthy()
     // A topic that lists mods is named as its page names itself.
-    expect(linkTo('Claude Code status lines and mods that show token usage')).toBe(
-      '/status-lines/token-usage',
-    )
+    expect(linkTo('Claude Code mods that show token usage')).toBe('/status-lines/token-usage')
     expect(screen.getByText('3 status lines and 2 mods')).toBeTruthy()
   })
 
@@ -120,7 +118,7 @@ describe('status line topics hub', () => {
     const list = jsonLd[0]?.mainEntity as { itemListElement: Array<{ name: string }> }
     expect(list.itemListElement.map((item) => item.name)).toEqual([
       'Claude Code status lines that show git status',
-      'Claude Code status lines and mods that show token usage',
+      'Claude Code mods that show token usage',
     ])
   })
 

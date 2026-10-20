@@ -65,7 +65,7 @@ describe('ModSubmitForm', () => {
 
 describe('modSubmitPageCopy', () => {
   it('names the page for a new mod, a fix and an update', () => {
-    expect(modSubmitPageCopy(null).heading).toBe('Submit a status line or mod')
+    expect(modSubmitPageCopy(null).heading).toBe('Submit a mod')
     expect(
       modSubmitPageCopy({ kind: 'resubmission', slug: 'meter', title: 'M', link: LINK }).heading,
     ).toBe('Fix and resubmit')

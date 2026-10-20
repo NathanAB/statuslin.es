@@ -6,6 +6,7 @@ import { configListPageJsonLd } from '@/lib/json-ld-lists'
 import { MOD_SAFETY_GUIDE_PATH, STATUS_LINES_VS_MODS_GUIDE_PATH } from '@/lib/page-title'
 import { MODS_PATH, modPath, siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
+import { MarketplaceLine } from '@/mods/marketplace-line'
 import { ModCard } from '@/mods/mod-card'
 import { modsFaq } from '@/mods/mods-page-faq'
 import { staticPageSocialMeta } from '@/og/meta'
@@ -16,11 +17,11 @@ import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
-// The home page owns the bare "Claude Code mods" search, so this page aims at the list, directory
-// and marketplace searches instead. No "best" until mods have install counts to rank by.
-const TITLE_BASE = 'Claude Code Mods Directory & Marketplace'
+// The home page owns the bare "Claude Code mods" search, so this page is the best-of list: the
+// plugin mods ranked by installs, which listicles rank for without showing previews.
+const TITLE_BASE = 'Best Claude Code Mods, Ranked by Installs'
 const DESCRIPTION =
-  'Claude Code mods, previewed in the terminal and Claude Desktop. Reviewed before listing, installed with one command.'
+  'The best Claude Code mods, ranked by installs and previewed in the terminal and Claude Desktop. Each is reviewed before listing.'
 
 export const Route = createFileRoute('/mods/')({
   loader: async () => {
@@ -31,6 +32,7 @@ export const Route = createFileRoute('/mods/')({
     return {
       mods: mods.items.flatMap(({ item }) => (item.kind === 'mod' ? [item.card] : [])),
       user,
+      origin: siteUrl(),
     }
   },
   head: ({ loaderData }) => {
@@ -54,15 +56,16 @@ export const Route = createFileRoute('/mods/')({
 })
 
 function ModsPage() {
-  const { mods, user } = Route.useLoaderData()
+  const { mods, user, origin } = Route.useLoaderData()
   return (
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
-          <Heading level={1}>Claude Code mods</Heading>
+          <Heading level={1}>Best Claude Code mods</Heading>
           <Text muted>
-            Mods are plugins that change how Claude Code looks and works. Each one is reviewed, and
-            the install pins the reviewed commit.
+            Plugins that change how Claude Code looks and works, ranked by installs. Each one is
+            reviewed before listing, and the install pins the reviewed commit. Status lines are mods
+            too: find them in <TextLink to="/">the gallery</TextLink>.
           </Text>
           <Text muted>
             New to mods?{' '}
@@ -72,6 +75,7 @@ function ModsPage() {
         </Stack>
         {mods.length > 0 ? (
           <Stack gap={4}>
+            <MarketplaceLine origin={origin} />
             <VisuallyHidden as="h2">Mods</VisuallyHidden>
             <GalleryList>
               {mods.map((card, index) => (

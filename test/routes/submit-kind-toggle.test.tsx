@@ -68,9 +68,7 @@ describe('/submit kind choice', () => {
   it('asks what you are submitting before the form, under a heading that names both kinds', () => {
     renderSubmit('status_line')
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
-      'Submit a status line or mod',
-    )
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Submit a mod')
     const choice = screen.getByRole('radiogroup', { name: 'What are you submitting?' })
     const radios = within(choice).getAllByRole('radio')
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual(['true', 'false'])
@@ -129,9 +127,7 @@ describe('/submit signed out', () => {
 
   it('asks a visitor to sign in to submit either kind', () => {
     renderSignedOut('status_line')
-    expect(
-      screen.getByRole('heading', { name: 'Sign in to submit a status line or mod' }),
-    ).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Sign in to submit a mod' })).toBeTruthy()
   })
 
   it('names the mod when the link picked one', () => {

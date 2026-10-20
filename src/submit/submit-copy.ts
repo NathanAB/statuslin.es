@@ -8,7 +8,7 @@ interface SubmitPageCopy {
 
 const COPY: Record<SubmitDraft['kind'] | 'new', SubmitPageCopy> = {
   new: {
-    heading: 'Submit a status line or mod',
+    heading: 'Submit a mod',
     intro: "Paste your script. We'll render it in a sandbox and review it before it goes live.",
     button: 'Submit',
   },

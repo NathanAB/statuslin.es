@@ -203,17 +203,15 @@ describe('facet page content', () => {
     return head?.meta ?? []
   }
 
-  it('names status lines and mods in the title, description and H1 when the page lists mods', async () => {
+  it('calls the page’s lines mods in the title, description and H1 when it lists mods', async () => {
     const meta = await headMeta('token-usage', 3)
     expect(meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Token Usage: Status Lines & Mods | statuslin.es' },
-        { property: 'og:title', content: 'Claude Code Token Usage: Status Lines & Mods' },
+        { title: 'Claude Code Token Usage Mods | statuslin.es' },
+        { property: 'og:title', content: 'Claude Code Token Usage Mods' },
         {
           name: 'description',
-          content: expect.stringMatching(
-            /^Claude Code status lines and mods that show context window usage/,
-          ),
+          content: expect.stringMatching(/^Claude Code mods that show context window usage/),
         },
       ]),
     )
@@ -222,7 +220,7 @@ describe('facet page content', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'Claude Code status lines and mods that show token usage',
+        name: 'Claude Code mods that show token usage',
       }),
     ).toBeTruthy()
     expect(

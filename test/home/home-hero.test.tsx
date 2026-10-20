@@ -96,7 +96,7 @@ describe('HomeHero', () => {
     expect(html).toContain(`<h1`)
     expect(html).toContain(heading)
     expect(html).toContain(
-      'A status line is the row under your Claude Code prompt. Pick one the community made and see how it looks in a session.',
+      'Mods change what Claude Code shows. The status line is the row under your prompt: pick one the community made and see how it looks in a session.',
     )
     expect(html).toContain('panel clean')
     expect(html).toContain('Fix the flaky date test in utils')

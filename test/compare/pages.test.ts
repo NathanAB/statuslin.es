@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { buildComparePage, COMPARE_PATHS, liveComparePages } from '@/compare/pages'
+import {
+  buildComparePage,
+  COMPARE_PATHS,
+  liveComparePages,
+  resourcesShowcase,
+} from '@/compare/pages'
+import { TOOLS } from '@/compare/tools'
 import type { GalleryCard } from '@/gallery/queries'
+import { RESOURCE_SECTIONS } from '@/resources/data'
 
 function card(slug: string, tags: string[]): GalleryCard {
   return {
@@ -229,5 +236,33 @@ describe('liveComparePages', () => {
       verifiedAt: '2026-09-24',
       slugs: ['three-jobs', 'five-jobs', 'powerline-look'],
     })
+  })
+})
+
+// /resources gets most status line search impressions and sent every visitor off-site. It shows
+// rendered status lines that do a listed tool's job, and sends a compared tool to its page first.
+describe('resourcesShowcase', () => {
+  it('picks up to three status lines sharing three jobs with any compared tool, in copy order', () => {
+    expect(resourcesShowcase(gallery).cards.map(({ card }) => card.slug)).toEqual([
+      'three-jobs',
+      'five-jobs',
+      'burn-rate',
+    ])
+    expect(resourcesShowcase([oneJob, twoJobs]).cards).toEqual([])
+  })
+
+  it('maps each tool whose alternatives page is live, by its repo URL, to that page', () => {
+    expect(resourcesShowcase(gallery).alternatives).toEqual({
+      'https://github.com/sirmalloc/ccstatusline': 'ccstatusline',
+      'https://github.com/Owloops/claude-powerline': 'claude-powerline',
+      'https://github.com/jarrodwatts/claude-hud': 'claude-hud',
+      'https://github.com/Haleclipse/CCometixLine': 'ccometixline',
+    })
+    expect(resourcesShowcase([oneJob]).alternatives).toEqual({})
+  })
+
+  it('finds every compared tool on /resources under the same repo URL', () => {
+    const urls = RESOURCE_SECTIONS.flatMap((s) => s.resources.map((r) => r.url))
+    for (const tool of TOOLS) expect(urls, tool.name).toContain(tool.repoUrl)
   })
 })

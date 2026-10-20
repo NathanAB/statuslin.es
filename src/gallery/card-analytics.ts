@@ -16,6 +16,7 @@ export interface GalleryCardAnalytics {
     | 'facet'
     | 'best'
     | 'compare'
+    | 'resources'
     | 'mods'
     | 'related'
     | 'mod_related'

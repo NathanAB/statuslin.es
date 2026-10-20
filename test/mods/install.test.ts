@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { modCopyEvent, modInstallCommands, modInstallPrompt } from '@/mods/install'
+import {
+  marketplaceAddCommand,
+  modCopyEvent,
+  modInstallCommands,
+  modInstallPrompt,
+} from '@/mods/install'
+
+describe('marketplaceAddCommand', () => {
+  // In a Claude Code terminal session; Desktop has no /plugin command.
+  it("adds the site marketplace from Claude Code's /plugin command", () => {
+    expect(marketplaceAddCommand('https://staging.example.test')).toBe(
+      '/plugin marketplace add https://staging.example.test/marketplace.json',
+    )
+  })
+})
 
 describe('modInstallPrompt', () => {
   it('asks Claude to add the marketplace and install with the Claude Code it runs on, then to start a new session', () => {

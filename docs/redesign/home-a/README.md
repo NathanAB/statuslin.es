@@ -113,14 +113,16 @@ Measured on the current code. Keep each, or change it on purpose and update its 
   `homeMetaDescription(page, pageCount)`, and `noindex, follow` when sort, tags or kind are in the
   URL (`isFilteredHomeSearch`). Canonical is `canonicalLink(homeCanonicalPath(…))`, `homeSocialMeta`
   sets og:url/title/description, and `homeJsonLd` outputs WebSite, Organization and a CollectionPage
-  ItemList of the visible items in visible order.
+  ItemList of the visible items in visible order. The title, description and `h1` text changed on
+  purpose to the mods wording (growth plan #26, approved by the owner); `test/routes/home-meta.test.ts`
+  pins the new text.
 - **Headings:** exactly one `h1` with `HOME_HEADING` (plus ", page N" past page 1), and the hidden
   `h2` for the gallery.
 - **Server-rendered content:** every card's title is an `<a href="/c/slug">` or `/mods/slug` in the
   server HTML. Pagination is real links. No content may exist only after JavaScript runs. The hero's
   first status line render is in the server HTML.
 - **Unchanged:** the sitemap (`src/lib/sitemap.ts`, home plus `/?page=2..N`), robots.txt,
-  llms.txt, the OG image route `og.home.png`, and breadcrumbs pointing at the origin.
+  llms.txt's structure (its summary now says "mods", #26), the OG image route `og.home.png`, and breadcrumbs pointing at the origin.
 - **Images:** alt text, width and height on every image, `loading="lazy"` below the fold.
 - **CLS:** the hero terminal has a fixed height, and the font swap must not shift layout. Use
   `font-display: swap` with a fallback tuned via `size-adjust`, or preload the font file you use
@@ -358,3 +360,18 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - **Agent-native troubleshooting.** The status line not showing page leads with a fix prompt:
   the page's own checks for Claude Code to run on the visitor's machine, shown before it's copied,
   reporting before it changes anything.
+- **A Claude Code mods site** (growth plan #26). The home title, heading and blurb, the five topic
+  pages that list both kinds, submit, terms and `llms.txt` say "mods", naming status lines once as
+  one kind. Mods passed status lines in copies in October, and home never won the status line
+  search its old title led with. Pages only about status lines, the guides, `/resources` and every
+  URL keep their wording.
+- **Add the whole marketplace** (#21). Mod pages and `/mods` carry one plain line with
+  `/plugin marketplace add …` and a copy button, no popup. It's the only command shown to run by
+  hand, and it installs nothing, so install counts still come only from the copied prompt. The
+  `marketplace_fetched` event measures it.
+- **`/mods` is the best-of page** (#7): "Best Claude Code Mods, Ranked by Installs", now that mods
+  have install counts and the header no longer links it. Its intro sends status line seekers to the
+  gallery.
+- **`/resources` leads somewhere to act** (#15). Under the tool list, up to three rendered status
+  lines that do a listed tool's jobs. A compared tool's card opens its alternatives page first,
+  with its repo a link in the card's corner.

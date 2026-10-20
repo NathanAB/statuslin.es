@@ -140,7 +140,7 @@ describe('home content', () => {
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
     expect(h1s[0]?.textContent).toBe(HOME_HEADING)
-    expect(HOME_HEADING).toBe('Claude Code status lines and mods')
+    expect(HOME_HEADING).toBe('Claude Code mods')
   })
 
   // Search engines and screen readers get each page's own h1; on screen the title stays the same,
@@ -150,7 +150,7 @@ describe('home content', () => {
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    expect(h1s[0]?.textContent).toBe('Claude Code status lines and mods, page 2')
+    expect(h1s[0]?.textContent).toBe('Claude Code mods, page 2')
     expect(h1s[0]?.querySelector('.sr-only')?.textContent).toBe(', page 2')
   })
 
@@ -174,13 +174,11 @@ describe('home content', () => {
   it('shows only the heading and the gallery past page 1', () => {
     renderHome({ page: 2, pageCount: 3 }, {}, modCard('weather'), [modCard('deck')])
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
-      'Claude Code status lines and mods, page 2',
-    )
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Claude Code mods, page 2')
     expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
       'Status lines and mods',
     ])
-    expect(screen.queryByText(/A status line is the row under your Claude Code prompt/)).toBeNull()
+    expect(screen.queryByText(/The status line is the row under your prompt/)).toBeNull()
   })
 
   // The hero is the first thing on the page, and the server renders its first state.
@@ -189,7 +187,7 @@ describe('home content', () => {
 
     const first = container.querySelector('section')
     expect(first?.querySelector('h1')?.textContent).toBe(HOME_HEADING)
-    expect(first?.textContent).toContain('A status line is the row under your Claude Code prompt.')
+    expect(first?.textContent).toContain('Mods change what Claude Code shows.')
     expect(first?.textContent).toContain('panel clean')
     expect(first?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()

@@ -260,6 +260,16 @@ describe('mod page', () => {
     ).toBe('/guide/are-claude-code-mods-safe')
   })
 
+  // One plain line, no popup: adding the marketplace gets every reviewed mod, not just this one.
+  it('offers the whole marketplace under the install button', () => {
+    renderPage()
+
+    const command = screen.getByText(`/plugin marketplace add ${ORIGIN}/marketplace.json`)
+    const install = screen.getByRole('button', { name: /Copy install prompt/ })
+    expect(install.compareDocumentPosition(command) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Copy marketplace command' })).toBeTruthy()
+  })
+
   // Nested boxes read as clutter: no section is a card, so only the rows themselves are surfaces.
   it('puts none of its sections in a card', () => {
     const { container } = renderPage()

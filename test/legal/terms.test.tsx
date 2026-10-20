@@ -12,6 +12,13 @@ describe('TermsContent', () => {
     expect(screen.getByText(/public domain/i)).toBeTruthy()
   })
 
+  it('calls the gallery one of mods, naming status lines once as one kind', () => {
+    render(<TermsContent />)
+    expect(
+      screen.getByText(/community gallery of Claude Code mods, including status lines\./),
+    ).toBeTruthy()
+  })
+
   it('puts the risk of running a status line or mod on the visitor', () => {
     render(<TermsContent />)
     expect(screen.getByText(/copy or install at your own risk/i)).toBeTruthy()

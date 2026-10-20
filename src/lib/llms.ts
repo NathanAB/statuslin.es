@@ -67,7 +67,7 @@ export function buildLlmsTxt(
     [
       '## Optional',
       '',
-      `- [Full catalog](${base}${LLMS_FULL_PATH}): every published status line and mod, with the copy from its page`,
+      `- [Full catalog](${base}${LLMS_FULL_PATH}): every published mod, with the copy from its page`,
     ].join('\n'),
   )
   return `${blocks.join('\n\n')}\n`
@@ -97,8 +97,8 @@ export function buildLlmsFullTxt(
 function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
   const blocks = [
     '# statuslin.es',
-    '> A gallery of Claude Code status lines and mods, each with a real preview. Copy a status line in one paste or install a mod with one command.',
-    "Status lines are scripts whose output Claude Code shows under the prompt. Mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead.",
+    '> A gallery of Claude Code mods, status lines included, each with a real preview. Install any of them with one copied prompt.',
+    "Status lines are scripts whose output Claude Code shows under the prompt. The other mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -109,8 +109,8 @@ function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
 
 function corePageLinks(base: string): string[] {
   return [
-    `- [Gallery](${base}/): every published status line and mod, sorted by trending, newest, or most installed`,
-    `- [Mods](${base}${MODS_PATH}): every published mod`,
+    `- [Gallery](${base}/): every published mod, sorted by trending, newest, or most installed`,
+    `- [Mods](${base}${MODS_PATH}): the plugin mods, ranked by installs`,
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
     `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
     `- [${GUIDE_TITLE_BASE}](${base}${GUIDE_PATH}): the statusLine setting, the JSON a script receives, and a tested example`,

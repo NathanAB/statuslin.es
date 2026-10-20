@@ -9,7 +9,7 @@ export function RankedCardList({
   ranked = false,
 }: {
   items: RankedCard[]
-  surface: 'best' | 'compare'
+  surface: 'best' | 'compare' | 'resources'
   ranked?: boolean
 }) {
   return (
