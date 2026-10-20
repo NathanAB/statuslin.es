@@ -13,7 +13,7 @@ describe('HomeInstall', () => {
     render(<HomeInstall />)
 
     expect(section()?.textContent).toContain(
-      'Every status line here was read by a person and rendered in a sandbox before it went up.',
+      'Every status line here was reviewed and rendered in a sandbox before it was listed.',
     )
     const steps = within(section() as HTMLElement).getAllByRole('heading', { level: 3 })
     expect(steps.map((step) => step.textContent)).toEqual([

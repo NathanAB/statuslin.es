@@ -55,7 +55,7 @@ describe('describeFootprint', () => {
       'adds the /filetree command',
       'sees each Read tool call before it runs and can block or change it',
       'runs on a timer',
-      'reacts to classic hook events',
+      'runs on Claude Code hooks, such as session start',
     ])
   })
 

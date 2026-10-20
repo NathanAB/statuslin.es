@@ -107,7 +107,7 @@ describe('/submit layout', () => {
     const steps = next()
     expect(steps).toHaveLength(3)
     expect(steps[0]).toMatch(/sandbox/)
-    expect(steps[1]).toMatch(/person/)
+    expect(steps[1]).toMatch(/review/)
     expect(steps[2]).toMatch(/email/)
   })
 

@@ -52,7 +52,7 @@ describe('/mods head', () => {
         {
           name: 'description',
           content:
-            'Claude Code mods, previewed in the terminal and Claude Desktop. Reviewed by a person, installed with one command.',
+            'Claude Code mods, previewed in the terminal and Claude Desktop. Reviewed before listing, installed with one command.',
         },
         { property: 'og:url', content: `${ORIGIN}/mods` },
       ]),

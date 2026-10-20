@@ -249,7 +249,7 @@ describe('mod page', () => {
 
     const panel = screen.getByRole('region', { name: 'What this mod can do' })
     expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
-      `Read by a person at commit ${SHA.slice(0, 7)}`,
+      `Reviewed at commit ${SHA.slice(0, 7)}`,
       'Reads files',
       'Adds the /filetree command',
     ])
@@ -476,9 +476,9 @@ describe('mod page', () => {
     expect(tile('What you see')?.textContent).toBe('A pane and a toast')
     expect(tile('Works in')?.textContent).toBe('Terminal')
     expect(tile('Slash commands')?.textContent).toBe('/filetree')
-    expect(tile('Uses your tokens')?.textContent).toBe('No')
-    expect(tile('Changes files')?.textContent).toBe('Nothing')
-    expect(tile('Network access')?.textContent).toBe('None')
+    expect(tile('Uses your plan')?.textContent).toBe('No')
+    expect(tile('Changes files')?.textContent).toBe('No')
+    expect(tile('Internet')?.textContent).toBe('Not used')
   })
 
   it('credits the author with a link to the source at the pinned commit', () => {

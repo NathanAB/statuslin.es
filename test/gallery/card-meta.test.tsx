@@ -50,20 +50,20 @@ describe('CardMeta', () => {
 
   // They're trust signals for running someone else's script, so they stay visible, but they
   // aren't browse dimensions: no link.
-  it('names network access and token reading without linking them, first', () => {
+  it('says it uses the internet and reads the sign-in token, in plain words, unlinked and first', () => {
     const meta = renderMeta({
       tags: ['git', 'network-access', 'reads-token'],
       networkHosts: ['api.example.com'],
       copyCount: 2,
     })
 
-    expect(meta.textContent).toBe('Network Access·Reads Token·Git·2 installs')
+    expect(meta.textContent).toBe('Uses the internet·Reads sign-in token·Git·2 installs')
     expect(
       within(meta)
         .getAllByRole('link')
         .map((link) => link.textContent),
     ).toEqual(['Git'])
-    expect(screen.getByRole('img', { name: 'Uses network: api.example.com' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Uses the internet: api.example.com' })).toBeTruthy()
   })
 
   it('starts a mod card with the word Mod', () => {

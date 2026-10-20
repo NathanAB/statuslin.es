@@ -1,9 +1,11 @@
+import { STATUS_LINE_FIX_PROMPT } from '@/guide/fix-prompt'
 import { NOT_SHOWING_FAQ } from '@/guide/status-line-not-showing-faq'
 import { DESKTOP_GUIDE_PATH, GUIDE_PATH } from '@/lib/page-title'
 import { FaqSection } from '@/ui/faq-section'
 import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
 import { NumberedList } from '@/ui/numbered-list'
+import { PromptPanel } from '@/ui/prompt-panel'
 import { Heading, Text, TextLink } from '@/ui/text'
 
 /**
@@ -22,7 +24,7 @@ const BLANK_CHECKS = [
   'If `disableAllHooks` is `true` outside managed settings, only a `statusLine` from managed settings runs. Remove it or set it to `false`.',
   'If your organization sets `allowManagedHooksOnly`, only a managed `statusLine` can show. Ask your admin.',
   "Run `claude --debug`. It logs the script's stderr on each run, and its exit code on the first run in a session.",
-  'Ask Claude to read your settings file and run the `statusLine` command, to surface any errors.',
+  'Ask Claude to read your settings file and run the `statusLine` command, to surface any errors. The fix prompt at the top of this page does that for you.',
 ]
 
 /** The /guide/status-line-not-showing page body: the terminal fixes, symptom by symptom. */
@@ -40,6 +42,14 @@ export function StatusLineNotShowingContent() {
           <TextLink to={DESKTOP_GUIDE_PATH}>The Claude Desktop guide</TextLink> covers that case.
         </Text>
       </Stack>
+
+      <PromptPanel
+        heading="Let Claude Code find the problem"
+        lead="Paste this into Claude Code. It checks your settings and runs your status line with sample input, then tells you the cause and waits before changing anything."
+        prompt={STATUS_LINE_FIX_PROMPT}
+        copyLabel="Copy fix prompt"
+        pasteHint="Paste it into Claude Code."
+      />
 
       <Stack gap={3}>
         <Heading level={2}>The status line is blank</Heading>

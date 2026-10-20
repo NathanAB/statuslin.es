@@ -162,18 +162,18 @@ describe('status line page', () => {
     expect(what.getByText('Written in')).toBeTruthy()
     expect(what.getByText('Bash')).toBeTruthy()
     expect(what.queryByText('Uses Nerd Font glyphs')).toBeNull()
-    expect(what.queryByText('Reads your Claude login')).toBeNull()
+    expect(what.queryByText('Reads your Claude sign-in token')).toBeNull()
   })
 
-  // A searcher decides at the install button: who read it, what it can reach and what it needs
+  // A searcher decides at the install button: that it was reviewed, what it can reach and what it needs
   // sit right after it, not pages below, and the help for a line that doesn't show is one click.
   it('says what to know before installing, right after the install button', () => {
     renderPage()
 
     const panel = screen.getByRole('region', { name: 'Before you install' })
     expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
-      'Read by a person · this version, Jul 6, 2026',
-      'No network access',
+      'Reviewed before listing · this version, Jul 6, 2026',
+      "Doesn't connect to the internet",
       'Uses Nerd Font glyphs',
     ])
     expect(
@@ -188,14 +188,14 @@ describe('status line page', () => {
     ])
   })
 
-  // Reading the login or calling hosts is a risk to weigh, not a topic: it leaves the topic chips.
+  // Reading the sign-in token or connecting to hosts is a risk to weigh, not a topic: it leaves the topic chips.
   it('keeps the risk facts out of the topic chips in the header', () => {
     renderPage(false, [], { ...DETAIL, tags: ['bash', 'reads-token'], readsClaudeToken: true })
 
     expect(screen.queryByRole('link', { name: /reads token/i })).toBeNull()
     expect(
       within(screen.getByRole('region', { name: 'Before you install' })).getByText(
-        'Reads your Claude login',
+        'Reads your Claude sign-in token',
       ),
     ).toBeTruthy()
   })

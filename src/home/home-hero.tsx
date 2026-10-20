@@ -1,12 +1,12 @@
 import { useId, useState } from 'react'
 import { InstallPromptButton } from '@/adopt/install-prompt-button'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
-import { reachFacts } from '@/gallery/config-install-facts'
+import { reachSentence } from '@/gallery/config-install-facts'
 import { AuthorByline } from '@/gallery/detail-byline'
 import type { HeroLine, HeroSessionKey } from '@/gallery/hero-lines'
 import { HERO_SESSIONS } from '@/home/hero-sessions'
 import { ChoiceGroup } from '@/ui/choice-group'
-import { FactLine } from '@/ui/fact-line'
+import { FactSentence } from '@/ui/fact-sentence'
 import { HeroActions, HeroLayout } from '@/ui/hero-layout'
 import { installsLabel } from '@/ui/install-count'
 import { Terminal } from '@/ui/terminal'
@@ -114,9 +114,9 @@ export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[
             </TextLink>
           </HeroActions>
           <AuthorByline author={line.author} after={installsLabel(copies.count)} />
-          <FactLine label="What this status line can reach" facts={reachFacts(line)} />
+          <FactSentence subject={line.title} fact={reachSentence(line)} />
           <Text muted size="sm">
-            Every line here was read by a person and rendered in a sandbox.
+            Every status line here is reviewed and rendered in a sandbox before it's listed.
           </Text>
           <LiveMessage>
             {anyChange ? `Showing ${line.title} in the ${session.label} session.` : ''}

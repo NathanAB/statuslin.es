@@ -17,6 +17,9 @@ export interface Facet {
   interpreter?: Interpreter
   /** Short label for tag chips / the filter dropdown. Required for every tag. */
   chipLabel: string
+  /** group 'capability' only: the chip's words, as a sentence-case fact about the script. Its
+   *  chipLabel stays the tag's name for search (JSON-LD keywords). */
+  label?: string
   titleBase?: string
   heading?: string
   metaDescription?: string
@@ -189,8 +192,20 @@ export const FACETS: Facet[] = [
       'Node.js Claude Code status lines. JSON parsing without jq, and the npm ecosystem when a config needs it. Rendered previews you can copy.',
     intro: FACET_INTRO.node,
   },
-  { slug: 'network-access', group: 'capability', page: false, chipLabel: 'network access' },
-  { slug: 'reads-token', group: 'capability', page: false, chipLabel: 'reads token' },
+  {
+    slug: 'network-access',
+    group: 'capability',
+    page: false,
+    chipLabel: 'network access',
+    label: 'Uses the internet',
+  },
+  {
+    slug: 'reads-token',
+    group: 'capability',
+    page: false,
+    chipLabel: 'reads token',
+    label: 'Reads sign-in token',
+  },
 ]
 
 export const FACET_BY_SLUG = new Map(FACETS.map((f) => [f.slug, f]))
@@ -200,6 +215,12 @@ export const FACET_BY_SLUG = new Map(FACETS.map((f) => [f.slug, f]))
  * only. Word boundaries include hyphens, so `multi-line` → `Multi-Line`. */
 export function tagLabel(chipLabel: string): string {
   return chipLabel.replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/** What a tag's chip says: a capability's own words, else its chipLabel, capitalized. */
+export function facetLabel(slug: string): string {
+  const facet = FACET_BY_SLUG.get(slug)
+  return facet?.label ?? tagLabel(facet?.chipLabel ?? slug)
 }
 
 /** Human-readable tag names for a page's JSON-LD keywords: each tag's chip label. */

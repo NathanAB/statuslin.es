@@ -14,6 +14,6 @@ export const BUDDY_FAQ: FaqEntry[] = [
   {
     question: 'Do pet mods use my tokens?',
     answer:
-      'Open the pet\'s page and check its "Uses your tokens" tile. It comes from what `claude plugin validate` reports about the code, not from the author\'s description.',
+      'Open the pet\'s page and check its "Uses your plan" tile. It comes from what `claude plugin validate` reports about the code, not from the author\'s description.',
   },
 ]

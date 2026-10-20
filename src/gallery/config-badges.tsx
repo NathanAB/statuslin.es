@@ -9,7 +9,7 @@ import {
   Tag,
   Terminal,
 } from 'lucide-react'
-import { FACET_BY_SLUG, tagHref, tagLabel } from '@/gallery/facets'
+import { FACET_BY_SLUG, facetLabel, tagHref } from '@/gallery/facets'
 import { Badge } from '@/ui/badge'
 import { Row, Stack } from '@/ui/layout'
 import { Text } from '@/ui/text'
@@ -46,7 +46,7 @@ export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHo
     <Row gap={2} wrap aboveOverlay>
       {tags.map((slug) => {
         const Icon = iconFor(slug)
-        const label = tagLabel(FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)
+        const label = facetLabel(slug)
         const hasPage = FACET_BY_SLUG.get(slug)?.page ?? false
         const isNetworkWithHosts = slug === 'network-access' && networkHosts.length > 0
         const badge = (
@@ -65,7 +65,7 @@ export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHo
               key={slug}
               content={
                 <Stack gap={1}>
-                  <Text size="xs">Contacts these hosts:</Text>
+                  <Text size="xs">Connects to:</Text>
                   {networkHosts.map((host) => (
                     <Text key={host} size="xs" muted>
                       {host}
@@ -74,7 +74,7 @@ export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHo
                 </Stack>
               }
             >
-              <span role="img" aria-label={`Uses network: ${networkHosts.join(', ')}`}>
+              <span role="img" aria-label={`Uses the internet: ${networkHosts.join(', ')}`}>
                 {content}
               </span>
             </Tooltip>

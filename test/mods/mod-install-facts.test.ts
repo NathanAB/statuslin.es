@@ -13,11 +13,11 @@ const mod = (events: string[], calls: string[], reviewedAt: string | null = '202
 // What a mod can do, in plain words beside its install button, from the validator's footprint:
 // the page copy is optional, so this must never depend on it.
 describe('modInstallFacts', () => {
-  it('says a person read this commit, then what the hooks can do, risks in the caution tint', () => {
+  it('says this commit was reviewed, then what the hooks can do, risks in the caution tint', () => {
     const facts = modInstallFacts(mod(['tool.call', 'prompt.submit'], ['$.fs.read']))
 
     expect(facts.map((f) => [f.text, f.caution ?? false])).toEqual([
-      ['Read by a person at commit `a5c8ead`, Oct 12, 2026', false],
+      ['Reviewed at commit `a5c8ead`, Oct 12, 2026', false],
       ['Sees each prompt you send and can change or drop it', true],
       ['Sees each tool call before it runs and can block or change it', true],
       ['Reads files', false],
@@ -29,7 +29,7 @@ describe('modInstallFacts', () => {
     const facts = modInstallFacts(mod([], [], null))
 
     expect(facts.map((f) => [f.text, f.caution ?? false])).toEqual([
-      ['Read by a person at commit `a5c8ead`', false],
+      ['Reviewed at commit `a5c8ead`', false],
       ["What it can reach isn't recorded yet", true],
     ])
   })

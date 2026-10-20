@@ -22,7 +22,7 @@ export function HomeInstall() {
     <HomeSection>
       <StepStrip
         heading="How installing works"
-        statement="Every status line here was read by a person and rendered in a sandbox before it went up. Installing one is a single paste."
+        statement="Every status line here was reviewed and rendered in a sandbox before it was listed. Installing one is a single paste."
         steps={STEPS}
       />
     </HomeSection>

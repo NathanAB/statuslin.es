@@ -18,7 +18,7 @@ describe('whyLine', () => {
         interpreter: 'bash',
         networkHosts: ['api.anthropic.com'],
       }),
-    ).toBe('Shows git, tokens, cost, and limits. Multi-line Bash script. Needs network access.')
+    ).toBe('Shows git, tokens, cost, and limits. Multi-line Bash script. Connects to the internet.')
   })
 
   it('joins two shown items without a list comma and combines style tags', () => {

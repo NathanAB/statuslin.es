@@ -20,7 +20,7 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 // and marketplace searches instead. No "best" until mods have install counts to rank by.
 const TITLE_BASE = 'Claude Code Mods Directory & Marketplace'
 const DESCRIPTION =
-  'Claude Code mods, previewed in the terminal and Claude Desktop. Reviewed by a person, installed with one command.'
+  'Claude Code mods, previewed in the terminal and Claude Desktop. Reviewed before listing, installed with one command.'
 
 export const Route = createFileRoute('/mods/')({
   loader: async () => {
@@ -61,8 +61,8 @@ function ModsPage() {
         <Stack gap={3}>
           <Heading level={1}>Claude Code mods</Heading>
           <Text muted>
-            Mods are plugins that change how Claude Code looks and works. A person reviews each one,
-            and the install pins the reviewed commit.
+            Mods are plugins that change how Claude Code looks and works. Each one is reviewed, and
+            the install pins the reviewed commit.
           </Text>
           <Text muted>
             New to mods?{' '}

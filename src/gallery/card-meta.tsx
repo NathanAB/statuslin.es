@@ -1,22 +1,20 @@
 import { iconFor } from '@/gallery/config-badges'
-import { FACET_BY_SLUG, tagHref, tagLabel } from '@/gallery/facets'
+import { FACET_BY_SLUG, facetLabel, tagHref } from '@/gallery/facets'
 import { RowFacts, RowNote } from '@/ui/gallery-row'
 import { installsLabel } from '@/ui/install-count'
 import { Stack } from '@/ui/layout'
 import { Text, TextLink } from '@/ui/text'
 import { Tooltip } from '@/ui/tooltip'
 
-const label = (slug: string) => tagLabel(FACET_BY_SLUG.get(slug)?.chipLabel ?? slug)
-
 /** What a status line can reach. They name a risk, not a way to browse, so they don't link. */
 function CapabilityNote({ slug, networkHosts }: { slug: string; networkHosts: string[] }) {
-  const note = <RowNote icon={iconFor(slug)}>{label(slug)}</RowNote>
+  const note = <RowNote icon={iconFor(slug)}>{facetLabel(slug)}</RowNote>
   if (slug !== 'network-access' || networkHosts.length === 0) return note
   return (
     <Tooltip
       content={
         <Stack gap={1}>
-          <Text size="xs">Contacts these hosts:</Text>
+          <Text size="xs">Connects to:</Text>
           {networkHosts.map((host) => (
             <Text key={host} size="xs" muted>
               {host}
@@ -25,7 +23,7 @@ function CapabilityNote({ slug, networkHosts }: { slug: string; networkHosts: st
         </Stack>
       }
     >
-      <span role="img" aria-label={`Uses network: ${networkHosts.join(', ')}`}>
+      <span role="img" aria-label={`Uses the internet: ${networkHosts.join(', ')}`}>
         {note}
       </span>
     </Tooltip>
@@ -60,10 +58,10 @@ export function CardMeta({
         ...browsable.map((slug) =>
           FACET_BY_SLUG.get(slug)?.page ? (
             <TextLink key={slug} {...tagHref(slug)} tone="muted">
-              {label(slug)}
+              {facetLabel(slug)}
             </TextLink>
           ) : (
-            label(slug)
+            facetLabel(slug)
           ),
         ),
         installsLabel(copyCount),

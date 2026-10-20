@@ -12,7 +12,7 @@ import { Heading, Text, TextLink } from '@/ui/text'
 const TILES: FactTableRow[] = [
   {
     label: MOD_TILE_LABEL.usesYourPlan,
-    cells: ['Yes when the mod sends its own requests to the model.'],
+    cells: ['Yes when the mod sends its own requests to Claude.'],
   },
   {
     label: MOD_TILE_LABEL.changesFiles,
@@ -72,13 +72,13 @@ export function ModSafetyContent() {
       <Stack gap={3}>
         <Heading level={2}>What statuslin.es checks before listing a mod</Heading>
         <Text muted>
-          A person reads the mod's footprint and source at a single commit. statuslin.es's
+          Each mod is reviewed at one commit: its footprint and its source. statuslin.es's
           marketplace, <TextLink href={MARKETPLACE_PATH}>{MARKETPLACE_PATH}</TextLink>, pins that
           commit, so a later push to the author's repository doesn't change what you install.
         </Text>
         <Text muted>
-          An update is a new commit, and a person reviews its changes before it goes live. If the
-          author deletes the pinned commit, new installs fail.
+          An update is a new commit, and its changes are reviewed before it goes live. If the author
+          deletes the pinned commit, new installs fail.
         </Text>
       </Stack>
 

@@ -348,3 +348,13 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - **The guide's contents follow the reader.** The section being read is marked current and a coral
   marker slides along the list's rail to it. Picking an entry glides there, unless the visitor
   asks for less motion.
+- **Plain words for what a line or mod can reach.** "No network access" read like an error, so it's
+  "Doesn't connect to the internet"; "Calls" is "Connects to"; the login is the "Claude sign-in
+  token"; the mod tile "Uses your tokens" is "Uses your plan", so "token" means one thing. The
+  hero's fact is a sentence that names the picked line, so it plainly changes with the pick.
+- **"Reviewed", never "read by a person".** Review is agent-assisted: a person approves each
+  listing, with agents helping check the code. `test/content/review-claims.test.ts` fails on any
+  page copy that says a person read or reviews it.
+- **Agent-native troubleshooting.** The status line not showing page leads with a fix prompt:
+  the page's own checks for Claude Code to run on the visitor's machine, shown before it's copied,
+  reporting before it changes anything.

@@ -36,7 +36,7 @@ export function modsFaq(): FaqEntry[] {
       // mod"). The review is SECURITY.md's, and the marketplace pins each entry's `sha` to the
       // reviewed commit (src/mods/marketplace.ts).
       answer:
-        'A mod runs with your permissions and no sandbox, so it can read your files, run programs and use the network. A person reviews every mod listed here, and its install is pinned to the reviewed commit. Each mod page lists what it can touch, from `claude plugin validate`.',
+        'A mod runs with your permissions and no sandbox, so it can read your files, run programs and use the network. Every mod listed here is reviewed, and its install is pinned to the reviewed commit. Each mod page lists what it can touch, from `claude plugin validate`.',
     },
   ]
 }

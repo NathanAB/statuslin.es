@@ -24,7 +24,7 @@ export function whyLine(card: Pick<GalleryCard, 'tags' | 'interpreter' | 'networ
   const sentences = [
     shown.length > 0 ? `Shows ${listPhrase(shown)}.` : '',
     upperFirst(shape.join(' ')),
-    card.networkHosts.length > 0 ? 'Needs network access.' : '',
+    card.networkHosts.length > 0 ? 'Connects to the internet.' : '',
   ]
   return sentences.filter(Boolean).join(' ')
 }

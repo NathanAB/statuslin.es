@@ -69,21 +69,25 @@ const announced = () => screen.getByRole('status').textContent
 const byline = () => screen.getByText('by').parentElement?.parentElement as HTMLElement
 
 describe('HomeHero', () => {
-  // You could copy a line that reads your Claude login without being told: the picked line's reach
-  // and the site's review now sit right under the install button.
-  it('says what the picked line can reach, and that a person read it, under the button', () => {
+  // You could copy a line that reads your Claude sign-in token without being told: the picked
+  // line's reach and the site's review sit right under the install button. The sentence names the
+  // line, so it plainly changes with the pick (a bare "No network access" read like an error).
+  it('says what the picked line can reach, by name, and that every line is reviewed', () => {
     renderHero()
-    const facts = () => screen.getByRole('list', { name: 'What this status line can reach' })
+    const reach = (title: string) =>
+      [...document.querySelectorAll('p')].find((p) => p.textContent?.startsWith(`${title} `))
+        ?.textContent
 
-    expect(facts().textContent).toBe('No network access')
+    expect(reach('Dreambase Panel')).toBe("Dreambase Panel doesn't connect to the internet.")
     expect(
-      screen.getByText('Every line here was read by a person and rendered in a sandbox.'),
+      screen.getByText(
+        "Every status line here is reviewed and rendered in a sandbox before it's listed.",
+      ),
     ).toBeTruthy()
     fireEvent.click(within(picker()).getByRole('radio', { name: /^Pace Dot Meters/ }))
-    expect([...facts().querySelectorAll('li')].map((li) => li.textContent)).toEqual([
-      'Reads your Claude login',
-      'Calls wttr.in',
-    ])
+    expect(reach('Pace Dot Meters')).toBe(
+      'Pace Dot Meters reads your Claude sign-in token and connects to wttr.in.',
+    )
   })
 
   it("server-renders the heading, the sentence and the first status line's Everyday session", () => {

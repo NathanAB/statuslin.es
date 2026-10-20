@@ -1,4 +1,4 @@
-import { CircleHelp, Info, Puzzle, UserCheck } from 'lucide-react'
+import { CircleHelp, Info, Puzzle, ShieldCheck } from 'lucide-react'
 import type { PageCopy } from '@/content/types'
 import { utcDateLabel } from '@/lib/date-label'
 import type { InstallFact } from '@/ui/install-facts'
@@ -9,7 +9,7 @@ import type { ModDetail } from './queries'
 const capitalized = (phrase: string) => phrase.charAt(0).toUpperCase() + phrase.slice(1)
 
 /**
- * What a mod page says beside its install button: that a person read this commit, then what its
+ * What a mod page says beside its install button: that this commit was reviewed, then what its
  * hooks can do, in the validator footprint's own plain words (so it shows for every mod, with or
  * without page copy), then the copy's good-to-know notes. An empty footprint reads as not
  * recorded, never as doing nothing.
@@ -19,7 +19,7 @@ export function modInstallFacts(
     generatedContent: Pick<PageCopy, 'goodToKnow'> | null
   },
 ): InstallFact[] {
-  const reviewed = `Read by a person at commit \`${mod.commitSha.slice(0, SHORT_SHA_LENGTH)}\``
+  const reviewed = `Reviewed at commit \`${mod.commitSha.slice(0, SHORT_SHA_LENGTH)}\``
   const { phrases, risks } = describeFootprint(mod.footprint)
   const powers: InstallFact[] = footprintRecorded(mod.footprint)
     ? phrases
@@ -33,7 +33,7 @@ export function modInstallFacts(
     : [{ icon: CircleHelp, text: "What it can reach isn't recorded yet", caution: true }]
   return [
     {
-      icon: UserCheck,
+      icon: ShieldCheck,
       text: mod.reviewedAt ? `${reviewed}, ${utcDateLabel(mod.reviewedAt)}` : reviewed,
     },
     ...powers,

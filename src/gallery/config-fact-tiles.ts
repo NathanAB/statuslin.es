@@ -12,7 +12,7 @@ const INTERPRETER_NAME: Record<Interpreter, string> = {
 
 /**
  * A status line's fact tiles, from the facts stored with its version. The page copy only words
- * the login tile, and only when the script does read the login.
+ * the sign-in token tile, and only when the script does read the token.
  */
 export function configFactTiles(
   config: Pick<
@@ -24,20 +24,20 @@ export function configFactTiles(
   const network =
     config.networkHosts.length > 0
       ? config.networkHosts.map((host) => `\`${host}\``).join(', ')
-      : 'None'
+      : 'Not used'
   return [
     {
       icon: iconFor(config.interpreter),
       label: 'Written in',
       value: INTERPRETER_NAME[config.interpreter],
     },
-    { icon: Globe, label: 'Network access', value: network },
+    { icon: Globe, label: 'Internet', value: network },
     ...(config.readsClaudeToken
       ? [
           {
             icon: KeyRound,
-            label: 'Reads your Claude login',
-            value: details.readsClaudeLogin ?? 'Yes',
+            label: 'Claude sign-in token',
+            value: details.readsClaudeLogin ?? 'Read',
             caution: true,
           },
         ]

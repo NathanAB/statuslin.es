@@ -34,12 +34,12 @@ export function submitPageCopy(
 // last step differs for an update, which replaces the live version instead of adding one.
 const STATUS_LINE_STEPS = [
   "We run it in a sandbox against sample Claude Code sessions. A script that needs the network waits until we've checked the hosts it calls.",
-  'A person reads the script and its previews.',
+  'We review the script and its previews.',
   "Once it's approved it goes up in the gallery. We email you either way.",
 ]
 const MOD_STEPS = [
   'We pin your link to one commit, so what we review is what people install.',
-  'We check it in a sandbox and render its previews, then a person reviews it.',
+  'We check it in a sandbox and render its previews, then review it.',
   "Once it's approved it goes up in the gallery and the marketplace. We email you either way.",
 ]
 const UPDATE_LIVE = "Once it's approved it replaces the live version. We email you either way."

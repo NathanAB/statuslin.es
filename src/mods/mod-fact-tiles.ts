@@ -25,9 +25,9 @@ export const MOD_TILE_LABEL = {
   showsUp: 'What you see',
   worksIn: 'Works in',
   commands: 'Slash commands',
-  usesYourPlan: 'Uses your tokens',
+  usesYourPlan: 'Uses your plan',
   changesFiles: 'Changes files',
-  network: 'Network access',
+  network: 'Internet',
   reviewedCommit: 'Reviewed commit',
   recordedWith: 'Preview recorded with',
 } as const
@@ -128,13 +128,15 @@ export function modFactTiles(
       icon: FilePen,
       label: MOD_TILE_LABEL.changesFiles,
       value: ifRecorded(
-        reachValue(facts.writesFiles, facts.runsPrograms, details.changesFiles, 'Nothing'),
+        reachValue(facts.writesFiles, facts.runsPrograms, details.changesFiles, 'No'),
       ),
     },
     {
       icon: Globe,
       label: MOD_TILE_LABEL.network,
-      value: ifRecorded(reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None')),
+      value: ifRecorded(
+        reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'Not used'),
+      ),
     },
     {
       icon: GitCommitHorizontal,

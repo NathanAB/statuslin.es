@@ -85,7 +85,7 @@ describe('BuddyGuideContent', () => {
     expect(document.body.textContent).toContain('Pixipet preview')
     // The previews, fact tiles and install prompt live on each mod page now.
     expect(screen.queryByRole('button', { name: /copy install prompt/i })).toBeNull()
-    for (const tile of ['Changes files', 'Network access', 'Reviewed commit']) {
+    for (const tile of ['Changes files', 'Preview recorded with', 'Reviewed commit']) {
       expect(document.body.textContent).not.toContain(tile)
     }
   })

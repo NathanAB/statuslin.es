@@ -114,7 +114,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | File | What it does |
 | --- | --- | --- |
-| `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control (`size="pill"`: the redesign's pill, icon trailing); `Copyable` overlays it on a code well |
+| `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control (`size="pill"`: the redesign's pill, icon trailing); `Copyable` overlays it on a code well. `useCopied` is its Copied state, timer cleared on unmount; `<SwapLabel>` (`src/ui/swap-label.tsx`) swaps the label without changing the width |
 | `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: the home hero's "Copy install prompt" pill, install count, toast |
 | `<InstallCount count>` / `installsLabel(n)` | `src/ui/install-count.tsx` | "1 install", "223 installs": how every surface words the count (the data calls it `copyCount`) |
 | `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display; pass `text` to copy |
@@ -125,8 +125,9 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<FormLayout asideTitle aside>` | `src/ui/form-layout.tsx` | A form page: the form over 8 of the column's 12 columns, a sticky side panel on the last 4 (the submit page's "What happens next"); stacked below 1024px |
 | `<AsideLayout aside>` | `src/ui/aside-layout.tsx` | Main part over 8 of the column's 12 columns, `aside` on the last 4, top-aligned; stacked below 1024px. The status line and mod pages' header and install button, with their `InstallFacts` beside them |
 | `<InstallFacts heading facts link>` | `src/ui/install-facts.tsx` | The facts a visitor needs before installing, in a `Panel` beside the install button: "Before you install" (review, reach, requirements, then the troubleshooting link) and "What this mod can do" (the footprint in plain words, then the mod safety guide). A `caution` fact is in the warning tint |
-| `<FactLine label facts>` | `src/ui/fact-line.tsx` | A few install facts on one wrapping line for a tight spot (the home hero, under its button), as a list named by `label` |
-| `<DocLayout contents>` | `src/ui/doc-layout.tsx` | A long doc page: a sticky contents list (links to section ids) in a left column from 1280px, inline under the intro below that |
+| `<FactSentence subject fact>` | `src/ui/fact-sentence.tsx` | One install fact as a sentence that names its subject, for a tight spot (the home hero, under its button), so it plainly changes with the pick |
+| `<PromptPanel heading lead prompt copyLabel pasteHint>` | `src/ui/prompt-panel.tsx` | A prompt to paste into Claude Code that does the page's job on the visitor's machine (the troubleshooting guide's fix prompt): the copy pill, then the prompt, shown open |
+| `<DocLayout contents>` | `src/ui/doc-layout.tsx` | A long doc page: a sticky contents list (links to section ids) in a left column from 1280px, inline under the intro below that. The list marks the section being read and slides a marker to it (`useActiveSection`) |
 | `<StepList label steps>` | `src/ui/step-list.tsx` | Numbered steps (the guide's "Wire up a script by hand"): a number and an h3 each, then its text and code at full width |
 | `<SideBySide first second>` | `src/ui/side-by-side.tsx` | Two things read together, side by side from 1024px (three fifths and two fifths), stacked below |
 | `<InlineCommand>` | `src/ui/inline-command.tsx` | A short shell command inside a sentence, monospace and kept on one line |
@@ -138,7 +139,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles, each one borderless surface; `caution` uses the warning tint |
 | `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
-| `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip; `avatar={false}` shows the byline alone (gallery rows) |
+| `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip, linked to the GitHub profile, everywhere a username shows |
 | `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header (Write your own, Resources, Star, a filled Submit pill, then sign-in or the user menu); used by shells. Phones keep the wordmark and Submit and get `SiteMenu` (`src/ui/site-menu.tsx`), a full-screen menu of the rest; the bar's account dropdown is `UserMenu` (`src/ui/user-menu.tsx`) |
 | `<SignInButton look>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger. `look`: `button` (default, outlined), `bar` (header bar) or `menu` (phone menu) |
 | `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview. `look="well"` (default) sits it in a code well; `look="strip"` sets it at 15px on a full-width dark strip (gallery rows); `look="terminal"` takes the home terminal's text. A line wider than its strip gets a round "Show more of this status line" button at its right edge, above a gallery row's link |

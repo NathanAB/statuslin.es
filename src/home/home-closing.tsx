@@ -8,8 +8,8 @@ export function HomeClosing({ signedIn }: { signedIn: boolean }) {
       heading="Yours goes here."
       lead={
         signedIn
-          ? "Paste a status line's script or a mod's GitHub link. It renders in a sandbox, a person reads it, and then it goes live."
-          : "Sign in with GitHub, then paste a status line's script or a mod's GitHub link. It renders in a sandbox, a person reads it, and then it goes live."
+          ? "Paste a status line's script or a mod's GitHub link. It renders in a sandbox and is reviewed before it goes live."
+          : "Sign in with GitHub, then paste a status line's script or a mod's GitHub link. It renders in a sandbox and is reviewed before it goes live."
       }
       panel={<SubmitChooser signedIn={signedIn} />}
     />
