@@ -64,6 +64,14 @@ describe('footprintFacts', () => {
     expect(footprintFacts({ ...NONE, calls: ['$.process.spawn'] }).runsPrograms).toBe(true)
   })
 
+  // The footprint records the call, not which tool it names, and Bash, Edit and Write are all one call away.
+  it('counts calling a Claude Code tool as both running programs and changing files', () => {
+    expect(footprintFacts({ ...NONE, calls: ['$.tool.call'] })).toMatchObject({
+      runsPrograms: true,
+      writesFiles: true,
+    })
+  })
+
   it('treats a file call it does not know as a possible write, never as a read', () => {
     expect(footprintFacts({ ...NONE, calls: ['$.fs.remove'] }).writesFiles).toBe(true)
     expect(

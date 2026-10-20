@@ -1,16 +1,17 @@
 import type { AnsiSegment } from '@/render/types'
 
-// `well` sits the line in a small dark code well; `strip` sets it at 15px in the terminal's text
-// colour on a full-width dark strip, so a gallery row's preview stands apart from the card;
+// `well` sits the line in a small dark code well; `strip` sets it in the terminal's text colour on a
+// full-width dark strip, so a gallery row's preview stands apart from the card. Both keep 14px text
+// on the terminal's row height (leading-terminal), so half-block pixel art rows touch, no seams;
 // `terminal` takes the home terminal's own text. Each look styles the scroller and the line.
 const LOOK = {
   well: {
     scroller: '',
-    line: 'inline-block rounded-md bg-sunken px-3 py-1.5 text-foreground text-sm',
+    line: 'inline-block rounded-md bg-sunken px-3 py-1.5 text-foreground text-sm leading-terminal',
   },
   strip: {
     scroller: 'rounded-xl bg-sunken px-4.5 py-3.5',
-    line: 'block w-max text-[0.9375rem] text-terminal-foreground leading-normal',
+    line: 'block w-max text-sm leading-terminal text-terminal-foreground',
   },
   terminal: { scroller: '', line: 'block w-max' },
 } as const

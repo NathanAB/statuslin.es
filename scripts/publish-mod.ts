@@ -5,8 +5,14 @@ import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
-import { createGitHub, type GitHub } from '@/mods/github'
+import { createGitHub, type GitHub, type GitHubSource } from '@/mods/github'
 import { hasSubmission } from '@/mods/import'
+import {
+  type PngWriter,
+  previewReviewLines,
+  storedPreviews,
+  writeTmpPng,
+} from '@/mods/preview-review'
 import {
   alreadyCurrentGuard,
   compareBase,
@@ -50,8 +56,9 @@ import { terminalLine } from '@/mods/terminal-line'
  *   # Or from your machine against any env:
  *   DATABASE_URL=<env-url> bun run scripts/publish-mod.ts <slug> <sha> [--apply --confirm=<slug>]
  *
- * Read the WARN lines before applying. Exit code 0 on a clean dry run or a publish, 1 on any
- * refusal or error.
+ * Both runs print the version's README, fenced as untrusted, beside its stored previews: check
+ * that each preview shows what the README says the mod draws, then read the WARN lines, before
+ * applying. Exit code 0 on a clean dry run or a publish, 1 on any refusal or error.
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -59,8 +66,9 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface PublishDeps {
   db: Db
-  github: GitHub
+  github: GitHub & Pick<GitHubSource, 'readme'>
   log: (line: string) => void
+  writePng: PngWriter
 }
 
 const USAGE = `Usage: bun run scripts/publish-mod.ts <slug> <sha> [--apply --confirm=<slug>]
@@ -164,6 +172,20 @@ async function makeCurrent(
   })
 }
 
+/** The README beside the version's stored previews, for the operator to compare; none unrendered. */
+async function reviewLines(
+  { db, github, writePng }: PublishDeps,
+  { slug, target }: PublishFacts,
+): Promise<string[]> {
+  if (!target.rendered) return []
+  const review = {
+    pin: { slug, versionId: target.id, commitSha: target.commitSha },
+    readme: await github.readme(target.repoUrl, target.path, target.commitSha),
+    ...(await storedPreviews(db, target.id)),
+  }
+  return previewReviewLines(review, writePng)
+}
+
 export async function runPublish(argv: string[], deps: PublishDeps): Promise<number> {
   const { db, github } = deps
   const log = (line: string) => deps.log(terminalLine(line))
@@ -186,7 +208,7 @@ export async function runPublish(argv: string[], deps: PublishDeps): Promise<num
   }
   const { modId, readPointerId, facts } = loaded
   const guards = [...publishGuards(facts), ...(apply ? confirmationGuards(slug, argv) : [])]
-  for (const line of publishReport(facts)) log(line)
+  for (const line of [...publishReport(facts), ...(await reviewLines(deps, facts))]) log(line)
   for (const g of guards) log(guardLine(g))
 
   if (refuses(guards)) return 1
@@ -218,6 +240,7 @@ async function main(): Promise<number> {
       db,
       github: createGitHub(),
       log: (line) => console.log(line),
+      writePng: writeTmpPng,
     })
   } finally {
     await client.end()

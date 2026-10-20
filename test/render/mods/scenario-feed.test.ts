@@ -1,5 +1,16 @@
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { cannedReply, feedFile, feedScenario } from '@/render/mods/scenario-feed'
+import {
+  BUSY_WORKSPACE_FILES,
+  busySettings,
+  cannedReply,
+  feedFile,
+  feedScenario,
+  playsBusySession,
+} from '@/render/mods/scenario-feed'
 import { hm, usage, win } from '@/render/scenario-helpers'
 import { SCENARIO_BY_KEY } from '@/render/scenarios'
 import type { Scenario } from '@/render/types'
@@ -19,7 +30,7 @@ describe('feedScenario', () => {
 
 describe('feedFile', () => {
   it('answers the session calls from the scenario, for the mod under render', () => {
-    const { target, answers } = feedFile(feedScenario(), 'token-weather', NOW_MS)
+    const { target, answers } = feedFile(feedScenario(), 'token-weather', NOW_MS, false)
 
     expect(target).toBe('token-weather')
     expect(answers['session.usage']).toEqual({
@@ -52,7 +63,7 @@ describe('feedFile', () => {
       model: { id: 'claude-sonnet-4-6', display_name: 'Sonnet 4.6' },
     })
 
-    const { answers } = feedFile(scenario, 'context-bar', NOW_MS)
+    const { answers } = feedFile(scenario, 'context-bar', NOW_MS, false)
 
     expect(answers['session.usage']).toEqual({
       startedAt: NOW_MS - 1_000,
@@ -67,7 +78,112 @@ describe('feedFile', () => {
   })
 
   it('names no target for the baseline, so no plugin is answered', () => {
-    expect(feedFile(feedScenario(), null, NOW_MS).target).toBeNull()
+    expect(feedFile(feedScenario(), null, NOW_MS, false).target).toBeNull()
+  })
+
+  it("leaves the mod's model and agent calls to the engine, even in a busy session", () => {
+    const { answers } = feedFile(feedScenario(), 'pixel-cat', NOW_MS, true)
+
+    expect(Object.keys(answers).filter((event) => /^(model|agent)\./.test(event))).toEqual([])
+  })
+
+  it('plays one fixed busy session in the workspace: a failing test, a fix, a pass, a denied rm -rf', () => {
+    expect(feedFile(feedScenario(), null, NOW_MS, true).busy).toEqual([
+      { tool: 'Bash', command: 'npm test', description: 'Run the tests' },
+      { tool: 'Read', file_path: '/home/user/app/src/sum.js' },
+      {
+        tool: 'Edit',
+        file_path: '/home/user/app/src/sum.js',
+        old_string: 'return a - b',
+        new_string: 'return a + b',
+      },
+      { tool: 'Bash', command: 'npm test', description: 'Run the tests' },
+      { tool: 'Bash', command: 'rm -rf build', description: 'Remove the build output' },
+    ])
+  })
+
+  it('plays nothing in a session whose steps never type /preview-busy', () => {
+    expect(feedFile(feedScenario(), 'pixel-cat', NOW_MS, false).busy).toEqual([])
+  })
+})
+
+describe('playsBusySession', () => {
+  const step = (text: string) => ({ type: 'text' as const, text })
+
+  it.each([
+    { texts: ['/preview-busy'], busy: true },
+    { texts: ['/pet', ' /preview-busy\n'], busy: true },
+    { texts: [], busy: false },
+    { texts: ['/pet'], busy: false },
+    { texts: ['run /preview-busy'], busy: false },
+  ])('is $busy for steps typing $texts', ({ texts, busy }) => {
+    expect(playsBusySession(texts.map(step))).toBe(busy)
+  })
+})
+
+describe('busy session workspace', () => {
+  function workspace(): string {
+    const dir = mkdtempSync(join(tmpdir(), 'busy-'))
+    for (const { path, data } of BUSY_WORKSPACE_FILES) {
+      mkdirSync(dirname(join(dir, path)), { recursive: true })
+      writeFileSync(join(dir, path), data)
+    }
+    return dir
+  }
+
+  function runTests(dir: string): { status: number; stdout: string } {
+    try {
+      return { status: 0, stdout: execFileSync('sh', ['test.sh'], { cwd: dir, encoding: 'utf8' }) }
+    } catch (error) {
+      const failed = error as { status: number; stdout: string }
+      return { status: failed.status, stdout: failed.stdout }
+    }
+  }
+
+  it('runs test.sh as its npm test script, and has a build folder to remove', () => {
+    const files = new Map(BUSY_WORKSPACE_FILES.map((f) => [f.path, f.data]))
+
+    expect(JSON.parse(String(files.get('package.json'))).scripts).toEqual({ test: 'sh test.sh' })
+    expect([...files.keys()].filter((path) => path.startsWith('build/'))).toHaveLength(1)
+  })
+
+  it("turns off npm's update check, which holds a passing npm 10 run open while offline", () => {
+    const files = new Map(BUSY_WORKSPACE_FILES.map((f) => [f.path, f.data]))
+
+    expect(files.get('.npmrc')).toBe('update-notifier=false\n')
+  })
+
+  it("fails its tests until the busy session's Edit lands, then passes them, with fixed output", () => {
+    const dir = workspace()
+    const edit = feedFile(feedScenario(), null, NOW_MS, true).busy.find(
+      (call) => call.tool === 'Edit',
+    )
+    if (edit?.tool !== 'Edit') throw new Error('the busy session makes no Edit')
+    const source = join(dir, 'src/sum.js')
+
+    expect(runTests(dir)).toEqual({ status: 1, stdout: 'Tests: 1 failed, 2 passed, 3 total\n' })
+    writeFileSync(source, readFileSync(source, 'utf8').replace(edit.old_string, edit.new_string))
+    expect(runTests(dir)).toEqual({ status: 0, stdout: 'Tests: 3 passed, 3 total\n' })
+  })
+})
+
+describe('busySettings', () => {
+  it('allows exactly the busy session calls, and denies every rm -rf', () => {
+    expect(busySettings(feedScenario()).permissions).toEqual({
+      allow: [
+        'Bash(npm test)',
+        'Read(//home/user/app/src/sum.js)',
+        'Edit(//home/user/app/src/sum.js)',
+      ],
+      deny: ['Bash(rm -rf:*)'],
+    })
+  })
+
+  it("runs the tests outside Desktop's Bash sandbox, which cannot start in a hardened sandbox", () => {
+    expect(busySettings(feedScenario()).sandbox).toEqual({
+      enabled: false,
+      excludedCommands: ['npm test'],
+    })
   })
 })
 

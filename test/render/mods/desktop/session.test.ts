@@ -24,12 +24,12 @@ import {
   stepTextPath,
   transcriptLinesCommand,
 } from '@/render/mods/desktop/session'
-import { cannedReply, feedScenario } from '@/render/mods/scenario-feed'
+import { busySettings, cannedReply, feedScenario } from '@/render/mods/scenario-feed'
 import { FEED_PLUGIN_DIR, REPLY_FILE, sessionEnv } from '@/render/mods/session'
 
 const scenario = feedScenario()
 const CONFIG_DIR = sessionEnv(scenario).CLAUDE_CONFIG_DIR
-const SEED = { target: 'token-weather', nowMs: 0, claudeCodeVersion: '2.1.295' }
+const SEED = { target: 'token-weather', nowMs: 0, claudeCodeVersion: '2.1.295', busy: false }
 
 describe('desktopEnv', () => {
   it('loads the scenario feed before the mod', () => {
@@ -95,6 +95,22 @@ describe('desktopSessionFiles', () => {
     expect(settings(files)).toEqual({
       statusLine: { type: 'command', command: `cat | bash ${script}` },
     })
+  })
+
+  it('puts no busy file in the workspace of a session that never types /preview-busy', () => {
+    expect([...files.keys()].filter((path) => path.startsWith('/home/user/app/'))).toEqual([])
+  })
+
+  it("writes one settings.json in a busy session, the busy session's rules beside the status line", () => {
+    const busy = desktopSessionFiles(scenario, { ...SEED, busy: true })
+    const paths = busy.map((f) => f.path)
+
+    expect(paths.filter((path) => path === `${CONFIG_DIR}/settings.json`)).toHaveLength(1)
+    expect(settings(new Map(busy.map((f) => [f.path, f.data])))).toEqual({
+      ...busySettings(scenario),
+      statusLine: { type: 'command', command: `cat | bash ${CONFIG_DIR}/statusline.sh` },
+    })
+    expect(paths).toContain('/home/user/app/package.json')
   })
 
   it.each([

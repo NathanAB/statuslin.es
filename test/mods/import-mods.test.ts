@@ -164,6 +164,45 @@ describe('importMods', () => {
     expect({ mods: await allMods(), versions: await allVersions() }).toEqual(before)
   })
 
+  it('updates the input steps of an imported commit in place, fetching nothing', async () => {
+    await run([entry()])
+    const steps = [{ type: 'text', text: '/skin demo' }]
+
+    const second = await run([entry({ inputSteps: steps })])
+
+    expect(second.exitCode).toBe(0)
+    expect(second.calls).toEqual([])
+    expect(second.output).toMatch(/skins.*input steps.*render/)
+    const versions = await allVersions()
+    expect(versions).toHaveLength(1)
+    expect(versions[0]?.inputSteps).toEqual(steps)
+  })
+
+  it("leaves a user's submission of the same commit alone when updating input steps", async () => {
+    await run([entry()])
+    const [curated] = await allVersions()
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    const theirsId = await addMod(db, 'skins-theirs', 'draft')
+    const theirs = await addVersion(db, theirsId, {
+      repoUrl: entry().repoUrl,
+      commitSha: SHA,
+      versionNumber: 1,
+    })
+    await insertPendingSubmission(db, { kind: 'mod', versionId: theirs, submittedBy: 'ada' })
+    const before = (await allVersions()).find((v) => v.id === theirs)?.inputSteps
+
+    await run([entry({ inputSteps: [{ type: 'text', text: '/skin demo' }] })])
+
+    const after = await allVersions()
+    expect(after.find((v) => v.id === theirs)?.inputSteps).toEqual(before)
+    expect(after.find((v) => v.id === curated?.id)?.inputSteps).toEqual([
+      { type: 'text', text: '/skin demo' },
+    ])
+  })
+
   it('adds a re-pinned entry as the next version of its mod and leaves the current one live', async () => {
     await run([entry()])
     await db.update(schema.mods).set({ status: 'published' })
@@ -363,13 +402,19 @@ describe('importMods', () => {
         {},
         {
           ...silent,
-          github: deps.github,
+          github: { ...deps.github, readme: async () => null },
           recorder: new FakeModRecorder({ baseline, mods: { skins } }),
           desktopRecorder: new FakeDesktopRecorder(),
+          review: async () => '',
+          writePng: () => 'unused.png',
         },
       )
     const publish = (sha: string, ...flags: string[]) =>
-      runPublish(['skins', sha, ...flags], { ...silent, github: fakeGitHub() })
+      runPublish(['skins', sha, ...flags], {
+        ...silent,
+        github: fakeGitHub(),
+        writePng: () => 'unused.png',
+      })
     const liveCommit = async () => (await getMarketplaceRows(db)).map((row) => row.commitSha)
     await run([entry()], deps)
     await render()

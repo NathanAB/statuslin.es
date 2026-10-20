@@ -124,6 +124,12 @@ describe('modFactTiles', () => {
     )
   })
 
+  it('says a mod that calls Claude Code’s tools changes files and may use the network', () => {
+    const footprint = { events: [ABOVE], calls: ['$.tool.call'] }
+    expect(value({ footprint }, 'Changes files')).toBe('Yes')
+    expect(value({ footprint }, 'Network access')).toBe('Only through programs it runs')
+  })
+
   it('names the reviewed commit without a date when no review date is stored', () => {
     expect(value({ reviewedAt: null }, 'Reviewed commit')).toBe('`0123456`')
   })

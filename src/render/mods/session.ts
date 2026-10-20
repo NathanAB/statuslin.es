@@ -5,7 +5,13 @@ import type { InputStep } from '@/mods/curation'
 import { SANDBOX_CANNED_MODEL_SERVER_DEST, SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
-import { cannedReply, feedFile, feedStdin } from './scenario-feed'
+import {
+  BUSY_WORKSPACE_FILES,
+  busySettings,
+  cannedReply,
+  feedFile,
+  feedStdin,
+} from './scenario-feed'
 
 export const TERMINAL = { cols: 100, rows: 30 }
 
@@ -76,15 +82,43 @@ export interface SessionSeed {
   target: string | null
   nowMs: number
   claudeCodeVersion: string
+  /** Whether the input steps type `/preview-busy` (`playsBusySession`). */
+  busy: boolean
+}
+
+type SessionFile = { path: string; data: string }
+
+/**
+ * The session's settings.json on both surfaces: in a busy session, what `/preview-busy`'s calls
+ * need (a call no rule covers would wait on a permission prompt), plus the surface's own keys.
+ * None at all when there is nothing to set.
+ */
+function settingsFiles(
+  scenario: Scenario,
+  busy: boolean,
+  own: Record<string, unknown>,
+): SessionFile[] {
+  const settings = { ...(busy ? busySettings(scenario) : {}), ...own }
+  if (Object.keys(settings).length === 0) return []
+  return [{ path: `${CONFIG_DIR}/settings.json`, data: JSON.stringify(settings) }]
+}
+
+/** Uploaded before setup runs, whose seed commit then holds them. */
+function busyWorkspaceFiles(scenario: Scenario): SessionFile[] {
+  const workspace = feedStdin(scenario).workspace.current_dir
+  return BUSY_WORKSPACE_FILES.map(({ path, data }) => ({ path: `${workspace}/${path}`, data }))
 }
 
 export function sessionFiles(
   scenario: Scenario,
-  { target, nowMs, claudeCodeVersion }: SessionSeed,
-): { path: string; data: string }[] {
+  { target, nowMs, claudeCodeVersion, busy }: SessionSeed,
+  ownSettings: Record<string, unknown> = {},
+): SessionFile[] {
   return [
     { path: `${CONFIG_DIR}/.claude.json`, data: claudeJson(scenario, claudeCodeVersion) },
-    { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs)) },
+    ...settingsFiles(scenario, busy, ownSettings),
+    ...(busy ? busyWorkspaceFiles(scenario) : []),
+    { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs, busy)) },
     { path: REPLY_FILE, data: JSON.stringify(cannedReply(scenario)) },
     ...FEED_PLUGIN_ASSETS.map((asset) => ({
       path: `${FEED_PLUGIN_DIR}/${asset}`,

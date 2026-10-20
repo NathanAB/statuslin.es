@@ -14,7 +14,7 @@ import {
   withReplaySandbox,
 } from './mod-sandbox'
 import { replayInSandbox } from './replay'
-import { feedScenario, feedStdin } from './scenario-feed'
+import { feedScenario, feedStdin, playsBusySession } from './scenario-feed'
 import {
   keystrokes,
   launchCommand,
@@ -178,7 +178,12 @@ export async function recordInSandbox(
 ): Promise<SessionCapture> {
   const scenario = feedScenario()
   const version = await claudeCodeVersion(sandbox, scenario)
-  const seed = { target: mod?.pluginName ?? null, nowMs: Date.now(), claudeCodeVersion: version }
+  const seed = {
+    target: mod?.pluginName ?? null,
+    nowMs: Date.now(),
+    claudeCodeVersion: version,
+    busy: playsBusySession(inputSteps),
+  }
   await sandbox.writeFiles(sessionFiles(scenario, seed))
   const setup = await sandbox.run(setupCommand(scenario))
   if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)

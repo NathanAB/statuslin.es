@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { and, eq, not } from 'drizzle-orm'
+import { and, eq, inArray, not, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -34,7 +34,8 @@ import { withModSandbox } from '@/render/mods/mod-sandbox'
  * (ADR 0005).
  *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
- * request, so rerunning the same file changes nothing. The whole file's format is checked before
+ * request, so rerunning the same file changes nothing. If only its `inputSteps` changed, they are
+ * stored on that version in place, and its previews need rendering again (render:mods --slug). The whole file's format is checked before
  * anything is fetched or written; an entry refused later is reported and the others still import.
  *
  * AGENT USAGE (needs E2B_API_KEY and DATABASE_URL):
@@ -81,13 +82,45 @@ async function modToRepin(
   return rows[0]
 }
 
+/**
+ * Stores an entry's input steps on the curated version already built from its commit, when they
+ * changed. They only drive the preview recording, so the version stays the same one.
+ */
+async function updateInputSteps(db: Db, entry: CurationEntry): Promise<boolean> {
+  const updated = await db
+    .update(schema.modVersions)
+    .set({ inputSteps: entry.inputSteps })
+    .where(
+      and(
+        eq(schema.modVersions.repoUrl, entry.repoUrl),
+        eq(schema.modVersions.path, entry.path),
+        eq(schema.modVersions.commitSha, entry.commitSha),
+        sql`${schema.modVersions.inputSteps} is distinct from ${JSON.stringify(entry.inputSteps)}::jsonb`,
+        inArray(
+          schema.modVersions.modId,
+          db
+            .select({ id: schema.mods.id })
+            .from(schema.mods)
+            .where(not(hasSubmission(db))),
+        ),
+      ),
+    )
+    .returning({ id: schema.modVersions.id })
+  return updated.length > 0
+}
+
 async function importEntry(
   entry: CurationEntry,
   { db, github, withSandbox }: ImportDeps,
 ): Promise<string> {
   const name = entry.pluginName
   const imported = await importedSlug(db, entry)
-  if (imported) return `unchanged ${imported}: already imported at ${entry.commitSha}`
+  if (imported) {
+    if (await updateInputSteps(db, entry)) {
+      return `updated ${imported}: new input steps at ${entry.commitSha}; render it again (render:mods --slug ${imported})`
+    }
+    return `unchanged ${imported}: already imported at ${entry.commitSha}`
+  }
   const existing = await modToRepin(db, entry)
 
   const repo = await github.repoInfo(entry.repoUrl)

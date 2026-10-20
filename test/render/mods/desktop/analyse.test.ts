@@ -92,7 +92,7 @@ function profileFor(command: string, opts: FakeShots): string {
       ? profile(...bubbles)
       : profile()
   }
-  if (command.includes('-crop 708x')) return opts.pane ?? profile()
+  if (command.includes('-crop 714x')) return opts.pane ?? profile()
   if (command.includes('-crop 1568x'))
     return opts.cropContent ?? opts.content ?? profile(PROMPT_ROWS)
   if (command.includes('-crop 6x')) return opts.plate ?? profile()
@@ -490,9 +490,9 @@ describe('analyseShot', () => {
 
     expect(result).toMatchObject({
       kind: 'shot',
-      width: 364,
-      height: 852,
-      card: { width: 364, height: 150 },
+      width: 367,
+      height: 860,
+      card: { width: 367, height: 150 },
     })
     expect(ran.some((c) => c.includes('-compose difference -composite -compose over'))).toBe(false)
   })
@@ -500,7 +500,7 @@ describe('analyseShot', () => {
   it("cards what the mod draws in its pane, from inside the pane's border", async () => {
     const { analysis, ran } = fakeAnalysis({
       shot: PANE,
-      pane: profile([44, 68], [93, 361], [879, 887]),
+      pane: profile([40, 64], [93, 361], [883, 891]),
     })
 
     const result = await analyseShot(analysis, {
@@ -510,8 +510,8 @@ describe('analyseShot', () => {
       typedSlashCommand: false,
     })
 
-    expect(result).toMatchObject({ kind: 'shot', card: { width: 354, height: 370 - 85 } })
-    expect(ran.some((c) => c.includes('-crop 708x570+1466+170'))).toBe(true)
+    expect(result).toMatchObject({ kind: 'shot', card: { width: 357, height: 370 - 85 } })
+    expect(ran.some((c) => c.includes('-crop 714x570+1468+170'))).toBe(true)
   })
 
   it('refuses a baseline that shows a pane', async () => {

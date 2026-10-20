@@ -13,5 +13,5 @@ The name is picked when the mod is approved. Until then a submission has a provi
 
 ## Consequences
 
-- Only a mod's submitter can send an update. Curated mods have no submitter and are re-pinned from the command line.
+- Only a mod's submitter can send an update. Curated mods have no submitter and are re-pinned from the command line, when `updates:mods` finds a new release (ADR 0009).
 - Two listed mods can have the same plugin.json name, one of them with its owner added. A user who enables both gets only one working, since Claude Code runs one hooks module per plugin name.

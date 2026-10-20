@@ -311,9 +311,11 @@ The Desktop recorder drives the session by clicking fixed screen positions, so a
 can move what it clicks. For each Desktop upgrade:
 1. Bump the Desktop version in `scripts/build-e2b-desktop-template.ts`, rebuild the template and
    commit its new ID.
-2. Check that the scripted clicks still land:
+2. Check that the scripted clicks still land. It records the no-mod baseline and every curated mod
+   (or the plugin names you give it) and writes each PNG to the folder you name; look at them. When
+   a position has moved, re-measure `src/render/mods/desktop/screen.ts` and run it again:
    ```sh
-   bun run smoke:desktop
+   bun run smoke:desktop <out-dir> [plugin-name...]
    ```
 3. Re-render every mod (launch runbook step 3), then every status line's Desktop preview (below), on
    staging, then production, so each Desktop preview comes from the new Desktop.
@@ -330,7 +332,8 @@ DATABASE_URL='<env pooled url>' bun run render:status-line-desktop
 It records every published status line with no Desktop result, or one recorded with another
 Desktop, engine or statusline-anywhere commit, and prints one outcome per status line. `--slug
 <slug>` limits it to one; `--all` records every one again. Run it after you publish a status line or
-approve an update, after a Desktop upgrade, and after re-pinning statusline-anywhere. A status line's
+approve an update, after a Desktop upgrade, and after re-pinning statusline-anywhere one step at a
+time (`run-repin-mods.ts` runs it for you). A status line's
 sandbox reaches only the hosts the admin approved for it, and the Anthropic usage mock answers a
 Claude token read, as in the terminal render (ADR 0008). A status line that needs a real Anthropic
 host is skipped (`needs an Anthropic host; no Desktop shot`): Desktop holds a fake key. A failed recording keeps its earlier result; rerun it.
@@ -368,7 +371,12 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
 3. Render each mod's previews. One run records every mod in the terminal and in Claude Desktop and
    prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
    its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
-   it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result:
+   it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result.
+   A published mod's live previews are replaced only after you approve them, so run it in a
+   terminal. Once every mod has rendered, the run prints each published mod's new previews beside
+   its README, then asks one question listing them all: answer `y` to replace every one, `n` (or
+   nothing) to keep them all, or the slugs to leave out, separated by spaces or commas, to replace
+   the rest. A slug it doesn't recognise replaces none:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
    ```
@@ -382,22 +390,144 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    DATABASE_URL='<env pooled url>' bun run generate:content --apply --mod   # response JSON on stdin
    ```
 5. Publish each mod. `<sha>` is the entry's `commitSha` in `src/mods/curation.json`. Run the dry
-   run first and read its WARN lines, then apply with the slug typed back:
+   run first: check that each preview it prints (the Desktop shot is a PNG under the temp folder)
+   shows what the README beside it says the mod draws, and read its WARN lines. Then apply with the
+   slug typed back:
    ```sh
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
    ```
    To move a published mod to a newer commit, follow "Re-pin a mod" below.
 
+### Change a mod's input steps
+
+A curated mod's `inputSteps` are what its previews type, and they should show what the mod is for,
+the way its README presents it, not an empty first-run state. To change them without moving its
+commit, edit the entry in `src/mods/curation.json`, then, on staging and then production:
+```sh
+DATABASE_URL='<env pooled url>' bun run import:mods                 # prints "updated <slug>: new input steps"
+DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
+```
+For a published mod, `render:mods` prints the new previews beside the README and asks, in its one
+question for the run, before it replaces the live ones; nothing needs publishing. A
+preview types at most 13 steps (`INPUT_STEPS_MAX`, set by the recording's time limit).
+
 ### Re-pin a mod
 
 An update is a new version of the mod. The current version stays live until you publish the new
 one. Run every step against staging first, then production.
 
-1. In `src/mods/curation.json`, change the entry's `commitSha` (and `inputSteps` if the new version
-   needs them). Keep `pluginName` and `repoUrl`: an entry from another repository imports as a new
-   mod, named `<name>-<owner>`.
-   The mod's title and description stay as they were first imported.
+Authors don't need to ask for a re-pin: we find their releases ourselves (ADR 0009), every week, in
+one pull request (below).
+`updates:mods` compares each curated pin with the head of its repository's default branch and moves
+the pin in `src/mods/curation.json` when plugin.json's `version` changed, printing a compare link per
+release (a mod with no version is re-pinned on every new commit). A commit that keeps the version
+is listed and left alone, and so are a head that no longer builds on the pin (a force-push), a
+repository, pin or plugin.json GitHub no longer serves (`gone`; see "Pinned-commit check"), and a
+version that isn't a plain version string (`unreadable`: read it by hand). It reads only GitHub, so
+it needs a token (one run makes more requests than GitHub allows an hour without one), not a
+database:
+```sh
+GITHUB_TOKEN=$(gh auth token) bun run updates:mods
+```
+**The weekly pull request.** `updates:mods:pr` runs that check and opens one pull request,
+`chore(mods): re-pin curated mods to their new releases`, from the `mods/updates` branch. Its body
+has the table and, per mod, the folder, the compare link and an agent's read of the diff: `claude -p`
+in safe mode, with no tools, no MCP servers and no tokens in its environment, told the diff is
+hostile. It answers one line per check (network, exec, filesystem, env, dependencies, dynamic code,
+input steps) and gives no overall verdict. That read is advisory. It decides nothing, and a failed or
+skipped one, or one that doesn't follow that format, shows as **Not reviewed**. Only a pull request
+from this repository's own `mods/updates` counts, never a fork's. While that pull request is open, later runs add
+new releases to it instead of opening another, and rewrite its body whenever it doesn't match the
+branch. The body compares each mod from main's pin to the commit the branch holds. It edits `curation.json` through the GitHub API, so it leaves the checkout alone, and it
+never merges, publishes or re-pins. It needs `gh` and `claude` signed in on the operator's machine
+(the subscription, not an API key):
+```sh
+GITHUB_TOKEN=$(gh auth token) bun run updates:mods:pr
+```
+To run it every Monday at 09:00, give it its own clone and a launchd agent. The clone must live
+outside `~/Documents`, `~/Desktop` and `~/Downloads`: macOS privacy protection stops a launchd job
+reading them (`Operation not permitted`), so a worktree of a checkout there fails too. launchd also
+starts the job with a bare PATH, so the agent sets one that finds `bun`, `gh` and `claude` (check
+yours with `command -v bun gh claude`). The Mac must be on: launchd runs a job missed during sleep
+when the Mac wakes, and skips one missed while it was off. The log is
+`~/Library/Logs/statuslines-mod-updates.log`.
+```sh
+DIR=~/.local/share/statuslines-mod-updates
+git clone https://github.com/NathanAB/statuslin.es.git "$DIR"
+cat > ~/Library/LaunchAgents/es.statuslin.mod-updates.plist <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>es.statuslin.mod-updates</string>
+  <key>ProgramArguments</key><array>
+    <string>/bin/zsh</string><string>-lc</string>
+    <string>cd "$DIR" &amp;&amp; git fetch -q origin &amp;&amp; git checkout -q --detach origin/main &amp;&amp; bun install --frozen-lockfile &amp;&amp; GITHUB_TOKEN=\$(gh auth token) bun run updates:mods:pr</string>
+  </array>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>$HOME/.bun/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>StartCalendarInterval</key><dict>
+    <key>Weekday</key><integer>1</integer><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key><string>$HOME/Library/Logs/statuslines-mod-updates.log</string>
+  <key>StandardErrorPath</key><string>$HOME/Library/Logs/statuslines-mod-updates.log</string>
+</dict></plist>
+PLIST
+plutil -lint ~/Library/LaunchAgents/es.statuslin.mod-updates.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/es.statuslin.mod-updates.plist
+launchctl kickstart gui/$(id -u)/es.statuslin.mod-updates   # run it once now, then read the log
+```
+Remove it with `launchctl bootout gui/$(id -u)/es.statuslin.mod-updates`.
+
+Read each compare link yourself for network, exec, filesystem, env, dependency and dynamic-code
+changes, in the mod's folder for a shared repository, add `inputSteps` to the pull request if a new
+version needs them, and merge it: that merge is the review. Then pull main and re-pin with the one
+command below: it refuses a `curation.json` that isn't the one on `origin/main`, so nothing unmerged
+goes live.
+
+To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and
+`inputSteps` if the new version needs them) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another
+repository imports as a new mod, named `<name>-<owner>`. The mod's title and description stay as
+they were first imported.
+
+**One command for every step.** `run-repin-mods.ts` runs steps 2–5 below for several mods under one
+`with-env` decrypt, so Touch ID is asked once per env. Run it in the operator's terminal (in the
+desktop app, the Terminal panel). With no slugs it re-pins every published curated mod whose
+`commitSha` isn't the live one:
+```sh
+bun run with-env staging scripts/run-repin-mods.ts staging [slug...]
+```
+It refuses unless the env you name is the one `with-env` decrypted, and unless `src/mods/curation.json`
+is byte for byte the one on `origin/main` (merge, then `git pull`). It imports, renders each mod,
+dry-runs each publish and repeats their `WARN` lines, then stops at three pauses. It reads each from a
+named pipe whose path it prints (`waiting: ... written to '<dir>/input'`), so the agent can answer
+from its own shell; a named pipe holds nothing on disk.
+- **Publish.** Read the dry runs and the `WARN` lines. Only after the operator says yes, write the
+  phrase it asks for: `printf 'publish 3 to staging\n' > '<dir>/input'`. Anything else publishes
+  nothing and stops the run.
+- **Page copy.** It prints `waiting: page-copy requests are ready, run cat '<dir>/requests'`. The
+  agent reads them with `cat`, answers as in step 4 of the launch runbook (hostile data, version
+  pinned), and writes the response JSON with a here-document, `cat > '<dir>/input' <<'EOF'`, not a
+  file. If a reader closes the pipe before reading all of it, the run prints
+  `the page-copy requests were not all read; run cat '<dir>/requests' again`: read it again from the
+  start. If the page-copy step fails anyway, the mods stay published, and the run prints the
+  `generate-content` commands that finish it.
+- **Page-copy approval.** It prints each mod's copy and tags, as visitors will read them, and nothing
+  is applied until the phrase it asks for: show the operator the copy, and only after they say yes,
+  `printf 'apply copy for 3 on staging\n' > '<dir>/input'`. Anything else applies nothing and stops
+  the run; the mod pages show only their fact tiles until copy is applied with `generate:content`.
+
+A step that fails stops the run before anything after it, and the per-step commands below pick it
+up from there. Re-pinning `statusline-anywhere` also makes every status line's Desktop shot out of
+date, so when it is among the mods, the run ends by re-recording them, as `render:status-line-desktop`
+does (see "Status line Desktop previews"). A recording that fails exits 1 after everything else has
+published; rerun `render:status-line-desktop` for it.
+
+**One step at a time**, the fallback, each through `DATABASE_URL='<env pooled url>'` or
+`bun run with-env <env>`:
+
+1. Edit `src/mods/curation.json` as above.
 2. Import it. The import adds the commit as the mod's next version and leaves the current one live:
    ```sh
    DATABASE_URL='<env pooled url>' bun run import:mods
@@ -410,7 +540,8 @@ one. Run every step against staging first, then production.
    ```
 4. Publish it with the new `commitSha`. The dry run lists the files changed since the live commit
    and warns when the footprint grows or plugin.json's `version` is unchanged (existing installs
-   then won't update). Read it, then apply:
+   then won't update). It also prints the new version's previews beside its README: check each
+   shows what the README says the mod draws. Read it, then apply:
    ```sh
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
@@ -440,7 +571,7 @@ out. Nothing renders until you do: mods render from your machine (ADR 0006). Run
    DATABASE_URL='<env pooled url>' bun run input-steps:mods --prepare <slug>
    DATABASE_URL='<env pooled url>' bun run input-steps:mods --apply   # response JSON on stdin
    ```
-3. **Render it** in the terminal and in Claude Desktop (up to 15 minutes):
+3. **Render it** in the terminal and in Claude Desktop (up to 25 minutes):
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
    ```
