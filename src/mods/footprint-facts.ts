@@ -44,15 +44,24 @@ function commandsOf(footprint: ModFootprint): FootprintCommands | null {
   return names.length > 0 || unnamed ? { names, unnamed } : null
 }
 
+/**
+ * Runs a Claude Code tool, such as Bash, Edit or Write. The footprint records the call but not which
+ * tool it names, so it counts as both running programs and writing files.
+ */
+const TOOL_CALL = '$.tool.call'
+
 const calls = (footprint: ModFootprint, namespace: string) =>
   footprint.calls.some((call) => call.startsWith(namespace))
 
 export function footprintFacts(footprint: ModFootprint): FootprintFacts {
+  const callsTools = footprint.calls.includes(TOOL_CALL)
   return {
     commands: commandsOf(footprint),
     callsModel: calls(footprint, '$.model.'),
-    writesFiles: footprint.calls.some((call) => call.startsWith('$.fs.') && !FILE_READS.has(call)),
+    writesFiles:
+      callsTools ||
+      footprint.calls.some((call) => call.startsWith('$.fs.') && !FILE_READS.has(call)),
     usesNetwork: calls(footprint, '$.http.'),
-    runsPrograms: calls(footprint, '$.process.'),
+    runsPrograms: callsTools || calls(footprint, '$.process.'),
   }
 }

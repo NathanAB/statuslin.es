@@ -48,6 +48,10 @@ const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
   Object.entries({
     '$.process.run': { phrase: 'runs programs' },
     '$.process.spawn': { phrase: 'runs programs' },
+    '$.tool.call': {
+      phrase:
+        "runs Claude Code's tools, such as Bash and Edit, which still pass the session's permission check",
+    },
     '$.fs.write': { phrase: 'writes files' },
     '$.http.fetch': { phrase: 'contacts the internet' },
     '$.model.complete': { phrase: 'sends requests to the model' },
