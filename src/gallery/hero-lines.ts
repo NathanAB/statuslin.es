@@ -29,6 +29,9 @@ export interface HeroLine {
   title: string
   copyCount: number
   author: ConfigAuthor | null
+  /** What the script can reach, said under the hero's install button. */
+  networkHosts: string[]
+  readsClaudeToken: boolean
   /** A session with no render yet is left out. */
   renders: Partial<Record<HeroSessionKey, AnsiSegment[]>>
 }
@@ -47,6 +50,8 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
       copyCount: configs.copyCount,
       title: configVersions.title,
       sha: configVersions.contentSha256,
+      networkHosts: configVersions.networkHosts,
+      readsClaudeToken: configVersions.readsClaudeToken,
       author: { name: user.name, username: user.username, image: user.image },
     })
     .from(configs)
@@ -80,8 +85,10 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
     rendersBySha.set(sha, renders)
   }
 
-  return rows.map(({ sha, author, ...row }) => ({
+  return rows.map(({ sha, author, networkHosts, readsClaudeToken, ...row }) => ({
     ...row,
+    networkHosts: networkHosts ?? [],
+    readsClaudeToken: readsClaudeToken ?? false,
     author: author
       ? { name: author.name, username: author.username ?? null, image: author.image ?? null }
       : null,

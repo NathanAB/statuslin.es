@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { DRAW_LOCATION_LABEL, describeFootprint, describeModFootprint } from '@/mods/footprint'
+import {
+  DRAW_LOCATION_LABEL,
+  describeFootprint,
+  describeModFootprint,
+  footprintRecorded,
+} from '@/mods/footprint'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -25,6 +30,24 @@ const FILETREE = {
 }
 
 describe('describeFootprint', () => {
+  // The install panel tints the powers over the session, files, programs and network. The table
+  // marks them, so rewording a phrase can't drop its tint.
+  it('names which phrases are risks to weigh', () => {
+    const { risks } = describeFootprint({
+      events: ['tool.call'],
+      calls: ['$.mcp.call', '$.fs.read', '$.command.run'],
+    })
+    expect(risks).toContain('calls MCP tools')
+    expect(risks).toContain('runs slash commands')
+    expect(risks).toContain('sees each tool call before it runs and can block or change it')
+    expect(risks).not.toContain('reads files')
+  })
+
+  it('tells a recorded footprint from one that was never recorded', () => {
+    expect(footprintRecorded({ events: [], calls: [] })).toBe(false)
+    expect(footprintRecorded({ events: [], calls: ['$.fs.read'] })).toBe(true)
+  })
+
   it('turns a real footprint into plain-words lines, most sensitive first', () => {
     expect(describeFootprint(FILETREE).phrases).toEqual([
       'runs programs',
@@ -71,7 +94,7 @@ describe('describeFootprint', () => {
       events: ['session.start', 'turn.complete'],
       calls: ['$.state.get', '$.state.set', '$.ui.resolve', '$.ui.invalidate', '$.clock.now'],
     })
-    expect(result).toEqual({ phrases: [], unknown: [], draws: [] })
+    expect(result).toEqual({ phrases: [], risks: [], unknown: [], draws: [] })
   })
 
   // flightdeck's hook only reads each message and after's rewrites one; neither adds any.

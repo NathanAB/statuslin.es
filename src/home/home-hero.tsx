@@ -1,9 +1,11 @@
 import { useId, useState } from 'react'
 import { InstallPromptButton } from '@/adopt/install-prompt-button'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
+import { reachFacts } from '@/gallery/config-install-facts'
 import type { HeroLine, HeroSessionKey } from '@/gallery/hero-lines'
 import { HERO_SESSIONS } from '@/home/hero-sessions'
 import { ChoiceGroup } from '@/ui/choice-group'
+import { FactLine } from '@/ui/fact-line'
 import { HeroActions, HeroLayout } from '@/ui/hero-layout'
 import { installsLabel } from '@/ui/install-count'
 import { Terminal } from '@/ui/terminal'
@@ -40,7 +42,9 @@ export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[
 
   // With nothing published yet there is nothing to try on; the title and sentence still stand.
   if (!line || !session)
-    return <HeroLayout heading={heading} lead={HERO_LEAD} stage={null} aside={null} />
+    return (
+      <HeroLayout heading={heading} lead={HERO_LEAD} stage={null} picker={null} actions={null} />
+    )
 
   const pick = (next: string) => {
     setSlug(next)
@@ -81,7 +85,7 @@ export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[
           statusChanged={anyChange}
         />
       }
-      aside={
+      picker={
         <>
           <Heading level={2} size="compact" id={pickerId}>
             Pick a status line
@@ -98,6 +102,10 @@ export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[
             value={line.slug}
             onValueChange={pick}
           />
+        </>
+      }
+      actions={
+        <>
           <HeroActions>
             <InstallPromptButton
               configId={line.configId}
@@ -111,6 +119,10 @@ export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[
           </HeroActions>
           <Text muted size="sm">
             {byline(line, copies.count)}
+          </Text>
+          <FactLine label="What this status line can reach" facts={reachFacts(line)} />
+          <Text muted size="sm">
+            Every line here was read by a person and rendered in a sandbox.
           </Text>
           <LiveMessage>
             {anyChange ? `Showing ${line.title} in the ${session.label} session.` : ''}

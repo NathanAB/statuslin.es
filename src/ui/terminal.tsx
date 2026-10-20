@@ -122,7 +122,7 @@ export function Terminal({
         role="img"
         aria-label={label}
         data-ui=""
-        className="flex h-[clamp(23.75rem,31vw,27.875rem)] flex-col justify-end overflow-hidden rounded-screen bg-sunken px-6 pt-5.5 pb-5 font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:h-85 max-md:px-4 max-md:pt-4 max-md:pb-3.5 max-md:text-[0.8125rem]"
+        className="flex h-[clamp(23.75rem,31vw,27.875rem)] flex-col justify-end overflow-hidden rounded-screen bg-sunken px-6 pt-5.5 pb-5 font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:h-72 max-md:px-4 max-md:pt-4 max-md:pb-3.5 max-md:text-[0.8125rem]"
       >
         <pre
           key={conversationKey}

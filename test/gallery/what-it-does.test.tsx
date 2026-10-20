@@ -29,7 +29,7 @@ const inOrder = (nodes: Node[]) =>
   )
 
 describe('WhatItDoes', () => {
-  it('runs the summary, the fact tiles, the steps, then the notes, in one titled card', () => {
+  it('runs the summary, the fact tiles, then the steps, in one titled section', () => {
     render(<WhatItDoes copy={COPY} tiles={TILES} />)
 
     const what = card()
@@ -38,21 +38,26 @@ describe('WhatItDoes', () => {
         what.getByText(COPY.summary),
         what.getByText('Network'),
         what.getByRole('heading', { level: 3, name: 'How it works' }),
-        what.getByRole('heading', { level: 3, name: 'Good to know' }),
       ]),
     ).toBe(true)
   })
 
-  it('numbers the steps and lists the notes', () => {
+  // The notes (the requirements) moved up beside the install button, so they aren't said twice.
+  it('leaves the good-to-know notes to the install panel', () => {
+    render(<WhatItDoes copy={COPY} tiles={TILES} />)
+
+    expect(screen.queryByRole('heading', { name: 'Good to know' })).toBeNull()
+    expect(screen.queryByText(/Needs/)).toBeNull()
+  })
+
+  it('numbers the steps', () => {
     const { container } = render(<WhatItDoes copy={COPY} tiles={TILES} />)
 
     expect([...container.querySelectorAll('ol > li')].map((li) => li.textContent)).toEqual([
       'Reads the session JSON on stdin',
       'Runs git for the branch',
     ])
-    expect([...container.querySelectorAll('ul > li')].map((li) => li.textContent)).toEqual([
-      'Needs jq on your PATH',
-    ])
+    expect(container.querySelectorAll('ul > li')).toHaveLength(0)
   })
 
   it('leaves out a steps or notes section with nothing in it', () => {

@@ -130,7 +130,7 @@ describe('status line page', () => {
       screen.getByText('by'),
       screen.getByText('A Powerline-style status line.'),
       screen.getByRole('button', { name: 'Copy install prompt for Powerline Dracula' }),
-      screen.getByText('In Claude Desktop?'),
+      screen.getByText(/^In Claude Desktop\?/),
       h2('Preview'),
       h2('What it does'),
       h2('Source'),
@@ -161,8 +161,43 @@ describe('status line page', () => {
     expect(what.getByText('A Powerline bar with the branch and the model.')).toBeTruthy()
     expect(what.getByText('Written in')).toBeTruthy()
     expect(what.getByText('Bash')).toBeTruthy()
-    expect(what.getByText('Uses Nerd Font glyphs')).toBeTruthy()
+    expect(what.queryByText('Uses Nerd Font glyphs')).toBeNull()
     expect(what.queryByText('Reads your Claude login')).toBeNull()
+  })
+
+  // A searcher decides at the install button: who read it, what it can reach and what it needs
+  // sit right after it, not pages below, and the help for a line that doesn't show is one click.
+  it('says what to know before installing, right after the install button', () => {
+    renderPage()
+
+    const panel = screen.getByRole('region', { name: 'Before you install' })
+    expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
+      'Read by a person · this version, Jul 6, 2026',
+      'No network access',
+      'Uses Nerd Font glyphs',
+    ])
+    expect(
+      within(panel)
+        .getByRole('link', { name: /Not showing after you paste/ })
+        .getAttribute('href'),
+    ).toBe('/guide/status-line-not-showing')
+    expectInOrder([
+      screen.getByRole('button', { name: 'Copy install prompt for Powerline Dracula' }),
+      panel,
+      h2('Preview'),
+    ])
+  })
+
+  // Reading the login or calling hosts is a risk to weigh, not a topic: it leaves the topic chips.
+  it('keeps the risk facts out of the topic chips in the header', () => {
+    renderPage(false, [], { ...DETAIL, tags: ['bash', 'reads-token'], readsClaudeToken: true })
+
+    expect(screen.queryByRole('link', { name: /reads token/i })).toBeNull()
+    expect(
+      within(screen.getByRole('region', { name: 'Before you install' })).getByText(
+        'Reads your Claude login',
+      ),
+    ).toBeTruthy()
   })
 
   it('puts the owner’s update strip above the header', () => {
@@ -236,7 +271,7 @@ describe('status line page in Claude Desktop', () => {
     for (const desktop of [{ kind: 'shot' as const, shot: SHOT }, { kind: 'nothing' as const }]) {
       const { unmount } = renderPage(false, [], { ...DETAIL, desktop })
 
-      expect(screen.queryByText('In Claude Desktop?')).toBeNull()
+      expect(screen.queryByText(/^In Claude Desktop\?/)).toBeNull()
       expect(screen.getAllByRole('link', { name: 'statusline-anywhere' })).toHaveLength(1)
       unmount()
     }
@@ -245,7 +280,7 @@ describe('status line page in Claude Desktop', () => {
   it('keeps the Desktop note, and adds nothing to the preview, before it is recorded', () => {
     renderPage()
 
-    expect(screen.getByText('In Claude Desktop?')).toBeTruthy()
+    expect(screen.getByText(/^In Claude Desktop\?/)).toBeTruthy()
     expect(preview().queryByText('In Claude Desktop')).toBeNull()
     expect(preview().queryByRole('link', { name: 'statusline-anywhere' })).toBeNull()
   })

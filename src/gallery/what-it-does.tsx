@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import type { PageCopy } from '@/content/types'
-import { BulletList } from '@/ui/bullet-list'
 import { type FactTile, FactTiles } from '@/ui/fact-tiles'
 import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
@@ -26,7 +25,8 @@ function Titled({ title, children }: { title: string; children: ReactNode }) {
 
 /**
  * The "What it does" section on every status line and mod page: the summary, the fact tiles,
- * then the numbered steps and the notes. Without generated copy it still states the facts.
+ * then the numbered steps. The good-to-know notes sit in the install panel by the button instead.
+ * Without generated copy it still states the facts.
  */
 export function WhatItDoes({ copy, tiles }: WhatItDoesContent) {
   return (
@@ -41,11 +41,6 @@ export function WhatItDoes({ copy, tiles }: WhatItDoesContent) {
         {copy && copy.howItWorks.length > 0 && (
           <Titled title="How it works">
             <NumberedList items={copy.howItWorks} />
-          </Titled>
-        )}
-        {copy && copy.goodToKnow.length > 0 && (
-          <Titled title="Good to know">
-            <BulletList items={copy.goodToKnow} />
           </Titled>
         )}
       </Stack>

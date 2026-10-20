@@ -34,6 +34,8 @@ type MatcherArgs = Record<string, string>
 interface EntryMeaning {
   phrase: string | null | ((args: MatcherArgs) => string)
   draws?: DrawLocation
+  /** A power over the session, its files, programs or network: drawn as a risk on the mod page. */
+  risk?: true
 }
 
 function literalMatcherValue(value: string | undefined): string | null {
@@ -46,34 +48,39 @@ const SILENT: EntryMeaning = { phrase: null }
 /** Ordered by how much a reader should weigh the entry; phrases are listed in this order. */
 const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
   Object.entries({
-    '$.process.run': { phrase: 'runs programs' },
-    '$.process.spawn': { phrase: 'runs programs' },
+    '$.process.run': { phrase: 'runs programs', risk: true },
+    '$.process.spawn': { phrase: 'runs programs', risk: true },
     '$.tool.call': {
       phrase:
         "runs Claude Code's tools, such as Bash and Edit, which still pass the session's permission check",
+      risk: true,
     },
-    '$.fs.write': { phrase: 'writes files' },
-    '$.http.fetch': { phrase: 'contacts the internet' },
-    '$.model.complete': { phrase: 'sends requests to the model' },
-    '$.mcp.call': { phrase: 'calls MCP tools' },
-    '$.tool.register': { phrase: 'adds a tool the model can call' },
-    'prompt.compose': { phrase: 'changes the system prompt' },
-    'session.append': { phrase: 'sees each message added to the conversation and can change it' },
+    '$.fs.write': { phrase: 'writes files', risk: true },
+    '$.http.fetch': { phrase: 'contacts the internet', risk: true },
+    '$.model.complete': { phrase: 'sends requests to the model', risk: true },
+    '$.mcp.call': { phrase: 'calls MCP tools', risk: true },
+    '$.tool.register': { phrase: 'adds a tool the model can call', risk: true },
+    'prompt.compose': { phrase: 'changes the system prompt', risk: true },
+    'session.append': {
+      phrase: 'sees each message added to the conversation and can change it',
+      risk: true,
+    },
     '$.fs.read': { phrase: 'reads files' },
     '$.fs.list': { phrase: 'reads files' },
     '$.fs.exists': { phrase: 'reads files' },
     '$.fs.stat': { phrase: 'reads files' },
-    '$.env.get': { phrase: 'reads environment variables' },
+    '$.env.get': { phrase: 'reads environment variables', risk: true },
     '$.settings.read': { phrase: 'reads your settings' },
     '$.config.list': { phrase: 'reads your settings' },
-    'config.set': { phrase: 'sees each change to /config and can block or rewrite it' },
+    'config.set': { phrase: 'sees each change to /config and can block or rewrite it', risk: true },
     '$.session.messages': { phrase: 'reads the conversation' },
     '$.session.turns': { phrase: 'reads the conversation' },
-    'prompt.submit': { phrase: 'sees each prompt you send and can change or drop it' },
+    'prompt.submit': { phrase: 'sees each prompt you send and can change or drop it', risk: true },
     'prompt.edit': { phrase: 'reads your prompt as you type' },
     '$.prompt.read': { phrase: 'reads your prompt as you type' },
     'prompt.attachment': {
       phrase: 'can change or remove the reminders Claude Code adds for Claude',
+      risk: true,
     },
     '$.store.get': { phrase: 'remembers data between sessions' },
     '$.store.set': { phrase: 'remembers data between sessions' },
@@ -86,7 +93,7 @@ const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
         return name ? `adds the /${name} command` : 'adds slash commands'
       },
     },
-    '$.command.run': { phrase: 'runs slash commands' },
+    '$.command.run': { phrase: 'runs slash commands', risk: true },
     'tool.call': {
       phrase: (args) => {
         const name = literalMatcherValue(args.tool)
@@ -94,9 +101,11 @@ const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
           ? `sees each ${name} tool call before it runs and can block or change it`
           : 'sees each tool call before it runs and can block or change it'
       },
+      risk: true,
     },
     'agent.spawn': {
       phrase: 'sees each subagent before it starts and can stop it or pick its model',
+      risk: true,
     },
     '$.agent.list': { phrase: 'lists running subagents' },
     '$.clock.every': { phrase: 'runs on a timer' },
@@ -170,12 +179,21 @@ function meaningOf(name: string, args: MatcherArgs): { key: string; meaning: Ent
 
 export interface FootprintDescription {
   phrases: string[]
+  /** The phrases that name a risk to weigh, in the same order. */
+  risks: string[]
   unknown: string[]
   draws: DrawLocation[]
 }
 
+/** Whether the validator recorded anything: an empty footprint was never recorded, which is not
+ *  the same as a mod that does nothing. */
+export function footprintRecorded(footprint: ModFootprint): boolean {
+  return footprint.events.length + footprint.calls.length > 0
+}
+
 export function describeFootprint(footprint: ModFootprint): FootprintDescription {
   const ranked = new Map<string, number>()
+  const risky = new Set<string>()
   const unknown: string[] = []
   const draws = new Set<DrawLocation>()
   for (const entry of [...footprint.events, ...footprint.calls]) {
@@ -190,9 +208,12 @@ export function describeFootprint(footprint: ModFootprint): FootprintDescription
     const phrase = typeof meaning.phrase === 'function' ? meaning.phrase(args) : meaning.phrase
     const rank = MEANING_RANK.get(key) ?? Number.MAX_SAFE_INTEGER
     if (phrase !== null && !ranked.has(phrase)) ranked.set(phrase, rank)
+    if (phrase !== null && meaning.risk) risky.add(phrase)
   }
+  const phrases = [...ranked].sort((a, b) => a[1] - b[1]).map(([phrase]) => phrase)
   return {
-    phrases: [...ranked].sort((a, b) => a[1] - b[1]).map(([phrase]) => phrase),
+    phrases,
+    risks: phrases.filter((phrase) => risky.has(phrase)),
     unknown,
     draws: DRAW_LOCATIONS.filter((location) => draws.has(location)),
   }

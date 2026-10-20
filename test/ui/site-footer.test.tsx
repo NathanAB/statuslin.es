@@ -28,7 +28,7 @@ describe('SiteFooter', () => {
     const { container } = render(<SiteFooter />)
     const nav = screen.getByRole('navigation', { name: 'Footer' })
     expect(nav.querySelectorAll('a').length).toBe(container.querySelectorAll('a').length)
-    expect(nav.querySelectorAll('a').length).toBe(13)
+    expect(nav.querySelectorAll('a').length).toBe(14)
   })
 
   // Columns of their own instead of one row that wraps wherever the width happens to break it.
@@ -39,7 +39,13 @@ describe('SiteFooter', () => {
         screen.getByRole('list', { name: list }).querySelectorAll('a'),
         (a) => a.textContent,
       )
-    expect(names('Browse')).toEqual(['Mods', 'Best status lines', 'Resources', 'Submit'])
+    expect(names('Browse')).toEqual([
+      'Mods',
+      'Status lines by topic',
+      'Best status lines',
+      'Resources',
+      'Submit',
+    ])
     expect(names('Guides')).toEqual([
       'Write your own',
       'Status line not showing?',

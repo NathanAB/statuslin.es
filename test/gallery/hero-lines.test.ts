@@ -89,6 +89,9 @@ describe('getHeroLines', () => {
       title: first?.slug,
       copyCount: expect.any(Number),
       author: { name: 'Author', username: null, image: null },
+      // What it can reach, said beside the hero's install button.
+      networkHosts: [],
+      readsClaudeToken: false,
     })
     expect(first?.configId).toEqual(expect.any(String))
   })

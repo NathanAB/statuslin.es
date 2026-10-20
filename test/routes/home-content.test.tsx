@@ -93,6 +93,8 @@ const heroLine: HeroLine = {
   title: 'Dreambase Panel',
   copyCount: 223,
   author: null,
+  networkHosts: [],
+  readsClaudeToken: false,
   renders: { 'clean-main': [{ text: 'panel clean' }] },
 }
 

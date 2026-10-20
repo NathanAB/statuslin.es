@@ -242,6 +242,24 @@ function section(title: string) {
 }
 
 describe('mod page', () => {
+  // A mod can hook tool calls and prompts: that sits beside the install button in plain words,
+  // from the footprint, for every mod, not only in the AI-written copy further down.
+  it('says what the mod can do right after the install button', () => {
+    renderPage()
+
+    const panel = screen.getByRole('region', { name: 'What this mod can do' })
+    expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
+      `Read by a person at commit ${SHA.slice(0, 7)}`,
+      'Reads files',
+      'Adds the /filetree command',
+    ])
+    expect(
+      within(panel)
+        .getByRole('link', { name: /Are mods safe\?/ })
+        .getAttribute('href'),
+    ).toBe('/guide/are-claude-code-mods-safe')
+  })
+
   // Nested boxes read as clutter: no section is a card, so only the rows themselves are surfaces.
   it('puts none of its sections in a card', () => {
     const { container } = renderPage()
@@ -266,6 +284,7 @@ describe('mod page', () => {
       screen.getByRole('heading', { level: 2, name: 'What it does' }),
     ]
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'What this mod can do',
       'Preview',
       'What it does',
     ])

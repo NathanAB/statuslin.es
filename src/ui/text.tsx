@@ -60,12 +60,14 @@ export function Heading({
 /**
  * Every piece of non-heading text goes through here, so size, color, and font live in
  * one place. `size` is a closed scale; `muted` dims the color; `mono` is for code/data
- * values (slugs, hashes); and `inline` renders a span instead of a paragraph.
+ * values (slugs, hashes); `inheritColor` keeps the color around it (code inside a caution fact);
+ * and `inline` renders a span instead of a paragraph.
  */
 export function Text({
   muted = false,
   size = 'base',
   mono = false,
+  inheritColor = false,
   inline = false,
   center = false,
   breakLong = false,
@@ -74,6 +76,7 @@ export function Text({
   muted?: boolean
   size?: 'base' | 'sm' | 'xs'
   mono?: boolean
+  inheritColor?: boolean
   inline?: boolean
   children: React.ReactNode
   center?: boolean
@@ -83,7 +86,7 @@ export function Text({
   breakLong?: boolean
 }) {
   const className = cn(
-    muted ? 'text-muted-foreground' : 'text-foreground',
+    !inheritColor && (muted ? 'text-muted-foreground' : 'text-foreground'),
     size === 'sm' && 'text-sm',
     size === 'xs' && 'text-xs',
     mono && 'font-mono',
@@ -176,8 +179,11 @@ export function TextLink(props: TextLinkProps) {
     )
   }
   return (
+    // Only the page itself is the current page: a breadcrumb to a parent (Mods, Status lines) must
+    // not announce aria-current="page" on the pages under it.
     <Link
       to={props.to}
+      activeOptions={{ exact: true }}
       {...(props.search !== undefined ? { search: props.search } : {})}
       {...(props.params !== undefined ? { params: props.params } : {})}
       {...(props.hash !== undefined

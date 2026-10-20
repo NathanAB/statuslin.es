@@ -40,6 +40,8 @@ const line = (slug: string, title: string, copyCount: number, render: string): H
   title,
   copyCount,
   author: { name: slug, username: `${slug}-dev`, image: null },
+  networkHosts: [],
+  readsClaudeToken: false,
   renders: {
     'clean-main': [{ text: `${render} clean` }],
     'fresh-session': [{ text: `${render} fresh` }],
@@ -49,7 +51,11 @@ const line = (slug: string, title: string, copyCount: number, render: string): H
 
 const LINES = [
   line('panel', 'Dreambase Panel', 223, 'panel'),
-  line('pace', 'Pace Dot Meters', 94, 'pace'),
+  {
+    ...line('pace', 'Pace Dot Meters', 94, 'pace'),
+    readsClaudeToken: true,
+    networkHosts: ['wttr.in'],
+  },
   line('kanji', 'Kanji Rain', 1, 'kanji'),
 ]
 
@@ -61,6 +67,23 @@ const statusRow = () => document.querySelector('[data-slot="terminal-status"]') 
 const announced = () => screen.getByRole('status').textContent
 
 describe('HomeHero', () => {
+  // You could copy a line that reads your Claude login without being told: the picked line's reach
+  // and the site's review now sit right under the install button.
+  it('says what the picked line can reach, and that a person read it, under the button', () => {
+    renderHero()
+    const facts = () => screen.getByRole('list', { name: 'What this status line can reach' })
+
+    expect(facts().textContent).toBe('No network access')
+    expect(
+      screen.getByText('Every line here was read by a person and rendered in a sandbox.'),
+    ).toBeTruthy()
+    fireEvent.click(within(picker()).getByRole('radio', { name: /^Pace Dot Meters/ }))
+    expect([...facts().querySelectorAll('li')].map((li) => li.textContent)).toEqual([
+      'Reads your Claude login',
+      'Calls wttr.in',
+    ])
+  })
+
   it("server-renders the heading, the sentence and the first status line's Everyday session", () => {
     const html = renderToString(<HomeHero heading={heading} lines={LINES} />)
 

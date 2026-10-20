@@ -1,7 +1,7 @@
 import type { GalleryKind } from '@/gallery/gallery-items'
-import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
+import { breadcrumbJsonLd, HOME_CRUMB_NAME, STATUS_LINES_CRUMB } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
-import { homePageName, RESOURCES_TITLE_BASE } from '@/lib/page-title'
+import { homePageName, RESOURCES_TITLE_BASE, STATUS_LINES_TITLE_BASE } from '@/lib/page-title'
 import { BRAND_ICON_PATH, CONTENT_LICENSE, modPath, REPO_URL, SITE_NAME } from '@/lib/site'
 
 /**
@@ -173,9 +173,41 @@ export function resourcesJsonLd(
   }
 }
 
+/** The /status-lines crumb, home's next step on the way to every facet page. */
+function statusLinesCrumb(origin: string): { name: string; item: string } {
+  return { name: STATUS_LINES_CRUMB.name, item: `${origin}${STATUS_LINES_CRUMB.to}` }
+}
+
+/** The /status-lines hub as a CollectionPage of its topic pages, plus its breadcrumb. */
+export function facetHubJsonLd(
+  origin: string,
+  topics: Array<{ slug: string; heading: string }>,
+): object[] {
+  const hub = statusLinesCrumb(origin)
+  return [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: STATUS_LINES_TITLE_BASE,
+      url: hub.item,
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: topics.map((topic, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: topic.heading,
+          url: `${hub.item}/${topic.slug}`,
+        })),
+      },
+    },
+    breadcrumbJsonLd([{ name: HOME_CRUMB_NAME, item: origin }, hub]),
+  ]
+}
+
 export function facetJsonLd(
   origin: string,
-  facet: { slug: string; titleBase: string },
+  /** `topic` names the facet in the breadcrumb, as the page's own trail does. */
+  facet: { slug: string; titleBase: string; topic: string },
   /** The page's status lines and mods, in the order it shows them. */
   items: GalleryListEntry[],
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
@@ -201,7 +233,8 @@ export function facetJsonLd(
   }
   const breadcrumbs = breadcrumbJsonLd([
     { name: HOME_CRUMB_NAME, item: origin },
-    { name: facet.titleBase, item: url },
+    statusLinesCrumb(origin),
+    { name: facet.topic, item: url },
   ])
   const nodes =
     options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]

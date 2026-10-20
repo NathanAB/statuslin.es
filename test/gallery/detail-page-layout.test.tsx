@@ -16,6 +16,7 @@ function renderLayout(overrides: Partial<Parameters<typeof DetailPageLayout>[0]>
       notice={<p>notice</p>}
       header={<h1>header</h1>}
       install={<p>install</p>}
+      beforeInstall={<p>before you install</p>}
       preview={<p>preview</p>}
       whatItDoes={WHAT_IT_DOES}
       source={<p>source</p>}
@@ -38,6 +39,7 @@ describe('DetailPageLayout', () => {
       screen.getByText('notice'),
       screen.getByText('header'),
       screen.getByText('install'),
+      screen.getByText('before you install'),
       screen.getByRole('heading', { level: 2, name: 'Preview' }),
       screen.getByRole('heading', { level: 2, name: 'What it does' }),
       screen.getByRole('heading', { level: 2, name: 'Source' }),

@@ -1,14 +1,5 @@
 import { kindCount } from '@/gallery/kind-count'
-
-function utcDateLabel(isoDate: string): string {
-  const date = new Date(`${isoDate}T00:00:00.000Z`)
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'UTC',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(date)
-}
+import { utcDateLabel } from '@/lib/date-label'
 
 /** The home page's inventory, a line in its footer: both kinds, their installs, and as of when. */
 export function HomeIndexNote({

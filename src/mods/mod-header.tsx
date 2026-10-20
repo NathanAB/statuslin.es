@@ -1,5 +1,5 @@
 import { usePostHog } from '@posthog/react'
-import { ConfigBadges } from '@/gallery/config-badges'
+import { ConfigBadges, topicTags } from '@/gallery/config-badges'
 import { DetailHeader } from '@/gallery/detail-header'
 import { listPhrase } from '@/gallery/why-line'
 import { MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
@@ -43,7 +43,8 @@ export function ModHeader({ mod }: { mod: ModDetail }) {
       trail={[MODS_CRUMB]}
       title={mod.title}
       subtitle={modSubtitle(mod.tags)}
-      chips={<ConfigBadges tags={mod.tags} networkHosts={[]} />}
+      // What it can reach is said in the install panel beside the button, not as a topic chip.
+      chips={<ConfigBadges tags={topicTags(mod.tags)} networkHosts={[]} />}
       byline={{
         author: {
           name: mod.authorGithub,

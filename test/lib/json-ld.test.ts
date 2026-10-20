@@ -3,6 +3,7 @@ import type { PageCopy } from '@/content/types'
 import { guideJsonLd } from '@/lib/guide-json-ld'
 import {
   configJsonLd,
+  facetHubJsonLd,
   facetJsonLd,
   faqPageJsonLd,
   homeJsonLd,
@@ -304,7 +305,11 @@ describe('resourcesJsonLd', () => {
 })
 
 describe('facetJsonLd', () => {
-  const facet = { slug: 'git', titleBase: 'Claude Code Status Lines That Show Git Status' }
+  const facet = {
+    slug: 'git',
+    titleBase: 'Claude Code Status Lines That Show Git Status',
+    topic: 'Git',
+  }
   const [page, crumbs] = facetJsonLd(
     'https://example.test',
     facet,
@@ -334,14 +339,20 @@ describe('facetJsonLd', () => {
       { '@type': 'ListItem', position: 2, name: 'A', url: 'https://example.test/c/a' },
     ])
   })
-  it('carries a breadcrumb trail back to the gallery', () => {
+  it('carries the breadcrumb trail the page shows: home, then the topics, then this topic', () => {
     expect(crumbs['@type']).toBe('BreadcrumbList')
     expect(crumbs.itemListElement).toEqual([
       { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://example.test' },
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Claude Code Status Lines That Show Git Status',
+        name: 'Status lines',
+        item: 'https://example.test/status-lines',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Git',
         item: 'https://example.test/status-lines/git',
       },
     ])
@@ -357,5 +368,45 @@ describe('facetJsonLd', () => {
       null,
     ) as [Record<string, unknown>]
     expect(p).not.toHaveProperty('dateModified')
+  })
+})
+
+describe('facetHubJsonLd', () => {
+  const [page, crumbs] = facetHubJsonLd('https://example.test', [
+    { slug: 'git', heading: 'Claude Code status lines that show git status' },
+    { slug: 'cost', heading: 'Claude Code status lines that track cost' },
+  ]) as [Record<string, unknown>, Record<string, unknown>]
+
+  it('is a CollectionPage listing each topic page in order', () => {
+    expect(page['@type']).toBe('CollectionPage')
+    expect(page.name).toBe('Claude Code Status Lines by Topic')
+    expect(page.url).toBe('https://example.test/status-lines')
+    expect((page.mainEntity as { itemListElement: unknown[] }).itemListElement).toEqual([
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Claude Code status lines that show git status',
+        url: 'https://example.test/status-lines/git',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Claude Code status lines that track cost',
+        url: 'https://example.test/status-lines/cost',
+      },
+    ])
+  })
+
+  it('carries the breadcrumb trail the page shows: home, then the topics', () => {
+    expect(crumbs['@type']).toBe('BreadcrumbList')
+    expect(crumbs.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://example.test' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Status lines',
+        item: 'https://example.test/status-lines',
+      },
+    ])
   })
 })

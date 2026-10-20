@@ -306,6 +306,24 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   `Card` lost its hairline too, and those pages' install button is the hero's pill.
 - **Submit in the header (after review), decided by the owner: a filled pill.** It's the bar's one
   filled button, beside sign-in, and stays in the bar on phones.
+- **Facts at the install button (after the second fresh-eyes review), decided by the owner from
+  mocks.** Status line pages show "Before you install" beside the button: read by a person (this
+  version, with its date), what it can reach (the Claude login, the hosts it calls), the
+  good-to-know notes (its requirements, moved up from "What it does"), and a link for a line that
+  doesn't show. Mod pages show "What this mod can do": the validator footprint in plain words,
+  risks first, for every mod; an empty footprint reads "not recorded yet", never "nothing". The
+  hero shows the picked line's reach and the review line under its button, and on phones the
+  button sits right under the terminal, the picker below it as one row of chips.
+- **The install prompt backs up an existing script** (`statusline.sh.bak`) and reports an existing
+  `statusLine` before replacing it.
+- **The guide leads with numbered steps** (save, make runnable, point settings.json, test), the
+  payload beside its field list on wide screens, a sticky contents list, and a link on every
+  section.
+- **Collections:** a `/status-lines` page lists every topic, facet pages show a visible trail, links
+  across topics and a "Show all" after 12 rows. Lists still rank by installs: a line's "main topic"
+  is only its first tag in registry order (git first), so ranking a topic's own lines first pushed
+  0-install mods above 223-install lines on /status-lines/token-usage. A real per-topic ranking
+  needs a signal the data doesn't have yet.
 - **No scroll reveal; the hero only slides (after the fresh-eyes review).** Blocks that faded in
   on scroll stayed hidden when a sort moved them on screen without a scroll, and printed blank, so
   `Reveal` is gone. The hero still rises in but starts visible, so its title and terminal (the

@@ -152,7 +152,7 @@ export const llmsFullTxtResponseForRoute = createServerOnlyFn(
 )
 
 /** Narrows a caller's per-mod tag lists, since they arrive over the server-fn boundary. */
-function coerceModTags(value: unknown): FacetMod[] {
+export function coerceModTags(value: unknown): FacetMod[] {
   if (!Array.isArray(value)) return []
   return value.map((tags) => ({
     tags: Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : [],

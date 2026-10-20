@@ -1,4 +1,4 @@
-import { ConfigBadges } from '@/gallery/config-badges'
+import { ConfigBadges, topicTags } from '@/gallery/config-badges'
 import { DetailHeader } from '@/gallery/detail-header'
 import type { ConfigDetail } from '@/gallery/queries'
 
@@ -27,7 +27,8 @@ export function ConfigHeader({ detail }: { detail: HeaderDetail }) {
           : []
       }
       title={detail.title}
-      chips={<ConfigBadges tags={detail.tags} networkHosts={detail.networkHosts} />}
+      // What it can reach is a risk to weigh, said in the install panel, not a topic chip.
+      chips={<ConfigBadges tags={topicTags(detail.tags)} networkHosts={detail.networkHosts} />}
       byline={{
         author: detail.author,
         source: detail.sourceUrl ? { label: 'original source', href: detail.sourceUrl } : null,

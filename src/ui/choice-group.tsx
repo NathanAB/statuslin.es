@@ -7,10 +7,12 @@ import { FOCUS_RING } from '@/ui/focus-ring'
 const root = cva('', {
   variants: {
     look: {
-      // A tall list on a tile; two columns on phones.
-      list: 'flex flex-col rounded-tile bg-card p-1.5 max-md:grid max-md:grid-cols-2',
+      // A tall list on a tile; on phones one row of chips that scrolls sideways, so the picker
+      // doesn't push the install button down.
+      list: 'flex flex-col rounded-tile bg-card p-1.5 max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:rounded-none max-md:bg-transparent max-md:p-0',
       // A row of small rounded segments in a dark tray.
-      tray: 'flex flex-wrap gap-0.5 rounded-full bg-sunken p-1',
+      // On phones one row that scrolls sideways, instead of wrapping into an uneven second row.
+      tray: 'flex flex-wrap gap-0.5 rounded-full bg-sunken p-1 max-md:max-w-full max-md:flex-nowrap max-md:overflow-x-auto',
       // Big side-by-side cards, each kind described (the submit page's "What are you submitting?").
       cards: 'grid gap-2.5 sm:grid-cols-2',
     },
@@ -23,7 +25,7 @@ const item = cva(
   {
     variants: {
       look: {
-        list: 'flex items-baseline justify-between gap-3 rounded-[0.875rem] px-3.5 py-1.5 motion-safe:active:scale-[0.985] max-md:flex-col max-md:justify-start max-md:gap-0.5 max-md:px-3 max-md:py-2.5',
+        list: 'flex items-baseline justify-between gap-3 rounded-[0.875rem] px-3.5 py-1.5 motion-safe:active:scale-[0.985] max-md:shrink-0 max-md:rounded-full max-md:bg-card max-md:px-3.5 max-md:py-2 max-md:data-[state=checked]:bg-muted max-md:focus-visible:ring-inset',
         tray: 'shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.75 text-small',
         // The picked card takes a faint coral tint and a filled dot; the coral ring is focus only.
         cards:
@@ -120,11 +122,11 @@ export function ChoiceGroup<T extends string>({
             </>
           ) : look === 'list' ? (
             <>
-              <span className="font-medium text-body tracking-[-0.01em] max-md:text-base">
+              <span className="whitespace-nowrap font-medium text-body tracking-[-0.01em] max-md:text-small">
                 {option.label}
               </span>
               {option.detail ? (
-                <span className="text-muted-foreground text-small tabular-nums">
+                <span className="text-muted-foreground text-small tabular-nums max-md:hidden">
                   {option.detail}
                 </span>
               ) : null}

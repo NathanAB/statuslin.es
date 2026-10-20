@@ -29,13 +29,18 @@ export function iconFor(slug: string): LucideIcon {
   return TAG_ICON[slug] ?? (FACET_BY_SLUG.get(slug)?.group === 'feature' ? Tag : Code)
 }
 
+/** A page header's topic tags: what it can reach (network, the Claude login) is a risk to weigh,
+ *  said in the install panel beside the button, not a topic chip. */
+export function topicTags(tags: string[]): string[] {
+  return tags.filter((slug) => FACET_BY_SLUG.get(slug)?.group !== 'capability')
+}
+
 /** The tag chips on a detail page: one per tag in the config's allTags,
  *  each linking to its facet page (or the tag-filtered home for tags with no page).
  *  `network-access` additionally carries a tooltip listing the hosts the config declares.
  *  `aboveOverlay` lifts the badge links (and the network tooltip, whose badge takes hover
  *  rather than opening the card) above the card's stretched-link overlay so they stay
- *  clickable; the gaps between them still open the card. Used by the detail pages' headers and
- *  the facet pages' "More ways to browse". */
+ *  clickable; the gaps between them still open the card. Used by the detail pages' headers. */
 export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHosts: string[] }) {
   return (
     <Row gap={2} wrap aboveOverlay>

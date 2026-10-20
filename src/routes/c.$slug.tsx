@@ -7,6 +7,7 @@ import { getViewerIsAuthor } from '@/gallery/authorship'
 import { cardClickProperties } from '@/gallery/card-analytics'
 import { configFactTiles } from '@/gallery/config-fact-tiles'
 import { ConfigHeader } from '@/gallery/config-header'
+import { configInstallFacts } from '@/gallery/config-install-facts'
 import { DesktopNote } from '@/gallery/desktop-note'
 import { DesktopPreviewBlock } from '@/gallery/desktop-preview-block'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
@@ -15,7 +16,12 @@ import { OwnerUpdateStrip } from '@/gallery/owner-update-strip'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { configMetaDescription, configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
+import {
+  configMetaDescription,
+  configPageTitle,
+  NOT_FOUND_TITLE,
+  NOT_SHOWING_GUIDE_PATH,
+} from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getStatusLineModsFn } from '@/mods/functions'
 import { ModCard } from '@/mods/mod-card'
@@ -24,6 +30,7 @@ import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
 import { GalleryList, GalleryRow, RowFacts } from '@/ui/gallery-row'
 import { HighlightedCode } from '@/ui/highlighted-code'
 import { installsLabel } from '@/ui/install-count'
+import { InstallFacts } from '@/ui/install-facts'
 import { Stack } from '@/ui/layout'
 import { PageSection } from '@/ui/page-section'
 import { ScenarioRow } from '@/ui/scenario-row'
@@ -109,6 +116,13 @@ function ConfigDetail() {
       <DetailPageLayout
         notice={<OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />}
         header={<ConfigHeader detail={detail} />}
+        beforeInstall={
+          <InstallFacts
+            heading="Before you install"
+            facts={configInstallFacts(detail)}
+            link={{ label: 'Not showing after you paste? Fix it', to: NOT_SHOWING_GUIDE_PATH }}
+          />
+        }
         install={
           <>
             <AdoptPrompt
