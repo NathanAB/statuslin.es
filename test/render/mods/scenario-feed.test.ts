@@ -52,7 +52,7 @@ describe('feedFile', () => {
       internal: false,
       name: null,
     })
-    expect(answers['session.version']).toEqual({ version: '2.1.155', base: '2.1.155' })
+    expect(answers['session.version']).toEqual({ version: '2.1.307', base: '2.1.307' })
   })
 
   it('follows the scenario when it changes', () => {

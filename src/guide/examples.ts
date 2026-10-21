@@ -44,11 +44,18 @@ export const SETTINGS_SNIPPET = `{
   }
 }`
 
-/** What each top-level field in SAMPLE_STDIN_JSON holds, worded from the official docs. */
+/** What each documented top-level field holds, worded from the official docs, in
+ * SAMPLE_STDIN_JSON's order. The fields the sample doesn't send come last and say when they appear. */
 export const STDIN_FIELD_GUIDE: Array<{ label: string; value: string }> = [
   { label: 'session_id', value: 'Unique ID for this session.' },
   { label: 'transcript_path', value: "Path to the session's transcript file." },
+  { label: 'fast_mode', value: 'Whether fast mode is on.' },
+  { label: 'version', value: 'Claude Code version.' },
   { label: 'cwd', value: 'Same value as workspace.current_dir.' },
+  {
+    label: 'prompt_id',
+    value: 'ID of the prompt being processed. Absent until your first prompt.',
+  },
   { label: 'model', value: 'id and display_name.' },
   { label: 'effort', value: "Reasoning effort level. Absent when the model doesn't support it." },
   { label: 'thinking', value: 'Whether extended thinking is on.' },
@@ -56,7 +63,6 @@ export const STDIN_FIELD_GUIDE: Array<{ label: string; value: string }> = [
     label: 'workspace',
     value: 'current_dir, project_dir and added_dirs, plus repo and git_worktree when they apply.',
   },
-  { label: 'version', value: 'Claude Code version.' },
   {
     label: 'cost',
     value: 'Session cost, duration, and lines added and removed. Most scripts show total_cost_usd.',
@@ -67,10 +73,30 @@ export const STDIN_FIELD_GUIDE: Array<{ label: string; value: string }> = [
   },
   { label: 'exceeds_200k_tokens', value: 'Whether the last response passed 200k tokens.' },
   {
+    label: 'prompt_cache',
+    value:
+      "The main conversation's prompt cache: whether it's warm, hit_ratio, misses, when it expires, and more. Absent until the first response.",
+  },
+  {
     label: 'rate_limits',
     value:
-      'five_hour and seven_day windows, each with used_percentage and resets_at in unix seconds. Pro and Max plans only, after the first response.',
+      'five_hour and seven_day windows on Pro and Max plans, or spend_limit behind a Claude apps gateway, each with used_percentage and resets_at in unix seconds. spend_limit can add used_usd, limit_usd and period. Appears after the first response, and a window drops out once its resets_at passes.',
   },
   { label: 'output_style', value: "The current output style's name." },
-  { label: 'pr', value: "Open PR's number, url and review_state, when the branch has one." },
+  {
+    label: 'pr',
+    value:
+      'Open PR\'s number, url and review_state, when the branch has one. For a GitLab merge request, kind is "mr".',
+  },
+  {
+    label: 'session_name',
+    value:
+      'The name from --name or /rename, else the AI-generated title. Absent until there is one.',
+  },
+  { label: 'vim', value: 'The vim mode, such as NORMAL or INSERT, when vim mode is on.' },
+  { label: 'agent', value: "The agent's name, when running with --agent or agent settings." },
+  {
+    label: 'worktree',
+    value: 'name, path, branch, original_cwd and original_branch, during a worktree session.',
+  },
 ]
