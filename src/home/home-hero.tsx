@@ -1,126 +1,169 @@
 import { useId, useState } from 'react'
-import { InstallPromptButton } from '@/adopt/install-prompt-button'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
-import { reachSentence } from '@/gallery/config-install-facts'
-import { AuthorByline } from '@/gallery/detail-byline'
-import type { HeroLine, HeroSessionKey } from '@/gallery/hero-lines'
+import type { HeroSessionKey } from '@/gallery/hero-lines'
+import { HeroItemActions } from '@/home/hero-actions'
+import { type HeroApp, heroScene } from '@/home/hero-scene'
 import { HERO_SESSIONS } from '@/home/hero-sessions'
+import type { HeroItem } from '@/home/showcase'
+import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { ChoiceGroup } from '@/ui/choice-group'
-import { FactSentence } from '@/ui/fact-sentence'
-import { HeroActions, HeroLayout } from '@/ui/hero-layout'
+import { HeroLayout } from '@/ui/hero-layout'
 import { installsLabel } from '@/ui/install-count'
-import { Terminal } from '@/ui/terminal'
-import { Heading, Text, TextLink } from '@/ui/text'
-import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
+import { SessionStage } from '@/ui/session-stage'
+import { Heading, Text } from '@/ui/text'
+import { LiveMessage } from '@/ui/visually-hidden'
 
 /** The hero's one sentence beside the title. */
 export const HERO_LEAD =
-  'Mods change what Claude Code shows. The status line is the row under your prompt: pick one the community made and see how it looks in a session.'
+  'Mods change what Claude Code shows. Pick one the community made and see how it looks in the terminal or in Claude Desktop.'
+
+const APPS: readonly { value: HeroApp; label: string }[] = [
+  { value: 'cli', label: 'CLI' },
+  { value: 'desktop', label: 'Desktop' },
+]
+
+/** A pick's value in the list: a status line and a mod can share a slug. */
+const keyOf = (item: HeroItem) =>
+  `${item.kind}:${item.kind === 'mod' ? item.mod.slug : item.line.slug}`
+const titleOf = (item: HeroItem) => (item.kind === 'mod' ? item.mod.title : item.line.title)
+const copiesOf = (item: HeroItem) =>
+  item.kind === 'mod' ? item.mod.copyCount : item.line.copyCount
+const KIND_LABEL: Record<HeroItem['kind'], string> = { 'status-line': 'Status line', mod: 'Mod' }
+const shownSession = (key: HeroSessionKey) =>
+  HERO_SESSIONS.find((s) => s.key === key) ?? HERO_SESSIONS[0]
+/** The pick as one kind or the other, so each kind's copy hook gets its own id. */
+const partsOf = (item: HeroItem | undefined) => ({
+  line: item?.kind === 'status-line' ? item.line : undefined,
+  mod: item?.kind === 'mod' ? item.mod : undefined,
+})
 
 /**
- * The home page's first screen: a Claude Code session where the visitor tries on the community's
- * most popular status lines. Picking one, or another session, renders it under the prompt; the
- * session also changes the conversation above it. Nothing changes on its own. The first status
- * line in its Everyday session is the server-rendered state, so the page reads whole without
- * JavaScript. Copy installs the shown one through the same prompt as its own page.
+ * The home page's first screen: Claude Code, in the terminal or in Claude Desktop, where the
+ * visitor tries on the community's most popular mods, status lines among them, ranked as the
+ * gallery ranks them. A status line runs under the prompt in each session; a mod draws where its
+ * footprint says, as it was recorded in the Everyday session, so the session is fixed while one is
+ * shown, and in Desktop, whose shots are recorded there too. Nothing changes on its own. The first
+ * item in the terminal's Everyday session is the server-rendered state, so the page reads whole
+ * without JavaScript. Copy installs the shown one through the same prompt as its own page.
  */
-export function HomeHero({ heading, lines }: { heading: string; lines: HeroLine[] }) {
-  const [slug, setSlug] = useState(lines[0]?.slug ?? '')
+export function HomeHero({ heading, items }: { heading: string; items: HeroItem[] }) {
+  const [picked, setPicked] = useState(items[0] ? keyOf(items[0]) : '')
+  const [app, setApp] = useState<HeroApp>('cli')
   const [sessionKey, setSessionKey] = useState<HeroSessionKey>('clean-main')
   // What the visitor has changed so far: nothing moves until they do.
-  const [changed, setChanged] = useState({ line: false, session: false })
+  const [changed, setChanged] = useState({ pick: false, app: false, session: false })
   const pickerId = useId()
+  const appId = useId()
   const sessionId = useId()
-  const line = lines.find((l) => l.slug === slug) ?? lines[0]
-  const session = HERO_SESSIONS.find((s) => s.key === sessionKey) ?? HERO_SESSIONS[0]
-  // The shown line's copy count, bumped when the visitor copies it, as on its own page.
-  const copies = useRecordedCopy(line?.configId ?? '', line?.copyCount ?? 0)
+  const item = items.find((i) => keyOf(i) === picked) ?? items[0]
+  const { line, mod } = partsOf(item)
+  // The shown one's copy count, bumped when the visitor copies it, as on its own page.
+  const lineCopies = useRecordedCopy(line?.configId ?? '', line?.copyCount ?? 0)
+  const modCopies = useRecordModCopy(mod?.modId ?? '', mod?.copyCount ?? 0)
+  // Only a status line in the terminal has a render for every session.
+  const sessionsApply = app === 'cli' && line !== undefined
+  const session = shownSession(sessionsApply ? sessionKey : 'clean-main')
 
   // With nothing published yet there is nothing to try on; the title and sentence still stand.
-  if (!line || !session)
+  if (!item || !session)
     return (
       <HeroLayout heading={heading} lead={HERO_LEAD} stage={null} picker={null} actions={null} />
     )
 
-  const pick = (next: string) => {
-    setSlug(next)
-    setChanged((c) => ({ ...c, line: true }))
-  }
-  const switchSession = (next: HeroSessionKey) => {
-    setSessionKey(next)
-    setChanged((c) => ({ ...c, session: true }))
-  }
-  const anyChange = changed.line || changed.session
+  const scene = heroScene(item, app, session)
+  const copies = mod ? modCopies : lineCopies
+  const anyChange = changed.pick || changed.app || changed.session
+  const change = (what: keyof typeof changed) => setChanged((c) => ({ ...c, [what]: true }))
 
   return (
     <HeroLayout
       heading={heading}
       lead={HERO_LEAD}
       stage={
-        <Terminal
-          label={`Claude Code with ${line.title} under the prompt, in the ${session.label} session`}
+        <SessionStage
+          label={scene.label}
           toolbar={{
-            title: 'Session',
-            titleId: sessionId,
-            caption: session.caption,
-            control: (
-              <ChoiceGroup
-                look="tray"
-                labelledBy={sessionId}
-                options={HERO_SESSIONS.map((s) => ({ value: s.key, label: s.label }))}
-                value={session.key}
-                onValueChange={switchSession}
-              />
-            ),
+            groups: [
+              {
+                title: 'App',
+                titleId: appId,
+                hideTitle: true,
+                control: (
+                  <ChoiceGroup
+                    look="tray"
+                    labelledBy={appId}
+                    options={APPS}
+                    value={app}
+                    onValueChange={(next) => {
+                      setApp(next)
+                      change('app')
+                    }}
+                  />
+                ),
+              },
+              {
+                title: 'Session',
+                titleId: sessionId,
+                control: (
+                  <ChoiceGroup
+                    look="tray"
+                    labelledBy={sessionId}
+                    options={HERO_SESSIONS.map((s) => ({ value: s.key, label: s.label }))}
+                    value={session.key}
+                    onValueChange={(next) => {
+                      setSessionKey(next)
+                      change('session')
+                    }}
+                    disabled={!sessionsApply}
+                  />
+                ),
+              },
+            ],
+            caption: scene.caption,
           }}
           transcript={session.transcript}
-          status={line.renders[session.key] ?? null}
-          conversationKey={session.key}
-          conversationChanged={changed.session}
-          statusKey={`${line.slug}:${session.key}`}
-          statusChanged={anyChange}
+          view={scene.view}
+          motion={{
+            conversationKey: `${app}:${session.key}`,
+            conversationChanged: changed.session || changed.app,
+            drawnKey: `${keyOf(item)}:${app}:${session.key}`,
+            drawnChanged: anyChange,
+          }}
         />
       }
       picker={
         <>
           <Heading level={2} size="compact" id={pickerId}>
-            Pick a status line
+            Pick a mod
           </Heading>
           <ChoiceGroup
             look="list"
             rise
             labelledBy={pickerId}
-            options={lines.map((l) => ({
-              value: l.slug,
-              label: l.title,
-              detail: installsLabel(l.slug === line.slug ? copies.count : l.copyCount),
+            options={items.map((i) => ({
+              value: keyOf(i),
+              label: titleOf(i),
+              detail: `${KIND_LABEL[i.kind]} · ${installsLabel(i === item ? copies.count : copiesOf(i))}`,
             }))}
-            value={line.slug}
-            onValueChange={pick}
+            value={keyOf(item)}
+            onValueChange={(next) => {
+              setPicked(next)
+              change('pick')
+            }}
           />
         </>
       }
       actions={
         <>
-          <HeroActions>
-            <InstallPromptButton
-              configId={line.configId}
-              title={line.title}
-              onCopied={() => copies.record('prompt')}
-            />
-            {/* The same visible words for every status line, so a long title never moves the row. */}
-            <TextLink to="/c/$slug" params={{ slug: line.slug }} tone="underlined">
-              Open page<VisuallyHidden>: {line.title}</VisuallyHidden>
-            </TextLink>
-          </HeroActions>
-          <AuthorByline author={line.author} after={installsLabel(copies.count)} />
-          <FactSentence subject={line.title} fact={reachSentence(line)} />
+          <HeroItemActions
+            item={item}
+            count={copies.count}
+            onCopied={() => copies.record('prompt')}
+          />
           <Text muted size="sm">
-            Every status line here is reviewed and rendered in a sandbox before it's listed.
+            Every mod here is reviewed and rendered in a sandbox before it's listed.
           </Text>
-          <LiveMessage>
-            {anyChange ? `Showing ${line.title} in the ${session.label} session.` : ''}
-          </LiveMessage>
+          <LiveMessage>{anyChange ? scene.shown : ''}</LiveMessage>
         </>
       }
     />

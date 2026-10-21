@@ -1,9 +1,15 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { configs, configVersions, previews, user } from '@/db/schema'
+import { configDesktopPreviews, configs, configVersions, previews, user } from '@/db/schema'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
+import type { DesktopShotImage } from '@/ui/desktop-shot'
 import { CONFIG_RANKING } from './config-items'
+import {
+  configDesktopPreview,
+  configDesktopPreviewColumns,
+  configDesktopPreviewJoin,
+} from './desktop-preview'
 import type { ConfigAuthor } from './queries'
 import { galleryRanking } from './ranking'
 
@@ -34,6 +40,14 @@ export interface HeroLine {
   readsClaudeToken: boolean
   /** A session with no render yet is left out. */
   renders: Partial<Record<HeroSessionKey, AnsiSegment[]>>
+  /** How it looks in Claude Desktop through statusline-anywhere; null without a shot. */
+  desktop: DesktopShotImage | null
+  /** Its Trending value, so the home page can rank it among mods as its gallery does. */
+  sortKey: number | null
+}
+
+function shotOf(preview: ReturnType<typeof configDesktopPreview>): DesktopShotImage | null {
+  return preview?.kind === 'shot' ? preview.shot : null
 }
 
 /**
@@ -53,10 +67,13 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
       networkHosts: configVersions.networkHosts,
       readsClaudeToken: configVersions.readsClaudeToken,
       author: { name: user.name, username: user.username, image: user.image },
+      desktop: configDesktopPreviewColumns,
+      sortKey: ranking.sortKey,
     })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
     .leftJoin(user, eq(user.id, configs.authorId))
+    .leftJoin(configDesktopPreviews, configDesktopPreviewJoin)
     .where(ranking.where)
     .orderBy(...ranking.orderBy)
     .limit(HERO_SIZE)
@@ -85,8 +102,9 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
     rendersBySha.set(sha, renders)
   }
 
-  return rows.map(({ sha, author, networkHosts, readsClaudeToken, ...row }) => ({
+  return rows.map(({ sha, author, networkHosts, readsClaudeToken, desktop, ...row }) => ({
     ...row,
+    desktop: shotOf(configDesktopPreview(desktop)),
     networkHosts: networkHosts ?? [],
     readsClaudeToken: readsClaudeToken ?? false,
     author: author

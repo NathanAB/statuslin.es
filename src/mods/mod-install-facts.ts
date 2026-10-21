@@ -1,5 +1,7 @@
 import { CircleHelp, Info, Puzzle, ShieldCheck } from 'lucide-react'
 import type { PageCopy } from '@/content/types'
+import type { ModFootprint } from '@/db/schema'
+import { listPhrase } from '@/gallery/why-line'
 import { utcDateLabel } from '@/lib/date-label'
 import type { InstallFact } from '@/ui/install-facts'
 import { describeFootprint, footprintRecorded } from './footprint'
@@ -39,4 +41,18 @@ export function modInstallFacts(
     ...powers,
     ...(mod.generatedContent?.goodToKnow ?? []).map((note) => ({ icon: Info, text: note })),
   ]
+}
+
+/**
+ * The home hero's one sentence on a mod, after its name: what its hooks can do that's worth weighing,
+ * else its first two powers, in the footprint's words. Null when it names nothing, since an empty
+ * list must never read as "does nothing"; an unrecorded footprint says so.
+ */
+export function modReachSentence(footprint: ModFootprint): InstallFact | null {
+  if (!footprintRecorded(footprint))
+    return { icon: CircleHelp, text: 'has no record yet of what it can reach.', caution: true }
+  const { phrases, risks } = describeFootprint(footprint)
+  const shown = risks.length > 0 ? risks : phrases.slice(0, 2)
+  if (shown.length === 0) return null
+  return { icon: Puzzle, text: `${listPhrase(shown)}.`, caution: risks.length > 0 }
 }

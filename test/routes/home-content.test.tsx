@@ -96,6 +96,8 @@ const heroLine: HeroLine = {
   networkHosts: [],
   readsClaudeToken: false,
   renders: { 'clean-main': [{ text: 'panel clean' }] },
+  desktop: null,
+  sortKey: 1,
 }
 
 function renderHome(
@@ -107,7 +109,7 @@ function renderHome(
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
-    showcase: { hero: [heroLine], mods: { featured, others } },
+    showcase: { hero: [{ kind: 'status-line', line: heroLine }], mods: { featured, others } },
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
@@ -245,7 +247,7 @@ describe('home sections', () => {
     renderHome({}, {}, modCard('weather'), [modCard('deck')])
 
     expect(sectionHeadings()).toEqual([
-      'Pick a status line',
+      'Pick a mod',
       'Status lines and mods',
       'Mods',
       'How installing works',

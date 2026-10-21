@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { modInstallFacts } from '@/mods/mod-install-facts'
+import { modInstallFacts, modReachSentence } from '@/mods/mod-install-facts'
 
 const SHA = 'a5c8eadbeef0000000000000000000000000000a'
 
@@ -32,5 +32,23 @@ describe('modInstallFacts', () => {
       ['Reviewed at commit `a5c8ead`', false],
       ["What it can reach isn't recorded yet", true],
     ])
+  })
+})
+
+// The home hero says one sentence about the picked mod, after its name.
+describe('modReachSentence', () => {
+  it('names what is worth weighing, as a caution', () => {
+    expect(modReachSentence({ events: ['$.http.fetch', '$.fs.write'], calls: [] })).toMatchObject({
+      text: 'writes files and connects to the internet.',
+      caution: true,
+    })
+  })
+
+  it('says when nothing about it was recorded, and says nothing when it names no power', () => {
+    expect(modReachSentence({ events: [], calls: [] })).toMatchObject({
+      text: 'has no record yet of what it can reach.',
+      caution: true,
+    })
+    expect(modReachSentence({ events: ['ui.render{component=AbovePrompt}'], calls: [] })).toBeNull()
   })
 })

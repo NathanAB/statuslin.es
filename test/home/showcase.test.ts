@@ -1,8 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getHeroLines } from '@/gallery/hero-lines'
-import { getHomeShowcase } from '@/home/showcase'
+import { getHeroLines, type HeroLine } from '@/gallery/hero-lines'
+import { getHomeShowcase, heroItems } from '@/home/showcase'
 import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
+import { getHeroMods, type HeroMod } from '@/mods/gallery-queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import {
   addDesktopPreview,
@@ -50,10 +51,16 @@ afterAll(async () => {
 
 // The parts of the home page that don't change with the gallery's sort, kind, tags or page.
 describe('getHomeShowcase', () => {
-  it("carries the hero's status lines", async () => {
+  it("carries the hero's status lines and mods, ranked together", async () => {
+    // Trending decays with the clock, so compare what is listed, not the values.
+    const listed = (items: ReturnType<typeof heroItems>) =>
+      items.map((item) => `${item.kind}:${item.kind === 'mod' ? item.mod.slug : item.line.slug}`)
     const showcase = await getHomeShowcase(db)
-    expect(showcase.hero).toEqual(await getHeroLines(db))
-    expect(showcase.hero[0]?.slug).toBe('top-line')
+    expect(listed(showcase.hero)).toEqual(
+      listed(heroItems(await getHeroLines(db), await getHeroMods(db))),
+    )
+    expect(showcase.hero.map((item) => item.kind)).toContain('mod')
+    expect(showcase.hero[0]).toMatchObject({ kind: 'status-line', line: { slug: 'top-line' } })
   })
 
   it('puts the featured mod apart from the rest, which leave it out', async () => {
@@ -61,5 +68,41 @@ describe('getHomeShowcase', () => {
 
     expect(mods.featured?.slug).toBe(FEATURED_MOD_SLUG)
     expect(mods.others.map((mod) => mod.slug)).toEqual(['other-mod'])
+  })
+})
+
+// The hero lists what the home gallery would: status lines and mods on one Trending scale.
+describe('heroItems', () => {
+  const line = (slug: string, sortKey: number | null) => ({ slug, sortKey }) as HeroLine
+  const mod = (slug: string, sortKey: number | null) => ({ slug, sortKey }) as HeroMod
+  const slugs = (items: ReturnType<typeof heroItems>) =>
+    items.map((item) => `${item.kind}:${item.kind === 'mod' ? item.mod.slug : item.line.slug}`)
+
+  it('merges both kinds by Trending, largest first, with ties keeping status lines first', () => {
+    expect(
+      slugs(heroItems([line('a', 9), line('b', 2), line('c', null)], [mod('m', 5), mod('n', 2)])),
+    ).toEqual(['status-line:a', 'mod:m', 'status-line:b', 'mod:n', 'status-line:c'])
+  })
+
+  it('keeps eight, at least three of each kind when there are that many', () => {
+    const lines = Array.from({ length: 8 }, (_, i) => line(`l${i}`, 10 - i))
+    const mods = Array.from({ length: 8 }, (_, i) => mod(`m${i}`, 1 - i / 10))
+    const items = heroItems(lines, mods)
+
+    expect(items).toHaveLength(8)
+    // Mods trend lower here, yet three still make the list, in Trending order after the lines.
+    expect(slugs(items)).toEqual([
+      'status-line:l0',
+      'status-line:l1',
+      'status-line:l2',
+      'status-line:l3',
+      'status-line:l4',
+      'mod:m0',
+      'mod:m1',
+      'mod:m2',
+    ])
+    expect(
+      slugs(heroItems(lines.slice(0, 2), mods)).filter((s) => s.startsWith('mod')),
+    ).toHaveLength(6)
   })
 })

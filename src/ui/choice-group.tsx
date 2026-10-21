@@ -21,7 +21,7 @@ const root = cva('', {
 
 // A pick shows at once: the 150ms fade only softens it, where the prototype's half second lagged.
 const item = cva(
-  `${FOCUS_RING} cursor-pointer text-left text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground`,
+  `${FOCUS_RING} cursor-pointer text-left text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground data-disabled:cursor-not-allowed data-disabled:opacity-45 data-disabled:hover:text-muted-foreground data-disabled:data-[state=checked]:hover:text-foreground`,
   {
     variants: {
       look: {
@@ -59,7 +59,8 @@ const RISE_DELAYS = [
  * choice with a detail beside it (the hero's status lines and their installs); `tray` is a row of
  * small segments (the hero's sessions); `cards` sets each choice on a big card, named by its label
  * and described by its detail, with a radio dot (the submit page's kinds). Named by the element
- * `labelledBy` points at.
+ * `labelledBy` points at. `disabled` keeps the choices in place but fixed, dimmed (the hero's
+ * sessions while it shows something recorded in one session only).
  */
 export function ChoiceGroup<T extends string>({
   labelledBy,
@@ -68,6 +69,7 @@ export function ChoiceGroup<T extends string>({
   onValueChange,
   look,
   rise = false,
+  disabled = false,
 }: {
   labelledBy: string
   options: readonly { value: T; label: string; detail?: string }[]
@@ -75,6 +77,7 @@ export function ChoiceGroup<T extends string>({
   onValueChange: (value: T) => void
   look: 'list' | 'tray' | 'cards'
   rise?: boolean
+  disabled?: boolean
 }) {
   const id = useId()
   return (
@@ -82,6 +85,7 @@ export function ChoiceGroup<T extends string>({
       aria-labelledby={labelledBy}
       value={value}
       onValueChange={(next) => onValueChange(next as T)}
+      disabled={disabled}
       loop
       className={root({ look })}
     >

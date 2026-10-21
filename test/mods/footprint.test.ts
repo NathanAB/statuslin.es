@@ -5,6 +5,7 @@ import {
   describeModFootprint,
   footprintRecorded,
 } from '@/mods/footprint'
+import { terminalPlacement } from '@/mods/terminal-placement'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -164,5 +165,19 @@ describe('describeModFootprint', () => {
       desktop: null,
     })
     expect(described).toMatchObject(describeFootprint(FILETREE))
+  })
+})
+
+// Where the home hero's terminal draws a mod.
+describe('terminalPlacement', () => {
+  const at = (events: string[]) => terminalPlacement({ events, calls: [] })
+
+  it('draws a prompt hint under the prompt, and everything else above it', () => {
+    expect(at(['ui.render{component=PromptHint}'])).toBe('under-prompt')
+    expect(at(['ui.render{component=AbovePrompt}'])).toBe('above-prompt')
+    expect(at(['ui.render{component=AbovePrompt}', 'ui.render{component=PromptHint}'])).toBe(
+      'above-prompt',
+    )
+    expect(at(['$.ui.open'])).toBe('above-prompt')
   })
 })

@@ -1,0 +1,103 @@
+import { toast } from 'sonner'
+import { InstallPromptButton } from '@/adopt/install-prompt-button'
+import { reachSentence } from '@/gallery/config-install-facts'
+import { AuthorByline } from '@/gallery/detail-byline'
+import type { HeroLine } from '@/gallery/hero-lines'
+import type { HeroItem } from '@/home/showcase'
+import { siteUrl } from '@/lib/site'
+import type { HeroMod } from '@/mods/gallery-queries'
+import { modInstallPrompt } from '@/mods/install'
+import { MOD_PASTE_HINT } from '@/mods/install-prompt'
+import { modAuthor } from '@/mods/mod-author'
+import { modReachSentence } from '@/mods/mod-install-facts'
+import { CopyButton } from '@/ui/copy-button'
+import { FactSentence } from '@/ui/fact-sentence'
+import { HeroActions } from '@/ui/hero-layout'
+import { installsLabel } from '@/ui/install-count'
+import { TextLink } from '@/ui/text'
+import { VisuallyHidden } from '@/ui/visually-hidden'
+
+// "Open page" keeps the same visible words for every pick, so a long title never moves the row.
+
+/**
+ * Under the hero's picker for a status line: the install button (the same prompt as its page) and
+ * its page, its author and installs, then what the script can reach.
+ */
+export function StatusLineHeroActions({
+  line,
+  count,
+  onCopied,
+}: {
+  line: HeroLine
+  count: number
+  onCopied: () => void
+}) {
+  return (
+    <>
+      <HeroActions>
+        <InstallPromptButton configId={line.configId} title={line.title} onCopied={onCopied} />
+        <TextLink to="/c/$slug" params={{ slug: line.slug }} tone="underlined">
+          Open page<VisuallyHidden>: {line.title}</VisuallyHidden>
+        </TextLink>
+      </HeroActions>
+      <AuthorByline author={line.author} after={installsLabel(count)} />
+      <FactSentence subject={line.title} fact={reachSentence(line)} />
+    </>
+  )
+}
+
+/**
+ * The same for a mod: its install prompt (as on its page), its page, the repository owner and
+ * installs, then what its hooks can do, from its footprint.
+ */
+export function ModHeroActions({
+  mod,
+  count,
+  onCopied,
+}: {
+  mod: HeroMod
+  count: number
+  onCopied: () => void
+}) {
+  const fact = modReachSentence(mod.footprint)
+  return (
+    <>
+      <HeroActions>
+        <CopyButton
+          text={modInstallPrompt(siteUrl(), mod.slug)}
+          label="Copy install prompt"
+          size="pill"
+          variant="default"
+          ariaLabel={`Copy install prompt for ${mod.title}`}
+          onCopied={() => {
+            onCopied()
+            toast('Prompt copied', { description: MOD_PASTE_HINT })
+          }}
+        />
+        <TextLink to="/mods/$slug" params={{ slug: mod.slug }} tone="underlined">
+          Open page<VisuallyHidden>: {mod.title}</VisuallyHidden>
+        </TextLink>
+      </HeroActions>
+      <AuthorByline author={modAuthor(mod.authorGithub)} after={installsLabel(count)} />
+      {fact ? <FactSentence subject={mod.title} fact={fact} /> : null}
+    </>
+  )
+}
+
+/** The actions for whichever kind is picked. A mod's start fresh on each pick, so "Copied" never
+ *  carries over to the next one. */
+export function HeroItemActions({
+  item,
+  count,
+  onCopied,
+}: {
+  item: HeroItem
+  count: number
+  onCopied: () => void
+}) {
+  return item.kind === 'mod' ? (
+    <ModHeroActions key={item.mod.slug} mod={item.mod} count={count} onCopied={onCopied} />
+  ) : (
+    <StatusLineHeroActions line={item.line} count={count} onCopied={onCopied} />
+  )
+}

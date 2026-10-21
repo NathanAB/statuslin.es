@@ -3,7 +3,12 @@ import * as schema from '@/db/schema'
 import { getConfigSource } from '@/gallery/config-items'
 import { getHeroLines, HERO_SESSION_KEYS, HERO_SIZE } from '@/gallery/hero-lines'
 import { openTestDb, type TestDb } from '../mods/seed-mods'
-import { addPublishedConfig } from './seed-configs'
+import {
+  addConfigDesktopPreview,
+  addPublishedConfig,
+  CONFIG_DESKTOP_SHOT,
+  currentVersionOf,
+} from './seed-configs'
 
 let db: TestDb
 let close: () => Promise<void>
@@ -34,6 +39,7 @@ beforeAll(async () => {
   for (let i = 0; i < 10; i++) {
     const id = await addPublishedConfig(db, `line-${i}`)
     await addCopies(id, (i * 7) % 10)
+    if (i === 7) await addConfigDesktopPreview(db, await currentVersionOf(db, id))
   }
   await addPublishedConfig(db, 'drafted', { status: 'draft' })
   await addPreview('line-7', 'clean-main', 'clean')
@@ -94,5 +100,26 @@ describe('getHeroLines', () => {
       readsClaudeToken: false,
     })
     expect(first?.configId).toEqual(expect.any(String))
+  })
+
+  // The hero's Desktop view shows the line as statusline-anywhere draws it in Claude Desktop.
+  it("carries each line's Desktop shot, and null for a line without one", async () => {
+    const lines = await getHeroLines(db)
+
+    expect(lines.find((l) => l.slug === 'line-7')?.desktop).toEqual({
+      src: expect.stringMatching(/\/desktop\.png\?r=\d+$/),
+      width: CONFIG_DESKTOP_SHOT.width,
+      height: CONFIG_DESKTOP_SHOT.height,
+    })
+    expect(lines.filter((l) => l.slug !== 'line-7').map((l) => l.desktop)).toEqual(
+      Array(lines.length - 1).fill(null),
+    )
+  })
+
+  // So the home page can rank status lines and mods together, as its gallery does.
+  it("carries each line's Trending value, largest first", async () => {
+    const keys = (await getHeroLines(db)).map((line) => line.sortKey ?? 0)
+    expect(keys).toEqual([...keys].sort((a, b) => b - a))
+    expect(keys[0]).toBeGreaterThan(0)
   })
 })

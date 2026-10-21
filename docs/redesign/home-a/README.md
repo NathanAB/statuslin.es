@@ -375,3 +375,10 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - **`/resources` leads somewhere to act** (#15). Under the tool list, up to three rendered status
   lines that do a listed tool's jobs. A compared tool's card opens its alternatives page first,
   with its repo a link in the card's corner.
+- **The hero tries on mods, in the terminal or in Claude Desktop.** Its sentence no longer singles
+  out the status line. The list holds the gallery's top eight by Trending, at least three of each
+  kind, each row naming its kind. A CLI / Desktop switcher sits on the demo: in the terminal a mod
+  draws above or under the prompt as its footprint says; in Desktop each pick shows its recorded
+  shot (a status line's through statusline-anywhere, with the Code tab's prompt box drawn under
+  it; a mod's whole shot already shows Desktop's own). Mods and every Desktop shot are recorded in
+  the Everyday session, so the session switcher stays in place, fixed and dimmed, while one shows.

@@ -123,7 +123,7 @@ function Home() {
     >
       {page > 1 ? null : (
         <HomeSection first>
-          <HomeHero heading={HOME_HEADING} lines={showcase.hero} />
+          <HomeHero heading={HOME_HEADING} items={showcase.hero} />
         </HomeSection>
       )}
       <HomeGallery
