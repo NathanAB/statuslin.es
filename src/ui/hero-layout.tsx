@@ -10,8 +10,8 @@ const RISE =
   'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 
 /**
- * The home hero on a 12-column grid: the title over the first eight columns with its one sentence
- * right under it, then the demo (`stage`) under them and its controls (`picker`, then `actions`) in
+ * The home hero on a 12-column grid: the title across the full width with its one sentence right
+ * under it over the first eight columns, then the demo (`stage`) under them and its controls (`picker`, then `actions`) in
  * the last four columns beside it. Below 900px everything stacks, with the actions moved above the
  * picker so a phone's first screen holds the install button. On load they rise in, in that order.
  */
@@ -32,13 +32,21 @@ export function HeroLayout({
 }) {
   return (
     <div className="grid grid-cols-12 gap-x-6 gap-y-[clamp(1.75rem,3.4vw,3rem)]">
-      <div className="col-span-12 flex flex-col gap-[clamp(0.875rem,1.6vw,1.375rem)] min-[56.25rem]:col-span-8">
-        <div className={cn(RISE, 'delay-[60ms]')}>
+      <div className="col-span-12 grid grid-cols-12 gap-x-6 gap-y-[clamp(0.875rem,1.6vw,1.375rem)]">
+        <div className={cn('col-span-12', RISE, 'delay-[60ms]')}>
           <Heading level={1} size="display">
             {heading}
           </Heading>
         </div>
-        <p className={cn('text-pretty text-foreground text-lead', RISE, 'delay-[240ms]')}>{lead}</p>
+        <p
+          className={cn(
+            'col-span-12 text-pretty text-foreground text-lead min-[56.25rem]:col-span-8',
+            RISE,
+            'delay-[240ms]',
+          )}
+        >
+          {lead}
+        </p>
       </div>
       <div className={cn('col-span-12 min-w-0 min-[56.25rem]:col-span-8', RISE, 'delay-[330ms]')}>
         {stage}
