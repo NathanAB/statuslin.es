@@ -17,6 +17,7 @@ import { checkedPixelPng } from './png'
 import {
   bandAbovePrompt,
   keptRowCuts,
+  promptTop,
   type RowCut,
   type RowProfile,
   type RowSignature,
@@ -32,7 +33,6 @@ import {
   CROP_MARGIN,
   PANE_BODY,
   PANE_CHAT_COLUMN,
-  PROMPT_BOX,
   PROMPT_TEXT,
   plateStrips,
   type Rect,
@@ -96,7 +96,10 @@ async function changedBox(analysis: AnalysisSandbox, masks: Rect[] = []): Promis
 }
 
 /** Where the chat ends: at the band's top, or at the prompt box when there is no band. */
-const chatBottom = (plate: RowProfile) => bandAbovePrompt(plate, PROMPT_BOX.y)?.top ?? PROMPT_BOX.y
+function chatBottom(plate: RowProfile): number {
+  const top = promptTop(plate)
+  return bandAbovePrompt(plate, top)?.top ?? top
+}
 
 /**
  * The chat column above the chat's bottom: where the input steps' own turns show (each step's

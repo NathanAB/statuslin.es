@@ -6,6 +6,7 @@ import {
   drawnRows,
   KEPT_GAP,
   keptRowCuts,
+  promptTop,
   rowsNotInBaseline,
   SIGNATURE_TOLERANCE,
   uncutTop,
@@ -56,6 +57,28 @@ describe('bandAbovePrompt', () => {
 
   it('ignores a sliver too thin to be a band', () => {
     expect(bandAbovePrompt(rows([812, 814, 1]), PROMPT_TOP)).toBeNull()
+  })
+})
+
+// Plate rows measured on Desktop 2.42304.2: a one-line prompt box reads from 830, a box holding a
+// draft that wrapped to two lines from 810, both down to 859.
+describe('promptTop', () => {
+  it('is the prompt box top when the draft fits on one line', () => {
+    expect(promptTop(rows([830, 859, 1]))).toBe(PROMPT_BOX.y)
+  })
+
+  it('moves up with the box when a draft wraps to more lines', () => {
+    expect(promptTop(rows([810, 859, 1]))).toBe(PROMPT_BOX.y - 20)
+  })
+
+  it('stays at the prompt box top when no box reads in the plate', () => {
+    expect(promptTop(rows())).toBe(PROMPT_BOX.y)
+  })
+
+  it('lets the band above a two-line draft be found', () => {
+    const profile = rows([763, 794, 1], [810, 859, 1])
+
+    expect(bandAbovePrompt(profile, promptTop(profile))).toEqual({ top: 763, bottom: 794 })
   })
 })
 

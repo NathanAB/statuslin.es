@@ -327,6 +327,27 @@ describe('analyseShot', () => {
     })
   })
 
+  it('crops the band above a draft an input step left wrapped onto two lines', async () => {
+    const band: [number, number] = [763, 794]
+    const chat = profile([275, 433], band, [805, 864])
+    const { analysis } = fakeAnalysis({
+      changes: [...STEP_TURNS, { x: 166, y: 763, width: 768, height: 32 }],
+      content: chat,
+      cropContent: chat,
+      plate: profile(band, [810, 859]),
+      shotRows: [[...band, 1]],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      typedSlashCommand: false,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot' })
+  })
+
   it('leaves out a message the user sent, though its slash command differs from the baseline', async () => {
     const bubble: [number, number] = [275, 305]
     const chat = profile(bubble, BAND_ROWS, PROMPT_ROWS)
