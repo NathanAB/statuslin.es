@@ -14,8 +14,7 @@ import { Heading, Text } from '@/ui/text'
 import { LiveMessage } from '@/ui/visually-hidden'
 
 /** The hero's one sentence beside the title. */
-export const HERO_LEAD =
-  'Mods change what Claude Code shows. Pick one the community made and see how it looks in the terminal or in Claude Desktop.'
+export const HERO_LEAD = 'Mods let you customize Claude Code. Pick one and see it in action.'
 
 const APPS: readonly { value: HeroApp; label: string; icon: LucideIcon }[] = [
   { value: 'cli', label: 'Terminal', icon: SquareTerminal },

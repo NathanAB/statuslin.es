@@ -180,7 +180,7 @@ describe('home content', () => {
     expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
       'Status lines and mods',
     ])
-    expect(screen.queryByText(/The status line is the row under your prompt/)).toBeNull()
+    expect(screen.queryByText(/Mods let you customize Claude Code/)).toBeNull()
   })
 
   // The hero is the first thing on the page, and the server renders its first state.
@@ -189,7 +189,7 @@ describe('home content', () => {
 
     const first = container.querySelector('section')
     expect(first?.querySelector('h1')?.textContent).toBe(HOME_HEADING)
-    expect(first?.textContent).toContain('Mods change what Claude Code shows.')
+    expect(first?.textContent).toContain('Mods let you customize Claude Code.')
     expect(first?.textContent).toContain('panel clean')
     expect(first?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
