@@ -139,7 +139,7 @@ describe('home content', () => {
     expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
       'Status lines and mods',
     ])
-    expect(screen.queryByText(/Pick one and see it in action/)).toBeNull()
+    expect(screen.queryByText(/see it in action/)).toBeNull()
   })
 
   // The hero is the first thing on the page, and the server renders its first state.
@@ -149,9 +149,13 @@ describe('home content', () => {
     const first = container.querySelector('section')
     expect(first?.querySelector('h1')?.textContent).toBe(HOME_HERO_HEADING)
     expect(first?.textContent).toContain(
-      'Status lines and mods that track your usage limits, context window and git branch.',
+      'Track your usage limits, context window, git branch and more.',
     )
     expect(first?.textContent).toContain('panel clean')
+    // Read in order: the title, then its sentence right under it, then the demo.
+    expect(first?.querySelector('h1')?.parentElement?.nextElementSibling?.textContent).toBe(
+      'Track your usage limits, context window, git branch and more. Pick a mod and see it in action.',
+    )
     expect(first?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
   })

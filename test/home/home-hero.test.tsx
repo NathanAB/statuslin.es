@@ -152,7 +152,7 @@ describe('HomeHero', () => {
     expect(html).toContain(`<h1`)
     expect(html).toContain(heading)
     expect(html).toContain(
-      'Status lines and mods that track your usage limits, context window and git branch. Pick one and see it in action.',
+      'Track your usage limits, context window, git branch and more. Pick a mod and see it in action.',
     )
     expect(html).not.toMatch(/row under your prompt/)
     expect(html).toContain('panel clean')

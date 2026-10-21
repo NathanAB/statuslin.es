@@ -10,12 +10,10 @@ const RISE =
   'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 
 /**
- * The home hero on a 12-column grid with two left edges: the title over the first eight columns
- * with its one sentence on the last four, then the demo (`stage`) under the title and its controls
- * (`picker`, then `actions`) under the sentence. Below 900px everything stacks, with the actions
- * moved above the picker so a phone's first screen holds the install button; `pickerFirst` keeps the
- * picker above them, where the actions only describe the pick (/resources). On load they rise in,
- * in that order.
+ * The home hero on a 12-column grid: the title over the first eight columns with its one sentence
+ * right under it, then the demo (`stage`) under them and its controls (`picker`, then `actions`) in
+ * the last four columns beside it. Below 900px everything stacks, with the actions moved above the
+ * picker so a phone's first screen holds the install button. On load they rise in, in that order.
  */
 export function HeroLayout({
   heading,
@@ -23,7 +21,6 @@ export function HeroLayout({
   stage,
   picker,
   actions,
-  pickerFirst = false,
 }: {
   heading: string
   lead: string
@@ -32,24 +29,17 @@ export function HeroLayout({
   /** The install button and what to know about it. Under the picker on wide screens; on phones
    *  right under the demo, so the first screen holds the button. */
   actions: ReactNode
-  pickerFirst?: boolean
 }) {
   return (
     <div className="grid grid-cols-12 gap-x-6 gap-y-[clamp(1.75rem,3.4vw,3rem)]">
-      <div className={cn('col-span-12 self-end min-[56.25rem]:col-span-8', RISE, 'delay-[60ms]')}>
-        <Heading level={1} size="display">
-          {heading}
-        </Heading>
+      <div className="col-span-12 flex flex-col gap-[clamp(0.875rem,1.6vw,1.375rem)] min-[56.25rem]:col-span-8">
+        <div className={cn(RISE, 'delay-[60ms]')}>
+          <Heading level={1} size="display">
+            {heading}
+          </Heading>
+        </div>
+        <p className={cn('text-pretty text-foreground text-lead', RISE, 'delay-[240ms]')}>{lead}</p>
       </div>
-      <p
-        className={cn(
-          'col-span-12 self-end text-foreground text-lead min-[56.25rem]:col-span-4',
-          RISE,
-          'delay-[240ms]',
-        )}
-      >
-        {lead}
-      </p>
       <div className={cn('col-span-12 min-w-0 min-[56.25rem]:col-span-8', RISE, 'delay-[330ms]')}>
         {stage}
       </div>
@@ -60,20 +50,8 @@ export function HeroLayout({
           'delay-[420ms]',
         )}
       >
-        <div
-          className={cn(
-            'flex min-w-0 flex-col gap-3.5',
-            !pickerFirst && 'order-2 min-[56.25rem]:order-1',
-          )}
-        >
-          {picker}
-        </div>
-        <div
-          className={cn(
-            'flex min-w-0 flex-col gap-3.5',
-            !pickerFirst && 'order-1 min-[56.25rem]:order-2',
-          )}
-        >
+        <div className="order-2 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:order-1">{picker}</div>
+        <div className="order-1 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:order-2">
           {actions}
         </div>
       </div>

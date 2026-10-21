@@ -465,3 +465,11 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   page's searches are those names. Search Console baseline before this change (2026-07-21 to
   2026-10-20): 1,934 impressions, 23 clicks, position 9.2; compare 2 to 4 weeks after it ships.
   The guides' Claude Code claims are listed with their sources in `docs/guide-claims.md`.
+- **The hero's sentence sits under its title, and /resources stops looking like home**, decided by
+  the owner. On the home page the sentence ("Track your usage limits, context window, git branch
+  and more. Pick a mod and see it in action.") now runs right under the title instead of in a
+  column of its own, so it reads title, sentence, then demo. /resources dropped the drawn Claude
+  Code session and its picker: next to the home hero it read as the same page. It now opens on a
+  plain title (the heading step, not display) and one sentence, then the status line tools, then
+  "What you can customize" as eight tiles with Anthropic's docs. This replaces the drawn-session
+  entries above.

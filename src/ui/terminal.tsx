@@ -19,7 +19,7 @@ export type TranscriptLine =
   | { kind: 'note'; text: string }
 
 // Claude Code's own marks (❯ your turn, ● a step, ⎿ its result) are decoration to a screen reader.
-export const mark = (glyph: string) => <span aria-hidden="true">{glyph}</span>
+const mark = (glyph: string) => <span aria-hidden="true">{glyph}</span>
 
 function TranscriptRow({ line }: { line: TranscriptLine }) {
   switch (line.kind) {

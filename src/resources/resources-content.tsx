@@ -2,16 +2,23 @@ import type { ResourcesShowcase } from '@/compare/pages'
 import { RankedCardList } from '@/gallery/ranked-card-list'
 import { CONTACT_EMAIL } from '@/lib/site'
 import { MarketplaceLine } from '@/mods/marketplace-line'
-import { CustomizeHero } from '@/resources/customize-hero'
+import { CustomizationMap } from '@/resources/customization-map'
 import { RESOURCE_SECTIONS, type ResourceSection, resourceAnchor } from '@/resources/data'
 import { HomeSection } from '@/ui/home-section'
 import { ColumnGrid, Row, Split, Stack } from '@/ui/layout'
 import { type LinkRow, LinkRows } from '@/ui/link-rows'
+import { PageHeader } from '@/ui/page-header'
 import { Panel } from '@/ui/panel'
 import { StretchedLink } from '@/ui/stretched-link'
 import { SubmitCta } from '@/ui/submit-cta'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
+
+const RESOURCES_HEADING = 'Claude Code customization tools & resources'
+// Most of the page's searches are a status line tool's name, so its first sentence names the two
+// biggest (Search Console, 2026-07-21 to 2026-10-20).
+const RESOURCES_LEAD =
+  'Every way to change Claude Code, from status line tools like ccstatusline and claude-powerline to mods and themes.'
 
 /** A section of src/resources/data.ts by key; a missing one is a typo here, so it fails loudly. */
 function sectionOf(key: string): ResourceSection {
@@ -23,12 +30,13 @@ function sectionOf(key: string): ResourceSection {
 const MORE = ['usage-tracking', 'themes', 'beyond', 'guides'] as const
 
 /**
- * The /resources page body, on the home page's sections: the Claude Code session with every way to
- * customize it, the status line tools (what most visitors search for) and the gallery status lines
- * that do the same jobs, the plugin marketplaces on a field of their own beside our marketplace
- * command, the smaller sections side by side, then a way to get listed. `showcase` gives a compared tool its alternatives page and the
- * rendered status lines; `origin` is the site's, for the marketplace command. A component (not inline
- * in the route) so it's unit-testable, the same pattern as TermsContent.
+ * The /resources page body, a reference page rather than a second home page: its title and one
+ * sentence, with no demo beside them, the status line tools (what most visitors search for) and the gallery status lines that
+ * do the same jobs, every way to customize Claude Code as tiles, the plugin marketplaces on a field
+ * of their own beside our marketplace command, the smaller sections side by side, then a way to get
+ * listed. `showcase` gives a compared tool its alternatives page and the rendered status lines;
+ * `origin` is the site's, for the marketplace command. A component (not inline in the route) so
+ * it's unit-testable, the same pattern as TermsContent.
  */
 export function ResourcesContent({
   signedIn,
@@ -43,7 +51,7 @@ export function ResourcesContent({
   return (
     <>
       <HomeSection first>
-        <CustomizeHero />
+        <PageHeader title={RESOURCES_HEADING} lead={RESOURCES_LEAD} />
       </HomeSection>
 
       <HomeSection>
@@ -96,6 +104,25 @@ export function ResourcesContent({
               <RankedCardList items={showcase.cards} surface="resources" />
             </Stack>
           ) : null}
+        </Stack>
+      </HomeSection>
+
+      <HomeSection>
+        <Stack gap={7}>
+          <Split
+            start={
+              <Heading level={2} size="section">
+                What you can customize
+              </Heading>
+            }
+            end={
+              <Text size="lead">
+                Eight ways to change Claude Code, each with Anthropic's docs and, where the gallery
+                has some, examples to install.
+              </Text>
+            }
+          />
+          <CustomizationMap />
         </Stack>
       </HomeSection>
 

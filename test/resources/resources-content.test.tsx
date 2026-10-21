@@ -65,7 +65,7 @@ describe('ResourcesContent', () => {
         name: 'Claude Code customization tools & resources',
       }),
     ).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 2, name: 'Pick what to customize' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'What you can customize' })).toBeTruthy()
     for (const section of RESOURCE_SECTIONS) {
       expect(screen.getByRole('heading', { level: 2, name: section.title })).toBeTruthy()
     }
@@ -119,12 +119,46 @@ describe('ResourcesContent', () => {
     expect(screen.getByRole('button', { name: 'Submit' })).toBeTruthy()
   })
 
-  // The page opens on a Claude Code session to pick a way to customize from (its own tests cover it).
-  it('opens on the session to pick a way to customize from, without FAQPage', () => {
+  // A plain page header, so it doesn't read as the home page: the title and one sentence that
+  // names the two tools most visitors search for.
+  it('opens on a title and one sentence naming the most-searched tools, no demo', () => {
     const { container } = render(
       <ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />,
     )
-    expect(screen.getByRole('radiogroup', { name: 'Pick what to customize' })).toBeTruthy()
+    expect(screen.getByText(/ccstatusline and claude-powerline/)).toBeTruthy()
+    expect(container.querySelector('[role="img"]')).toBeNull()
+    expect(screen.queryByRole('radiogroup')).toBeNull()
+  })
+
+  // Every way to customize, each with what it changes and its docs, in the page from the start.
+  it('maps every way to customize Claude Code, each with its official docs, without FAQPage', () => {
+    const { container } = render(
+      <ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />,
+    )
+    const map = screen
+      .getByRole('heading', { level: 2, name: 'What you can customize' })
+      .closest('section') as HTMLElement
+    expect(
+      within(map)
+        .getAllByRole('heading', { level: 3 })
+        .map((h) => h.textContent),
+    ).toEqual([
+      'Mods',
+      'Status line',
+      'Themes',
+      'Spinner verbs',
+      'Output styles',
+      'Hooks',
+      'Skills',
+      'Subagents',
+    ])
+    expect(within(map).getAllByRole('link', { name: /^Docs for / })).toHaveLength(8)
+    expect(within(map).getByRole('link', { name: 'Docs for mods' }).getAttribute('href')).toBe(
+      'https://code.claude.com/docs/en/plugins/mods/overview',
+    )
+    expect(within(map).getByRole('link', { name: 'Browse mods' }).getAttribute('href')).toBe(
+      '/mods',
+    )
     expect(container.innerHTML).not.toMatch(/FAQPage/)
   })
 
@@ -210,8 +244,8 @@ describe('ResourcesContent', () => {
     render(<ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />)
     const h2s = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
     expect(h2s.slice(0, 3)).toEqual([
-      'Pick what to customize',
       'Status line tools',
+      'What you can customize',
       'Mods & plugin marketplaces',
     ])
   })

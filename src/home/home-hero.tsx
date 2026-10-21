@@ -18,7 +18,7 @@ import { LiveMessage } from '@/ui/visually-hidden'
  * most: usage limits, context and git (production installs and Search Console, 2026-10-21).
  */
 export const HERO_LEAD =
-  'Status lines and mods that track your usage limits, context window and git branch. Pick one and see it in action.'
+  'Track your usage limits, context window, git branch and more. Pick a mod and see it in action.'
 
 const APPS: readonly { value: HeroApp; label: string; icon: LucideIcon }[] = [
   { value: 'cli', label: 'Terminal', icon: SquareTerminal },
