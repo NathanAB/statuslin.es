@@ -143,10 +143,11 @@ describe('llms.txt with mods', () => {
     expect(txt).not.toContain('removed-mod')
   })
 
-  it('links a facet that mods make indexable', async () => {
+  // The link names the page as the page names itself: it lists a mod, so its heading says mods.
+  it('links a facet that mods make indexable, by its page heading', async () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
-    expect(txt).toContain(`(${BASE}/status-lines/minimal)`)
+    expect(txt).toContain(`[Minimal Claude Code mods](${BASE}/status-lines/minimal)`)
   })
 
   it('no longer says every submission is a shell script', async () => {

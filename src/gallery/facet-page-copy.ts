@@ -26,3 +26,16 @@ export function topicHeading(topic: { slug: string; mods: number }): string {
   const facet = FACET_BY_SLUG.get(topic.slug)
   return facet ? facetPageCopy(facet, topic.mods).heading : topic.slug
 }
+
+/**
+ * A status line page's primary topic, named as the topic page names itself: once a published mod
+ * carries the topic (`modTags` are each mod's tags), its heading says mods, as the page's does.
+ */
+export function primaryFacetLink(
+  facet: { slug: string; heading: string } | null,
+  modTags: string[][],
+): { slug: string; heading: string } | null {
+  if (!facet) return null
+  const mods = modTags.filter((tags) => tags.includes(facet.slug)).length
+  return mods > 0 ? { slug: facet.slug, heading: topicHeading({ slug: facet.slug, mods }) } : facet
+}

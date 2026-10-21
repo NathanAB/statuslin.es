@@ -208,14 +208,19 @@ export function ShotCarousel({
               onClick={item.onOpen}
               className="block w-fit max-w-[86vw] rounded-[1.375rem] bg-card p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span data-ui="" className="block overflow-hidden rounded-2xl">
+              {/* On phones a whole shot scaled to the screen was too small to read: it keeps about
+                  three quarters of its size instead, cropped at the right with a fade. */}
+              <span
+                data-ui=""
+                className="block overflow-hidden rounded-2xl max-md:[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]"
+              >
                 <img
                   src={item.shot.src}
                   alt={item.alt}
                   width={item.shot.width}
                   height={item.shot.height}
                   loading="lazy"
-                  className="block h-auto max-w-full"
+                  className="block h-auto max-w-full max-md:w-[min(48rem,150vw)] max-md:max-w-none"
                 />
               </span>
             </Link>

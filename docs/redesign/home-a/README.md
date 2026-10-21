@@ -388,3 +388,15 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   is fixed (a mod, or Desktop), the line under the rows says why, with an info mark, instead of the
   session's data. On phones the labels sit above their rows and the sessions wrap, so every option
   still shows.
+- **A new-user review's fixes** (an independent agent walked every page type on staging).
+  - The hero never cuts a line in half: both conversations keep their newest lines and fade the
+    oldest at the top, and a render wider than the terminal shrinks to fit.
+  - In Desktop a mod shows its card, which ends cleanly, with the prompt box drawn under it unless
+    the mod writes in the toolbar (its card shows the box then). Whole shots could end in a sliver
+    of the prompt box. The shot's box is held before it loads, so nothing jumps.
+  - "How installing works" says what happens for a status line and for a mod.
+  - A mod's reach sentence says only the weightiest power when its powers would run on.
+  - The home submit card says "Submit a mod", and breadcrumbs and `llms.txt` name a topic as its
+    page does.
+  - On phones, cut previews fade at the right edge (under the status line's "more" button too),
+    and the mods row keeps its shots readable.

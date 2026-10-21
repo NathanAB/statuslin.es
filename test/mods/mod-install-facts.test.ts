@@ -44,6 +44,15 @@ describe('modReachSentence', () => {
     })
   })
 
+  // Two long powers joined with "and" ran on: "sees each change to /config and can block or
+  // rewrite it and sees each tool call…". The weightiest one is said, and its page lists the rest.
+  it('says only the weightiest of several long powers, and points to the page for the rest', () => {
+    expect(modReachSentence({ events: ['config.set', 'tool.call'], calls: [] })).toMatchObject({
+      text: 'sees each change to /config and can block or rewrite it. Its page lists 1 more.',
+      caution: true,
+    })
+  })
+
   it('says when nothing about it was recorded, and says nothing when it names no power', () => {
     expect(modReachSentence({ events: [], calls: [] })).toMatchObject({
       text: 'has no record yet of what it can reach.',

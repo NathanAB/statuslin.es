@@ -1,6 +1,6 @@
 import type { HeroSession } from '@/home/hero-sessions'
 import type { HeroItem } from '@/home/showcase'
-import { terminalPlacement } from '@/mods/terminal-placement'
+import { terminalPlacement, writesInToolbar } from '@/mods/draw-placement'
 import type { StageView } from '@/ui/session-stage'
 
 /** Where the hero shows its pick: Claude Code in a terminal, or Claude Desktop's Code tab. */
@@ -30,8 +30,9 @@ export function heroScene(item: HeroItem, app: HeroApp, session: HeroSession): H
       view: {
         kind: 'desktop',
         shot: item.kind === 'mod' ? item.mod.desktop : item.line.desktop,
-        // A mod's whole shot already runs down through the prompt box; a status line's is its strip.
-        promptBox: item.kind === 'status-line',
+        // A card ends at the band, so the prompt box is drawn under it, unless the mod writes in
+        // the toolbar: its card then already shows the prompt box and toolbar.
+        promptBox: item.kind === 'status-line' || !writesInToolbar(item.mod.footprint),
         missing: 'No Claude Desktop preview yet.',
       },
       label: `${title} in Claude Desktop`,

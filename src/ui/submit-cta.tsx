@@ -57,7 +57,8 @@ export function SubmitChooser({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="flex flex-col items-start gap-4.5 rounded-3xl bg-card p-7 text-foreground">
       <h3 className="font-medium text-body tracking-[-0.015em]">
-        {kind === 'mod' ? 'Submit a mod' : 'Submit a status line'}
+        {/* "Mod" covers both kinds on this site; the choice below says which. */}
+        Submit a mod
       </h3>
       <span id={labelId} className="sr-only">
         What are you submitting?

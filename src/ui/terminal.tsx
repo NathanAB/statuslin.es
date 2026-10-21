@@ -1,5 +1,7 @@
+import { useLayoutEffect, useRef } from 'react'
 import { cn } from '@/lib/cn'
 import type { AnsiSegment } from '@/render/types'
+import { BottomAnchored } from '@/ui/bottom-anchored'
 import { GLOW, SCREEN, type ScreenMotion, SETTLE } from '@/ui/stage-screen'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 
@@ -63,12 +65,38 @@ function Transcript({ lines }: { lines: TranscriptLine[] }) {
   ))
 }
 
-/** What the terminal draws for the pick, or why it draws nothing. */
+/** A render's widest line, in characters. */
+function widestLine(segments: AnsiSegment[]): number {
+  const lines = segments
+    .map((segment) => segment.text)
+    .join('')
+    .split('\n')
+  return Math.max(1, ...lines.map((line) => [...line].length))
+}
+
+// A monospace character is about 0.6em wide. Text shrinks until the widest line fits the screen's
+// width (`--cols` characters across 100cqw), but never below 9px; past that the line scrolls.
+const FIT_TO_WIDTH =
+  'text-[length:max(0.5625rem,min(1em,calc(100cqw/(var(--cols,1)*0.6))))] leading-[1.45]'
+
+/**
+ * What the terminal draws for the pick, or why it draws nothing. A render wider than the screen
+ * shrinks to fit, so its right edge never goes missing. `--cols` is set from a ref (inline styles
+ * are off limits), so the first server paint shows full-size text.
+ */
 function Drawn({ segments, missing }: { segments: AnsiSegment[] | null; missing: string }) {
-  return segments ? (
-    <StatuslinePreview segments={segments} look="terminal" />
-  ) : (
-    <span className="text-terminal-muted">{missing}</span>
+  const fit = useRef<HTMLDivElement>(null)
+  const cols = segments ? widestLine(segments) : 1
+  useLayoutEffect(() => {
+    fit.current?.style.setProperty('--cols', String(cols))
+  }, [cols])
+  if (!segments) return <span className="text-terminal-muted">{missing}</span>
+  return (
+    <div className="@container">
+      <div ref={fit} data-fit="" className={FIT_TO_WIDTH}>
+        <StatuslinePreview segments={segments} look="terminal" />
+      </div>
+    </div>
   )
 }
 
@@ -106,12 +134,11 @@ export function TerminalScreen({
         'bg-sunken font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:text-[0.8125rem]',
       )}
     >
-      <pre
-        key={motion.conversationKey}
-        className={cn('min-h-0 shrink overflow-hidden whitespace-pre font-mono', settle)}
-      >
-        <Transcript lines={transcript} />
-      </pre>
+      <BottomAnchored key={motion.conversationKey} look="terminal" settle={settle}>
+        <pre className="whitespace-pre font-mono">
+          <Transcript lines={transcript} />
+        </pre>
+      </BottomAnchored>
       {at === 'above-prompt' ? (
         <div
           key={drawnKey}

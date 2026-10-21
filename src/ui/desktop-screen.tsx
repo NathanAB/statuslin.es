@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn'
+import { BottomAnchored } from '@/ui/bottom-anchored'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import { GLOW, SCREEN, type ScreenMotion, SETTLE } from '@/ui/stage-screen'
 import type { TranscriptLine } from '@/ui/terminal'
@@ -33,7 +34,8 @@ function DesktopTranscript({ lines }: { lines: TranscriptLine[] }) {
  * The home hero's Claude Desktop Code tab: the conversation, then the pick's recorded shot, and
  * under it the prompt box when `promptBox` (a shot of a band alone, which Desktop draws just above
  * it). `missing` is said in place of a shot there isn't. One picture to a screen reader, named by
- * `label`. A tall shot keeps to 18rem, scaled down whole, so some conversation still shows.
+ * `label`. A tall shot keeps to 18rem, scaled down whole, so some conversation still shows; its
+ * width and height hold its box before it loads, so nothing above it jumps when it arrives.
  */
 export function DesktopScreen({
   label,
@@ -57,16 +59,13 @@ export function DesktopScreen({
       data-ui=""
       className={cn(SCREEN, 'bg-background text-foreground text-small')}
     >
-      <div
+      <BottomAnchored
         key={motion.conversationKey}
-        className={cn(
-          // Newest last, as in a chat: what doesn't fit is the oldest, clipped at the top.
-          'flex min-h-0 shrink flex-col justify-end gap-3 overflow-hidden',
-          motion.conversationChanged && SETTLE,
-        )}
+        look="desktop"
+        settle={motion.conversationChanged ? SETTLE : undefined}
       >
         <DesktopTranscript lines={transcript} />
-      </div>
+      </BottomAnchored>
       <div
         key={motion.drawnChanged ? motion.drawnKey : undefined}
         data-slot="desktop-shot"
@@ -78,7 +77,7 @@ export function DesktopScreen({
             alt=""
             width={shot.width}
             height={shot.height}
-            className="h-auto max-h-72 w-auto max-w-full"
+            className="h-auto max-h-72 max-w-full object-contain object-left-bottom"
           />
         ) : (
           <span className="text-muted-foreground">{missing}</span>

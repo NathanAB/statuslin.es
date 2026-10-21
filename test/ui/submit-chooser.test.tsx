@@ -46,7 +46,8 @@ describe('SubmitChooser', () => {
       ['Status line', 'true'],
       ['Mod', 'false'],
     ])
-    expect(screen.getByRole('heading', { name: 'Submit a status line' })).toBeTruthy()
+    // The site calls both kinds mods, so the panel's heading says mod whichever kind is picked.
+    expect(screen.getByRole('heading', { name: 'Submit a mod' })).toBeTruthy()
   })
 
   it('links a signed-in visitor to the form for what they chose', () => {

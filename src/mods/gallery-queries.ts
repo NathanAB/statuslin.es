@@ -98,8 +98,8 @@ export interface HeroMod {
   copyCount: number
   /** What it draws in the terminal, from the Everyday session; null when it drew nothing there. */
   render: AnsiSegment[] | null
-  /** Its whole Desktop shot, which runs down through Desktop's prompt box; null without one. A
-   *  card can hold the prompt box or not, so the hero never uses it. */
+  /** Its Desktop card: its band (with the prompt box and toolbar when it writes there), or the top
+   *  of its pane; null without a shot. A whole shot can end in a sliver of the prompt box. */
   desktop: DesktopShotImage | null
   /** Where it draws and what it can reach come from this, as on its page. */
   footprint: ModFootprint
@@ -126,7 +126,7 @@ export async function getHeroMods(db: Db): Promise<HeroMod[]> {
       authorGithub,
       copyCount,
       render: preview && preview.length > 0 ? compactSegments(preview) : null,
-      desktop: shot?.kind === 'shot' ? shot.shot : null,
+      desktop: shot?.kind === 'shot' ? shot.card : null,
       footprint: row.footprint,
       sortKey: row.sortKey,
     }

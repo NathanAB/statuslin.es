@@ -56,9 +56,9 @@ describe('getHeroMods', () => {
     expect(keys).toEqual([...keys].sort((a, b) => b - a))
   })
 
-  // The whole shot, not the card: a card can hold Desktop's prompt box or not, and the whole shot
-  // always runs down through it, so the hero draws no second one.
-  it('carries what the hero shows: its terminal render, whole Desktop shot, footprint and author', async () => {
+  // The card, not the whole shot: a whole shot can end in a sliver of Desktop's prompt box, while a
+  // card ends cleanly (showing the whole box only for a mod that writes in the toolbar).
+  it('carries what the hero shows: its terminal render, Desktop card, footprint and author', async () => {
     const mods = await getHeroMods(db)
     const shot = mods.find((mod) => mod.slug === 'mod-7')
 
@@ -69,9 +69,9 @@ describe('getHeroMods', () => {
       render: [{ text: 'meter' }],
       footprint: FOOTPRINT,
       desktop: {
-        src: expect.stringMatching(/\/desktop\.png\?r=\d+$/),
-        width: SEEDED_DESKTOP_SHOT.width,
-        height: SEEDED_DESKTOP_SHOT.height,
+        src: expect.stringMatching(/image=card$/),
+        width: SEEDED_DESKTOP_SHOT.cardWidth,
+        height: SEEDED_DESKTOP_SHOT.cardHeight,
       },
     })
     expect(shot?.modId).toEqual(expect.any(String))

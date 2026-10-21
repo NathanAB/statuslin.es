@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { terminalPlacement, writesInToolbar } from '@/mods/draw-placement'
 import {
   DRAW_LOCATION_LABEL,
   describeFootprint,
   describeModFootprint,
   footprintRecorded,
 } from '@/mods/footprint'
-import { terminalPlacement } from '@/mods/terminal-placement'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -179,5 +179,17 @@ describe('terminalPlacement', () => {
       'above-prompt',
     )
     expect(at(['$.ui.open'])).toBe('above-prompt')
+  })
+})
+
+// Desktop records a toolbar write by its pixels; a mod's footprint names it as the session-mode
+// label or a status entry.
+describe('writesInToolbar', () => {
+  const writes = (events: string[]) => writesInToolbar({ events, calls: [] })
+
+  it('counts the session-mode label and a status entry as toolbar writes, and nothing else', () => {
+    expect(writes(['ui.render{component=SessionMode}'])).toBe(true)
+    expect(writes(['$.ui.status'])).toBe(true)
+    expect(writes(['ui.render{component=AbovePrompt}', '$.ui.open'])).toBe(false)
   })
 })

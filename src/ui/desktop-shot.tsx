@@ -10,8 +10,10 @@ export interface DesktopShotImage {
 // A card image is recorded to fit a card: the mod's band, its pane, or the top of its shot. It
 // shows whole and at its natural size, so its text stays readable; a card narrower than it crops
 // it from the right, and the 300px cap (75 spacing steps of 4px) is only a safety net.
+// On phones a card is always narrower than its image, so the cut right edge fades out: it reads as
+// "continues" rather than as a broken crop.
 const cardFrame = cva(
-  'flex max-h-75 w-fit max-w-full flex-col overflow-hidden rounded-md border border-border',
+  'flex max-h-75 w-fit max-w-full flex-col overflow-hidden rounded-md border border-border max-md:[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]',
 )
 
 /**

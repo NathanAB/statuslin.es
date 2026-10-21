@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { primaryFacetLink } from '@/gallery/facet-page-copy'
 import { primaryFacet } from '@/gallery/facet-queries'
 
 const stats = (counts: Record<string, number>) =>
@@ -18,5 +19,23 @@ describe('primaryFacet', () => {
 
   it('skips tags without a facet page and returns null when nothing qualifies', () => {
     expect(primaryFacet(['reads-token', 'git'], stats({ 'reads-token': 9, git: 1 }))).toBeNull()
+  })
+})
+
+// A status line page's breadcrumb names its topic as the topic page names itself, so a topic that
+// lists a mod reads "mods" in both places.
+describe('primaryFacetLink', () => {
+  const facet = { slug: 'token-usage', heading: 'Claude Code status lines that show token usage' }
+
+  it('names a topic that lists a mod by its mods heading', () => {
+    expect(primaryFacetLink(facet, [['token-usage', 'multi-line'], ['pets']])).toEqual({
+      slug: 'token-usage',
+      heading: 'Claude Code mods that show token usage',
+    })
+  })
+
+  it('keeps the status line heading while no mod carries the topic, and passes null through', () => {
+    expect(primaryFacetLink(facet, [['pets']])).toEqual(facet)
+    expect(primaryFacetLink(null, [['token-usage']])).toBeNull()
   })
 })

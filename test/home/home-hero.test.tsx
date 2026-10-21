@@ -90,7 +90,18 @@ const ITEMS: HeroItem[] = [
     kind: 'status-line',
     line: { ...line('panel', 'Dreambase Panel', 223, 'panel'), desktop: SHOT },
   },
-  mod('deck', 'Deck', 120, { desktop: { src: '/deck-desktop.png', width: 784, height: 81 } }),
+  // Deck writes in Desktop's toolbar, so its card already shows the prompt box under its band.
+  mod('deck', 'Deck', 120, {
+    desktop: { src: '/deck-card.png', width: 784, height: 81 },
+    footprint: {
+      events: [
+        'ui.render{component=AbovePrompt}',
+        'ui.render{component=SessionMode}',
+        '$.http.fetch',
+      ],
+      calls: [],
+    },
+  }),
   {
     kind: 'status-line',
     line: {
@@ -306,12 +317,15 @@ describe('HomeHero', () => {
       expect(radio.hasAttribute('disabled')).toBe(true)
 
     pick(/^Deck/)
-    expect(shotIn('Deck in Claude Desktop')).toBe('/deck-desktop.png')
+    expect(shotIn('Deck in Claude Desktop')).toBe('/deck-card.png')
     expect(
       screen.getByText('Desktop previews are recorded in the Everyday session only.'),
     ).toBeTruthy()
-    // A mod's shot already runs down through Desktop's own prompt box.
+    // Deck writes in the toolbar, so its card already shows Desktop's own prompt box.
     expect(promptBox()).toBeNull()
+    // A mod that doesn't gets the prompt box drawn under its card, as a status line does.
+    pick(/^Cost Hint/)
+    expect(promptBox()).toBeTruthy()
 
     pick(/^Kanji Rain/)
     expect(screen.getByText('No Claude Desktop preview yet.')).toBeTruthy()

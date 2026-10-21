@@ -19,6 +19,11 @@ const LOOK = {
   terminal: { scroller: '', line: 'block w-max' },
 } as const
 
+// While more of the line is off to the right, its right edge fades out under the "more" button, so
+// the button never sits on readable text.
+const MORE_FADE =
+  '[mask-image:linear-gradient(to_right,black_calc(100%-4rem),transparent_calc(100%-0.5rem))]'
+
 /** Renders captured statusline output as escaped, styled spans. NEVER use dangerouslySetInnerHTML —
  * segment text is untrusted. The per-segment colors come from the script's own ANSI output, so they
  * are the one allowed inline-style exception (see scripts/check-frontend.ts INLINE_STYLE_ALLOW). */
@@ -37,7 +42,7 @@ export function StatuslinePreview({
           become a nameless tab stop (browsers make scrollers focusable). */}
       <div
         ref={scroller}
-        className={`min-w-0 max-w-full overflow-x-auto ${LOOK[look].scroller}`}
+        className={`min-w-0 max-w-full overflow-x-auto ${LOOK[look].scroller} ${more ? MORE_FADE : ''}`}
         tabIndex={look === 'terminal' ? -1 : undefined}
       >
         <code className={`whitespace-pre font-mono ${LOOK[look].line}`}>

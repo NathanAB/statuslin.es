@@ -9,18 +9,23 @@ const section = () =>
 
 // A short strip of three steps, not the prototype's long walkthrough of panels.
 describe('HomeInstall', () => {
-  it('says why it is safe, then installing in three steps, in order', () => {
+  // The page lists both kinds, so the steps say what happens to each: a status line's script, or
+  // a mod installed from the marketplace at its reviewed commit.
+  it('says why it is safe, then installing in three steps, for mods and status lines', () => {
     render(<HomeInstall />)
 
-    expect(section()?.textContent).toContain(
-      'Every status line here was reviewed and rendered in a sandbox before it was listed.',
+    const text = section()?.textContent ?? ''
+    expect(text).toContain(
+      'Every mod here, status lines included, was reviewed and rendered in a sandbox before it was listed.',
     )
     const steps = within(section() as HTMLElement).getAllByRole('heading', { level: 3 })
     expect(steps.map((step) => step.textContent)).toEqual([
       'Copy its install prompt',
       'Paste it into Claude Code',
-      'It runs under every prompt',
+      'It shows in your sessions',
     ])
+    expect(text).toContain('saves the script in ~/.claude')
+    expect(text).toMatch(/adds the statuslin\.es marketplace and installs the mod/)
   })
 
   it('has no long panels: no code, no prompt, no terminal', () => {
