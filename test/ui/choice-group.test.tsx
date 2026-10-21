@@ -33,7 +33,7 @@ describe('ChoiceGroup rise', () => {
 })
 
 describe('ChoiceGroup tray', () => {
-  const renderTray = (wrap?: boolean) =>
+  const renderTray = () =>
     render(
       <>
         <span id="label">Show it in</span>
@@ -46,7 +46,6 @@ describe('ChoiceGroup tray', () => {
           ]}
           value="a"
           onValueChange={() => {}}
-          {...(wrap ? { wrap } : {})}
         />
       </>,
     )
@@ -57,19 +56,5 @@ describe('ChoiceGroup tray', () => {
     const desktop = screen.getByRole('radio', { name: 'Claude Desktop' })
     expect(desktop.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
     expect(screen.getByRole('radio', { name: 'Terminal' }).querySelector('svg')).toBeNull()
-  })
-
-  // A phone scrolls a tray sideways by default; `wrap` shows every choice instead.
-  it('wraps on phones instead of scrolling when asked to', () => {
-    const phoneClasses = () =>
-      (screen.getByRole('radiogroup').getAttribute('class') ?? '')
-        .split(/\s+/)
-        .filter((name) => name.startsWith('max-md:'))
-    const { unmount } = renderTray()
-    expect(phoneClasses()).toContain('max-md:overflow-x-auto')
-    unmount()
-    renderTray(true)
-    expect(phoneClasses()).not.toContain('max-md:overflow-x-auto')
-    expect(phoneClasses()).not.toContain('max-md:flex-nowrap')
   })
 })

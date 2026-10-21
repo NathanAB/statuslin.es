@@ -377,17 +377,15 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   with its repo a link in the card's corner.
 - **The hero tries on mods, in the terminal or in Claude Desktop.** Its sentence no longer singles
   out the status line. The list holds the gallery's top eight by Trending, at least three of each
-  kind, each row naming its kind. A CLI / Desktop switcher sits on the demo: in the terminal a mod
-  draws above or under the prompt as its footprint says; in Desktop each pick shows its recorded
-  shot (a status line's through statusline-anywhere, with the Code tab's prompt box drawn under
-  it; a mod's whole shot already shows Desktop's own). Mods and every Desktop shot are recorded in
-  the Everyday session, so the session switcher stays in place, fixed and dimmed, while one shows.
-- **The demo's choices are labelled rows.** "Show it in" (Terminal, Claude Desktop) over "Sample
-  session" (the four sessions), every option in view, so the demo reads at a glance. Two unlabelled
-  trays side by side read as one control. Terminal and Claude Desktop carry icons. When the session
-  is fixed (a mod, or Desktop), the line under the rows says why, with an info mark, instead of the
-  session's data. On phones the labels sit above their rows and the sessions wrap, so every option
-  still shows.
+  kind, each row naming its kind, less statusline-anywhere (on its own it only shows a status
+  line). One labelled row, "Show it in" (Terminal, Claude Desktop, with icons), sits on the demo:
+  in the terminal a mod draws above or under the prompt as its footprint says; in Desktop each pick
+  shows its recorded shot, a status line's through statusline-anywhere, which a note beside the
+  row says.
+- **No session switcher.** Mods and every Desktop shot are recorded in the Everyday session only,
+  so switching sessions changed nothing for most of the list. The hero shows the Everyday session
+  and loads only its renders. This replaces the earlier Everyday / Just started / Uncommitted
+  changes / 1M context switcher.
 - **A new-user review's fixes** (an independent agent walked every page type on staging).
   - The hero never cuts a line in half: both conversations keep their newest lines and fade the
     oldest at the top, and a render wider than the terminal shrinks to fit.

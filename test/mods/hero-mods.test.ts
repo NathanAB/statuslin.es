@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { HERO_SIZE } from '@/gallery/hero-lines'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { getHeroMods, getModSource } from '@/mods/gallery-queries'
 import {
   addDesktopPreview,
@@ -36,6 +37,8 @@ beforeAll(async () => {
   ;({ db, close } = await openTestDb())
   // Ten published mods, copied different amounts, so Trending has an order of its own.
   for (let i = 0; i < 10; i++) await addPublished(`mod-${i}`, (i * 7) % 10, { shot: i === 7 })
+  // The most copied of all, yet its preview is just a status line: the hero has nothing to show.
+  await addPublished(STATUSLINE_ANYWHERE_MOD_SLUG, 20)
   await addMod(db, 'drafted', 'draft')
 })
 afterAll(async () => {
@@ -45,7 +48,10 @@ afterAll(async () => {
 // The home hero ranks mods among status lines on one Trending scale, as its gallery does.
 describe('getHeroMods', () => {
   it('takes the first eight mods in the order the home gallery ranks them', async () => {
-    const gallery = await getModSource(db, { sort: 'trending' })
+    const gallery = await getModSource(db, {
+      sort: 'trending',
+      excludeSlug: STATUSLINE_ANYWHERE_MOD_SLUG,
+    })
     const expected = gallery.items.slice(0, HERO_SIZE).map(({ item }) => item.card.slug)
 
     const mods = await getHeroMods(db)
@@ -76,5 +82,12 @@ describe('getHeroMods', () => {
     })
     expect(shot?.modId).toEqual(expect.any(String))
     expect(mods.find((mod) => mod.slug === 'mod-1')?.desktop).toBeNull()
+  })
+
+  // statusline-anywhere draws a status line in Desktop: shown on its own, there is nothing to see.
+  it('leaves out statusline-anywhere, however much it trends', async () => {
+    expect((await getHeroMods(db)).map((mod) => mod.slug)).not.toContain(
+      STATUSLINE_ANYWHERE_MOD_SLUG,
+    )
   })
 })

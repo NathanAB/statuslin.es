@@ -95,7 +95,7 @@ const heroLine: HeroLine = {
   author: null,
   networkHosts: [],
   readsClaudeToken: false,
-  renders: { 'clean-main': [{ text: 'panel clean' }] },
+  render: [{ text: 'panel clean' }],
   desktop: null,
   sortKey: 1,
 }

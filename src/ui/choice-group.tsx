@@ -12,28 +12,17 @@ const root = cva('', {
       // doesn't push the install button down.
       list: 'flex flex-col rounded-tile bg-card p-1.5 max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:rounded-none max-md:bg-transparent max-md:p-0',
       // A row of small rounded segments in a dark tray.
-      tray: 'flex flex-wrap gap-0.5 rounded-full bg-sunken p-1',
+      // On phones one row that scrolls sideways, instead of wrapping into an uneven second row.
+      tray: 'flex flex-wrap gap-0.5 rounded-full bg-sunken p-1 max-md:max-w-full max-md:flex-nowrap max-md:overflow-x-auto',
       // Big side-by-side cards, each kind described (the submit page's "What are you submitting?").
       cards: 'grid gap-2.5 sm:grid-cols-2',
     },
-    wrap: { true: '', false: '' },
   },
-  compoundVariants: [
-    // On phones one row that scrolls sideways, instead of wrapping into an uneven second row;
-    // with `wrap`, every choice shows, the tray rounding its two rows.
-    {
-      look: 'tray',
-      wrap: false,
-      class: 'max-md:max-w-full max-md:flex-nowrap max-md:overflow-x-auto',
-    },
-    { look: 'tray', wrap: true, class: 'max-md:rounded-[1.375rem]' },
-  ],
-  defaultVariants: { wrap: false },
 })
 
 // A pick shows at once: the 150ms fade only softens it, where the prototype's half second lagged.
 const item = cva(
-  `${FOCUS_RING} cursor-pointer text-left text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground data-disabled:cursor-not-allowed data-disabled:opacity-45 data-disabled:hover:text-muted-foreground data-disabled:data-[state=checked]:hover:text-foreground`,
+  `${FOCUS_RING} cursor-pointer text-left text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground`,
   {
     variants: {
       look: {
@@ -79,11 +68,9 @@ function TrayLabel({ label, icon: Icon }: { label: string; icon?: LucideIcon | u
  * Exactly one of a few choices, as a radio group: arrow keys move to the next choice and pick it,
  * the way a radio group works, since picking one only changes what a demo shows. `list` names each
  * choice with a detail beside it (the hero's status lines and their installs); `tray` is a row of
- * small segments (the hero's sessions); `cards` sets each choice on a big card, named by its label
- * and described by its detail, with a radio dot (the submit page's kinds). Named by the element
- * `labelledBy` points at. `disabled` keeps the choices in place but fixed, dimmed (the hero's
- * sessions while it shows something recorded in one session only). A tray option's `icon` sits
- * before its label; `wrap` lets a tray wrap on phones, so every choice shows, instead of scrolling.
+ * small segments, an option's `icon` before its label (the hero's app); `cards` sets each choice on
+ * a big card, named by its label and described by its detail, with a radio dot (the submit page's
+ * kinds). Named by the element `labelledBy` points at.
  */
 export function ChoiceGroup<T extends string>({
   labelledBy,
@@ -92,8 +79,6 @@ export function ChoiceGroup<T extends string>({
   onValueChange,
   look,
   rise = false,
-  disabled = false,
-  wrap = false,
 }: {
   labelledBy: string
   options: readonly { value: T; label: string; detail?: string; icon?: LucideIcon }[]
@@ -101,8 +86,6 @@ export function ChoiceGroup<T extends string>({
   onValueChange: (value: T) => void
   look: 'list' | 'tray' | 'cards'
   rise?: boolean
-  disabled?: boolean
-  wrap?: boolean
 }) {
   const id = useId()
   return (
@@ -110,9 +93,8 @@ export function ChoiceGroup<T extends string>({
       aria-labelledby={labelledBy}
       value={value}
       onValueChange={(next) => onValueChange(next as T)}
-      disabled={disabled}
       loop
-      className={root({ look, wrap })}
+      className={root({ look })}
     >
       {options.map((option, i) => (
         <RadioGroup.Item

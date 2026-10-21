@@ -1,4 +1,3 @@
-import { Info } from 'lucide-react'
 import { Fragment, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import type { AnsiSegment } from '@/render/types'
@@ -31,7 +30,8 @@ export type StageView =
 
 /**
  * The home hero's session, in a frame: an optional toolbar on the frame (labelled rows of choices,
- * the app and the session, then a caption under them), then the screen for `view`, a fixed height so nothing below it moves.
+ * such as the app, with an optional note beside them), then the screen for `view`, a fixed height
+ * so nothing below it moves.
  * The screen is one picture to a screen reader, named by `label`. Nothing moves on the first
  * render; `motion` says when a new conversation settles in (with the caption) and a new pick glows.
  */
@@ -44,7 +44,8 @@ export function SessionStage({
 }: {
   label: string
   /** `note`: the caption explains a choice that's fixed, so it carries an info mark. */
-  toolbar?: { groups: StageToolbarGroup[]; caption: string; note?: boolean }
+  /** `caption`: a note beside the choices, or null. */
+  toolbar?: { groups: StageToolbarGroup[]; caption: string | null }
   transcript: TranscriptLine[]
   view: StageView
   motion: ScreenMotion
@@ -52,10 +53,10 @@ export function SessionStage({
   return (
     <div className="rounded-frame bg-card p-1.75">
       {toolbar ? (
-        // Each row named in one column, its choices in the next, every option in view; under them
-        // the session's data, or why the session is fixed.
+        // Each row named in one column, its choices in the next; a note sits beside the last
+        // row's choices, so it comes and goes without moving the screen.
         <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2 pt-1.5 pr-2 pb-3.25 pl-3.5 max-md:grid-cols-1 max-md:gap-y-1.5">
-          {toolbar.groups.map((group) => (
+          {toolbar.groups.map((group, index) => (
             <Fragment key={group.titleId}>
               <span
                 id={group.titleId}
@@ -63,21 +64,22 @@ export function SessionStage({
               >
                 {group.title}
               </span>
-              <div className="flex min-w-0">{group.control}</div>
+              <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5">
+                {group.control}
+                {index === toolbar.groups.length - 1 && toolbar.caption ? (
+                  <p
+                    key={motion.conversationKey}
+                    className={cn(
+                      'text-muted-foreground text-small',
+                      motion.conversationChanged && SETTLE,
+                    )}
+                  >
+                    {toolbar.caption}
+                  </p>
+                ) : null}
+              </div>
             </Fragment>
           ))}
-          <p
-            key={motion.conversationKey}
-            className={cn(
-              'col-start-2 flex items-start gap-1.5 pl-1 text-muted-foreground text-small tabular-nums max-md:col-start-1 max-md:mt-1 max-md:pl-0',
-              motion.conversationChanged && SETTLE,
-            )}
-          >
-            {toolbar.note ? (
-              <Info aria-hidden="true" className="mt-[0.2em] size-3.5 shrink-0" />
-            ) : null}
-            <span>{toolbar.caption}</span>
-          </p>
         </div>
       ) : null}
       {view.kind === 'cli' ? (

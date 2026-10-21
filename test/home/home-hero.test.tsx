@@ -57,11 +57,7 @@ const line = (slug: string, title: string, copyCount: number, render: string): H
   author: { name: slug, username: `${slug}-dev`, image: null },
   networkHosts: [],
   readsClaudeToken: false,
-  renders: {
-    'clean-main': [{ text: `${render} clean` }],
-    'fresh-session': [{ text: `${render} fresh` }],
-    'dirty-feature': [{ text: `${render} dirty` }],
-  },
+  render: [{ text: `${render} clean` }],
   desktop: null,
   sortKey: copyCount,
 })
@@ -121,7 +117,6 @@ const heading = 'Claude Code mods'
 const renderHero = () => render(<HomeHero heading={heading} items={ITEMS} />)
 const picker = () => screen.getByRole('radiogroup', { name: 'Pick a mod' })
 const pick = (name: RegExp) => fireEvent.click(within(picker()).getByRole('radio', { name }))
-const sessions = () => screen.getByRole('radiogroup', { name: 'Sample session' })
 const views = () => screen.getByRole('radiogroup', { name: 'Show it in' })
 const showIn = (name: 'Terminal' | 'Claude Desktop') =>
   fireEvent.click(within(views()).getByRole('radio', { name }))
@@ -151,7 +146,7 @@ describe('HomeHero', () => {
     )
   })
 
-  it("server-renders the heading, the sentence and the first item's Everyday session", () => {
+  it("server-renders the heading, the sentence and the first item's terminal", () => {
     const html = renderToString(<HomeHero heading={heading} items={ITEMS} />)
 
     expect(html).toContain(`<h1`)
@@ -162,7 +157,6 @@ describe('HomeHero', () => {
     expect(html).not.toMatch(/row under your prompt/)
     expect(html).toContain('panel clean')
     expect(html).toContain('Fix the flaky date test in utils')
-    expect(html).toContain('Opus 4.8 · clean main · 22% of context')
   })
 
   // Status lines are one kind of mod: the hero lists both, as the gallery ranks them.
@@ -193,7 +187,7 @@ describe('HomeHero', () => {
 
     expect(statusRow().textContent).toBe('pace clean')
     expect(band()).toBeNull()
-    expect(announced()).toBe('Showing Pace Dot Meters in the Everyday session.')
+    expect(announced()).toBe('Showing Pace Dot Meters under the prompt.')
     expect(
       screen.getByRole('link', { name: 'Open page: Pace Dot Meters' }).getAttribute('href'),
     ).toBe('/c/pace')
@@ -215,7 +209,7 @@ describe('HomeHero', () => {
     expect(
       screen.getByRole('img', { name: /^Claude Code with Deck above the prompt/ }),
     ).toBeTruthy()
-    expect(announced()).toBe('Showing Deck above the prompt, in the Everyday session.')
+    expect(announced()).toBe('Showing Deck above the prompt.')
     expect(screen.getByRole('link', { name: 'Open page: Deck' }).getAttribute('href')).toBe(
       '/mods/deck',
     )
@@ -241,32 +235,9 @@ describe('HomeHero', () => {
     expect(band()).toBeNull()
   })
 
-  // A mod is recorded in the Everyday session only, so its session can't be switched.
-  it('keeps a mod in the Everyday session, and gives a status line its sessions back', () => {
-    renderHero()
-    fireEvent.click(within(sessions()).getByRole('radio', { name: 'Uncommitted changes' }))
-
-    pick(/^Deck/)
-
-    expect(
-      within(sessions()).getByRole('radio', { name: 'Everyday' }).getAttribute('aria-checked'),
-    ).toBe('true')
-    for (const radio of within(sessions()).getAllByRole('radio'))
-      expect(radio.hasAttribute('disabled')).toBe(true)
-    // The line under the sessions says why they're fixed, where the session's data would be.
-    expect(screen.getByText('Mods are recorded in the Everyday session only.')).toBeTruthy()
-    expect(screen.queryByText('Opus 4.8 · clean main · 22% of context')).toBeNull()
-    expect(screen.getByText(/Fix the flaky date test in utils/)).toBeTruthy()
-
-    pick(/^Dreambase Panel/)
-    expect(statusRow().textContent).toBe('panel dirty')
-    expect(
-      within(sessions()).getByRole('radio', { name: 'Everyday' }).hasAttribute('disabled'),
-    ).toBe(false)
-  })
-
-  // Both choices are named on the frame, and every option shows at once, so it reads at a glance.
-  it('labels its two rows of choices, showing every option', () => {
+  // Mods and Desktop shots are recorded in one session, so the hero shows that one and offers no
+  // session to pick: switching it would change nothing for most of the list.
+  it('names where it shows the pick, with icons, and offers no session to pick', () => {
     renderHero()
 
     expect(
@@ -274,23 +245,11 @@ describe('HomeHero', () => {
         .getAllByRole('radio')
         .map((r) => r.textContent),
     ).toEqual(['Terminal', 'Claude Desktop'])
-    expect(within(sessions()).getAllByRole('radio')).toHaveLength(4)
     expect(screen.getByText('Show it in')).toBeTruthy()
-    expect(screen.getByText('Sample session')).toBeTruthy()
     for (const radio of within(views()).getAllByRole('radio'))
       expect(radio.querySelector('svg'), radio.textContent ?? '').not.toBeNull()
-  })
-
-  // The line under the rows carries an info mark only when it explains why the session is fixed.
-  it('marks the reason the session is fixed, and not the session data', () => {
-    renderHero()
-    const line = (text: string) => screen.getByText(text).closest('p') as HTMLElement
-
-    expect(line('Opus 4.8 · clean main · 22% of context').querySelector('svg')).toBeNull()
-    pick(/^Deck/)
-    expect(
-      line('Mods are recorded in the Everyday session only.').querySelector('svg'),
-    ).not.toBeNull()
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
+    expect(screen.queryByText(/session/i)).toBeNull()
   })
 
   // The same pick, shown as Claude Desktop's Code tab draws it.
@@ -303,24 +262,19 @@ describe('HomeHero', () => {
     const shotIn = (name: string) =>
       screen.getByRole('img', { name }).querySelector('img')?.getAttribute('src')
     expect(shotIn('Dreambase Panel in Claude Desktop')).toBe(SHOT.src)
-    expect(
-      screen.getByText(
-        'Desktop previews are recorded in the Everyday session only, through statusline-anywhere.',
-      ),
-    ).toBeTruthy()
+    // A status line shows in Desktop only through statusline-anywhere, so the frame says so.
+    const viaAnywhere = () =>
+      screen.queryByText('Status lines show here through statusline-anywhere.')
+    expect(viaAnywhere()).toBeTruthy()
     // A status line's shot is only its strip, so the Code tab's prompt box is drawn under it.
     const promptBox = () => screen.queryByText('Type / for commands')
     expect(promptBox()).toBeTruthy()
     expect(statusRow()).toBeNull()
     expect(announced()).toBe('Showing Dreambase Panel in Claude Desktop.')
-    for (const radio of within(sessions()).getAllByRole('radio'))
-      expect(radio.hasAttribute('disabled')).toBe(true)
 
     pick(/^Deck/)
     expect(shotIn('Deck in Claude Desktop')).toBe('/deck-card.png')
-    expect(
-      screen.getByText('Desktop previews are recorded in the Everyday session only.'),
-    ).toBeTruthy()
+    expect(viaAnywhere()).toBeNull()
     // Deck writes in the toolbar, so its card already shows Desktop's own prompt box.
     expect(promptBox()).toBeNull()
     // A mod that doesn't gets the prompt box drawn under its card, as a status line does.
@@ -332,7 +286,7 @@ describe('HomeHero', () => {
 
     showIn('Terminal')
     expect(statusRow().textContent).toBe('kanji clean')
-    expect(screen.getByText('Opus 4.8 · clean main · 22% of context')).toBeTruthy()
+    expect(viaAnywhere()).toBeNull()
   })
 
   // A long title used to push the link under the button: its visible words now never change.
@@ -351,24 +305,17 @@ describe('HomeHero', () => {
     expect(visible()).toBe('Open page')
   })
 
-  it('switches the conversation, the caption and the data with the session', () => {
-    renderHero()
+  it('says so when a status line has no render yet', () => {
+    render(
+      <HomeHero
+        heading={heading}
+        items={[
+          { kind: 'status-line', line: { ...line('new', 'New Line', 0, 'new'), render: null } },
+        ]}
+      />,
+    )
 
-    fireEvent.click(within(sessions()).getByRole('radio', { name: 'Uncommitted changes' }))
-
-    expect(screen.getByText(/Add rate limiting to the login route/)).toBeTruthy()
-    expect(screen.queryByText(/Fix the flaky date test in utils/)).toBeNull()
-    expect(screen.getByText('Sonnet 4.6 · feat/auth · 48% of context')).toBeTruthy()
-    expect(statusRow().textContent).toBe('panel dirty')
-    expect(announced()).toBe('Showing Dreambase Panel in the Uncommitted changes session.')
-  })
-
-  it('says so when a status line has no render for the session', () => {
-    renderHero()
-
-    fireEvent.click(within(sessions()).getByRole('radio', { name: '1M context' }))
-
-    expect(statusRow().textContent).toBe('No render for this session yet.')
+    expect(statusRow().textContent).toBe('No render yet.')
   })
 
   it('moves through the list with the arrow keys', async () => {
@@ -387,7 +334,7 @@ describe('HomeHero', () => {
     expect(announced()).toBe('')
   })
 
-  // Only a new session replays the conversation's entrance; a new pick leaves it in place.
+  // A new pick leaves the conversation in place; only switching app redraws it.
   it('keeps the conversation in place when only the pick changes', () => {
     renderHero()
     const before = document.querySelector('pre')

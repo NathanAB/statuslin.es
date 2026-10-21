@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigSource } from '@/gallery/config-items'
-import { getHeroLines, HERO_SESSION_KEYS, HERO_SIZE } from '@/gallery/hero-lines'
+import { getHeroLines, HERO_SCENARIO_KEY, HERO_SIZE } from '@/gallery/hero-lines'
 import { openTestDb, type TestDb } from '../mods/seed-mods'
 import {
   addConfigDesktopPreview,
@@ -64,28 +64,14 @@ describe('getHeroLines', () => {
     expect(lines.map((line) => line.slug)).not.toContain('drafted')
   })
 
-  it("loads each line's render for every hero session, and only those", async () => {
+  // The hero shows one session, Everyday: mods and Desktop shots are recorded in it too.
+  it("loads each line's Everyday render, and no other session's", async () => {
     const lines = await getHeroLines(db)
-    const line = lines.find((l) => l.slug === 'line-7')
 
-    expect(HERO_SESSION_KEYS).toEqual([
-      'clean-main',
-      'fresh-session',
-      'dirty-feature',
-      'big-context',
-    ])
-    expect(
-      Object.fromEntries(
-        Object.entries(line?.renders ?? {}).map(([key, segments]) => [key, segments?.[0]?.text]),
-      ),
-    ).toEqual({
-      'clean-main': 'clean',
-      'fresh-session': 'fresh',
-      'dirty-feature': 'dirty',
-      'big-context': 'big',
-    })
+    expect(HERO_SCENARIO_KEY).toBe('clean-main')
     // Segments go out compact: no default style fields.
-    expect(line?.renders['clean-main']?.[0]).toEqual({ text: 'clean' })
+    expect(lines.find((l) => l.slug === 'line-7')?.render).toEqual([{ text: 'clean' }])
+    expect(lines.find((l) => l.slug === 'line-1')?.render).toBeNull()
   })
 
   it('carries what the hero names: title, copy count and author', async () => {

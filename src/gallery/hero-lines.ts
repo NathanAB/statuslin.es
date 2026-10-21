@@ -19,16 +19,13 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 /** How many status lines the home hero lets a visitor try. */
 export const HERO_SIZE = 8
 
-/** The sessions the hero switches between, as scenario keys (src/render/scenarios.ts), in order. */
-export const HERO_SESSION_KEYS = [
-  'clean-main',
-  'fresh-session',
-  'dirty-feature',
-  'big-context',
-] as const
-export type HeroSessionKey = (typeof HERO_SESSION_KEYS)[number]
+/**
+ * The session the hero shows, as a scenario key (src/render/scenarios.ts): Everyday. Mods and
+ * Desktop shots are recorded in it only, so the hero offers no other.
+ */
+export const HERO_SCENARIO_KEY = 'clean-main'
 
-/** A status line the hero can show: what it names, and its render for each hero session. */
+/** A status line the hero can show: what it names, and its render in the hero's session. */
 export interface HeroLine {
   configId: string
   slug: string
@@ -38,8 +35,8 @@ export interface HeroLine {
   /** What the script can reach, said under the hero's install button. */
   networkHosts: string[]
   readsClaudeToken: boolean
-  /** A session with no render yet is left out. */
-  renders: Partial<Record<HeroSessionKey, AnsiSegment[]>>
+  /** Its render in the Everyday session; null while it has none. */
+  render: AnsiSegment[] | null
   /** How it looks in Claude Desktop through statusline-anywhere; null without a shot. */
   desktop: DesktopShotImage | null
   /** Its Trending value, so the home page can rank it among mods as its gallery does. */
@@ -52,8 +49,7 @@ function shotOf(preview: ReturnType<typeof configDesktopPreview>): DesktopShotIm
 
 /**
  * The home hero's status lines: the first HERO_SIZE the home gallery ranks (Trending), each with
- * its renders for the four hero sessions. The gallery's own query loads one render per card; this
- * one is the hero's alone, about 4.5KB a line.
+ * its Everyday render. The gallery's own query loads one render per card; this one is the hero's.
  */
 export async function getHeroLines(db: Db): Promise<HeroLine[]> {
   const ranking = galleryRanking(CONFIG_RANKING, { sort: 'trending' })
@@ -80,11 +76,7 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
   if (rows.length === 0) return []
 
   const rendered = await db
-    .select({
-      sha: previews.scriptSha,
-      scenarioKey: previews.scenarioKey,
-      segments: previews.segments,
-    })
+    .select({ sha: previews.scriptSha, segments: previews.segments })
     .from(previews)
     .where(
       and(
@@ -92,15 +84,12 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
           previews.scriptSha,
           rows.map((row) => row.sha),
         ),
-        inArray(previews.scenarioKey, [...HERO_SESSION_KEYS]),
+        eq(previews.scenarioKey, HERO_SCENARIO_KEY),
       ),
     )
-  const rendersBySha = new Map<string, HeroLine['renders']>()
-  for (const { sha, scenarioKey, segments } of rendered) {
-    const renders = rendersBySha.get(sha) ?? {}
-    renders[scenarioKey as HeroSessionKey] = compactSegments(segments as AnsiSegment[])
-    rendersBySha.set(sha, renders)
-  }
+  const renderBySha = new Map(
+    rendered.map(({ sha, segments }) => [sha, compactSegments(segments as AnsiSegment[])]),
+  )
 
   return rows.map(({ sha, author, networkHosts, readsClaudeToken, desktop, ...row }) => ({
     ...row,
@@ -110,6 +99,6 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
     author: author
       ? { name: author.name, username: author.username ?? null, image: author.image ?? null }
       : null,
-    renders: rendersBySha.get(sha) ?? {},
+    render: renderBySha.get(sha) ?? null,
   }))
 }

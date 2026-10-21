@@ -11,6 +11,7 @@ import {
   type RankedColumns,
 } from '@/gallery/ranking'
 import { MOD_COPY_EVENTS } from '@/gallery/trending'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
@@ -107,9 +108,14 @@ export interface HeroMod {
   sortKey: number | null
 }
 
-/** The home hero's mods: the first HERO_SIZE the home gallery ranks (Trending). */
+/** The home hero's mods: the first HERO_SIZE the home gallery ranks (Trending), less
+ * statusline-anywhere. */
 export async function getHeroMods(db: Db): Promise<HeroMod[]> {
-  const ranking = galleryRanking(MOD_RANKING, { sort: 'trending' })
+  // statusline-anywhere only draws a status line in Desktop: on its own there is nothing to show.
+  const ranking = galleryRanking(MOD_RANKING, {
+    sort: 'trending',
+    excludeSlug: STATUSLINE_ANYWHERE_MOD_SLUG,
+  })
   const rows = await selectModCards(db, {
     sortKey: ranking.sortKey,
     footprint: modVersions.footprint,
