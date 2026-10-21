@@ -1,6 +1,6 @@
 /**
  * Re-render every published/pending config's current version against the current SCENARIOS and
- * replace its stored previews. Run this after changing src/render/scenarios.ts so existing gallery
+ * replace its stored previews. Run this after changing src/render/scenario-list.ts so existing gallery
  * entries pick up new scenarios. Uses real E2B when E2B_API_KEY is set, else the fake runner.
  *
  *   bun run rerender:previews
