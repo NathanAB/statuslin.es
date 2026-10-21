@@ -1,10 +1,11 @@
 // Shared building blocks for the statusline preview scenarios (see ./scenarios.ts).
 
 // Model identities Claude Code reports (model.id is the resolved full id; display_name is shown).
-export const OPUS = { id: 'claude-opus-4-8', display_name: 'Opus 4.8' }
-export const SONNET = { id: 'claude-sonnet-4-6', display_name: 'Sonnet 4.6' }
+export const OPUS = { id: 'claude-opus-5-5', display_name: 'Opus 5.5' }
+export const SONNET = { id: 'claude-sonnet-5-5', display_name: 'Sonnet 5.5' }
+// Every Claude 5 model supports effort, so Haiku stays on 4.5 for the scenario with effort absent.
 export const HAIKU = { id: 'claude-haiku-4-5', display_name: 'Haiku 4.5' }
-export const FABLE = { id: 'claude-fable-5', display_name: 'Fable 5' }
+export const FABLE = { id: 'claude-fable-5-1', display_name: 'Fable 5.1' }
 
 export const ENV = { COLUMNS: '120', LINES: '40' }
 export const VERSION = '2.1.307'

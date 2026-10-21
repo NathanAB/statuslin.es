@@ -67,7 +67,7 @@ describe('guide examples', () => {
     () => {
       const fresh = SCENARIOS.find((s) => s.key === 'fresh-session')
       if (!fresh) throw new Error('fresh-session scenario missing')
-      expect(runScript(JSON.stringify(fresh.stdin))).toBe('[Opus 4.8] app · 0% context')
+      expect(runScript(JSON.stringify(fresh.stdin))).toBe('[Opus 5.5] app · 0% context')
     },
   )
 })

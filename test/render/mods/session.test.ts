@@ -242,13 +242,13 @@ describe('setupCommand', () => {
 describe('launchCommand', () => {
   it('runs Claude Code by its absolute path on the scenario model with only the feed', () => {
     expect(launchCommand(feedScenario(), null)).toBe(
-      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model 'claude-opus-4-8' --plugin-dir '${FEED_PLUGIN_DIR}'`,
+      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model 'claude-opus-5-5' --plugin-dir '${FEED_PLUGIN_DIR}'`,
     )
   })
 
   it('loads the mod after the feed, so the feed sits above it', () => {
     expect(launchCommand(feedScenario(), MOD_DIR)).toBe(
-      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model 'claude-opus-4-8' --plugin-dir '${FEED_PLUGIN_DIR}' --plugin-dir '${MOD_DIR}'`,
+      `exec ${SANDBOX_CLAUDE_CODE_BIN} --model 'claude-opus-5-5' --plugin-dir '${FEED_PLUGIN_DIR}' --plugin-dir '${MOD_DIR}'`,
     )
   })
 

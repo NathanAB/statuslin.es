@@ -154,12 +154,12 @@ export const RAW_SCENARIOS: Scenario[] = [
   },
   {
     key: 'post-compact',
-    label: 'Just after /compact, Haiku (no effort), partial rate limits, prompt cache rebuilding',
+    label: 'Just after /compact, Haiku 4.5 (no effort), partial rate limits, cache rebuilding',
     shortLabel: 'Post-compact',
     stdin: {
       prompt_id: PROMPT_ID,
       model: HAIKU,
-      // Haiku has no effort param → the field is absent.
+      // Haiku 4.5 has no effort param → the field is absent.
       workspace: { current_dir: '/home/user/app', project_dir: '/home/user/app', repo: REPO },
       cost: COST,
       context_window: emptyUsage(),

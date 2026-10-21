@@ -34,7 +34,7 @@ echo "[$model] \${dir##*/} · \${pct}% context"
 `
 
 /** What MINIMAL_SCRIPT prints for SAMPLE_STDIN_JSON (asserted by the test suite). */
-export const MINIMAL_SCRIPT_OUTPUT = '[Opus 4.8] app · 22% context'
+export const MINIMAL_SCRIPT_OUTPUT = '[Opus 5.5] app · 22% context'
 
 /** The settings.json wiring, exactly as the official docs specify. */
 export const SETTINGS_SNIPPET = `{
