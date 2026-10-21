@@ -96,10 +96,6 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. A tray option's `icon` sits before its label. `look`: `list` (label and detail on a tile: the hero's picker), `tray` (small segments: the hero's app) or `cards` (big side-by-side cards, each named by its label and described by its detail, with a radio dot: the submit page's "What are you submitting?") |
 | `<HeroLayout heading lead stage picker actions>`, `<HeroActions>` | `src/ui/hero-layout.tsx` | The home hero's 12-column grid (title and sentence, then the demo and its controls); stacks below 900px. On phones the actions show before the picker, so the first screen holds the install button; the DOM (and tab) order stays picker then actions, which still reads as pick, then install |
 | `<LiveMessage>` | `src/ui/visually-hidden.tsx` | A screen-reader-only `role="status"` message, read out when it changes |
-| `<ShotCarousel heading lead listLabel items more>` | `src/ui/shot-carousel.tsx` | The home page's dark band of mod screenshots in a sideways row: the centred one lit and named above it, previous and next buttons, arrow keys; every shot links to its page. On phones a shot keeps about three quarters of its size, cropped at the right with a fade, so it stays readable |
-| `<StepStrip heading statement steps>` | `src/ui/step-strip.tsx` | A heading and one statement, then a short strip of steps side by side ("How installing works") |
-| `<ClosingBand heading lead panel>` | `src/ui/closing-band.tsx` | The home page's full-width coral closing section, light text on `bg-primary-fill` |
-| `<SubmitChooser signedIn>` | `src/ui/submit-cta.tsx` | Status line or Mod, then continue: a link to `/submit` (or `?kind=mod`) when signed in, GitHub sign-in back to that form when not |
 | `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on the page column, `mt-section` from the one above (`first`: just under the header) |
 
 ### Buttons (`src/ui/button.tsx`)
@@ -107,7 +103,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 `Button` and `buttonVariants` are exported. Key variants:
 
 - **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link` · `quiet` (dim text that lights up on hover, no surface: the header's links) · `plain` (full-strength text, no surface)
-- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `bar-pill` (the header's one filled action, Submit: a compact pill) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`). `aria-disabled` dims a button that can't act right now but keeps it focusable (the mods row's ends); its `onClick` must then do nothing
+- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `bar-pill` (the header's one filled action, Submit: a compact pill) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`).
 - **active:** `true` / `false` — active-tab treatment; pair with `variant="outline"`
 
 ### Other primitives

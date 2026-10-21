@@ -2,7 +2,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import type { GalleryModCard } from '@/gallery/gallery-items'
 import type { HeroLine } from '@/gallery/hero-lines'
 import { HOME_HEADING } from '@/lib/page-title'
 
@@ -55,9 +54,6 @@ vi.mock('@/ui/shell', () => ({
 vi.mock('@/gallery/gallery-controls', () => ({
   GalleryControls: () => null,
 }))
-vi.mock('@/ui/submit-cta', () => ({
-  SubmitChooser: () => <p>submit chooser</p>,
-}))
 // It fetches the script it would install; the hero's own tests cover it.
 vi.mock('@/adopt/install-prompt-button', () => ({
   InstallPromptButton: () => null,
@@ -75,18 +71,6 @@ const gallery = {
   asOf: '2026-09-08',
 }
 
-const modCard = (slug: string): GalleryModCard => ({
-  modId: `id-${slug}`,
-  slug,
-  title: slug,
-  description: '',
-  authorGithub: 'octocat',
-  copyCount: 0,
-  tags: [],
-  preview: null,
-  desktopShot: { src: `/shots/${slug}.png`, width: 784, height: 142 },
-})
-
 const heroLine: HeroLine = {
   configId: 'id-panel',
   slug: 'panel',
@@ -100,16 +84,11 @@ const heroLine: HeroLine = {
   sortKey: 1,
 }
 
-function renderHome(
-  overrides: Partial<typeof gallery> = {},
-  search: Record<string, string> = {},
-  featured: GalleryModCard | null = null,
-  others: GalleryModCard[] = [],
-) {
+function renderHome(overrides: Partial<typeof gallery> = {}, search: Record<string, string> = {}) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     gallery: { ...gallery, ...overrides },
-    showcase: { hero: [{ kind: 'status-line', line: heroLine }], mods: { featured, others } },
+    showcase: { hero: [{ kind: 'status-line', line: heroLine }] },
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
@@ -172,9 +151,9 @@ describe('home content', () => {
     expect(fadesIn(screen.getByRole('img', { name: /^Claude Code with/ }))).toBe(true)
   })
 
-  // Past page 1 the page is its results: the showcase around them would only repeat page 1.
+  // Past page 1 the page is its results: the hero would only repeat page 1.
   it('shows only the heading and the gallery past page 1', () => {
-    renderHome({ page: 2, pageCount: 3 }, {}, modCard('weather'), [modCard('deck')])
+    renderHome({ page: 2, pageCount: 3 })
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Claude Code mods, page 2')
     expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
@@ -240,52 +219,13 @@ describe('home analytics', () => {
 })
 
 describe('home sections', () => {
-  const sectionHeadings = () =>
-    [...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())
-
-  it('runs hero, gallery, mods, how installing works, then the closing invitation', () => {
-    renderHome({}, {}, modCard('weather'), [modCard('deck')])
-
-    expect(sectionHeadings()).toEqual([
-      'Pick a mod',
-      'Status lines and mods',
-      'Mods',
-      'How installing works',
-      'Yours goes here.',
-    ])
-    expect(screen.getByText('submit chooser')).toBeTruthy()
-  })
-
-  // The featured mod leads the mods row now, below the gallery, instead of a row above it.
-  it('leads the mods row with the featured mod, linking every shot to its mod', () => {
-    renderHome({}, {}, modCard('weather'), [modCard('deck')])
-
-    const row = screen.getByRole('list', { name: 'Mods in Claude Desktop' })
-    expect([...row.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual([
-      '/mods/weather',
-      '/mods/deck',
-    ])
-    expect(screen.getByRole('link', { name: 'All 9 mods' }).getAttribute('href')).toBe('/mods')
-  })
-
-  it('reports the featured mod with its own surface', () => {
-    renderHome({}, {}, modCard('weather'))
-
-    fireEvent.click(screen.getByRole('img', { name: 'weather running in Claude Desktop' }))
-
-    expect(capture).toHaveBeenCalledWith('mod_card_clicked', {
-      modId: 'id-weather',
-      slug: 'weather',
-      surface: 'home_featured_mod',
-      position: 1,
-    })
-  })
-
-  it('explains installing in three short steps', () => {
+  // The gallery is the page: nothing below it repeats the hero or the header.
+  it('runs the hero, then the gallery, and ends there', () => {
     renderHome()
 
-    const install = screen.getByRole('heading', { level: 2, name: 'How installing works' })
-    const steps = install.closest('section')?.querySelectorAll('h3')
-    expect(steps).toHaveLength(3)
+    expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
+      'Pick a mod',
+      'Status lines and mods',
+    ])
   })
 })

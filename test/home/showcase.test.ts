@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getHeroLines, type HeroLine } from '@/gallery/hero-lines'
 import { getHomeShowcase, heroItems } from '@/home/showcase'
-import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
 import { getHeroMods, type HeroMod } from '@/mods/gallery-queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import {
@@ -42,7 +41,7 @@ beforeAll(async () => {
     timedOut: 0,
     trace: { networkAttempts: [], sensitiveReads: [], spawnedProcesses: [] },
   })
-  await addPublishedMod(FEATURED_MOD_SLUG, 'a')
+  await addPublishedMod('first-mod', 'a')
   await addPublishedMod('other-mod', 'b')
 })
 afterAll(async () => {
@@ -61,13 +60,6 @@ describe('getHomeShowcase', () => {
     )
     expect(showcase.hero.map((item) => item.kind)).toContain('mod')
     expect(showcase.hero[0]).toMatchObject({ kind: 'status-line', line: { slug: 'top-line' } })
-  })
-
-  it('puts the featured mod apart from the rest, which leave it out', async () => {
-    const { mods } = await getHomeShowcase(db)
-
-    expect(mods.featured?.slug).toBe(FEATURED_MOD_SLUG)
-    expect(mods.others.map((mod) => mod.slug)).toEqual(['other-mod'])
   })
 })
 

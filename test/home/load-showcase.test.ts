@@ -9,8 +9,8 @@ beforeEach(() => {
   getHomeShowcaseFn.mockReset()
 })
 
-// The home loader runs again on every sort, kind, tag or page change, but the hero and the mods row
-// are the same whatever the gallery shows, so the browser asks for them once.
+// The home loader runs again on every sort, kind, tag or page change, but the hero's list is the
+// same whatever the gallery shows, so the browser asks for it once.
 describe('loadShowcase in the browser', () => {
   it('asks the server once, however often the gallery changes', async () => {
     getHomeShowcaseFn.mockResolvedValue([{ slug: 'panel' }])

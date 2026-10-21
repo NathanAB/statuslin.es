@@ -3,11 +3,8 @@ import { getGallery, getGalleryConfigs } from '@/gallery/functions'
 import { coerceGalleryFilter, type GalleryFilter, loadGalleryPage } from '@/gallery/gallery-items'
 import { HomeIndexNote } from '@/gallery/home-gallery-intro'
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
-import { HomeClosing } from '@/home/home-closing'
 import { HomeGallery } from '@/home/home-gallery'
 import { HomeHero } from '@/home/home-hero'
-import { HomeInstall } from '@/home/home-install'
-import { HomeMods } from '@/home/home-mods'
 import { HomeResultsHeading } from '@/home/home-results-heading'
 import { loadShowcase } from '@/home/load-showcase'
 import { getSession } from '@/lib/auth-functions'
@@ -15,7 +12,6 @@ import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/ca
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { HOME_HEADING, homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
-import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { homeSocialMeta } from '@/og/meta'
 import { HomeSection } from '@/ui/home-section'
@@ -48,15 +44,13 @@ export const Route = createFileRoute('/')({
   loader: async ({ deps }) => {
     const sort = deps.sort ?? 'trending'
     const tags = coerceTags(deps.tags)
-    // The showcase (the hero's lines, the mods row) is the same whatever the gallery shows.
+    // The showcase (the hero's list) is the same whatever the gallery shows.
     const [listing, gallery, showcase] = await Promise.all([
       loadGalleryPage(
         { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
         {
           'status-line': (limit) => getGalleryConfigs({ data: { sort, tags, limit } }),
-          // The featured mod leads the mods row, so the gallery leaves it out.
-          mod: (limit) =>
-            getGalleryModsFn({ data: { sort, tags, limit, excludeSlug: FEATURED_MOD_SLUG } }),
+          mod: (limit) => getGalleryModsFn({ data: { sort, tags, limit } }),
         },
       ),
       getGallery(),
@@ -135,14 +129,6 @@ function Home() {
         tags={tags}
         {...(page > 1 ? { heading: <HomeResultsHeading page={page} /> } : {})}
       />
-      {/* Past page 1 the page is its results: the showcase would only repeat page 1. */}
-      {page > 1 ? null : (
-        <>
-          <HomeMods featured={showcase.mods.featured} others={showcase.mods.others} total={mods} />
-          <HomeInstall />
-          <HomeClosing signedIn={!!user} />
-        </>
-      )}
     </PageShell>
   )
 }

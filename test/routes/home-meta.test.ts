@@ -127,33 +127,6 @@ describe('home search indexing metadata', () => {
     ])
   })
 
-  // The ItemList is the ranked gallery, numbered across pages. The "Featured mod" row is a separate
-  // section whose mod also ranks in the gallery, so listing it would shift page 1's numbering and
-  // list that mod twice.
-  it('lists only the ranked gallery in the CollectionPage, not the "Featured mod" row', async () => {
-    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
-    const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 1,
-          pageCount: 2,
-          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
-        },
-        featuredMod: { slug: 'meter', title: 'Meter' },
-      },
-      match: { search: {} },
-    } as never)
-
-    const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
-      .map((script) => JSON.parse(script.children) as Record<string, unknown>)
-      .find((node) => node['@type'] === 'CollectionPage') as
-      | { mainEntity: { itemListElement: Array<{ position: number; url: string }> } }
-      | undefined
-    expect(
-      collectionPage?.mainEntity.itemListElement.map(({ position, url }) => ({ position, url })),
-    ).toEqual([{ position: 1, url: 'https://statuslin.es/c/alpha' }])
-  })
-
   it('canonicalizes a kind-filtered gallery to itself and marks it noindex', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({

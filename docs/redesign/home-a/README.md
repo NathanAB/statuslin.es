@@ -22,9 +22,8 @@ The first screen is a working Claude Code session. Pick a status line from a lis
 and it renders under the prompt, where it really sits. A session switcher on the terminal (Everyday,
 Just started, Uncommitted changes, 1M context) changes both the conversation above the prompt and the
 data the status line renders. Below it, the gallery is one full-width card per status line or mod,
-with the All / Status lines / Mods filter as the section heading. Then a carousel of mod Desktop
-screenshots, a "How installing works" walkthrough, a coral closing section with the submit form, and
-a one-line footer. Warm near-black palette and coral accent as today, Hanken Grotesk for text, the
+with the All / Status lines / Mods filter as the section heading. The gallery ends the page, above
+the footer. Warm near-black palette and coral accent as today, Hanken Grotesk for text, the
 Nerd Font for status lines and the wordmark.
 
 ## Decisions already made (don't relitigate)
@@ -133,9 +132,8 @@ Measured on the current code. Keep each, or change it on purpose and update its 
   `notFound()` and render the existing not-found view.
 - **Empty state:** "Nothing matches these filters yet." when a filter matches nothing.
 - **Clearing tags:** today's X button; keep a way to clear them.
-- **The featured mod** (`FEATURED_MOD_SLUG`) leaves the gallery list. In the new design it becomes
-  the first panel of the mods section instead of a row above the gallery, and the ItemList keeps
-  excluding it.
+- **No featured mod.** The gallery and its ItemList list every mod, the one once featured
+  included.
 - **Header:** Mods, Guide, Resources, Star on GitHub, then sign-in or the user menu (My submissions,
   Review for admins, Log out).
 - **Footer:** keep every link the current footer has: guides, Best status lines, Resources, GitHub,
@@ -146,7 +144,7 @@ Measured on the current code. Keep each, or change it on purpose and update its 
 ### Analytics (keep names and properties)
 - `gallery_page_changed`, `gallery_sort_changed`, `gallery_kind_changed`, `gallery_filter_changed`.
 - `statusline_card_clicked` and `mod_card_clicked` via `cardClickProperties`, with
-  `surface: 'home'` and a 1-based position. The featured mod uses `surface: 'home_featured_mod'`.
+  `surface: 'home'` and a 1-based position.
 - `auth_started` from the submit CTA and header, and `github_star_link_clicked`.
 - New hero interactions may add events, but name them like the existing ones.
 
@@ -398,3 +396,8 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
     page does.
   - On phones, cut previews fade at the right edge (under the status line's "more" button too),
     and the mods row keeps its shots readable.
+- **The gallery ends the page.** The mods row, "How installing works" and the submit band below the
+  gallery each repeated something higher up: the hero plays mods in Claude Desktop and the gallery
+  lists them, the hero's trust line sits beside its copy button, and Submit is the header's one
+  filled button. The featured mod went with the row, so the gallery lists it again. This replaces
+  the "How installing works" strip and the featured mod decisions above.

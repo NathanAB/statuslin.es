@@ -42,7 +42,7 @@ function ByAuthor({ author }: { author: ConfigAuthor }) {
   )
 }
 
-/** "by @author · 224 installs": the hero's and the mods row's line under a name. */
+/** "by @author · 224 installs": the hero's line under a name. */
 export function AuthorByline({ author, after }: { author: ConfigAuthor | null; after: string }) {
   const fact = (
     <Text muted size="sm">
