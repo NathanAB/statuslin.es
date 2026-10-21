@@ -1,4 +1,5 @@
 import { cva } from 'class-variance-authority'
+import type { LucideIcon } from 'lucide-react'
 import { RadioGroup } from 'radix-ui'
 import { useId } from 'react'
 import { cn } from '@/lib/cn'
@@ -11,12 +12,23 @@ const root = cva('', {
       // doesn't push the install button down.
       list: 'flex flex-col rounded-tile bg-card p-1.5 max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:rounded-none max-md:bg-transparent max-md:p-0',
       // A row of small rounded segments in a dark tray.
-      // On phones one row that scrolls sideways, instead of wrapping into an uneven second row.
-      tray: 'flex flex-wrap gap-0.5 rounded-full bg-sunken p-1 max-md:max-w-full max-md:flex-nowrap max-md:overflow-x-auto',
+      tray: 'flex flex-wrap gap-0.5 rounded-full bg-sunken p-1',
       // Big side-by-side cards, each kind described (the submit page's "What are you submitting?").
       cards: 'grid gap-2.5 sm:grid-cols-2',
     },
+    wrap: { true: '', false: '' },
   },
+  compoundVariants: [
+    // On phones one row that scrolls sideways, instead of wrapping into an uneven second row;
+    // with `wrap`, every choice shows, the tray rounding its two rows.
+    {
+      look: 'tray',
+      wrap: false,
+      class: 'max-md:max-w-full max-md:flex-nowrap max-md:overflow-x-auto',
+    },
+    { look: 'tray', wrap: true, class: 'max-md:rounded-[1.375rem]' },
+  ],
+  defaultVariants: { wrap: false },
 })
 
 // A pick shows at once: the 150ms fade only softens it, where the prototype's half second lagged.
@@ -26,7 +38,7 @@ const item = cva(
     variants: {
       look: {
         list: 'flex items-baseline justify-between gap-3 rounded-[0.875rem] px-3.5 py-1.5 motion-safe:active:scale-[0.985] max-md:shrink-0 max-md:rounded-full max-md:bg-card max-md:px-3.5 max-md:py-2 max-md:data-[state=checked]:bg-muted max-md:focus-visible:ring-inset',
-        tray: 'shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.75 text-small',
+        tray: 'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.75 text-small',
         // The picked card takes a faint coral tint and a filled dot; the coral ring is focus only.
         cards:
           'group flex flex-col gap-1.5 rounded-panel bg-card px-5 pt-4.5 pb-5 text-foreground hover:bg-muted data-[state=checked]:bg-primary/12 data-[state=checked]:hover:bg-primary/16',
@@ -53,6 +65,16 @@ const RISE_DELAYS = [
   '[--tw-animation-delay:735ms]',
 ]
 
+/** A tray choice: its icon, if any, then its label. */
+function TrayLabel({ label, icon: Icon }: { label: string; icon?: LucideIcon | undefined }) {
+  return (
+    <>
+      {Icon ? <Icon aria-hidden="true" className="size-3.5 shrink-0" /> : null}
+      {label}
+    </>
+  )
+}
+
 /**
  * Exactly one of a few choices, as a radio group: arrow keys move to the next choice and pick it,
  * the way a radio group works, since picking one only changes what a demo shows. `list` names each
@@ -60,7 +82,8 @@ const RISE_DELAYS = [
  * small segments (the hero's sessions); `cards` sets each choice on a big card, named by its label
  * and described by its detail, with a radio dot (the submit page's kinds). Named by the element
  * `labelledBy` points at. `disabled` keeps the choices in place but fixed, dimmed (the hero's
- * sessions while it shows something recorded in one session only).
+ * sessions while it shows something recorded in one session only). A tray option's `icon` sits
+ * before its label; `wrap` lets a tray wrap on phones, so every choice shows, instead of scrolling.
  */
 export function ChoiceGroup<T extends string>({
   labelledBy,
@@ -70,14 +93,16 @@ export function ChoiceGroup<T extends string>({
   look,
   rise = false,
   disabled = false,
+  wrap = false,
 }: {
   labelledBy: string
-  options: readonly { value: T; label: string; detail?: string }[]
+  options: readonly { value: T; label: string; detail?: string; icon?: LucideIcon }[]
   value: T
   onValueChange: (value: T) => void
   look: 'list' | 'tray' | 'cards'
   rise?: boolean
   disabled?: boolean
+  wrap?: boolean
 }) {
   const id = useId()
   return (
@@ -87,7 +112,7 @@ export function ChoiceGroup<T extends string>({
       onValueChange={(next) => onValueChange(next as T)}
       disabled={disabled}
       loop
-      className={root({ look })}
+      className={root({ look, wrap })}
     >
       {options.map((option, i) => (
         <RadioGroup.Item
@@ -136,7 +161,7 @@ export function ChoiceGroup<T extends string>({
               ) : null}
             </>
           ) : (
-            option.label
+            <TrayLabel label={option.label} icon={option.icon} />
           )}
         </RadioGroup.Item>
       ))}

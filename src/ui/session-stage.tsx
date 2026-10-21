@@ -1,18 +1,16 @@
-import type { ReactNode } from 'react'
+import { Info } from 'lucide-react'
+import { Fragment, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import type { AnsiSegment } from '@/render/types'
 import { DesktopScreen } from '@/ui/desktop-screen'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import { type ScreenMotion, SETTLE } from '@/ui/stage-screen'
 import { TerminalScreen, type TranscriptLine } from '@/ui/terminal'
-import { VisuallyHidden } from '@/ui/visually-hidden'
 
-/** One choice on the frame's toolbar: its name (or a hidden one), then its control. */
+/** One row of the frame's toolbar: its name, then its choices. */
 export interface StageToolbarGroup {
   title: string
   titleId: string
-  /** The control says what it is (CLI, Desktop), so its name is for screen readers only. */
-  hideTitle?: boolean
   control: ReactNode
 }
 
@@ -32,8 +30,8 @@ export type StageView =
   | { kind: 'desktop'; shot: DesktopShotImage | null; promptBox: boolean; missing: string }
 
 /**
- * The home hero's session, in a frame: an optional toolbar on the frame (the app and session
- * switchers, then a caption), then the screen for `view`, a fixed height so nothing below it moves.
+ * The home hero's session, in a frame: an optional toolbar on the frame (labelled rows of choices,
+ * the app and the session, then a caption under them), then the screen for `view`, a fixed height so nothing below it moves.
  * The screen is one picture to a screen reader, named by `label`. Nothing moves on the first
  * render; `motion` says when a new conversation settles in (with the caption) and a new pick glows.
  */
@@ -45,7 +43,8 @@ export function SessionStage({
   motion,
 }: {
   label: string
-  toolbar?: { groups: StageToolbarGroup[]; caption: string }
+  /** `note`: the caption explains a choice that's fixed, so it carries an info mark. */
+  toolbar?: { groups: StageToolbarGroup[]; caption: string; note?: boolean }
   transcript: TranscriptLine[]
   view: StageView
   motion: ScreenMotion
@@ -53,31 +52,31 @@ export function SessionStage({
   return (
     <div className="rounded-frame bg-card p-1.75">
       {toolbar ? (
-        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2.5 pt-1.5 pr-2 pb-3.25 pl-3.5">
+        // Each row named in one column, its choices in the next, every option in view; under them
+        // the session's data, or why the session is fixed.
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-2 pt-1.5 pr-2 pb-3.25 pl-3.5 max-md:grid-cols-1 max-md:gap-y-1.5">
           {toolbar.groups.map((group) => (
-            <div key={group.titleId} className="flex min-w-0 items-center gap-3.5">
-              {group.hideTitle ? (
-                <VisuallyHidden>
-                  <span id={group.titleId}>{group.title}</span>
-                </VisuallyHidden>
-              ) : (
-                <span id={group.titleId} className="font-medium text-foreground text-small">
-                  {group.title}
-                </span>
-              )}
-              {group.control}
-            </div>
+            <Fragment key={group.titleId}>
+              <span
+                id={group.titleId}
+                className="whitespace-nowrap font-medium text-foreground text-small"
+              >
+                {group.title}
+              </span>
+              <div className="flex min-w-0">{group.control}</div>
+            </Fragment>
           ))}
-          {/* As wide as the longest caption, so every session's toolbar wraps at the same width
-              and the frame keeps its height when the session changes. */}
           <p
             key={motion.conversationKey}
             className={cn(
-              'ml-auto min-w-[18.5em] text-right text-muted-foreground text-small tabular-nums',
+              'col-start-2 flex items-start gap-1.5 pl-1 text-muted-foreground text-small tabular-nums max-md:col-start-1 max-md:mt-1 max-md:pl-0',
               motion.conversationChanged && SETTLE,
             )}
           >
-            {toolbar.caption}
+            {toolbar.note ? (
+              <Info aria-hidden="true" className="mt-[0.2em] size-3.5 shrink-0" />
+            ) : null}
+            <span>{toolbar.caption}</span>
           </p>
         </div>
       ) : null}

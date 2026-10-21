@@ -110,9 +110,9 @@ const heading = 'Claude Code mods'
 const renderHero = () => render(<HomeHero heading={heading} items={ITEMS} />)
 const picker = () => screen.getByRole('radiogroup', { name: 'Pick a mod' })
 const pick = (name: RegExp) => fireEvent.click(within(picker()).getByRole('radio', { name }))
-const sessions = () => screen.getByRole('radiogroup', { name: 'Session' })
-const views = () => screen.getByRole('radiogroup', { name: 'App' })
-const showIn = (name: 'CLI' | 'Desktop') =>
+const sessions = () => screen.getByRole('radiogroup', { name: 'Sample session' })
+const views = () => screen.getByRole('radiogroup', { name: 'Show it in' })
+const showIn = (name: 'Terminal' | 'Claude Desktop') =>
   fireEvent.click(within(views()).getByRole('radio', { name }))
 const statusRow = () => document.querySelector('[data-slot="terminal-status"]') as HTMLElement
 const band = () => document.querySelector('[data-slot="terminal-band"]')
@@ -242,6 +242,9 @@ describe('HomeHero', () => {
     ).toBe('true')
     for (const radio of within(sessions()).getAllByRole('radio'))
       expect(radio.hasAttribute('disabled')).toBe(true)
+    // The line under the sessions says why they're fixed, where the session's data would be.
+    expect(screen.getByText('Mods are recorded in the Everyday session only.')).toBeTruthy()
+    expect(screen.queryByText('Opus 4.8 · clean main · 22% of context')).toBeNull()
     expect(screen.getByText(/Fix the flaky date test in utils/)).toBeTruthy()
 
     pick(/^Dreambase Panel/)
@@ -251,17 +254,49 @@ describe('HomeHero', () => {
     ).toBe(false)
   })
 
+  // Both choices are named on the frame, and every option shows at once, so it reads at a glance.
+  it('labels its two rows of choices, showing every option', () => {
+    renderHero()
+
+    expect(
+      within(views())
+        .getAllByRole('radio')
+        .map((r) => r.textContent),
+    ).toEqual(['Terminal', 'Claude Desktop'])
+    expect(within(sessions()).getAllByRole('radio')).toHaveLength(4)
+    expect(screen.getByText('Show it in')).toBeTruthy()
+    expect(screen.getByText('Sample session')).toBeTruthy()
+    for (const radio of within(views()).getAllByRole('radio'))
+      expect(radio.querySelector('svg'), radio.textContent ?? '').not.toBeNull()
+  })
+
+  // The line under the rows carries an info mark only when it explains why the session is fixed.
+  it('marks the reason the session is fixed, and not the session data', () => {
+    renderHero()
+    const line = (text: string) => screen.getByText(text).closest('p') as HTMLElement
+
+    expect(line('Opus 4.8 · clean main · 22% of context').querySelector('svg')).toBeNull()
+    pick(/^Deck/)
+    expect(
+      line('Mods are recorded in the Everyday session only.').querySelector('svg'),
+    ).not.toBeNull()
+  })
+
   // The same pick, shown as Claude Desktop's Code tab draws it.
   it('switches to Claude Desktop, showing the shot above its prompt box', () => {
     renderHero()
 
-    showIn('Desktop')
+    showIn('Claude Desktop')
 
     // The screen is one picture, named for what it shows; the shot inside it is that picture.
     const shotIn = (name: string) =>
       screen.getByRole('img', { name }).querySelector('img')?.getAttribute('src')
     expect(shotIn('Dreambase Panel in Claude Desktop')).toBe(SHOT.src)
-    expect(screen.getByText('Claude Desktop, through statusline-anywhere')).toBeTruthy()
+    expect(
+      screen.getByText(
+        'Desktop previews are recorded in the Everyday session only, through statusline-anywhere.',
+      ),
+    ).toBeTruthy()
     // A status line's shot is only its strip, so the Code tab's prompt box is drawn under it.
     const promptBox = () => screen.queryByText('Type / for commands')
     expect(promptBox()).toBeTruthy()
@@ -272,15 +307,18 @@ describe('HomeHero', () => {
 
     pick(/^Deck/)
     expect(shotIn('Deck in Claude Desktop')).toBe('/deck-desktop.png')
-    expect(screen.getByText("Claude Desktop's Code tab")).toBeTruthy()
+    expect(
+      screen.getByText('Desktop previews are recorded in the Everyday session only.'),
+    ).toBeTruthy()
     // A mod's shot already runs down through Desktop's own prompt box.
     expect(promptBox()).toBeNull()
 
     pick(/^Kanji Rain/)
     expect(screen.getByText('No Claude Desktop preview yet.')).toBeTruthy()
 
-    showIn('CLI')
+    showIn('Terminal')
     expect(statusRow().textContent).toBe('kanji clean')
+    expect(screen.getByText('Opus 4.8 · clean main · 22% of context')).toBeTruthy()
   })
 
   // A long title used to push the link under the button: its visible words now never change.
@@ -366,7 +404,7 @@ describe('HomeHero', () => {
   it('has no axe violations, in the terminal or in Claude Desktop', async () => {
     const { container } = renderHero()
     expect(await axe(container)).toHaveNoViolations()
-    showIn('Desktop')
+    showIn('Claude Desktop')
     expect(await axe(container)).toHaveNoViolations()
   })
 })

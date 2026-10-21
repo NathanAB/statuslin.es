@@ -1,3 +1,4 @@
+import { type LucideIcon, Monitor, SquareTerminal } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import type { HeroSessionKey } from '@/gallery/hero-lines'
@@ -17,9 +18,9 @@ import { LiveMessage } from '@/ui/visually-hidden'
 export const HERO_LEAD =
   'Mods change what Claude Code shows. Pick one the community made and see how it looks in the terminal or in Claude Desktop.'
 
-const APPS: readonly { value: HeroApp; label: string }[] = [
-  { value: 'cli', label: 'CLI' },
-  { value: 'desktop', label: 'Desktop' },
+const APPS: readonly { value: HeroApp; label: string; icon: LucideIcon }[] = [
+  { value: 'cli', label: 'Terminal', icon: SquareTerminal },
+  { value: 'desktop', label: 'Claude Desktop', icon: Monitor },
 ]
 
 /** A pick's value in the list: a status line and a mod can share a slug. */
@@ -85,9 +86,8 @@ export function HomeHero({ heading, items }: { heading: string; items: HeroItem[
           toolbar={{
             groups: [
               {
-                title: 'App',
+                title: 'Show it in',
                 titleId: appId,
-                hideTitle: true,
                 control: (
                   <ChoiceGroup
                     look="tray"
@@ -102,7 +102,7 @@ export function HomeHero({ heading, items }: { heading: string; items: HeroItem[
                 ),
               },
               {
-                title: 'Session',
+                title: 'Sample session',
                 titleId: sessionId,
                 control: (
                   <ChoiceGroup
@@ -115,11 +115,13 @@ export function HomeHero({ heading, items }: { heading: string; items: HeroItem[
                       change('session')
                     }}
                     disabled={!sessionsApply}
+                    wrap
                   />
                 ),
               },
             ],
             caption: scene.caption,
+            note: scene.sessionFixed,
           }}
           transcript={session.transcript}
           view={scene.view}
