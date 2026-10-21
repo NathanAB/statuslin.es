@@ -78,9 +78,7 @@ describe('the phone menu', () => {
     expect(button.getAttribute('aria-expanded')).toBe('true')
     const links = within(menu)
     expect(links.queryByRole('link', { name: 'Mods' })).toBeNull()
-    expect(links.getByRole('link', { name: 'Write a status line' }).getAttribute('href')).toBe(
-      '/guide',
-    )
+    expect(links.queryByRole('link', { name: 'Write a status line' })).toBeNull()
     expect(links.getByRole('link', { name: 'Resources' }).getAttribute('href')).toBe('/resources')
     expect(links.getByRole('link', { name: 'Submit' }).getAttribute('href')).toBe('/submit')
     expect(links.getByRole('link', { name: 'Star on GitHub' })).toBeTruthy()
@@ -97,7 +95,7 @@ describe('the phone menu', () => {
   it('closes when a link is chosen', async () => {
     render(<AppHeader user={null} />)
     const { menu } = openPhoneMenu()
-    fireEvent.click(within(menu).getByRole('link', { name: 'Write a status line' }))
+    fireEvent.click(within(menu).getByRole('link', { name: 'Resources' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 

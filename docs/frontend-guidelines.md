@@ -73,7 +73,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | What it does |
 | --- | --- |
-| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + main + `SiteFooter`, all on `PAGE_COLUMN`. `fullBleed` (the home page) lets main span the window, each section placing itself on the column; `footerNote` adds a quiet line of the page's own to the footer (the home page's inventory) |
+| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + main + `SiteFooter`, all on `PAGE_COLUMN`. `fullBleed` (the home page) lets main span the window, each section placing itself on the column |
 | `<CenteredShell user={user}>` | Centered screen for login / signed-out-submit views |
 
 ### Typography (`src/ui/text.tsx`)

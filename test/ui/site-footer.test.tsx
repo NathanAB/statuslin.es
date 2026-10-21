@@ -57,19 +57,11 @@ describe('SiteFooter', () => {
     expect(names('About')).toEqual(['GitHub', 'Contact', 'Terms'])
   })
 
-  it('says what the site is, with a copyright line', () => {
+  // The owner dropped the tagline and the home page's inventory line: only the copyright stays.
+  it('carries a copyright line and no tagline', () => {
     render(<SiteFooter />)
-    expect(screen.getByText(HOME_HEADING)).toBeTruthy()
+    expect(screen.queryByText(HOME_HEADING)).toBeNull()
     expect(screen.getByText(`© ${new Date().getFullYear()} ${SITE_NAME}`)).toBeTruthy()
-  })
-
-  // The home page puts its inventory line here: how many status lines and mods, copied how often.
-  it("adds a page's own note under what the site is", () => {
-    render(<SiteFooter note="32 status lines and 9 mods, installed 148 times." />)
-    const note = screen.getByText('32 status lines and 9 mods, installed 148 times.')
-    const tagline = screen.getByText(HOME_HEADING)
-    expect(tagline.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByRole('navigation', { name: 'Footer' }).contains(note)).toBe(false)
   })
 
   it('renders a source link to the public repo that opens in a new tab', () => {

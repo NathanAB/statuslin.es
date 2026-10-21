@@ -1,7 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { getGallery, getGalleryConfigs } from '@/gallery/functions'
+import { getGalleryConfigs } from '@/gallery/functions'
 import { coerceGalleryFilter, type GalleryFilter, loadGalleryPage } from '@/gallery/gallery-items'
-import { HomeIndexNote } from '@/gallery/home-gallery-intro'
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { HomeGallery } from '@/home/home-gallery'
 import { HomeHero } from '@/home/home-hero'
@@ -45,7 +44,7 @@ export const Route = createFileRoute('/')({
     const sort = deps.sort ?? 'trending'
     const tags = coerceTags(deps.tags)
     // The showcase (the hero's list) is the same whatever the gallery shows.
-    const [listing, gallery, showcase] = await Promise.all([
+    const [listing, showcase] = await Promise.all([
       loadGalleryPage(
         { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
         {
@@ -53,13 +52,12 @@ export const Route = createFileRoute('/')({
           mod: (limit) => getGalleryModsFn({ data: { sort, tags, limit } }),
         },
       ),
-      getGallery(),
       loadShowcase(),
     ])
     if (!listing) throw notFound()
     return {
       user: await getSession(),
-      gallery: { ...gallery, ...listing },
+      gallery: listing,
       showcase,
     }
   },
@@ -104,17 +102,11 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   const { user, gallery, showcase } = Route.useLoaderData()
-  const { items, page, pageCount, statusLines, mods, copyCount, asOf } = gallery
+  const { items, page, pageCount } = gallery
   const { sort, tags, kind } = Route.useSearch()
 
   return (
-    <PageShell
-      user={user}
-      fullBleed
-      footerNote={
-        <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
-      }
-    >
+    <PageShell user={user} fullBleed>
       {page > 1 ? null : (
         <HomeSection first>
           <HomeHero heading={HOME_HERO_HEADING} items={showcase.hero} />

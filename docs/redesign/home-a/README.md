@@ -419,7 +419,13 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
     burn-rate and weather (1 to 6 impressions) gained the mods copy the others had.
   - The topics hub (no impressions) is "Claude Code status lines and mods by topic", its crumb
     "Topics", its footer link "Browse by topic".
-  - The header's guide link says "Write a status line"; terms say both kinds are rendered in a
-    sandbox and reviewed; status line review cards say "Status line" as mod cards say "Mod".
+  - The guide link says "Write a status line" (in the footer; the header dropped it, below); terms
+    say both kinds are rendered in a sandbox and reviewed; status line review cards say "Status
+    line" as mod cards say "Mod".
   - Kept: status line pages, guides about status lines, `/status-lines/best`, the compare and
     alternatives pages, and the share card's status line picture.
+- **A shorter header and footer**, decided by the owner. The header no longer links the status line
+  writing guide (the footer's Guides column still does), so it links Resources, Star on GitHub and
+  Submit. The footer drops its "Claude Code mods" tagline and the home page's inventory line ("N
+  status lines and M mods, installed X times as of …"), which replaces the `HomeIndexNote` decision
+  above; only the copyright stays on its left.

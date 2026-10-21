@@ -42,14 +42,7 @@ vi.mock('@tanstack/react-router', async () => {
   }
 })
 vi.mock('@/ui/shell', () => ({
-  PageShell: ({ children, footerNote }: { children: ReactNode; footerNote?: ReactNode }) => (
-    <>
-      <main>{children}</main>
-      <footer>
-        <p>{footerNote}</p>
-      </footer>
-    </>
-  ),
+  PageShell: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }))
 vi.mock('@/gallery/gallery-controls', () => ({
   GalleryControls: () => null,
@@ -65,10 +58,6 @@ const gallery = {
   items: [],
   page: 1,
   pageCount: 1,
-  statusLines: 32,
-  mods: 9,
-  copyCount: 148,
-  asOf: '2026-09-08',
 }
 
 const heroLine: HeroLine = {
@@ -95,24 +84,13 @@ function renderHome(overrides: Partial<typeof gallery> = {}, search: Record<stri
   return render(Home ? <Home /> : null)
 }
 
-/** The dated count paragraph: the one holding a <time>. */
-const inventoryNote = () => document.querySelector('time')?.closest('p')
-
 describe('home content', () => {
-  it('counts both kinds, their copies and the as-of date it is given', () => {
+  // The owner dropped the footer's inventory line ("N status lines and M mods, installed …").
+  it('puts no inventory line in the footer', () => {
     renderHome()
 
-    expect(inventoryNote()?.textContent).toBe(
-      '32 status lines and 9 mods, installed 148 times as of Sep 8, 2026.',
-    )
-  })
-
-  it('leaves mods out of the count while none is published', () => {
-    renderHome({ mods: 0 })
-
-    expect(inventoryNote()?.textContent).toBe(
-      '32 status lines, installed 148 times as of Sep 8, 2026.',
-    )
+    expect(document.body.textContent).not.toMatch(/installed \d+ times/)
+    expect(document.querySelector('time')).toBeNull()
   })
 
   it("makes the hero's title the only h1 on the page", () => {

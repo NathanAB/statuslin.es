@@ -10,18 +10,15 @@ import { TooltipProvider } from '@/ui/tooltip'
  * footer, all three on the one page column (`PAGE_COLUMN`), so every page lines up the same.
  *
  * `fullBleed` is the home page: main spans the window, since some of its sections are
- * full-width bands, and each section places itself on the column. `footerNote` is a quiet line
- * of the page's own in the footer.
+ * full-width bands, and each section places itself on the column.
  */
 export function PageShell({
   user,
   fullBleed = false,
-  footerNote,
   children,
 }: {
   user: AppHeaderUser | null
   fullBleed?: boolean
-  footerNote?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
@@ -31,7 +28,7 @@ export function PageShell({
         <main className={fullBleed ? 'w-full flex-1' : cn(PAGE_COLUMN, 'flex-1 py-8')}>
           {children}
         </main>
-        <SiteFooter note={footerNote} />
+        <SiteFooter />
       </div>
     </TooltipProvider>
   )

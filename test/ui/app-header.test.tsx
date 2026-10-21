@@ -67,16 +67,15 @@ describe('AppHeader', () => {
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
-  // The guide is for writing a status line; "Guide" alone read as how to install one. A Mods
-  // link with no Status lines link beside it read as out of place, so the bar has neither: the home
-  // page lists both, and the footer links Mods.
-  it('leads with the guide, which says it is for writing a status line, and links no Mods page', () => {
+  // The status line writing guide is one kind's how-to, so the bar doesn't lead with it; the footer
+  // links it. A Mods link with no Status lines link beside it read as out of place, so the bar has
+  // neither: the home page lists both, and the footer links Mods.
+  it('links neither the guide nor a Mods page', () => {
     const { container } = render(<AppHeader user={null} />)
-    const nav = screen.getByRole('navigation')
-    expect(within(nav).getAllByRole('link')[0]?.textContent).toBe('Write a status line')
-    expect(screen.getByRole('link', { name: 'Write a status line' }).getAttribute('href')).toBe(
-      '/guide',
+    expect(within(screen.getByRole('navigation')).getAllByRole('link')[0]?.textContent).toBe(
+      'Resources',
     )
+    expect(container.querySelector('a[href="/guide"]')).toBeNull()
     expect(container.querySelector('a[href="/mods"]')).toBeNull()
   })
 

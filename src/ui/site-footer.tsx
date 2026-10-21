@@ -1,12 +1,10 @@
 import type { LinkProps } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import {
   BUDDY_GUIDE_PATH,
   DESKTOP_GUIDE_PATH,
   GUIDE_LINK_LABEL,
   GUIDE_PATH,
-  HOME_HEADING,
   MOD_SAFETY_GUIDE_PATH,
   NOT_SHOWING_GUIDE_PATH,
   STATUS_LINES_PATH,
@@ -55,17 +53,15 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
 ]
 
 /**
- * Shared bottom footer on every page, on the page column: what the site is, a page's own note
- * (`note`, the home page's inventory) and the copyright on the left, then the links in three
- * named columns (Browse, Guides, About). Phones put the left part on top and the columns two up.
+ * Shared bottom footer on every page, on the page column: the copyright on the left, then the
+ * links in three named columns (Browse, Guides, About). Phones put the copyright on top and the
+ * columns two up.
  */
-export function SiteFooter({ note }: { note?: ReactNode }) {
+export function SiteFooter() {
   return (
     <footer className={cn('pt-20 pb-10 text-small', PAGE_COLUMN)}>
       <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-12">
         <div className="col-span-2 flex flex-col gap-1.5 text-muted-foreground md:col-span-4 lg:col-span-6">
-          <p className="text-foreground">{HOME_HEADING}</p>
-          {note ? <p>{note}</p> : null}
           {/* The year is the visitor's clock; it can only differ from the server's on New Year's. */}
           <p suppressHydrationWarning>{`© ${new Date().getFullYear()} ${SITE_NAME}`}</p>
         </div>

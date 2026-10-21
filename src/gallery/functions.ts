@@ -11,7 +11,6 @@ import { getConfigSource, getPublishedConfigCatalog, getPublishedConfigs } from 
 import { topicHeading } from './facet-page-copy'
 import { type FacetMod, getLatestCopyAt } from './facet-queries'
 import type { GallerySource } from './gallery-items'
-import { getPublishedInventory } from './inventory'
 import {
   getCardsByCopies,
   getConfigBySlug,
@@ -169,13 +168,6 @@ export function coerceModTags(value: unknown): FacetMod[] {
 export const getGalleryConfigs = createServerFn({ method: 'GET' })
   .validator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
-
-export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
-  withHttpStatus(async () => {
-    const inventory = await getPublishedInventory(db)
-    return { ...inventory, asOf: new Date().toISOString().slice(0, 10) }
-  }),
-)
 
 export const getConfigDetail = createServerFn({ method: 'GET' })
   .validator((d: { slug: string }) => d)
