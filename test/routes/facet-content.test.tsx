@@ -74,9 +74,7 @@ describe('facet page content', () => {
 
     const trail = within(screen.getByRole('navigation', { name: 'Breadcrumb' }))
     expect(trail.getByRole('link', { name: 'statuslin.es' }).getAttribute('href')).toBe('/')
-    expect(trail.getByRole('link', { name: 'Status lines' }).getAttribute('href')).toBe(
-      '/status-lines',
-    )
+    expect(trail.getByRole('link', { name: 'Topics' }).getAttribute('href')).toBe('/status-lines')
     expect(trail.getByText('Git')).toBeTruthy()
   })
 
@@ -203,15 +201,15 @@ describe('facet page content', () => {
     return head?.meta ?? []
   }
 
-  it('calls the page’s lines mods in the title, description and H1 when it lists mods', async () => {
+  it('names both kinds in the title, description and H1 when it lists mods', async () => {
     const meta = await headMeta('token-usage', 3)
     expect(meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Token Usage Mods | statuslin.es' },
-        { property: 'og:title', content: 'Claude Code Token Usage Mods' },
+        { title: 'Claude Code Token Usage Status Lines & Mods | statuslin.es' },
+        { property: 'og:title', content: 'Claude Code Token Usage Status Lines & Mods' },
         {
           name: 'description',
-          content: expect.stringMatching(/^Claude Code mods that show context window usage/),
+          content: expect.stringMatching(/^Status lines and mods that track context window usage/),
         },
       ]),
     )
@@ -220,7 +218,7 @@ describe('facet page content', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'Claude Code mods that show token usage',
+        name: 'Claude Code status lines and mods that show token usage',
       }),
     ).toBeTruthy()
     expect(
@@ -321,7 +319,7 @@ describe('facet page content', () => {
     const trail = (crumbs?.itemListElement ?? []) as Array<{ name: string; item: string }>
     expect(trail.map(({ name, item }) => [name, item])).toEqual([
       ['statuslin.es', window.location.origin],
-      ['Status lines', `${window.location.origin}/status-lines`],
+      ['Topics', `${window.location.origin}/status-lines`],
       ['Tokens', `${window.location.origin}/status-lines/token-usage`],
     ])
   })

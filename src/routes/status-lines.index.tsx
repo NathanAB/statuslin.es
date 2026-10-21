@@ -64,8 +64,7 @@ function StatusLinesHub() {
           <DetailBreadcrumb trail={[]} title={STATUS_LINES_CRUMB.name} />
           <Heading level={1}>{STATUS_LINES_HEADING}</Heading>
           <Text muted>
-            Each topic page lists the status lines that show it, with previews rendered from the
-            real scripts.
+            Each topic page lists the status lines and mods that show it, each with a real preview.
           </Text>
         </Stack>
         <Grid>

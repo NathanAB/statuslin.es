@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { STATUS_LINES_PATH } from '@/lib/page-title'
+import { MODS_PATH } from '@/lib/site'
 import { Badge } from '@/ui/badge'
 import { Row } from '@/ui/layout'
 import { TextLink } from '@/ui/text'
@@ -44,12 +45,15 @@ export function FacetTopicLinks({
   )
 }
 
-/** Where to go from a status line list: the most-installed ones, or the whole gallery. */
+/** Where to go from a topic list: the most-installed of each kind, or the whole gallery. */
 export function BrowseOnLinks() {
   return (
     <Row gap={6} wrap>
       <TextLink to="/status-lines/best">
         Best status lines <span aria-hidden="true">→</span>
+      </TextLink>
+      <TextLink to={MODS_PATH}>
+        Best mods <span aria-hidden="true">→</span>
       </TextLink>
       <TextLink to="/">
         Browse the gallery <span aria-hidden="true">→</span>

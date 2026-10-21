@@ -175,6 +175,7 @@ export function SubmissionCard({
     <SectionCard interactive={linked} title={titleFor(version, detailSlug)}>
       <Stack gap={4}>
         <Row gap={2} align="center" wrap>
+          <Badge variant="outline">Status line</Badge>
           {row.live ? <Badge variant="secondary">{`Update to ${config.slug}`}</Badge> : null}
           <Badge variant={view.variant}>{view.label}</Badge>
           <Text muted size="sm">

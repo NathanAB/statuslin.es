@@ -68,7 +68,7 @@ export function StatuslinePreview({
         // stays, marked unavailable, so a keyboard user's focus isn't dropped to the page.
         <button
           type="button"
-          aria-label="Show more of this status line"
+          aria-label="Show more of this preview"
           aria-disabled={!more}
           onClick={() => {
             if (!more) return

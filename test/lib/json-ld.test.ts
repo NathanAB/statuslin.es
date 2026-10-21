@@ -346,7 +346,7 @@ describe('facetJsonLd', () => {
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Status lines',
+        name: 'Topics',
         item: 'https://example.test/status-lines',
       },
       {
@@ -379,7 +379,7 @@ describe('facetHubJsonLd', () => {
 
   it('is a CollectionPage listing each topic page in order', () => {
     expect(page['@type']).toBe('CollectionPage')
-    expect(page.name).toBe('Claude Code Status Lines by Topic')
+    expect(page.name).toBe('Claude Code Status Lines & Mods by Topic')
     expect(page.url).toBe('https://example.test/status-lines')
     expect((page.mainEntity as { itemListElement: unknown[] }).itemListElement).toEqual([
       {
@@ -404,7 +404,7 @@ describe('facetHubJsonLd', () => {
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Status lines',
+        name: 'Topics',
         item: 'https://example.test/status-lines',
       },
     ])

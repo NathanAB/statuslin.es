@@ -67,9 +67,14 @@ describe('status line topics hub', () => {
 
     const trail = within(screen.getByRole('navigation', { name: 'Breadcrumb' }))
     expect(trail.getByRole('link', { name: 'statuslin.es' }).getAttribute('href')).toBe('/')
-    expect(trail.getByText('Status lines')).toBeTruthy()
+    expect(trail.getByText('Topics')).toBeTruthy()
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Claude Code status lines by topic' }),
+      screen.getByRole('heading', { level: 1, name: 'Claude Code status lines and mods by topic' }),
+    ).toBeTruthy()
+    expect(
+      screen.getByText(
+        'Each topic page lists the status lines and mods that show it, each with a real preview.',
+      ),
     ).toBeTruthy()
   })
 
@@ -85,24 +90,32 @@ describe('status line topics hub', () => {
     expect(linkTo('Claude Code status lines that show git status')).toBe('/status-lines/git')
     expect(screen.getByText('4 status lines')).toBeTruthy()
     // A topic that lists mods is named as its page names itself.
-    expect(linkTo('Claude Code mods that show token usage')).toBe('/status-lines/token-usage')
+    expect(linkTo('Claude Code status lines and mods that show token usage')).toBe(
+      '/status-lines/token-usage',
+    )
     expect(screen.getByText('3 status lines and 2 mods')).toBeTruthy()
   })
 
-  it('links the best status lines and the gallery', () => {
+  // The topics list both kinds, so the way on offers the best of each.
+  it('links the best status lines, the best mods and the gallery', () => {
     renderHub()
 
     expect(linkTo('Best status lines')).toBe('/status-lines/best')
+    expect(linkTo('Best mods')).toBe('/mods')
     expect(linkTo('Browse the gallery')).toBe('/')
   })
 
   it('has its own title, description and canonical', async () => {
     const { meta, links } = await headFor(topics)
 
-    expect(meta).toContainEqual({ title: 'Claude Code Status Lines by Topic | statuslin.es' })
+    expect(meta).toContainEqual({
+      title: 'Claude Code Status Lines & Mods by Topic | statuslin.es',
+    })
     expect(meta).toContainEqual({
       name: 'description',
-      content: expect.stringMatching(/^Claude Code status lines grouped by what they show/),
+      content: expect.stringMatching(
+        /^Claude Code status lines and mods grouped by what they show/,
+      ),
     })
     expect(meta).not.toContainEqual({ name: 'robots', content: 'noindex, follow' })
     expect(links).toContainEqual({
@@ -118,7 +131,7 @@ describe('status line topics hub', () => {
     const list = jsonLd[0]?.mainEntity as { itemListElement: Array<{ name: string }> }
     expect(list.itemListElement.map((item) => item.name)).toEqual([
       'Claude Code status lines that show git status',
-      'Claude Code mods that show token usage',
+      'Claude Code status lines and mods that show token usage',
     ])
   })
 

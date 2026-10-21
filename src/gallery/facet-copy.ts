@@ -16,13 +16,13 @@ export const FACET_INTRO = {
     'Claude Code sends each status line script the running cost of the session. Some show it as a plain number, others change color as the session gets expensive.',
   ],
   quota: [
-    'Claude Pro and Max plans limit usage in a five-hour window and a weekly one. Pick a status line that shows the five-hour window if you hit limits during a workday, or one that shows both if you watch the week.',
+    'Claude Pro and Max plans limit usage in a five-hour window and a weekly one. Pick one that shows the five-hour window if you hit limits during a workday, or one that shows both if you watch the week.',
   ],
   'burn-rate': [
-    'These status lines show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
+    'These show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
   ],
   weather: [
-    'These status lines put the local weather beside your session. They call a weather API, so check the network hosts each one declares before you copy it.',
+    'These put the local weather beside your session. They call a weather API, so check the network hosts each one declares before you copy it.',
   ],
   markets: [
     'These status lines show crypto prices, stock quotes or exchange rates beside your session. They call a market data API, so check the network hosts each one declares before you copy it.',
@@ -107,14 +107,23 @@ export const FACET_KIND_NOTE =
 
 /**
  * Title, heading and description for a facet page that lists mods too, keyed by facet slug. Only
- * facets a published mod carries get an entry (checked against production on 2026-10-15). The site
+ * facets a published mod carries get an entry (checked against production on 2026-10-21). The site
  * counts status lines as one kind of mod, so these say "mods"; FACET_KIND_NOTE names the kinds.
+ * token-usage and quota also keep "status lines": 89% and 83% of their search impressions are for
+ * status line queries (Search Console, 2026-07-21 to 2026-10-20).
  */
 export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
+  git: {
+    titleBase: 'Claude Code Git Status Mods',
+    heading: 'Claude Code mods that show git status',
+    metaDescription:
+      'Claude Code mods that show your git branch, dirty state, ahead/behind counts or diff stats. Rendered previews, one-paste install.',
+  },
   'token-usage': {
-    titleBase: 'Claude Code Token Usage Mods',
-    heading: 'Claude Code mods that show token usage',
-    metaDescription: 'Claude Code mods that show context window usage, as token counts or meters.',
+    titleBase: 'Claude Code Token Usage Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that show token usage',
+    metaDescription:
+      'Status lines and mods that track context window usage in Claude Code, as token counts or burn bars. Install one in a single paste.',
   },
   cost: {
     titleBase: 'Claude Code Session Cost Mods',
@@ -123,10 +132,22 @@ export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
       'Claude Code mods that show session cost, from dollar figures to burn-rate meters.',
   },
   quota: {
-    titleBase: 'Claude Code Usage Limit Mods',
-    heading: 'Claude Code mods that track usage limits',
+    titleBase: 'Claude Code Usage Limit Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that track usage limits',
     metaDescription:
-      'Claude Code mods that show your 5-hour and weekly usage limits and when they reset.',
+      'Show your Claude Code 5-hour and weekly usage limits in a status line or mod: quota percentages, reset countdowns and overage warnings.',
+  },
+  'burn-rate': {
+    titleBase: 'Claude Code Burn Rate Mods',
+    heading: 'Claude Code mods that show burn rate',
+    metaDescription:
+      'Claude Code mods that show how fast a session burns tokens, cost or quota, from hourly rates to over/under-pace arrows.',
+  },
+  weather: {
+    titleBase: 'Claude Code Weather Mods',
+    heading: 'Claude Code mods that show the weather',
+    metaDescription:
+      'Claude Code mods that put live weather beside your session, next to model, git and usage.',
   },
   minimal: {
     titleBase: 'Minimal Claude Code Mods',

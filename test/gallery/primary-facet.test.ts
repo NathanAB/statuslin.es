@@ -23,14 +23,14 @@ describe('primaryFacet', () => {
 })
 
 // A status line page's breadcrumb names its topic as the topic page names itself, so a topic that
-// lists a mod reads "mods" in both places.
+// lists a mod reads the same in both places.
 describe('primaryFacetLink', () => {
   const facet = { slug: 'token-usage', heading: 'Claude Code status lines that show token usage' }
 
-  it('names a topic that lists a mod by its mods heading', () => {
+  it('names a topic that lists a mod by the heading its page uses then', () => {
     expect(primaryFacetLink(facet, [['token-usage', 'multi-line'], ['pets']])).toEqual({
       slug: 'token-usage',
-      heading: 'Claude Code mods that show token usage',
+      heading: 'Claude Code status lines and mods that show token usage',
     })
   })
 

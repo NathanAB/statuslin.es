@@ -13,8 +13,12 @@ import { SessionStage } from '@/ui/session-stage'
 import { Heading, Text } from '@/ui/text'
 import { LiveMessage } from '@/ui/visually-hidden'
 
-/** The hero's one sentence beside the title. */
-export const HERO_LEAD = 'Mods let you customize Claude Code. Pick one and see it in action.'
+/**
+ * The hero's one sentence beside the title. It names the three jobs people install and search for
+ * most: usage limits, context and git (production installs and Search Console, 2026-10-21).
+ */
+export const HERO_LEAD =
+  'Status lines and mods that track your usage limits, context window and git branch. Pick one and see it in action.'
 
 const APPS: readonly { value: HeroApp; label: string; icon: LucideIcon }[] = [
   { value: 'cli', label: 'Terminal', icon: SquareTerminal },

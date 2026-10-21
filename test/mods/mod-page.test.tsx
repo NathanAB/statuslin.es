@@ -260,7 +260,7 @@ describe('mod page', () => {
     ).toBe('/guide/are-claude-code-mods-safe')
   })
 
-  // One plain line, no popup: adding the marketplace gets every reviewed mod, not just this one.
+  // One plain line, no popup: adding the marketplace gets the reviewed mods, not just this one.
   it('offers the whole marketplace under the install button', () => {
     renderPage()
 

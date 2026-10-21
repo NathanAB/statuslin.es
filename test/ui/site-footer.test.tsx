@@ -41,13 +41,13 @@ describe('SiteFooter', () => {
       )
     expect(names('Browse')).toEqual([
       'Mods',
-      'Status lines by topic',
+      'Browse by topic',
       'Best status lines',
       'Resources',
       'Submit',
     ])
     expect(names('Guides')).toEqual([
-      'Write your own',
+      'Write a status line',
       'Status line not showing?',
       'Claude Desktop',
       'Status lines vs mods',
@@ -99,7 +99,7 @@ describe('SiteFooter', () => {
     const { container } = render(<SiteFooter />)
     const guide = container.querySelector('a[href="/guide"]') as HTMLAnchorElement
     expect(guide).not.toBeNull()
-    expect(guide.textContent).toBe('Write your own')
+    expect(guide.textContent).toBe('Write a status line')
   })
 
   it('links the mods gallery and the best status lines', () => {

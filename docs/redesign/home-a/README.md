@@ -292,7 +292,7 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   input, and a side panel where a simple form would leave the column half empty.
 - **Wording (after review), decided by the owner.** Counts read "installs", not "copies"
   (`installsLabel`); the data and analytics keep their copy names. The header and footer say
-  "Write your own" for the guide, whose visible title and first lines now say it's for writing a
+  "Write a status line" for the guide (first "Write your own", see the framing sweep below), whose visible title and first lines now say it's for writing a
   status line from scratch (its `<title>` and meta keep "set up"). The hero says "see how it looks
   in a session": nothing runs live.
 - **The pill's hover (after review).** The icon circle no longer grows and shifts toward the edge;
@@ -361,8 +361,8 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - **A Claude Code mods site** (growth plan #26). The home title, heading and blurb, the five topic
   pages that list both kinds, submit, terms and `llms.txt` say "mods", naming status lines once as
   one kind. Mods passed status lines in copies in October, and home never won the status line
-  search its old title led with. Pages only about status lines, the guides, `/resources` and every
-  URL keep their wording.
+  search its old title led with. Pages only about status lines, the guides and every URL keep their
+  wording. The framing sweep below changed `/resources` and the topic titles after this.
 - **Add the whole marketplace** (#21). Mod pages and `/mods` carry one plain line with
   `/plugin marketplace add …` and a copy button, no popup. It's the only command shown to run by
   hand, and it installs nothing, so install counts still come only from the copied prompt. The
@@ -401,3 +401,25 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   lists them, the hero's trust line sits beside its copy button, and Submit is the header's one
   filled button. The featured mod went with the row, so the gallery lists it again. This replaces
   the "How installing works" strip and the featured mod decisions above.
+- **Hero: "Customize Claude Code with mods"**, decided by the owner from evidence. The subheader is
+  "Status lines and mods that track your usage limits, context window and git branch. Pick one and
+  see it in action." Google builds title links from the h1 as well as `<title>`, and readers scan a
+  heading's first two words, so the h1 opens on the product and names mods. "customize claude code"
+  and "claude code mods" are both Google autocomplete queries. Usage limits, context and git are the
+  jobs with the most installs (Sub Meter 23, Token Weather Usage 20; every top-5 status line shows
+  git) and the most search impressions (token-usage 602, quota 586, git 377 over 90 days). Past page
+  1 the h1 stays "Claude Code mods". Which copy engages more can only come from an A/B test.
+- **No status-line-only framing** (a crawl of every staging page and a sweep of the source). Search
+  Console (2026-07-21 to 2026-10-20) set one rule: titles and h1s keep "status line" where the
+  page's search traffic uses it, with mods beside it; everywhere else says mods or both.
+  - `/resources` is the site's top search page (1,934 impressions, 77% of its queries status line
+    tools): its h1 is "Claude Code status line tools, mods & resources", and its intro is "Five
+    ways to customize Claude Code", one of them installing a mod.
+  - token-usage and quota (89% and 83% status line queries) say "Status Lines & Mods"; git,
+    burn-rate and weather (1 to 6 impressions) gained the mods copy the others had.
+  - The topics hub (no impressions) is "Claude Code status lines and mods by topic", its crumb
+    "Topics", its footer link "Browse by topic".
+  - The header's guide link says "Write a status line"; terms say both kinds are rendered in a
+    sandbox and reviewed; status line review cards say "Status line" as mod cards say "Mod".
+  - Kept: status line pages, guides about status lines, `/status-lines/best`, the compare and
+    alternatives pages, and the share card's status line picture.

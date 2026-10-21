@@ -79,7 +79,14 @@ export const NOT_FOUND_TITLE = `Page not found — ${SITE_NAME}`
  * Lines & Mods" title led with. Pages only about status lines keep saying "status line".
  */
 export const HOME_TITLE_BASE = 'Claude Code Mods'
+/** The site's short name on screen: the h1 past page 1, the footer tagline and the share card. */
 export const HOME_HEADING = 'Claude Code mods'
+/**
+ * The hero's h1. Google can build a result's title from the h1, and readers scan its first two
+ * words, so it opens on the product and names mods: "customize claude code" and "claude code mods"
+ * are both searched (Google autocomplete, 2026-10-21).
+ */
+export const HOME_HERO_HEADING = 'Customize Claude Code with mods'
 export const HOME_DESCRIPTION_BASE =
   'Claude Code mods with real previews. Install any of them with one copied prompt.'
 
@@ -106,20 +113,23 @@ export function homeMetaDescription(page: number, pageCount: number): string {
  */
 export const BEST_PAGE_TITLE_BASE = 'Best Claude Code Status Line Examples'
 
-/** The status line topics hub: every facet page, linked by its heading. */
+/** The topics hub: every facet page, linked by its heading. Its topics list both kinds. */
 export const STATUS_LINES_PATH = '/status-lines'
 
 /** /status-lines title base: the <title> tag, og:title and its JSON-LD name. */
-export const STATUS_LINES_TITLE_BASE = 'Claude Code Status Lines by Topic'
-export const STATUS_LINES_HEADING = 'Claude Code status lines by topic'
+export const STATUS_LINES_TITLE_BASE = 'Claude Code Status Lines & Mods by Topic'
+export const STATUS_LINES_HEADING = 'Claude Code status lines and mods by topic'
 
 /** /status-lines meta description: the description tag and OG. */
 export const STATUS_LINES_DESCRIPTION =
-  'Claude Code status lines grouped by what they show: git, token usage, cost, usage limits and more. Each has a real preview and a one-paste install.'
+  'Claude Code status lines and mods grouped by what they show: git, token usage, cost, usage limits and more. Each has a real preview and a one-paste install.'
 
 export const GUIDE_PATH = '/guide'
-/** What the header and footer call the guide: it's for writing your own, not installing one. */
-export const GUIDE_LINK_LABEL = 'Write your own'
+/**
+ * What the header and footer call the guide: it's for writing a status line, not a mod, so the
+ * label says so. Google also reads the anchor text of links to a page.
+ */
+export const GUIDE_LINK_LABEL = 'Write a status line'
 
 /** /guide title base — shared by the <title> tag and the guide JSON-LD headline. */
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'

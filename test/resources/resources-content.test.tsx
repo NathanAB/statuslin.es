@@ -59,7 +59,10 @@ describe('ResourcesContent', () => {
   it('renders the h1 and every section heading', () => {
     render(<ResourcesContent signedIn={false} showcase={NONE} />)
     expect(
-      screen.getByRole('heading', { level: 1, name: /claude code status line tools & resources/i }),
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Claude Code status line tools, mods & resources',
+      }),
     ).toBeTruthy()
     for (const section of RESOURCE_SECTIONS) {
       expect(screen.getByRole('heading', { level: 2, name: section.title })).toBeTruthy()
@@ -108,11 +111,21 @@ describe('ResourcesContent', () => {
     expect(screen.getByRole('button', { name: 'Submit' })).toBeTruthy()
   })
 
-  it('compares four setup paths without FAQPage schema', () => {
+  // The site lists mods as well as status lines, so the paths include installing a mod, and the
+  // gallery is named for what it holds, not as a pile of scripts.
+  it('compares five ways to customize Claude Code, a mod among them, without FAQPage schema', () => {
     const { container } = render(<ResourcesContent signedIn={false} showcase={NONE} />)
+    const ways = screen.getByRole('heading', {
+      level: 2,
+      name: 'Five ways to customize Claude Code',
+    })
+    const intro = ways.parentElement as HTMLElement
+    expect(intro.querySelectorAll('p')).toHaveLength(5)
     expect(
-      screen.getByRole('heading', { level: 2, name: /four ways to get a status line/i }),
-    ).toBeTruthy()
+      within(intro).getByRole('link', { name: 'the most-installed mods' }).getAttribute('href'),
+    ).toBe('/mods')
+    expect(intro.textContent).toMatch(/Copy a reviewed status line from the gallery/)
+    expect(intro.textContent).not.toMatch(/script from the gallery/)
     expect(container.innerHTML).not.toMatch(/FAQPage/)
   })
 
@@ -162,6 +175,9 @@ describe('ResourcesContent', () => {
       'usage-bar',
       'powerline-cost',
     ])
+    expect(previews.parentElement?.textContent).toMatch(
+      /^Status lines that do the same jobStatus lines from the gallery/,
+    )
   })
 
   it('leaves the previews out when no status line matches', () => {

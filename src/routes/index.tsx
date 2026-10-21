@@ -10,7 +10,7 @@ import { loadShowcase } from '@/home/load-showcase'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { HOME_HEADING, homeMetaDescription, homePageTitle } from '@/lib/page-title'
+import { HOME_HERO_HEADING, homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { homeSocialMeta } from '@/og/meta'
@@ -117,7 +117,7 @@ function Home() {
     >
       {page > 1 ? null : (
         <HomeSection first>
-          <HomeHero heading={HOME_HEADING} items={showcase.hero} />
+          <HomeHero heading={HOME_HERO_HEADING} items={showcase.hero} />
         </HomeSection>
       )}
       <HomeGallery

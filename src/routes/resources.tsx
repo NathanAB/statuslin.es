@@ -11,7 +11,7 @@ import { ResourcesContent } from '@/resources/resources-content'
 import { PageShell } from '@/ui/shell'
 
 const DESCRIPTION =
-  'ccstatusline, claude-powerline, CCometixLine, and other Claude Code status line tools, generators, guides, and resources, each with a short note of our own.'
+  'ccstatusline, claude-powerline, CCometixLine, and other Claude Code status line tools, generators and guides, plus mods that go beyond the status line.'
 
 export const Route = createFileRoute('/resources')({
   loader: async () => {

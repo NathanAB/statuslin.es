@@ -73,6 +73,14 @@ describe('buildLlmsTxt', () => {
     expect(txt).toContain('(https://statuslin.es/resources)')
   })
 
+  // /resources lists status line tools and points on to mods; it isn't a status-line-only site.
+  it('describes /resources as status line tools plus the way on to mods', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    expect(txt).toContain(
+      '- [Resources](https://statuslin.es/resources): Claude Code status line tools, generators and guides, and where mods go further',
+    )
+  })
+
   it('links the mods page and the plugin marketplace under Browse', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))

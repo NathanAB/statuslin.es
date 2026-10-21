@@ -26,7 +26,7 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
     links: [
       { to: MODS_PATH, label: 'Mods' },
       // The topic hub's one site-wide link in, besides the facet pages' trails.
-      { to: STATUS_LINES_PATH, label: 'Status lines by topic' },
+      { to: STATUS_LINES_PATH, label: 'Browse by topic' },
       { to: '/status-lines/best', label: 'Best status lines' },
       { to: '/resources', label: 'Resources' },
       { to: '/submit', label: 'Submit' },

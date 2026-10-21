@@ -21,7 +21,7 @@ describe('StatuslinePreview strip', () => {
     HTMLElement.prototype.scrollBy = scrollBy
     render(<StatuslinePreview segments={LINE} look="strip" />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show more of this status line' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show more of this preview' }))
     expect(scrollBy).toHaveBeenCalledWith(expect.objectContaining({ left: expect.any(Number) }))
   })
 
@@ -33,7 +33,7 @@ describe('StatuslinePreview strip', () => {
 
     expect(
       screen
-        .getByRole('button', { name: 'Show more of this status line' })
+        .getByRole('button', { name: 'Show more of this preview' })
         .getAttribute('aria-disabled'),
     ).toBe('true')
   })

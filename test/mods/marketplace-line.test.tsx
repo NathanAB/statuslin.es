@@ -17,12 +17,13 @@ beforeEach(() => {
 const COMMAND = '/plugin marketplace add https://site.example.test/marketplace.json'
 
 describe('MarketplaceLine', () => {
-  // A visitor who adds the marketplace gets every reviewed mod in /plugin without another visit.
+  // A visitor who adds the marketplace gets the reviewed mods in /plugin without another visit.
+  // Status lines aren't in it, so the line doesn't say "every".
   it('says what adding the marketplace gets you, then shows the command', () => {
     const { container } = render(<MarketplaceLine origin="https://site.example.test" />)
 
     expect(container.textContent).toContain(
-      "To browse every reviewed mod from Claude Code's /plugin menu, add the marketplace in the terminal:",
+      "To browse the reviewed mods from Claude Code's /plugin menu, add the marketplace in the terminal:",
     )
     expect(screen.getByText(COMMAND)).toBeTruthy()
   })

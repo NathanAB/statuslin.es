@@ -13,7 +13,7 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 
 /**
  * The /resources page body: the curated list from src/resources/data.ts rendered as
- * cards by section, framed by an intro that cross-links the guide and gallery, and a
+ * cards by section, framed by an intro that cross-links the guide, the gallery and mods, and a
  * closing "get listed" call-to-action. A component (not inline in the route) so it's
  * unit-testable — same pattern as TermsContent. `showcase` turns the tool list into something to
  * act on: rendered status lines that do the same jobs, and a compared tool's card opening its
@@ -28,10 +28,10 @@ export function ResourcesContent({
 }) {
   return (
     <Stack gap={6}>
-      <Heading level={1}>Claude Code status line tools & resources</Heading>
+      <Heading level={1}>Claude Code status line tools, mods & resources</Heading>
 
       <Stack gap={3}>
-        <Heading level={2}>Four ways to get a status line</Heading>
+        <Heading level={2}>Five ways to customize Claude Code</Heading>
         <Text muted>
           Run{' '}
           <Text inline mono>
@@ -57,8 +57,8 @@ export function ResourcesContent({
           .
         </Text>
         <Text muted>
-          Copy a reviewed script from <TextLink to="/">the gallery</TextLink> after seeing its real
-          output. Try the <TextLink to="/status-lines/best">most-installed</TextLink>,{' '}
+          Copy a reviewed status line from <TextLink to="/">the gallery</TextLink> after seeing its
+          real output. Try the <TextLink to="/status-lines/best">most-installed</TextLink>,{' '}
           <TextLink to="/c/$slug" params={{ slug: 'powerline-dracula-6936b97c' }}>
             Powerline Dracula
           </TextLink>{' '}
@@ -73,7 +73,12 @@ export function ResourcesContent({
           is the reviewed copy of ohugonnot/claude-code-statusline.
         </Text>
         <Text muted>
-          Write your own to control every field. The{' '}
+          Install a mod to change more than the status line: a band above the prompt, a pane, or a
+          new slash command. Mods work in Claude Desktop too. Start with{' '}
+          <TextLink to="/mods">the most-installed mods</TextLink>.
+        </Text>
+        <Text muted>
+          Write your own status line to control every field. The{' '}
           <TextLink to="/guide">guide to writing one</TextLink> walks through the JSON Claude Code
           sends, with a script our tests run on every pull request.
         </Text>
@@ -94,7 +99,7 @@ export function ResourcesContent({
               <Stack gap={2}>
                 <Heading level={2}>Status lines that do the same job</Heading>
                 <Text muted>
-                  Single scripts from the gallery that cover at least three of the same features as
+                  Status lines from the gallery that cover at least three of the same features as
                   these tools, each shown with its real output. Copy one in a single paste.
                 </Text>
               </Stack>

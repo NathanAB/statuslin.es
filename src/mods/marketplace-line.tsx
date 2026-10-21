@@ -5,7 +5,7 @@ import { Text } from '@/ui/text'
 
 /**
  * One plain line on mod pages and /mods: the command that adds the whole marketplace, so `/plugin`
- * lists every reviewed mod without another visit. No popup; a visitor who wants one mod still copies
+ * lists the reviewed mods without another visit. No popup; a visitor who wants one mod still copies
  * its install prompt.
  */
 export function MarketplaceLine({ origin }: { origin: string }) {
@@ -13,7 +13,7 @@ export function MarketplaceLine({ origin }: { origin: string }) {
   return (
     <Stack gap={1}>
       <Text muted size="sm">
-        To browse every reviewed mod from Claude Code's{' '}
+        To browse the reviewed mods from Claude Code's{' '}
         <Text inline mono>
           /plugin
         </Text>{' '}

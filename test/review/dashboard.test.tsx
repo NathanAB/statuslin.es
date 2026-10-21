@@ -183,6 +183,12 @@ describe('SubmissionCard', () => {
     expect(html).toContain('exit 1')
   })
 
+  // Mod cards say "Mod"; a status line card names its kind too, so neither reads as the default.
+  it('labels the card with its kind', () => {
+    const html = renderToStaticMarkup(<SubmissionCard row={row({ status: 'queued' })} />)
+    expect(html).toContain('>Status line<')
+  })
+
   it('offers Re-queue on a still-queued row', () => {
     const html = renderToStaticMarkup(<SubmissionCard row={row({ status: 'queued' })} />)
     expect(html).toContain('Re-queue')

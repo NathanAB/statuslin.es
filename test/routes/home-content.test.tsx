@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { HeroLine } from '@/gallery/hero-lines'
-import { HOME_HEADING } from '@/lib/page-title'
+import { HOME_HEADING, HOME_HERO_HEADING } from '@/lib/page-title'
 
 const capture = vi.hoisted(() => vi.fn())
 vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
@@ -120,18 +120,20 @@ describe('home content', () => {
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    expect(h1s[0]?.textContent).toBe(HOME_HEADING)
-    expect(HOME_HEADING).toBe('Claude Code mods')
+    expect(h1s[0]?.textContent).toBe(HOME_HERO_HEADING)
+    expect(HOME_HERO_HEADING).toBe('Customize Claude Code with mods')
   })
 
   // Search engines and screen readers get each page's own h1; on screen the title stays the same,
   // since the pager already says which page this is.
+  // Past page 1 the h1 names the list, not the hero's invitation.
   it('names the page number in the h1 past page 1, without showing it', () => {
     const { container } = renderHome({ page: 2, pageCount: 3 })
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    expect(h1s[0]?.textContent).toBe('Claude Code mods, page 2')
+    expect(h1s[0]?.textContent).toBe(`${HOME_HEADING}, page 2`)
+    expect(HOME_HEADING).toBe('Claude Code mods')
     expect(h1s[0]?.querySelector('.sr-only')?.textContent).toBe(', page 2')
   })
 
@@ -159,7 +161,7 @@ describe('home content', () => {
     expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
       'Status lines and mods',
     ])
-    expect(screen.queryByText(/Mods let you customize Claude Code/)).toBeNull()
+    expect(screen.queryByText(/Pick one and see it in action/)).toBeNull()
   })
 
   // The hero is the first thing on the page, and the server renders its first state.
@@ -167,8 +169,10 @@ describe('home content', () => {
     const { container } = renderHome()
 
     const first = container.querySelector('section')
-    expect(first?.querySelector('h1')?.textContent).toBe(HOME_HEADING)
-    expect(first?.textContent).toContain('Mods let you customize Claude Code.')
+    expect(first?.querySelector('h1')?.textContent).toBe(HOME_HERO_HEADING)
+    expect(first?.textContent).toContain(
+      'Status lines and mods that track your usage limits, context window and git branch.',
+    )
     expect(first?.textContent).toContain('panel clean')
     expect(first?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()

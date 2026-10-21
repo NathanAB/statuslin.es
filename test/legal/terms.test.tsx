@@ -19,6 +19,17 @@ describe('TermsContent', () => {
     ).toBeTruthy()
   })
 
+  // Both kinds are rendered in a sandbox and reviewed; saying so of status lines alone read as if
+  // mods were not.
+  it('says both kinds are rendered in a sandbox and reviewed before they appear', () => {
+    render(<TermsContent />)
+    expect(
+      screen.getByText(
+        /Submitted status lines and mods are rendered in a sandbox and reviewed before they appear\./,
+      ),
+    ).toBeTruthy()
+  })
+
   it('puts the risk of running a status line or mod on the visitor', () => {
     render(<TermsContent />)
     expect(screen.getByText(/copy or install at your own risk/i)).toBeTruthy()
