@@ -2,7 +2,8 @@
  * The curated list behind /resources. Hand-maintained; descriptions are our own
  * words (never copied from the target's README — both an SEO duplicate-content
  * rule and what makes the page an editorial feature worth a link back).
- * Section order is display order. All entries verified live 2026-07-05.
+ * Section order is display order. Each entry earns its place with search traffic to this page or
+ * public use (stars, downloads); all verified live 2026-10-21.
  */
 
 export interface Resource {
@@ -18,6 +19,69 @@ export function resourceAnchor(name: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+/** One way to customize Claude Code: what it changes, Anthropic's docs, and where to find some. */
+export interface CustomizationSurface {
+  name: string
+  text: string
+  docsUrl: string
+  browse: Array<{ to: '/mods' | '/status-lines/best' | '/guide'; label: string }>
+}
+
+/** Every way to customize Claude Code, each checked against code.claude.com on 2026-10-21. */
+export const CUSTOMIZATION_SURFACES: CustomizationSurface[] = [
+  {
+    name: 'Mods',
+    text: "Panes, a band above the prompt, Claude Code's own rows and spinner, and slash commands. They work in the terminal and in Claude Desktop.",
+    docsUrl: 'https://code.claude.com/docs/en/plugins/mods/overview',
+    browse: [{ to: '/mods', label: 'Browse mods' }],
+  },
+  {
+    name: 'Status line',
+    text: 'The row under the prompt in the terminal, printed by a script. Run /statusline to have Claude write one.',
+    docsUrl: 'https://code.claude.com/docs/en/statusline',
+    browse: [
+      { to: '/status-lines/best', label: 'Best status lines' },
+      { to: '/guide', label: 'Write your own' },
+    ],
+  },
+  {
+    name: 'Themes',
+    text: "Claude Code's colors, from a theme you make or install and pick with /theme.",
+    docsUrl: 'https://code.claude.com/docs/en/terminal-config#create-a-custom-theme',
+    browse: [],
+  },
+  {
+    name: 'Spinner verbs',
+    text: 'The words beside the spinner while Claude works, set with spinnerVerbs.',
+    docsUrl: 'https://code.claude.com/docs/en/settings-reference',
+    browse: [],
+  },
+  {
+    name: 'Output styles',
+    text: 'How Claude writes its replies, picked with /output-style.',
+    docsUrl: 'https://code.claude.com/docs/en/output-styles',
+    browse: [],
+  },
+  {
+    name: 'Hooks',
+    text: 'Commands that run at set moments, such as before a tool call or when a session ends.',
+    docsUrl: 'https://code.claude.com/docs/en/hooks',
+    browse: [],
+  },
+  {
+    name: 'Skills',
+    text: 'Instructions Claude loads when a task calls for them, or that you run as /name.',
+    docsUrl: 'https://code.claude.com/docs/en/skills',
+    browse: [],
+  },
+  {
+    name: 'Subagents',
+    text: 'Helpers with their own context, each for one kind of task.',
+    docsUrl: 'https://code.claude.com/docs/en/sub-agents',
+    browse: [],
+  },
+]
+
 export interface ResourceSection {
   key: string
   title: string
@@ -25,6 +89,36 @@ export interface ResourceSection {
 }
 
 export const RESOURCE_SECTIONS: ResourceSection[] = [
+  {
+    key: 'marketplaces',
+    title: 'Mods & plugin marketplaces',
+    resources: [
+      {
+        name: 'Claude Marketplace',
+        url: 'https://claude.com/marketplace/plugins',
+        description:
+          "Anthropic's web catalog of plugins, with install counts and an Anthropic verified mark.",
+      },
+      {
+        name: 'claude-plugins-official',
+        url: 'https://github.com/anthropics/claude-plugins-official',
+        description:
+          "Anthropic's own marketplace. Claude Code adds it the first time you start a session in the terminal.",
+      },
+      {
+        name: 'wshobson/agents',
+        url: 'https://github.com/wshobson/agents',
+        description:
+          'A large community marketplace of agents, skills and commands, built to install into several coding agents.',
+      },
+      {
+        name: 'claude-code-templates',
+        url: 'https://aitmpl.com',
+        description:
+          'A CLI and catalog for adding ready-made agents, commands, hooks, settings and MCP servers.',
+      },
+    ],
+  },
   {
     key: 'tools',
     title: 'Status line tools',
@@ -39,7 +133,7 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         name: 'claude-powerline',
         url: 'https://github.com/Owloops/claude-powerline',
         description:
-          'Vim-style powerline segments with themes and usage tracking. Powerline Studio, listed below, builds its config visually.',
+          'Vim-style powerline segments with themes and usage tracking. Powerline Studio builds its config in the browser.',
       },
       {
         name: 'claude-hud',
@@ -53,63 +147,11 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         description:
           'Written in Rust, configured through a terminal UI. Git integration and usage tracking come built in.',
       },
-      {
-        name: 'CC-statusline',
-        url: 'https://github.com/AwesomeJun/CC-statusline',
-        description:
-          'One command to install on macOS, Linux, or Windows. Shows context, usage limits, cost, and reasoning effort.',
-      },
-      {
-        name: 'claude-statusline (TheoBrigitte)',
-        url: 'https://github.com/TheoBrigitte/claude-statusline',
-        description: 'Built for speed. Its own benchmarks put a full render under 20 microseconds.',
-      },
-      {
-        name: 'claude-statusline (felipeelias)',
-        url: 'https://felipeelias.github.io/2026/03/17/claude-statusline.html',
-        description:
-          'Themes, cost tracking, and context usage, configured in a TOML file instead of a terminal UI.',
-      },
-      {
-        name: 'claude-code-statusline (sotayamashita)',
-        url: 'https://github.com/sotayamashita/claude-code-statusline',
-        description: 'Written in Rust and configured like Starship.',
-      },
-      {
-        name: 'claude-code-statusline (levz0r)',
-        url: 'https://github.com/levz0r/claude-code-statusline',
-        description:
-          'Shows token usage and spend live, next to the directory, git status and model.',
-      },
-    ],
-  },
-  {
-    key: 'generators',
-    title: 'Generators & builders',
-    resources: [
-      {
-        name: 'The built-in /statusline command',
-        url: 'https://code.claude.com/docs/en/statusline#use-the-statusline-command',
-        description:
-          'Describe the status line you want, and Claude Code writes the script and updates your settings.',
-      },
-      {
-        name: 'Powerline Studio',
-        url: 'https://powerline.owloops.com/',
-        description:
-          'A visual editor for claude-powerline. Click segments in a live preview, then copy the config.',
-      },
-      {
-        name: "Don't Sleep On AI status line themes",
-        url: 'https://www.dontsleeponai.com/statusline',
-        description:
-          'Ten ready-made /statusline prompts to paste straight into Claude Code, plus a builder for assembling your own.',
-      },
     ],
   },
   {
     key: 'usage-tracking',
-    title: 'Usage tracking',
+    title: 'Usage & cost tracking',
     resources: [
       {
         name: 'ccusage',
@@ -117,55 +159,62 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         description:
           "Tracks Claude Code spend. Its status line mode shows session cost, the day's total, burn rate and when your block resets.",
       },
+      {
+        name: 'CodexBar',
+        url: 'https://github.com/steipete/CodexBar',
+        description: 'A macOS menu bar app that shows your Claude Code and Codex usage limits.',
+      },
+    ],
+  },
+  {
+    key: 'themes',
+    title: 'Themes & sounds',
+    resources: [
+      {
+        name: 'tweakcc',
+        url: 'https://github.com/Piebald-AI/tweakcc',
+        description:
+          'Patches Claude Code to add custom themes, change the spinner and thinking verbs, and edit its system prompts.',
+      },
+      {
+        name: 'peon-ping',
+        url: 'https://github.com/PeonPing/peon-ping',
+        description:
+          "Plays game character voice lines, Warcraft III's peon among them, when Claude Code needs your attention.",
+      },
+    ],
+  },
+  {
+    key: 'beyond',
+    title: 'Beyond the interface',
+    resources: [
+      {
+        name: 'anthropics/skills',
+        url: 'https://github.com/anthropics/skills',
+        description:
+          "Anthropic's public Agent Skills. Add the repo as a plugin marketplace to install them.",
+      },
+      {
+        name: 'awesome-claude-code-subagents',
+        url: 'https://github.com/VoltAgent/awesome-claude-code-subagents',
+        description: 'A collection of ready-made subagents, grouped by the job they do.',
+      },
     ],
   },
   {
     key: 'guides',
-    title: 'Guides & references',
+    title: 'Guides & lists',
     resources: [
-      {
-        name: 'Official docs: Customize your status line',
-        url: 'https://code.claude.com/docs/en/statusline',
-        description:
-          "Anthropic's reference for the statusLine setting and every field your script receives, with example scripts.",
-      },
-      {
-        name: 'Complete field reference (AKCodez gist)',
-        url: 'https://gist.github.com/AKCodez/ffb420ba6a7662b5c3dda2edce7783de',
-        description: 'One gist documenting every payload field, with scripts you can lift as-is.',
-      },
-      {
-        name: 'Dan Does Code: Building a custom status line',
-        url: 'https://www.dandoescode.com/blog/claude-code-custom-statusline',
-        description:
-          'A build log of a custom status line that tracks git worktrees and usage limits.',
-      },
       {
         name: 'AI Hero: Creating the perfect status line',
         url: 'https://www.aihero.dev/creating-the-perfect-claude-code-status-line',
         description: "An opinionated take on what belongs in a status line and what doesn't.",
       },
       {
-        name: 'Jerad Bitner: Leveling up with a killer status line',
-        url: 'https://jeradbitner.com/blog/claude-code-statusline',
-        description: 'A write-up of replacing the default status line with a custom one.',
-      },
-      {
-        name: 'ClaudeLog: ccstatusline overview',
-        url: 'https://claudelog.com/claude-code-mcps/ccstatusline/',
-        description: 'Community docs for Claude Code, with an overview of ccstatusline.',
-      },
-    ],
-  },
-  {
-    key: 'community-lists',
-    title: 'Community lists',
-    resources: [
-      {
         name: 'awesome-claude-code',
         url: 'https://github.com/hesreallyhim/awesome-claude-code',
         description:
-          'The big community list for Claude Code. Its status lines section may list tools newer than this page.',
+          'The big community list for Claude Code, with sections for status lines and mods.',
       },
     ],
   },

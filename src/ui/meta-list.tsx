@@ -11,7 +11,7 @@ export interface MetaEntry {
 }
 
 /**
- * Two-column label/value grid for scannable metadata (admin dashboard rows). Dim labels on the
+ * Two-column label/value grid for scannable metadata (admin dashboard rows, the /resources map). Dim labels on the
  * left, foreground values on the right; long values wrap. Replaces dot-separated metadata runs
  * that read as a wall of text.
  */

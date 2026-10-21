@@ -429,3 +429,21 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   Submit. The footer drops its "Claude Code mods" tagline and the home page's inventory line ("N
   status lines and M mods, installed X times as of …"), which replaces the `HomeIndexNote` decision
   above; only the copyright stays on its left.
+- **/resources covers all of Claude Code customization**, decided by the owner ("everything has to
+  earn its place"). It opens on "What you can customize": mods, status line, themes, spinner verbs,
+  output styles, hooks, skills and subagents, each linking Anthropic's docs (all checked
+  2026-10-21; Anthropic added "Claude Mods" in 2.1.287). Then six short sections: mods and plugin
+  marketplaces (Claude Marketplace, the official marketplace, wshobson/agents,
+  claude-code-templates, with our marketplace command), status line tools, usage and cost tracking,
+  themes and sounds, beyond the interface (skills, subagents), and guides and lists.
+  - The h1 is "Claude Code customization tools & resources". The `<title>` keeps its tool names,
+    since 77% of the page's search impressions are status line tool queries.
+  - Kept because they earn it: ccstatusline and claude-powerline (most of the page's queries),
+    claude-hud and CCometixLine (their alternatives pages), ccusage (176k npm downloads a week),
+    the AI Hero guide (25 impressions), awesome-claude-code, and the Quota Fallback line
+    (ohugonnot/claude-code-statusline, 17 impressions).
+  - Cut: CC-statusline and three small claude-statusline repos (4 to 199 stars, no queries),
+    Powerline Studio and /statusline as cards (now in claude-powerline's line and the map), and four
+    status line articles with no queries.
+  - Not linked: galleries that compete with this site (claudecodemods.com, petdex.dev). No star
+    counts on the page, since they go stale.

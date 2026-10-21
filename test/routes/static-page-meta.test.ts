@@ -19,7 +19,7 @@ describe('static page social metadata', () => {
         {
           name: 'description',
           content:
-            'ccstatusline, claude-powerline, CCometixLine, and other Claude Code status line tools, generators and guides, plus mods that go beyond the status line.',
+            'ccstatusline, claude-powerline and other Claude Code status line tools, plus mods, plugin marketplaces, usage trackers and themes.',
         },
       ]),
     )

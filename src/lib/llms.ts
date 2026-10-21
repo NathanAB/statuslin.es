@@ -119,7 +119,7 @@ function corePageLinks(base: string): string[] {
     `- [${STATUS_LINES_VS_MODS_GUIDE_TITLE}](${base}${STATUS_LINES_VS_MODS_GUIDE_PATH}): where each one shows up, and when to pick which`,
     `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what a mod can do, and how statuslin.es pins and reviews each one`,
     `- [${BUDDY_GUIDE_TITLE}](${base}${BUDDY_GUIDE_PATH}): what happened to /buddy, and pet mods that put a companion back, each with a real preview`,
-    `- [Resources](${base}/resources): Claude Code status line tools, generators and guides, and where mods go further`,
+    `- [Resources](${base}/resources): every way to customize Claude Code, with plugin marketplaces, status line tools, usage trackers and themes`,
   ]
 }
 

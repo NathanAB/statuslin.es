@@ -2,7 +2,9 @@ import { Fragment } from 'react'
 import type { ResourcesShowcase } from '@/compare/pages'
 import { RankedCardList } from '@/gallery/ranked-card-list'
 import { CONTACT_EMAIL } from '@/lib/site'
+import { CustomizationOverview } from '@/resources/customization-overview'
 import { RESOURCE_SECTIONS, type Resource, resourceAnchor } from '@/resources/data'
+import { SectionIntro } from '@/resources/section-intro'
 import { Badge } from '@/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
 import { Grid, Row, Stack } from '@/ui/layout'
@@ -12,82 +14,33 @@ import { Heading, Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 /**
- * The /resources page body: the curated list from src/resources/data.ts rendered as
- * cards by section, framed by an intro that cross-links the guide, the gallery and mods, and a
- * closing "get listed" call-to-action. A component (not inline in the route) so it's
- * unit-testable — same pattern as TermsContent. `showcase` turns the tool list into something to
- * act on: rendered status lines that do the same jobs, and a compared tool's card opening its
- * alternatives page before its repo.
+ * The /resources page body: every way to customize Claude Code first, then the curated list from
+ * src/resources/data.ts as cards by section, each with its intro line where one earns a place, and
+ * a closing "get listed" call-to-action. A component (not inline in the route) so it's unit-testable,
+ * the same pattern as TermsContent. `showcase` turns the status line tools into something to act on:
+ * rendered status lines that do the same jobs, and a compared tool's card opening its alternatives
+ * page before its repo. `origin` is the site's, for the statuslin.es marketplace command.
  */
 export function ResourcesContent({
   signedIn,
   showcase,
+  origin,
 }: {
   signedIn: boolean
   showcase: ResourcesShowcase
+  origin: string
 }) {
   return (
     <Stack gap={6}>
-      <Heading level={1}>Claude Code status line tools, mods & resources</Heading>
+      <Heading level={1}>Claude Code customization tools & resources</Heading>
 
-      <Stack gap={3}>
-        <Heading level={2}>Five ways to customize Claude Code</Heading>
-        <Text muted>
-          Run{' '}
-          <Text inline mono>
-            /statusline
-          </Text>{' '}
-          in Claude Code and describe what you want. It writes the script and settings for you.
-          Start here if you have no status line yet.
-        </Text>
-        <Text muted>
-          Install a tool from the list below for a setup screen, themes or widgets without keeping a
-          script yourself. Start with ccstatusline or claude-powerline. Compare{' '}
-          <TextLink to="/compare/$pair" params={{ pair: 'ccstatusline-vs-claude-powerline' }}>
-            ccstatusline vs claude-powerline
-          </TextLink>
-          ,{' '}
-          <TextLink to="/alternatives/$tool" params={{ tool: 'ccstatusline' }}>
-            ccstatusline alternatives
-          </TextLink>{' '}
-          or{' '}
-          <TextLink to="/alternatives/$tool" params={{ tool: 'claude-powerline' }}>
-            claude-powerline alternatives
-          </TextLink>
-          .
-        </Text>
-        <Text muted>
-          Copy a reviewed status line from <TextLink to="/">the gallery</TextLink> after seeing its
-          real output. Try the <TextLink to="/status-lines/best">most-installed</TextLink>,{' '}
-          <TextLink to="/c/$slug" params={{ slug: 'powerline-dracula-6936b97c' }}>
-            Powerline Dracula
-          </TextLink>{' '}
-          or{' '}
-          <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
-            status lines that show token usage
-          </TextLink>
-          .{' '}
-          <TextLink to="/c/$slug" params={{ slug: 'quota-fallback-2a730aa6' }}>
-            Quota Fallback
-          </TextLink>{' '}
-          is the reviewed copy of ohugonnot/claude-code-statusline.
-        </Text>
-        <Text muted>
-          Install a mod to change more than the status line: a band above the prompt, a pane, or a
-          new slash command. Mods work in Claude Desktop too. Start with{' '}
-          <TextLink to="/mods">the most-installed mods</TextLink>.
-        </Text>
-        <Text muted>
-          Write your own status line to control every field. The{' '}
-          <TextLink to="/guide">guide to writing one</TextLink> walks through the JSON Claude Code
-          sends, with a script our tests run on every pull request.
-        </Text>
-      </Stack>
+      <CustomizationOverview />
 
       {RESOURCE_SECTIONS.map((section) => (
         <Fragment key={section.key}>
           <Stack gap={3}>
             <Heading level={2}>{section.title}</Heading>
+            <SectionIntro sectionKey={section.key} origin={origin} />
             <Grid>
               {section.resources.map((r) => (
                 <ResourceCard key={r.url} resource={r} tool={showcase.alternatives[r.url]} />
