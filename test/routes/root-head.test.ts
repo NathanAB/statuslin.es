@@ -5,7 +5,7 @@ import { Route as RootRoute } from '@/routes/__root'
 
 describe('root head', () => {
   it('offers a square PNG favicon, which Google Search can use, next to the SVG', async () => {
-    const head = await RootRoute.options.head?.({} as never)
+    const head = await RootRoute.options.head?.({ match: {} } as never)
 
     expect(head?.links).toEqual(
       expect.arrayContaining([

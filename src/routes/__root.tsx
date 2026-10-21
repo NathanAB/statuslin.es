@@ -3,6 +3,7 @@ import { PostHogProvider } from '@posthog/react'
 import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import { getAnalyticsToken } from '@/lib/analytics-config'
 import { getSession } from '@/lib/auth-functions'
+import { NOT_FOUND_TITLE } from '@/lib/page-title'
 import { tagAutomatedBrowser } from '@/lib/posthog-bot-tag'
 import { connectPostHogClientErrors } from '@/lib/posthog-client-errors'
 import { dropExtensionExceptions } from '@/lib/posthog-exception-filter'
@@ -11,7 +12,10 @@ import { identifyPostHogUser } from '@/lib/posthog-identity'
 import { BRAND_ICON_PATH, SITE_NAME } from '@/lib/site'
 import { rootSocialMeta } from '@/og/meta'
 import interfaceFontUrl from '@/styles/fonts/hanken-grotesk-latin-wght-normal.woff2?url'
+import { Stack } from '@/ui/layout'
+import { PageShell } from '@/ui/shell'
 import { Toaster } from '@/ui/sonner'
+import { Heading, TextLink } from '@/ui/text'
 
 export const Route = createRootRoute({
   // Load the session and the analytics token together. The token is null everywhere but prod, which
@@ -20,11 +24,12 @@ export const Route = createRootRoute({
     const [user, posthogToken] = await Promise.all([getSession(), getAnalyticsToken()])
     return { user, posthogToken }
   },
-  head: () => ({
+  head: ({ match }) => ({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: SITE_NAME },
+      // `_notFound` marks the root as the boundary for a path no route matches.
+      { title: match._notFound ? NOT_FOUND_TITLE : SITE_NAME },
       ...rootSocialMeta(),
     ],
     links: [
@@ -45,6 +50,7 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootDocument,
   component: RootComponent,
+  notFoundComponent: PageNotFound,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -58,6 +64,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function PageNotFound() {
+  return (
+    <PageShell user={null}>
+      <Stack gap={4}>
+        <Heading level={1}>Page not found</Heading>
+        <TextLink to="/">Back to gallery</TextLink>
+      </Stack>
+    </PageShell>
   )
 }
 
