@@ -73,7 +73,7 @@ describe('scenario feed plugin', () => {
     const { $ } = fakeEngine('pixel-cat')
     const n = next('pixel-cat')
 
-    expect(await call('session.model', $, {}, n)).toEqual({ value: 'Opus 4.8' })
+    expect(await call('session.model', $, {}, n)).toEqual({ value: 'Opus 5.5' })
     expect(n).not.toHaveBeenCalled()
   })
 

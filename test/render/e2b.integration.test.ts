@@ -20,7 +20,7 @@ run('E2BSandboxRunner (integration, needs E2B_API_KEY)', () => {
     if (!scenario) throw new Error('clean-main scenario missing')
     const res = await new E2BSandboxRunner().render({ script, interpreter: 'bash', scenario })
     expect(res.exitCode).toBe(0)
-    expect(res.stdout).toContain('Opus 4.8')
+    expect(res.stdout).toContain('Opus 5.5')
   }, 60_000)
 
   it('renders a jq + bc statusline faithfully (custom template bakes both in)', async () => {
@@ -41,7 +41,7 @@ run('E2BSandboxRunner (integration, needs E2B_API_KEY)', () => {
     if (!scenario) throw new Error('near-full scenario missing')
     const res = await new E2BSandboxRunner().render({ script, interpreter: 'bash', scenario })
     expect(res.exitCode).toBe(0)
-    expect(res.stdout).toContain('Opus 4.8') // jq read the model
+    expect(res.stdout).toContain('Opus 5.5') // jq read the model
     expect(res.stdout).toContain('91% used') // jq read the context %
     expect(res.stdout).toContain('9% left') // bc computed 100 - 91
     expect(res.stdout).toContain('$4.12') // jq read the cost

@@ -42,7 +42,7 @@ describe('feedFile', () => {
       ],
       cost: { usd: 0.41 },
     })
-    expect(answers['session.model']).toBe('Opus 4.8')
+    expect(answers['session.model']).toBe('Opus 5.5')
     expect(answers['session.cwd']).toBe('/home/user/app')
     expect(answers['session.root']).toBe('/home/user/app')
     expect(answers['session.id']).toBe('b8e1c0d2-4a6f-4e2a-9c1b-3f5d7a9e2c10')
@@ -52,7 +52,7 @@ describe('feedFile', () => {
       internal: false,
       name: null,
     })
-    expect(answers['session.version']).toEqual({ version: '2.1.155', base: '2.1.155' })
+    expect(answers['session.version']).toEqual({ version: '2.1.307', base: '2.1.307' })
   })
 
   it('follows the scenario when it changes', () => {
