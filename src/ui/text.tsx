@@ -10,7 +10,7 @@ import { prefersReducedMotion } from '@/lib/reduced-motion'
  * the same level can never render differently on two pages, and headings are never
  * monospace. Level 3 is the card / section-card title. `size="compact"` is the quiet
  * title for a page whose wordmark already carries the visual weight. `size="display"` is the home
- * hero's title.
+ * hero's title; `size="section"` a redesigned page's section title, a step under it.
  */
 const HEADING_CLASS = {
   1: 'text-2xl font-semibold text-foreground',
@@ -20,6 +20,8 @@ const HEADING_CLASS = {
 const COMPACT_HEADING_CLASS = 'text-lg font-medium leading-snug text-foreground'
 // The home hero's page title, on the redesign's largest size.
 const DISPLAY_HEADING_CLASS = 'text-balance font-semibold text-display text-foreground'
+// A redesigned page's section title (/resources), on the redesign's heading size.
+const SECTION_HEADING_CLASS = 'text-balance font-semibold text-foreground text-heading'
 
 export function Heading({
   level,
@@ -28,7 +30,7 @@ export function Heading({
   children,
 }: {
   level: 1 | 2 | 3
-  size?: 'default' | 'compact' | 'display'
+  size?: 'default' | 'compact' | 'display' | 'section'
   id?: string | undefined
   children: React.ReactNode
 }) {
@@ -37,7 +39,9 @@ export function Heading({
       ? COMPACT_HEADING_CLASS
       : size === 'display'
         ? DISPLAY_HEADING_CLASS
-        : HEADING_CLASS[level]
+        : size === 'section'
+          ? SECTION_HEADING_CLASS
+          : HEADING_CLASS[level]
   if (level === 1)
     return (
       <h1 id={id} className={className}>
@@ -59,7 +63,7 @@ export function Heading({
 
 /**
  * Every piece of non-heading text goes through here, so size, color, and font live in
- * one place. `size` is a closed scale; `muted` dims the color; `mono` is for code/data
+ * one place. `size` is a closed scale (`lead` is the redesign's statement size); `muted` dims the color; `mono` is for code/data
  * values (slugs, hashes); `inheritColor` keeps the color around it (code inside a caution fact);
  * and `inline` renders a span instead of a paragraph.
  */
@@ -74,7 +78,7 @@ export function Text({
   children,
 }: {
   muted?: boolean
-  size?: 'base' | 'sm' | 'xs'
+  size?: 'base' | 'sm' | 'xs' | 'lead'
   mono?: boolean
   inheritColor?: boolean
   inline?: boolean
@@ -89,6 +93,7 @@ export function Text({
     !inheritColor && (muted ? 'text-muted-foreground' : 'text-foreground'),
     size === 'sm' && 'text-sm',
     size === 'xs' && 'text-xs',
+    size === 'lead' && 'text-lead',
     mono && 'font-mono',
     center && 'self-center text-center',
     breakLong && 'wrap-anywhere min-w-0',

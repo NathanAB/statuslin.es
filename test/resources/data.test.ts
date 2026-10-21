@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CUSTOMIZATION_SURFACES, RESOURCE_SECTIONS } from '@/resources/data'
+import { RESOURCE_SECTIONS } from '@/resources/data'
+import { CUSTOMIZATION_SURFACES } from '@/resources/surfaces'
 
 const ALL = RESOURCE_SECTIONS.flatMap((s) => s.resources)
 

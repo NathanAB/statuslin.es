@@ -65,7 +65,7 @@ describe('ResourcesContent', () => {
         name: 'Claude Code customization tools & resources',
       }),
     ).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 2, name: 'What you can customize' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 2, name: 'Pick what to customize' })).toBeTruthy()
     for (const section of RESOURCE_SECTIONS) {
       expect(screen.getByRole('heading', { level: 2, name: section.title })).toBeTruthy()
     }
@@ -114,36 +114,17 @@ describe('ResourcesContent', () => {
     for (const href of ['/mods', '/status-lines/best', '/guide', '/submit']) {
       expect(container.querySelector(`a[href="${href}"]`)).not.toBeNull()
     }
-    const getListed = screen.getByRole('heading', { level: 2, name: /get listed/i })
-    expect(getListed.parentElement?.textContent).toMatch(/status line or mod/)
+    expect(screen.getByRole('heading', { level: 2, name: /get listed/i })).toBeTruthy()
+    expect(screen.getByText(/^Made a status line or mod\?/)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Submit' })).toBeTruthy()
   })
 
-  // One line per way to customize Claude Code, each linking Anthropic's docs, and where the site has
-  // some, a way to browse them.
-  it('maps every way to customize Claude Code, each with its official docs, without FAQPage', () => {
+  // The page opens on a Claude Code session to pick a way to customize from (its own tests cover it).
+  it('opens on the session to pick a way to customize from, without FAQPage', () => {
     const { container } = render(
       <ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />,
     )
-    const map = screen.getByRole('heading', { level: 2, name: 'What you can customize' })
-      .parentElement as HTMLElement
-    expect([...map.querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual([
-      'Mods',
-      'Status line',
-      'Themes',
-      'Spinner verbs',
-      'Output styles',
-      'Hooks',
-      'Skills',
-      'Subagents',
-    ])
-    expect(within(map).getByRole('link', { name: 'Docs for mods' }).getAttribute('href')).toBe(
-      'https://code.claude.com/docs/en/plugins/mods/overview',
-    )
-    expect(within(map).getByRole('link', { name: 'Browse mods' }).getAttribute('href')).toBe(
-      '/mods',
-    )
-    expect(within(map).getAllByRole('link', { name: /^Docs for / })).toHaveLength(8)
+    expect(screen.getByRole('radiogroup', { name: 'Pick what to customize' })).toBeTruthy()
     expect(container.innerHTML).not.toMatch(/FAQPage/)
   })
 
@@ -213,9 +194,9 @@ describe('ResourcesContent', () => {
       'usage-bar',
       'powerline-cost',
     ])
-    expect(previews.parentElement?.textContent).toMatch(
-      /^Status lines that do the same jobStatus lines from the gallery/,
-    )
+    expect(
+      screen.getByText(/^Status lines from the gallery that cover at least three/),
+    ).toBeTruthy()
   })
 
   it('leaves the previews out when no status line matches', () => {

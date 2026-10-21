@@ -44,7 +44,7 @@ export const Route = createFileRoute('/resources')({
 function Resources() {
   const { user, showcase, origin } = Route.useLoaderData()
   return (
-    <PageShell user={user}>
+    <PageShell user={user} fullBleed>
       <ResourcesContent signedIn={!!user} showcase={showcase} origin={origin} />
     </PageShell>
   )

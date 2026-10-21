@@ -100,6 +100,26 @@ export function Grid({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * A section on a 12-column grid: `start` over the first five columns (a title, a statement, an
+ * action), `end` over the last seven (the list it introduces). Stacked below 900px.
+ */
+export function Split({ start, end }: { start: React.ReactNode; end: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-12 gap-x-6 gap-y-8">
+      <div className="col-span-12 flex min-w-0 flex-col gap-5 min-[56.25rem]:col-span-5">
+        {start}
+      </div>
+      <div className="col-span-12 min-w-0 min-[56.25rem]:col-span-7">{end}</div>
+    </div>
+  )
+}
+
+/** Small groups side by side: two up from `sm`, four up from `xl`, each group its own column. */
+export function ColumnGrid({ children }: { children: React.ReactNode }) {
+  return <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 xl:grid-cols-4">{children}</div>
+}
+
+/**
  * THE escape hatch — a plain div that takes an arbitrary class string.
  * Every use is a design-system gap, not a convenience. Each call site MUST carry a
  * `// REASON:` comment on the preceding line (gate-enforced) explaining why no

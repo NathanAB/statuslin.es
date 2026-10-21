@@ -61,6 +61,10 @@
   --terminal-muted: #8f8d86;
   --terminal-rule: #3a3833;
   --terminal-turn: #2e2c28;
+  /* The same terminal in a light theme: /resources shows what picking a theme changes */
+  --terminal-light: #f3f1ea;
+  --terminal-light-foreground: #23211d;
+  --terminal-light-muted: #6f6c64;
 
   /* ── Relationships: by reference ONLY. Never restate a hex above. ── */
   --card-foreground: var(--foreground);
@@ -172,6 +176,9 @@
   --color-terminal-muted: var(--terminal-muted);
   --color-terminal-rule: var(--terminal-rule);
   --color-terminal-turn: var(--terminal-turn);
+  --color-terminal-light: var(--terminal-light);
+  --color-terminal-light-foreground: var(--terminal-light-foreground);
+  --color-terminal-light-muted: var(--terminal-light-muted);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);

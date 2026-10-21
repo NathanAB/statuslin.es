@@ -447,3 +447,14 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
     status line articles with no queries.
   - Not linked: galleries that compete with this site (claudecodemods.com, petdex.dev). No star
     counts on the page, since they go stale.
+- **/resources on the redesign's language.** It opens like the home hero, on `HeroLayout`: the title
+  at display size, one sentence, and a drawn Claude Code session (`CustomizeScreen`) with a place for
+  every way to customize it. Picking one lights its part (a mod's pane and band, the status line, a
+  hook's note) and dims the rest; Themes redraws the session light, and Spinner verbs swaps in a word
+  of your own. Under the picker, what the pick changes, a pill to browse ones here, and Anthropic's
+  docs. Then each section has its own composition: the marketplaces on a panel field beside our
+  marketplace command, the status line tools as text rows two up with the gallery previews under
+  them, the four small sections side by side, and Get listed. Rows replace the card grids
+  (`LinkRows`), body text is 19px and section titles use the redesign's heading size.
+  - Kept against the design meter: the title runs three lines at 390px (it is the search title), and
+    the page's pictures are interfaces (the session, the rendered status lines), not photographs.

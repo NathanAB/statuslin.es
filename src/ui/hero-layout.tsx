@@ -13,7 +13,8 @@ const RISE =
  * The home hero on a 12-column grid with two left edges: the title over the first eight columns
  * with its one sentence on the last four, then the demo (`stage`) under the title and its controls
  * (`picker`, then `actions`) under the sentence. Below 900px everything stacks, with the actions
- * moved above the picker so a phone's first screen holds the install button. On load they rise in,
+ * moved above the picker so a phone's first screen holds the install button; `pickerFirst` keeps the
+ * picker above them, where the actions only describe the pick (/resources). On load they rise in,
  * in that order.
  */
 export function HeroLayout({
@@ -22,6 +23,7 @@ export function HeroLayout({
   stage,
   picker,
   actions,
+  pickerFirst = false,
 }: {
   heading: string
   lead: string
@@ -30,6 +32,7 @@ export function HeroLayout({
   /** The install button and what to know about it. Under the picker on wide screens; on phones
    *  right under the demo, so the first screen holds the button. */
   actions: ReactNode
+  pickerFirst?: boolean
 }) {
   return (
     <div className="grid grid-cols-12 gap-x-6 gap-y-[clamp(1.75rem,3.4vw,3rem)]">
@@ -57,8 +60,20 @@ export function HeroLayout({
           'delay-[420ms]',
         )}
       >
-        <div className="order-2 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:order-1">{picker}</div>
-        <div className="order-1 flex min-w-0 flex-col gap-3.5 min-[56.25rem]:order-2">
+        <div
+          className={cn(
+            'flex min-w-0 flex-col gap-3.5',
+            !pickerFirst && 'order-2 min-[56.25rem]:order-1',
+          )}
+        >
+          {picker}
+        </div>
+        <div
+          className={cn(
+            'flex min-w-0 flex-col gap-3.5',
+            !pickerFirst && 'order-1 min-[56.25rem]:order-2',
+          )}
+        >
           {actions}
         </div>
       </div>
