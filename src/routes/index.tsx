@@ -33,16 +33,17 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
   // sort, page, tags, kind and the search q are optional in the URL (defaults: 'trending', page 1,
-  // no tags, all kinds, no search), so Links to "/" can omit them. q is always returned, undefined
-  // when it isn't a search: the router lays this result over the raw URL search, so an omitted key
-  // would let an array or object through.
+  // no tags, all kinds, no search), so Links to "/" can omit them. A default comes back as an
+  // explicit undefined: the router spreads this result over the raw URL search, so an omitted key
+  // would let a bad value through (`?kind=foo`, an array for q). With the key set, the server
+  // redirects to the URL without it.
   validateSearch: (
     search: Record<string, unknown>,
   ): {
-    sort?: GallerySort
-    page?: number
-    tags?: string
-    kind?: GalleryFilter
+    sort?: GallerySort | undefined
+    page?: number | undefined
+    tags?: string | undefined
+    kind?: GalleryFilter | undefined
     q?: string | undefined
   } => {
     const sort = coerceSort(search.sort)
@@ -51,10 +52,10 @@ export const Route = createFileRoute('/')({
     const kind = coerceGalleryFilter(search.kind)
     const q = normalizeSearchQuery(search.q)
     return {
-      ...(sort === 'trending' ? {} : { sort }),
-      ...(page === 1 ? {} : { page }),
-      ...(tags === '' ? {} : { tags }),
-      ...(kind === 'all' ? {} : { kind }),
+      sort: sort === 'trending' ? undefined : sort,
+      page: page === 1 ? undefined : page,
+      tags: tags === '' ? undefined : tags,
+      kind: kind === 'all' ? undefined : kind,
       q,
     }
   },

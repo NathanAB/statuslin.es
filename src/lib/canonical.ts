@@ -13,9 +13,9 @@ export function canonicalLink(path: string): { rel: string; href: string } {
 
 /** Search state after the home route's validator has removed default values. */
 export interface HomeCanonicalSearch {
-  sort?: string
-  tags?: string
-  kind?: string
+  sort?: string | undefined
+  tags?: string | undefined
+  kind?: string | undefined
   /** The gallery search: noindex, and its page gets no canonical link. */
   q?: string | undefined
 }
