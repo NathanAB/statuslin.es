@@ -26,7 +26,7 @@ function renderHero() {
   render(
     <HeroLayout
       heading="Claude Code status lines and mods"
-      lead="A status line is the row under your prompt."
+      lead={['A status line is the row under your prompt.']}
       stage={<div data-testid="stage" />}
       picker={
         <>

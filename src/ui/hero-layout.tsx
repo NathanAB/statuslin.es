@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { Heading } from '@/ui/text'
 
@@ -10,8 +10,8 @@ const RISE =
   'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 
 /**
- * The home hero on a 12-column grid: the title across the full width with its one sentence right
- * under it over the first eight columns, then the demo (`stage`) under them and its controls (`picker`, then `actions`) in
+ * The home hero on a 12-column grid: the title across the full width with its sentences right under
+ * it, a line each, then the demo (`stage`) under them and its controls (`picker`, then `actions`) in
  * the last four columns beside it. Below 900px everything stacks, with the actions moved above the
  * picker so a phone's first screen holds the install button. On load they rise in, in that order.
  */
@@ -23,7 +23,8 @@ export function HeroLayout({
   actions,
 }: {
   heading: string
-  lead: string
+  /** The sentences under the title, each on a line of its own where it fits. */
+  lead: readonly string[]
   stage: ReactNode
   picker: ReactNode
   /** The install button and what to know about it. Under the picker on wide screens; on phones
@@ -39,13 +40,14 @@ export function HeroLayout({
           </Heading>
         </div>
         <p
-          className={cn(
-            'col-span-12 text-pretty text-foreground text-lead min-[56.25rem]:col-span-8',
-            RISE,
-            'delay-[240ms]',
-          )}
+          className={cn('col-span-12 text-pretty text-foreground text-lead', RISE, 'delay-[240ms]')}
         >
-          {lead}
+          {lead.map((line, i) => (
+            <Fragment key={line}>
+              {i > 0 ? ' ' : null}
+              <span className="block">{line}</span>
+            </Fragment>
+          ))}
         </p>
       </div>
       <div className={cn('col-span-12 min-w-0 min-[56.25rem]:col-span-8', RISE, 'delay-[330ms]')}>

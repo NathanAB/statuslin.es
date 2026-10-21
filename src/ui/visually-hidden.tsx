@@ -8,12 +8,19 @@ import type { ReactNode } from 'react'
  */
 export function VisuallyHidden({
   as: Tag = 'span',
+  id,
   children,
 }: {
   as?: 'span' | 'h2'
+  /** For an element named by this text (`aria-labelledby`), such as a list with no visible title. */
+  id?: string
   children: ReactNode
 }) {
-  return <Tag className="sr-only">{children}</Tag>
+  return (
+    <Tag id={id} className="sr-only">
+      {children}
+    </Tag>
+  )
 }
 
 /**

@@ -10,15 +10,17 @@ import { ChoiceGroup } from '@/ui/choice-group'
 import { HeroLayout } from '@/ui/hero-layout'
 import { installsLabel } from '@/ui/install-count'
 import { SessionStage } from '@/ui/session-stage'
-import { Heading, Text } from '@/ui/text'
-import { LiveMessage } from '@/ui/visually-hidden'
+import { Text } from '@/ui/text'
+import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 
 /**
- * The hero's one sentence beside the title. It names the three jobs people install and search for
+ * The hero's two sentences under the title, a line each. It names the three jobs people install and search for
  * most: usage limits, context and git (production installs and Search Console, 2026-10-21).
  */
-export const HERO_LEAD =
-  'Track your usage limits, context window, git branch and more. Pick a mod and see it in action.'
+export const HERO_LEAD = [
+  'Track your usage limits, context window, git branch and more.',
+  'Pick a mod and see it in action.',
+] as const
 
 const APPS: readonly { value: HeroApp; label: string; icon: LucideIcon }[] = [
   { value: 'cli', label: 'Terminal', icon: SquareTerminal },
@@ -110,9 +112,8 @@ export function HomeHero({ heading, items }: { heading: string; items: HeroItem[
       }
       picker={
         <>
-          <Heading level={2} size="compact" id={pickerId}>
-            Pick a mod
-          </Heading>
+          {/* The sentence above already says "Pick a mod", so the list's name is for screen readers. */}
+          <VisuallyHidden id={pickerId}>Pick a mod</VisuallyHidden>
           <ChoiceGroup
             look="list"
             rise

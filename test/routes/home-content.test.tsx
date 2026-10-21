@@ -153,9 +153,15 @@ describe('home content', () => {
     )
     expect(first?.textContent).toContain('panel clean')
     // Read in order: the title, then its sentence right under it, then the demo.
-    expect(first?.querySelector('h1')?.parentElement?.nextElementSibling?.textContent).toBe(
+    const lead = first?.querySelector('h1')?.parentElement?.nextElementSibling
+    expect(lead?.textContent).toBe(
       'Track your usage limits, context window, git branch and more. Pick a mod and see it in action.',
     )
+    // One line per sentence: what mods do, then the invitation.
+    expect([...(lead?.children ?? [])].map((line) => line.textContent)).toEqual([
+      'Track your usage limits, context window, git branch and more.',
+      'Pick a mod and see it in action.',
+    ])
     expect(first?.textContent).not.toMatch(/32 status lines/)
     expect(screen.queryByText('Browse by feature')).toBeNull()
   })
@@ -210,8 +216,11 @@ describe('home sections', () => {
     renderHome()
 
     expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
-      'Pick a mod',
       'Status lines and mods',
     ])
+    // The sentence already says "Pick a mod", so the list keeps the words only as its name for
+    // screen readers, with no heading on screen.
+    expect(screen.queryByRole('heading', { name: 'Pick a mod' })).toBeNull()
+    expect(screen.getByRole('radiogroup', { name: 'Pick a mod' })).toBeTruthy()
   })
 })
