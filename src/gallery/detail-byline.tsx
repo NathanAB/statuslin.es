@@ -42,18 +42,13 @@ function ByAuthor({ author }: { author: ConfigAuthor }) {
   )
 }
 
-/** "by @author · 224 installs": the hero's line under a name. */
-export function AuthorByline({ author, after }: { author: ConfigAuthor | null; after: string }) {
-  const fact = (
-    <Text muted size="sm">
-      {after}
-    </Text>
-  )
-  if (!author) return fact
+/** "by @author": the hero's line under its install button; nothing without an author. The list
+ *  beside it already shows the installs. */
+export function AuthorByline({ author }: { author: ConfigAuthor | null }) {
+  if (!author) return null
   return (
     <Row gap={3} wrap>
       <ByAuthor author={author} />
-      <LaterFact>{fact}</LaterFact>
     </Row>
   )
 }

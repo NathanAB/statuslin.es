@@ -133,11 +133,7 @@ export function HomeHero({ heading, items }: { heading: string; items: HeroItem[
       }
       actions={
         <>
-          <HeroItemActions
-            item={item}
-            count={copies.count}
-            onCopied={() => copies.record('prompt')}
-          />
+          <HeroItemActions item={item} onCopied={() => copies.record('prompt')} />
           <Text muted size="sm">
             Every mod here is reviewed and rendered in a sandbox before it's listed.
           </Text>

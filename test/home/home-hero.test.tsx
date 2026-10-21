@@ -194,7 +194,8 @@ describe('HomeHero', () => {
     expect(screen.getByRole('link', { name: '@pace-dev' }).getAttribute('href')).toBe(
       'https://github.com/pace-dev',
     )
-    expect(byline().textContent).toContain('94 installs')
+    // The list right above already shows the installs, so the byline names only the author.
+    expect(byline().textContent).not.toMatch(/installs/)
   })
 
   // A mod draws where its footprint says: Deck's band sits above the prompt, as in Claude Code.
@@ -222,7 +223,11 @@ describe('HomeHero', () => {
       expect(writeText).toHaveBeenCalledWith(modInstallPrompt(window.location.origin, 'deck')),
     )
     expect(recordModCopyFn).toHaveBeenCalled()
-    await waitFor(() => expect(byline().textContent).toContain('121 installs'))
+    await waitFor(() =>
+      expect(within(picker()).getByRole('radio', { name: /^Deck/ }).textContent).toBe(
+        'DeckMod · 121 installs',
+      ),
+    )
   })
 
   it('draws a mod that hints under the prompt in the status line row', () => {
@@ -348,7 +353,6 @@ describe('HomeHero', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Install Dreambase Panel' }))
 
-    expect(byline().textContent).toContain('224 installs')
     expect(within(picker()).getByRole('radio', { name: /^Dreambase Panel/ }).textContent).toBe(
       'Dreambase PanelStatus line · 224 installs',
     )

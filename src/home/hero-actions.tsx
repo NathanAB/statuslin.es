@@ -13,7 +13,6 @@ import { modReachSentence } from '@/mods/mod-install-facts'
 import { CopyButton } from '@/ui/copy-button'
 import { FactSentence } from '@/ui/fact-sentence'
 import { HeroActions } from '@/ui/hero-layout'
-import { installsLabel } from '@/ui/install-count'
 import { TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
@@ -21,15 +20,13 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 
 /**
  * Under the hero's picker for a status line: the install button (the same prompt as its page) and
- * its page, its author and installs, then what the script can reach.
+ * its page, its author, then what the script can reach.
  */
 export function StatusLineHeroActions({
   line,
-  count,
   onCopied,
 }: {
   line: HeroLine
-  count: number
   onCopied: () => void
 }) {
   return (
@@ -40,25 +37,17 @@ export function StatusLineHeroActions({
           Open page<VisuallyHidden>: {line.title}</VisuallyHidden>
         </TextLink>
       </HeroActions>
-      <AuthorByline author={line.author} after={installsLabel(count)} />
+      <AuthorByline author={line.author} />
       <FactSentence subject={line.title} fact={reachSentence(line)} />
     </>
   )
 }
 
 /**
- * The same for a mod: its install prompt (as on its page), its page, the repository owner and
- * installs, then what its hooks can do, from its footprint.
+ * The same for a mod: its install prompt (as on its page), its page, the repository owner, then
+ * what its hooks can do, from its footprint.
  */
-export function ModHeroActions({
-  mod,
-  count,
-  onCopied,
-}: {
-  mod: HeroMod
-  count: number
-  onCopied: () => void
-}) {
+export function ModHeroActions({ mod, onCopied }: { mod: HeroMod; onCopied: () => void }) {
   const fact = modReachSentence(mod.footprint)
   return (
     <>
@@ -78,7 +67,7 @@ export function ModHeroActions({
           Open page<VisuallyHidden>: {mod.title}</VisuallyHidden>
         </TextLink>
       </HeroActions>
-      <AuthorByline author={modAuthor(mod.authorGithub)} after={installsLabel(count)} />
+      <AuthorByline author={modAuthor(mod.authorGithub)} />
       {fact ? <FactSentence subject={mod.title} fact={fact} /> : null}
     </>
   )
@@ -86,18 +75,10 @@ export function ModHeroActions({
 
 /** The actions for whichever kind is picked. A mod's start fresh on each pick, so "Copied" never
  *  carries over to the next one. */
-export function HeroItemActions({
-  item,
-  count,
-  onCopied,
-}: {
-  item: HeroItem
-  count: number
-  onCopied: () => void
-}) {
+export function HeroItemActions({ item, onCopied }: { item: HeroItem; onCopied: () => void }) {
   return item.kind === 'mod' ? (
-    <ModHeroActions key={item.mod.slug} mod={item.mod} count={count} onCopied={onCopied} />
+    <ModHeroActions key={item.mod.slug} mod={item.mod} onCopied={onCopied} />
   ) : (
-    <StatusLineHeroActions line={item.line} count={count} onCopied={onCopied} />
+    <StatusLineHeroActions line={item.line} onCopied={onCopied} />
   )
 }
