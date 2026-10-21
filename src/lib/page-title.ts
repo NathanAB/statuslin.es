@@ -135,7 +135,7 @@ export const GUIDE_LINK_LABEL = 'Write a status line'
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 
 /** `modified` is the day a change to the page's text went live; bump it with every such change. */
-export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-18' } as const
+export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-21' } as const
 
 /** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
 export const GUIDE_DESCRIPTION =
@@ -146,7 +146,7 @@ export const DESKTOP_GUIDE_PATH = '/guide/claude-desktop'
 /** /guide/claude-desktop title base — shared by the <title> tag and its JSON-LD headline. */
 export const DESKTOP_GUIDE_TITLE_BASE = 'Claude Code Status Line Not Showing in Claude Desktop'
 
-export const DESKTOP_GUIDE_DATES = { published: '2026-10-02', modified: '2026-10-18' } as const
+export const DESKTOP_GUIDE_DATES = { published: '2026-10-02', modified: '2026-10-21' } as const
 
 /** /guide/claude-desktop meta description — shared by the description tag, OG, and JSON-LD. */
 export const DESKTOP_GUIDE_DESCRIPTION =
@@ -162,7 +162,7 @@ export const STATUS_LINES_VS_MODS_GUIDE_TITLE = 'Claude Code Status Lines vs Mod
 
 export const STATUS_LINES_VS_MODS_GUIDE_DATES = {
   published: '2026-10-13',
-  modified: '2026-10-15',
+  modified: '2026-10-21',
 } as const
 
 /** /guide/status-lines-vs-mods meta description — shared by the description tag, OG, and JSON-LD. */
@@ -177,7 +177,7 @@ export const MOD_SAFETY_GUIDE_PATH = '/guide/are-claude-code-mods-safe'
  */
 export const MOD_SAFETY_GUIDE_TITLE = 'Are Claude Code Mods Safe? What a Mod Can Touch'
 
-export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026-10-15' } as const
+export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026-10-21' } as const
 
 /** /guide/are-claude-code-mods-safe meta description — the description tag, OG, and JSON-LD. */
 export const MOD_SAFETY_GUIDE_DESCRIPTION =
@@ -191,7 +191,7 @@ export const NOT_SHOWING_GUIDE_PATH = '/guide/status-line-not-showing'
  */
 export const NOT_SHOWING_GUIDE_TITLE = 'Claude Code Status Line Not Showing? How to Fix It'
 
-export const NOT_SHOWING_GUIDE_DATES = { published: '2026-10-18', modified: '2026-10-18' } as const
+export const NOT_SHOWING_GUIDE_DATES = { published: '2026-10-18', modified: '2026-10-21' } as const
 
 /** /guide/status-line-not-showing meta description — the description tag, OG, and JSON-LD. */
 export const NOT_SHOWING_GUIDE_DESCRIPTION =
@@ -205,11 +205,11 @@ export const BUDDY_GUIDE_PATH = '/guide/claude-code-buddy'
  */
 export const BUDDY_GUIDE_TITLE = 'Claude Code Buddy Removed? Pet Mods That Replace It'
 
-export const BUDDY_GUIDE_DATES = { published: '2026-10-17', modified: '2026-10-18' } as const
+export const BUDDY_GUIDE_DATES = { published: '2026-10-17', modified: '2026-10-21' } as const
 
 /** /guide/claude-code-buddy meta description — the description tag, OG, and JSON-LD. */
 export const BUDDY_GUIDE_DESCRIPTION =
-  'Claude Code 2.1.97 removed /buddy. These community pet mods put a pixel companion back in your session, each with a real preview and what it can touch.'
+  "Users report Claude Code's /buddy gone since 2.1.97. These community pet mods put a pixel companion back, each with a real preview and what it can touch."
 
 /** The live /guide subpages and their last edits. Every other /guide/* path redirects to /guide. */
 export const GUIDE_SUBPAGES: ReadonlyArray<{ path: string; modified: string }> = [

@@ -146,7 +146,7 @@ describe('/guide/status-line-not-showing page', () => {
       .map((script) => JSON.parse(script.children) as Record<string, unknown>)
       .find((node) => node['@type'] === 'TechArticle')
 
-    expect(NOT_SHOWING_GUIDE_DATES).toEqual({ published: '2026-10-18', modified: '2026-10-18' })
+    expect(NOT_SHOWING_GUIDE_DATES).toEqual({ published: '2026-10-18', modified: '2026-10-21' })
     expect(article).toMatchObject({
       datePublished: NOT_SHOWING_GUIDE_DATES.published,
       dateModified: NOT_SHOWING_GUIDE_DATES.modified,

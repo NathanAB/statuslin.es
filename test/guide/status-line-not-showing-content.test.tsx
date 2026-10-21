@@ -84,6 +84,8 @@ describe('StatusLineNotShowingContent', () => {
       'Git Bash',
       'disableAllHooks',
       'allowManagedHooksOnly',
+      'off entirely',
+      '--safe-mode',
       'claude --debug',
       'Ask Claude',
     ]

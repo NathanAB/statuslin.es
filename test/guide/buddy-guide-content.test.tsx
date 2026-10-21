@@ -55,7 +55,9 @@ const PIXIPET = card('pixipet', 'Pixipet')
 const CAT = card('pixel-cat', 'Pixel Cat')
 
 describe('BuddyGuideContent', () => {
-  it('says buddy was removed, links the Bring Back Buddy issue, and that these are new pets', () => {
+  // The changelog records /buddy arriving (2.1.89) but not leaving, so the page reports what users
+  // say rather than stating a removal as fact.
+  it('says users report buddy gone, links the Bring Back Buddy issue, and that these are new pets', () => {
     render(<BuddyGuideContent cards={[PIXIPET]} clashes={[]} />)
 
     expect(screen.getByRole('heading', { level: 1, name: /buddy/i })).toBeTruthy()
@@ -64,7 +66,8 @@ describe('BuddyGuideContent', () => {
     }) as HTMLAnchorElement
     expect(issue.href).toBe(ISSUE_URL)
     const text = document.body.textContent ?? ''
-    expect(text).toContain('Claude Code 2.1.97 removed /buddy in April 2026')
+    expect(text).toContain('Users report it gone since 2.1.97')
+    expect(text).not.toMatch(/2\.1\.97 removed/)
     expect(text).toContain("They're new pets, not your old buddy.")
     expect(text).toContain(`Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`)
     expect(

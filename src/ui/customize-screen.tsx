@@ -53,9 +53,20 @@ function Part({
  * subagent at work, a hook's note under a tool call, Claude's reply, the spinner, a mod's pane beside
  * the conversation and its band above the prompt, and the status line under it. `focus` lights the
  * part a pick changes; `themes` shows the same session in a light theme; `spinner-verbs` swaps the
- * spinner's word for one of your own. One picture to a screen reader, named by `label`.
+ * spinner's word for one of your own. Its rows follow Claude Code's docs (the Agent tool, a hook's
+ * error notice, no "esc to interrupt" once a status line is set); `caption` says which parts are
+ * examples. One picture to a screen reader, named by `label`.
  */
-export function CustomizeScreen({ focus, label }: { focus: CustomizeFocus; label: string }) {
+export function CustomizeScreen({
+  focus,
+  label,
+  caption,
+}: {
+  focus: CustomizeFocus
+  label: string
+  /** A line under the screen saying which parts are examples rather than Claude Code's own. */
+  caption: string
+}) {
   const light = focus === 'themes'
   const muted = light ? 'text-terminal-light-muted' : 'text-terminal-muted'
   const quiet = cn('transition-opacity duration-500', !light && 'opacity-50')
@@ -91,7 +102,7 @@ export function CustomizeScreen({ focus, label }: { focus: CustomizeFocus; label
               {mark('●')} Skill(test-fixing)
             </Part>
             <Part part="subagents" focus={focus}>
-              {mark('●')} Task(Find every caller of parseDate){'\n'}
+              {mark('●')} Agent(Find every caller of parseDate){'\n'}
               <span className={muted}>
                 {'  '}
                 {mark('⎿')}
@@ -99,11 +110,11 @@ export function CustomizeScreen({ focus, label }: { focus: CustomizeFocus; label
               </span>
             </Part>
             <Part part="hooks" focus={focus}>
-              {mark('●')} Bash(bun run test utils){'\n'}
+              {mark('●')} Bash(rm -rf coverage){'\n'}
               <span className={muted}>
                 {'  '}
                 {mark('⎿')}
-                {'  PreToolUse hook: allowed'}
+                {'  PreToolUse:Bash hook error: Blocked'}
               </span>
             </Part>
             <Part part="output-styles" focus={focus}>
@@ -113,7 +124,7 @@ export function CustomizeScreen({ focus, label }: { focus: CustomizeFocus; label
             <Part part="spinner-verbs" focus={focus}>
               <span className="text-primary">{mark('✻')}</span>{' '}
               {focus === 'spinner-verbs' ? 'Reticulating…' : 'Cooking…'}
-              <span className={muted}> (12s · esc to interrupt)</span>
+              <span className={muted}> (12s)</span>
             </Part>
           </div>
           <Part part="mods" focus={focus} pane>
@@ -152,6 +163,7 @@ export function CustomizeScreen({ focus, label }: { focus: CustomizeFocus; label
           <span className={muted}>·</span> $0.41
         </Part>
       </div>
+      <p className="px-3 pt-2.5 pb-1 text-muted-foreground text-small">{caption}</p>
     </div>
   )
 }

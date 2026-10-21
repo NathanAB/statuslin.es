@@ -85,7 +85,7 @@ describe('sitemapResponse', () => {
 
     expect(entryFor(xml, BASE)).toContain('<lastmod>2026-05-06</lastmod>')
     expect(entryFor(xml, `${BASE}/?page=2`)).toContain('<lastmod>2026-05-06</lastmod>')
-    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-10-18</lastmod>')
+    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-10-21</lastmod>')
     for (const path of ['/resources', '/terms']) {
       expect(entryFor(xml, `${BASE}${path}`)).not.toContain('<lastmod>')
     }

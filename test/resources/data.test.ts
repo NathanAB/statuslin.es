@@ -63,4 +63,12 @@ describe('resources data', () => {
       expect(prose.toLowerCase()).not.toContain('statusline')
     }
   })
+
+  it('links spinner verbs to their own entry and names every app mods run in', () => {
+    const byName = (name: string) => CUSTOMIZATION_SURFACES.find((s) => s.name === name)
+    expect(byName('Spinner verbs')?.docsUrl).toBe(
+      'https://code.claude.com/docs/en/settings-reference#spinnerverbs',
+    )
+    expect(byName('Mods')?.text).toMatch(/terminal, Claude Desktop and VS Code/)
+  })
 })

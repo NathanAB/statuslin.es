@@ -203,4 +203,16 @@ describe('ResourcesContent', () => {
     render(<ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />)
     expect(screen.queryByRole('heading', { name: 'Status lines that do the same job' })).toBeNull()
   })
+
+  // Most visitors arrive searching a status line tool by name, so the tools come right after the
+  // hero, before the marketplaces.
+  it('puts the status line tools right after the hero', () => {
+    render(<ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />)
+    const h2s = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+    expect(h2s.slice(0, 3)).toEqual([
+      'Pick what to customize',
+      'Status line tools',
+      'Mods & plugin marketplaces',
+    ])
+  })
 })

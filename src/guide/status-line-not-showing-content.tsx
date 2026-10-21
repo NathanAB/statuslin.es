@@ -23,6 +23,8 @@ const BLANK_CHECKS = [
   'On Windows with Git Bash, use forward slashes in the `command` path, since backslashes get eaten as escape characters. A path starting with `~` also works.',
   'If `disableAllHooks` is `true` outside managed settings, only a `statusLine` from managed settings runs. Remove it or set it to `false`.',
   'If your organization sets `allowManagedHooksOnly`, only a managed `statusLine` can show. Ask your admin.',
+  'If managed settings set `disableAllHooks`, the status line is off entirely, a managed `statusLine` included. Ask your admin.',
+  'If you started Claude Code with `--safe-mode`, only a managed `statusLine` runs. Start it without the flag.',
   "Run `claude --debug`. It logs the script's stderr on each run, and its exit code on the first run in a session.",
   'Ask Claude to read your settings file and run the `statusLine` command, to surface any errors. The fix prompt at the top of this page does that for you.',
 ]

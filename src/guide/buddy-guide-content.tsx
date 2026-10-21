@@ -35,8 +35,8 @@ export function BuddyGuideContent({
       <Stack gap={3}>
         <Heading level={1}>Claude Code /buddy removed? Pet mods that replace it</Heading>
         <Text muted>
-          <InlineCodeText text="Claude Code 2.1.97 removed `/buddy` in April 2026" /> (
-          <TextLink href={BUDDY_ISSUE_URL}>Bring Back Buddy, #{BUDDY_ISSUE_NUMBER}</TextLink>).
+          <InlineCodeText text="`/buddy` came in Claude Code 2.1.89 for April 1st. Users report it gone since 2.1.97, though the changelog doesn't say so" />{' '}
+          (<TextLink href={BUDDY_ISSUE_URL}>Bring Back Buddy, #{BUDDY_ISSUE_NUMBER}</TextLink>).
           These community pet mods put a pixel companion back. They're new pets, not your old buddy.
         </Text>
         <Text muted>

@@ -24,9 +24,9 @@ const MORE = ['usage-tracking', 'themes', 'beyond', 'guides'] as const
 
 /**
  * The /resources page body, on the home page's sections: the Claude Code session with every way to
- * customize it, the plugin marketplaces on a field of their own beside our marketplace command, the
- * status line tools and the gallery status lines that do the same jobs, the smaller sections side by
- * side, then a way to get listed. `showcase` gives a compared tool its alternatives page and the
+ * customize it, the status line tools (what most visitors search for) and the gallery status lines
+ * that do the same jobs, the plugin marketplaces on a field of their own beside our marketplace
+ * command, the smaller sections side by side, then a way to get listed. `showcase` gives a compared tool its alternatives page and the
  * rendered status lines; `origin` is the site's, for the marketplace command. A component (not inline
  * in the route) so it's unit-testable, the same pattern as TermsContent.
  */
@@ -44,26 +44,6 @@ export function ResourcesContent({
     <>
       <HomeSection first>
         <CustomizeHero />
-      </HomeSection>
-
-      <HomeSection>
-        <Panel size="band">
-          <Split
-            start={
-              <>
-                <Heading level={2} size="section">
-                  {sectionOf('marketplaces').title}
-                </Heading>
-                <Text size="lead">
-                  Mods are Claude Code plugins. Each comes from a marketplace: Anthropic's, a
-                  community one, or ours.
-                </Text>
-                <MarketplaceLine origin={origin} />
-              </>
-            }
-            end={<LinkRows items={rows('marketplaces')} />}
-          />
-        </Panel>
       </HomeSection>
 
       <HomeSection>
@@ -117,6 +97,26 @@ export function ResourcesContent({
             </Stack>
           ) : null}
         </Stack>
+      </HomeSection>
+
+      <HomeSection>
+        <Panel size="band">
+          <Split
+            start={
+              <>
+                <Heading level={2} size="section">
+                  {sectionOf('marketplaces').title}
+                </Heading>
+                <Text size="lead">
+                  Mods are Claude Code plugins. Each comes from a marketplace: Anthropic's, a
+                  community one, or ours.
+                </Text>
+                <MarketplaceLine origin={origin} />
+              </>
+            }
+            end={<LinkRows items={rows('marketplaces')} />}
+          />
+        </Panel>
       </HomeSection>
 
       <HomeSection>

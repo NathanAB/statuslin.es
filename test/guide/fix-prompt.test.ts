@@ -14,10 +14,19 @@ describe('STATUS_LINE_FIX_PROMPT', () => {
       'jq',
       'disableAllHooks',
       'allowManagedHooksOnly',
+      'managed settings',
+      '--safe-mode',
       'trust dialog',
     ]) {
       expect(STATUS_LINE_FIX_PROMPT, check).toContain(check)
     }
+  })
+
+  // The Code tab never runs statusLine, so checking scripts there would end at the wrong advice.
+  it('first rules out Claude Desktop, where no script check can help', () => {
+    const [step1] = STATUS_LINE_FIX_PROMPT.split('\n2.')
+    expect(step1).toContain('Claude Desktop')
+    expect(step1).toContain('statuslin.es/guide/claude-desktop')
   })
 
   it('names the page it follows, and changes nothing until you say yes', () => {

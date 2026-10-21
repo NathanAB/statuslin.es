@@ -47,7 +47,7 @@ describe('CustomizeHero', () => {
     render(<CustomizeHero />)
     expect(
       screen.getByRole('img', {
-        name: 'A Claude Code session with the band a mod draws above the prompt lit.',
+        name: "A Claude Code session with a mod's pane and its band above the prompt lit.",
       }),
     ).toBeTruthy()
     expect(screen.getByText(/Panes, a band above the prompt/)).toBeTruthy()
@@ -78,5 +78,11 @@ describe('CustomizeHero', () => {
       8,
     )
     expect(screen.getAllByRole('link', { name: /^Anthropic's docs/ })).toHaveLength(1)
+  })
+
+  // The page's searches are tool names, so the first screen names the biggest two.
+  it('names ccstatusline and claude-powerline in its first sentence', () => {
+    render(<CustomizeHero />)
+    expect(screen.getByText(/ccstatusline and claude-powerline/)).toBeTruthy()
   })
 })

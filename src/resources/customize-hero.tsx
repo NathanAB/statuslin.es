@@ -15,8 +15,12 @@ import { Heading, Text, TextLink } from '@/ui/text'
 import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 
 const RESOURCES_HEADING = 'Claude Code customization tools & resources'
+// Most of the page's searches are a status line tool's name, so its first sentence names the two
+// biggest (Search Console, 2026-07-21 to 2026-10-20).
 const RESOURCES_LEAD =
-  'Every way to change Claude Code, with the tools worth installing for each. Pick one to see where it lives.'
+  'Every way to change Claude Code, from status line tools like ccstatusline and claude-powerline to mods and themes. Pick one to see where it lives.'
+const SCREEN_CAPTION =
+  "An example session. The pane and the band above the prompt are mods; the rest is Claude Code's own."
 
 /**
  * The top of /resources, on the home hero's layout: a Claude Code session with a place for every way
@@ -33,7 +37,7 @@ export function CustomizeHero() {
     <HeroLayout
       heading={RESOURCES_HEADING}
       lead={RESOURCES_LEAD}
-      stage={<CustomizeScreen focus={focus} label={surface.screen} />}
+      stage={<CustomizeScreen focus={focus} label={surface.screen} caption={SCREEN_CAPTION} />}
       pickerFirst
       picker={
         <>

@@ -4,7 +4,7 @@ import { BUDDY_ISSUE_NUMBER } from './buddy-pets'
 export const BUDDY_FAQ: FaqEntry[] = [
   {
     question: "What happened to Claude Code's /buddy?",
-    answer: `Claude Code 2.1.97 removed \`/buddy\` and its companion in April 2026, with no changelog entry. GitHub issue #${BUDDY_ISSUE_NUMBER}, "Bring Back Buddy", asks for it back.`,
+    answer: `Users report \`/buddy\`, an April 1st feature from Claude Code 2.1.89, gone since 2.1.97, and the changelog doesn't mention a removal. GitHub issue #${BUDDY_ISSUE_NUMBER}, "Bring Back Buddy", asks for it back.`,
   },
   {
     question: 'Can a mod bring my old buddy back?',

@@ -11,11 +11,12 @@ import { Stack } from '@/ui/layout'
 import { StatuslineAnywhereLink } from '@/ui/statusline-anywhere-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 
-// No VS Code row: the mods docs say mods draw there only from extension 2.1.299 behind feature
-// flags, and the status line docs don't say whether status lines show there.
+// The mods docs (plugins/mods/overview, "Where mods run") say what a mod draws shows in the VS Code
+// extension from 2.1.299; the status line docs don't say whether a status line shows there.
 const WHERE_EACH_SHOWS_UP: FactTableRow[] = [
   { label: 'Claude Code in a terminal', cells: ['Yes', 'Yes'] },
   { label: "Claude Desktop's Code tab", cells: ['No', 'Yes'] },
+  { label: 'The VS Code extension', cells: ['Not documented', 'Yes, from extension 2.1.299'] },
 ]
 
 /**

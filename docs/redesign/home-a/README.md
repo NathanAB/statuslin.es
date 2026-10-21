@@ -458,3 +458,10 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   (`LinkRows`), body text is 19px and section titles use the redesign's heading size.
   - Kept against the design meter: the title runs three lines at 390px (it is the search title), and
     the page's pictures are interfaces (the session, the rendered status lines), not photographs.
+- **After a fresh-eyes review of the guides and /resources (2026-10-21).** The drawn session follows
+  Claude Code's docs (the Agent tool, a hook's error notice, no "esc to interrupt" with a status
+  line set) and says under it which parts are example mods. The status line tools moved right under
+  the hero, and the hero's sentence names ccstatusline and claude-powerline, since most of the
+  page's searches are those names. Search Console baseline before this change (2026-07-21 to
+  2026-10-20): 1,934 impressions, 23 clicks, position 9.2; compare 2 to 4 weeks after it ships.
+  The guides' Claude Code claims are listed with their sources in `docs/guide-claims.md`.

@@ -236,7 +236,7 @@ describe('guideJsonLd', () => {
       description: GUIDE_DESCRIPTION,
       author: { '@type': 'Organization', name: 'statuslin.es', url: 'https://statuslin.es' },
       datePublished: '2026-08-14',
-      dateModified: '2026-10-18',
+      dateModified: '2026-10-21',
     })
     expect(nodes[1]).toEqual({
       '@context': 'https://schema.org',
