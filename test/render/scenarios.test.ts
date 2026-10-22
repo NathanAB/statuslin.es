@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { resolveResets, usage } from '@/render/scenario-helpers'
 import { SCENARIOS } from '@/render/scenarios'
+import {
+  DOCUMENTED_STDIN_FIELDS,
+  DOCUMENTED_TOP_LEVEL_FIELDS,
+} from '../helpers/statusline-stdin-fields'
 
 // Helpers to read loosely-typed stdin fields off the scenarios.
 type Obj = Record<string, unknown>
@@ -11,6 +15,15 @@ function collect<T>(pick: (s: Obj) => T | undefined): T[] {
     .filter((v): v is T => v !== undefined && v !== null)
 }
 const get = (o: unknown, k: string) => (o as Obj | undefined)?.[k]
+/** Whether `stdin` carries the dotted `path`. A null leaf counts: the field is sent, as null. */
+function sends(stdin: Obj, path: string): boolean {
+  let node: unknown = stdin
+  for (const key of path.split('.')) {
+    if (node === null || typeof node !== 'object' || !(key in node)) return false
+    node = (node as Obj)[key]
+  }
+  return true
+}
 
 describe('SCENARIOS — exhaustive coverage of the statusline stdin schema', () => {
   it('has 8 scenarios with unique keys and shortLabels (≤13 chars)', () => {
@@ -36,8 +49,19 @@ describe('SCENARIOS — exhaustive coverage of the statusline stdin schema', () 
       expect(typeof s.stdin.transcript_path).toBe('string')
       expect(typeof s.stdin.version).toBe('string')
       expect(s.stdin.cost).toBeDefined()
+      expect(typeof s.stdin.fast_mode).toBe('boolean')
       // cwd mirrors workspace.current_dir
       expect(s.stdin.cwd).toBe((s.stdin.workspace as Obj).current_dir)
+    }
+  })
+
+  it.each(DOCUMENTED_STDIN_FIELDS)('some scenario sends %s', (path) => {
+    expect(stdins().some((s) => sends(s, path))).toBe(true)
+  })
+
+  it('sends only documented top-level fields', () => {
+    for (const s of stdins()) {
+      for (const key of Object.keys(s)) expect(DOCUMENTED_TOP_LEVEL_FIELDS).toContain(key)
     }
   })
 
@@ -78,6 +102,19 @@ describe('SCENARIOS — exhaustive coverage of the statusline stdin schema', () 
     expect(prs.some((p) => p === undefined)).toBe(true)
   })
 
+  it('covers a GitLab merge request (pr.kind mr) in a nested-namespace gitlab.com repo', () => {
+    const mr = stdins().find((s) => get(s.pr, 'kind') === 'mr')
+    if (!mr) throw new Error('no scenario has a GitLab merge request')
+    expect(get(mr.pr, 'url')).toMatch(/\/-\/merge_requests\/\d+$/)
+    // GitLab merge requests only ever report these three states.
+    expect(['approved', 'pending', 'draft']).toContain(get(mr.pr, 'review_state'))
+    const repo = get(mr.workspace, 'repo')
+    expect(get(repo, 'host')).toBe('gitlab.com')
+    expect(get(repo, 'owner')).toContain('/') // subgroup path, e.g. "group/subgroup"
+    // GitHub PRs leave kind absent
+    expect(stdins().some((s) => s.pr !== undefined && get(s.pr, 'kind') === undefined)).toBe(true)
+  })
+
   it('covers rate_limits present (both), absent, and partial (one window)', () => {
     const rl = stdins().map((s) => s.rate_limits as Obj | undefined)
     expect(rl.some((r) => get(r, 'five_hour') && get(r, 'seven_day'))).toBe(true) // both
@@ -85,6 +122,41 @@ describe('SCENARIOS — exhaustive coverage of the statusline stdin schema', () 
     expect(rl.some((r) => r !== undefined && (!get(r, 'five_hour') || !get(r, 'seven_day')))).toBe(
       true,
     ) // partial
+  })
+
+  it('covers a gateway spend limit with its dollar fields and without them', () => {
+    const limits = collect((s) => get(s.rate_limits, 'spend_limit') as Obj)
+    for (const l of limits) {
+      expect(typeof l.used_percentage).toBe('number')
+      expect(typeof l.resets_at).toBe('number')
+      if (l.period !== undefined) expect(['daily', 'weekly', 'monthly']).toContain(l.period)
+    }
+    const dollars = (l: Obj) => [l.used_usd, l.limit_usd, l.period]
+    expect(limits.some((l) => dollars(l).every((v) => v !== undefined))).toBe(true)
+    expect(limits.some((l) => dollars(l).every((v) => v === undefined))).toBe(true)
+  })
+
+  it('covers prompt_cache absent, warm and cold, both TTLs, and each nullable field null and set', () => {
+    expect(stdins().some((s) => s.prompt_cache === undefined)).toBe(true)
+    const caches = collect((s) => s.prompt_cache as Obj)
+    const fields = DOCUMENTED_STDIN_FIELDS.filter((p) => p.startsWith('prompt_cache.')).map((p) =>
+      p.replace('prompt_cache.', '').replace(/\..*/, ''),
+    )
+    for (const c of caches) for (const f of fields) expect(f in c).toBe(true)
+    expect(caches.map((c) => c.warm)).toEqual(expect.arrayContaining([true, false]))
+    expect(caches.map((c) => c.ttl)).toEqual(expect.arrayContaining(['5m', '1h']))
+    for (const f of ['expires_at', 'last_miss_at', 'last_miss_cause', 'recache_tokens_if_cold']) {
+      expect(caches.some((c) => c[f] === null)).toBe(true)
+      expect(caches.some((c) => c[f] !== null)).toBe(true)
+    }
+  })
+
+  it('covers prompt_id before the first prompt (absent) and after, and fast mode on and off', () => {
+    expect(stdins().some((s) => typeof s.prompt_id === 'string')).toBe(true)
+    expect(stdins().some((s) => s.prompt_id === undefined)).toBe(true)
+    const fast = stdins().map((s) => s.fast_mode)
+    expect(fast).toContain(true)
+    expect(fast).toContain(false)
   })
 
   it('models all-model and Fable weekly usage both behind and ahead of even reset pace', () => {
@@ -160,10 +232,24 @@ describe('SCENARIOS — exhaustive coverage of the statusline stdin schema', () 
     expect(get(win(s.stdin as Obj), 'resets_at')).toBe(offset) // original untouched
   })
 
-  it('resolveResets leaves stdin without rate_limits unchanged', () => {
+  it('resolveResets resolves spend-limit and prompt-cache offsets too, leaving nulls null', () => {
+    const stdin = {
+      rate_limits: { spend_limit: { used_percentage: 12, resets_at: 600 } },
+      prompt_cache: { warm: true, expires_at: 300, last_miss_at: -120 },
+    }
+    expect(resolveResets(stdin, 1_000_000)).toEqual({
+      rate_limits: { spend_limit: { used_percentage: 12, resets_at: 1_000_600 } },
+      prompt_cache: { warm: true, expires_at: 1_000_300, last_miss_at: 999_880 },
+    })
+    expect(stdin.prompt_cache.expires_at).toBe(300) // original untouched
+    const cold = { prompt_cache: { warm: false, expires_at: null, last_miss_at: null } }
+    expect(resolveResets(cold, 1_000_000)).toEqual(cold)
+  })
+
+  it('resolveResets leaves stdin without rate_limits or prompt_cache unchanged', () => {
     const s = SCENARIOS.find((x) => x.key === 'fresh-session')
     if (!s) throw new Error('fresh-session missing')
-    expect(resolveResets(s.stdin as Obj, 123).rate_limits).toBeUndefined()
+    expect(resolveResets(s.stdin as Obj, 123)).toEqual(s.stdin)
   })
 
   it('usage never produces negative token counts at low percentages', () => {
