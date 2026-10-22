@@ -104,7 +104,8 @@ export const Route = createFileRoute('/')({
         ...(isFiltered ? [{ name: 'robots', content: 'noindex, follow' }] : []),
         ...(loaderData ? homeSocialMeta({ url: canonical.href, page, pageCount }) : []),
       ],
-      links: loaderData ? [canonical] : [],
+      // A search is noindex, and a noindex page whose canonical points elsewhere mixes signals.
+      links: loaderData && match.search.q === undefined ? [canonical] : [],
       scripts: view
         ? homeJsonLd(
             siteUrl(),

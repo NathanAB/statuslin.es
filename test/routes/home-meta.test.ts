@@ -161,7 +161,8 @@ describe('home search indexing metadata', () => {
     ])
   })
 
-  it('marks a search noindex, leaves it out of the canonical and omits CollectionPage', async () => {
+  // A noindex page whose canonical points elsewhere sends search engines mixed signals.
+  it('marks a search noindex with no canonical link and omits CollectionPage', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
       loaderData: { entries: [entry('status-line', 'alpha', 'Alpha'), ...filler(3)] },
@@ -169,7 +170,7 @@ describe('home search indexing metadata', () => {
     } as never)
 
     expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
-    expect(head?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es' }])
+    expect(head?.links).toEqual([])
     const scripts = (head?.scripts ?? []) as Array<{ children: string }>
     expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
       'WebSite',
@@ -190,7 +191,24 @@ describe('home search indexing metadata', () => {
     expect(head?.meta).toContainEqual({
       title: 'Claude Code Mods & Status Lines — Page 2 | statuslin.es',
     })
-    expect(head?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es/?page=2' }])
+    expect(head?.links).toEqual([])
+  })
+
+  it('gives /?q=git noindex and no canonical while /?page=2 keeps its canonical', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const headFor = (search: Record<string, unknown>) =>
+      HomeRoute.options.head?.({
+        loaderData: { entries: filler(3 * PAGE_SIZE) },
+        match: { search },
+      } as never)
+
+    const searched = await headFor({ q: 'git' })
+    expect(searched?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(searched?.links).toEqual([])
+
+    const paged = await headFor({ page: 2 })
+    expect(paged?.meta).not.toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(paged?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es/?page=2' }])
   })
 
   it('does not noindex the unfiltered gallery', async () => {

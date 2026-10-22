@@ -16,7 +16,7 @@ export interface HomeCanonicalSearch {
   sort?: string
   tags?: string
   kind?: string
-  /** The gallery search: noindex, and never part of the canonical. */
+  /** The gallery search: noindex, and its page gets no canonical link. */
   q?: string | undefined
 }
 
@@ -52,7 +52,8 @@ export function homePaginationSearch<TSort extends string, TKind extends string>
 /**
  * Canonical path for the gallery home. Preserve sort, tag, and page state so a paginated URL never
  * canonicalizes to different content. Filtered and sorted views get noindex metadata at the route
- * level; their canonical still describes the exact page whose links crawlers should follow.
+ * level; their canonical still describes the exact page whose links crawlers should follow. A
+ * search gets no canonical at all.
  */
 export function homeCanonicalPath(page: number, search: HomeCanonicalSearch = {}): string {
   const params = new URLSearchParams()
