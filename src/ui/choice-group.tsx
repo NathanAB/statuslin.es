@@ -42,7 +42,7 @@ const item = cva(
 // Timed through tw-animate's own variables: Tailwind's `duration-*` and `delay-*` would also time
 // each row's transitions, holding a pick back by its entrance delay.
 const RISE =
-  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:animation-duration-900 motion-safe:ease-settle motion-safe:fill-mode-backwards'
+  'motion-safe:animate-in motion-safe:fade-in-1 motion-safe:slide-in-from-bottom-7 motion-safe:animation-duration-900 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 const RISE_DELAYS = [
   '[--tw-animation-delay:420ms]',
   '[--tw-animation-delay:465ms]',

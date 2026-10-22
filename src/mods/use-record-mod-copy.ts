@@ -1,4 +1,5 @@
 import { usePostHog } from '@posthog/react'
+import type { CopySurface } from '@/lib/copy-surface'
 import { browserFunnelIds } from '@/lib/posthog-funnel-ids'
 import { type CountedCopy, useCountedCopy } from '@/lib/use-counted-copy'
 import { recordModCopyFn } from './functions'
@@ -11,9 +12,10 @@ import type { InstallCommandKind } from './install'
 export function useRecordModCopy(
   modId: string,
   copyCount: number,
+  surface: CopySurface = 'page',
 ): CountedCopy<InstallCommandKind> {
   const posthog = usePostHog()
   return useCountedCopy(modId, copyCount, (kind: InstallCommandKind) =>
-    recordModCopyFn({ data: { modId, kind, ...browserFunnelIds(posthog) } }),
+    recordModCopyFn({ data: { modId, kind, surface, ...browserFunnelIds(posthog) } }),
   )
 }

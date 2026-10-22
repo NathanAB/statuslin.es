@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { FileText, LogOut, ShieldCheck } from 'lucide-react'
 import type { PostHog } from 'posthog-js'
 import { authClient } from '@/lib/auth-client'
+import { chipAvatarUrl } from '@/lib/github-avatars'
 import type { AppHeaderUser } from '@/ui/app-header'
 import { Button } from '@/ui/button'
 import {
@@ -43,7 +44,7 @@ export function UserMenu({ user }: { user: AppHeaderUser }) {
       <DropdownMenuTrigger asChild>
         <Button variant="plain" size="bar" aria-label={label}>
           {user.image ? (
-            <img src={user.image} alt="" className="size-5 shrink-0 rounded-full" />
+            <img src={chipAvatarUrl(user.image)} alt="" className="size-5 shrink-0 rounded-full" />
           ) : (
             <span
               aria-hidden="true"

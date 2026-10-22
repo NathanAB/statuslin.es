@@ -1,3 +1,4 @@
+import { type CopySurface, copySurface } from '@/lib/copy-surface'
 import { copierPersonProperties } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
 import { MARKETPLACE_PATH } from '@/lib/site'
@@ -68,11 +69,13 @@ export function modCopyEvent(input: {
   distinctId: string | null | undefined
   signedInUserId: string | null
   sessionId?: string | null | undefined
+  surface?: CopySurface | undefined
 }): ServerEvent | null {
   if (!input.distinctId || !Object.hasOwn(COMMAND_KINDS, input.kind)) return null
   const properties: Record<string, unknown> = {
     modId: input.modId,
     command: input.kind,
+    surface: copySurface(input.surface),
     ...copierPersonProperties(input.distinctId, input.signedInUserId),
   }
   if (input.sessionId) properties[SESSION_ID_PROP] = input.sessionId

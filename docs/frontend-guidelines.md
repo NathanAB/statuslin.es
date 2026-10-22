@@ -180,7 +180,7 @@ All rules run in `bun run check` and at the hooks listed below.
 | 4 | Tokens: define-once | Duplicate hex literal in `src/styles/app.css` token declarations | `check-frontend.ts` — gate error |
 | 5 | Tokens: theme-alias var()-only | `--color-*` declaration with a literal value instead of `var(…)` or `initial` | `check-frontend.ts` — gate error |
 | 6 | Tokens: token-echo | Hex literal in any `src/` or `test/` file that equals a token value | `check-frontend.ts` — gate error |
-| 7 | No inline styles | `style={` prop in `.tsx` files (except `src/ui/statusline-preview.tsx` and `src/ui/sonner.tsx`) | `check-frontend.ts` — gate error |
+| 7 | No inline styles | `style={` prop in `.tsx` files (except `src/ui/statusline-preview.tsx`, `src/ui/terminal.tsx` and `src/ui/sonner.tsx`) | `check-frontend.ts` — gate error |
 | 8 | No raw colors | Bare hex / `rgb()` / `hsl()` with literal digits in any `src/` file | `check-frontend.ts` — gate error |
 | 9 | No dead-palette classes | Tailwind default-palette classes (`bg-red-500` etc.) — they render nothing (palette is wiped) | `check-frontend.ts` — gate error |
 | 10 | No arbitrary Tailwind values | `w-[200px]`-style values in app code (allowed in `src/ui/` vendored files) | `check-frontend.ts` — gate error |

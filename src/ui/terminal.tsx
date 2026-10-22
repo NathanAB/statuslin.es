@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import type { CSSProperties } from 'react'
 import { cn } from '@/lib/cn'
 import type { AnsiSegment } from '@/render/types'
 import { BottomAnchored } from '@/ui/bottom-anchored'
@@ -81,19 +81,15 @@ const FIT_TO_WIDTH =
 
 /**
  * What the terminal draws for the pick, or why it draws nothing. A render wider than the screen
- * shrinks to fit, so its right edge never goes missing. `--cols` is set from a ref (inline styles
- * are off limits), so the first server paint shows full-size text.
+ * shrinks to fit, so its right edge never goes missing. `--cols` comes from the render, so it's an
+ * inline style, and the server's HTML is already the fitted size.
  */
 function Drawn({ segments, missing }: { segments: AnsiSegment[] | null; missing: string }) {
-  const fit = useRef<HTMLDivElement>(null)
-  const cols = segments ? widestLine(segments) : 1
-  useLayoutEffect(() => {
-    fit.current?.style.setProperty('--cols', String(cols))
-  }, [cols])
   if (!segments) return <span className="text-terminal-muted">{missing}</span>
+  const fit = { '--cols': widestLine(segments) } as CSSProperties
   return (
     <div className="@container">
-      <div ref={fit} data-fit="" className={FIT_TO_WIDTH}>
+      <div data-fit="" className={FIT_TO_WIDTH} style={fit}>
         <StatuslinePreview segments={segments} look="terminal" />
       </div>
     </div>

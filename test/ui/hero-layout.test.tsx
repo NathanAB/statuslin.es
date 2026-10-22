@@ -20,7 +20,7 @@ function entranceOf(el: Element) {
   return node
 }
 
-const fades = (el: Element) => classesOf(entranceOf(el)).includes('fade-in-0')
+const fades = (el: Element) => classesOf(entranceOf(el)).includes('fade-in-1')
 
 function renderHero() {
   render(

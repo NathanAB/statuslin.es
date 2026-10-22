@@ -148,7 +148,13 @@ describe('config source overlay', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(props.source))
     await waitFor(() =>
       expect(recordCopyFn).toHaveBeenCalledWith({
-        data: { configId: 'cfg-1', kind: 'script', distinctId: 'did-test', sessionId: 'sid-test' },
+        data: {
+          configId: 'cfg-1',
+          kind: 'script',
+          surface: 'page',
+          distinctId: 'did-test',
+          sessionId: 'sid-test',
+        },
       }),
     )
     expect(toast).not.toHaveBeenCalled()

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render } from '@testing-library/react'
+import { renderToString } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { TerminalScreen } from '@/ui/terminal'
 
@@ -29,6 +30,22 @@ describe('TerminalScreen', () => {
     const { container } = renderAt('above-prompt', `${'x'.repeat(40)}\n${'y'.repeat(120)}`)
     const band = container.querySelector('[data-slot="terminal-band"] [data-fit]') as HTMLElement
     expect(band.style.getPropertyValue('--cols')).toBe('120')
+  })
+
+  // Sized after hydration, the text rendered full size and then shrank: a layout shift on every
+  // load of the home page.
+  it('sizes the text in the server render, before any script runs', () => {
+    const html = renderToString(
+      <TerminalScreen
+        label="Claude Code"
+        transcript={[{ kind: 'prompt', text: 'hi' }]}
+        at="above-prompt"
+        segments={[{ text: 'y'.repeat(120) }]}
+        missing="Nothing"
+        motion={MOTION}
+      />,
+    )
+    expect(html).toContain('--cols:120')
   })
 
   it('fits the status line row the same way', () => {

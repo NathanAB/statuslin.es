@@ -57,8 +57,8 @@ export function HomeHero({ heading, items }: { heading: ReactNode; items: HeroIt
   const item = items.find((i) => keyOf(i) === picked) ?? items[0]
   const { line, mod } = partsOf(item)
   // The shown one's copy count, bumped when the visitor copies it, as on its own page.
-  const lineCopies = useRecordedCopy(line?.configId ?? '', line?.copyCount ?? 0)
-  const modCopies = useRecordModCopy(mod?.modId ?? '', mod?.copyCount ?? 0)
+  const lineCopies = useRecordedCopy(line?.configId ?? '', line?.copyCount ?? 0, 'home_hero')
+  const modCopies = useRecordModCopy(mod?.modId ?? '', mod?.copyCount ?? 0, 'home_hero')
 
   // With nothing published yet there is nothing to try on; the title and sentence still stand.
   if (!item)

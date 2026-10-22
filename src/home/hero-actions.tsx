@@ -32,7 +32,12 @@ export function StatusLineHeroActions({
   return (
     <>
       <HeroActions>
-        <InstallPromptButton configId={line.configId} title={line.title} onCopied={onCopied} />
+        <InstallPromptButton
+          configId={line.configId}
+          versionId={line.versionId}
+          title={line.title}
+          onCopied={onCopied}
+        />
         <TextLink to="/c/$slug" params={{ slug: line.slug }} tone="underlined">
           Open page<VisuallyHidden>: {line.title}</VisuallyHidden>
         </TextLink>

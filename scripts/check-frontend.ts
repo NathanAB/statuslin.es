@@ -6,6 +6,9 @@ import { findTextWidthCaps } from './text-width-caps'
  * or are a var()-only CSS bridge into a vendored component. */
 const INLINE_STYLE_ALLOW = [
   'src/ui/statusline-preview.tsx',
+  // `--cols`, the widest line of a script's output, sizes the hero terminal's text from the
+  // server render on.
+  'src/ui/terminal.tsx',
   // var()-only CSS bridge to the vendored sonner toaster; the raw-color rule still
   // polices its contents, so it can carry tokens but never a literal.
   'src/ui/sonner.tsx',

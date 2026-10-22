@@ -456,7 +456,13 @@ describe('mod page', () => {
     await waitFor(() => expect(recordModCopyFn).toHaveBeenCalledTimes(1))
     expect(writeText).toHaveBeenCalledWith(modInstallPrompt(ORIGIN, 'filetree'))
     expect(recordModCopyFn).toHaveBeenCalledWith({
-      data: { modId: MOD.id, kind: 'prompt', distinctId: 'did-test', sessionId: 'sid-test' },
+      data: {
+        modId: MOD.id,
+        kind: 'prompt',
+        surface: 'page',
+        distinctId: 'did-test',
+        sessionId: 'sid-test',
+      },
     })
     expect(toast).toHaveBeenCalledWith('Prompt copied', {
       description: `Paste it into Claude Code or Claude Desktop. Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,

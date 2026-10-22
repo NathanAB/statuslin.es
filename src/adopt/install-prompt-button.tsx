@@ -12,15 +12,18 @@ import { SwapLabel } from '@/ui/swap-label'
 /**
  * The home hero's "Copy install prompt": the same prompt as a status line's page; `onCopied` records
  * the copy. The page doesn't carry the scripts, so the shown status line's script is fetched as soon
- * as it is shown, once per status line; by the time the visitor clicks it is usually here, and the
- * clipboard write stays inside the click.
+ * as it is shown, once per version; by the time the visitor clicks it is usually here, and the
+ * clipboard write stays inside the click. Only `versionId`, the version the hero describes, is
+ * fetched: after an update it is gone, and the visitor is sent to the page.
  */
 export function InstallPromptButton({
   configId,
+  versionId,
   title,
   onCopied,
 }: {
   configId: string
+  versionId: string
   title: string
   onCopied: () => void
 }) {
@@ -29,24 +32,24 @@ export function InstallPromptButton({
   const [copied, flash, resetCopied] = useCopied()
 
   // A failed fetch is forgotten, so the next click tries again.
-  const load = useCallback((id: string): Promise<InstallSource | null> => {
-    const inFlight = pending.current.get(id)
+  const load = useCallback((id: string, version: string): Promise<InstallSource | null> => {
+    const inFlight = pending.current.get(version)
     if (inFlight) return inFlight
-    const request = getInstallSourceFn({ data: { configId: id } })
+    const request = getInstallSourceFn({ data: { configId: id, versionId: version } })
       .catch(() => null)
       .then((source) => {
-        if (source) ready.current.set(id, source)
-        else pending.current.delete(id)
+        if (source) ready.current.set(version, source)
+        else pending.current.delete(version)
         return source
       })
-    pending.current.set(id, request)
+    pending.current.set(version, request)
     return request
   }, [])
 
   useEffect(() => {
     resetCopied()
-    void load(configId)
-  }, [configId, load, resetCopied])
+    void load(configId, versionId)
+  }, [configId, versionId, load, resetCopied])
 
   function write(source: InstallSource) {
     navigator.clipboard
@@ -63,9 +66,9 @@ export function InstallPromptButton({
   }
 
   function copy() {
-    const source = ready.current.get(configId)
+    const source = ready.current.get(versionId)
     if (source) return write(source)
-    void load(configId).then((loaded) => {
+    void load(configId, versionId).then((loaded) => {
       if (loaded) write(loaded)
       else
         toast.error("Couldn't load this status line's script", {

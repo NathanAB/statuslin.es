@@ -515,3 +515,11 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   uses `text-heading`, retuned to 30px on a phone and 48px from about 1300px wide; display stays
   the home hero's alone. The home page's sections also sit closer: `mt-section` went from 13vw
   (up to 208px) to 9vw (up to 144px).
+- **Fixes from the pre-launch review** (owner, 2026-10-22). Copies carry a `surface` (`home_hero`
+  or `page`), so the hero's copies can be told from page copies. The hero copies only the version
+  it describes, and sends the visitor to the page after an update. The hero's fade starts at 1%
+  opacity, because a fade from 0 held the largest paint until the rise ended (1.43 s against
+  0.12 s on staging). The terminal's `--cols` is rendered on the server, Back restores the scroll
+  position at once, a failing hero query leaves the home page up without its hero, and stored
+  GitHub avatars are asked for at 40px. The baseline to compare against after launch is in
+  [launch-metrics.md](launch-metrics.md).

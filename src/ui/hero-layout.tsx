@@ -5,9 +5,11 @@ import { Heading } from '@/ui/text'
 // The prototype's load sequence: each part fades in as it rises 28px into place over a second, one
 // after another. It's CSS, so it runs from the first paint without waiting for JavaScript. Every
 // part fades: one sliding up without a fade, beside the others fading in, read as nonsensical.
-// Off for a visitor who asks for less motion, so the page shows at once.
+// Off for a visitor who asks for less motion, so the page shows at once. The fade starts at 1%, not
+// 0: Chrome doesn't count a fully transparent element as painted, so from 0 the largest paint (LCP)
+// waited for the last part's rise to end, about 1.3s after the page drew.
 const RISE =
-  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
+  'motion-safe:animate-in motion-safe:fade-in-1 motion-safe:slide-in-from-bottom-7 motion-safe:duration-1000 motion-safe:ease-settle motion-safe:fill-mode-backwards'
 
 /**
  * The home hero on a 12-column grid: the title across the full width with its sentences right under

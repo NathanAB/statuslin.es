@@ -188,7 +188,7 @@ describe('status line page', () => {
     const panel = screen.getByRole('region', { name: 'Before you install' })
     expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
       'Reviewed before listing · this version, Jul 6, 2026',
-      "Doesn't connect to the internet",
+      "Doesn't ask to reach the internet",
       'Uses Nerd Font glyphs',
     ])
     expect(

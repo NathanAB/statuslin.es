@@ -6,7 +6,7 @@ import { utcDateLabel } from '@/lib/date-label'
 import type { InstallFact } from '@/ui/install-facts'
 
 /** What a status line's script can reach, from the facts stored with its version: the sign-in
- *  token it reads and the hosts it connects to are risks to weigh; staying offline is said too. */
+ *  token it reads and the hosts it connects to are risks to weigh; asking for no internet is said too. */
 export function reachFacts(
   config: Pick<ConfigDetail, 'readsClaudeToken' | 'networkHosts'>,
 ): InstallFact[] {
@@ -20,7 +20,7 @@ export function reachFacts(
           text: `Connects to ${config.networkHosts.map((host) => `\`${host}\``).join(', ')}`,
           caution: true,
         }
-      : { icon: GlobeLock, text: "Doesn't connect to the internet" },
+      : { icon: GlobeLock, text: "Doesn't ask to reach the internet" },
   ]
 }
 
@@ -39,7 +39,7 @@ export function reachSentence(
       ? [`connects to ${listPhrase(config.networkHosts.map(asCode))}`]
       : []),
   ]
-  if (reaches.length === 0) return { icon: GlobeLock, text: "Doesn't connect to the internet" }
+  if (reaches.length === 0) return { icon: GlobeLock, text: "Doesn't ask to reach the internet" }
   const text = reaches.join(' and ')
   return {
     icon: config.readsClaudeToken ? KeyRound : Globe,

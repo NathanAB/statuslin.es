@@ -39,7 +39,14 @@ const button = (title: string) =>
 
 describe('InstallPromptButton', () => {
   it("copies the status line's full install prompt, fetched when it is shown", async () => {
-    render(<InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />)
+    render(
+      <InstallPromptButton
+        configId="cfg-1"
+        versionId="v-cfg-1"
+        title="Meter"
+        onCopied={onCopied}
+      />,
+    )
     await waitFor(() => expect(getInstallSourceFn).toHaveBeenCalledTimes(1))
 
     await act(async () => {
@@ -57,7 +64,14 @@ describe('InstallPromptButton', () => {
   })
 
   it('keeps its width when it swaps to Copied', async () => {
-    render(<InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />)
+    render(
+      <InstallPromptButton
+        configId="cfg-1"
+        versionId="v-cfg-1"
+        title="Meter"
+        onCopied={onCopied}
+      />,
+    )
     await waitFor(() => expect(getInstallSourceFn).toHaveBeenCalledTimes(1))
     await act(async () => {
       fireEvent.click(button('Meter'))
@@ -70,7 +84,12 @@ describe('InstallPromptButton', () => {
 
   it('drops its Copied timer when it unmounts', async () => {
     const { unmount } = render(
-      <InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />,
+      <InstallPromptButton
+        configId="cfg-1"
+        versionId="v-cfg-1"
+        title="Meter"
+        onCopied={onCopied}
+      />,
     )
     await waitFor(() => expect(getInstallSourceFn).toHaveBeenCalledTimes(1))
     vi.useFakeTimers()
@@ -85,11 +104,20 @@ describe('InstallPromptButton', () => {
 
   it('fetches the next one when the status line changes, and copies that', async () => {
     const { rerender } = render(
-      <InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />,
+      <InstallPromptButton
+        configId="cfg-1"
+        versionId="v-cfg-1"
+        title="Meter"
+        onCopied={onCopied}
+      />,
     )
-    rerender(<InstallPromptButton configId="cfg-2" title="Pace" onCopied={onCopied} />)
+    rerender(
+      <InstallPromptButton configId="cfg-2" versionId="v-cfg-2" title="Pace" onCopied={onCopied} />,
+    )
     await waitFor(() =>
-      expect(getInstallSourceFn).toHaveBeenLastCalledWith({ data: { configId: 'cfg-2' } }),
+      expect(getInstallSourceFn).toHaveBeenLastCalledWith({
+        data: { configId: 'cfg-2', versionId: 'v-cfg-2' },
+      }),
     )
 
     await act(async () => {
@@ -103,15 +131,31 @@ describe('InstallPromptButton', () => {
 
   it('fetches each status line once, however often it comes back', async () => {
     const { rerender } = render(
-      <InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />,
+      <InstallPromptButton
+        configId="cfg-1"
+        versionId="v-cfg-1"
+        title="Meter"
+        onCopied={onCopied}
+      />,
     )
-    rerender(<InstallPromptButton configId="cfg-2" title="Pace" onCopied={onCopied} />)
-    rerender(<InstallPromptButton configId="cfg-1" title="Meter" onCopied={onCopied} />)
+    rerender(
+      <InstallPromptButton configId="cfg-2" versionId="v-cfg-2" title="Pace" onCopied={onCopied} />,
+    )
+    rerender(
+      <InstallPromptButton
+        configId="cfg-1"
+        versionId="v-cfg-1"
+        title="Meter"
+        onCopied={onCopied}
+      />,
+    )
     await waitFor(() => expect(getInstallSourceFn).toHaveBeenCalledTimes(2))
   })
 
   it('says so and copies nothing when the script cannot be loaded', async () => {
-    render(<InstallPromptButton configId="gone" title="Gone" onCopied={onCopied} />)
+    render(
+      <InstallPromptButton configId="gone" versionId="v-gone" title="Gone" onCopied={onCopied} />,
+    )
 
     await act(async () => {
       fireEvent.click(button('Gone'))

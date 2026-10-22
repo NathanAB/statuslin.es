@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { getHeroLines, type HeroLine } from '@/gallery/hero-lines'
-import { getHomeShowcase, heroItems } from '@/home/showcase'
+import { getHomeShowcase, heroItems, showcaseOrEmpty } from '@/home/showcase'
 import { getHeroMods, type HeroMod } from '@/mods/gallery-queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import {
@@ -96,5 +96,23 @@ describe('heroItems', () => {
     expect(
       slugs(heroItems(lines.slice(0, 2), mods)).filter((s) => s.startsWith('mod')),
     ).toHaveLength(6)
+  })
+})
+
+// The hero opens the page; the gallery under it is the content. A failure loading the hero's lists
+// must not turn the whole home page into an error page.
+describe('showcaseOrEmpty', () => {
+  it('passes a loaded showcase through', async () => {
+    const report = vi.fn()
+    expect(await showcaseOrEmpty(async () => ({ hero: [] }), report)).toEqual({ hero: [] })
+    expect(report).not.toHaveBeenCalled()
+  })
+
+  it('reports a failure and shows the page without a hero', async () => {
+    const report = vi.fn()
+    const failure = new Error('hero query failed')
+    const showcase = await showcaseOrEmpty(() => Promise.reject(failure), report)
+    expect(showcase).toEqual({ hero: [] })
+    expect(report).toHaveBeenCalledWith(failure)
   })
 })

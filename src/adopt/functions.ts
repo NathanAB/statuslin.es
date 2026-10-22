@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
 import { type BrowserCopyTracking, requestCopyIdentity } from '@/lib/copy-identity.server'
+import type { CopySurface } from '@/lib/copy-surface'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { findCopiedConfig, recordCopy } from './copy'
@@ -11,7 +12,9 @@ import { findInstallSource } from './install-source'
 // signal, deduped per client so it can't be trivially inflated from a single host (IP rotation or
 // many accounts can still move it).
 export const recordCopyFn = createServerFn({ method: 'POST' })
-  .validator((d: { configId: string; kind: CopyKind } & BrowserCopyTracking) => d)
+  .validator(
+    (d: { configId: string; kind: CopyKind; surface?: CopySurface } & BrowserCopyTracking) => d,
+  )
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const [{ ipHash, ...tracking }, config] = await Promise.all([
@@ -22,7 +25,13 @@ export const recordCopyFn = createServerFn({ method: 'POST' })
       // browser's PostHog id joins the copy to the View→Copy funnel; without one the pseudonymous
       // ipHash still counts an ad-blocked copy under a stable per-client id. This fires on every
       // copy action, independent of recordCopy's per-IP dedup on the display count.
-      const event = copyEvent({ kind: data.kind, configId: data.configId, config, ...tracking })
+      const event = copyEvent({
+        kind: data.kind,
+        configId: data.configId,
+        config,
+        surface: data.surface,
+        ...tracking,
+      })
       if (event) getPostHogClient()?.capture(event)
       return recordCopy(db, data.configId, ipHash)
     }),
@@ -30,5 +39,8 @@ export const recordCopyFn = createServerFn({ method: 'POST' })
 
 /** A published status line's live script, fetched when the home hero is about to install it. */
 export const getInstallSourceFn = createServerFn({ method: 'GET' })
-  .validator((d: { configId: string }) => ({ configId: String(d.configId) }))
-  .handler(({ data }) => withHttpStatus(() => findInstallSource(db, data.configId)))
+  .validator((d: { configId: string; versionId: string }) => ({
+    configId: String(d.configId),
+    versionId: String(d.versionId),
+  }))
+  .handler(({ data }) => withHttpStatus(() => findInstallSource(db, data.configId, data.versionId)))

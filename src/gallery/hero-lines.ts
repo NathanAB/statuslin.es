@@ -28,6 +28,8 @@ export const HERO_SCENARIO_KEY = 'clean-main'
 /** A status line the hero can show: what it names, and its render in the hero's session. */
 export interface HeroLine {
   configId: string
+  /** The live version this line's render and reach describe; the copy button installs only it. */
+  versionId: string
   slug: string
   title: string
   copyCount: number
@@ -56,6 +58,7 @@ export async function getHeroLines(db: Db): Promise<HeroLine[]> {
   const rows = await db
     .select({
       configId: configs.id,
+      versionId: configVersions.id,
       slug: configs.slug,
       copyCount: configs.copyCount,
       title: configVersions.title,

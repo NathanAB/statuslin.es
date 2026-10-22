@@ -51,6 +51,7 @@ beforeEach(() => {
 
 const line = (slug: string, title: string, copyCount: number, render: string): HeroLine => ({
   configId: `id-${slug}`,
+  versionId: `version-${slug}`,
   slug,
   title,
   copyCount,
@@ -135,7 +136,7 @@ describe('HomeHero', () => {
   it('says what the picked line can reach, and leaves review to the section below', () => {
     renderHero()
 
-    expect(reach()).toBe("Doesn't connect to the internet")
+    expect(reach()).toBe("Doesn't ask to reach the internet")
     expect(screen.queryByText(/reviewed and rendered in a sandbox/)).toBeNull()
     pick(/^Pace Dot Meters/)
     expect(reach()).toBe('Reads your Claude sign-in token and connects to wttr.in')

@@ -36,6 +36,17 @@ describe('modInstallCommands', () => {
 })
 
 describe('modCopyEvent', () => {
+  it('says when the install command was copied from the home hero', () => {
+    const evt = modCopyEvent({
+      kind: 'prompt',
+      modId: 'mod-1',
+      distinctId: 'u1',
+      signedInUserId: 'u1',
+      surface: 'home_hero',
+    })
+    expect(evt?.properties.surface).toBe('home_hero')
+  })
+
   it('names the mod and the command copied, tied to the signed-in browser session', () => {
     expect(
       modCopyEvent({
@@ -48,7 +59,7 @@ describe('modCopyEvent', () => {
     ).toEqual({
       distinctId: 'u1',
       event: 'mod_install_command_copied',
-      properties: { modId: 'mod-1', command: 'prompt', $session_id: 'sid' },
+      properties: { modId: 'mod-1', command: 'prompt', surface: 'page', $session_id: 'sid' },
     })
   })
 

@@ -118,9 +118,9 @@ function Reviewed() {
   return (
     <Stack gap={4}>
       <Text>
-        A status line with hidden or encoded code, or one that reads credentials such as SSH or AWS
-        keys, is refused when it's submitted. Everything else waits in a review queue, and nothing
-        goes live on its own. Review looks at:
+        Checks on submit look for hidden or encoded code and for reads of credentials such as SSH or
+        AWS keys, and a status line they catch is refused. Nothing goes live on its own. Review
+        looks at:
       </Text>
       <IconList label="What review looks at" look="rows" items={REVIEW_LOOKS_AT} />
       <Text>
@@ -135,8 +135,9 @@ function Listed({ mod }: { mod: HowItWorksExamples['mod'] }) {
   return (
     <Stack gap={4}>
       <Text>
-        Its page shows what it can reach, right by the install button. That comes from its footprint
-        and the checks on its script, never from the author's description.
+        Its page shows what it can reach, right by the install button. For a mod that comes from its
+        footprint, and for a status line from the checks on its script and the hosts approved for
+        it, never from the author's description.
       </Text>
       {mod ? (
         <Stack gap={2}>

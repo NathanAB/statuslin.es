@@ -16,11 +16,16 @@ export interface InstallSource {
 
 /**
  * The live script of a published status line, for a page that offers its install prompt without
- * carrying the script (the home hero). Null when the id is malformed, or the config is missing or
- * not published.
+ * carrying the script (the home hero). Null when an id is malformed, the config is missing or not
+ * published, or `versionId` is no longer its live version: the page described that version's reach,
+ * and an update approved since may reach more.
  */
-export async function findInstallSource(db: Db, configId: string): Promise<InstallSource | null> {
-  if (!isUuid(configId)) return null
+export async function findInstallSource(
+  db: Db,
+  configId: string,
+  versionId: string,
+): Promise<InstallSource | null> {
+  if (!isUuid(configId) || !isUuid(versionId)) return null
   const [row] = await db
     .select({
       title: configVersions.title,
@@ -29,7 +34,13 @@ export async function findInstallSource(db: Db, configId: string): Promise<Insta
     })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
-    .where(and(eq(configs.id, configId), eq(configs.status, 'published')))
+    .where(
+      and(
+        eq(configs.id, configId),
+        eq(configs.status, 'published'),
+        eq(configs.currentVersionId, versionId),
+      ),
+    )
   if (!row) return null
   // The column is free-form text; anything unknown installs as bash, as the gallery shows it.
   const interpreter = INTERPRETERS.find((known) => known === row.interpreter) ?? 'bash'

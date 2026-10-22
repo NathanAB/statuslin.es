@@ -2,7 +2,7 @@
 
 // After a change, new content settles in from just below. Motion only when the visitor allows it.
 export const SETTLE =
-  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1.5 motion-safe:duration-700 motion-safe:ease-settle'
+  'motion-safe:animate-in motion-safe:fade-in-1 motion-safe:slide-in-from-bottom-1.5 motion-safe:duration-700 motion-safe:ease-settle'
 
 /** A new pick glows for a moment. */
 export const GLOW = 'motion-safe:animate-flash'

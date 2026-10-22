@@ -81,6 +81,7 @@ function entries(pages: number): HomeGalleryEntry[] {
 
 const heroLine: HeroLine = {
   configId: 'id-panel',
+  versionId: 'version-panel',
   slug: 'panel',
   title: 'Dreambase Panel',
   copyCount: 223,
@@ -169,7 +170,7 @@ describe('home content', () => {
     const hero = container.querySelector('section') as HTMLElement
     const fadesIn = (element: Element | null) => {
       for (let node = element; node && node !== hero.parentElement; node = node.parentElement) {
-        if (/\bfade-in-0\b/.test(node.getAttribute('class') ?? '')) return true
+        if (/\bfade-in-1\b/.test(node.getAttribute('class') ?? '')) return true
       }
       return false
     }

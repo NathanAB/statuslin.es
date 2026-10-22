@@ -13,7 +13,7 @@ describe('configInstallFacts', () => {
   it('says this version was reviewed before listing, and that it never connects to the internet', () => {
     expect(configInstallFacts(base).map((f) => [f.text, f.caution ?? false])).toEqual([
       ['Reviewed before listing · this version, Oct 12, 2026', false],
-      ["Doesn't connect to the internet", false],
+      ["Doesn't ask to reach the internet", false],
     ])
   })
 
@@ -49,7 +49,7 @@ describe('reachSentence', () => {
   }
 
   it('says a line that reaches nothing never connects to the internet', () => {
-    expect(reach(false, [])).toEqual(["Doesn't connect to the internet", false])
+    expect(reach(false, [])).toEqual(["Doesn't ask to reach the internet", false])
   })
 
   it('names the token it reads and the hosts it connects to, as risks', () => {

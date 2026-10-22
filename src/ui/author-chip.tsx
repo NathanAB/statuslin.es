@@ -1,4 +1,5 @@
 import type { ConfigAuthor } from '@/gallery/queries'
+import { chipAvatarUrl } from '@/lib/github-avatars'
 
 /** Author avatar + byline. Renders nothing for a null author (pre-FK data only).
  *  With a GitHub username it links to the profile and shows `@username`; without
@@ -10,7 +11,7 @@ export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
 
   const avatar = author.image ? (
     <img
-      src={author.image}
+      src={chipAvatarUrl(author.image)}
       alt=""
       loading="lazy"
       width={20}

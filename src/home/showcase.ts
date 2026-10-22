@@ -39,3 +39,19 @@ export async function getHomeShowcase(db: Db): Promise<HomeShowcase> {
   const [lines, heroMods] = await Promise.all([getHeroLines(db), getHeroMods(db)])
   return { hero: heroItems(lines, heroMods) }
 }
+
+/**
+ * The hero opens the page; the gallery under it is the content. If the hero's lists fail to load,
+ * the failure is reported and the home page renders without them instead of as an error page.
+ */
+export async function showcaseOrEmpty(
+  load: () => Promise<HomeShowcase>,
+  report: (error: unknown) => void,
+): Promise<HomeShowcase> {
+  try {
+    return await load()
+  } catch (error) {
+    report(error)
+    return { hero: [] }
+  }
+}
