@@ -15,9 +15,9 @@ export function TermsContent() {
       <Stack gap={2}>
         <Heading level={2}>What this is</Heading>
         <Text muted>
-          statuslin.es is a community gallery of Claude Code mods, including status lines. Submitted
-          status lines and mods are rendered in a sandbox and reviewed before they appear. You run
-          anything you copy or install at your own risk.
+          statuslin.es is a community gallery of Claude Code status lines and mods. Submitted status
+          lines and mods are rendered in a sandbox and reviewed before they appear. You run anything
+          you copy or install at your own risk.
         </Text>
       </Stack>
 

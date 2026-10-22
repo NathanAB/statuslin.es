@@ -12,10 +12,11 @@ describe('TermsContent', () => {
     expect(screen.getByText(/public domain/i)).toBeTruthy()
   })
 
-  it('calls the gallery one of mods, naming status lines once as one kind', () => {
+  // In Claude Code a mod is a plugin, and a status line is not one.
+  it('calls the gallery one of status lines and mods, two kinds', () => {
     render(<TermsContent />)
     expect(
-      screen.getByText(/community gallery of Claude Code mods, including status lines\./),
+      screen.getByText(/community gallery of Claude Code status lines and mods\./),
     ).toBeTruthy()
   })
 
