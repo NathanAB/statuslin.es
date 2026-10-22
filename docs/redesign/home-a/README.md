@@ -481,3 +481,18 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   is home, then the topic, on the page and in its BreadcrumbList. This replaces the hub parts of the
   Collections entry and the framing sweep above. The footer's Browse column reads Best mods, Best
   status lines, Resources, Submit.
+- **Titles name both kinds, ordered by what each page's searchers type** (owner, after an SEO
+  pass on 2026-10-22). Search Console (2026-07-23 to 2026-10-21): the October growth came from mod
+  pages ranking for mod names, whose titles this branch leaves alone; no visible search is a
+  generic "claude code mods" one; the home page's visible queries are 12% status line and 0% mod
+  searches; topic pages, `/resources` and the guides are found by status line and tool-name
+  searches. So the mods-first framing lives in the h1s, hero and copy, and the titles keep the
+  searched words: home is "Claude Code Mods & Status Lines"; git, burn-rate and weather say
+  "Status Lines & Mods"; cost, minimal and multi-line go back to production's; token-usage and
+  quota keep the earlier both-kinds wording. Each topic page's title is fixed in its `FACETS`
+  entry, so a tag edit can no longer retitle a ranking page. A status line page's breadcrumb names
+  its topic as the topic page does ("Git"). A `/resources` tool's name opens the tool, with its
+  alternatives page in the line under it. `/guide`'s h1 says "set up" like its title. A gallery
+  search page is noindex with no canonical. This replaces the title parts of the Claude Code mods
+  site entry, the `/resources` entry above and the framing sweep. Before/after data for comparing
+  2 to 4 weeks after launch: the per-page Search Console tables taken on 2026-10-22.
