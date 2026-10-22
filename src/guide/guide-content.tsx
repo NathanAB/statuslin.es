@@ -30,7 +30,7 @@ export function GuideContent({
       contents={GUIDE_CONTENTS}
       intro={
         <Stack gap={3}>
-          <Heading level={1}>How to write your own Claude Code status line</Heading>
+          <Heading level={1}>How to set up a Claude Code status line</Heading>
           <Text muted>
             A status line is a bar at the bottom of Claude Code. Claude Code runs your script, pipes
             it a JSON snapshot of the session, and shows what the script prints.

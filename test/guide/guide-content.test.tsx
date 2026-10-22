@@ -34,7 +34,7 @@ describe('GuideContent', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: 'How to write your own Claude Code status line',
+        name: 'How to set up a Claude Code status line',
       }),
     ).toBeTruthy()
     for (const heading of [

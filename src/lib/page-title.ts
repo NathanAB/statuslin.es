@@ -128,7 +128,7 @@ export const GUIDE_LINK_LABEL = 'Write a status line'
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 
 /** `modified` is the day a change to the page's text went live; bump it with every such change. */
-export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-21' } as const
+export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-22' } as const
 
 /** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
 export const GUIDE_DESCRIPTION =
