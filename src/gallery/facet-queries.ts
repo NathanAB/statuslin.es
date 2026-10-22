@@ -141,24 +141,6 @@ export function primaryFacet(
   return null
 }
 
-/** A topic on the /status-lines hub: an indexable facet page and what it lists. */
-export interface FacetTopic {
-  slug: string
-  statusLines: number
-  mods: number
-}
-
-/**
- * Every indexable facet page, in registry order, with its counts. `stats` counts status lines and
- * the published `mods` together, so a facet's mods come off its count to leave its status lines.
- */
-export function facetTopics(stats: Map<string, FacetStats>, mods: FacetMod[]): FacetTopic[] {
-  return liveFacetLinks(stats).map(({ slug }) => {
-    const modCount = mods.filter((mod) => mod.tags.includes(slug)).length
-    return { slug, statusLines: (stats.get(slug)?.count ?? 0) - modCount, mods: modCount }
-  })
-}
-
 /** Links for every indexable facet, optionally excluding the current one. */
 export function liveFacetLinks(
   stats: Map<string, FacetStats>,

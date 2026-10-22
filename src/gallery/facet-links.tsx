@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router'
-import { STATUS_LINES_PATH } from '@/lib/page-title'
 import { MODS_PATH } from '@/lib/site'
 import { Badge } from '@/ui/badge'
 import { Row } from '@/ui/layout'
@@ -9,8 +8,7 @@ import { FACETS } from './facets'
 
 /**
  * A facet page's topics, under its heading: this facet and the other indexable ones in registry
- * order, this one marked as the current page, then a link to the hub that lists them all. The hub
- * link matches its path exactly, or the router would mark it current on every facet page too.
+ * order, this one marked as the current page.
  */
 export function FacetTopicLinks({
   current,
@@ -35,11 +33,6 @@ export function FacetTopicLinks({
             </Badge>
           </Link>
         ))}
-        <Link to={STATUS_LINES_PATH} activeOptions={{ exact: true }}>
-          <Badge variant="link">
-            All topics <span aria-hidden="true">→</span>
-          </Badge>
-        </Link>
       </Row>
     </nav>
   )

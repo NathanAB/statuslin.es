@@ -21,7 +21,7 @@ export function facetTopicName(facet: Facet): string {
   return tagLabel(facet.chipLabel)
 }
 
-/** A topic's heading on the hub: its page's own, which names mods while the page lists one. */
+/** A topic page's heading, which names mods while the page lists one. */
 export function topicHeading(topic: { slug: string; mods: number }): string {
   const facet = FACET_BY_SLUG.get(topic.slug)
   return facet ? facetPageCopy(facet, topic.mods).heading : topic.slug

@@ -473,3 +473,11 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   plain title (the heading step, not display) and one sentence, then the status line tools, then
   "What you can customize" as eight tiles with Anthropic's docs. This replaces the drawn-session
   entries above.
+- **No topics hub**, decided by the owner. `/status-lines` stacked each topic page's full search
+  heading five times, under links that went nowhere in particular, and had no job the topic pages
+  didn't already do: they link each other, every status line page links its topic, and the guides,
+  /resources and the sitemap link them. It never shipped to production, so nothing indexed it. The
+  page, its footer link, the "All topics" chip and the "Topics" crumb are gone; a topic page's trail
+  is home, then the topic, on the page and in its BreadcrumbList. This replaces the hub parts of the
+  Collections entry and the framing sweep above. The footer's Browse column reads Best mods, Best
+  status lines, Resources, Submit.

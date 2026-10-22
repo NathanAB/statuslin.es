@@ -133,21 +133,13 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('<loc>https://example.test/status-lines/bash</loc>')
   })
 
-  it('lists the topics hub beside its facets, dated by the newest of them', async () => {
+  // There is no topics hub: each topic page is listed on its own.
+  it('lists no /status-lines page beside the topic pages', async () => {
     const xml = await sitemapResponse(
       BASE,
       [],
-      [
-        { slug: 'git', latest: new Date('2026-06-02T00:00:00Z') },
-        { slug: 'cost', latest: new Date('2026-07-08T00:00:00Z') },
-        { slug: 'bash', latest: null },
-      ],
+      [{ slug: 'git', latest: new Date('2026-06-02T00:00:00Z') }],
     ).text()
-    expect(entryFor(xml, `${BASE}/status-lines`)).toContain('<lastmod>2026-07-08</lastmod>')
-  })
-
-  it('leaves the topics hub out while no facet page is listed', async () => {
-    const xml = await sitemapResponse(BASE, [], []).text()
     expect(xml).not.toContain(`<loc>${BASE}/status-lines</loc>`)
   })
 })

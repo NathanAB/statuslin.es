@@ -69,16 +69,15 @@ function renderFacet(
 const linkTo = (name: string) => screen.getByRole('link', { name }).getAttribute('href')
 
 describe('facet page content', () => {
-  it('shows the trail back through the topics hub', () => {
+  it('shows the trail back home, with no topics hub between', () => {
     renderFacet('git')
 
     const trail = within(screen.getByRole('navigation', { name: 'Breadcrumb' }))
-    expect(trail.getByRole('link', { name: 'statuslin.es' }).getAttribute('href')).toBe('/')
-    expect(trail.getByRole('link', { name: 'Topics' }).getAttribute('href')).toBe('/status-lines')
+    expect(trail.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/'])
     expect(trail.getByText('Git')).toBeTruthy()
   })
 
-  it('links every topic under the heading, this one marked current, then all topics', () => {
+  it('links every topic under the heading, this one marked current', () => {
     renderFacet('git', 0, {
       otherFacets: [
         { slug: 'token-usage', chipLabel: 'tokens' },
@@ -91,14 +90,8 @@ describe('facet page content', () => {
       ['Git', '/status-lines/git'],
       ['Tokens', '/status-lines/token-usage'],
       ['Bash', '/status-lines/bash'],
-      ['All topics →', '/status-lines'],
     ])
-    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual([
-      'page',
-      null,
-      null,
-      null,
-    ])
+    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual(['page', null, null])
   })
 
   it('says how to install one from the list', () => {
@@ -314,12 +307,11 @@ describe('facet page content', () => {
     ])
   })
 
-  it('names this topic in the breadcrumb JSON-LD, after the topics hub', async () => {
+  it('names this topic in the breadcrumb JSON-LD, right after home', async () => {
     const crumbs = (await headFor('token-usage')).find((node) => node['@type'] === 'BreadcrumbList')
     const trail = (crumbs?.itemListElement ?? []) as Array<{ name: string; item: string }>
     expect(trail.map(({ name, item }) => [name, item])).toEqual([
       ['statuslin.es', window.location.origin],
-      ['Topics', `${window.location.origin}/status-lines`],
       ['Tokens', `${window.location.origin}/status-lines/token-usage`],
     ])
   })

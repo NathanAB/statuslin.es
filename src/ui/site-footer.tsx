@@ -7,7 +7,6 @@ import {
   GUIDE_PATH,
   MOD_SAFETY_GUIDE_PATH,
   NOT_SHOWING_GUIDE_PATH,
-  STATUS_LINES_PATH,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
 } from '@/lib/page-title'
 import { CONTACT_EMAIL, MODS_PATH, REPO_URL, SITE_NAME } from '@/lib/site'
@@ -25,8 +24,6 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
       // The two ranked lists side by side, named alike.
       { to: MODS_PATH, label: 'Best mods' },
       { to: '/status-lines/best', label: 'Best status lines' },
-      // The topic hub's one site-wide link in, besides the facet pages' trails.
-      { to: STATUS_LINES_PATH, label: 'Topics' },
       { to: '/resources', label: 'Resources' },
       { to: '/submit', label: 'Submit' },
     ],

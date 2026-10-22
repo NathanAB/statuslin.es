@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { facetTopics } from '@/gallery/facet-queries'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 // @/gallery/queries is the single import surface for gallery queries (its own comment says so);
 // resolveLiveFacet and liveFacetLinks get re-exported there like the rest.
@@ -35,22 +34,5 @@ describe('liveFacetLinks', () => {
   })
   it('can exclude the current facet', () => {
     expect(liveFacetLinks(stats, 'git')).toEqual([])
-  })
-})
-
-describe('facetTopics', () => {
-  it('lists every indexable facet page in registry order, with its status line and mod counts', () => {
-    // Each count holds both kinds: git's 4 is 3 status lines and the git mod.
-    const counted = new Map([
-      ['token-usage', { count: 3, latest: null }],
-      ['git', { count: 4, latest: null }],
-      ['cost', { count: 2, latest: null }],
-      ['reads-token', { count: 5, latest: null }],
-    ])
-
-    expect(facetTopics(counted, [{ tags: ['git', 'reads-token'] }, { tags: ['cost'] }])).toEqual([
-      { slug: 'git', statusLines: 3, mods: 1 },
-      { slug: 'token-usage', statusLines: 3, mods: 0 },
-    ])
   })
 })

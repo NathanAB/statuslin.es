@@ -35,7 +35,6 @@ import { Route as GuideStatusLinesVsModsRouteImport } from './routes/guide_.stat
 import { Route as ModsIndexRouteImport } from './routes/mods.index'
 import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
-import { Route as StatusLinesIndexRouteImport } from './routes/status-lines.index'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -178,11 +177,6 @@ const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
   path: '/og/home.png',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StatusLinesIndexRoute = StatusLinesIndexRouteImport.update({
-  id: '/status-lines/',
-  path: '/status-lines/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const StatusLinesFacetRoute = StatusLinesFacetRouteImport.update({
   id: '/status-lines/$facet',
   path: '/status-lines/$facet',
@@ -258,7 +252,6 @@ export interface FileRoutesByFullPath {
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
-  '/status-lines/': typeof StatusLinesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
@@ -295,7 +288,6 @@ export interface FileRoutesByTo {
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin': typeof AdminIndexRoute
   '/mods': typeof ModsIndexRoute
-  '/status-lines': typeof StatusLinesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
@@ -333,7 +325,6 @@ export interface FileRoutesById {
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
-  '/status-lines/': typeof StatusLinesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
@@ -372,7 +363,6 @@ export interface FileRouteTypes {
     | '/status-lines/best'
     | '/admin/'
     | '/mods/'
-    | '/status-lines/'
     | '/api/auth/$'
     | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
@@ -409,7 +399,6 @@ export interface FileRouteTypes {
     | '/status-lines/best'
     | '/admin'
     | '/mods'
-    | '/status-lines'
     | '/api/auth/$'
     | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
@@ -446,7 +435,6 @@ export interface FileRouteTypes {
     | '/status-lines/best'
     | '/admin/'
     | '/mods/'
-    | '/status-lines/'
     | '/api/auth/$'
     | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
@@ -484,7 +472,6 @@ export interface RootRouteChildren {
   StatusLinesBestRoute: typeof StatusLinesBestRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ModsIndexRoute: typeof ModsIndexRoute
-  StatusLinesIndexRoute: typeof StatusLinesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ConfigPreviewsVersionIdDesktopDotpngRoute: typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
@@ -677,13 +664,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgHomeDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/status-lines/': {
-      id: '/status-lines/'
-      path: '/status-lines'
-      fullPath: '/status-lines/'
-      preLoaderRoute: typeof StatusLinesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/status-lines/$facet': {
       id: '/status-lines/$facet'
       path: '/status-lines/$facet'
@@ -772,7 +752,6 @@ const rootRouteChildren: RootRouteChildren = {
   StatusLinesBestRoute: StatusLinesBestRoute,
   AdminIndexRoute: AdminIndexRoute,
   ModsIndexRoute: ModsIndexRoute,
-  StatusLinesIndexRoute: StatusLinesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ConfigPreviewsVersionIdDesktopDotpngRoute:
     ConfigPreviewsVersionIdDesktopDotpngRoute,

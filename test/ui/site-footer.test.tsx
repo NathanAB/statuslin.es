@@ -28,7 +28,7 @@ describe('SiteFooter', () => {
     const { container } = render(<SiteFooter />)
     const nav = screen.getByRole('navigation', { name: 'Footer' })
     expect(nav.querySelectorAll('a').length).toBe(container.querySelectorAll('a').length)
-    expect(nav.querySelectorAll('a').length).toBe(14)
+    expect(nav.querySelectorAll('a').length).toBe(13)
   })
 
   // Columns of their own instead of one row that wraps wherever the width happens to break it.
@@ -39,14 +39,8 @@ describe('SiteFooter', () => {
         screen.getByRole('list', { name: list }).querySelectorAll('a'),
         (a) => a.textContent,
       )
-    // Parallel names: the two ranked lists side by side, then the topic hub, none repeating "Browse".
-    expect(names('Browse')).toEqual([
-      'Best mods',
-      'Best status lines',
-      'Topics',
-      'Resources',
-      'Submit',
-    ])
+    // Parallel names: the two ranked lists side by side, neither repeating "Browse".
+    expect(names('Browse')).toEqual(['Best mods', 'Best status lines', 'Resources', 'Submit'])
     expect(names('Guides')).toEqual([
       'Write a status line',
       'Status line not showing?',

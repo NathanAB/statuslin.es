@@ -1,4 +1,4 @@
-import { GUIDE_DATES, GUIDE_PATH, GUIDE_SUBPAGES, STATUS_LINES_PATH } from '@/lib/page-title'
+import { GUIDE_DATES, GUIDE_PATH, GUIDE_SUBPAGES } from '@/lib/page-title'
 import { MODS_PATH, modPath } from '@/lib/site'
 
 /**
@@ -93,11 +93,6 @@ function buildSitemapXml(
   for (let page = 2; page <= pageCount; page++) {
     pageEntries.push(urlEntry(`${base}/?page=${page}`, homepageLastmod))
   }
-  // The topics hub lists the facet pages, so it goes with them and dates by the newest.
-  const hubEntries =
-    facets.length > 0
-      ? [urlEntry(`${base}${STATUS_LINES_PATH}`, isoDay(newestDate(facets.map((f) => f.latest))))]
-      : []
   const facetEntries = facets.map((f) =>
     urlEntry(
       `${base}/status-lines/${f.slug}`,
@@ -120,7 +115,6 @@ function buildSitemapXml(
   const body = [
     ...staticEntries,
     ...pageEntries,
-    ...hubEntries,
     ...facetEntries,
     ...configEntries,
     ...modEntries,

@@ -9,7 +9,6 @@ import { getFacetPage } from '@/gallery/functions'
 import { mergeGalleryItems } from '@/gallery/gallery-items'
 import { kindCount } from '@/gallery/kind-count'
 import { getSession } from '@/lib/auth-functions'
-import { STATUS_LINES_CRUMB } from '@/lib/breadcrumb-json-ld'
 import { canonicalLink } from '@/lib/canonical'
 import { facetJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { brandedPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
@@ -90,7 +89,7 @@ function FacetPage() {
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
-          <DetailBreadcrumb trail={[STATUS_LINES_CRUMB]} title={facetTopicName(facet)} />
+          <DetailBreadcrumb trail={[]} title={facetTopicName(facet)} />
           <Heading level={1}>{copy.heading}</Heading>
           <FacetTopicLinks current={page.slug} others={page.otherFacets} />
           {(facet.intro ?? []).map((paragraph) => (

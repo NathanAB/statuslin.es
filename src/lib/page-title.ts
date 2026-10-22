@@ -113,17 +113,6 @@ export function homeMetaDescription(page: number, pageCount: number): string {
  */
 export const BEST_PAGE_TITLE_BASE = 'Best Claude Code Status Line Examples'
 
-/** The topics hub: every facet page, linked by its heading. Its topics list both kinds. */
-export const STATUS_LINES_PATH = '/status-lines'
-
-/** /status-lines title base: the <title> tag, og:title and its JSON-LD name. */
-export const STATUS_LINES_TITLE_BASE = 'Claude Code Status Lines & Mods by Topic'
-export const STATUS_LINES_HEADING = 'Claude Code status lines and mods by topic'
-
-/** /status-lines meta description: the description tag and OG. */
-export const STATUS_LINES_DESCRIPTION =
-  'Claude Code status lines and mods grouped by what they show: git, token usage, cost, usage limits and more. Each has a real preview and a one-paste install.'
-
 export const GUIDE_PATH = '/guide'
 /**
  * What the header and footer call the guide: it's for writing a status line, not a mod, so the
