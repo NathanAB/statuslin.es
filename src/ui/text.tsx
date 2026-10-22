@@ -10,7 +10,8 @@ import { hashScrollOptions } from '@/lib/reduced-motion'
  * the same level can never render differently on two pages, and headings are never
  * monospace. Level 3 is the card / section-card title. `size="compact"` is the quiet
  * title for a page whose wordmark already carries the visual weight. `size="display"` is the home
- * hero's title; `size="subsection"` a directory page's section title (/resources), at statement size.
+ * hero's title; `size="page"` another page's opening title (`PageHeader`), one step down;
+ * `size="subsection"` a directory page's section title (/resources), at statement size.
  */
 const HEADING_CLASS = {
   1: 'text-2xl font-semibold text-foreground',
@@ -20,6 +21,8 @@ const HEADING_CLASS = {
 const COMPACT_HEADING_CLASS = 'text-lg font-medium leading-snug text-foreground'
 // The home hero's page title, on the redesign's largest size.
 const DISPLAY_HEADING_CLASS = 'text-balance font-semibold text-display text-foreground'
+// Another page's opening title (PageHeader): one step under the hero's, which ran too big there.
+const PAGE_HEADING_CLASS = 'text-balance font-semibold text-heading text-foreground'
 // A directory page's section title (/resources): the redesign's statement size, set bold.
 const SUBSECTION_HEADING_CLASS = 'text-balance font-semibold text-foreground text-lead'
 
@@ -30,7 +33,7 @@ export function Heading({
   children,
 }: {
   level: 1 | 2 | 3
-  size?: 'default' | 'compact' | 'display' | 'subsection'
+  size?: 'default' | 'compact' | 'display' | 'page' | 'subsection'
   id?: string | undefined
   children: React.ReactNode
 }) {
@@ -39,9 +42,11 @@ export function Heading({
       ? COMPACT_HEADING_CLASS
       : size === 'display'
         ? DISPLAY_HEADING_CLASS
-        : size === 'subsection'
-          ? SUBSECTION_HEADING_CLASS
-          : HEADING_CLASS[level]
+        : size === 'page'
+          ? PAGE_HEADING_CLASS
+          : size === 'subsection'
+            ? SUBSECTION_HEADING_CLASS
+            : HEADING_CLASS[level]
   if (level === 1)
     return (
       <h1 id={id} className={className}>

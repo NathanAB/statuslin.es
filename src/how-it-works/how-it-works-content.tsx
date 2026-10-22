@@ -11,7 +11,7 @@ import {
 import type { HowItWorksExamples } from '@/how-it-works/examples'
 import { CHECK_STEP, CHECK_STEPS } from '@/how-it-works/steps'
 import { HOW_IT_WORKS_HEADING, MOD_SAFETY_GUIDE_PATH } from '@/lib/page-title'
-import { MARKETPLACE_PATH } from '@/lib/site'
+import { MARKETPLACE_PATH, REPO_URL, SECURITY_POLICY_URL } from '@/lib/site'
 import { modInstallFacts } from '@/mods/mod-install-facts'
 import { SCENARIO_BY_KEY, SCENARIOS } from '@/render/scenarios'
 import { Callout } from '@/ui/callout'
@@ -27,6 +27,7 @@ import { RuledSections } from '@/ui/ruled-sections'
 import { ScenarioRow } from '@/ui/scenario-row'
 import { Text, TextLink } from '@/ui/text'
 
+const OPEN_SOURCE = { id: 'all-of-it-is-open-source', title: 'All of it is open source' } as const
 const LIMITS = { id: 'what-review-cant-promise', title: "What review can't promise" } as const
 
 /** How many of the example status line's sessions the sandbox step shows. */
@@ -157,13 +158,14 @@ function Listed({ mod }: { mod: HowItWorksExamples['mod'] }) {
 
 /**
  * The /how-it-works page body: the four checks every listing passes, each shown with a real
- * listing (the hero's top status line and mod) when there is one, then what review can't promise.
+ * listing (the hero's top status line and mod) when there is one, then that all of it is open
+ * source, then what review can't promise.
  */
 export function HowItWorksContent({ examples }: { examples: HowItWorksExamples }) {
   const { pinned, sandboxed, reviewed, listed } = CHECK_STEP
   return (
     <DocLayout
-      contents={[...CHECK_STEPS.map(({ id, title }) => ({ id, title })), LIMITS]}
+      contents={[...CHECK_STEPS.map(({ id, title }) => ({ id, title })), OPEN_SOURCE, LIMITS]}
       intro={
         <PageHeader
           title={HOW_IT_WORKS_HEADING}
@@ -183,6 +185,18 @@ export function HowItWorksContent({ examples }: { examples: HowItWorksExamples }
         </PageSection>
         <PageSection id={listed.id} step={4} title={listed.title}>
           <Listed mod={examples.mod} />
+        </PageSection>
+        <PageSection id={OPEN_SOURCE.id} title={OPEN_SOURCE.title}>
+          <Text>
+            statuslin.es is open source. The sandbox, the checks on submitted scripts, the review
+            queue and /marketplace.json are code in its public repository, so you can read exactly
+            what each step does.
+          </Text>
+          <Text>
+            Read it at <TextLink href={REPO_URL}>statuslin.es on GitHub</TextLink>. If you find a
+            way around a check, <TextLink href={SECURITY_POLICY_URL}>SECURITY.md</TextLink> says how
+            to report it.
+          </Text>
         </PageSection>
         <PageSection id={LIMITS.id} title={LIMITS.title}>
           <IconList label={LIMITS.title} look="rows" items={CANT_PROMISE} />

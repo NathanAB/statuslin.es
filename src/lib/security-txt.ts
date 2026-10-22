@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL, REPO_URL } from '@/lib/site'
+import { CONTACT_EMAIL, SECURITY_POLICY_URL } from '@/lib/site'
 
 /**
  * RFC 9116 security.txt body, served at /.well-known/security.txt so researchers
@@ -11,7 +11,7 @@ import { CONTACT_EMAIL, REPO_URL } from '@/lib/site'
 export const SECURITY_TXT = [
   `Contact: mailto:${CONTACT_EMAIL}`,
   'Expires: 2027-06-20T00:00:00.000Z',
-  `Policy: ${REPO_URL}/blob/main/SECURITY.md`,
+  `Policy: ${SECURITY_POLICY_URL}`,
   'Preferred-Languages: en',
   '',
 ].join('\n')

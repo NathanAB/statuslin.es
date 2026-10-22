@@ -156,7 +156,6 @@ function Home() {
           items={showcase.hero}
         />
       </HomeSection>
-      <HomeChecks />
       <HomeGallery
         items={items}
         page={page}
@@ -167,6 +166,7 @@ function Home() {
         tags={search.tags}
         query={search.q}
       />
+      <HomeChecks />
     </PageShell>
   )
 }

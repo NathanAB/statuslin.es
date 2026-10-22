@@ -105,8 +105,8 @@ function renderHome(pages = 1, search: Record<string, string | number> = {}) {
 
 describe('home content', () => {
   // The hero's one line about review grew into its own section: the four checks every listing
-  // passes, between the hero and the gallery, with a link to the page that shows each one.
-  it('says how listings are checked between the hero and the gallery, and links to the steps', () => {
+  // passes, on its own band of colour after the gallery, with a link to the page that shows each one.
+  it('says how listings are checked after the gallery, and links to the steps', () => {
     renderHome()
 
     const checks = screen.getByRole('region', { name: 'How listings are checked' })
@@ -123,10 +123,15 @@ describe('home content', () => {
     expect(within(checks).getByRole('link', { name: 'How it works' }).getAttribute('href')).toBe(
       '/how-it-works',
     )
+    // The checks are code anyone can read.
+    expect(within(checks).getByText(/statuslin\.es is open source/)).toBeTruthy()
+    expect(within(checks).getByRole('link', { name: 'read on GitHub' }).getAttribute('href')).toBe(
+      'https://github.com/NathanAB/statuslin.es',
+    )
     const hero = screen.getByRole('heading', { level: 1 })
     const gallery = screen.getByRole('heading', { level: 2, name: 'Status lines and mods' })
-    expect(hero.compareDocumentPosition(checks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(checks.compareDocumentPosition(gallery) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(hero.compareDocumentPosition(gallery) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(gallery.compareDocumentPosition(checks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   // The owner dropped the footer's inventory line ("N status lines and M mods, installed …").
@@ -270,12 +275,12 @@ describe('home analytics', () => {
 
 describe('home sections', () => {
   // The gallery is the page: nothing below it repeats the hero or the header.
-  it('runs the hero, how listings are checked, then the gallery, and ends there', () => {
+  it('runs the hero, the gallery, then how listings are checked, and ends there', () => {
     renderHome()
 
     expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
-      'How listings are checked',
       'Status lines and mods',
+      'How listings are checked',
     ])
     // The sentence already says "Pick a mod", so the list keeps the words only as its name for
     // screen readers, with no heading on screen.

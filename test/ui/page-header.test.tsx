@@ -10,4 +10,12 @@ describe('PageHeader', () => {
     const h1 = screen.getByRole('heading', { level: 1, name: 'Claude Code tools' })
     expect(h1.parentElement?.nextElementSibling?.textContent).toBe('Everything worth installing.')
   })
+
+  // At the hero's display size a page title was too big: it's one step down the type scale.
+  it("sets the title one size under the home hero's", () => {
+    render(<PageHeader title="Claude Code tools" lead="Everything worth installing." />)
+    const h1 = screen.getByRole('heading', { level: 1 })
+    expect(h1.className.split(/\s+/)).toContain('text-heading')
+    expect(h1.className.split(/\s+/)).not.toContain('text-display')
+  })
 })

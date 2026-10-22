@@ -92,15 +92,15 @@
      src/og/fit.ts) and on whole pixels, so ▀ rows touch with no seam, as in a terminal. */
   --leading-terminal: 1.125rem;
 
-  /* The redesign's five text sizes (text-small … text-display). Each grows with the viewport
-     between a phone and a 1440px screen. */
+  /* The redesign's five text sizes (text-small … text-display), each growing between a phone and
+     1440px. Display is the home hero's alone; heading, a step under it, opens other pages. */
   --text-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
   --text-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
   --text-body--line-height: 1.5;
   --text-lead: clamp(1.25rem, 1.1rem + 0.7vw, 1.625rem);
   --text-lead--line-height: 1.3;
   --text-lead--letter-spacing: -0.015em;
-  --text-heading: clamp(2rem, 1.3rem + 3.2vw, 4rem);
+  --text-heading: clamp(1.875rem, 1.2rem + 2.2vw, 3rem);
   --text-heading--line-height: 1;
   --text-heading--letter-spacing: -0.04em;
   --text-display: clamp(2.25rem, 0.9rem + 4vw, 4.75rem);
@@ -120,7 +120,7 @@
      gutters that grow with the window (px-gutter, max-w-page). And the space between the home
      page's sections (mt-section). */
   --spacing-gutter: clamp(1rem, 2.4vw, 2.25rem);
-  --spacing-section: clamp(7rem, 13vw, 13rem);
+  --spacing-section: clamp(4.5rem, 9vw, 9rem);
   --container-page: calc(80rem + 2 * var(--spacing-gutter));
 
   /* The home terminal: its status row glows coral for a moment when it changes (animate-flash),

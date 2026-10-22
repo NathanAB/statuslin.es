@@ -74,7 +74,11 @@ describe('HowItWorksContent', () => {
         name: 'How statuslin.es checks mods and status lines',
       }),
     ).toBeTruthy()
-    expect(sectionTitles()).toEqual([...STEPS, "What review can't promise"])
+    expect(sectionTitles()).toEqual([
+      ...STEPS,
+      'All of it is open source',
+      "What review can't promise",
+    ])
     STEPS.forEach((title, i) => {
       expect(step(title).id).not.toBe('')
       expect(step(title).textContent?.startsWith(`${i + 1}${title}`)).toBe(true)
@@ -130,7 +134,11 @@ describe('HowItWorksContent', () => {
   it('reads whole with no examples to show', () => {
     render(<HowItWorksContent examples={{ line: null, mod: null }} />)
 
-    expect(sectionTitles()).toEqual([...STEPS, "What review can't promise"])
+    expect(sectionTitles()).toEqual([
+      ...STEPS,
+      'All of it is open source',
+      "What review can't promise",
+    ])
     expect(document.querySelector('.shiki')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'What this mod can do' })).toBeNull()
   })
@@ -143,6 +151,19 @@ describe('HowItWorksContent', () => {
     expect(page).not.toMatch(/\b(a person|a human|every mod|every listing)\b/i)
     expect(page.replace(/\/statusline|statusLine/g, '')).not.toMatch(/statusline/i)
     expect(page).not.toContain('—')
+  })
+
+  // Every check on the page is code in the public repository, and a way around one has a place to go.
+  it('says all of it is open source, with the repository and how to report a hole', () => {
+    render(<HowItWorksContent examples={EXAMPLES} />)
+
+    const open = within(screen.getByRole('region', { name: 'All of it is open source' }))
+    expect(open.getByRole('link', { name: 'statuslin.es on GitHub' }).getAttribute('href')).toBe(
+      'https://github.com/NathanAB/statuslin.es',
+    )
+    expect(open.getByRole('link', { name: 'SECURITY.md' }).getAttribute('href')).toBe(
+      'https://github.com/NathanAB/statuslin.es/blob/main/SECURITY.md',
+    )
   })
 
   it("says what review can't promise, and sends the reader to the mod safety guide", () => {

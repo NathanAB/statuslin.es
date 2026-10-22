@@ -498,13 +498,20 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   2 to 4 weeks after launch: the per-page Search Console tables taken on 2026-10-22.
 - **How listings are checked gets its own section and page** (owner, 2026-10-22). The hero's line
   "Every mod here is reviewed and rendered in a sandbox before it's listed" was a whole topic in one
-  sentence, so it left the hero. A section between the hero and the gallery names the four checks
-  every status line and mod passes (pinned to one version, run in a sandbox, reviewed before it's
-  listed, listed with what it can reach), a line each, with a link to `/how-it-works`. It sits
-  above the gallery, not after it, since the gallery runs dozens of rows. `/how-it-works` shows
+  sentence, so it left the hero. A section after the gallery, on a full-width darker band so it
+  reads apart from the list, names the four checks every status line and mod passes (pinned to
+  one version, run in a sandbox, reviewed before it's listed, listed with what it can reach), a
+  line each, says the site is open source with a link to the repository, and links to
+  `/how-it-works`. `/how-it-works` shows
   each check as a numbered section with a real example: the top mod's `name` and `source` from
   `/marketplace.json`, the top status line in three of its sample sessions, and that mod's "What
-  this mod can do" panel, then what review can't promise. It says the sandbox is only for
+  this mod can do" panel, then that all of it is open source (the repository and SECURITY.md),
+  then what review can't promise. It says the sandbox is only for
   previews, since a mod installed runs with your permissions and no sandbox, and, like the mod
   safety guide, it never says a person reads every listing. The guide's checks section and the
   footer's About column link to it.
+- **Page titles sit a clear step under the hero's** (owner, 2026-10-22). At the hero's display
+  size a `PageHeader` title (/how-it-works, /resources, the mod safety guide) was too big. It now
+  uses `text-heading`, retuned to 30px on a phone and 48px from about 1300px wide; display stays
+  the home hero's alone. The home page's sections also sit closer: `mt-section` went from 13vw
+  (up to 208px) to 9vw (up to 144px).

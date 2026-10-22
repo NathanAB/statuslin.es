@@ -17,6 +17,9 @@ export const CONTACT_EMAIL = 'hello@statuslin.es'
 /** Public source repository. Linked from the site footer and the header's GitHub link. */
 export const REPO_URL = 'https://github.com/NathanAB/statuslin.es'
 
+/** How to report a security hole: the repository's policy. */
+export const SECURITY_POLICY_URL = `${REPO_URL}/blob/main/SECURITY.md`
+
 /**
  * License for user-submitted statusline configs (NOT the site's own code, which is MIT).
  * CC0 (public domain): a statusline is a tiny snippet meant to be copied and run, so we skip

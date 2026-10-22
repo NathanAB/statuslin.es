@@ -80,7 +80,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | What it does |
 | --- | --- |
-| `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. `size="compact"` is a quiet title; `size="display"` is the home hero's title; `size="subsection"` a directory page's section title (statement size, bold; /resources) |
+| `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. `size="compact"` is a quiet title; `size="display"` is the home hero's title; `size="page"` every other page's opening title (`PageHeader`), a clear step under it; `size="subsection"` a directory page's section title (statement size, bold; /resources) |
 | `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`. Text always fills its container: there is no line-length cap. |
 | `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer); `tone="muted"` is dimmed text that lights up on hover (a gallery row's tags); `tone="underlined"` is full-strength text underlined at rest (the hero's "Open page" link) |
 
@@ -96,10 +96,10 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. A tray option's `icon` sits before its label. `look`: `list` (label and detail on a tile: the hero's picker), `tray` (small segments: the hero's app) or `cards` (big side-by-side cards, each named by its label and described by its detail, with a radio dot: the submit page's "What are you submitting?") |
 | `<HeroLayout heading lead stage picker actions>`, `<HeroActions>` | `src/ui/hero-layout.tsx` | The home hero's 12-column grid (the title with its sentence under it, then the demo and its controls); stacks below 900px. On phones the actions show before the picker, so the first screen holds the install button; the DOM (and tab) order stays picker then actions, which still reads as pick, then install. |
 | `<DirectorySection title intro>`, `<LinkCard id title meta description>` | `src/ui/directory-section.tsx`, `src/ui/link-card.tsx` | A directory page's section (/resources): its title at statement size with a short intro under it, then its entries, closer together than the home sections. `LinkCard`: one outside resource as a compact card, its name (usually a `StretchedLink`) with a note under it and a short description; it lifts a tone on hover or focus |
-| `<PageHeader title lead>` | `src/ui/page-header.tsx` | A redesigned page's opening without a demo: the title at display size and its sentence right under it, over eight of twelve columns, as the home hero sets its own (/resources) |
+| `<PageHeader title lead>` | `src/ui/page-header.tsx` | A redesigned page's opening without a demo: the title at page size (`text-heading`, a step under the hero's display) and its sentence right under it, over eight of twelve columns, as the home hero sets its own (/resources) |
 | `<ColumnGrid>`, `<TileGrid>` | `src/ui/layout.tsx` | `ColumnGrid`: small groups side by side, two up from `sm`, four from `xl`. `TileGrid`: small tiles (`Panel`s) in rows, two up from `sm`, four from `xl` |
 | `<LiveMessage>` | `src/ui/visually-hidden.tsx` | A screen-reader-only `role="status"` message, read out when it changes |
-| `<HomeSection first? id?>` | `src/ui/home-section.tsx` | One section of the home page on the page column, `mt-section` from the one above (`first`: just under the header) |
+| `<HomeSection first? id? labelledBy? band?>` | `src/ui/home-section.tsx` | One section of the home page on the page column, `mt-section` from the one above (`first`: just under the header). `band` sets it on a full-width darker band (`bg-sunken`): the checks section after the gallery |
 
 ### Buttons (`src/ui/button.tsx`)
 

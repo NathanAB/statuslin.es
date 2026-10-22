@@ -131,7 +131,7 @@ const reach = () => byline().nextElementSibling?.textContent
 describe('HomeHero', () => {
   // You could copy a line that reads your Claude sign-in token without being told: the picked
   // line's reach sits right under the install button, as one short line. How listings are checked
-  // is its own section under the hero, too much for a line here.
+  // is its own section on the home page, too much for a line here.
   it('says what the picked line can reach, and leaves review to the section below', () => {
     renderHero()
 

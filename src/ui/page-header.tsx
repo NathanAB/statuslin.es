@@ -9,7 +9,7 @@ export function PageHeader({ title, lead }: { title: string; lead: string }) {
   return (
     <div className="grid grid-cols-12 gap-x-6 gap-y-[clamp(0.875rem,1.6vw,1.375rem)]">
       <div className="col-span-12">
-        <Heading level={1} size="display">
+        <Heading level={1} size="page">
           {title}
         </Heading>
       </div>
