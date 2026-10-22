@@ -70,6 +70,7 @@ export async function renderGallery(...urls: string[]) {
           items={view.items}
           page={view.page}
           pageCount={view.pageCount}
+          total={view.total}
           sort={search.sort ?? 'trending'}
           rawKind={search.kind}
           tags={search.tags}
@@ -107,7 +108,7 @@ export const searchBox = () =>
 export const titles = () => screen.queryAllByRole('heading', { level: 3 }).map((h) => h.textContent)
 export const pageLabels = () =>
   screen
-    .queryAllByRole('navigation', { name: 'Gallery pages' })
+    .queryAllByRole('navigation', { name: /^Gallery pages/ })
     .map((pager) => within(pager).getByText(/^Page \d+ of \d+$/).textContent)
 
 export async function typeAndWait(router: Router, text: string) {

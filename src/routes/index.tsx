@@ -134,7 +134,7 @@ export const Route = createFileRoute('/')({
 function Home() {
   const { user, entries, showcase } = Route.useLoaderData()
   const search = Route.useSearch()
-  const { items, page, pageCount } = galleryView(entries, {
+  const { items, page, pageCount, total } = galleryView(entries, {
     page: search.page ?? 1,
     q: search.q,
   })
@@ -158,6 +158,7 @@ function Home() {
         items={items}
         page={page}
         pageCount={pageCount}
+        total={total}
         sort={search.sort ?? 'trending'}
         rawKind={search.kind}
         tags={search.tags}

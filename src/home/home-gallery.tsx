@@ -14,7 +14,7 @@ import { GalleryList } from '@/ui/gallery-row'
 import { HomeSection } from '@/ui/home-section'
 import { Row, Stack } from '@/ui/layout'
 import { Text } from '@/ui/text'
-import { VisuallyHidden } from '@/ui/visually-hidden'
+import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 
 /** The gallery section's id: /#gallery lands on it. */
 const GALLERY_ID = 'gallery'
@@ -29,6 +29,7 @@ export function HomeGallery({
   items,
   page,
   pageCount,
+  total,
   sort,
   rawKind,
   tags,
@@ -37,6 +38,8 @@ export function HomeGallery({
   items: GalleryItem[]
   page: number
   pageCount: number
+  /** How many status lines and mods the search matches, across every page. */
+  total: number
   sort: GallerySort
   rawKind: GalleryFilter | undefined
   tags: string | undefined
@@ -65,10 +68,10 @@ export function HomeGallery({
       posthog.capture('gallery_page_changed', { page: nextPage, sort, selectedTags, kind }),
   })
 
-  // The same pager above the list (beside the sort) and under it.
-  const pager =
+  // The same pager above the list (beside the sort) and under it, named apart as two landmarks.
+  const pager = (label: string) =>
     pageCount > 1 ? (
-      <nav aria-label="Gallery pages">
+      <nav aria-label={label}>
         <Row gap={4} align="center">
           <Text muted size="sm">
             Page {page} of {pageCount}
@@ -99,8 +102,15 @@ export function HomeGallery({
         <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
         <Row gap={4} justify="between" wrap>
           <GalleryControls kind={kind} sort={sort} tags={selectedTags} query={query} />
-          {pager}
+          {pager('Gallery pages')}
         </Row>
+        <LiveMessage>
+          {!query
+            ? ''
+            : total === 0
+              ? `Nothing matches “${query}”`
+              : `${total} ${total === 1 ? 'result' : 'results'} for “${query}”`}
+        </LiveMessage>
         {items.length === 0 && query ? (
           <Row gap={4} wrap>
             <Text muted>Nothing matches “{query}”.</Text>
@@ -141,9 +151,9 @@ export function HomeGallery({
             )}
           </GalleryList>
         )}
-        {pager ? (
+        {pageCount > 1 ? (
           <Row gap={4} justify="end">
-            {pager}
+            {pager('Gallery pages, end of list')}
           </Row>
         ) : null}
       </Stack>

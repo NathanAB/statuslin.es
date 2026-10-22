@@ -44,6 +44,7 @@ async function renderGallery() {
           items={[]}
           page={page}
           pageCount={3}
+          total={30}
           sort="top"
           rawKind={undefined}
           tags={undefined}

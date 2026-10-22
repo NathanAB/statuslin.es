@@ -111,6 +111,31 @@ describe('the home gallery search', () => {
     }
   })
 
+  // The list filters as you type; a screen reader hears how it came out, once the search applies.
+  it('announces the result of each applied search, and nothing without one', async () => {
+    const { router } = await renderGallery('/')
+    const announced = () => screen.getByRole('status').textContent
+    expect(announced()).toBe('')
+    vi.useFakeTimers()
+
+    await typeAndWait(router, 'git')
+    expect(announced()).toBe(`${PAGE_SIZE} results for “git”`)
+    await typeAndWait(router, 'weather 5')
+    expect(announced()).toBe('1 result for “weather 5”')
+    await typeAndWait(router, 'zzz')
+    expect(announced()).toBe('Nothing matches “zzz”')
+    await typeAndWait(router, '')
+    expect(announced()).toBe('')
+  })
+
+  it('names its two pagers apart, so each is its own landmark', async () => {
+    await renderGallery('/')
+    expect(screen.getAllByRole('navigation').map((nav) => nav.getAttribute('aria-label'))).toEqual([
+      'Gallery pages',
+      'Gallery pages, end of list',
+    ])
+  })
+
   it('works without JavaScript: a GET form to the home page that keeps the sort and filters', async () => {
     await renderGallery('/?sort=new&tags=git&kind=mods')
     const form = screen.getByRole('search')

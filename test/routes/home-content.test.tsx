@@ -183,7 +183,7 @@ describe('home content', () => {
 })
 
 describe('home pagination', () => {
-  const pagers = () => screen.getAllByRole('navigation', { name: 'Gallery pages' })
+  const pagers = () => screen.getAllByRole('navigation', { name: /^Gallery pages/ })
 
   // The same pager sits above the list, beside the sort, and under it.
   it('puts the same pager above the list and under it', () => {
@@ -224,7 +224,7 @@ describe('home pagination', () => {
   it('shows no pager on a single page', () => {
     renderHome()
     expect(screen.queryByText(/Page 1 of/)).toBeNull()
-    expect(screen.queryByRole('navigation', { name: 'Gallery pages' })).toBeNull()
+    expect(screen.queryByRole('navigation', { name: /^Gallery pages/ })).toBeNull()
   })
 })
 

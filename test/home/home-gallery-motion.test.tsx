@@ -94,6 +94,7 @@ async function renderGallery(initialUrl: string) {
           items={view.items}
           page={view.page}
           pageCount={view.pageCount}
+          total={view.total}
           sort={search.sort ?? 'trending'}
           rawKind={search.kind}
           tags={search.tags}
