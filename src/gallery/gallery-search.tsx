@@ -9,8 +9,8 @@ export const SEARCH_DEBOUNCE_MS = 200
 /**
  * The gallery's search box. It shows each keystroke at once; once typing pauses, the URL's `q`
  * follows (from page 1, replacing the history entry), and the list filters from the URL. When `q`
- * changes elsewhere (back, Clear search), the box shows it. `params` are the URL's other gallery
- * values, which a search without JavaScript keeps.
+ * changes elsewhere (back, Clear search), the box shows it and drops any search still waiting.
+ * `params` are the URL's other gallery values, which a search without JavaScript keeps.
  */
 export function GallerySearch({
   query,
@@ -22,10 +22,14 @@ export function GallerySearch({
   const navigate = useNavigate({ from: '/' })
   const [text, setText] = useState(query ?? '')
   const pending = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // The q this box last put in the URL. The URL arriving at it is the box's own search landing,
+  // perhaps behind newer typing; any other q came from outside the box.
+  const sent = useRef(query)
 
   useEffect(() => {
-    // While a search waits to apply, the box is ahead of the URL, not behind it.
-    if (pending.current !== undefined) return
+    if (query === sent.current) return
+    clearTimeout(pending.current)
+    sent.current = query
     setText((shown) => (normalizeSearchQuery(shown) === query ? shown : (query ?? '')))
   }, [query])
 
@@ -35,8 +39,8 @@ export function GallerySearch({
     setText(value)
     clearTimeout(pending.current)
     pending.current = setTimeout(() => {
-      pending.current = undefined
       const q = normalizeSearchQuery(value)
+      sent.current = q
       navigate({
         to: '/',
         search: (prev) => {
