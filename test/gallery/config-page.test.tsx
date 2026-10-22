@@ -138,6 +138,21 @@ describe('status line page', () => {
     ])
   })
 
+  // Sections 24px apart, at the size of the text inside them, ran into each other: the header and
+  // each section are set apart by a rule, in one list.
+  it('sets the header and each section apart from the one before it', () => {
+    renderPage()
+
+    const list = h2('Preview').closest('[data-slot="ruled-sections"]')
+    expect(list).not.toBeNull()
+    expect(
+      ['What it does', 'Source', 'More status lines'].map((name) => list?.contains(h2(name))),
+    ).toEqual([true, true, true])
+    expect(
+      list?.contains(screen.getByRole('heading', { level: 1, name: 'Powerline Dracula' })),
+    ).toBe(true)
+  })
+
   // Nested boxes read as clutter: no section is a card, and the other status lines are the
   // gallery's own rows, each with its preview, not cards inside a card.
   it('lists the other status lines as gallery rows, with no box inside a box', () => {
