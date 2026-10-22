@@ -15,6 +15,7 @@ import {
   PAGE_SIZE,
 } from '@/gallery/queries'
 import { normalizeSearchQuery } from '@/gallery/search'
+import { HomeChecks } from '@/home/home-checks'
 import { HomeGallery } from '@/home/home-gallery'
 import { HomeHero } from '@/home/home-hero'
 import { loadShowcase } from '@/home/load-showcase'
@@ -155,6 +156,7 @@ function Home() {
           items={showcase.hero}
         />
       </HomeSection>
+      <HomeChecks />
       <HomeGallery
         items={items}
         page={page}

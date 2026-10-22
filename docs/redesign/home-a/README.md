@@ -496,3 +496,15 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   search page is noindex with no canonical. This replaces the title parts of the Claude Code mods
   site entry, the `/resources` entry above and the framing sweep. Before/after data for comparing
   2 to 4 weeks after launch: the per-page Search Console tables taken on 2026-10-22.
+- **How listings are checked gets its own section and page** (owner, 2026-10-22). The hero's line
+  "Every mod here is reviewed and rendered in a sandbox before it's listed" was a whole topic in one
+  sentence, so it left the hero. A section between the hero and the gallery names the four checks
+  every status line and mod passes (pinned to one version, run in a sandbox, reviewed before it's
+  listed, listed with what it can reach), a line each, with a link to `/how-it-works`. It sits
+  above the gallery, not after it, since the gallery runs dozens of rows. `/how-it-works` shows
+  each check as a numbered section with a real example: the top mod's `name` and `source` from
+  `/marketplace.json`, the top status line in three of its sample sessions, and that mod's "What
+  this mod can do" panel, then what review can't promise. It says the sandbox is only for
+  previews, since a mod installed runs with your permissions and no sandbox, and, like the mod
+  safety guide, it never says a person reads every listing. The guide's checks section and the
+  footer's About column link to it.

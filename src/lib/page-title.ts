@@ -176,6 +176,20 @@ export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026
 export const MOD_SAFETY_GUIDE_DESCRIPTION =
   'A Claude Code mod runs with your permissions. See what claude plugin validate reports, how statuslin.es pins and reviews each mod, and what to check yourself.'
 
+export const HOW_IT_WORKS_PATH = '/how-it-works'
+
+/** /how-it-works title — the <title> tag and its JSON-LD headline. */
+export const HOW_IT_WORKS_TITLE = 'How statuslin.es Checks Claude Code Mods & Status Lines'
+
+/** The page's h1, and the name a link to it gives. */
+export const HOW_IT_WORKS_HEADING = 'How statuslin.es checks mods and status lines'
+
+export const HOW_IT_WORKS_DATES = { published: '2026-10-22', modified: '2026-10-22' } as const
+
+/** /how-it-works meta description — the description tag, OG, and JSON-LD. */
+export const HOW_IT_WORKS_DESCRIPTION =
+  "Every Claude Code mod and status line on statuslin.es is pinned to one version, run in a sandbox for its previews and reviewed before it's listed."
+
 export const NOT_SHOWING_GUIDE_PATH = '/guide/status-line-not-showing'
 
 /**

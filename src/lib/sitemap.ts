@@ -1,4 +1,10 @@
-import { GUIDE_DATES, GUIDE_PATH, GUIDE_SUBPAGES } from '@/lib/page-title'
+import {
+  GUIDE_DATES,
+  GUIDE_PATH,
+  GUIDE_SUBPAGES,
+  HOW_IT_WORKS_DATES,
+  HOW_IT_WORKS_PATH,
+} from '@/lib/page-title'
 import { MODS_PATH, modPath } from '@/lib/site'
 
 /**
@@ -39,6 +45,7 @@ const STATIC_PAGES: Array<{ path: string; lastmod?: string }> = [
   { path: GUIDE_PATH, lastmod: GUIDE_DATES.modified },
   ...GUIDE_SUBPAGES.map(({ path, modified }) => ({ path, lastmod: modified })),
   { path: '/resources' },
+  { path: HOW_IT_WORKS_PATH, lastmod: HOW_IT_WORKS_DATES.modified },
   { path: '/terms' },
 ]
 

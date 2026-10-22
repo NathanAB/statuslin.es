@@ -11,7 +11,6 @@ import { ChoiceGroup } from '@/ui/choice-group'
 import { HeroLayout } from '@/ui/hero-layout'
 import { installsLabel } from '@/ui/install-count'
 import { SessionStage } from '@/ui/session-stage'
-import { Text } from '@/ui/text'
 import { LiveMessage, VisuallyHidden } from '@/ui/visually-hidden'
 
 /**
@@ -134,9 +133,6 @@ export function HomeHero({ heading, items }: { heading: ReactNode; items: HeroIt
       actions={
         <>
           <HeroItemActions item={item} onCopied={() => copies.record('prompt')} />
-          <Text muted size="sm">
-            Every mod here is reviewed and rendered in a sandbox before it's listed.
-          </Text>
           <LiveMessage>{anyChange ? scene.shown : ''}</LiveMessage>
         </>
       }

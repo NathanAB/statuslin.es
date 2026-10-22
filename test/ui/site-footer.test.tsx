@@ -28,7 +28,7 @@ describe('SiteFooter', () => {
     const { container } = render(<SiteFooter />)
     const nav = screen.getByRole('navigation', { name: 'Footer' })
     expect(nav.querySelectorAll('a').length).toBe(container.querySelectorAll('a').length)
-    expect(nav.querySelectorAll('a').length).toBe(13)
+    expect(nav.querySelectorAll('a').length).toBe(14)
   })
 
   // Columns of their own instead of one row that wraps wherever the width happens to break it.
@@ -49,7 +49,7 @@ describe('SiteFooter', () => {
       'Are mods safe?',
       'Buddy pets',
     ])
-    expect(names('About')).toEqual(['GitHub', 'Contact', 'Terms'])
+    expect(names('About')).toEqual(['How it works', 'GitHub', 'Contact', 'Terms'])
   })
 
   // The owner dropped the tagline and the home page's inventory line: only the copyright stays.

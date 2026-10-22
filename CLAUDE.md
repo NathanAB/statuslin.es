@@ -32,6 +32,7 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
 - `og/` — Open Graph card images · `legal/` — terms page
 - `db/` — Drizzle schema + migration client · `lib/` — shared utils (`env.ts`)
 - `home/` — the home page's sections (gallery, hero, mods row), composed from the features above
+- `how-it-works/` — /how-it-works and the home section on how listings are checked: the four checks, shown with the top status line and mod
 - `ui/` — closed design-system components · `styles/` — tokens (`app.css`)
 - `server/` — Nitro server plugins (error context, PostHog, startup render drain) and the in-process render drain
 

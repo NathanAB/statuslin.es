@@ -71,6 +71,9 @@ describe('buildLlmsTxt', () => {
     expect(txt).toContain('(https://statuslin.es/submit)')
     expect(txt).toContain('(https://statuslin.es/guide)')
     expect(txt).toContain('(https://statuslin.es/resources)')
+    expect(txt).toContain(
+      "- [How statuslin.es Checks Claude Code Mods & Status Lines](https://statuslin.es/how-it-works): how each mod and status line is pinned, run in a sandbox for its previews and reviewed, and what that can't promise",
+    )
   })
 
   // /resources covers every way to customize Claude Code, not only status line tools.

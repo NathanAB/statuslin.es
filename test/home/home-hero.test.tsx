@@ -130,14 +130,13 @@ const reach = () => byline().nextElementSibling?.textContent
 
 describe('HomeHero', () => {
   // You could copy a line that reads your Claude sign-in token without being told: the picked
-  // line's reach and the site's review sit right under the install button, as one short line each.
-  it('says what the picked line can reach, and that everything is reviewed', () => {
+  // line's reach sits right under the install button, as one short line. How listings are checked
+  // is its own section under the hero, too much for a line here.
+  it('says what the picked line can reach, and leaves review to the section below', () => {
     renderHero()
 
     expect(reach()).toBe("Doesn't connect to the internet")
-    expect(
-      screen.getByText("Every mod here is reviewed and rendered in a sandbox before it's listed."),
-    ).toBeTruthy()
+    expect(screen.queryByText(/reviewed and rendered in a sandbox/)).toBeNull()
     pick(/^Pace Dot Meters/)
     expect(reach()).toBe('Reads your Claude sign-in token and connects to wttr.in')
   })

@@ -119,6 +119,11 @@ describe('ModSafetyContent', () => {
     expect(
       within(checks).getByRole('link', { name: '/marketplace.json' }).getAttribute('href'),
     ).toBe('/marketplace.json')
+    expect(
+      within(checks)
+        .getByRole('link', { name: 'How statuslin.es checks mods and status lines' })
+        .getAttribute('href'),
+    ).toBe('/how-it-works')
     const onYou = region("What's still on you")
     expect(
       within(onYou)

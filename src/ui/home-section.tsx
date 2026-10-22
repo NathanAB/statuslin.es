@@ -8,16 +8,20 @@ import { PAGE_COLUMN } from '@/ui/page-column'
  */
 export function HomeSection({
   id,
+  labelledBy,
   first = false,
   children,
 }: {
   id?: string
+  /** The id of the section's heading, which names it as a region. */
+  labelledBy?: string
   first?: boolean
   children: ReactNode
 }) {
   return (
     <section
       id={id}
+      aria-labelledby={labelledBy}
       className={cn(PAGE_COLUMN, first ? 'pt-[clamp(1.75rem,4vw,3.5rem)]' : 'mt-section')}
     >
       {children}

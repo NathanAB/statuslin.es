@@ -5,6 +5,7 @@ import {
   DESKTOP_GUIDE_PATH,
   GUIDE_LINK_LABEL,
   GUIDE_PATH,
+  HOW_IT_WORKS_PATH,
   MOD_SAFETY_GUIDE_PATH,
   NOT_SHOWING_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
@@ -42,6 +43,7 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
   {
     title: 'About',
     links: [
+      { to: HOW_IT_WORKS_PATH, label: 'How it works' },
       { href: REPO_URL, label: 'GitHub' },
       // The abuse-report path.
       { href: `mailto:${CONTACT_EMAIL}`, label: 'Contact' },

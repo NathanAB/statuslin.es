@@ -9,18 +9,33 @@ import { Heading } from '@/ui/text'
 export function PageSection({
   title,
   id,
+  step,
   children,
 }: {
   title: string
   id?: string
+  /** The section's place in a sequence (/how-it-works's checks), in a circle before its title. */
+  step?: number
   children: ReactNode
 }) {
   const headingId = useId()
+  const heading = (
+    <Heading level={2} id={headingId}>
+      {title}
+    </Heading>
+  )
   return (
     <section id={id} aria-labelledby={headingId} className="flex flex-col gap-4">
-      <Heading level={2} id={headingId}>
-        {title}
-      </Heading>
+      {step === undefined ? (
+        heading
+      ) : (
+        <div className="flex items-center gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-foreground text-sm tabular-nums">
+            {step}
+          </span>
+          {heading}
+        </div>
+      )}
       {children}
     </section>
   )

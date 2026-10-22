@@ -17,6 +17,7 @@ import {
   Variable,
 } from 'lucide-react'
 import { MOD_SAFETY_FAQ } from '@/guide/mod-safety-faq'
+import { HOW_IT_WORKS_HEADING, HOW_IT_WORKS_PATH } from '@/lib/page-title'
 import { MARKETPLACE_PATH, MODS_PATH } from '@/lib/site'
 import { MOD_TILE_LABEL, THROUGH_PROGRAMS } from '@/mods/mod-fact-tiles'
 import { Callout } from '@/ui/callout'
@@ -184,6 +185,10 @@ export function ModSafetyContent() {
           <Panel>
             <PageSection id={SECTION.checks.id} title={SECTION.checks.title}>
               <IconList label="What statuslin.es checks" look="rows" items={CHECKS} />
+              <Text>
+                <TextLink to={HOW_IT_WORKS_PATH}>{HOW_IT_WORKS_HEADING}</TextLink> walks through
+                each step with real examples.
+              </Text>
             </PageSection>
           </Panel>
           <Panel>

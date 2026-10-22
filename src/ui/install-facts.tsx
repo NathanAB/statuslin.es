@@ -87,8 +87,11 @@ export function InstallFacts({
   more,
   notes,
   link,
+  headingLevel = 2,
 }: {
   heading: string
+  /** 3 where the panel sits inside a page section (/how-it-works) rather than beside one. */
+  headingLevel?: 2 | 3
   facts: InstallFact[]
   more?: FoldedFacts | null
   notes?: FoldedFacts | null
@@ -98,7 +101,7 @@ export function InstallFacts({
   return (
     <section aria-labelledby={id}>
       <Panel>
-        <Heading level={2} size="compact" id={id}>
+        <Heading level={headingLevel} size="compact" id={id}>
           {heading}
         </Heading>
         <FactList facts={facts} />

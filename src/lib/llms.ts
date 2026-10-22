@@ -6,6 +6,8 @@ import {
   DESKTOP_GUIDE_TITLE_BASE,
   GUIDE_PATH,
   GUIDE_TITLE_BASE,
+  HOW_IT_WORKS_PATH,
+  HOW_IT_WORKS_TITLE,
   MOD_SAFETY_GUIDE_PATH,
   MOD_SAFETY_GUIDE_TITLE,
   NOT_SHOWING_GUIDE_PATH,
@@ -120,6 +122,7 @@ function corePageLinks(base: string): string[] {
     `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what a mod can do, and how statuslin.es pins and reviews each one`,
     `- [${BUDDY_GUIDE_TITLE}](${base}${BUDDY_GUIDE_PATH}): what happened to /buddy, and pet mods that put a companion back, each with a real preview`,
     `- [Resources](${base}/resources): every way to customize Claude Code, with plugin marketplaces, status line tools, usage trackers and themes`,
+    `- [${HOW_IT_WORKS_TITLE}](${base}${HOW_IT_WORKS_PATH}): how each mod and status line is pinned, run in a sandbox for its previews and reviewed, and what that can't promise`,
   ]
 }
 

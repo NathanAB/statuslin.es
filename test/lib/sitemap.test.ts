@@ -39,6 +39,7 @@ describe('sitemapResponse', () => {
     expect(xml).toContain(`<loc>${BASE}</loc>`)
     expect(xml).toContain(`<loc>${BASE}/guide</loc>`)
     expect(xml).toContain(`<loc>${BASE}/resources</loc>`)
+    expect(xml).toContain(`<loc>${BASE}/how-it-works</loc>`)
     expect(xml).toContain(`<loc>${BASE}/terms</loc>`)
     expect(xml).not.toContain(`<loc>${BASE}/submit</loc>`)
   })
