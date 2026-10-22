@@ -39,10 +39,11 @@ describe('SiteFooter', () => {
         screen.getByRole('list', { name: list }).querySelectorAll('a'),
         (a) => a.textContent,
       )
+    // Parallel names: the two ranked lists side by side, then the topic hub, none repeating "Browse".
     expect(names('Browse')).toEqual([
-      'Mods',
-      'Browse by topic',
+      'Best mods',
       'Best status lines',
+      'Topics',
       'Resources',
       'Submit',
     ])
@@ -94,9 +95,9 @@ describe('SiteFooter', () => {
     expect(guide.textContent).toBe('Write a status line')
   })
 
-  it('links the mods gallery and the best status lines', () => {
+  it('links the best mods and the best status lines', () => {
     const { container } = render(<SiteFooter />)
-    expect(container.querySelector(`a[href="${MODS_PATH}"]`)?.textContent).toBe('Mods')
+    expect(container.querySelector(`a[href="${MODS_PATH}"]`)?.textContent).toBe('Best mods')
     expect(container.querySelector('a[href="/status-lines/best"]')?.textContent).toBe(
       'Best status lines',
     )

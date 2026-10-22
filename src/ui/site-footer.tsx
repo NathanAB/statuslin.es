@@ -22,10 +22,11 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
   {
     title: 'Browse',
     links: [
-      { to: MODS_PATH, label: 'Mods' },
-      // The topic hub's one site-wide link in, besides the facet pages' trails.
-      { to: STATUS_LINES_PATH, label: 'Browse by topic' },
+      // The two ranked lists side by side, named alike.
+      { to: MODS_PATH, label: 'Best mods' },
       { to: '/status-lines/best', label: 'Best status lines' },
+      // The topic hub's one site-wide link in, besides the facet pages' trails.
+      { to: STATUS_LINES_PATH, label: 'Topics' },
       { to: '/resources', label: 'Resources' },
       { to: '/submit', label: 'Submit' },
     ],
