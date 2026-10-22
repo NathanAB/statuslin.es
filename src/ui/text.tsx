@@ -2,7 +2,7 @@ import { Link, type LinkProps } from '@tanstack/react-router'
 import type * as React from 'react'
 
 import { cn } from '@/lib/cn'
-import { prefersReducedMotion } from '@/lib/reduced-motion'
+import { hashScrollOptions } from '@/lib/reduced-motion'
 
 /**
  * Page and section headings. `level` is the only knob: it picks both the semantic tag
@@ -153,11 +153,6 @@ type TextLinkProps =
       tone?: LinkTone
       onClick?: () => void
     }
-
-/** Glide to a hash target, or jump when the reader asks for reduced motion. */
-function hashScrollOptions(): ScrollIntoViewOptions {
-  return { behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' }
-}
 
 export function TextLink(props: TextLinkProps) {
   const className = cn(

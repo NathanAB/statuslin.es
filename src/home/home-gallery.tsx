@@ -7,6 +7,7 @@ import { GalleryControls } from '@/gallery/gallery-controls'
 import type { GalleryFilter, GalleryItem } from '@/gallery/gallery-items'
 import type { GallerySort } from '@/gallery/queries'
 import { homePaginationSearch } from '@/lib/canonical'
+import { hashScrollOptions } from '@/lib/reduced-motion'
 import { ModCard } from '@/mods/mod-card'
 import { Button } from '@/ui/button'
 import { GalleryList } from '@/ui/gallery-row'
@@ -53,8 +54,9 @@ export function HomeGallery({
   })
   const pageLink = (nextPage: number) => ({
     search: homePaginationSearch(nextPage, { sort, tags, kind: rawKind }),
-    // Land on the results, not back at the top of the page.
+    // Glide to the results, not back to the top, so the reader sees where the new page is.
     hash: GALLERY_ID,
+    hashScrollIntoView: hashScrollOptions(),
     onClick: () =>
       posthog.capture('gallery_page_changed', { page: nextPage, sort, selectedTags, kind }),
   })
