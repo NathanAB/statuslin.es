@@ -171,6 +171,20 @@ describe('describeFootprint on the calls and events published mods use', () => {
     expect(result).toEqual({ phrases: [], risks: [], unknown: [], draws: [] })
   })
 
+  // ui.press, ui.input and ui.select fire when someone uses a Button, Input or Select the mod drew
+  // itself (code.claude.com/docs/en/plugins/mods/reference), like the ui events already left unsaid.
+  it('says nothing about responding to its own buttons, inputs and selects', () => {
+    const result = describeFootprint({
+      events: [
+        'ui.press{plugin=pixel-cat, element=settings}',
+        'ui.input{plugin=pixel-cat, element=name}',
+        'ui.select{plugin=pixel-cat, element=scene}',
+      ],
+      calls: [],
+    })
+    expect(result).toEqual({ phrases: [], risks: [], unknown: [], draws: [] })
+  })
+
   // A mod can add its own namespace to the mods API, and calls on it are events; the footprint
   // can't tell one from a Claude Code event this page doesn't know yet, so it stays named.
   it("keeps an event on another mod's own namespace unknown", () => {

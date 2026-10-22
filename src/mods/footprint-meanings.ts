@@ -158,5 +158,8 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     'ui.scroll': SILENT,
     'ui.message': SILENT,
     'ui.close': SILENT,
+    'ui.press': SILENT,
+    'ui.input': SILENT,
+    'ui.select': SILENT,
   }),
 )
