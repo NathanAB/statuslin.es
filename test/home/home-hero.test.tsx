@@ -202,7 +202,7 @@ describe('HomeHero', () => {
     pick(/^Deck/)
 
     expect(band()?.textContent).toBe('deck band')
-    expect(statusRow().textContent).toBe('')
+    expect(statusRow()).toBeNull()
     expect(
       screen.getByRole('img', { name: /^Claude Code with Deck above the prompt/ }),
     ).toBeTruthy()

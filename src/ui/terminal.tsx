@@ -101,10 +101,10 @@ function Drawn({ segments, missing }: { segments: AnsiSegment[] | null; missing:
 }
 
 /**
- * The home hero's Claude Code terminal: the conversation, the input box and the status line row
- * under it, as Claude Code lays them out. The pick is drawn `at` a band above the input box or in
- * the status line row; `missing` is said in place of a render there isn't. One picture to a screen
- * reader, named by `label`, so it never reads out box-drawing characters.
+ * The home hero's Claude Code terminal: the conversation and the input box, as Claude Code lays
+ * them out. The pick is drawn `at` a band above the input box or in the status line row under it,
+ * and only that one is drawn; `missing` is said in place of a render there isn't. One picture to a
+ * screen reader, named by `label`, so it never reads out box-drawing characters.
  */
 export function TerminalScreen({
   label,
@@ -155,13 +155,15 @@ export function TerminalScreen({
           className="inline-block h-[1.1em] w-[0.6em] bg-foreground align-[-0.2em] motion-safe:animate-blink"
         />
       </div>
-      <div
-        key={at === 'under-prompt' ? drawnKey : undefined}
-        data-slot="terminal-status"
-        className={cn('mt-2 min-h-[1.45em] shrink-0 rounded-sm', at === 'under-prompt' && glow)}
-      >
-        {at === 'under-prompt' ? <Drawn segments={segments} missing={missing} /> : null}
-      </div>
+      {at === 'under-prompt' ? (
+        <div
+          key={drawnKey}
+          data-slot="terminal-status"
+          className={cn('mt-2 min-h-[1.45em] shrink-0 rounded-sm', glow)}
+        >
+          <Drawn segments={segments} missing={missing} />
+        </div>
+      ) : null}
     </div>
   )
 }
