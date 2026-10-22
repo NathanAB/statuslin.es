@@ -24,6 +24,26 @@ describe('modInstallFacts', () => {
     ])
   })
 
+  // A power the page can't name yet must still show, never hide behind the commit line.
+  it("names the entries it can't describe yet, as a caution", () => {
+    const facts = modInstallFacts(
+      mod(['tool.call'], ['$.http.request', '$.process.exec', '$.fs.remove'], null),
+    )
+
+    expect(facts.map((f) => [f.text, f.caution ?? false])).toEqual([
+      ['Reviewed at commit `a5c8ead`', false],
+      ['Sees each tool call before it runs and can block or change it', true],
+      [
+        "Also uses `$.http.request`, `$.process.exec`, and `$.fs.remove`, which this page doesn't describe yet",
+        true,
+      ],
+    ])
+    expect(modInstallFacts(mod([], ['$.http.request'], null))[1]).toMatchObject({
+      text: "Uses `$.http.request`, which this page doesn't describe yet",
+      caution: true,
+    })
+  })
+
   // An empty footprint means nothing was recorded, not that the mod does nothing.
   it('says nothing is recorded yet when the footprint is empty, never that it does nothing', () => {
     const facts = modInstallFacts(mod([], [], null))

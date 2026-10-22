@@ -252,6 +252,7 @@ describe('mod page', () => {
       `Reviewed at commit ${SHA.slice(0, 7)}`,
       'Reads files',
       'Adds the /filetree command',
+      "Also uses $.warp.drive, which this page doesn't describe yet",
     ])
     expect(
       within(panel)

@@ -13,7 +13,8 @@ const capitalized = (phrase: string) => phrase.charAt(0).toUpperCase() + phrase.
 /**
  * What a mod page says beside its install button: that this commit was reviewed, then what its
  * hooks can do, in the validator footprint's own plain words (so it shows for every mod, with or
- * without page copy), then the copy's good-to-know notes. An empty footprint reads as not
+ * without page copy), and the entries those words don't cover yet, then the copy's good-to-know
+ * notes. An empty footprint reads as not
  * recorded, never as doing nothing.
  */
 export function modInstallFacts(
@@ -22,7 +23,17 @@ export function modInstallFacts(
   },
 ): InstallFact[] {
   const reviewed = `Reviewed at commit \`${mod.commitSha.slice(0, SHORT_SHA_LENGTH)}\``
-  const { phrases, risks } = describeFootprint(mod.footprint)
+  const { phrases, risks, unknown } = describeFootprint(mod.footprint)
+  const undescribed: InstallFact[] =
+    unknown.length > 0
+      ? [
+          {
+            icon: CircleHelp,
+            text: `${phrases.length > 0 ? 'Also uses' : 'Uses'} ${listPhrase(unknown.map((entry) => `\`${entry}\``))}, which this page doesn't describe yet`,
+            caution: true,
+          },
+        ]
+      : []
   const powers: InstallFact[] = footprintRecorded(mod.footprint)
     ? phrases
         .map((phrase) => ({
@@ -39,6 +50,7 @@ export function modInstallFacts(
       text: mod.reviewedAt ? `${reviewed}, ${utcDateLabel(mod.reviewedAt)}` : reviewed,
     },
     ...powers,
+    ...undescribed,
     ...(mod.generatedContent?.goodToKnow ?? []).map((note) => ({ icon: Info, text: note })),
   ]
 }
