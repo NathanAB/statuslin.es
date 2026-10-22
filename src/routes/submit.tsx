@@ -74,7 +74,11 @@ function Submit() {
   const posthog = usePostHog()
   const kindId = useId()
   if (!data.user) {
-    return <SignInPrompt title="Sign in to submit a mod" />
+    return (
+      <SignInPrompt
+        title={`Sign in to submit ${data.kind === 'mod' ? 'a mod' : 'a status line'}`}
+      />
+    )
   }
 
   const draft = data.kind === 'mod' ? data.draft : data.initial
