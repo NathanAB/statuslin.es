@@ -52,6 +52,34 @@ describe('InstallFacts', () => {
     expect(container.querySelector('details')).toBeNull()
   })
 
+  // Opening a fold grows it and fades its list in, and closing reverses it, instead of the panel
+  // jumping. CSS only (::details-content), so it still opens without JavaScript; no motion under
+  // reduced motion.
+  it('animates a fold open and closed, and holds still under reduced motion', () => {
+    const { container } = render(
+      <InstallFacts
+        heading="What this mod can do"
+        facts={[{ icon: UserCheck, text: 'Reviewed at commit `a5c8ead`' }]}
+        more={{
+          summary: '1 more thing it can do',
+          facts: [{ icon: KeyRound, text: 'Reads files' }],
+        }}
+        link={{ label: 'Are mods safe?', to: '/guide/are-claude-code-mods-safe' }}
+      />,
+    )
+
+    const fold = container.querySelector('details') as HTMLElement
+    for (const motion of [
+      '[interpolate-size:allow-keywords]',
+      'details-content:h-0',
+      'open:details-content:h-auto',
+      'details-content:transition-[height,opacity,content-visibility]',
+      'motion-reduce:details-content:transition-none',
+    ]) {
+      expect(fold.className).toContain(motion)
+    }
+  })
+
   // A long list reads as too much at once: what can wait folds under a count, closed until opened.
   it('folds `more`, then `notes`, each under its summary, closed until opened', () => {
     const { container } = render(

@@ -43,10 +43,21 @@ function FactList({ facts, folded = false }: { facts: InstallFact[]; folded?: bo
   )
 }
 
+// The fold's content grows and fades in when opened and reverses when closed, with no JavaScript:
+// ::details-content animates to `auto` through interpolate-size, and content-visibility switches
+// last (allow-discrete) so the close runs before the list hides. Browsers without it just open.
+const FOLD = cn(
+  'group text-sm [interpolate-size:allow-keywords]',
+  'details-content:h-0 details-content:overflow-clip details-content:opacity-0',
+  'details-content:transition-[height,opacity,content-visibility] details-content:duration-300 details-content:ease-settle details-content:[transition-behavior:allow-discrete]',
+  'open:details-content:h-auto open:details-content:opacity-100',
+  'motion-reduce:details-content:transition-none',
+)
+
 /** A native disclosure, so it opens without JavaScript and from the keyboard. */
 function Fold({ summary, facts }: FoldedFacts) {
   return (
-    <details className="group text-sm">
+    <details className={FOLD}>
       <summary
         className={cn(
           'flex cursor-pointer gap-2.5 rounded-sm text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden',
@@ -55,7 +66,7 @@ function Fold({ summary, facts }: FoldedFacts) {
       >
         <ChevronRight
           aria-hidden="true"
-          className="mt-0.5 size-4 shrink-0 transition-transform group-open:rotate-90 motion-reduce:transition-none"
+          className="mt-0.5 size-4 shrink-0 transition-transform duration-300 ease-settle group-open:rotate-90 motion-reduce:transition-none"
         />
         {summary}
       </summary>
