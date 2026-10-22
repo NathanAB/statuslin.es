@@ -7,7 +7,7 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router'
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { HomeGalleryEntry } from '@/gallery/gallery-items'
 
@@ -199,6 +199,16 @@ describe('the home gallery search', () => {
 
     expect(searchBox().value).toBe('git')
     expect(titles()).toEqual(ENTRIES.slice(PAGE_SIZE + 1).map(({ item }) => item.card.title))
+  })
+
+  it('reads a search that is not text (an array, an object) as no search, and shows the gallery', async () => {
+    for (const url of ['/?q=%5B1%5D', '/?q=%7B%22a%22%3A1%7D']) {
+      const { router } = await renderGallery(url)
+      expect(router.state.location.search.q).toBeUndefined()
+      expect(searchBox().value).toBe('')
+      expect(titles()).toHaveLength(PAGE_SIZE)
+      cleanup()
+    }
   })
 
   it('works without JavaScript: a GET form to the home page that keeps the sort and filters', async () => {

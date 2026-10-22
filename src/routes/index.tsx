@@ -32,10 +32,18 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
   // sort, page, tags, kind and the search q are optional in the URL (defaults: 'trending', page 1,
-  // no tags, all kinds, no search), so Links to "/" can omit them.
+  // no tags, all kinds, no search), so Links to "/" can omit them. q is always returned, undefined
+  // when it isn't a search: the router lays this result over the raw URL search, so an omitted key
+  // would let an array or object through.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { sort?: GallerySort; page?: number; tags?: string; kind?: GalleryFilter; q?: string } => {
+  ): {
+    sort?: GallerySort
+    page?: number
+    tags?: string
+    kind?: GalleryFilter
+    q?: string | undefined
+  } => {
     const sort = coerceSort(search.sort)
     const page = coercePage(search.page)
     const tags = coerceTags(search.tags).join(',')
@@ -46,7 +54,7 @@ export const Route = createFileRoute('/')({
       ...(page === 1 ? {} : { page }),
       ...(tags === '' ? {} : { tags }),
       ...(kind === 'all' ? {} : { kind }),
-      ...(q === undefined ? {} : { q }),
+      q,
     }
   },
   // The loader returns every item, so paging and searching (page, q) filter in the browser and

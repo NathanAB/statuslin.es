@@ -17,7 +17,7 @@ export interface HomeCanonicalSearch {
   tags?: string
   kind?: string
   /** The gallery search: noindex, and never part of the canonical. */
-  q?: string
+  q?: string | undefined
 }
 
 export function isFilteredHomeSearch(search: HomeCanonicalSearch): boolean {
