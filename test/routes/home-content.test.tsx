@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { HeroLine } from '@/gallery/hero-lines'
-import { HOME_HEADING, HOME_HERO_HEADING } from '@/lib/page-title'
+import { HOME_HERO_HEADING } from '@/lib/page-title'
 
 const capture = vi.hoisted(() => vi.fn())
 vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
@@ -104,14 +104,12 @@ describe('home content', () => {
 
   // Search engines and screen readers get each page's own h1; on screen the title stays the same,
   // since the pager already says which page this is.
-  // Past page 1 the h1 names the list, not the hero's invitation.
   it('names the page number in the h1 past page 1, without showing it', () => {
     const { container } = renderHome({ page: 2, pageCount: 3 })
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
-    expect(h1s[0]?.textContent).toBe(`${HOME_HEADING}, page 2`)
-    expect(HOME_HEADING).toBe('Claude Code mods')
+    expect(h1s[0]?.textContent).toBe(`${HOME_HERO_HEADING}, page 2`)
     expect(h1s[0]?.querySelector('.sr-only')?.textContent).toBe(', page 2')
   })
 
@@ -131,15 +129,13 @@ describe('home content', () => {
     expect(fadesIn(screen.getByRole('img', { name: /^Claude Code with/ }))).toBe(true)
   })
 
-  // Past page 1 the page is its results: the hero would only repeat page 1.
-  it('shows only the heading and the gallery past page 1', () => {
+  // Paging changes only the list: the hero stays, so the page keeps its shape and the page link
+  // lands on the gallery.
+  it('keeps the hero on every page, so paging only changes the list', () => {
     renderHome({ page: 2, pageCount: 3 })
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Claude Code mods, page 2')
-    expect([...document.querySelectorAll('main h2')].map((h) => h.textContent?.trim())).toEqual([
-      'Status lines and mods',
-    ])
-    expect(screen.queryByText(/see it in action/)).toBeNull()
+    expect(screen.getByText('Pick a mod and see it in action.')).toBeTruthy()
+    expect(screen.getByRole('radiogroup', { name: 'Pick a mod' })).toBeTruthy()
   })
 
   // The hero is the first thing on the page, and the server renders its first state.

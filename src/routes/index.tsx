@@ -4,7 +4,6 @@ import { coerceGalleryFilter, type GalleryFilter, loadGalleryPage } from '@/gall
 import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
 import { HomeGallery } from '@/home/home-gallery'
 import { HomeHero } from '@/home/home-hero'
-import { HomeResultsHeading } from '@/home/home-results-heading'
 import { loadShowcase } from '@/home/load-showcase'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
@@ -16,6 +15,7 @@ import { homeSocialMeta } from '@/og/meta'
 import { HomeSection } from '@/ui/home-section'
 import { PageShell } from '@/ui/shell'
 import { Text, TextLink } from '@/ui/text'
+import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
   // sort, page, tags and kind are optional in the URL (defaults: 'trending', page 1, no tags, all
@@ -107,11 +107,19 @@ function Home() {
 
   return (
     <PageShell user={user} fullBleed>
-      {page > 1 ? null : (
-        <HomeSection first>
-          <HomeHero heading={HOME_HERO_HEADING} items={showcase.hero} />
-        </HomeSection>
-      )}
+      {/* On every page, so paging changes only the list; the page links land on the gallery. Past
+          page 1 the h1 names the page for search engines and screen readers. */}
+      <HomeSection first>
+        <HomeHero
+          heading={
+            <>
+              {HOME_HERO_HEADING}
+              {page > 1 ? <VisuallyHidden>, page {page}</VisuallyHidden> : null}
+            </>
+          }
+          items={showcase.hero}
+        />
+      </HomeSection>
       <HomeGallery
         items={items}
         page={page}
@@ -119,7 +127,6 @@ function Home() {
         sort={sort ?? 'trending'}
         rawKind={kind}
         tags={tags}
-        {...(page > 1 ? { heading: <HomeResultsHeading page={page} /> } : {})}
       />
     </PageShell>
   )

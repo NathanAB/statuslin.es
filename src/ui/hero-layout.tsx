@@ -22,7 +22,7 @@ export function HeroLayout({
   picker,
   actions,
 }: {
-  heading: string
+  heading: ReactNode
   /** The sentences under the title, each on a line of its own where it fits. */
   lead: readonly string[]
   stage: ReactNode

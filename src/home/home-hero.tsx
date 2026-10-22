@@ -1,4 +1,5 @@
 import { type LucideIcon, Monitor, SquareTerminal } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useId, useState } from 'react'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
 import { HeroItemActions } from '@/home/hero-actions'
@@ -48,7 +49,7 @@ const partsOf = (item: HeroItem | undefined) => ({
  * own. The first item in the terminal is the server-rendered state, so the page reads whole without
  * JavaScript. Copy installs the shown one through the same prompt as its own page.
  */
-export function HomeHero({ heading, items }: { heading: string; items: HeroItem[] }) {
+export function HomeHero({ heading, items }: { heading: ReactNode; items: HeroItem[] }) {
   const [picked, setPicked] = useState(items[0] ? keyOf(items[0]) : '')
   const [app, setApp] = useState<HeroApp>('cli')
   // What the visitor has changed so far: nothing moves until they do.
