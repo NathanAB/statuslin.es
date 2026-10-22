@@ -165,6 +165,7 @@ function ConfigDetail() {
         whatItDoes={{ copy: detail.generatedContent, tiles: configFactTiles(detail) }}
         source={
           <HighlightedCode
+            peek
             html={detail.sourceHtml}
             text={detail.source}
             copyLabel="Copy script"
