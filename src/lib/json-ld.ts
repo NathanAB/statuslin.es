@@ -99,7 +99,7 @@ export function configJsonLd(
     license: string | null
     keywords: string[]
     updatedAt: string | null
-    primaryFacet: { slug: string; heading: string } | null
+    primaryFacet: { slug: string; topic: string } | null
   },
 ): object[] {
   const url = `${origin}/c/${config.slug}`
@@ -108,7 +108,7 @@ export function configJsonLd(
     ...(config.primaryFacet
       ? [
           {
-            name: config.primaryFacet.heading,
+            name: config.primaryFacet.topic,
             item: `${origin}/status-lines/${config.primaryFacet.slug}`,
           },
         ]

@@ -92,20 +92,20 @@ describe('configJsonLd', () => {
       howItWorks: ['Reads the session JSON on stdin', 'Runs `git` for the branch.'],
       goodToKnow: ['Needs Bash 4 or newer.', 'Uses Nerd Font glyphs'],
     } as PageCopy | null,
-    primaryFacet: null as { slug: string; heading: string } | null,
+    primaryFacet: null as { slug: string; topic: string } | null,
   }
 
-  it('breadcrumbs through the primary facet page when the config has one', () => {
+  it('breadcrumbs through the primary topic page by its short name when the config has one', () => {
     const [, crumbs] = configJsonLd('https://statuslin.es', {
       ...base,
-      primaryFacet: { slug: 'git', heading: 'Claude Code status lines that show git status' },
+      primaryFacet: { slug: 'git', topic: 'Git' },
     }) as Array<Record<string, unknown>>
     expect(crumbs?.itemListElement).toEqual([
       { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://statuslin.es' },
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Claude Code status lines that show git status',
+        name: 'Git',
         item: 'https://statuslin.es/status-lines/git',
       },
       {

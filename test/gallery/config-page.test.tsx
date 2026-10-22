@@ -80,7 +80,7 @@ const DETAIL: Detail = {
     },
   ],
   facetLabels: ['bash'],
-  primaryFacet: { slug: 'bash', heading: 'Claude Code status lines written in bash' },
+  primaryFacet: { slug: 'bash', topic: 'Bash' },
 }
 
 const COST_MOD: GalleryModCard = {

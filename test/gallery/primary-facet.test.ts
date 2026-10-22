@@ -10,10 +10,7 @@ describe('primaryFacet', () => {
       ['git', 'token-usage', 'bash'],
       stats({ git: 2, 'token-usage': 3, bash: 9 }),
     )
-    expect(facet).toEqual({
-      slug: 'token-usage',
-      heading: 'Claude Code status lines and mods that show token usage',
-    })
+    expect(facet).toEqual({ slug: 'token-usage', topic: 'Tokens' })
   })
 
   it('skips tags without a facet page and returns null when nothing qualifies', () => {

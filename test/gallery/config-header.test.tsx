@@ -31,22 +31,14 @@ const trail = () =>
   screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent?.replace(/\s+/g, ' ').trim()
 
 describe('ConfigHeader', () => {
-  it('breadcrumbs through the primary facet page, linking home and the facet', () => {
-    render(
-      <ConfigHeader
-        detail={{
-          ...DETAIL,
-          primaryFacet: { slug: 'git', heading: 'Claude Code status lines that show git status' },
-        }}
-      />,
-    )
+  it('breadcrumbs through the primary topic page by its short name, linking home and the topic', () => {
+    render(<ConfigHeader detail={{ ...DETAIL, primaryFacet: { slug: 'git', topic: 'Git' } }} />)
 
-    expect(trail()).toBe(
-      'statuslin.es›Claude Code status lines that show git status›Powerline Dracula',
+    expect(trail()).toBe('statuslin.es›Git›Powerline Dracula')
+    expect(screen.getByRole('link', { name: 'Git' })).toHaveProperty(
+      'pathname',
+      '/status-lines/git',
     )
-    expect(
-      screen.getByRole('link', { name: 'Claude Code status lines that show git status' }),
-    ).toHaveProperty('pathname', '/status-lines/git')
   })
 
   it('goes straight from home to the status line without a primary facet', () => {
