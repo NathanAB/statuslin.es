@@ -88,7 +88,7 @@ function ModPage() {
         beforeInstall={
           <InstallFacts
             heading="What this mod can do"
-            facts={modInstallFacts(mod)}
+            {...modInstallFacts(mod)}
             link={{ label: 'Are mods safe?', to: MOD_SAFETY_GUIDE_PATH }}
           />
         }

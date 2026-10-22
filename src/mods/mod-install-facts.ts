@@ -3,25 +3,41 @@ import type { PageCopy } from '@/content/types'
 import type { ModFootprint } from '@/db/schema'
 import { listPhrase } from '@/gallery/why-line'
 import { utcDateLabel } from '@/lib/date-label'
-import type { InstallFact } from '@/ui/install-facts'
+import type { FoldedFacts, InstallFact } from '@/ui/install-facts'
 import { describeFootprint, footprintRecorded } from './footprint'
 import { SHORT_SHA_LENGTH } from './mod-fact-tiles'
 import type { ModDetail } from './queries'
 
 const capitalized = (phrase: string) => phrase.charAt(0).toUpperCase() + phrase.slice(1)
 
+const power = (phrase: string, caution = false): InstallFact => ({
+  icon: Puzzle,
+  text: capitalized(phrase),
+  caution,
+})
+
+const fold = (summary: string, facts: InstallFact[]): FoldedFacts | null =>
+  facts.length > 0 ? { summary, facts } : null
+
+/** A mod page's install panel: `facts` in sight, `more` and `notes` folded (null when empty). */
+export interface ModInstallFacts {
+  facts: InstallFact[]
+  more: FoldedFacts | null
+  notes: FoldedFacts | null
+}
+
 /**
- * What a mod page says beside its install button: that this commit was reviewed, then what its
- * hooks can do, in the validator footprint's own plain words (so it shows for every mod, with or
- * without page copy), and the entries those words don't cover yet, then the copy's good-to-know
- * notes. An empty footprint reads as not
- * recorded, never as doing nothing.
+ * What a mod page says beside its install button, in the validator footprint's own plain words
+ * (so it shows for every mod, with or without page copy). In sight: that this commit was reviewed,
+ * every risk its hooks take, and the entries those words don't cover yet. Folded: its plain powers,
+ * then the copy's good-to-know notes. An empty footprint reads as not recorded, never as doing
+ * nothing.
  */
 export function modInstallFacts(
   mod: Pick<ModDetail, 'footprint' | 'commitSha' | 'reviewedAt'> & {
     generatedContent: Pick<PageCopy, 'goodToKnow'> | null
   },
-): InstallFact[] {
+): ModInstallFacts {
   const reviewed = `Reviewed at commit \`${mod.commitSha.slice(0, SHORT_SHA_LENGTH)}\``
   const { phrases, risks, unknown } = describeFootprint(mod.footprint)
   const undescribed: InstallFact[] =
@@ -34,25 +50,33 @@ export function modInstallFacts(
           },
         ]
       : []
-  const powers: InstallFact[] = footprintRecorded(mod.footprint)
-    ? phrases
-        .map((phrase) => ({
-          icon: Puzzle,
-          text: capitalized(phrase),
-          caution: risks.includes(phrase),
-        }))
-        // The risks first, each group in the footprint's own order of weight.
-        .sort((a, b) => Number(b.caution) - Number(a.caution))
-    : [{ icon: CircleHelp, text: "What it can reach isn't recorded yet", caution: true }]
-  return [
-    {
-      icon: ShieldCheck,
-      text: mod.reviewedAt ? `${reviewed}, ${utcDateLabel(mod.reviewedAt)}` : reviewed,
-    },
-    ...powers,
+  const inSight: InstallFact[] = [
+    ...(footprintRecorded(mod.footprint)
+      ? risks.map((phrase) => power(phrase, true))
+      : [{ icon: CircleHelp, text: "What it can reach isn't recorded yet", caution: true }]),
     ...undescribed,
-    ...(mod.generatedContent?.goodToKnow ?? []).map((note) => ({ icon: Info, text: note })),
   ]
+  const plain = phrases.filter((phrase) => !risks.includes(phrase))
+  const notes = mod.generatedContent?.goodToKnow ?? []
+  // "More" only when a power is in sight above the fold.
+  const things = `${inSight.length > 0 ? 'more ' : ''}${plain.length === 1 ? 'thing' : 'things'}`
+  return {
+    facts: [
+      {
+        icon: ShieldCheck,
+        text: mod.reviewedAt ? `${reviewed}, ${utcDateLabel(mod.reviewedAt)}` : reviewed,
+      },
+      ...inSight,
+    ],
+    more: fold(
+      `${plain.length} ${things} it can do`,
+      plain.map((phrase) => power(phrase)),
+    ),
+    notes: fold(
+      `Good to know (${notes.length})`,
+      notes.map((note) => ({ icon: Info, text: note })),
+    ),
+  }
 }
 
 /**

@@ -241,24 +241,70 @@ function section(title: string) {
   return within(card)
 }
 
+/** The panel's lines in sight, then each fold: its summary, whether it's open, and its lines. */
+function panelLines(panel: HTMLElement) {
+  const text = (line: Element) => line.textContent
+  return {
+    shown: [...panel.querySelectorAll('li')].filter((line) => !line.closest('details')).map(text),
+    folded: [...panel.querySelectorAll('details')].map((fold) => [
+      fold.querySelector('summary')?.textContent,
+      fold.open,
+      [...fold.querySelectorAll('li')].map(text),
+    ]),
+  }
+}
+
 describe('mod page', () => {
   // A mod can hook tool calls and prompts: that sits beside the install button in plain words,
   // from the footprint, for every mod, not only in the AI-written copy further down.
-  it('says what the mod can do right after the install button', () => {
+  it('says what the mod can do right after the install button, its plain powers folded', () => {
     renderPage()
 
     const panel = screen.getByRole('region', { name: 'What this mod can do' })
-    expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
-      `Reviewed at commit ${SHA.slice(0, 7)}`,
-      'Reads files',
-      'Adds the /filetree command',
-      "Also uses $.warp.drive, which this page doesn't describe yet",
-    ])
+    expect(panelLines(panel)).toEqual({
+      shown: [
+        `Reviewed at commit ${SHA.slice(0, 7)}`,
+        "Also uses $.warp.drive, which this page doesn't describe yet",
+      ],
+      folded: [['2 more things it can do', false, ['Reads files', 'Adds the /filetree command']]],
+    })
     expect(
       within(panel)
         .getByRole('link', { name: /Are mods safe\?/ })
         .getAttribute('href'),
     ).toBe('/guide/are-claude-code-mods-safe')
+  })
+
+  // Sixteen lines at once was too much: the risks stay in sight, and what can wait opens on a click.
+  it('keeps the risks in sight and folds the plain powers and the notes until opened', () => {
+    renderPage({
+      footprint: { events: ['tool.call', 'command.run{command=filetree}'], calls: ['$.fs.read'] },
+      generatedContent: { ...COPY, goodToKnow: ['Needs `git` on your PATH', 'Works offline'] },
+    })
+
+    const panel = screen.getByRole('region', { name: 'What this mod can do' })
+    expect(panelLines(panel)).toEqual({
+      shown: [
+        `Reviewed at commit ${SHA.slice(0, 7)}`,
+        'Sees each tool call before it runs and can block or change it',
+      ],
+      folded: [
+        ['2 more things it can do', false, ['Reads files', 'Adds the /filetree command']],
+        ['Good to know (2)', false, ['Needs git on your PATH', 'Works offline']],
+      ],
+    })
+    fireEvent.click(within(panel).getByText('Good to know (2)'))
+    expect(panelLines(panel).folded.map(([summary, open]) => [summary, open])).toEqual([
+      ['2 more things it can do', false],
+      ['Good to know (2)', true],
+    ])
+  })
+
+  it('folds nothing when every power is a risk and there are no notes', () => {
+    renderPage({ footprint: { events: ['tool.call'], calls: [] } })
+
+    const panel = screen.getByRole('region', { name: 'What this mod can do' })
+    expect(panelLines(panel).folded).toEqual([])
   })
 
   // One plain line, no popup: adding the marketplace gets the reviewed mods, not just this one.
