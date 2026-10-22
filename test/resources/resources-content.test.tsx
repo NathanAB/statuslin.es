@@ -220,7 +220,7 @@ describe('ResourcesContent', () => {
       level: 2,
       name: 'Status lines that do the same job',
     })
-    const next = screen.getByRole('heading', { level: 2, name: 'Usage & cost tracking' })
+    const next = screen.getByRole('heading', { level: 2, name: 'What you can customize' })
     expect(tools.compareDocumentPosition(previews) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(previews.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const list = container.querySelector('ul[data-surface="resources"]')
