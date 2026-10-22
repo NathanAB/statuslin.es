@@ -15,7 +15,7 @@ describe('configFactTiles', () => {
   it('states the interpreter, no network and the terminal for a plain script', () => {
     expect(shown(configFactTiles(CONFIG))).toEqual([
       { label: 'Written in', value: 'Bash', caution: false },
-      { label: 'Internet', value: 'Not used', caution: false },
+      { label: 'Network access', value: 'None', caution: false },
       { label: 'Works in', value: 'Terminal', caution: false },
     ])
   })
@@ -27,14 +27,16 @@ describe('configFactTiles', () => {
 
   it('lists the declared network hosts as code', () => {
     const tiles = configFactTiles({ ...CONFIG, networkHosts: ['wttr.in', 'api.github.com'] })
-    expect(tiles.find((t) => t.label === 'Internet')?.value).toBe('`wttr.in`, `api.github.com`')
+    expect(tiles.find((t) => t.label === 'Network access')?.value).toBe(
+      '`wttr.in`, `api.github.com`',
+    )
   })
 
-  it('cautions that it reads your Claude sign-in token only when it does, in the copy’s words', () => {
+  it('cautions that it reads your Claude login only when it does, in the copy’s words', () => {
     const reads = { ...CONFIG, readsClaudeToken: true }
     expect(shown(configFactTiles(reads))[2]).toEqual({
-      label: 'Claude sign-in token',
-      value: 'Read',
+      label: 'Reads your Claude login',
+      value: 'Yes',
       caution: true,
     })
     const worded = configFactTiles({
@@ -59,6 +61,6 @@ describe('configFactTiles', () => {
         details: { readsClaudeLogin: 'To steal it' },
       },
     })
-    expect(tiles.map((t) => t.label)).not.toContain('Claude sign-in token')
+    expect(tiles.map((t) => t.label)).not.toContain('Reads your Claude login')
   })
 })

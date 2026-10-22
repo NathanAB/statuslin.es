@@ -177,7 +177,7 @@ describe('status line page', () => {
     expect(what.getByText('Written in')).toBeTruthy()
     expect(what.getByText('Bash')).toBeTruthy()
     expect(what.queryByText('Uses Nerd Font glyphs')).toBeNull()
-    expect(what.queryByText('Reads your Claude sign-in token')).toBeNull()
+    expect(what.queryByText('Reads your Claude login')).toBeNull()
   })
 
   // A searcher decides at the install button: that it was reviewed, what it can reach and what it needs

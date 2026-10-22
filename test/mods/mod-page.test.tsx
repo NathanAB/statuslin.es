@@ -532,9 +532,9 @@ describe('mod page', () => {
     expect(tile('What you see')?.textContent).toBe('A pane and a toast')
     expect(tile('Works in')?.textContent).toBe('Terminal')
     expect(tile('Slash commands')?.textContent).toBe('/filetree')
-    expect(tile('Uses your plan')?.textContent).toBe('No')
-    expect(tile('Changes files')?.textContent).toBe('No')
-    expect(tile('Internet')?.textContent).toBe('Not used')
+    expect(tile('Uses your tokens')?.textContent).toBe('No')
+    expect(tile('Changes files')?.textContent).toBe('Nothing')
+    expect(tile('Network access')?.textContent).toBe('None')
   })
 
   it('credits the author with a link to the source at the pinned commit', () => {
