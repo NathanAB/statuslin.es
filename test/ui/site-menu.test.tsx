@@ -81,7 +81,7 @@ describe('the phone menu', () => {
     expect(links.queryByRole('link', { name: 'Write a status line' })).toBeNull()
     expect(links.getByRole('link', { name: 'Resources' }).getAttribute('href')).toBe('/resources')
     expect(links.getByRole('link', { name: 'Submit' }).getAttribute('href')).toBe('/submit')
-    expect(links.getByRole('link', { name: 'Star on GitHub' })).toBeTruthy()
+    expect(links.getByRole('link', { name: 'GitHub' })).toBeTruthy()
     expect(links.getByRole('button', { name: 'Sign in with GitHub' })).toBeTruthy()
   })
 

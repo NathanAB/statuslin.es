@@ -11,9 +11,24 @@ vi.mock('@posthog/react', () => ({
   usePostHog: () => ({ capture }),
 }))
 
+// A Link's search function, applied to this previous search, shows up as data-search.
+const PREV_SEARCH = { sort: 'top', tags: 'git', kind: 'mods', page: 2 }
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-    <a href={to} {...props}>
+  Link: ({
+    to,
+    children,
+    search,
+    resetScroll: _resetScroll,
+    from: _from,
+    ...props
+  }: {
+    to: string
+    children: React.ReactNode
+    search?: (prev: Record<string, unknown>) => Record<string, unknown>
+    resetScroll?: boolean
+    from?: string
+  }) => (
+    <a href={to} data-search={search ? JSON.stringify(search(PREV_SEARCH)) : undefined} {...props}>
       {children}
     </a>
   ),
@@ -71,19 +86,6 @@ describe('GalleryControls analytics', () => {
       kind: 'mods',
     })
   })
-
-  it('captures switching what the gallery shows, from what it showed', () => {
-    render(<GalleryControls kind="all" sort="new" tags={['git']} />)
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
-
-    expect(capture).toHaveBeenCalledWith('gallery_kind_changed', {
-      kind: 'mods',
-      previousKind: 'all',
-      sort: 'new',
-      selectedTags: ['git'],
-    })
-  })
 })
 
 describe('GalleryControls sort', () => {
@@ -114,50 +116,19 @@ describe('GalleryControls sort', () => {
   })
 })
 
-describe('GalleryControls kind filter', () => {
-  const searchAfterClicking = (name: string, prev: Record<string, unknown>) => {
-    fireEvent.click(screen.getByRole('radio', { name }))
-    const call = navigate.mock.calls[0]?.[0] as
-      | { search: (prev: Record<string, unknown>) => Record<string, unknown> }
-      | undefined
-    return call?.search(prev)
-  }
-
-  it('is one segmented control, with the active kind checked', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
-
-    const group = screen.getByRole('radiogroup', { name: 'Show' })
-    expect(
-      within(group)
-        .getAllByRole('radio')
-        .map((r) => r.textContent),
-    ).toEqual(['All', 'Status lines', 'Mods'])
-    expect(screen.getByRole('radio', { name: 'Mods' }).getAttribute('aria-checked')).toBe('true')
-    expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('false')
+// What the gallery shows is no longer a control: status lines and mods are one list. A kind that
+// arrives in the URL still filters, and Clear filters drops it with any tags.
+describe('GalleryControls without a kind filter', () => {
+  it('offers no kind control', () => {
+    render(<GalleryControls kind="all" sort="trending" tags={[]} />)
+    expect(screen.queryByRole('radio', { name: 'Mods' })).toBeNull()
+    expect(screen.queryByRole('radio', { name: 'Status lines' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Clear filters' })).toBeNull()
   })
 
-  it('writes the chosen kind to the URL and resets the page', () => {
-    render(<GalleryControls kind="all" sort="new" tags={['git']} />)
-
-    expect(searchAfterClicking('Status lines', { sort: 'new', tags: 'git', page: 3 })).toEqual({
-      sort: 'new',
-      tags: 'git',
-      kind: 'status-lines',
-    })
-  })
-
-  it('leaves All out of the URL', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
-
-    expect(searchAfterClicking('All', { kind: 'mods', page: 2 })).toEqual({})
-  })
-
-  it('keeps the active kind when it is clicked again', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
-
-    expect(navigate).not.toHaveBeenCalled()
-    expect(capture).not.toHaveBeenCalled()
+  it('clears a kind that arrived in the URL, with any tags', () => {
+    render(<GalleryControls kind="mods" sort="top" tags={[]} />)
+    const clear = screen.getByRole('link', { name: 'Clear filters' })
+    expect(JSON.parse(clear.getAttribute('data-search') ?? '{}')).toEqual({ sort: 'top' })
   })
 })

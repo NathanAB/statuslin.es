@@ -14,7 +14,7 @@ export const BRAND_ICON_PATH = '/apple-touch-icon.png'
 /** Contact + abuse-report address (live, forwarding-verified). Used by the site footer. */
 export const CONTACT_EMAIL = 'hello@statuslin.es'
 
-/** Public source repository. Linked from the site footer and the header's Star on GitHub link. */
+/** Public source repository. Linked from the site footer and the header's GitHub link. */
 export const REPO_URL = 'https://github.com/NathanAB/statuslin.es'
 
 /**

@@ -39,7 +39,8 @@ export function SignInButton({ look = 'button' }: { look?: keyof typeof LOOK }) 
           Sign in<span className="hidden sm:inline"> with GitHub</span>
         </span>
       ) : (
-        <span>Sign in with GitHub</span>
+        // The header bar and phone menu: just "Sign in" beside the GitHub mark.
+        <span>Sign in</span>
       )}
     </Button>
   )

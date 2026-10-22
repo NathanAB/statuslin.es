@@ -87,15 +87,15 @@ describe('AppHeader', () => {
     expect(submit.getAttribute('href')).toBe('/submit')
     expect(submit.getAttribute('data-variant')).toBe('default')
     expect(submit.closest('nav')).toBeNull()
-    const star = screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })
+    const star = screen.getByRole('link', { name: 'statuslin.es on GitHub' })
     const signIn = screen.getByRole('button', { name: 'Sign in with GitHub' })
     expect(star.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(submit.compareDocumentPosition(signIn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('shows the Star on GitHub link', () => {
+  it('shows the GitHub link', () => {
     render(<AppHeader user={null} />)
-    expect(screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'statuslin.es on GitHub' })).toBeTruthy()
   })
 
   it('shows the avatar image and @username for a signed-in user', () => {

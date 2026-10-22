@@ -12,15 +12,10 @@ const SORT_OPTIONS: readonly { label: string; value: GallerySort }[] = [
   { label: 'Top', value: 'top' },
   { label: 'New', value: 'new' },
 ]
-const KIND_OPTIONS: readonly { label: string; value: GalleryFilter }[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Status lines', value: 'status-lines' },
-  { label: 'Mods', value: 'mods' },
-]
-
 /**
- * The gallery's heading row: what it shows (All, Status lines, Mods) set as the visible heading,
- * then a way to clear a tag filter and the sort on the right. Every control writes the URL.
+ * The gallery's sort, then a way to clear what a link filtered it by (tags, or a kind from an old
+ * `?kind=` link: status lines and mods are one list, with no control to split them). Every control
+ * writes the URL.
  */
 export function GalleryControls({
   kind,
@@ -36,7 +31,7 @@ export function GalleryControls({
   // Every control here only changes the search, so the reader stays where they were instead of
   // the router's default jump to the top of the page.
   const posthog = usePostHog()
-  const selected = new Set(tags)
+  const filtered = tags.length > 0 || kind !== 'all'
 
   const setSort = (value: GallerySort) => {
     posthog.capture('gallery_sort_changed', {
@@ -54,65 +49,40 @@ export function GalleryControls({
       resetScroll: false,
     })
   }
-  const setKind = (value: GalleryFilter) => {
-    posthog.capture('gallery_kind_changed', {
-      kind: value,
-      previousKind: kind,
-      sort,
-      selectedTags: tags,
-    })
-    navigate({
-      to: '/',
-      search: (prev) => {
-        const { page: _page, kind: _kind, ...rest } = prev
-        return value === 'all' ? rest : { ...rest, kind: value }
-      },
-      resetScroll: false,
-    })
-  }
   return (
-    <Row gap={4} justify="between" wrap>
+    <Row gap={4} wrap>
       <SegmentedControl
-        label="Show"
-        look="heading"
-        options={KIND_OPTIONS}
-        value={kind}
-        onValueChange={setKind}
+        label="Sort"
+        look="tray"
+        options={SORT_OPTIONS}
+        value={sort}
+        onValueChange={setSort}
       />
-      <Row gap={4} wrap>
-        {selected.size > 0 ? (
-          <Button asChild variant="quiet" size="bar">
-            <Link
-              from="/"
-              to="/"
-              resetScroll={false}
-              onClick={() => {
-                posthog.capture('gallery_filter_changed', {
-                  action: 'clear',
-                  selectedTags: [],
-                  sort,
-                  page: 1,
-                  kind,
-                })
-              }}
-              search={(prev) => {
-                const { page: _page, tags: _tags, ...rest } = prev
-                return rest
-              }}
-            >
-              <X />
-              Clear filters
-            </Link>
-          </Button>
-        ) : null}
-        <SegmentedControl
-          label="Sort"
-          look="tray"
-          options={SORT_OPTIONS}
-          value={sort}
-          onValueChange={setSort}
-        />
-      </Row>
+      {filtered ? (
+        <Button asChild variant="quiet" size="bar">
+          <Link
+            from="/"
+            to="/"
+            resetScroll={false}
+            onClick={() => {
+              posthog.capture('gallery_filter_changed', {
+                action: 'clear',
+                selectedTags: [],
+                sort,
+                page: 1,
+                kind,
+              })
+            }}
+            search={(prev) => {
+              const { page: _page, tags: _tags, kind: _kind, ...rest } = prev
+              return rest
+            }}
+          >
+            <X />
+            Clear filters
+          </Link>
+        </Button>
+      ) : null}
     </Row>
   )
 }

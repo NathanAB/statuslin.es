@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react'
 import { cn } from '@/lib/cn'
 import type { AppHeaderUser, HeaderLink } from '@/ui/app-header'
 import { Button } from '@/ui/button'
+import { GitHubLink } from '@/ui/github-link'
 import { SignInButton } from '@/ui/sign-in-button'
-import { StarOnGitHubLink } from '@/ui/star-on-github-link'
 import { signOutAndGoHome, userLabel } from '@/ui/user-menu'
 import { Wordmark } from '@/ui/wordmark'
 
@@ -68,7 +68,7 @@ export function SiteMenu({
         </Button>
       </Dialog.Close>
     )),
-    <StarOnGitHubLink key="star" look="menu" />,
+    <GitHubLink key="github" look="menu" />,
     ...(user
       ? [
           <p key="user" className="wrap-anywhere pt-6 text-body text-muted-foreground">

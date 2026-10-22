@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { HeroLine } from '@/gallery/hero-lines'
@@ -168,30 +168,48 @@ describe('home content', () => {
 })
 
 describe('home pagination', () => {
+  const pagers = () => screen.getAllByRole('navigation', { name: 'Gallery pages' })
+
+  // The same pager sits above the list, beside the sort, and under it.
+  it('puts the same pager above the list and under it', () => {
+    renderHome({ pageCount: 3 })
+    expect(pagers()).toHaveLength(2)
+    for (const pager of pagers()) {
+      expect(within(pager).getByText('Page 1 of 3')).toBeTruthy()
+      expect(within(pager).getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe(
+        '/?page=2#gallery',
+      )
+    }
+  })
+
   // Each page link lands on the results (#gallery), not back at the top of the page.
   it('links the next page, keeping what the gallery shows, from page 1', () => {
     renderHome({ pageCount: 3 }, { kind: 'mods' })
+    const [, bottom] = pagers()
 
-    expect(screen.getByText('Page 1 of 3')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe(
-      '/?page=2&kind=mods#gallery',
-    )
+    expect(
+      within(bottom as HTMLElement)
+        .getByRole('link', { name: 'Next page' })
+        .getAttribute('href'),
+    ).toBe('/?page=2&kind=mods#gallery')
     expect(screen.queryByRole('link', { name: 'Previous page' })).toBeNull()
   })
 
   it('links both ways from a middle page, and only back from the last', () => {
     renderHome({ page: 2, pageCount: 3 })
-    expect(screen.getByRole('link', { name: 'Previous page' }).getAttribute('href')).toBe(
-      '/#gallery',
-    )
-    expect(screen.getByRole('link', { name: 'Next page' }).getAttribute('href')).toBe(
-      '/?page=3#gallery',
-    )
+    const [, bottom] = pagers()
+    const link = (name: string) =>
+      within(bottom as HTMLElement)
+        .getByRole('link', { name })
+        .getAttribute('href')
+    expect(link('Previous page')).toBe('/#gallery')
+    expect(link('Next page')).toBe('/?page=3#gallery')
   })
 
   it('shows no pager on a single page', () => {
     renderHome()
     expect(screen.queryByText(/Page 1 of/)).toBeNull()
+    expect(screen.queryByRole('navigation', { name: 'Gallery pages' })).toBeNull()
   })
 })
 
@@ -199,7 +217,7 @@ describe('home analytics', () => {
   it('captures paging with what the gallery shows', () => {
     renderHome({ pageCount: 2 }, { kind: 'mods' })
 
-    fireEvent.click(screen.getByRole('link', { name: 'Next page' }))
+    fireEvent.click(screen.getAllByRole('link', { name: 'Next page' })[0] as HTMLElement)
 
     expect(capture).toHaveBeenCalledWith('gallery_page_changed', {
       page: 2,

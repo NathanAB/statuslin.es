@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/button'
+import { GitHubLink } from '@/ui/github-link'
 import { PAGE_COLUMN } from '@/ui/page-column'
 import { SignInButton } from '@/ui/sign-in-button'
 import { SiteMenu } from '@/ui/site-menu'
-import { StarOnGitHubLink } from '@/ui/star-on-github-link'
 import { UserMenu } from '@/ui/user-menu'
 import { Wordmark } from '@/ui/wordmark'
 
@@ -31,7 +31,7 @@ const MENU_LINKS = [...HEADER_LINKS, SUBMIT_LINK]
 
 /**
  * Shared top header, a plain bar on the page column: the wordmark home-link, quiet links
- * (Resources, Star on GitHub), Submit as the bar's one filled button, then GitHub sign-in or
+ * (Resources, GitHub), Submit as the bar's one filled button, then GitHub sign-in or
  * the signed-in user's menu. Phones keep the wordmark and Submit, and get a menu button for the
  * rest, which opens the links full-screen.
  */
@@ -48,7 +48,7 @@ export function AppHeader({ user = null }: { user?: AppHeaderUser | null }) {
               <Link to={to}>{label}</Link>
             </Button>
           ))}
-          <StarOnGitHubLink look="bar" />
+          <GitHubLink look="bar" />
         </nav>
         <Button asChild size="bar-pill">
           <Link to={SUBMIT_LINK.to} className="max-md:ml-auto">

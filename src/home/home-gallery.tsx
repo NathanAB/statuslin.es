@@ -20,8 +20,8 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 const GALLERY_ID = 'gallery'
 
 /**
- * The home page's gallery: the filter heading and sort, one row per status line or mod, and real
- * links to the pages before and after. `rawKind` and `tags` are the URL's own values, so the page
+ * The home page's gallery: the sort with the pager beside it, one row per status line or mod, and
+ * the same pager under them, real links to the pages before and after. `rawKind` and `tags` are the URL's own values, so the page
  * links keep exactly what the URL asked for. `heading` is the page's h1 when the gallery is the
  * whole page (past page 1): it sits in the gallery's own section, just under the header.
  */
@@ -62,12 +62,43 @@ export function HomeGallery({
       posthog.capture('gallery_page_changed', { page: nextPage, sort, selectedTags, kind }),
   })
 
+  // The same pager above the list (beside the sort) and under it.
+  const pager =
+    pageCount > 1 ? (
+      <nav aria-label="Gallery pages">
+        <Row gap={4} align="center">
+          <Text muted size="sm">
+            Page {page} of {pageCount}
+          </Text>
+          <Row gap={3}>
+            {page > 1 ? (
+              <Button asChild variant="secondary" size="round" aria-label="Previous page">
+                <Link to="/" {...pageLink(page - 1)}>
+                  <ChevronLeft />
+                </Link>
+              </Button>
+            ) : null}
+            {page < pageCount ? (
+              <Button asChild variant="secondary" size="pill" trailingIcon={<ChevronRight />}>
+                <Link to="/" {...pageLink(page + 1)}>
+                  Next page
+                </Link>
+              </Button>
+            ) : null}
+          </Row>
+        </Row>
+      </nav>
+    ) : null
+
   return (
     <HomeSection id={GALLERY_ID} first={heading !== undefined}>
       <Stack gap={7}>
         {heading}
         <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-        <GalleryControls kind={kind} sort={sort} tags={selectedTags} />
+        <Row gap={4} justify="between" wrap>
+          <GalleryControls kind={kind} sort={sort} tags={selectedTags} />
+          {pager}
+        </Row>
         {items.length === 0 ? (
           <Text muted>Nothing matches these filters yet.</Text>
         ) : (
@@ -89,27 +120,9 @@ export function HomeGallery({
             )}
           </GalleryList>
         )}
-        {pageCount > 1 ? (
-          <Row gap={4} justify="between">
-            <Text muted size="sm">
-              Page {page} of {pageCount}
-            </Text>
-            <Row gap={3}>
-              {page > 1 ? (
-                <Button asChild variant="secondary" size="round" aria-label="Previous page">
-                  <Link to="/" {...pageLink(page - 1)}>
-                    <ChevronLeft />
-                  </Link>
-                </Button>
-              ) : null}
-              {page < pageCount ? (
-                <Button asChild variant="secondary" size="pill" trailingIcon={<ChevronRight />}>
-                  <Link to="/" {...pageLink(page + 1)}>
-                    Next page
-                  </Link>
-                </Button>
-              ) : null}
-            </Row>
+        {pager ? (
+          <Row gap={4} justify="end">
+            {pager}
           </Row>
         ) : null}
       </Stack>

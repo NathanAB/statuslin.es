@@ -49,7 +49,7 @@ async function renderControls(initialUrl: string) {
     scrollRestoration: true,
   })
   render(<RouterProvider router={router} />)
-  await screen.findByRole('radiogroup', { name: 'Show' })
+  await screen.findByRole('radiogroup', { name: 'Sort' })
   return router
 }
 
@@ -72,17 +72,6 @@ async function afterNavigation(
 }
 
 describe('GalleryControls keep the reader where they are', () => {
-  it('does not scroll to the top when the kind changes', async () => {
-    const router = await renderControls('/')
-
-    await afterNavigation(router, () => {
-      fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
-    })
-
-    expect(router.state.location.search).toEqual({ kind: 'mods' })
-    expect(scrollTo).not.toHaveBeenCalled()
-  })
-
   it('does not scroll to the top when the sort changes', async () => {
     const router = await renderControls('/')
 
