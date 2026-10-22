@@ -363,7 +363,7 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   one kind. Mods passed status lines in copies in October, and home never won the status line
   search its old title led with. Pages only about status lines, the guides and every URL keep their
   wording. The framing sweep below changed `/resources` and the topic titles after this.
-- **Add the whole marketplace** (#21). Mod pages and `/mods` carry one plain line with
+- **Add the whole marketplace** (#21). `/mods` and `/resources` carry one plain line with
   `/plugin marketplace add …` and a copy button, no popup. It's the only command shown to run by
   hand, and it installs nothing, so install counts still come only from the copied prompt. The
   `marketplace_fetched` event measures it.

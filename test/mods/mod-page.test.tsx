@@ -307,14 +307,13 @@ describe('mod page', () => {
     expect(panelLines(panel).folded).toEqual([])
   })
 
-  // One plain line, no popup: adding the marketplace gets the reviewed mods, not just this one.
-  it('offers the whole marketplace under the install button', () => {
+  // One mod's page is about that mod: the whole-marketplace command was clutter here, so it lives
+  // on /mods and /resources, where a visitor browses many at once.
+  it('leaves the whole-marketplace command to /mods and /resources', () => {
     renderPage()
 
-    const command = screen.getByText(`/plugin marketplace add ${ORIGIN}/marketplace.json`)
-    const install = screen.getByRole('button', { name: /Copy install prompt/ })
-    expect(install.compareDocumentPosition(command) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Copy marketplace command' })).toBeTruthy()
+    expect(screen.queryByText(/plugin marketplace add/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copy marketplace command' })).toBeNull()
   })
 
   // Nested boxes read as clutter: no section is a card, so only the rows themselves are surfaces.

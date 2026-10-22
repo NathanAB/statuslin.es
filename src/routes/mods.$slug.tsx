@@ -16,7 +16,6 @@ import { modPath, siteUrl } from '@/lib/site'
 import { getModDetailFn } from '@/mods/functions'
 import { ModInstallPrompt } from '@/mods/install-prompt'
 import { modJsonLd } from '@/mods/json-ld'
-import { MarketplaceLine } from '@/mods/marketplace-line'
 import { modFactTiles } from '@/mods/mod-fact-tiles'
 import { ModHeader } from '@/mods/mod-header'
 import { modInstallFacts } from '@/mods/mod-install-facts'
@@ -26,7 +25,6 @@ import type { ModDetail } from '@/mods/queries'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
 import { InstallFacts } from '@/ui/install-facts'
-import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Text, TextLink } from '@/ui/text'
 
@@ -93,15 +91,12 @@ function ModPage() {
           />
         }
         install={
-          <Stack gap={4}>
-            <ModInstallPrompt
-              origin={origin}
-              slug={mod.slug}
-              title={mod.title}
-              controller={copyController}
-            />
-            <MarketplaceLine origin={origin} />
-          </Stack>
+          <ModInstallPrompt
+            origin={origin}
+            slug={mod.slug}
+            title={mod.title}
+            controller={copyController}
+          />
         }
         preview={<ModPreview mod={mod} />}
         whatItDoes={{ copy: mod.generatedContent, tiles: modFactTiles(mod) }}
