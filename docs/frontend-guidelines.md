@@ -136,6 +136,7 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 | `<SelectField options label …>` | `src/ui/select.tsx` | Closed select with `SelectOption[]` |
 | `<Details summary="…">` | `src/ui/details.tsx` | Styled `<details>` / `<summary>` disclosure |
 | `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles, each one borderless surface; `caution` uses the warning tint |
+| `<IconList label items look>` | `src/ui/icon-list.tsx` | A short named list, each item an icon and its words. `look`: `tiles` (a few words per tile, two up on a phone, four from 1024px: the mod safety guide's "What a mod can do") or `rows` (sentences stacked, the icon beside each; an item may hold a link) |
 | `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
 | `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip, linked to the GitHub profile, everywhere a username shows |

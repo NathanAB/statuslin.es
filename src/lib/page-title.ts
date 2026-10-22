@@ -170,7 +170,7 @@ export const MOD_SAFETY_GUIDE_PATH = '/guide/are-claude-code-mods-safe'
  */
 export const MOD_SAFETY_GUIDE_TITLE = 'Are Claude Code Mods Safe? What a Mod Can Touch'
 
-export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026-10-21' } as const
+export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026-10-22' } as const
 
 /** /guide/are-claude-code-mods-safe meta description — the description tag, OG, and JSON-LD. */
 export const MOD_SAFETY_GUIDE_DESCRIPTION =
