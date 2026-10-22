@@ -47,10 +47,14 @@ export function gallerySearchText({
     .toLowerCase()
 }
 
-/** A search as the URL keeps it: a trimmed string with single spaces, or undefined for none. */
+/**
+ * A search as the URL keeps it: a trimmed string with single spaces, or undefined for none. The
+ * router parses `?q=123` as JSON, so a number or boolean is read back as the text typed.
+ */
 export function normalizeSearchQuery(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined
-  const query = value.replace(/\s+/g, ' ').trim().slice(0, MAX_SEARCH_LENGTH).trimEnd()
+  const raw = typeof value === 'number' || typeof value === 'boolean' ? String(value) : value
+  if (typeof raw !== 'string') return undefined
+  const query = raw.replace(/\s+/g, ' ').trim().slice(0, MAX_SEARCH_LENGTH).trimEnd()
   return query === '' ? undefined : query
 }
 

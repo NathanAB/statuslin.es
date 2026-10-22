@@ -74,6 +74,12 @@ describe('normalizeSearchQuery', () => {
     expect(normalizeSearchQuery('   ')).toBeUndefined()
   })
 
+  // The router parses `?q=123` and `?q=true` as JSON, so a typed number or word arrives as one.
+  it('reads a number or boolean from the URL as the words typed', () => {
+    expect(normalizeSearchQuery(123)).toBe('123')
+    expect(normalizeSearchQuery(true)).toBe('true')
+  })
+
   it('keeps only a string', () => {
     expect(normalizeSearchQuery(['git'])).toBeUndefined()
     expect(normalizeSearchQuery({ q: 'git' })).toBeUndefined()
