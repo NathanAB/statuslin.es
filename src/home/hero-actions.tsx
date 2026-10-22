@@ -20,7 +20,7 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 
 /**
  * Under the hero's picker for a status line: the install button (the same prompt as its page) and
- * its page, its author, then what the script can reach.
+ * its page, its kind and author, then what the script can reach.
  */
 export function StatusLineHeroActions({
   line,
@@ -37,15 +37,15 @@ export function StatusLineHeroActions({
           Open page<VisuallyHidden>: {line.title}</VisuallyHidden>
         </TextLink>
       </HeroActions>
-      <AuthorByline author={line.author} />
-      <FactSentence subject={line.title} fact={reachSentence(line)} />
+      <AuthorByline kind="A status line" author={line.author} />
+      <FactSentence fact={reachSentence(line)} />
     </>
   )
 }
 
 /**
- * The same for a mod: its install prompt (as on its page), its page, the repository owner, then
- * what its hooks can do, from its footprint.
+ * The same for a mod: its install prompt (as on its page), its page, its kind and the repository
+ * owner, then the risks its hooks take, from its footprint.
  */
 export function ModHeroActions({ mod, onCopied }: { mod: HeroMod; onCopied: () => void }) {
   const fact = modReachSentence(mod.footprint)
@@ -67,8 +67,8 @@ export function ModHeroActions({ mod, onCopied }: { mod: HeroMod; onCopied: () =
           Open page<VisuallyHidden>: {mod.title}</VisuallyHidden>
         </TextLink>
       </HeroActions>
-      <AuthorByline author={modAuthor(mod.authorGithub)} />
-      {fact ? <FactSentence subject={mod.title} fact={fact} /> : null}
+      <AuthorByline kind="A mod" author={modAuthor(mod.authorGithub)} />
+      {fact ? <FactSentence fact={fact} /> : null}
     </>
   )
 }

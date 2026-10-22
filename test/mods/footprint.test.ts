@@ -95,7 +95,7 @@ describe('describeFootprint', () => {
       events: ['session.start', 'turn.complete'],
       calls: ['$.state.get', '$.state.set', '$.ui.resolve', '$.ui.invalidate', '$.clock.now'],
     })
-    expect(result).toEqual({ phrases: [], risks: [], unknown: [], draws: [] })
+    expect(result).toEqual({ phrases: [], risks: [], shortRisks: [], unknown: [], draws: [] })
   })
 
   // flightdeck's hook only reads each message and after's rewrites one; neither adds any.
@@ -168,7 +168,7 @@ describe('describeFootprint on the calls and events published mods use', () => {
 
   it('says nothing about moving focus inside its own drawing or reading the model name', () => {
     const result = describeFootprint({ events: [], calls: ['$.ui.focus', '$.session.model'] })
-    expect(result).toEqual({ phrases: [], risks: [], unknown: [], draws: [] })
+    expect(result).toEqual({ phrases: [], risks: [], shortRisks: [], unknown: [], draws: [] })
   })
 
   // ui.press, ui.input and ui.select fire when someone uses a Button, Input or Select the mod drew
@@ -182,7 +182,7 @@ describe('describeFootprint on the calls and events published mods use', () => {
       ],
       calls: [],
     })
-    expect(result).toEqual({ phrases: [], risks: [], unknown: [], draws: [] })
+    expect(result).toEqual({ phrases: [], risks: [], shortRisks: [], unknown: [], draws: [] })
   })
 
   // A mod can add its own namespace to the mods API, and calls on it are events; the footprint

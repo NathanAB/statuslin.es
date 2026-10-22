@@ -41,7 +41,7 @@ describe('configInstallFacts', () => {
   })
 })
 
-// The home hero names the picked line, then says what it reaches as the rest of one sentence.
+// The home hero says what the picked line reaches as one short line, under its byline.
 describe('reachSentence', () => {
   const reach = (readsClaudeToken: boolean, networkHosts: string[]) => {
     const { text, caution } = reachSentence({ readsClaudeToken, networkHosts })
@@ -49,17 +49,17 @@ describe('reachSentence', () => {
   }
 
   it('says a line that reaches nothing never connects to the internet', () => {
-    expect(reach(false, [])).toEqual(["doesn't connect to the internet.", false])
+    expect(reach(false, [])).toEqual(["Doesn't connect to the internet", false])
   })
 
   it('names the token it reads and the hosts it connects to, as risks', () => {
-    expect(reach(true, [])).toEqual(['reads your Claude sign-in token.', true])
+    expect(reach(true, [])).toEqual(['Reads your Claude sign-in token', true])
     expect(reach(false, ['wttr.in', 'api.github.com'])).toEqual([
-      'connects to `wttr.in` and `api.github.com`.',
+      'Connects to `wttr.in` and `api.github.com`',
       true,
     ])
     expect(reach(true, ['wttr.in'])).toEqual([
-      'reads your Claude sign-in token and connects to `wttr.in`.',
+      'Reads your Claude sign-in token and connects to `wttr.in`',
       true,
     ])
   })

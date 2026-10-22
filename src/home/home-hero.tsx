@@ -34,7 +34,6 @@ const keyOf = (item: HeroItem) =>
 const titleOf = (item: HeroItem) => (item.kind === 'mod' ? item.mod.title : item.line.title)
 const copiesOf = (item: HeroItem) =>
   item.kind === 'mod' ? item.mod.copyCount : item.line.copyCount
-const KIND_LABEL: Record<HeroItem['kind'], string> = { 'status-line': 'Status line', mod: 'Mod' }
 /** The pick as one kind or the other, so each kind's copy hook gets its own id. */
 const partsOf = (item: HeroItem | undefined) => ({
   line: item?.kind === 'status-line' ? item.line : undefined,
@@ -122,7 +121,7 @@ export function HomeHero({ heading, items }: { heading: ReactNode; items: HeroIt
             options={items.map((i) => ({
               value: keyOf(i),
               label: titleOf(i),
-              detail: `${KIND_LABEL[i.kind]} · ${installsLabel(i === item ? copies.count : copiesOf(i))}`,
+              detail: installsLabel(i === item ? copies.count : copiesOf(i)),
             }))}
             value={keyOf(item)}
             onValueChange={(next) => {

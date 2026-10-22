@@ -3,11 +3,10 @@ import { InlineCodeText } from '@/ui/inline-code-text'
 import type { InstallFact } from '@/ui/install-facts'
 
 /**
- * One install fact as a sentence about a named thing, for a tight spot (the home hero, under its
- * install button): its icon, the name, then the fact, a risk in the caution tint. Naming it shows
- * the fact belongs to what's picked and changes with the pick.
+ * One install fact as a short line, for a tight spot (the home hero, under its byline): its icon,
+ * then the fact, a risk in the caution tint.
  */
-export function FactSentence({ subject, fact }: { subject: string; fact: InstallFact }) {
+export function FactSentence({ fact }: { fact: InstallFact }) {
   const { icon: Icon, text, caution = false } = fact
   return (
     <p
@@ -18,7 +17,6 @@ export function FactSentence({ subject, fact }: { subject: string; fact: Install
     >
       <Icon aria-hidden="true" className="mt-[0.2em] size-3.5 shrink-0" />
       <span className="wrap-anywhere min-w-0">
-        <span className="text-foreground">{subject}</span>{' '}
         <InlineCodeText text={text} tinted={caution} />
       </span>
     </p>

@@ -96,29 +96,54 @@ describe('modInstallFacts', () => {
   })
 })
 
-// The home hero says one sentence about the picked mod, after its name.
+// The home hero says one short line about the picked mod's risks, under its byline.
 describe('modReachSentence', () => {
-  it('names what is worth weighing, as a caution', () => {
-    expect(modReachSentence({ events: ['$.http.fetch', '$.fs.write'], calls: [] })).toMatchObject({
-      text: 'writes files and connects to the internet.',
-      caution: true,
-    })
+  const line = (events: string[]) => {
+    const fact = modReachSentence({ events, calls: [] })
+    return fact && [fact.text, fact.caution ?? false]
+  }
+
+  it('names a risk by its short name, as a caution', () => {
+    expect(line(['$.fs.write'])).toEqual(['Can write files', true])
   })
 
-  // Two long powers joined with "and" ran on: "sees each change to /config and can block or
-  // rewrite it and sees each tool call…". The weightiest one is said, and its page lists the rest.
-  it('says only the weightiest of several long powers, and points to the page for the rest', () => {
-    expect(modReachSentence({ events: ['config.set', 'tool.call'], calls: [] })).toMatchObject({
-      text: 'sees each change to /config and can block or rewrite it. Its page lists 1 more.',
-      caution: true,
-    })
+  // Watching /config and changing it are two risks, but both change your settings.
+  it('counts two risks with the same short name once', () => {
+    expect(line(['config.set', '$.config.set'])).toEqual(['Can change your settings', true])
   })
 
-  it('says when nothing about it was recorded, and says nothing when it names no power', () => {
-    expect(modReachSentence({ events: [], calls: [] })).toMatchObject({
-      text: 'has no record yet of what it can reach.',
-      caution: true,
-    })
-    expect(modReachSentence({ events: ['ui.render{component=AbovePrompt}'], calls: [] })).toBeNull()
+  it('names the first two risks, weightiest first, and counts the rest', () => {
+    expect(line(['tool.check', 'config.set', '$.fs.write'])).toEqual([
+      'Can write files and change your settings, +1 more',
+      true,
+    ])
+    expect(line(['tool.check', 'config.set', '$.fs.write', '$.http.fetch'])).toEqual([
+      'Can write files and connect to the internet, +2 more',
+      true,
+    ])
+  })
+
+  // An entry the page can't describe is never named here, but it is never hidden either.
+  it('counts what the page cannot describe as one more, without naming it', () => {
+    expect(line(['$.fs.write', 'prismantis.markdown', 'prismantis.other'])).toEqual([
+      'Can write files, +1 more',
+      true,
+    ])
+    expect(line(['$.fs.write', 'config.set', 'tool.check', 'prismantis.markdown'])).toEqual([
+      'Can write files and change your settings, +2 more',
+      true,
+    ])
+    expect(line(['$.fs.read', 'prismantis.markdown'])).toEqual([
+      "Can do things its page doesn't describe yet",
+      true,
+    ])
+  })
+
+  it('says nothing for a mod with no risks and nothing undescribed', () => {
+    expect(line(['$.fs.read', '$.audio.play', 'ui.render{component=AbovePrompt}'])).toBeNull()
+  })
+
+  it('says when nothing about it was recorded', () => {
+    expect(line([])).toEqual(["What it can reach isn't recorded yet", true])
   })
 })

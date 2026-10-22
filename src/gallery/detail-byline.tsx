@@ -42,13 +42,16 @@ function ByAuthor({ author }: { author: ConfigAuthor }) {
   )
 }
 
-/** "by @author": the hero's line under its install button; nothing without an author. The list
- *  beside it already shows the installs. */
-export function AuthorByline({ author }: { author: ConfigAuthor | null }) {
-  if (!author) return null
+/** "A mod by @author": the hero's line under its install button, naming what's picked and who
+ *  made it ("A status line" alone without an author). The list beside it already shows the
+ *  installs. */
+export function AuthorByline({ kind, author }: { kind: string; author: ConfigAuthor | null }) {
   return (
-    <Row gap={3} wrap>
-      <ByAuthor author={author} />
+    <Row gap={1.5} wrap>
+      <Text muted size="sm">
+        {author ? `${kind} by` : kind}
+      </Text>
+      {author ? <AuthorChip author={author} /> : null}
     </Row>
   )
 }

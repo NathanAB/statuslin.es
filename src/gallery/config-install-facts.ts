@@ -27,9 +27,8 @@ export function reachFacts(
 const asCode = (host: string) => `\`${host}\``
 
 /**
- * The same reach as the rest of one sentence after the status line's name, for the home hero:
- * "… reads your Claude sign-in token and connects to `wttr.in`." Naming the line shows the fact
- * changes with the pick.
+ * The same reach as one short line, for the home hero: "Reads your Claude sign-in token and
+ * connects to `wttr.in`".
  */
 export function reachSentence(
   config: Pick<ConfigDetail, 'readsClaudeToken' | 'networkHosts'>,
@@ -40,10 +39,11 @@ export function reachSentence(
       ? [`connects to ${listPhrase(config.networkHosts.map(asCode))}`]
       : []),
   ]
-  if (reaches.length === 0) return { icon: GlobeLock, text: "doesn't connect to the internet." }
+  if (reaches.length === 0) return { icon: GlobeLock, text: "Doesn't connect to the internet" }
+  const text = reaches.join(' and ')
   return {
     icon: config.readsClaudeToken ? KeyRound : Globe,
-    text: `${reaches.join(' and ')}.`,
+    text: text.charAt(0).toUpperCase() + text.slice(1),
     caution: true,
   }
 }

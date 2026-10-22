@@ -123,27 +123,23 @@ const showIn = (name: 'Terminal' | 'Claude Desktop') =>
 const statusRow = () => document.querySelector('[data-slot="terminal-status"]') as HTMLElement
 const band = () => document.querySelector('[data-slot="terminal-band"]')
 const announced = () => screen.getByRole('status').textContent
-/** The line under the install button that credits the shown item's author. */
-const byline = () => screen.getByText('by').parentElement?.parentElement as HTMLElement
-const reach = (title: string) =>
-  [...document.querySelectorAll('p')].find((p) => p.textContent?.startsWith(`${title} `))
-    ?.textContent
+/** The line under the install button that names the shown item's kind and credits its author. */
+const byline = () => screen.getByText(/^A (mod|status line)( by)?$/).parentElement as HTMLElement
+/** The line under the byline that says what the shown item can reach. */
+const reach = () => byline().nextElementSibling?.textContent
 
 describe('HomeHero', () => {
   // You could copy a line that reads your Claude sign-in token without being told: the picked
-  // line's reach and the site's review sit right under the install button. The sentence names the
-  // line, so it plainly changes with the pick (a bare "No network access" read like an error).
-  it('says what the picked line can reach, by name, and that everything is reviewed', () => {
+  // line's reach and the site's review sit right under the install button, as one short line each.
+  it('says what the picked line can reach, and that everything is reviewed', () => {
     renderHero()
 
-    expect(reach('Dreambase Panel')).toBe("Dreambase Panel doesn't connect to the internet.")
+    expect(reach()).toBe("Doesn't connect to the internet")
     expect(
       screen.getByText("Every mod here is reviewed and rendered in a sandbox before it's listed."),
     ).toBeTruthy()
     pick(/^Pace Dot Meters/)
-    expect(reach('Pace Dot Meters')).toBe(
-      'Pace Dot Meters reads your Claude sign-in token and connects to wttr.in.',
-    )
+    expect(reach()).toBe('Reads your Claude sign-in token and connects to wttr.in')
   })
 
   it("server-renders the heading, the sentence and the first item's terminal", () => {
@@ -159,16 +155,17 @@ describe('HomeHero', () => {
   })
 
   // Status lines are one kind of mod: the hero lists both, as the gallery ranks them.
-  it('lists status lines and mods as one radio group, each with its kind and installs', () => {
+  // The byline under the buttons names the kind, so each row says only its installs.
+  it('lists status lines and mods as one radio group, each with its installs', () => {
     renderHero()
 
     const radios = within(picker()).getAllByRole('radio')
     expect(radios.map((r) => r.textContent)).toEqual([
-      'Dreambase PanelStatus line · 223 installs',
-      'DeckMod · 120 installs',
-      'Pace Dot MetersStatus line · 94 installs',
-      'Cost HintMod · 5 installs',
-      'Kanji RainStatus line · 1 install',
+      'Dreambase Panel223 installs',
+      'Deck120 installs',
+      'Pace Dot Meters94 installs',
+      'Cost Hint5 installs',
+      'Kanji Rain1 install',
     ])
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
       'true',
@@ -194,8 +191,8 @@ describe('HomeHero', () => {
     expect(screen.getByRole('link', { name: '@pace-dev' }).getAttribute('href')).toBe(
       'https://github.com/pace-dev',
     )
-    // The list right above already shows the installs, so the byline names only the author.
-    expect(byline().textContent).not.toMatch(/installs/)
+    // The list right above already shows the installs, so the byline names the kind and author.
+    expect(byline().textContent).toMatch(/^A status line by.*@pace-dev$/)
   })
 
   // A mod draws where its footprint says: Deck's band sits above the prompt, as in Claude Code.
@@ -216,7 +213,8 @@ describe('HomeHero', () => {
     expect(screen.getByRole('link', { name: '@deck-dev' }).getAttribute('href')).toBe(
       'https://github.com/deck-dev',
     )
-    expect(reach('Deck')).toBe('Deck connects to the internet.')
+    expect(byline().textContent).toMatch(/^A mod by.*@deck-dev$/)
+    expect(reach()).toBe('Can connect to the internet')
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy install prompt for Deck' }))
     await waitFor(() =>
@@ -225,7 +223,7 @@ describe('HomeHero', () => {
     expect(recordModCopyFn).toHaveBeenCalled()
     await waitFor(() =>
       expect(within(picker()).getByRole('radio', { name: /^Deck/ }).textContent).toBe(
-        'DeckMod · 121 installs',
+        'Deck121 installs',
       ),
     )
   })
@@ -309,6 +307,19 @@ describe('HomeHero', () => {
     expect(visible()).toBe('Open page')
   })
 
+  it('names the kind alone when a status line has no known author', () => {
+    render(
+      <HomeHero
+        heading={heading}
+        items={[
+          { kind: 'status-line', line: { ...line('anon', 'Anon Line', 3, 'anon'), author: null } },
+        ]}
+      />,
+    )
+
+    expect(byline().textContent).toBe('A status line')
+  })
+
   it('says so when a status line has no render yet', () => {
     render(
       <HomeHero
@@ -354,7 +365,7 @@ describe('HomeHero', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Install Dreambase Panel' }))
 
     expect(within(picker()).getByRole('radio', { name: /^Dreambase Panel/ }).textContent).toBe(
-      'Dreambase PanelStatus line · 224 installs',
+      'Dreambase Panel224 installs',
     )
   })
 

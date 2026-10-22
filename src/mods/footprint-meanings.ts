@@ -3,12 +3,19 @@ import type { DrawLocation } from './footprint'
 /** What each footprint entry (a validator-recorded API call or event) means for a visitor. */
 export type MatcherArgs = Record<string, string>
 
-export interface EntryMeaning {
+interface Meaning {
   phrase: string | null | ((args: MatcherArgs) => string)
   draws?: DrawLocation
-  /** A power over the session, its files, programs or network: drawn as a risk on the mod page. */
-  risk?: true
 }
+
+/** A power over the session, its files, programs or network: drawn as a risk on the mod page. Its
+ *  `short` name completes "Can …" in at most four words for the home hero, still true to the phrase. */
+interface RiskyMeaning extends Meaning {
+  risk: true
+  short: string
+}
+
+export type EntryMeaning = (Meaning & { risk?: undefined }) | RiskyMeaning
 
 function literalMatcherValue(value: string | undefined): string | null {
   return value !== undefined && /^[\w-]+$/.test(value) ? value : null
@@ -22,59 +29,95 @@ const SILENT: EntryMeaning = { phrase: null }
  *  /events and /admin, and the mods types in anthropics/claude-code (mods/types/claude-code.d.ts). */
 export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
   Object.entries({
-    '$.process.run': { phrase: 'runs programs', risk: true },
-    '$.process.spawn': { phrase: 'runs programs', risk: true },
+    '$.process.run': { phrase: 'runs programs', risk: true, short: 'run programs' },
+    '$.process.spawn': { phrase: 'runs programs', risk: true, short: 'run programs' },
     '$.tool.call': {
       phrase:
         "runs Claude Code's tools, such as Bash and Edit, which still pass the session's permission check",
       risk: true,
+      short: "run Claude Code's tools",
     },
-    '$.fs.write': { phrase: 'writes files', risk: true },
-    '$.http.fetch': { phrase: 'connects to the internet', risk: true },
+    '$.fs.write': { phrase: 'writes files', risk: true, short: 'write files' },
+    '$.http.fetch': {
+      phrase: 'connects to the internet',
+      risk: true,
+      short: 'connect to the internet',
+    },
     '$.model.complete': {
       phrase: 'sends its own requests to Claude, which uses your plan',
       risk: true,
+      short: 'use your plan',
     },
     '$.model.fork': {
       phrase: 'sends the conversation to Claude with its own requests, which uses your plan',
       risk: true,
+      short: 'use your plan',
     },
     '$.prompt.submit': {
       phrase: 'submits prompts for you, which can be sent as your own words',
       risk: true,
+      short: 'send prompts for you',
     },
     '$.prompt.fill': {
       phrase: 'puts text in your prompt box, which can replace what you typed',
       risk: true,
+      short: 'replace what you typed',
     },
-    '$.mcp.call': { phrase: 'calls MCP tools', risk: true },
-    '$.tool.register': { phrase: 'adds a tool Claude can call', risk: true },
-    'prompt.compose': { phrase: 'changes the system prompt', risk: true },
+    '$.mcp.call': { phrase: 'calls MCP tools', risk: true, short: 'call MCP tools' },
+    '$.tool.register': {
+      phrase: 'adds a tool Claude can call',
+      risk: true,
+      short: 'add tools for Claude',
+    },
+    'prompt.compose': {
+      phrase: 'changes the system prompt',
+      risk: true,
+      short: 'change the system prompt',
+    },
     'session.append': {
       phrase: 'sees each message added to the conversation and can change it',
       risk: true,
+      short: 'change the conversation',
     },
     'prompt.context': {
       phrase: 'sees the context sent with your first message, such as CLAUDE.md, and can change it',
       risk: true,
+      short: "change Claude's starting context",
     },
     '$.fs.read': { phrase: 'reads files' },
     '$.fs.list': { phrase: 'reads files' },
     '$.fs.exists': { phrase: 'reads files' },
     '$.fs.stat': { phrase: 'reads files' },
-    '$.env.get': { phrase: 'reads environment variables', risk: true },
+    '$.env.get': {
+      phrase: 'reads environment variables',
+      risk: true,
+      short: 'read environment variables',
+    },
     '$.settings.read': { phrase: 'reads your settings' },
     '$.config.list': { phrase: 'reads your settings' },
-    'config.set': { phrase: 'sees each change to /config and can block or rewrite it', risk: true },
-    '$.config.set': { phrase: 'changes your settings in /config', risk: true },
+    'config.set': {
+      phrase: 'sees each change to /config and can block or rewrite it',
+      risk: true,
+      short: 'change your settings',
+    },
+    '$.config.set': {
+      phrase: 'changes your settings in /config',
+      risk: true,
+      short: 'change your settings',
+    },
     '$.session.messages': { phrase: 'reads the conversation' },
     '$.session.turns': { phrase: 'reads the conversation' },
-    'prompt.submit': { phrase: 'sees each prompt you send and can change or drop it', risk: true },
+    'prompt.submit': {
+      phrase: 'sees each prompt you send and can change or drop it',
+      risk: true,
+      short: 'change or drop prompts',
+    },
     'prompt.edit': { phrase: 'reads your prompt as you type' },
     '$.prompt.read': { phrase: 'reads your prompt as you type' },
     'prompt.attachment': {
       phrase: 'can change or remove the reminders Claude Code adds for Claude',
       risk: true,
+      short: 'change or remove reminders',
     },
     '$.store.get': { phrase: 'remembers data between sessions' },
     '$.store.set': { phrase: 'remembers data between sessions' },
@@ -91,7 +134,7 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
         return name ? `adds the /${name} command` : 'adds slash commands'
       },
     },
-    '$.command.run': { phrase: 'runs slash commands', risk: true },
+    '$.command.run': { phrase: 'runs slash commands', risk: true, short: 'run slash commands' },
     'tool.call': {
       phrase: (args) => {
         const name = literalMatcherValue(args.tool)
@@ -100,6 +143,7 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
           : 'sees each tool call before it runs and can block or change it'
       },
       risk: true,
+      short: 'intercept tool calls',
     },
     'tool.check': {
       phrase: (args) => {
@@ -109,12 +153,18 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
           : 'can approve or deny each tool call before Claude Code asks you'
       },
       risk: true,
+      short: 'approve tool calls',
     },
     'agent.spawn': {
       phrase: 'sees each subagent before it starts and can stop it or pick its model',
       risk: true,
+      short: 'stop or change subagents',
     },
-    'agent.offer': { phrase: 'can hide subagent types from Claude', risk: true },
+    'agent.offer': {
+      phrase: 'can hide subagent types from Claude',
+      risk: true,
+      short: 'hide subagent types',
+    },
     '$.agent.list': { phrase: 'lists running subagents' },
     '$.command.list': { phrase: 'lists the slash commands you can run' },
     'engine.create': { phrase: 'adds its own methods for other mods to call' },

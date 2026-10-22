@@ -62,6 +62,8 @@ export interface FootprintDescription {
   phrases: string[]
   /** The phrases that name a risk to weigh, in the same order. */
   risks: string[]
+  /** The risks' short names, each once, in the same order. */
+  shortRisks: string[]
   unknown: string[]
   draws: DrawLocation[]
 }
@@ -74,7 +76,7 @@ export function footprintRecorded(footprint: ModFootprint): boolean {
 
 export function describeFootprint(footprint: ModFootprint): FootprintDescription {
   const ranked = new Map<string, number>()
-  const risky = new Set<string>()
+  const shortOfRisk = new Map<string, string>()
   const unknown: string[] = []
   const draws = new Set<DrawLocation>()
   for (const entry of [...footprint.events, ...footprint.calls]) {
@@ -89,12 +91,14 @@ export function describeFootprint(footprint: ModFootprint): FootprintDescription
     const phrase = typeof meaning.phrase === 'function' ? meaning.phrase(args) : meaning.phrase
     const rank = MEANING_RANK.get(key) ?? Number.MAX_SAFE_INTEGER
     if (phrase !== null && !ranked.has(phrase)) ranked.set(phrase, rank)
-    if (phrase !== null && meaning.risk) risky.add(phrase)
+    if (phrase !== null && meaning.risk) shortOfRisk.set(phrase, meaning.short)
   }
   const phrases = [...ranked].sort((a, b) => a[1] - b[1]).map(([phrase]) => phrase)
+  const risks = phrases.filter((phrase) => shortOfRisk.has(phrase))
   return {
     phrases,
-    risks: phrases.filter((phrase) => risky.has(phrase)),
+    risks,
+    shortRisks: [...new Set(risks.map((phrase) => shortOfRisk.get(phrase) ?? phrase))],
     unknown,
     draws: DRAW_LOCATIONS.filter((location) => draws.has(location)),
   }

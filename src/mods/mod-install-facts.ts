@@ -80,22 +80,20 @@ export function modInstallFacts(
 }
 
 /**
- * The home hero's one sentence on a mod, after its name: what its hooks can do that's worth weighing,
- * else its first two powers, in the footprint's words. Short powers are listed together; a power
- * that already joins two clauses with "and" would run on, so only the weightiest is said and the
- * page is named for the rest. Null when it names nothing, since an empty list must never read as
- * "does nothing"; an unrecorded footprint says so.
+ * The home hero's one short line on a mod's risks: "Can" and the short names of its first two,
+ * weightiest first, then how many more its page lists, the entries it can't describe counted as
+ * one. Null when it takes no risk and uses nothing undescribed; an unrecorded footprint says so.
  */
 export function modReachSentence(footprint: ModFootprint): InstallFact | null {
   if (!footprintRecorded(footprint))
-    return { icon: CircleHelp, text: 'has no record yet of what it can reach.', caution: true }
-  const { phrases, risks } = describeFootprint(footprint)
-  const shown = risks.length > 0 ? risks : phrases.slice(0, 2)
-  const [first] = shown
-  if (first === undefined) return null
-  const runsOn = shown.length > 1 && shown.some((phrase) => phrase.includes(' and '))
-  const text = runsOn
-    ? `${first}. Its page lists ${shown.length - 1} more.`
-    : `${listPhrase(shown)}.`
-  return { icon: Puzzle, text, caution: risks.length > 0 }
+    return { icon: CircleHelp, text: "What it can reach isn't recorded yet", caution: true }
+  const { shortRisks, unknown } = describeFootprint(footprint)
+  const named = shortRisks.slice(0, 2)
+  const more = shortRisks.length - named.length + (unknown.length > 0 ? 1 : 0)
+  if (named.length === 0)
+    return more > 0
+      ? { icon: CircleHelp, text: "Can do things its page doesn't describe yet", caution: true }
+      : null
+  const text = `Can ${named.join(' and ')}${more > 0 ? `, +${more} more` : ''}`
+  return { icon: Puzzle, text, caution: true }
 }
