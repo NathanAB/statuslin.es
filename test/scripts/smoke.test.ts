@@ -9,6 +9,7 @@ import {
   FIT_WIDTHS,
   sideScrollFailures,
 } from '../../scripts/smoke'
+import { HOME_HERO_HEADING } from '../../src/lib/page-title'
 
 const validHome = {
   bodyText: `${EXPECTED_HOME.h1} Trending`,
@@ -36,8 +37,9 @@ describe('browserCommandOutput', () => {
 })
 
 describe('assertHomeDocument', () => {
-  it('expects the gallery heading as the h1', () => {
-    expect(EXPECTED_HOME.h1).toBe('Claude Code mods')
+  // The smoke test runs before every production deploy; a stale heading here stops the deploy.
+  it("expects the heading the home page's hero renders as its h1", () => {
+    expect(EXPECTED_HOME.h1).toBe(HOME_HERO_HEADING)
   })
 
   it('accepts the expected production homepage shell', () => {

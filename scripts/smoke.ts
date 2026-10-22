@@ -10,10 +10,10 @@
  */
 import { type ChildProcess, spawn } from 'node:child_process'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { HOME_HEADING, HOME_TITLE_BASE } from '../src/lib/page-title'
+import { HOME_HERO_HEADING, HOME_TITLE_BASE } from '../src/lib/page-title'
 
 export const EXPECTED_HOME = {
-  h1: HOME_HEADING,
+  h1: HOME_HERO_HEADING,
   title: `${HOME_TITLE_BASE} | statuslin.es`,
 } as const
 
