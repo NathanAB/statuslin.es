@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { findTextWidthCaps } from './text-width-caps'
 
 /** Files allowed to use inline styles — their colors come from data (script output)
  * or are a var()-only CSS bridge into a vendored component. */
@@ -278,6 +279,8 @@ if (!process.env.VITEST) {
     all.push(...findClassNameOutsideUi(p, content))
     // Font-family is centralized: only the typography file + allowlist may set one.
     all.push(...findRawFontFamily(p, content))
+    // Text runs the full width of its column: no line-length caps.
+    all.push(...findTextWidthCaps(p, content))
   }
 
   // Token-echo runs over src/ AND test/: no literal anywhere may restate a token value.

@@ -1,9 +1,8 @@
 import { Heading } from '@/ui/text'
 
 /**
- * A redesigned page's opening, without a demo beside it: the title at display size across the full
- * width, and one sentence right under it over eight of twelve columns, as the home hero sets its own
- * (/resources).
+ * A redesigned page's opening, without a demo beside it: the title at page size and one sentence
+ * right under it, both across the full width of the column (/resources).
  */
 export function PageHeader({ title, lead }: { title: string; lead: string }) {
   return (
@@ -13,9 +12,7 @@ export function PageHeader({ title, lead }: { title: string; lead: string }) {
           {title}
         </Heading>
       </div>
-      <p className="col-span-12 text-pretty text-foreground text-lead min-[56.25rem]:col-span-8">
-        {lead}
-      </p>
+      <p className="col-span-12 text-pretty text-foreground text-lead">{lead}</p>
     </div>
   )
 }
