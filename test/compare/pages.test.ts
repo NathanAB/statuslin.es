@@ -240,7 +240,7 @@ describe('liveComparePages', () => {
 })
 
 // /resources gets most status line search impressions and sent every visitor off-site. It shows
-// rendered status lines that do a listed tool's job, and sends a compared tool to its page first.
+// rendered status lines that do a listed tool's job, and links a compared tool's alternatives page.
 describe('resourcesShowcase', () => {
   it('picks up to three status lines sharing three jobs with any compared tool, in copy order', () => {
     expect(resourcesShowcase(gallery).cards.map(({ card }) => card.slug)).toEqual([

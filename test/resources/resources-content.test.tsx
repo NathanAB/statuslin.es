@@ -216,23 +216,25 @@ describe('ResourcesContent', () => {
     expect(container.querySelector('a[href="/submit"]')).not.toBeNull()
   })
 
-  // A compared tool's card opens its alternatives page, with rendered status lines, before the
-  // repo. The repo stays one click away on the same card.
-  it('sends a compared tool to its alternatives page first and keeps its repo link', () => {
-    const { container } = render(
-      <ResourcesContent signedIn={false} showcase={SHOWCASE} origin={ORIGIN} />,
-    )
+  // 93% of the page's visible searches name a tool, so a tool's name opens the tool itself. A
+  // compared tool's alternatives page stays one click away in the line under its name.
+  it("links a compared tool's name to its repo and its alternatives page from the line under it", () => {
+    render(<ResourcesContent signedIn={false} showcase={SHOWCASE} origin={ORIGIN} />)
 
-    const titleLink = (name: string) =>
-      within(screen.getByRole('heading', { level: 3, name })).getByRole('link')
-    expect(titleLink('ccstatusline alternatives').getAttribute('href')).toBe(
-      '/alternatives/ccstatusline',
-    )
-    const repo = container.querySelector(`a[href="${CCSTATUSLINE_URL}"]`)
-    expect(repo?.getAttribute('target')).toBe('_blank')
-    expect(titleLink('claude-powerline').getAttribute('href')).toBe(
+    const heading = screen.getByRole('heading', { level: 3, name: 'ccstatusline' })
+    const name = within(heading).getByRole('link')
+    expect(name.getAttribute('href')).toBe(CCSTATUSLINE_URL)
+    expect(name.getAttribute('target')).toBe('_blank')
+    const meta = heading.nextElementSibling as HTMLElement
+    expect(meta.textContent).toBe('GitHub · Alternatives to ccstatusline')
+    expect(
+      within(meta).getByRole('link', { name: 'Alternatives to ccstatusline' }).getAttribute('href'),
+    ).toBe('/alternatives/ccstatusline')
+    const plain = screen.getByRole('heading', { level: 3, name: 'claude-powerline' })
+    expect(within(plain).getByRole('link').getAttribute('href')).toBe(
       'https://github.com/Owloops/claude-powerline',
     )
+    expect(plain.nextElementSibling?.textContent).toBe('GitHub')
   })
 
   it('shows rendered status lines that do the same job right after the tools', () => {

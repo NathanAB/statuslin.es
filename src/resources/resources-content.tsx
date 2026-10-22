@@ -160,9 +160,9 @@ export function ResourcesContent({
 }
 
 /**
- * A section's resources as cards. A compared tool (one with an alternatives page) opens that page,
- * where its rendered alternatives sit beside its facts, and keeps its repo as a link under its name.
- * Anything else opens off-site, and its note says where.
+ * A section's resources as cards, each name opening the resource off-site, with a note under it
+ * saying where. 93% of this page's visible searches name a tool, so the name takes them to it. A
+ * compared tool (one with an alternatives page) adds a link to that page in its note.
  */
 function cardsOf(
   section: ResourceSection,
@@ -173,16 +173,13 @@ function cardsOf(
     return {
       key: r.url,
       id: resourceAnchor(r.name),
-      title: tool ? (
-        <StretchedLink to="/alternatives/$tool" params={{ tool }}>
-          {r.name} <VisuallyHidden>alternatives</VisuallyHidden>
-        </StretchedLink>
-      ) : (
-        <StretchedLink href={r.url}>{r.name}</StretchedLink>
-      ),
+      title: <StretchedLink href={r.url}>{r.name}</StretchedLink>,
       meta: tool ? (
         <>
-          Opens its alternatives · <TextLink href={r.url}>{domainLabel(r.url)}</TextLink>
+          {domainLabel(r.url)} ·{' '}
+          <TextLink to="/alternatives/$tool" params={{ tool }}>
+            Alternatives <VisuallyHidden>to {r.name}</VisuallyHidden>
+          </TextLink>
         </>
       ) : (
         domainLabel(r.url)
