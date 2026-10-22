@@ -28,6 +28,13 @@ describe('MarketplaceLine', () => {
     expect(screen.getByText(COMMAND)).toBeTruthy()
   })
 
+  // Bare monospace beside a copy icon read as stray text; the guide's commands sit in a code box.
+  it('shows the command in a code box', () => {
+    render(<MarketplaceLine origin="https://site.example.test" />)
+
+    expect(screen.getByText(COMMAND).tagName).toBe('PRE')
+  })
+
   it('copies the exact command', async () => {
     render(<MarketplaceLine origin="https://site.example.test" />)
 

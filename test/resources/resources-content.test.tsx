@@ -152,14 +152,28 @@ describe('ResourcesContent', () => {
       'Skills',
       'Subagents',
     ])
-    expect(within(map).getAllByRole('link', { name: /^Docs for / })).toHaveLength(8)
-    expect(within(map).getByRole('link', { name: 'Docs for mods' }).getAttribute('href')).toBe(
-      'https://code.claude.com/docs/en/plugins/mods/overview',
-    )
+    // Off-site, so it says whose docs they are; the arrow is decoration.
+    expect(within(map).getAllByRole('link', { name: /^Anthropic's docs for / })).toHaveLength(8)
+    expect(
+      within(map).getByRole('link', { name: "Anthropic's docs for mods" }).getAttribute('href'),
+    ).toBe('https://code.claude.com/docs/en/plugins/mods/overview')
     expect(within(map).getByRole('link', { name: 'Browse mods' }).getAttribute('href')).toBe(
       '/mods',
     )
     expect(container.innerHTML).not.toMatch(/FAQPage/)
+  })
+
+  // A row of links wrapped wherever the width broke it; one link per line reads as a list.
+  it("lists a tile's links one per line at its foot, the gallery's first and the docs last", () => {
+    render(<ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />)
+    const tile = screen.getByRole('heading', { level: 3, name: 'Status line' })
+      .parentElement as HTMLElement
+    const foot = tile.querySelector('[data-slot="panel-foot"]') as HTMLElement
+    expect(
+      within(foot)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Best status lines →', 'Write your own →', "Anthropic's docs for status line ↗"])
   })
 
   // statuslin.es is a marketplace too: its add command sits with the others.
@@ -184,6 +198,15 @@ describe('ResourcesContent', () => {
     expect(screen.queryByText(/ohugonnot/)).toBeNull()
     expect(container.querySelector('a[href="/status-lines/quota"]')).not.toBeNull()
     expect(container.querySelector('a[href="/status-lines/powerline"]')).toBeNull()
+  })
+
+  // Above the cards it pushed this column's cards below its neighbour's; it reads as an "or" after.
+  it("puts the usage group's in-gallery note after its tools, so the columns' cards line up", () => {
+    render(<ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />)
+    const group = screen.getByRole('heading', { level: 2, name: 'Usage & cost tracking' })
+      .parentElement as HTMLElement
+    expect(group.lastElementChild?.textContent).toMatch(/^Or watch your limits inside Claude Code/)
+    expect(group.children[1]?.textContent).not.toMatch(/Or watch your limits/)
   })
 
   it('links to /submit when signed in', () => {

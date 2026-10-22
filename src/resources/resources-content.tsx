@@ -125,6 +125,8 @@ export function ResourcesContent({
               <Heading level={2} size="compact">
                 {sectionOf(key).title}
               </Heading>
+              {cards(key)}
+              {/* Under the tools, so this column's cards start level with its neighbour's. */}
               {key === 'usage-tracking' ? (
                 <Text muted size="sm">
                   Or watch your limits inside Claude Code with{' '}
@@ -134,7 +136,6 @@ export function ResourcesContent({
                   .
                 </Text>
               ) : null}
-              {cards(key)}
             </Stack>
           ))}
         </ColumnGrid>
