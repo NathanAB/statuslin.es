@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { canonicalLink, homeCanonicalPath, homePaginationSearch } from '@/lib/canonical'
+import {
+  canonicalLink,
+  homeCanonicalPath,
+  homePaginationSearch,
+  isFilteredHomeSearch,
+} from '@/lib/canonical'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -34,6 +39,18 @@ describe('homeCanonicalPath', () => {
     expect(homeCanonicalPath(2, { sort: 'top' })).toBe('/?sort=top&page=2')
     expect(homeCanonicalPath(2, { tags: 'git' })).toBe('/?tags=git&page=2')
   })
+  it('leaves a search out of the canonical', () => {
+    expect(homeCanonicalPath(2, { q: 'weather' })).toBe('/?page=2')
+    expect(homeCanonicalPath(1, { tags: 'git', q: 'weather' })).toBe('/?tags=git')
+  })
+})
+
+describe('isFilteredHomeSearch', () => {
+  it('counts a search as a filtered view, like a tag', () => {
+    expect(isFilteredHomeSearch({ q: 'weather' })).toBe(true)
+    expect(isFilteredHomeSearch({ tags: 'git' })).toBe(true)
+    expect(isFilteredHomeSearch({})).toBe(false)
+  })
 })
 
 describe('homePaginationSearch', () => {
@@ -50,5 +67,10 @@ describe('homePaginationSearch', () => {
 
   it('preserves the kind filter', () => {
     expect(homePaginationSearch(2, { kind: 'mods' })).toEqual({ page: 2, kind: 'mods' })
+  })
+
+  it('keeps the search on every page', () => {
+    expect(homePaginationSearch(2, { q: 'weather' })).toEqual({ page: 2, q: 'weather' })
+    expect(homePaginationSearch(1, { q: 'weather' })).toEqual({ q: 'weather' })
   })
 })

@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { PAGE_SIZE } from '@/gallery/queries'
 import { Route as HomeRoute } from '@/routes/index'
+
+/** A loader entry: a gallery item and the text a search matches it on. */
+const entry = (kind: string, slug: string, title: string, searchText = slug) => ({
+  item: { kind, card: { slug, title } },
+  searchText,
+})
+const filler = (count: number) =>
+  Array.from({ length: count }, (_, i) => entry('status-line', `filler-${i}`, `Filler ${i}`))
 
 const ORIGINAL_URL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -9,13 +18,7 @@ afterEach(() => {
 describe('home search indexing metadata', () => {
   it('gives page 1 the base gallery title and description', async () => {
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 1,
-          pageCount: 3,
-          items: [],
-        },
-      },
+      loaderData: { entries: filler(3 * PAGE_SIZE) },
       match: { search: {} },
     } as never)
 
@@ -31,17 +34,11 @@ describe('home search indexing metadata', () => {
     )
   })
 
-  it('gives page 2 distinct metadata using the loader-clamped page values', async () => {
+  it('gives page 2 distinct metadata', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 2,
-          pageCount: 3,
-          items: [],
-        },
-      },
-      match: { search: { page: 999 } },
+      loaderData: { entries: filler(3 * PAGE_SIZE) },
+      match: { search: { page: 2 } },
     } as never)
 
     expect(head?.meta).toEqual(
@@ -78,13 +75,7 @@ describe('home search indexing metadata', () => {
 
   it('renders WebSite, Organization and CollectionPage as separate JSON-LD scripts', async () => {
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 1,
-          pageCount: 1,
-          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
-        },
-      },
+      loaderData: { entries: [entry('status-line', 'alpha', 'Alpha')] },
       match: { search: {} },
     } as never)
 
@@ -102,16 +93,13 @@ describe('home search indexing metadata', () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
       loaderData: {
-        gallery: {
-          page: 2,
-          pageCount: 2,
-          items: [
-            { kind: 'mod', card: { slug: 'meter', title: 'Meter' } },
-            { kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } },
-          ],
-        },
+        entries: [
+          ...filler(PAGE_SIZE),
+          entry('mod', 'meter', 'Meter'),
+          entry('status-line', 'alpha', 'Alpha'),
+        ],
       },
-      match: { search: {} },
+      match: { search: { page: 2 } },
     } as never)
 
     const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
@@ -130,7 +118,7 @@ describe('home search indexing metadata', () => {
   it('canonicalizes a kind-filtered gallery to itself and marks it noindex', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
-      loaderData: { gallery: { page: 1, pageCount: 1, items: [] } },
+      loaderData: { entries: [] },
       match: { search: { kind: 'mods' } },
     } as never)
 
@@ -141,7 +129,7 @@ describe('home search indexing metadata', () => {
   it('keeps the kind in the canonical of a later kind-filtered page', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
-      loaderData: { gallery: { page: 2, pageCount: 2, items: [] } },
+      loaderData: { entries: filler(PAGE_SIZE + 1) },
       match: { search: { kind: 'mods', page: 2 } },
     } as never)
 
@@ -162,13 +150,7 @@ describe('home search indexing metadata', () => {
 
   it('omits CollectionPage JSON-LD from filtered noindex views', async () => {
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 2,
-          pageCount: 3,
-          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
-        },
-      },
+      loaderData: { entries: filler(3 * PAGE_SIZE) },
       match: { search: { sort: 'new', page: 2 } },
     } as never)
 
@@ -177,6 +159,36 @@ describe('home search indexing metadata', () => {
       'WebSite',
       'Organization',
     ])
+  })
+
+  it('marks a search noindex, leaves it out of the canonical and omits CollectionPage', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: { entries: [entry('status-line', 'alpha', 'Alpha'), ...filler(3)] },
+      match: { search: { q: 'alpha' } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(head?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es' }])
+    const scripts = (head?.scripts ?? []) as Array<{ children: string }>
+    expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
+      'WebSite',
+      'Organization',
+    ])
+  })
+
+  it('pages the matches of a search, showing their last page for a page past it', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const matching = Array.from({ length: PAGE_SIZE + 1 }, (_, i) =>
+      entry('status-line', `weather-${i}`, `Weather ${i}`),
+    )
+    const head = await HomeRoute.options.head?.({
+      loaderData: { entries: [...filler(3 * PAGE_SIZE), ...matching] },
+      match: { search: { q: 'weather', page: 3 } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ title: 'Claude Code Mods — Page 2 | statuslin.es' })
+    expect(head?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es/?page=2' }])
   })
 
   it('does not noindex the unfiltered gallery', async () => {

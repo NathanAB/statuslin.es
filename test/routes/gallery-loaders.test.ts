@@ -76,9 +76,10 @@ const listed = (items: GalleryItem[]) =>
 
 async function loadHome(search: { kind?: 'status-lines' | 'mods'; tags?: string }) {
   const loader = HomeRoute.options.loader as (ctx: unknown) => Promise<{
-    gallery: { items: GalleryItem[] }
+    entries: Array<{ item: GalleryItem }>
   }>
-  return (await loader({ deps: search })).gallery
+  const { entries } = await loader({ deps: search, location: { search: {} } })
+  return { items: entries.map(({ item }) => item) }
 }
 
 async function loadFacet(facet: string) {

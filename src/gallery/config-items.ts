@@ -71,6 +71,8 @@ export interface PublishedConfigCatalogRow {
   description: string
   copyCount: number
   tags: string[]
+  /** The author's GitHub login, when known. */
+  authorGithub: string | null
   /** Null when its current version has no page copy in the current format. */
   generatedContent: ConfigPageCopy | null
 }
@@ -85,10 +87,12 @@ export async function getPublishedConfigCatalog(db: Db): Promise<PublishedConfig
       description: configVersions.description,
       copyCount: configs.copyCount,
       tags: configs.allTags,
+      authorGithub: user.username,
       generatedContent: configVersions.generatedContent,
     })
     .from(configs)
     .innerJoin(configVersions, eq(configVersions.id, configs.currentVersionId))
+    .leftJoin(user, eq(user.id, configs.authorId))
     .where(ranking.where)
     .orderBy(...ranking.orderBy)
   return rows.map((row) => ({

@@ -25,6 +25,7 @@ import {
   resolveLiveFacet,
 } from './queries'
 import { coerceSourceQuery } from './ranking'
+import { type GallerySearchText, gallerySearchText } from './search'
 import { rankedCard } from './why-line'
 
 /**
@@ -168,6 +169,21 @@ export function coerceModTags(value: unknown): FacetMod[] {
 export const getGalleryConfigs = createServerFn({ method: 'GET' })
   .validator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
+
+/** Every published status line's search text, for the home gallery's search. */
+export const getConfigSearchTexts = createServerFn({ method: 'GET' }).handler(() =>
+  withHttpStatus(
+    async (): Promise<GallerySearchText[]> =>
+      (await getPublishedConfigCatalog(db)).map((row) => ({
+        slug: row.slug,
+        searchText: gallerySearchText({
+          ...row,
+          author: row.authorGithub,
+          copy: row.generatedContent,
+        }),
+      })),
+  ),
+)
 
 export const getConfigDetail = createServerFn({ method: 'GET' })
   .validator((d: { slug: string }) => d)

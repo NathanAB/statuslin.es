@@ -2,7 +2,9 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import type { HomeGalleryEntry } from '@/gallery/gallery-items'
 import type { HeroLine } from '@/gallery/hero-lines'
+import { PAGE_SIZE } from '@/gallery/queries'
 import { HOME_HERO_HEADING } from '@/lib/page-title'
 
 const capture = vi.hoisted(() => vi.fn())
@@ -54,10 +56,27 @@ vi.mock('@/adopt/install-prompt-button', () => ({
 
 const { Route: HomeRoute } = await import('@/routes/index')
 
-const gallery = {
-  items: [],
-  page: 1,
-  pageCount: 1,
+/** Loader entries that fill `pages` gallery pages: none for one page, else one onto the last. */
+function entries(pages: number): HomeGalleryEntry[] {
+  return Array.from({ length: pages > 1 ? (pages - 1) * PAGE_SIZE + 1 : 0 }, (_, i) => ({
+    item: {
+      kind: 'status-line',
+      card: {
+        configId: `id-${i}`,
+        slug: `line-${i}`,
+        title: `Line ${i}`,
+        description: '',
+        interpreter: 'bash',
+        copyCount: 0,
+        author: null,
+        preview: null,
+        networkHosts: [],
+        readsClaudeToken: false,
+        tags: [],
+      },
+    },
+    searchText: `line ${i}`,
+  }))
 }
 
 const heroLine: HeroLine = {
@@ -73,10 +92,10 @@ const heroLine: HeroLine = {
   sortKey: 1,
 }
 
-function renderHome(overrides: Partial<typeof gallery> = {}, search: Record<string, string> = {}) {
+function renderHome(pages = 1, search: Record<string, string | number> = {}) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
-    gallery: { ...gallery, ...overrides },
+    entries: entries(pages),
     showcase: { hero: [{ kind: 'status-line', line: heroLine }] },
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
@@ -105,7 +124,7 @@ describe('home content', () => {
   // Search engines and screen readers get each page's own h1; on screen the title stays the same,
   // since the pager already says which page this is.
   it('names the page number in the h1 past page 1, without showing it', () => {
-    const { container } = renderHome({ page: 2, pageCount: 3 })
+    const { container } = renderHome(3, { page: 2 })
 
     const h1s = container.querySelectorAll('h1')
     expect(h1s).toHaveLength(1)
@@ -132,7 +151,7 @@ describe('home content', () => {
   // Paging changes only the list: the hero stays, so the page keeps its shape and the page link
   // lands on the gallery.
   it('keeps the hero on every page, so paging only changes the list', () => {
-    renderHome({ page: 2, pageCount: 3 })
+    renderHome(3, { page: 2 })
 
     expect(screen.getByText('Pick a mod and see it in action.')).toBeTruthy()
     expect(screen.getByRole('radiogroup', { name: 'Pick a mod' })).toBeTruthy()
@@ -168,7 +187,7 @@ describe('home pagination', () => {
 
   // The same pager sits above the list, beside the sort, and under it.
   it('puts the same pager above the list and under it', () => {
-    renderHome({ pageCount: 3 })
+    renderHome(3)
     expect(pagers()).toHaveLength(2)
     for (const pager of pagers()) {
       expect(within(pager).getByText('Page 1 of 3')).toBeTruthy()
@@ -180,7 +199,7 @@ describe('home pagination', () => {
 
   // Each page link lands on the results (#gallery), not back at the top of the page.
   it('links the next page, keeping what the gallery shows, from page 1', () => {
-    renderHome({ pageCount: 3 }, { kind: 'mods' })
+    renderHome(3, { kind: 'mods' })
     const [, bottom] = pagers()
 
     expect(
@@ -192,7 +211,7 @@ describe('home pagination', () => {
   })
 
   it('links both ways from a middle page, and only back from the last', () => {
-    renderHome({ page: 2, pageCount: 3 })
+    renderHome(3, { page: 2 })
     const [, bottom] = pagers()
     const link = (name: string) =>
       within(bottom as HTMLElement)
@@ -211,7 +230,7 @@ describe('home pagination', () => {
 
 describe('home analytics', () => {
   it('captures paging with what the gallery shows', () => {
-    renderHome({ pageCount: 2 }, { kind: 'mods' })
+    renderHome(2, { kind: 'mods' })
 
     fireEvent.click(screen.getAllByRole('link', { name: 'Next page' })[0] as HTMLElement)
 

@@ -4,11 +4,12 @@ import {
   type GalleryItem,
   type GalleryModCard,
   type GallerySource,
-  loadGalleryPage,
+  galleryView,
+  loadGalleryEntries,
   mergeGalleryItems,
   type RankedGalleryItem,
 } from '@/gallery/gallery-items'
-import { type GalleryCard, MAX_GALLERY_PAGE, PAGE_SIZE } from '@/gallery/queries'
+import { type GalleryCard, PAGE_SIZE } from '@/gallery/queries'
 
 function statusLine(slug: string, sortKey: number | null): RankedGalleryItem {
   const card: GalleryCard = {
@@ -82,79 +83,83 @@ describe('coerceGalleryFilter', () => {
   })
 })
 
-function source(items: RankedGalleryItem[], total = items.length): GallerySource {
-  return { items, total }
+function source(items: RankedGalleryItem[]): GallerySource {
+  return { items, total: items.length }
 }
 
-describe('loadGalleryPage', () => {
-  const statusLines = source([statusLine('a', 3), statusLine('b', 1)])
-  const mods = source([mod('x', 2)])
+const texts = (rows: Array<[string, string]>) => async () =>
+  rows.map(([slug, searchText]) => ({ slug, searchText }))
 
-  it('returns both kinds for the All filter', async () => {
-    const page = await loadGalleryPage(
-      { page: 1, filter: 'all' },
-      { 'status-line': async () => statusLines, mod: async () => mods },
-    )
-    expect(page?.items.map(label)).toEqual(['status-line:a', 'mod:x', 'status-line:b'])
+describe('loadGalleryEntries', () => {
+  const statusLines = source([statusLine('a', 3), statusLine('b', 1)])
+  const mods = source([mod('a', 2)])
+  const loaders = {
+    'status-line': {
+      items: async () => statusLines,
+      searchText: texts([
+        ['a', 'status line a'],
+        ['b', 'status line b'],
+      ]),
+    },
+    mod: { items: async () => mods, searchText: texts([['a', 'mod a']]) },
+  }
+
+  it('lists both kinds in gallery order, each with the search text of its own kind and slug', async () => {
+    const entries = await loadGalleryEntries('all', loaders)
+    expect(entries.map(({ item, searchText }) => [label(item), searchText])).toEqual([
+      ['status-line:a', 'status line a'],
+      ['mod:a', 'mod a'],
+      ['status-line:b', 'status line b'],
+    ])
   })
 
-  it('returns only mods, and never loads status lines, for the Mods filter', async () => {
+  it('loads only the kinds the filter includes', async () => {
     const loadStatusLines = vi.fn(async () => statusLines)
-    const page = await loadGalleryPage(
-      { page: 1, filter: 'mods' },
-      { 'status-line': loadStatusLines, mod: async () => mods },
-    )
-    expect(page?.items.map(label)).toEqual(['mod:x'])
+    const entries = await loadGalleryEntries('mods', {
+      ...loaders,
+      'status-line': { ...loaders['status-line'], items: loadStatusLines },
+    })
+    expect(entries.map(({ item }) => label(item))).toEqual(['mod:a'])
     expect(loadStatusLines).not.toHaveBeenCalled()
   })
+})
 
-  it('returns only status lines for the Status lines filter', async () => {
-    const loadMods = vi.fn(async () => mods)
-    const page = await loadGalleryPage(
-      { page: 1, filter: 'status-lines' },
-      { 'status-line': async () => statusLines, mod: loadMods },
-    )
-    expect(page?.items.map(label)).toEqual(['status-line:a', 'status-line:b'])
-    expect(loadMods).not.toHaveBeenCalled()
+describe('galleryView', () => {
+  const entries = Array.from({ length: PAGE_SIZE + 3 }, (_, i) => ({
+    item: statusLine(`line-${i}`, null).item,
+    searchText: i % 2 === 0 ? `even line ${i}` : `odd line ${i}`,
+  }))
+  const slugs = (items: GalleryItem[]) => items.map((item) => item.card.slug)
+
+  it('pages the whole list without a search', () => {
+    const first = galleryView(entries, { page: 1, q: undefined })
+    expect(first).toMatchObject({ page: 1, pageCount: 2, total: PAGE_SIZE + 3 })
+    expect(slugs(first.items)).toEqual(slugs(entries.slice(0, PAGE_SIZE).map((e) => e.item)))
+    expect(slugs(galleryView(entries, { page: 2, q: undefined }).items)).toEqual([
+      `line-${PAGE_SIZE}`,
+      `line-${PAGE_SIZE + 1}`,
+      `line-${PAGE_SIZE + 2}`,
+    ])
   })
 
-  it('asks each kind for the prefix up to the page end and counts pages over both kinds', async () => {
-    const limits: number[] = []
-    const many = (kind: typeof statusLine, prefix: string, count: number) =>
-      Array.from({ length: count }, (_, i) => kind(`${prefix}${i}`, count - i))
-    const page = await loadGalleryPage(
-      { page: 2, filter: 'all' },
-      {
-        'status-line': async (limit) => {
-          limits.push(limit)
-          return source(many(statusLine, 's', PAGE_SIZE + 3))
-        },
-        mod: async (limit) => {
-          limits.push(limit)
-          return source(many(mod, 'm', 3))
-        },
-      },
-    )
-    expect(limits).toEqual([2 * PAGE_SIZE, 2 * PAGE_SIZE])
-    expect(page?.pageCount).toBe(2)
-    expect(page?.items).toHaveLength(6)
+  it('lists and counts only the entries the search matches', () => {
+    const view = galleryView(entries, { page: 1, q: 'ODD' })
+    expect(view).toMatchObject({ page: 1, pageCount: 1, total: 6 })
+    expect(slugs(view.items)).toEqual(['line-1', 'line-3', 'line-5', 'line-7', 'line-9', 'line-11'])
   })
 
-  it('returns null for a page past the end', async () => {
-    const page = await loadGalleryPage(
-      { page: 2, filter: 'mods' },
-      { 'status-line': async () => statusLines, mod: async () => mods },
-    )
-    expect(page).toBeNull()
+  it('shows the last page of the matches for a page past their end', () => {
+    const view = galleryView(entries, { page: 2, q: 'even' })
+    expect(view).toMatchObject({ page: 1, pageCount: 1, total: 7 })
+    expect(view.items).toHaveLength(7)
   })
 
-  it('refuses a page past the last one the gallery serves without loading anything', async () => {
-    const load = vi.fn(async () => statusLines)
-    const page = await loadGalleryPage(
-      { page: MAX_GALLERY_PAGE + 1, filter: 'all' },
-      { 'status-line': load, mod: load },
-    )
-    expect(page).toBeNull()
-    expect(load).not.toHaveBeenCalled()
+  it('shows an empty page 1 when nothing matches', () => {
+    expect(galleryView(entries, { page: 3, q: 'nothing' })).toEqual({
+      items: [],
+      page: 1,
+      pageCount: 1,
+      total: 0,
+    })
   })
 })

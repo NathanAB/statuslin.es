@@ -1,6 +1,7 @@
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
-import { type GalleryCard, galleryPageWindow, MAX_GALLERY_PAGE, PAGE_SIZE } from './queries'
+import { type GalleryCard, galleryPageCount, PAGE_SIZE } from './queries'
+import { type GallerySearchText, matchesSearch } from './search'
 
 /** The home grid's kind filter, kept in the URL; `all` is the default and stays out of it. */
 export type GalleryFilter = 'all' | 'status-lines' | 'mods'
@@ -56,24 +57,55 @@ export function mergeGalleryItems(sources: RankedGalleryItem[][]): GalleryItem[]
     .map((ranked) => ranked.item)
 }
 
-/**
- * One page of the gallery. Each kind the filter includes is asked for its first `page * PAGE_SIZE`
- * items: every item on the merged page is within that prefix of its own kind.
- */
-export async function loadGalleryPage(
-  query: { page: number; filter: GalleryFilter },
-  loaders: Record<GalleryKind, (limit: number) => Promise<GallerySource>>,
-): Promise<{ items: GalleryItem[]; page: number; pageCount: number } | null> {
-  if (query.page > MAX_GALLERY_PAGE) return null
-  const sources = await Promise.all(
-    FILTER_KINDS[query.filter].map((kind) => loaders[kind](query.page * PAGE_SIZE)),
+/** A gallery item with the text a search matches it on. */
+export interface HomeGalleryEntry {
+  item: GalleryItem
+  searchText: string
+}
+
+/** One kind's whole ranked list, and the search text of each of its published items. */
+export interface GalleryKindLoaders {
+  items: () => Promise<GallerySource>
+  searchText: () => Promise<GallerySearchText[]>
+}
+
+/** Every item of the kinds the filter includes, in gallery order, each with its search text. */
+export async function loadGalleryEntries(
+  filter: GalleryFilter,
+  loaders: Record<GalleryKind, GalleryKindLoaders>,
+): Promise<HomeGalleryEntry[]> {
+  const kinds = FILTER_KINDS[filter]
+  const [sources, texts] = await Promise.all([
+    Promise.all(kinds.map((kind) => loaders[kind].items())),
+    Promise.all(kinds.map((kind) => loaders[kind].searchText())),
+  ])
+  const textByKey = new Map(
+    kinds.flatMap((kind, index) =>
+      (texts[index] ?? []).map((row) => [`${kind}:${row.slug}`, row.searchText] as const),
+    ),
   )
-  const total = sources.reduce((sum, source) => sum + source.total, 0)
-  const window = galleryPageWindow(query.page, total)
-  if (!window) return null
-  const start = (window.page - 1) * PAGE_SIZE
+  return mergeGalleryItems(sources.map((source) => source.items)).map((item) => ({
+    item,
+    searchText: textByKey.get(`${item.kind}:${item.card.slug}`) ?? '',
+  }))
+}
+
+/**
+ * What the gallery shows for a page and a search: that page of the matching items, and their
+ * counts. A page past the end of the matches shows their last page.
+ */
+export function galleryView(
+  entries: HomeGalleryEntry[],
+  { page, q }: { page: number; q: string | undefined },
+): { items: GalleryItem[]; page: number; pageCount: number; total: number } {
+  const matches = entries.filter((entry) => matchesSearch(entry.searchText, q))
+  const pageCount = galleryPageCount(matches.length)
+  const shown = Math.min(page, pageCount)
+  const start = (shown - 1) * PAGE_SIZE
   return {
-    items: mergeGalleryItems(sources.map((source) => source.items)).slice(start, start + PAGE_SIZE),
-    ...window,
+    items: matches.slice(start, start + PAGE_SIZE).map((entry) => entry.item),
+    page: shown,
+    pageCount,
+    total: matches.length,
   }
 }

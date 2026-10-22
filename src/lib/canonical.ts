@@ -16,23 +16,36 @@ export interface HomeCanonicalSearch {
   sort?: string
   tags?: string
   kind?: string
+  /** The gallery search: noindex, and never part of the canonical. */
+  q?: string
 }
 
 export function isFilteredHomeSearch(search: HomeCanonicalSearch): boolean {
-  return search.sort !== undefined || search.tags !== undefined || search.kind !== undefined
+  return (
+    search.sort !== undefined ||
+    search.tags !== undefined ||
+    search.kind !== undefined ||
+    search.q !== undefined
+  )
 }
 
 /** Search params for gallery pagination links. The default trending sort is implicit, so keeping
  * it out of the URL prevents an unfiltered page from being mistaken for a noindex sorted view. */
 export function homePaginationSearch<TSort extends string, TKind extends string>(
   page: number,
-  search: { sort?: TSort | undefined; tags?: string | undefined; kind?: TKind | undefined } = {},
-): { page?: number; sort?: TSort; tags?: string; kind?: TKind } {
+  search: {
+    sort?: TSort | undefined
+    tags?: string | undefined
+    kind?: TKind | undefined
+    q?: string | undefined
+  } = {},
+): { page?: number; sort?: TSort; tags?: string; kind?: TKind; q?: string } {
   return {
     ...(search.sort && search.sort !== 'trending' ? { sort: search.sort } : {}),
     ...(page > 1 ? { page } : {}),
     ...(search.tags ? { tags: search.tags } : {}),
     ...(search.kind ? { kind: search.kind } : {}),
+    ...(search.q ? { q: search.q } : {}),
   }
 }
 

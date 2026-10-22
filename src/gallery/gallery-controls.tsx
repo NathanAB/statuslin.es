@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import type { GalleryFilter } from '@/gallery/gallery-items'
+import { GallerySearch } from '@/gallery/gallery-search'
 import type { GallerySort } from '@/gallery/queries'
 import { Button } from '@/ui/button'
 import { Row } from '@/ui/layout'
@@ -13,18 +14,21 @@ const SORT_OPTIONS: readonly { label: string; value: GallerySort }[] = [
   { label: 'New', value: 'new' },
 ]
 /**
- * The gallery's sort, then a way to clear what a link filtered it by (tags, or a kind from an old
- * `?kind=` link: status lines and mods are one list, with no control to split them). Every control
- * writes the URL.
+ * The gallery's sort, its search, then a way to clear what a link filtered it by (tags, or a kind
+ * from an old `?kind=` link: status lines and mods are one list, with no control to split them).
+ * Every control writes the URL.
  */
 export function GalleryControls({
   kind,
   sort,
   tags,
+  query,
 }: {
   kind: GalleryFilter
   sort: GallerySort
   tags: string[]
+  /** The URL's search. */
+  query?: string | undefined
 }) {
   // From '/', so `prev` is the gallery's search alone, not every route's.
   const navigate = useNavigate({ from: '/' })
@@ -57,6 +61,14 @@ export function GalleryControls({
         options={SORT_OPTIONS}
         value={sort}
         onValueChange={setSort}
+      />
+      <GallerySearch
+        query={query}
+        params={{
+          sort: sort === 'trending' ? undefined : sort,
+          tags: tags.length > 0 ? tags.join(',') : undefined,
+          kind: kind === 'all' ? undefined : kind,
+        }}
       />
       {filtered ? (
         <Button asChild variant="quiet" size="bar">

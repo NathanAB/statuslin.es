@@ -58,11 +58,16 @@ export function coercePage(value: unknown): number {
   return Math.floor(n)
 }
 
+/** How many gallery pages `total` items fill; an empty gallery still has page 1. */
+export function galleryPageCount(total: number): number {
+  return Math.max(1, Math.ceil(total / PAGE_SIZE))
+}
+
 export function galleryPageWindow(
   requestedPage: number,
   total: number,
 ): { page: number; pageCount: number } | null {
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const pageCount = galleryPageCount(total)
   if (requestedPage > pageCount) return null
   return { page: requestedPage, pageCount }
 }
