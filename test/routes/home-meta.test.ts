@@ -24,11 +24,11 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Mods | statuslin.es' },
+        { title: 'Claude Code Mods & Status Lines | statuslin.es' },
         {
           name: 'description',
           content:
-            'Claude Code mods with real previews. Install any of them with one copied prompt.',
+            'Claude Code mods and status lines with real previews. Install any of them with one copied prompt.',
         },
       ]),
     )
@@ -43,18 +43,18 @@ describe('home search indexing metadata', () => {
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Mods — Page 2 | statuslin.es' },
+        { title: 'Claude Code Mods & Status Lines — Page 2 | statuslin.es' },
         {
           name: 'description',
           content:
-            'Claude Code mods with real previews. Install any of them with one copied prompt. Page 2 of 3.',
+            'Claude Code mods and status lines with real previews. Install any of them with one copied prompt. Page 2 of 3.',
         },
         { property: 'og:url', content: 'https://statuslin.es/?page=2' },
-        { property: 'og:title', content: 'Claude Code Mods — Page 2' },
+        { property: 'og:title', content: 'Claude Code Mods & Status Lines — Page 2' },
         {
           property: 'og:description',
           content:
-            'Claude Code mods with real previews. Install any of them with one copied prompt. Page 2 of 3.',
+            'Claude Code mods and status lines with real previews. Install any of them with one copied prompt. Page 2 of 3.',
         },
       ]),
     )
@@ -68,7 +68,7 @@ describe('home search indexing metadata', () => {
       .map((script) => JSON.parse(script.children) as Record<string, unknown>)
       .find((node) => node['@type'] === 'CollectionPage')
     expect(collectionPage).toMatchObject({
-      name: 'Claude Code Mods — Page 2',
+      name: 'Claude Code Mods & Status Lines — Page 2',
       url: 'https://statuslin.es/?page=2',
     })
   })
@@ -187,7 +187,9 @@ describe('home search indexing metadata', () => {
       match: { search: { q: 'weather', page: 3 } },
     } as never)
 
-    expect(head?.meta).toContainEqual({ title: 'Claude Code Mods — Page 2 | statuslin.es' })
+    expect(head?.meta).toContainEqual({
+      title: 'Claude Code Mods & Status Lines — Page 2 | statuslin.es',
+    })
     expect(head?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es/?page=2' }])
   })
 

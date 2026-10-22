@@ -73,12 +73,12 @@ export const MOD_NOT_FOUND_TITLE = `Mod not found — ${SITE_NAME}`
 export const NOT_FOUND_TITLE = `Page not found — ${SITE_NAME}`
 
 /**
- * The home page's title base — shared by the <title> tag, og:title and the home JSON-LD name. The
- * site calls itself a Claude Code mods site, with status lines as one kind of mod: mods passed status
- * lines in copies in October 2026, and home never won the status line search that the old "Status
- * Lines & Mods" title led with. Pages only about status lines keep saying "status line".
+ * The home page's title base — shared by the <title> tag, og:title and the home JSON-LD name. It
+ * names both kinds: in Search Console (2026-07-23 to 2026-10-21) 12% of home's visible queries
+ * searched for status lines and none for mods, and no page on the site drew a visible "claude code
+ * mods" search, so a mods-only title gave up the searches home does get.
  */
-export const HOME_TITLE_BASE = 'Claude Code Mods'
+export const HOME_TITLE_BASE = 'Claude Code Mods & Status Lines'
 /** The site's short name on screen: the h1 past page 1, the footer tagline and the share card. */
 export const HOME_HEADING = 'Claude Code mods'
 /**
@@ -90,8 +90,9 @@ export const HOME_HERO_HEADING = 'Customize Claude Code with mods'
 
 /** /submit's heading over the status line or mod choice, so it never reads as a choice already made. */
 export const SUBMIT_HEADING = 'Submit a status line or mod'
+/** Home's meta description names both kinds, as its title does. */
 export const HOME_DESCRIPTION_BASE =
-  'Claude Code mods with real previews. Install any of them with one copied prompt.'
+  'Claude Code mods and status lines with real previews. Install any of them with one copied prompt.'
 
 function homePageSuffix(page: number): string {
   return page > 1 ? ` — Page ${page}` : ''

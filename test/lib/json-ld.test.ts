@@ -53,7 +53,7 @@ describe('homeJsonLd', () => {
     expect(nodes[2]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Claude Code Mods',
+      name: 'Claude Code Mods & Status Lines',
       url: 'https://statuslin.es',
       mainEntity: {
         '@type': 'ItemList',
