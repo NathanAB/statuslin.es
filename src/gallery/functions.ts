@@ -8,7 +8,6 @@ import { type LlmsCatalogEntry, type LlmsMod, llmsFullResponse, llmsResponse } f
 import { siteUrl } from '@/lib/site'
 import { newestDate, type SitemapMod, type SitemapPage, sitemapResponse } from '@/lib/sitemap'
 import { getConfigSource, getPublishedConfigCatalog, getPublishedConfigs } from './config-items'
-import { topicHeading } from './facet-page-copy'
 import { type FacetMod, getLatestCopyAt } from './facet-queries'
 import type { GallerySource } from './gallery-items'
 import {
@@ -95,20 +94,14 @@ export const getBestPage = createServerFn({ method: 'GET' }).handler(() =>
 )
 
 /**
- * The live facets llms.txt and llms-full.txt link, by page heading (which says mods once the page
- * lists one). Lists only indexable page
+ * The live facets llms.txt and llms-full.txt link, by page heading. Lists only indexable page
  * facets that meet the shared inventory threshold, counting the published mods passed in.
  */
 async function llmsFacets(mods: FacetMod[]): Promise<Array<{ slug: string; label: string }>> {
   const stats = await getFacetStats(db, mods)
   return liveFacetLinks(stats).map((link) => ({
     slug: link.slug,
-    label: FACET_BY_SLUG.has(link.slug)
-      ? topicHeading({
-          slug: link.slug,
-          mods: mods.filter((mod) => mod.tags.includes(link.slug)).length,
-        })
-      : link.chipLabel,
+    label: FACET_BY_SLUG.get(link.slug)?.heading ?? link.chipLabel,
   }))
 }
 

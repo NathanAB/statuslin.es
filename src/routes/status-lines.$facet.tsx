@@ -3,7 +3,7 @@ import { GalleryConfigCard } from '@/gallery/config-card'
 import { DetailBreadcrumb } from '@/gallery/detail-breadcrumb'
 import { FACET_KIND_NOTE } from '@/gallery/facet-copy'
 import { BrowseOnLinks, FacetTopicLinks } from '@/gallery/facet-links'
-import { facetPageCopy, facetTopicName } from '@/gallery/facet-page-copy'
+import { facetTopicName } from '@/gallery/facet-page-copy'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getFacetPage } from '@/gallery/functions'
 import { mergeGalleryItems } from '@/gallery/gallery-items'
@@ -47,7 +47,8 @@ export const Route = createFileRoute('/status-lines/$facet')({
     const facet = loaderData ? FACET_BY_SLUG.get(loaderData.page.slug) : undefined
     if (!facet || !loaderData) return { meta: [{ title: NOT_FOUND_TITLE }] }
     const path = `/status-lines/${facet.slug}`
-    const { titleBase, metaDescription } = facetPageCopy(facet, loaderData.mods ?? 0)
+    const titleBase = facet.titleBase ?? ''
+    const metaDescription = facet.metaDescription ?? ''
     return {
       meta: [
         { title: brandedPageTitle(titleBase) },
@@ -84,13 +85,12 @@ function FacetPage() {
   const { page, items, mods, user } = Route.useLoaderData()
   const facet = FACET_BY_SLUG.get(page.slug)
   if (!facet) return null
-  const copy = facetPageCopy(facet, mods)
   return (
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
           <DetailBreadcrumb trail={[]} title={facetTopicName(facet)} />
-          <Heading level={1}>{copy.heading}</Heading>
+          <Heading level={1}>{facet.heading}</Heading>
           <FacetTopicLinks current={page.slug} others={page.otherFacets} />
           {(facet.intro ?? []).map((paragraph) => (
             <Text key={paragraph.slice(0, 24)} muted size="sm">
@@ -102,7 +102,7 @@ function FacetPage() {
               <InlineCodeText text={facet.answer} />
             </Text>
           ) : null}
-          {copy.listsMods ? (
+          {mods > 0 ? (
             <Text muted size="sm">
               {FACET_KIND_NOTE}
             </Text>

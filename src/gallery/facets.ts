@@ -7,7 +7,9 @@ import type { Interpreter } from '@/render/types'
  * tag vocabulary. A facet page can only exist for an entry here; a tag can only be stored on a
  * config if it is a tag-facet slug (TAG_VOCABULARY). Titles use modified keywords on purpose;
  * the bare head term belongs to the home page. titleBase/heading/metaDescription/intro are SEO
- * copy (intro lives in facet-copy.ts), required only when page: true. */
+ * copy (intro lives in facet-copy.ts), required only when page: true. The copy is fixed on
+ * purpose, so a tag edit can't retitle a ranking page: a topic says "& Mods" only once someone
+ * decides it lists mods. */
 export interface Facet {
   slug: string
   group: 'interpreter' | 'capability' | 'feature'
@@ -34,10 +36,10 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'git',
-    titleBase: 'Claude Code Status Lines With Git Branch & Diff Stats',
-    heading: 'Claude Code status lines that show git status',
+    titleBase: 'Claude Code Git Branch Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that show git status',
     metaDescription:
-      'Show your git branch, dirty state, ahead/behind counts, or diff stats in the Claude Code status line. Rendered previews you can copy in one paste.',
+      'Claude Code status lines and mods that show your git branch, dirty state, ahead/behind counts or diff stats. Rendered previews, one-paste install.',
     intro: FACET_INTRO.git,
     answer: FACET_ANSWER.git,
     faq: FACET_FAQ.git,
@@ -47,10 +49,10 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'tokens',
-    titleBase: 'Claude Code Status Lines That Show Token Usage',
-    heading: 'Claude Code status lines that show token usage',
+    titleBase: 'Claude Code Token Usage Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that show token usage',
     metaDescription:
-      'Status lines that track context window usage in the Claude Code terminal, as token counts or burn bars. Copy one in a single paste.',
+      'Status lines and mods that track context window usage in Claude Code, as token counts or burn bars. Install one in a single paste.',
     intro: FACET_INTRO['token-usage'],
     answer: FACET_ANSWER['token-usage'],
     faq: FACET_FAQ['token-usage'],
@@ -60,10 +62,10 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'cost',
-    titleBase: 'Claude Code Status Lines That Track Cost',
-    heading: 'Claude Code status lines that track cost',
+    titleBase: 'Claude Code Session Cost: Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that track cost',
     metaDescription:
-      'Status lines that show what a Claude Code session costs as you work, from plain dollar figures to burn-rate meters. Rendered previews, one-paste install.',
+      'Claude Code status lines and mods that show session cost, from dollar figures to burn-rate meters.',
     intro: FACET_INTRO.cost,
   },
   {
@@ -71,10 +73,10 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'limits',
-    titleBase: 'Claude Code Usage Limit Status Lines: 5-Hour & Weekly',
-    heading: 'Claude Code status lines that track usage limits',
+    titleBase: 'Claude Code Usage Limit Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that track usage limits',
     metaDescription:
-      'Show your Claude Code 5-hour and weekly usage limits in the status line: quota percentages, reset countdowns, and overage warnings. One-paste install.',
+      'Show your Claude Code 5-hour and weekly usage limits in a status line or mod: quota percentages, reset countdowns and overage warnings.',
     intro: FACET_INTRO.quota,
     answer: FACET_ANSWER.quota,
     faq: FACET_FAQ.quota,
@@ -84,10 +86,10 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'burn rate',
-    titleBase: 'Claude Code Status Lines That Show Burn Rate',
-    heading: 'Claude Code status lines that show burn rate',
+    titleBase: 'Claude Code Burn Rate Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that show burn rate',
     metaDescription:
-      'Status lines that show how fast a Claude Code session is burning tokens, cost, or quota: hourly burn rates and over/under-pace arrows. Rendered previews, one-paste install.',
+      'Claude Code status lines and mods that show how fast a session burns tokens, cost or quota, from hourly rates to over/under-pace arrows.',
     intro: FACET_INTRO['burn-rate'],
   },
   {
@@ -95,10 +97,10 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'weather',
-    titleBase: 'Claude Code Status Lines That Show the Weather',
-    heading: 'Claude Code status lines that show the weather',
+    titleBase: 'Claude Code Weather Status Lines & Mods',
+    heading: 'Claude Code status lines and mods that show the weather',
     metaDescription:
-      'Claude Code status lines that pull live weather into your terminal next to model, git, and usage. Rendered previews, one-paste install.',
+      'Claude Code status lines and mods that put live weather beside your session, next to model, git and usage.',
     intro: FACET_INTRO.weather,
   },
   {
@@ -117,10 +119,9 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'minimal',
-    titleBase: 'Minimal Claude Code Status Lines',
-    heading: 'Minimal Claude Code status lines',
-    metaDescription:
-      'Single-line, low-noise Claude Code status lines that show just the essentials. Rendered previews you can copy in one paste.',
+    titleBase: 'Minimal Claude Code Status Lines & Mods',
+    heading: 'Minimal Claude Code status lines and mods',
+    metaDescription: 'Single-line Claude Code status lines and mods that show only the essentials.',
     intro: FACET_INTRO.minimal,
   },
   {
@@ -128,10 +129,10 @@ export const FACETS: Facet[] = [
     group: 'feature',
     page: true,
     chipLabel: 'multi-line',
-    titleBase: 'Multi-Line Claude Code Status Lines',
-    heading: 'Multi-line Claude Code status lines',
+    titleBase: 'Multi-Line Claude Code Status Lines & Mods',
+    heading: 'Multi-line Claude Code status lines and mods',
     metaDescription:
-      'Claude Code status lines that use two or more lines to fit a fuller dashboard: model, git, tokens, cost, and more at a glance.',
+      'Claude Code status lines and mods that use two or more lines to show tokens, cost and usage limits.',
     intro: FACET_INTRO['multi-line'],
   },
   {

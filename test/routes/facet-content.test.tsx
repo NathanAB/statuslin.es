@@ -194,54 +194,41 @@ describe('facet page content', () => {
     return head?.meta ?? []
   }
 
-  it('names both kinds in the title, description and H1 when it lists mods', async () => {
-    const meta = await headMeta('token-usage', 3)
-    expect(meta).toEqual(
-      expect.arrayContaining([
-        { title: 'Claude Code Token Usage Status Lines & Mods | statuslin.es' },
-        { property: 'og:title', content: 'Claude Code Token Usage Status Lines & Mods' },
-        {
-          name: 'description',
-          content: expect.stringMatching(/^Status lines and mods that track context window usage/),
-        },
-      ]),
-    )
-
-    renderFacet('token-usage', 3)
-    expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: 'Claude Code status lines and mods that show token usage',
-      }),
-    ).toBeTruthy()
-    expect(
-      screen.getByText(
-        "Status lines print under the prompt. Each mod's page shows where it draws.",
-      ),
-    ).toBeTruthy()
+  // A tag edit must not retitle a ranking page, so the copy never depends on what the page lists.
+  it("keeps a topic's title, description and H1 whether it lists 0 or 3 mods", async () => {
+    for (const mods of [0, 3]) {
+      expect(await headMeta('git', mods)).toEqual(
+        expect.arrayContaining([
+          { title: 'Claude Code Git Branch Status Lines & Mods | statuslin.es' },
+          { property: 'og:title', content: 'Claude Code Git Branch Status Lines & Mods' },
+          {
+            name: 'description',
+            content: expect.stringMatching(/^Claude Code status lines and mods that show your git/),
+          },
+        ]),
+      )
+      const { unmount } = renderFacet('git', mods)
+      expect(
+        screen.getByRole('heading', {
+          level: 1,
+          name: 'Claude Code status lines and mods that show git status',
+        }),
+      ).toBeTruthy()
+      unmount()
+    }
   })
 
-  it('keeps status-lines wording on a mod-ready facet while it lists no mods', async () => {
-    const meta = await headMeta('token-usage', 0)
-    expect(meta).toContainEqual({
-      title: 'Claude Code Status Lines That Show Token Usage',
-    })
-    expect(meta).toContainEqual({
-      name: 'description',
-      content: expect.stringMatching(/^Status lines that track context window usage/),
-    })
+  it('says where each kind shows up only while the page lists mods', () => {
+    const note = "Status lines print under the prompt. Each mod's page shows where it draws."
+    const { unmount } = renderFacet('token-usage', 0)
+    expect(screen.queryByText(note)).toBeNull()
+    unmount()
 
-    renderFacet('token-usage', 0)
-    expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: 'Claude Code status lines that show token usage',
-      }),
-    ).toBeTruthy()
-    expect(screen.queryByText(/Each mod's page/)).toBeNull()
+    renderFacet('bash', 1)
+    expect(screen.getByText(note)).toBeTruthy()
   })
 
-  it('never claims mods on a facet with no mod copy, even if a mod carries the tag', async () => {
+  it('keeps status line copy on a topic that lists no mods, even if a mod carries the tag', async () => {
     expect(await headMeta('bash', 1)).toContainEqual({
       title: 'Claude Code Status Lines Written in Bash | statuslin.es',
     })
@@ -252,8 +239,8 @@ describe('facet page content', () => {
   })
 
   it('drops the brand from a facet title that would run past 60 characters', async () => {
-    expect(await headMeta('git')).toContainEqual({
-      title: 'Claude Code Status Lines With Git Branch & Diff Stats',
+    expect(await headMeta('themed')).toContainEqual({
+      title: 'Catppuccin, Dracula & Themed Claude Code Status Lines',
     })
   })
 

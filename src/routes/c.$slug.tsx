@@ -11,7 +11,6 @@ import { configInstallFacts } from '@/gallery/config-install-facts'
 import { DesktopNote } from '@/gallery/desktop-note'
 import { DesktopPreviewBlock } from '@/gallery/desktop-preview-block'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
-import { primaryFacetLink } from '@/gallery/facet-page-copy'
 import { getConfigDetail } from '@/gallery/functions'
 import { OwnerUpdateStrip } from '@/gallery/owner-update-strip'
 import { getSession } from '@/lib/auth-functions'
@@ -25,7 +24,6 @@ import {
 } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getStatusLineModsFn } from '@/mods/functions'
-import { getPublishedModTagsFn } from '@/mods/gallery-functions'
 import { ModCard } from '@/mods/mod-card'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
@@ -42,13 +40,8 @@ import { Text, TextLink } from '@/ui/text'
 
 export const Route = createFileRoute('/c/$slug')({
   loader: async ({ params }) => {
-    const [found, modTags] = await Promise.all([
-      getConfigDetail({ data: { slug: params.slug } }),
-      getPublishedModTagsFn(),
-    ])
-    if (!found) throw notFound()
-    // The breadcrumb names its topic as the topic page does: "mods" once a mod carries it.
-    const detail = { ...found, primaryFacet: primaryFacetLink(found.primaryFacet, modTags) }
+    const detail = await getConfigDetail({ data: { slug: params.slug } })
+    if (!detail) throw notFound()
     const [user, viewerIsAuthor, mods] = await Promise.all([
       getSession(),
       getViewerIsAuthor({ data: { slug: params.slug } }),
