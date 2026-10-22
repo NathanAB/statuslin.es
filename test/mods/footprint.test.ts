@@ -129,6 +129,57 @@ describe('describeFootprint', () => {
   })
 })
 
+// Each entry's meaning comes from Anthropic's mods reference, API, events and admin pages.
+describe('describeFootprint on the calls and events published mods use', () => {
+  const STORE = 'remembers data between sessions'
+  it.each([
+    ['$.store.delete', STORE, false],
+    ['$.store.keys', STORE, false],
+    [
+      '$.model.fork',
+      'sends the conversation to Claude with its own requests, which uses your plan',
+      true,
+    ],
+    ['$.prompt.submit', 'submits prompts for you, which can be sent as your own words', true],
+    ['$.prompt.fill', 'puts text in your prompt box, which can replace what you typed', true],
+    ['$.config.set', 'changes your settings in /config', true],
+    ['$.command.list', 'lists the slash commands you can run', false],
+    ['tool.check', 'can approve or deny each tool call before Claude Code asks you', true],
+    [
+      'tool.check{tool=Bash}',
+      'can approve or deny each Bash tool call before Claude Code asks you',
+      true,
+    ],
+    [
+      'prompt.context',
+      'sees the context sent with your first message, such as CLAUDE.md, and can change it',
+      true,
+    ],
+    ['agent.offer', 'can hide subagent types from Claude', true],
+    ['engine.create', 'adds its own methods for other mods to call', false],
+    ['ui.status', 'can change or hide the status lines other mods show', false],
+    ['ui.log', 'can change or hide the transcript lines other mods add', false],
+  ] as const)('describes %s as %j, a risk: %s', (entry, phrase, risk) => {
+    const result = describeFootprint({ events: [entry], calls: [] })
+    expect(result.unknown).toEqual([])
+    expect(result.phrases).toEqual([phrase])
+    expect(result.risks).toEqual(risk ? [phrase] : [])
+  })
+
+  it('says nothing about moving focus inside its own drawing or reading the model name', () => {
+    const result = describeFootprint({ events: [], calls: ['$.ui.focus', '$.session.model'] })
+    expect(result).toEqual({ phrases: [], risks: [], unknown: [], draws: [] })
+  })
+
+  // A mod can add its own namespace to the mods API, and calls on it are events; the footprint
+  // can't tell one from a Claude Code event this page doesn't know yet, so it stays named.
+  it("keeps an event on another mod's own namespace unknown", () => {
+    expect(describeFootprint({ events: ['prismantis.markdown'], calls: [] }).unknown).toEqual([
+      'prismantis.markdown',
+    ])
+  })
+})
+
 describe('describeModFootprint', () => {
   const PLAIN = { events: ['ui.render{component=AbovePrompt}'], calls: [] }
   const PREVIEW = [{ text: 'row' }]
