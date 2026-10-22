@@ -70,11 +70,7 @@ export function ResourcesContent({
             <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
               ones that show token usage
             </TextLink>
-            , or <TextLink to="/guide">write your own</TextLink>.{' '}
-            <TextLink to="/c/$slug" params={{ slug: 'quota-fallback-2a730aa6' }}>
-              Quota Fallback
-            </TextLink>{' '}
-            is the reviewed copy of ohugonnot/claude-code-statusline.
+            , or <TextLink to="/guide">write your own</TextLink>.
           </Text>
         }
       >

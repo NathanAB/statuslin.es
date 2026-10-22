@@ -179,7 +179,9 @@ describe('ResourcesContent', () => {
       <ResourcesContent signedIn={false} showcase={NONE} origin={ORIGIN} />,
     )
     expect(container.querySelector('a[href="/status-lines/token-usage"]')).not.toBeNull()
-    expect(container.querySelector('a[href="/c/quota-fallback-2a730aa6"]')).not.toBeNull()
+    // The "reviewed copy of ohugonnot/claude-code-statusline" line drew 17 impressions and no clicks.
+    expect(container.querySelector('a[href="/c/quota-fallback-2a730aa6"]')).toBeNull()
+    expect(screen.queryByText(/ohugonnot/)).toBeNull()
     expect(container.querySelector('a[href="/status-lines/quota"]')).not.toBeNull()
     expect(container.querySelector('a[href="/status-lines/powerline"]')).toBeNull()
   })
