@@ -57,7 +57,8 @@ export function HomeGallery({
   })
   const pageLink = (nextPage: number) => ({
     search: homePaginationSearch(nextPage, { sort, tags, kind: rawKind, q: query }),
-    // Glide to the results, not back to the top, so the reader sees where the new page is.
+    // Glide to the results, not back to the top, so the reader sees where the new page is. No
+    // view transition here, unlike the search and sort: it would fight that scroll.
     hash: GALLERY_ID,
     hashScrollIntoView: hashScrollOptions(),
     onClick: () =>
@@ -108,6 +109,7 @@ export function HomeGallery({
                 from="/"
                 to="/"
                 resetScroll={false}
+                viewTransition
                 search={(prev) => {
                   const { q: _q, ...rest } = prev
                   return rest
@@ -121,7 +123,7 @@ export function HomeGallery({
         ) : items.length === 0 ? (
           <Text muted>Nothing matches these filters yet.</Text>
         ) : (
-          <GalleryList>
+          <GalleryList animateChanges>
             {items.map((item, index) =>
               item.kind === 'mod' ? (
                 <ModCard

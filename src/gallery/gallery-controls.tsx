@@ -51,6 +51,7 @@ export function GalleryControls({
         return { ...rest, sort: value }
       },
       resetScroll: false,
+      viewTransition: true,
     })
   }
   return (
@@ -76,6 +77,7 @@ export function GalleryControls({
             from="/"
             to="/"
             resetScroll={false}
+            viewTransition
             onClick={() => {
               posthog.capture('gallery_filter_changed', {
                 action: 'clear',

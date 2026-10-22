@@ -86,6 +86,14 @@ describe('GalleryRow', () => {
     expect(screen.getByText(DESCRIPTION)).toBeTruthy()
   })
 
+  // Only the home gallery's list animates its changes; facet pages and related lists stay still.
+  it('keeps the rows of a plain list out of view transitions', () => {
+    const { container } = renderRow()
+
+    const row = container.querySelector('[data-slot=gallery-row]') as HTMLElement
+    expect(row.closest('[class*="view-transition"]')).toBeNull()
+  })
+
   it('has no axe violations', async () => {
     const { container } = renderRow()
     expect(await axe(container)).toHaveNoViolations()

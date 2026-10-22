@@ -57,7 +57,9 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
  */
 export function SiteFooter() {
   return (
-    <footer className={cn('pt-20 pb-10 text-small', PAGE_COLUMN)}>
+    <footer
+      className={cn('pt-20 pb-10 text-small [view-transition-name:site-footer]', PAGE_COLUMN)}
+    >
       <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-12">
         <div className="col-span-2 flex flex-col gap-1.5 text-muted-foreground md:col-span-4 lg:col-span-6">
           {/* The year is the visitor's clock; it can only differ from the server's on New Year's. */}

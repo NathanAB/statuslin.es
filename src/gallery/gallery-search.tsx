@@ -47,6 +47,7 @@ export function GallerySearch({
         },
         replace: true,
         resetScroll: false,
+        viewTransition: true,
       })
     }, SEARCH_DEBOUNCE_MS)
   }

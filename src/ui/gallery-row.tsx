@@ -1,6 +1,7 @@
 import { Link, type LinkProps } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/cn'
 import { ABOVE_OVERLAY_CLASS } from '@/ui/layout'
 
 // The row lights up while its title link has keyboard focus, as it does under the pointer. Every
@@ -92,7 +93,28 @@ export function RowNote({ icon: Icon, children }: { icon: LucideIcon; children: 
   )
 }
 
-/** The gallery's rows, stacked close: one surface tone each, so the gaps draw the rows apart. */
-export function GalleryList({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-2.5">{children}</div>
+/**
+ * The gallery's rows, stacked close: one surface tone each, so the gaps draw the rows apart.
+ * `animateChanges` moves the rows in a view transition: rows that stay slide to their new place,
+ * new rows rise in, leaving rows fade out (the timing is in app.css). `match-element` names each
+ * row by its DOM node, so React's keyed rows keep their identity across the update.
+ */
+export function GalleryList({
+  animateChanges = false,
+  children,
+}: {
+  animateChanges?: boolean
+  children: ReactNode
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-2.5',
+        animateChanges &&
+          '[&_[data-slot=gallery-row]]:[view-transition-class:gallery-row] [&_[data-slot=gallery-row]]:[view-transition-name:match-element]',
+      )}
+    >
+      {children}
+    </div>
+  )
 }

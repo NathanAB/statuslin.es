@@ -204,6 +204,43 @@ body {
   }
 }
 
+/* The home gallery's view transition (GalleryList animateChanges); a short root fade keeps changed
+   text from ghosting. .gallery-row rules stand alone: a browser that can't read one drops it all. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(root) {
+    animation-duration: 200ms;
+  }
+  ::view-transition-group(site-footer) {
+    animation-duration: 300ms;
+    animation-timing-function: var(--ease-settle);
+  }
+  ::view-transition-group(.gallery-row) {
+    animation-duration: 300ms;
+    animation-timing-function: var(--ease-settle);
+  }
+  ::view-transition-new(.gallery-row):only-child {
+    animation: gallery-row-enter 250ms var(--ease-settle) 100ms both;
+  }
+  ::view-transition-old(.gallery-row):only-child {
+    animation-duration: 150ms;
+  }
+  @keyframes gallery-row-enter {
+    from {
+      opacity: 0;
+      translate: 0 0.5rem;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
+}
+
 /* Shiki source block (src/ui/highlighted-code.tsx): match the site's code wells. The highlighter
    strips Shiki's inline background (see highlight.ts), so our --sunken applies; syntax colors stay. */
 .shiki {

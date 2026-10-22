@@ -68,6 +68,13 @@ describe('SiteFooter', () => {
     expect(link.getAttribute('rel')).toContain('noopener')
   })
 
+  // When the home gallery's list grows or shrinks, the footer slides with it instead of fading.
+  it('names itself for a view transition', () => {
+    const { container } = render(<SiteFooter />)
+    const footer = container.querySelector('footer') as HTMLElement
+    expect(footer.className.split(/\s+/)).toContain('[view-transition-name:site-footer]')
+  })
+
   it('links to the Terms page', () => {
     const { container } = render(<SiteFooter />)
     const link = container.querySelector('a[href="/terms"]') as HTMLAnchorElement
