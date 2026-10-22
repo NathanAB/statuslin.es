@@ -4,7 +4,7 @@ import { submitNextSteps, submitPageCopy } from '@/submit/submit-copy'
 describe('submitPageCopy', () => {
   it('names the page and button for each kind of submission', () => {
     expect(submitPageCopy(null)).toMatchObject({
-      heading: 'Submit a status line',
+      heading: 'Submit a status line or mod',
       button: 'Submit',
     })
     expect(submitPageCopy({ kind: 'resubmission' })).toMatchObject({

@@ -1,3 +1,4 @@
+import { SUBMIT_HEADING } from '@/lib/page-title'
 import type { SubmitDraft } from '@/submit/submit'
 
 interface SubmitPageCopy {
@@ -8,7 +9,7 @@ interface SubmitPageCopy {
 
 const COPY: Record<SubmitDraft['kind'] | 'new', SubmitPageCopy> = {
   new: {
-    heading: 'Submit a status line',
+    heading: SUBMIT_HEADING,
     intro: "Paste your script. We'll render it in a sandbox and review it before it goes live.",
     button: 'Submit',
   },

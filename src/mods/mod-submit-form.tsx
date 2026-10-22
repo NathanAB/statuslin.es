@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { HttpError } from '@/lib/http'
+import { SUBMIT_HEADING } from '@/lib/page-title'
 import type { ModDraft } from '@/mods/own-mod'
 import { submitModFn } from '@/mods/submit-fn'
 import { Button } from '@/ui/button'
@@ -19,7 +20,7 @@ interface ModSubmitCopy {
 
 const COPY: Record<ModDraft['kind'] | 'new', ModSubmitCopy> = {
   new: {
-    heading: 'Submit a mod',
+    heading: SUBMIT_HEADING,
     intro:
       'Paste a GitHub link to a Claude Code plugin. We pin it to a commit, check it in a sandbox, render it, and review it before it goes live.',
     button: 'Submit',

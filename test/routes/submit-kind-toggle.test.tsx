@@ -63,12 +63,14 @@ describe('/submit kind toggle analytics', () => {
 })
 
 // A small toggle under "Submit a status line" read as a choice already made, and people skimmed
-// past Mod. Now the page asks first, with each kind described, and the heading names the kind picked.
+// past Mod. Now the page asks first, with each kind described, under a heading that names both.
 describe('/submit kind choice', () => {
-  it('asks what you are submitting before the form, under a heading that names the kind', () => {
+  it('asks what you are submitting before the form, under a heading that names both kinds', () => {
     renderSubmit('status_line')
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Submit a status line')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Submit a status line or mod',
+    )
     const choice = screen.getByRole('radiogroup', { name: 'What are you submitting?' })
     const radios = within(choice).getAllByRole('radio')
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual(['true', 'false'])
@@ -125,9 +127,11 @@ describe('/submit signed out', () => {
     return render(Page ? <Page /> : null)
   }
 
-  it('asks a visitor to sign in to submit a status line', () => {
+  it('asks a visitor to sign in to submit either kind when no link picked one', () => {
     renderSignedOut('status_line')
-    expect(screen.getByRole('heading', { name: 'Sign in to submit a status line' })).toBeTruthy()
+    expect(
+      screen.getByRole('heading', { name: 'Sign in to submit a status line or mod' }),
+    ).toBeTruthy()
   })
 
   it('names the mod when the link picked one', () => {

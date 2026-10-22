@@ -87,6 +87,9 @@ export const HOME_HEADING = 'Claude Code mods'
  * are both searched (Google autocomplete, 2026-10-21).
  */
 export const HOME_HERO_HEADING = 'Customize Claude Code with mods'
+
+/** /submit's heading over the status line or mod choice, so it never reads as a choice already made. */
+export const SUBMIT_HEADING = 'Submit a status line or mod'
 export const HOME_DESCRIPTION_BASE =
   'Claude Code mods with real previews. Install any of them with one copied prompt.'
 

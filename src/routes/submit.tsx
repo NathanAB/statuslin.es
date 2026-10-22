@@ -76,7 +76,7 @@ function Submit() {
   if (!data.user) {
     return (
       <SignInPrompt
-        title={`Sign in to submit ${data.kind === 'mod' ? 'a mod' : 'a status line'}`}
+        title={`Sign in to submit ${data.kind === 'mod' ? 'a mod' : 'a status line or mod'}`}
       />
     )
   }
