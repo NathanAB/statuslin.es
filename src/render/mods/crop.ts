@@ -31,7 +31,7 @@ export function cropModPreview(
   const kept = modScreen.flatMap((row, y) => {
     if (common.has(y) || PROMPT_ROW.test(plainText(row).trimStart())) return []
     const modOnly = blankMatch(row, MODE_HINT)
-    return plainText(modOnly).trim() === '' ? [] : [modOnly]
+    return showsNothing(modOnly) ? [] : [modOnly]
   })
   if (kept.length === 0) return { kind: 'not-rendered' }
 
@@ -58,6 +58,11 @@ function blankMatch(row: string, pattern: RegExp): string {
     i++
   }
   return out
+}
+
+/** A space with a background colour is a pixel, as pixel-art mods draw them. */
+function showsNothing(row: string): boolean {
+  return parseAnsi(row).every((segment) => segment.text.trim() === '' && !segment.bg)
 }
 
 function plainText(row: string): string {

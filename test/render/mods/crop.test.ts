@@ -67,6 +67,16 @@ describe('cropModPreview', () => {
     )
   })
 
+  it('keeps a row drawn only with background-coloured spaces', () => {
+    const footer = baseline.findIndex((row) => row.includes('shift+tab to cycle'))
+    const pixelRow = ' \x1b[48;2;221;119;85m                \x1b[0m'
+    const withSprite = [...baseline.slice(0, footer), pixelRow, ...baseline.slice(footer)]
+
+    expect(renderedSegments(cropModPreview(baseline, withSprite))).toContainEqual(
+      expect.objectContaining({ text: '                ', bg: 'rgb(221, 119, 85)' }),
+    )
+  })
+
   it('never keeps the baseline branding rows, even when they scrolled', () => {
     expect(switchboard[0]).toMatch(BRANDING)
 
