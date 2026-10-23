@@ -8,7 +8,7 @@ Only published items appear.
 
 ## Sub-features
 
-- `gallery-list` shows published rows: a level-3 title link, an `@author` link, a facts line (`Uses the internet` / `Reads sign-in token` notes, `Mod` for a mod, tag links such as `Bash`, `N installs`), a preview and the description.
+- `gallery-list` shows published rows: a level-3 title link, an `@author` link, a facts line (`Mod` for a mod, then the tags its page header shows as links such as `Bash`, then `N installs`), the `@author` text on the title's baseline, a preview and the description.
 - `gallery-sort` reorders with the radiogroup `Sort` and writes `?sort=` into the URL.
 - `gallery-search` filters with the searchbox `Search status lines and mods`, writes `?q=`, and says `Nothing matches “<q>”.` with a `Clear search` link when nothing matches.
 - `gallery-pages` pages ten items at a time with the `Gallery pages` navigation (`Page N of M`, `Next page`, `Previous page`), and returns 404 past the last page.
