@@ -65,6 +65,86 @@ The dry run on 2026-10-23 already checked prod's data with this code: every site
 390px, all 77 share cards and the 8 hero picks, with no errors. These checks confirm the deploy
 itself.
 
+## Search
+
+Most visits come from Google, so search gets its own checks. A title or canonical that's wrong for a
+few days can cost rankings that take weeks to come back.
+
+### What changes for search
+
+Checked on 2026-10-23 by snapshotting every sitemap page's head on production and on staging and
+comparing them (`seo/seo_snapshot.py`):
+
+- **Titles:** the 7 in `launch-metrics.md`. Every other page keeps its title.
+- **h1s:** home ("Customize Claude Code with mods"), `/mods` ("Best Claude Code mods"),
+  `/resources` ("Claude Code customization tools & resources"), and the git, burn-rate and weather
+  topics, which add "and mods".
+- **Meta descriptions:** home, `/mods`, `/resources`, `/terms`, `/status-lines/best` (copies become
+  installs) and the five retitled topic pages. `/mods` drops "Reviewed by a person".
+- **JSON-LD:** topic pages list mods as well as status lines; `/resources` lists its new tools; the
+  guides' `dateModified` moved to 2026-10-23.
+- **New page:** `/how-it-works`, in the sitemap.
+- **Redirects:** a home URL with an unknown search value (`/?kind=foo`, `/?sort=foo`) answers 307 to
+  the URL without it. Unknown paths answer a real 404 page.
+- **Unchanged:** robots.txt, every status line page's head, and every mod page's title and
+  description. No URL leaves the sitemap: the dry run on prod's data listed every URL production's
+  sitemap has. No URL that Search Console shows with impressions stops answering: the three outside
+  the sitemap (`/status-lines/powerline`, `/status-lines/markets`, `/submit`) were already noindex
+  and still render.
+
+### Before deploying
+
+Take a fresh snapshot of production right before the deploy, so the diff after it shows only the
+deploy's changes. `seo/prod-before.json` is the one taken on 2026-10-23; retake it if content
+changed since.
+
+```bash
+cd docs/redesign/home-a/seo && python3 -I seo_snapshot.py snapshot https://statuslin.es prod-before.json
+```
+
+### Right after the deploy
+
+1. Snapshot production again and compare:
+
+   ```bash
+   python3 -I seo_snapshot.py snapshot https://statuslin.es prod-after.json
+   python3 -I seo_snapshot.py diff prod-before.json prod-after.json
+   ```
+
+   Every changed page must be in the list above. Fix anything else before Google recrawls: a
+   changed canonical, a robots `noindex` on an indexed page, a status line or mod page's title, a
+   URL that left the sitemap, or a status other than 200.
+2. In Search Console, under Sitemaps, resubmit `https://statuslin.es/sitemap.xml`.
+3. URL Inspection, "Test live URL", on `/`, `/mods` and `/status-lines/git`: the page is
+   indexable and the live title is the new one. Then "Request indexing" for `/`, `/mods`,
+   `/how-it-works` and the five retitled topic pages.
+4. Google's Rich Results Test on `/`, one `/c/` page, one `/mods/` page and `/guide`: no errors.
+5. `https://statuslin.es/llms.txt` loads and names both kinds, for AI search.
+
+### The first two weeks
+
+Search Console data lags about two days. Each day, compare clicks, impressions and position by
+page group with the days before the deploy, using `seo/search_console.py` (under "How to
+measure"):
+
+- The retitled pages and the home page, which change the most.
+- `/mods/*`: October's growth came from mod pages ranking for mod names. Their titles don't change,
+  so a drop there points at something else, such as the page losing content or links.
+- The Pages report (indexing): new 404s, soft 404s, "Excluded by noindex", or "Duplicate without
+  user-selected canonical" on a main page.
+- How Google shows the new titles: search for "claude code status line", "ccstatusline" and two
+  top mod names, and note any title Google rewrites.
+
+Rankings move for a few days after titles change while Google recrawls, so don't act on less than
+a week of data. Act on these:
+
+- **Now:** an indexing error on a main page (5xx, noindex, wrong canonical). Fix forward or roll
+  back.
+- **After two weeks:** a page group's clicks down more than 30% against the two weeks before, with
+  its average position down more than 2 and impressions steady, so it isn't a fall in demand. Put
+  that page's old title or heading back first (topic titles live in their `FACETS` entry, the rest in
+  `src/lib/page-title.ts`), rather than rolling back the whole release.
+
 ## When to roll back
 
 Roll back on any of these:
@@ -73,6 +153,8 @@ Roll back on any of these:
   blank.
 - More than 10 `$exception` events in an hour, or one error repeating on a main page. The baseline
   is 7 in 28 days.
+- The search snapshot diff shows a main page with a wrong canonical, a `noindex` it shouldn't have,
+  or a non-200 status, and no fix is quick.
 
 Investigate first, and roll back if no fix is quick, on these:
 
@@ -98,7 +180,9 @@ The database needs nothing, and copy events written in between stay valid (the o
 | When | Look at |
 | --- | --- |
 | Next morning | Exceptions since the deploy; copies by surface; home bounce rate; web vitals (about 40 home samples a day, enough for a first read). |
-| End of week 1 | Web vitals p75 per page group over the 7 days. In Search Console, URL Inspection on the 7 retitled pages (do they show the new title?), their impressions and position against the week before, and the Pages report for new 404s or server errors. A PageSpeed Insights rerun. |
+| Daily, for two weeks | Search Console by page group, as in "Search" above. |
+| End of week 1 | Web vitals p75 per page group over the 7 days. URL Inspection on the 7 retitled pages: does Google show the new title? A PageSpeed Insights rerun. |
+| End of week 2 | The search decision in "Search" above: keep each new title, or put an old one back. |
 | Week 4 (about 2026-11-20) | The full comparison in `launch-metrics.md`: the 4 weeks after against the 4 weeks before. PageSpeed Insights' field data (CrUX) covers 28 days by then. Decide what to keep and what to change. |
 
 ## How to measure
@@ -173,9 +257,19 @@ group by wk order by wk
 
 ### Search Console
 
-Property `sc-domain:statuslin.es`. In Performance, filter by page and compare clicks, impressions
-and position with the per-group table in `launch-metrics.md`, using the same 28-day windows. The
-titles that changed are listed there too.
+Property `sc-domain:statuslin.es`. `seo/search_console.py` prints clicks, impressions, CTR and
+average position by page group for a date window against the same number of days before it,
+through the Composio CLI:
+
+```bash
+python3 -I docs/redesign/home-a/seo/search_console.py 2026-10-24 2026-10-30
+```
+
+In the Search Console UI, Performance with a page filter and "Compare" dates gives the same numbers
+for one page. For week 4, compare with the per-group table in `launch-metrics.md`, using 28-day
+windows.
+
+`seo/seo_snapshot.py` takes and compares the head snapshots described in "Search".
 
 ### Lab performance
 

@@ -14,6 +14,7 @@ it in. Read it whole before writing code.
 | `screenshots/current-*.jpg` | Today's home page, for comparison. |
 | `launch-plan.md` | How to deploy the redesign to production, what to check after, when to roll back, and the queries that measure it. |
 | `launch-metrics.md` | The numbers from before launch to compare against. |
+| `seo/` | `seo_snapshot.py` snapshots and compares every sitemap page's search head; `prod-before.json` is production's from 2026-10-23. `search_console.py` compares Search Console by page group across two windows. |
 
 The proposal it came from, with the rejected Direction B, is published at
 https://claude.ai/artifact/Hw3uYgpXoxxk2MrEnbEuwH.
