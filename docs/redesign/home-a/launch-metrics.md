@@ -72,7 +72,10 @@ The week of 2026-10-19 alone had 81 clicks, 1,173 impressions and an average pos
 Seven page titles change in the same deploy. A search drop on one of these pages starts at the
 deploy date. Record that date here when the release goes out.
 
-Deploy date: _not deployed yet_.
+Deploy date: 2026-10-23, 18:05 UTC (production release v79, image
+`sha256:67d45749cf10b7e2c2f71b1b8883c15614551b9e287548d63f5f57c3fc6d55f5`; both machines on it by
+18:06). The search snapshots from just before and just after are `seo/prod-before.json` and
+`seo/prod-after.json`.
 
 | Page | Before | After |
 |---|---|---|

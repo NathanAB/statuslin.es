@@ -46,15 +46,15 @@
               },
               {
                 "@type": "ListItem",
-                "name": "Single-line usage",
+                "name": "Context Bar",
                 "position": 4,
-                "url": "{site}/c/single-line-usage-31dcb76e"
+                "url": "{site}/mods/context-bar"
               },
               {
                 "@type": "ListItem",
-                "name": "Context Bar",
+                "name": "Single-line usage",
                 "position": 5,
-                "url": "{site}/mods/context-bar"
+                "url": "{site}/c/single-line-usage-31dcb76e"
               },
               {
                 "@type": "ListItem",
@@ -76,15 +76,15 @@
               },
               {
                 "@type": "ListItem",
-                "name": "Status Line Anywhere",
+                "name": "Claude Pets",
                 "position": 9,
-                "url": "{site}/mods/statusline-anywhere"
+                "url": "{site}/mods/pets"
               },
               {
                 "@type": "ListItem",
-                "name": "Mocha Two-Liner",
+                "name": "Status Line Anywhere",
                 "position": 10,
-                "url": "{site}/c/mocha-two-liner-853347d3"
+                "url": "{site}/mods/statusline-anywhere"
               }
             ]
           },
@@ -162,51 +162,51 @@
             "itemListElement": [
               {
                 "@type": "ListItem",
-                "name": "Flightdeck",
+                "name": "Mocha Two-Liner",
                 "position": 11,
+                "url": "{site}/c/mocha-two-liner-853347d3"
+              },
+              {
+                "@type": "ListItem",
+                "name": "Flightdeck",
+                "position": 12,
                 "url": "{site}/mods/flightdeck"
               },
               {
                 "@type": "ListItem",
                 "name": "Catppuccin Frapp\u00e9",
-                "position": 12,
+                "position": 13,
                 "url": "{site}/c/catppuccin-frapp-88ba1499"
               },
               {
                 "@type": "ListItem",
                 "name": "Powerline Dracula",
-                "position": 13,
+                "position": 14,
                 "url": "{site}/c/powerline-dracula-6936b97c"
               },
               {
                 "@type": "ListItem",
                 "name": "Everything Bar",
-                "position": 14,
+                "position": 15,
                 "url": "{site}/c/everything-bar-6754d090"
               },
               {
                 "@type": "ListItem",
                 "name": "Better Prompt",
-                "position": 15,
+                "position": 16,
                 "url": "{site}/mods/better-prompt"
               },
               {
                 "@type": "ListItem",
                 "name": "One Dark Triptych",
-                "position": 16,
+                "position": 17,
                 "url": "{site}/c/one-dark-triptych-071e85e2"
               },
               {
                 "@type": "ListItem",
                 "name": "Filetree",
-                "position": 17,
-                "url": "{site}/mods/filetree"
-              },
-              {
-                "@type": "ListItem",
-                "name": "Claude Pets",
                 "position": 18,
-                "url": "{site}/mods/pets"
+                "url": "{site}/mods/filetree"
               },
               {
                 "@type": "ListItem",
@@ -4710,15 +4710,15 @@
             "itemListElement": [
               {
                 "@type": "ListItem",
-                "name": "Sub Meter",
+                "name": "Token Weather Usage",
                 "position": 1,
-                "url": "{site}/mods/sub-meter"
+                "url": "{site}/mods/token-weather-usage"
               },
               {
                 "@type": "ListItem",
-                "name": "Token Weather Usage",
+                "name": "Sub Meter",
                 "position": 2,
-                "url": "{site}/mods/token-weather-usage"
+                "url": "{site}/mods/sub-meter"
               },
               {
                 "@type": "ListItem",
@@ -4734,45 +4734,45 @@
               },
               {
                 "@type": "ListItem",
-                "name": "Status Line Anywhere",
+                "name": "Claude Pets",
                 "position": 5,
+                "url": "{site}/mods/pets"
+              },
+              {
+                "@type": "ListItem",
+                "name": "Status Line Anywhere",
+                "position": 6,
                 "url": "{site}/mods/statusline-anywhere"
               },
               {
                 "@type": "ListItem",
                 "name": "Flightdeck",
-                "position": 6,
+                "position": 7,
                 "url": "{site}/mods/flightdeck"
               },
               {
                 "@type": "ListItem",
                 "name": "Better Prompt",
-                "position": 7,
+                "position": 8,
                 "url": "{site}/mods/better-prompt"
               },
               {
                 "@type": "ListItem",
                 "name": "Burn Meter",
-                "position": 8,
+                "position": 9,
                 "url": "{site}/mods/burn-meter"
               },
               {
                 "@type": "ListItem",
                 "name": "Cache Tax",
-                "position": 9,
+                "position": 10,
                 "url": "{site}/mods/cache-tax"
               },
               {
                 "@type": "ListItem",
                 "name": "Filetree",
-                "position": 10,
-                "url": "{site}/mods/filetree"
-              },
-              {
-                "@type": "ListItem",
-                "name": "Claude Pets",
                 "position": 11,
-                "url": "{site}/mods/pets"
+                "url": "{site}/mods/filetree"
               },
               {
                 "@type": "ListItem",
@@ -8177,15 +8177,15 @@
               },
               {
                 "@type": "ListItem",
-                "name": "Sub Meter",
+                "name": "Token Weather Usage",
                 "position": 5,
-                "url": "{site}/mods/sub-meter"
+                "url": "{site}/mods/token-weather-usage"
               },
               {
                 "@type": "ListItem",
-                "name": "Token Weather Usage",
+                "name": "Sub Meter",
                 "position": 6,
-                "url": "{site}/mods/token-weather-usage"
+                "url": "{site}/mods/sub-meter"
               },
               {
                 "@type": "ListItem",
@@ -8611,15 +8611,15 @@
               },
               {
                 "@type": "ListItem",
-                "name": "Powerline Dracula",
+                "name": "Token Weather Usage",
                 "position": 8,
-                "url": "{site}/c/powerline-dracula-6936b97c"
+                "url": "{site}/mods/token-weather-usage"
               },
               {
                 "@type": "ListItem",
-                "name": "Token Weather Usage",
+                "name": "Powerline Dracula",
                 "position": 9,
-                "url": "{site}/mods/token-weather-usage"
+                "url": "{site}/c/powerline-dracula-6936b97c"
               },
               {
                 "@type": "ListItem",
@@ -9174,5 +9174,5 @@
     "/status-lines/weather",
     "/terms"
   ],
-  "taken_at": "2026-10-23T15:28:19+00:00"
+  "taken_at": "2026-10-23T17:59:03+00:00"
 }
