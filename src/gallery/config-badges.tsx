@@ -29,8 +29,6 @@ export function iconFor(slug: string): LucideIcon {
   return TAG_ICON[slug] ?? (FACET_BY_SLUG.get(slug)?.group === 'feature' ? Tag : Code)
 }
 
-/** A page header's topic tags: what it can reach (network, the Claude login) is a risk to weigh,
- *  said in the install panel beside the button, not a topic chip. */
 export function topicTags(tags: string[]): string[] {
   return tags.filter((slug) => FACET_BY_SLUG.get(slug)?.group !== 'capability')
 }

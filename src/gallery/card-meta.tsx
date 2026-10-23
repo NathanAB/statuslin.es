@@ -4,10 +4,6 @@ import { RowFacts } from '@/ui/gallery-row'
 import { installsLabel } from '@/ui/install-count'
 import { TextLink } from '@/ui/text'
 
-/**
- * The facts on a gallery card's top line, in a quiet dotted row: `kind` (a mod card says Mod),
- * the tags its page header shows, each as a link to its page, then the copy count.
- */
 export function CardMeta({
   kind,
   tags,

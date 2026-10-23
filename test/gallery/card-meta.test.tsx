@@ -43,12 +43,8 @@ describe('CardMeta', () => {
     expect(renderMeta({ tags: [], copyCount: 1 }).textContent).toBe('1 install')
   })
 
-  // The page says what the code can reach in its install panel, beside the button.
   it('lists the tags its page header shows, leaving out what the code can reach', () => {
-    const meta = renderMeta({
-      tags: ['network-access', 'git', 'reads-token'],
-      copyCount: 2,
-    })
+    const meta = renderMeta({ tags: ['network-access', 'git', 'reads-token'], copyCount: 2 })
 
     expect(meta.textContent).toBe('Git·2 installs')
   })
