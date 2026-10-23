@@ -188,7 +188,7 @@ describe('status line page', () => {
     const panel = screen.getByRole('region', { name: 'Before you install' })
     expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
       'This version was reviewed before it was listed on Jul 6, 2026',
-      "Doesn't ask to reach the internet",
+      "Doesn't ask to connect to the internet",
       'Uses Nerd Font glyphs',
     ])
     expect(
@@ -203,14 +203,14 @@ describe('status line page', () => {
     ])
   })
 
-  // Reading the sign-in token or connecting to hosts is a risk to weigh, not a topic: it leaves the topic chips.
+  // Reading the Claude login or connecting to hosts is a risk to weigh, not a topic: it leaves the topic chips.
   it('keeps the risk facts out of the topic chips in the header', () => {
     renderPage(false, [], { ...DETAIL, tags: ['bash', 'reads-token'], readsClaudeToken: true })
 
     expect(screen.queryByRole('link', { name: /reads token/i })).toBeNull()
     expect(
       within(screen.getByRole('region', { name: 'Before you install' })).getByText(
-        'Reads your Claude sign-in token',
+        'Reads your Claude login',
       ),
     ).toBeTruthy()
   })

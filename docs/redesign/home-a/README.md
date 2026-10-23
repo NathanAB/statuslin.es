@@ -349,9 +349,17 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   marker slides along the list's rail to it. Picking an entry glides there, unless the visitor
   asks for less motion.
 - **Plain words for what a line or mod can reach.** "No network access" read like an error, so it's
-  "Doesn't connect to the internet"; "Calls" is "Connects to"; the login is the "Claude sign-in
-  token"; the mod tile "Uses your tokens" is "Uses your plan", so "token" means one thing. The
-  hero's fact is a sentence that names the picked line, so it plainly changes with the pick.
+  "Doesn't ask to connect to the internet"; "Calls" is "Connects to". The hero's fact is a
+  sentence that names the picked line, so it plainly changes with the pick.
+- **One word for each reach fact (owner, 2026-10-23).** The install panel, the "What it does"
+  tiles, the gallery chips and the guides used different words for the same fact on one page.
+  They now use the tile words production had, which 0dfbccc4 brought back: "Reads your Claude
+  login", "Uses your tokens" (a mod calling Claude), and "Connects to" for hosts. "Token" now
+  means only usage. A status line's network tile reads "None requested" when it declares no hosts,
+  since the author declares them; a mod's reads "None", since that comes from the validator's read
+  of the code. The submit form's network switch, the admin cards and "your plan's usage limits"
+  (the subscription) keep their words. This replaces the sign-in token and "Uses your plan" parts
+  of the entry above.
 - **"Reviewed", never "read by a person".** Review is agent-assisted: a person approves each
   listing, with agents helping check the code. `test/content/review-claims.test.ts` fails on any
   page copy that says a person read or reviews it.

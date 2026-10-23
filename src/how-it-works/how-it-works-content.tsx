@@ -36,7 +36,7 @@ const SESSIONS_SHOWN = 3
 const REVIEW_LOOKS_AT: IconListItem[] = [
   { icon: FileCode, text: 'Its source, at the pinned version' },
   { icon: Eye, text: 'The previews the sandbox recorded' },
-  { icon: Globe, text: 'The hosts it asks to reach, and whether it reads your Claude login' },
+  { icon: Globe, text: 'The hosts it asks to connect to, and whether it reads your Claude login' },
   {
     icon: ScanSearch,
     text: (

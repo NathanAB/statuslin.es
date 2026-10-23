@@ -198,14 +198,14 @@ export const FACETS: Facet[] = [
     group: 'capability',
     page: false,
     chipLabel: 'network access',
-    label: 'Uses the internet',
+    label: 'Connects to the internet',
   },
   {
     slug: 'reads-token',
     group: 'capability',
     page: false,
     chipLabel: 'reads token',
-    label: 'Reads sign-in token',
+    label: 'Reads your Claude login',
   },
 ]
 

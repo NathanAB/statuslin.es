@@ -12,7 +12,7 @@ export function reachFacts(
 ): InstallFact[] {
   return [
     ...(config.readsClaudeToken
-      ? [{ icon: KeyRound, text: 'Reads your Claude sign-in token', caution: true }]
+      ? [{ icon: KeyRound, text: 'Reads your Claude login', caution: true }]
       : []),
     config.networkHosts.length > 0
       ? {
@@ -20,26 +20,27 @@ export function reachFacts(
           text: `Connects to ${config.networkHosts.map((host) => `\`${host}\``).join(', ')}`,
           caution: true,
         }
-      : { icon: GlobeLock, text: "Doesn't ask to reach the internet" },
+      : { icon: GlobeLock, text: "Doesn't ask to connect to the internet" },
   ]
 }
 
 const asCode = (host: string) => `\`${host}\``
 
 /**
- * The same reach as one short line, for the home hero: "Reads your Claude sign-in token and
+ * The same reach as one short line, for the home hero: "Reads your Claude login and
  * connects to `wttr.in`".
  */
 export function reachSentence(
   config: Pick<ConfigDetail, 'readsClaudeToken' | 'networkHosts'>,
 ): InstallFact {
   const reaches = [
-    ...(config.readsClaudeToken ? ['reads your Claude sign-in token'] : []),
+    ...(config.readsClaudeToken ? ['reads your Claude login'] : []),
     ...(config.networkHosts.length > 0
       ? [`connects to ${listPhrase(config.networkHosts.map(asCode))}`]
       : []),
   ]
-  if (reaches.length === 0) return { icon: GlobeLock, text: "Doesn't ask to reach the internet" }
+  if (reaches.length === 0)
+    return { icon: GlobeLock, text: "Doesn't ask to connect to the internet" }
   const text = reaches.join(' and ')
   return {
     icon: config.readsClaudeToken ? KeyRound : Globe,

@@ -130,16 +130,16 @@ const byline = () => screen.getByText(/^A (mod|status line)( by)?$/).parentEleme
 const reach = () => byline().nextElementSibling?.textContent
 
 describe('HomeHero', () => {
-  // You could copy a line that reads your Claude sign-in token without being told: the picked
+  // You could copy a line that reads your Claude login without being told: the picked
   // line's reach sits right under the install button, as one short line. How listings are checked
   // is its own section on the home page, too much for a line here.
   it('says what the picked line can reach, and leaves review to the section below', () => {
     renderHero()
 
-    expect(reach()).toBe("Doesn't ask to reach the internet")
+    expect(reach()).toBe("Doesn't ask to connect to the internet")
     expect(screen.queryByText(/reviewed and rendered in a sandbox/)).toBeNull()
     pick(/^Pace Dot Meters/)
-    expect(reach()).toBe('Reads your Claude sign-in token and connects to wttr.in')
+    expect(reach()).toBe('Reads your Claude login and connects to wttr.in')
   })
 
   it("server-renders the heading, the sentence and the first item's terminal", () => {

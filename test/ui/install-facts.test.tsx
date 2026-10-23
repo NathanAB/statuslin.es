@@ -21,7 +21,7 @@ describe('InstallFacts', () => {
         heading="Before you install"
         facts={[
           { icon: UserCheck, text: 'Reviewed before listing · this version, Oct 12, 2026' },
-          { icon: KeyRound, text: 'Reads your Claude sign-in token', caution: true },
+          { icon: KeyRound, text: 'Reads your Claude login', caution: true },
           { icon: UserCheck, text: 'Needs `jq` on your PATH' },
         ]}
         link={{
@@ -35,7 +35,7 @@ describe('InstallFacts', () => {
     const items = panel.getAllByRole('listitem')
     expect(items.map((item) => item.textContent)).toEqual([
       'Reviewed before listing · this version, Oct 12, 2026',
-      'Reads your Claude sign-in token',
+      'Reads your Claude login',
       'Needs jq on your PATH',
     ])
     expect(items.map((item) => item.getAttribute('data-tone'))).toEqual([

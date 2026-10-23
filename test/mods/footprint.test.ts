@@ -137,7 +137,7 @@ describe('describeFootprint on the calls and events published mods use', () => {
     ['$.store.keys', STORE, false],
     [
       '$.model.fork',
-      'sends the conversation to Claude with its own requests, which uses your plan',
+      'sends the conversation to Claude with its own requests, which uses your tokens',
       true,
     ],
     ['$.prompt.submit', 'submits prompts for you, which can be sent as your own words', true],

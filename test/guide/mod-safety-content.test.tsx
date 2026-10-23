@@ -68,7 +68,7 @@ describe('ModSafetyContent', () => {
       'Runs programs',
       'Makes web requests',
       'Reads your environment variables',
-      'Calls Claude on your plan',
+      'Calls Claude and uses your tokens',
       'Reads the conversation',
       'Adds slash commands',
       "Approves Claude's tool calls for you",

@@ -23,7 +23,7 @@ function CapabilityNote({ slug, networkHosts }: { slug: string; networkHosts: st
         </Stack>
       }
     >
-      <span role="img" aria-label={`Uses the internet: ${networkHosts.join(', ')}`}>
+      <span role="img" aria-label={`Connects to ${networkHosts.join(', ')}`}>
         {note}
       </span>
     </Tooltip>

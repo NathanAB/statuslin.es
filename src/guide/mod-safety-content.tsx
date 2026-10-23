@@ -56,7 +56,7 @@ const CAN_DO: IconListItem[] = [
   { icon: Terminal, text: 'Runs programs' },
   { icon: Globe, text: 'Makes web requests' },
   { icon: Variable, text: 'Reads your environment variables' },
-  { icon: Coins, text: 'Calls Claude on your plan' },
+  { icon: Coins, text: 'Calls Claude and uses your tokens' },
   { icon: MessagesSquare, text: 'Reads the conversation' },
   { icon: SquareSlash, text: 'Adds slash commands' },
   { icon: CircleCheck, text: "Approves Claude's tool calls for you" },

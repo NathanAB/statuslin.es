@@ -44,14 +44,14 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
       short: 'connect to the internet',
     },
     '$.model.complete': {
-      phrase: 'sends its own requests to Claude, which uses your plan',
+      phrase: 'sends its own requests to Claude, which uses your tokens',
       risk: true,
-      short: 'use your plan',
+      short: 'use your tokens',
     },
     '$.model.fork': {
-      phrase: 'sends the conversation to Claude with its own requests, which uses your plan',
+      phrase: 'sends the conversation to Claude with its own requests, which uses your tokens',
       risk: true,
-      short: 'use your plan',
+      short: 'use your tokens',
     },
     '$.prompt.submit': {
       phrase: 'submits prompts for you, which can be sent as your own words',

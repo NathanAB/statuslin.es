@@ -74,7 +74,7 @@ export function ConfigBadges({ tags, networkHosts }: { tags: string[]; networkHo
                 </Stack>
               }
             >
-              <span role="img" aria-label={`Uses the internet: ${networkHosts.join(', ')}`}>
+              <span role="img" aria-label={`Connects to ${networkHosts.join(', ')}`}>
                 {content}
               </span>
             </Tooltip>
