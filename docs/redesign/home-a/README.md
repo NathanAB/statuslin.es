@@ -363,6 +363,11 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
   of the code. The submit form's network switch, the admin cards and "your plan's usage limits"
   (the subscription) keep their words. This replaces the sign-in token and "Uses your plan" parts
   of the entry above.
+- **A card lists its page header's tags (owner, 2026-10-23).** In a card's dotted row, "Connects
+  to the internet" and "Reads your Claude login" read like topics, and the page header already
+  left them out. Each page still says what the code can reach in its "What it does" tiles, and a
+  status line's install panel says it beside the button. This replaces item 3 under "Decisions
+  already made".
 - **"Reviewed", never "read by a person".** Review is agent-assisted: a person approves each
   listing, with agents helping check the code. `test/content/review-claims.test.ts` fails on any
   page copy that says a person read or reviews it.

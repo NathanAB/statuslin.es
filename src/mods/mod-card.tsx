@@ -34,7 +34,7 @@ export function ModCard({
       }}
       title={card.title}
       byline={<AuthorChip author={modAuthor(card.authorGithub)} />}
-      facts={<CardMeta kind="Mod" tags={card.tags} networkHosts={[]} copyCount={card.copyCount} />}
+      facts={<CardMeta kind="Mod" tags={card.tags} copyCount={card.copyCount} />}
       description={card.description}
     >
       <ModRowPreview card={card} />

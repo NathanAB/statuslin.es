@@ -1,5 +1,4 @@
 import { Link, type LinkProps } from '@tanstack/react-router'
-import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { ABOVE_OVERLAY_CLASS } from '@/ui/layout'
@@ -80,16 +79,6 @@ export function RowFacts({ children }: { children: ReactNode[] }) {
         </li>
       ))}
     </ul>
-  )
-}
-
-/** A fact with an icon before it: what a status line can reach (the network, your token). */
-export function RowNote({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap">
-      <Icon aria-hidden="true" className="size-3.5 self-center" />
-      {children}
-    </span>
   )
 }
 

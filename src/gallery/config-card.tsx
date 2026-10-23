@@ -34,9 +34,7 @@ export function GalleryConfigCard({
       }}
       title={card.title}
       byline={<AuthorChip author={card.author} />}
-      facts={
-        <CardMeta tags={card.tags} networkHosts={card.networkHosts} copyCount={card.copyCount} />
-      }
+      facts={<CardMeta tags={card.tags} copyCount={card.copyCount} />}
       description={card.description}
     >
       {card.preview !== null ? (
