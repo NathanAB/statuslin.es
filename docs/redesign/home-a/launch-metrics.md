@@ -2,7 +2,8 @@
 
 The numbers to compare once the redesign is on production, and the numbers from before it.
 The baseline was pulled on 2026-10-22, before the redesign reached production. Compare the
-four weeks after the deploy with the four weeks before it.
+four weeks after the deploy with the four weeks before it. `launch-plan.md` has the deploy steps,
+when to roll back, and the queries that produce these numbers.
 
 ## What to compare
 

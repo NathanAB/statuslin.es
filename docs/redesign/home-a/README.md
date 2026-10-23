@@ -12,6 +12,8 @@ it in. Read it whole before writing code.
 | `prototype/img/` | The mod Desktop screenshots the prototype shows. |
 | `screenshots/a2-*.jpg` | The prototype at 1440px: hero, gallery, and three 2×2 composites of the whole page (each panel is one 1440×900 screen). `a2-mobile-hero.jpg` is 390px. |
 | `screenshots/current-*.jpg` | Today's home page, for comparison. |
+| `launch-plan.md` | How to deploy the redesign to production, what to check after, when to roll back, and the queries that measure it. |
+| `launch-metrics.md` | The numbers from before launch to compare against. |
 
 The proposal it came from, with the rejected Direction B, is published at
 https://claude.ai/artifact/Hw3uYgpXoxxk2MrEnbEuwH.
