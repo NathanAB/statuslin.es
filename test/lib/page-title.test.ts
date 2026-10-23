@@ -136,7 +136,7 @@ describe('modMetaDescription', () => {
 
   it('falls back to a generic mod description when there is none', () => {
     expect(modMetaDescription(null)).toBe(
-      'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one command.',
+      'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.',
     )
   })
 })

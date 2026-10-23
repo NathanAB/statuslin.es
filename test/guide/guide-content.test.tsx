@@ -119,7 +119,9 @@ describe('GuideContent', () => {
       within(runnable).getByText('chmod +x ~/.claude/statusline.sh').closest('pre'),
     ).toBeTruthy()
     expect(within(settings).getByRole('button', { name: 'Copy settings' })).toBeTruthy()
-    expect(within(test).getByText('bash statusline.sh < sample.json').closest('pre')).toBeTruthy()
+    expect(
+      within(test).getByText('bash ~/.claude/statusline.sh < sample.json').closest('pre'),
+    ).toBeTruthy()
 
     const json = within(section).getByRole('heading', {
       level: 3,

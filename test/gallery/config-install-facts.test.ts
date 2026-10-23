@@ -12,7 +12,7 @@ const base = {
 describe('configInstallFacts', () => {
   it('says this version was reviewed before listing, and that it never connects to the internet', () => {
     expect(configInstallFacts(base).map((f) => [f.text, f.caution ?? false])).toEqual([
-      ['Reviewed before listing · this version, Oct 12, 2026', false],
+      ['This version was reviewed before it was listed on Oct 12, 2026', false],
       ["Doesn't ask to reach the internet", false],
     ])
   })

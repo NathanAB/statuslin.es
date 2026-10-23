@@ -34,7 +34,7 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
     links: [
       { to: GUIDE_PATH, label: GUIDE_LINK_LABEL },
       { to: NOT_SHOWING_GUIDE_PATH, label: 'Status line not showing?' },
-      { to: DESKTOP_GUIDE_PATH, label: 'Claude Desktop' },
+      { to: DESKTOP_GUIDE_PATH, label: 'Status line in Claude Desktop' },
       { to: STATUS_LINES_VS_MODS_GUIDE_PATH, label: 'Status lines vs mods' },
       { to: MOD_SAFETY_GUIDE_PATH, label: 'Are mods safe?' },
       { to: BUDDY_GUIDE_PATH, label: 'Buddy pets' },

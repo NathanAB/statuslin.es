@@ -61,7 +61,7 @@ export function configInstallFacts(
   return [
     {
       icon: ShieldCheck,
-      text: `Reviewed before listing · this version, ${utcDateLabel(config.updatedAt)}`,
+      text: `This version was reviewed before it was listed on ${utcDateLabel(config.updatedAt)}`,
     },
     ...reachFacts(config),
     ...(config.generatedContent?.goodToKnow ?? []).map((note) => ({ icon: Info, text: note })),

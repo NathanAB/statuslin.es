@@ -128,7 +128,7 @@ describe('the phone menu', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 
-  it('gives a signed-in admin their account links, and Log out signs them out', async () => {
+  it('gives a signed-in admin their account links, and Sign out signs them out', async () => {
     render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' }} />,
     )
@@ -138,7 +138,7 @@ describe('the phone menu', () => {
     expect(menu.getByRole('link', { name: 'Review' }).getAttribute('href')).toBe('/admin/review')
     expect(menu.queryByRole('button', { name: 'Sign in with GitHub' })).toBeNull()
 
-    fireEvent.click(menu.getByRole('button', { name: 'Log out' }))
+    fireEvent.click(menu.getByRole('button', { name: 'Sign out' }))
     await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/'))
   })

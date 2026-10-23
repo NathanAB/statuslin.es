@@ -62,7 +62,7 @@ export async function supersedeRejectionEmail(
   submission: { id: string; rejectionEmailStatus: string | null },
 ): Promise<void> {
   if (submission.rejectionEmailStatus === 'sending') {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
+    throw new HttpError(409, 'Your rejection email is still being sent. Try again shortly.')
   }
   if (
     !SUPERSEDABLE_REJECTION_EMAIL_STATUSES.some(
@@ -81,6 +81,6 @@ export async function supersedeRejectionEmail(
       ),
   )
   if (!superseded) {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
+    throw new HttpError(409, 'Your rejection email is still being sent. Try again shortly.')
   }
 }

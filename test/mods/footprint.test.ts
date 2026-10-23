@@ -157,7 +157,7 @@ describe('describeFootprint on the calls and events published mods use', () => {
     ],
     ['agent.offer', 'can hide subagent types from Claude', true],
     ['engine.create', 'adds its own methods for other mods to call', false],
-    ['ui.status', 'can change or hide the status lines other mods show', false],
+    ['ui.status', 'can change or hide the status entries other mods show', false],
     ['ui.log', 'can change or hide the transcript lines other mods add', false],
   ] as const)('describes %s as %j, a risk: %s', (entry, phrase, risk) => {
     const result = describeFootprint({ events: [entry], calls: [] })

@@ -23,7 +23,7 @@ describe('MarketplaceLine', () => {
     const { container } = render(<MarketplaceLine origin="https://site.example.test" />)
 
     expect(container.textContent).toContain(
-      "To browse the reviewed mods from Claude Code's /plugin menu, add the marketplace in the terminal:",
+      "To browse the reviewed mods from Claude Code's /plugin menu, add the marketplace from Claude Code in the terminal:",
     )
     expect(screen.getByText(COMMAND)).toBeTruthy()
   })

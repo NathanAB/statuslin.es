@@ -83,7 +83,7 @@ export function ResourcesContent({
           intro={
             <Text muted>
               Status lines from the gallery that cover at least three of the same features as these
-              tools, each shown with its real output. Copy one in a single paste.
+              tools, each shown with its real output. Install one in a single paste.
             </Text>
           }
         >

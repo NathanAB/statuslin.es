@@ -32,7 +32,7 @@ describe('ModSubmitForm', () => {
     await waitFor(() =>
       expect(submitModFn).toHaveBeenCalledWith({ data: { link: LINK, title: 'Context meter' } }),
     )
-    expect(await screen.findByText('Pinned meter to main at abcdef1.')).toBeTruthy()
+    expect(await screen.findByText('Pinned your link to main at abcdef1.')).toBeTruthy()
     expect(toast.success).toHaveBeenCalledWith('Submitted for review.')
     expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('')
   })

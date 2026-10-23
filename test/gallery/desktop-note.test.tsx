@@ -19,7 +19,7 @@ describe('DesktopNote', () => {
   it('points Claude Desktop users at statusline-anywhere', () => {
     const { container } = render(<DesktopNote />)
     expect(container.textContent).toBe(
-      'In Claude Desktop? Add this status line with statusline-anywhere.',
+      'In Claude Desktop? This status line shows there once you also install statusline-anywhere.',
     )
   })
 

@@ -7,7 +7,7 @@ import { SITE_NAME } from '@/lib/site'
  * the script, its output, the switches that narrow or turn off the status line, then folder trust.
  * It reports before it changes anything.
  */
-export const STATUS_LINE_FIX_PROMPT = `My Claude Code status line isn't showing in the terminal. Find out why, following ${SITE_NAME}${NOT_SHOWING_GUIDE_PATH}. Tell me what you find before you change anything.
+export const STATUS_LINE_FIX_PROMPT = `My Claude Code status line isn't showing. Find out why, following ${SITE_NAME}${NOT_SHOWING_GUIDE_PATH}. Tell me what you find before you change anything.
 
 1. If this session runs in Claude Desktop's Code tab, say so and stop: the Code tab doesn't run statusLine. Point me to ${SITE_NAME}${DESKTOP_GUIDE_PATH}.
 2. Read any managed settings my organization installed, ~/.claude/settings.json, then this project's .claude/settings.json and .claude/settings.local.json. Find the statusLine that applies. If there is none, say so and stop.

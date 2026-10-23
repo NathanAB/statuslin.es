@@ -22,10 +22,10 @@ export const FACET_INTRO = {
     'These show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
   ],
   weather: [
-    'These put the local weather beside your session. They call a weather API, so check the network hosts each one declares before you copy it.',
+    'These put the local weather beside your session. They call a weather API, so check what each one connects to before you install it.',
   ],
   markets: [
-    'These status lines show crypto prices, stock quotes or exchange rates beside your session. They call a market data API, so check the network hosts each one declares before you copy it.',
+    'These status lines show crypto prices, stock quotes or exchange rates beside your session. They call a market data API, so check what each one connects to before you install it.',
   ],
   minimal: ['These show only the essentials, usually the model, the directory and one number.'],
   'multi-line': [
@@ -53,7 +53,7 @@ export const FACET_ANSWER = {
     'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
   quota:
     "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing.",
-  git: "Claude Code does not send git state in the status line's stdin JSON. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
+  git: "In a normal session, the status line's stdin JSON has no branch or dirty-file count. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
 } satisfies Record<string, string>
 
 export const FACET_FAQ = {
@@ -73,7 +73,7 @@ export const FACET_FAQ = {
     {
       question: 'Why is rate_limits missing from my status line input?',
       answer:
-        'Claude Code can omit `rate_limits`, or send only the `five_hour` window. Check that each window exists before reading `used_percentage`, or the script prints empty values.',
+        "Claude Code sends `rate_limits` only on Pro and Max plans or behind a gateway with a spend limit, and only after the session's first API response. Each window can also be missing on its own. Check that each window exists before reading `used_percentage`, or the script prints empty values.",
     },
     {
       question: 'How do I show when my limit resets?',
@@ -85,7 +85,7 @@ export const FACET_FAQ = {
     {
       question: 'What does the status line show outside a git repository?',
       answer:
-        'Whatever the script prints when git fails. A careful script runs `git rev-parse --is-inside-work-tree` first and skips the git segment when it fails. Each preview includes a directory with no repo, so you can see how each one handles it.',
+        "Whatever the script prints when git fails. A careful script runs `git rev-parse --is-inside-work-tree` first and skips the git segment when it fails. Each status line's page previews it in a directory with no repo, so you can see how it handles one.",
     },
     {
       question: 'Can the status line show the pull request?',

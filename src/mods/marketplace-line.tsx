@@ -17,7 +17,7 @@ export function MarketplaceLine({ origin }: { origin: string }) {
         <Text inline mono>
           /plugin
         </Text>{' '}
-        menu, add the marketplace in the terminal:
+        menu, add the marketplace from Claude Code in the terminal:
       </Text>
       <CodeBlock wrap text={command} copyLabel="Copy marketplace command">
         {command}

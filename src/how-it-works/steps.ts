@@ -35,7 +35,7 @@ export const CHECK_STEP = {
   listed: {
     id: 'listed-with-what-it-can-reach',
     title: 'Listed with what it can reach',
-    summary: 'What it can touch is shown by the install button.',
+    summary: 'Its page shows what it can reach, next to the install button.',
     icon: Radar,
   },
 } as const satisfies Record<string, CheckStep>

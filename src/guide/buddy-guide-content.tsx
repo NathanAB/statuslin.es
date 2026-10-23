@@ -12,10 +12,10 @@ import { Stack } from '@/ui/layout'
 import { Notice } from '@/ui/notice'
 import { Heading, Text, TextLink } from '@/ui/text'
 
-/** "Pixel Cat and Pixipet both add `/mods`. Install one.": two pets that add one command clash. */
+/** "Pixel Cat and Pixipet both add `/mods`. Install only one.": two pets that add one command clash. */
 function clashLine({ command, titles }: SharedCommand): string {
   const all = titles.length === 2 ? 'both' : 'all'
-  return `${listPhrase(titles)} ${all} add \`/${command}\`. Install one.`
+  return `${listPhrase(titles)} ${all} add \`/${command}\`. Install only one.`
 }
 
 /**

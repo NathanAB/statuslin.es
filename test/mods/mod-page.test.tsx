@@ -358,7 +358,7 @@ describe('mod page', () => {
     const dots = screen.getAllByText('·')
     expect(dots).toHaveLength(2)
     expect(dots[0]?.parentElement?.textContent).toMatch(/^·\s*source at/)
-    expect(dots[1]?.parentElement?.textContent).toMatch(/^·\s*MIT licence/)
+    expect(dots[1]?.parentElement?.textContent).toMatch(/^·\s*MIT license/)
   })
 
   it('credits the author with their GitHub avatar', () => {
@@ -553,7 +553,7 @@ describe('mod page', () => {
     expect(screen.getByRole('link', { name: /@octocat/ }).getAttribute('href')).toBe(
       'https://github.com/octocat',
     )
-    expect(screen.getByText('MIT licence')).toBeTruthy()
+    expect(screen.getByText('MIT license')).toBeTruthy()
   })
 
   it('links a root-level plugin to the repo tree at the commit', () => {
@@ -603,10 +603,10 @@ describe('mod page', () => {
     expect(screen.queryByRole('heading', { name: 'More like this' })).toBeNull()
   })
 
-  it('says so when there is no licence', () => {
+  it('says so when there is no license', () => {
     renderPage({ license: null })
 
-    expect(screen.getByText('No licence')).toBeTruthy()
+    expect(screen.getByText('No license')).toBeTruthy()
   })
 })
 

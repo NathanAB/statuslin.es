@@ -118,10 +118,10 @@ describe('BuddyGuideContent', () => {
       />,
     )
 
-    const notes = screen.getAllByText(/Install one\./)
+    const notes = screen.getAllByText(/Install only one\./)
     expect(notes.map((note) => note.closest('p')?.textContent)).toEqual([
-      'Pixipet, Claude Pets, and Code Pet all add /pet. Install one.',
-      'Pixel Cat and Pixipet both add /mods. Install one.',
+      'Pixipet, Claude Pets, and Code Pet all add /pet. Install only one.',
+      'Pixel Cat and Pixipet both add /mods. Install only one.',
     ])
     const firstCard = screen.getByRole('link', { name: 'Pixipet' })
     expect(notes[1]?.compareDocumentPosition(firstCard)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
@@ -131,7 +131,7 @@ describe('BuddyGuideContent', () => {
     render(<BuddyGuideContent cards={[]} clashes={[]} />)
 
     expect(document.body.textContent).toMatch(/no pet mods are published yet/i)
-    expect(screen.queryByText(/Install one\./)).toBeNull()
+    expect(screen.queryByText(/Install only one\./)).toBeNull()
   })
 
   it('keeps the submit link and asks its common questions', () => {

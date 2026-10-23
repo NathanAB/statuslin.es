@@ -54,7 +54,7 @@ export function ModHeader({ mod }: { mod: ModDetail }) {
           // Reading the source is how a visitor decides to trust a mod before installing it.
           onClick: () => posthog.capture('mod_source_clicked', { modId: mod.id, slug: mod.slug }),
         },
-        license: mod.license ? `${mod.license} licence` : 'No licence',
+        license: mod.license ? `${mod.license} license` : 'No license',
       }}
       description={mod.description}
     />

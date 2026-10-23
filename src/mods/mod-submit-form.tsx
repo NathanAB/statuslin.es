@@ -33,7 +33,7 @@ const COPY: Record<ModDraft['kind'] | 'new', ModSubmitCopy> = {
   update: {
     heading: 'Submit an update',
     intro:
-      'Link to a newer commit of the same folder. Your live version stays in the gallery until we’ve reviewed the update.',
+      'Link to a newer commit of the same folder. Your live version stays in the gallery while we review the update.',
     button: 'Submit update',
   },
 }
@@ -68,7 +68,7 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
           ...(draft ? { slug: draft.slug } : {}),
         },
       })
-      setPinned(`Pinned ${result.slug} to ${result.ref} at ${result.commitSha.slice(0, 7)}.`)
+      setPinned(`Pinned your link to ${result.ref} at ${result.commitSha.slice(0, 7)}.`)
       toast.success('Submitted for review.')
       setLink('')
       setTitle(draft?.title ?? '')

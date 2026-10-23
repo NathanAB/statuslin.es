@@ -64,8 +64,8 @@ function ModsPage() {
           <Heading level={1}>Best Claude Code mods</Heading>
           <Text muted>
             Plugins that change how Claude Code looks and works, ranked by installs. Each one is
-            reviewed before listing, and the install pins the reviewed commit. Status lines are mods
-            too: find them in <TextLink to="/">the gallery</TextLink>.
+            reviewed before listing, and the install pins the reviewed commit. For status lines, see{' '}
+            <TextLink to="/">the gallery</TextLink>.
           </Text>
           <Text muted>
             New to mods?{' '}

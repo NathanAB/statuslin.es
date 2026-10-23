@@ -94,7 +94,7 @@ export const RESOURCE_SECTIONS: ResourceSection[] = [
         name: 'ccusage',
         url: 'https://ccusage.com/guide/statusline',
         description:
-          "Tracks Claude Code spend. Its status line mode shows session cost, the day's total, burn rate and when your block resets.",
+          "Tracks Claude Code spend. Its status line mode shows session cost, the day's total, burn rate and the time left in your five-hour block.",
       },
       {
         name: 'CodexBar',

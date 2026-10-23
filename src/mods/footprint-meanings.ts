@@ -126,7 +126,7 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     '$.ui.copy': { phrase: 'copies to your clipboard' },
     '$.ui.ask': { phrase: 'asks you questions' },
     '$.audio.play': { phrase: 'plays sounds' },
-    'ui.status': { phrase: 'can change or hide the status lines other mods show' },
+    'ui.status': { phrase: 'can change or hide the status entries other mods show' },
     'ui.log': { phrase: 'can change or hide the transcript lines other mods add' },
     'command.run': {
       phrase: (args) => {

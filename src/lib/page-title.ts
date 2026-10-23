@@ -10,7 +10,7 @@ const META_DESCRIPTION_MAX_LENGTH = 160
 export const CONFIG_META_DESCRIPTION_FALLBACK =
   'A reviewed Claude Code status line. See its preview and source, then copy it in one paste.'
 const MOD_META_DESCRIPTION_FALLBACK =
-  'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one command.'
+  'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.'
 
 function normalizeWhitespace(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
@@ -128,7 +128,7 @@ export const GUIDE_LINK_LABEL = 'Write a status line'
 export const GUIDE_TITLE_BASE = 'How to Set Up a Claude Code Status Line'
 
 /** `modified` is the day a change to the page's text went live; bump it with every such change. */
-export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-22' } as const
+export const GUIDE_DATES = { published: '2026-08-14', modified: '2026-10-23' } as const
 
 /** /guide meta description — shared by the description tag, OG, and TechArticle JSON-LD. */
 export const GUIDE_DESCRIPTION =
@@ -170,7 +170,7 @@ export const MOD_SAFETY_GUIDE_PATH = '/guide/are-claude-code-mods-safe'
  */
 export const MOD_SAFETY_GUIDE_TITLE = 'Are Claude Code Mods Safe? What a Mod Can Touch'
 
-export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026-10-22' } as const
+export const MOD_SAFETY_GUIDE_DATES = { published: '2026-10-13', modified: '2026-10-23' } as const
 
 /** /guide/are-claude-code-mods-safe meta description — the description tag, OG, and JSON-LD. */
 export const MOD_SAFETY_GUIDE_DESCRIPTION =
@@ -184,7 +184,7 @@ export const HOW_IT_WORKS_TITLE = 'How statuslin.es Checks Claude Code Mods & St
 /** The page's h1, and the name a link to it gives. */
 export const HOW_IT_WORKS_HEADING = 'How statuslin.es checks mods and status lines'
 
-export const HOW_IT_WORKS_DATES = { published: '2026-10-22', modified: '2026-10-22' } as const
+export const HOW_IT_WORKS_DATES = { published: '2026-10-22', modified: '2026-10-23' } as const
 
 /** /how-it-works meta description — the description tag, OG, and JSON-LD. */
 export const HOW_IT_WORKS_DESCRIPTION =
@@ -198,7 +198,7 @@ export const NOT_SHOWING_GUIDE_PATH = '/guide/status-line-not-showing'
  */
 export const NOT_SHOWING_GUIDE_TITLE = 'Claude Code Status Line Not Showing? How to Fix It'
 
-export const NOT_SHOWING_GUIDE_DATES = { published: '2026-10-18', modified: '2026-10-21' } as const
+export const NOT_SHOWING_GUIDE_DATES = { published: '2026-10-18', modified: '2026-10-23' } as const
 
 /** /guide/status-line-not-showing meta description — the description tag, OG, and JSON-LD. */
 export const NOT_SHOWING_GUIDE_DESCRIPTION =
@@ -212,7 +212,7 @@ export const BUDDY_GUIDE_PATH = '/guide/claude-code-buddy'
  */
 export const BUDDY_GUIDE_TITLE = 'Claude Code Buddy Removed? Pet Mods That Replace It'
 
-export const BUDDY_GUIDE_DATES = { published: '2026-10-17', modified: '2026-10-21' } as const
+export const BUDDY_GUIDE_DATES = { published: '2026-10-17', modified: '2026-10-23' } as const
 
 /** /guide/claude-code-buddy meta description — the description tag, OG, and JSON-LD. */
 export const BUDDY_GUIDE_DESCRIPTION =

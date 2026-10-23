@@ -10,7 +10,7 @@ export interface CustomizationSurface {
 export const CUSTOMIZATION_SURFACES: CustomizationSurface[] = [
   {
     name: 'Mods',
-    text: "Panes, a band above the prompt, Claude Code's own rows and spinner, and slash commands. They work in the terminal, Claude Desktop and VS Code.",
+    text: 'Panes, a band above the prompt, a restyled spinner and tool call rows, and slash commands. They work in the terminal, Claude Desktop and VS Code.',
     docsUrl: 'https://code.claude.com/docs/en/plugins/mods/overview',
     browse: [{ to: '/mods', label: 'Browse mods' }],
   },
@@ -31,7 +31,7 @@ export const CUSTOMIZATION_SURFACES: CustomizationSurface[] = [
   },
   {
     name: 'Spinner verbs',
-    text: 'The words beside the spinner while Claude works, set with spinnerVerbs.',
+    text: 'The words beside the spinner while Claude works, set with the spinnerVerbs setting.',
     docsUrl: 'https://code.claude.com/docs/en/settings-reference#spinnerverbs',
     browse: [],
   },

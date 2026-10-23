@@ -9,7 +9,7 @@ function openMenu(trigger: Element) {
   fireEvent.pointerUp(trigger, { button: 0, ctrlKey: false, pointerType: 'mouse' })
 }
 
-// Mock the auth client so Log out can be asserted without a real network call.
+// Mock the auth client so Sign out can be asserted without a real network call.
 const signOut = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/auth-client', () => ({
   authClient: { signOut: () => signOut() },
@@ -59,7 +59,7 @@ describe('AppHeader', () => {
     render(<AppHeader user={null} />)
     expect(screen.getByText(/sign in/i)).toBeTruthy()
     expect(screen.queryByText('@ada')).toBeNull()
-    expect(screen.queryByText('Log out')).toBeNull()
+    expect(screen.queryByText('Sign out')).toBeNull()
   })
 
   it('links to the resources page when signed out', () => {
@@ -142,14 +142,14 @@ describe('AppHeader', () => {
     expect(trigger.getAttribute('aria-label')).toBe('Ada Lovelace')
   })
 
-  it('opens a Log out menu item on trigger click and calls signOut', async () => {
+  it('opens a Sign out menu item on trigger click and calls signOut', async () => {
     render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,
     )
 
     // No Review for a non-admin.
     openMenu(screen.getByText('@ada'))
-    const logout = await screen.findByText('Log out')
+    const logout = await screen.findByText('Sign out')
     expect(screen.queryByText('Review')).toBeNull()
 
     fireEvent.click(logout)
@@ -167,7 +167,7 @@ describe('AppHeader', () => {
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,
     )
     openMenu(screen.getByText('@ada'))
-    fireEvent.click(await screen.findByText('Log out'))
+    fireEvent.click(await screen.findByText('Sign out'))
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/'))
     await Promise.resolve()
@@ -182,6 +182,6 @@ describe('AppHeader', () => {
     )
     openMenu(screen.getByText('@ada'))
     expect(await screen.findByText('Review')).toBeTruthy()
-    expect(screen.getByText('Log out')).toBeTruthy()
+    expect(screen.getByText('Sign out')).toBeTruthy()
   })
 })

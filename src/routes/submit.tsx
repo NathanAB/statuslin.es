@@ -38,7 +38,8 @@ const KIND_OPTIONS = [
   {
     label: 'Mod',
     value: 'mod',
-    detail: 'A Claude Code plugin on GitHub that changes more than that row. You paste its link.',
+    detail:
+      'A Claude Code plugin on GitHub that can draw in the terminal and in Claude Desktop. You paste its link.',
   },
 ] as const
 

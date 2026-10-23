@@ -34,7 +34,7 @@ export function userLabel(user: AppHeaderUser): string {
   return user.username ? `@${user.username}` : user.name
 }
 
-/** The header bar's account menu: avatar + @username, opening My submissions, Review, Log out. */
+/** The header bar's account menu: avatar + @username, opening My submissions, Review, Sign out. */
 export function UserMenu({ user }: { user: AppHeaderUser }) {
   const posthog = usePostHog()
   const label = userLabel(user)
@@ -75,7 +75,7 @@ export function UserMenu({ user }: { user: AppHeaderUser }) {
         )}
         <DropdownMenuItem onSelect={() => signOutAndGoHome(posthog)}>
           <LogOut />
-          Log out
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -95,7 +95,7 @@ export function SiteMenu({
             size="menu"
             onClick={() => signOutAndGoHome(posthog)}
           >
-            Log out
+            Sign out
           </Button>,
         ]
       : [<SignInButton key="signin" look="menu" />]),

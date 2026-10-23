@@ -9,7 +9,8 @@ import { Text } from '@/ui/text'
 export function DesktopNote() {
   return (
     <Text muted size="sm">
-      In Claude Desktop? Add this status line with <StatuslineAnywhereLink surface="config_page" />.
+      In Claude Desktop? This status line shows there once you also install{' '}
+      <StatuslineAnywhereLink surface="config_page" />.
     </Text>
   )
 }

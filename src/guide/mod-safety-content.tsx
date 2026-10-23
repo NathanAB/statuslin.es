@@ -155,7 +155,7 @@ export function ModSafetyContent() {
       <Stack gap={9}>
         <PageSection id={SECTION.canDo.id} title={SECTION.canDo.title}>
           <Text>
-            <InlineCodeText text="Through `$`, Claude Code's API for mods, a mod can:" />
+            <InlineCodeText text="Through `$`, Claude Code's API for mods, a mod can do all of these:" />
           </Text>
           <IconList label="What a mod can do" look="tiles" items={CAN_DO} />
           <Callout

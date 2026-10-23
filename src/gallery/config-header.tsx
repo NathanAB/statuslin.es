@@ -33,7 +33,7 @@ export function ConfigHeader({ detail }: { detail: HeaderDetail }) {
       byline={{
         author: detail.author,
         source: detail.sourceUrl ? { label: 'original source', href: detail.sourceUrl } : null,
-        license: detail.license ? `${detail.license} licence` : null,
+        license: detail.license ? `${detail.license} license` : null,
       }}
       description={detail.description}
     />

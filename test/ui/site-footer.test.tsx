@@ -44,7 +44,7 @@ describe('SiteFooter', () => {
     expect(names('Guides')).toEqual([
       'Write a status line',
       'Status line not showing?',
-      'Claude Desktop',
+      'Status line in Claude Desktop',
       'Status lines vs mods',
       'Are mods safe?',
       'Buddy pets',

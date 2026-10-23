@@ -93,8 +93,8 @@ export function GuideContent({
 
         <PageSection id={S.goingFurther.id} title={S.goingFurther.title}>
           <Text muted>
-            The <TextLink to="/resources">tools and resources list</TextLink> has themes and usage
-            trackers. If you build a status line you like,{' '}
+            The <TextLink to="/resources">tools and resources list</TextLink> has status line tools,
+            themes and usage trackers. If you build a status line you like,{' '}
             <TextLink to="/submit">submit it to the gallery</TextLink>.
           </Text>
           <Text muted>

@@ -13,7 +13,7 @@ import { Text, TextLink } from '@/ui/text'
 const DOCS_URL = 'https://code.claude.com/docs/en/statusline'
 const SCRIPT_PATH = '~/.claude/statusline.sh'
 const CHMOD_COMMAND = `chmod +x ${SCRIPT_PATH}`
-const TEST_COMMAND = 'bash statusline.sh < sample.json'
+const TEST_COMMAND = `bash ${SCRIPT_PATH} < sample.json`
 
 const EXAMPLE_SEGMENTS: AnsiSegment[] = [
   {

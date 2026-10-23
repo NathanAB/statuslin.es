@@ -135,7 +135,7 @@ Measured on the current code. Keep each, or change it on purpose and update its 
 - **No featured mod.** The gallery and its ItemList list every mod, the one once featured
   included.
 - **Header:** Mods, Guide, Resources, Star on GitHub, then sign-in or the user menu (My submissions,
-  Review for admins, Log out).
+  Review for admins, Sign out).
 - **Footer:** keep every link the current footer has: guides, Best status lines, Resources, GitHub,
   Contact, Terms. The prototype's one-line footer only shows five; after review they sit in three
   named columns (Browse, Guides, About) instead, since one wrapping line broke differently on every
