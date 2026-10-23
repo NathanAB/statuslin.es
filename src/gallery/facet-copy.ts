@@ -8,10 +8,10 @@ import { GUIDE_PATH } from '@/lib/page-title'
  */
 export const FACET_INTRO = {
   git: [
-    'Pick a branch-only line if that is all you need, one with dirty-file counts if you commit from the session, or one with ahead and behind markers if you track remotes.',
+    'These show your git branch. Pick one that also counts changed files if you commit as you work, or one that shows commits ahead and behind if you push to a remote.',
   ],
   'token-usage': [
-    'Pick a number if you only glance at it. Pick a bar if you work near the limit and want to read the fill at a distance.',
+    'These show how much of your context window is used. Pick one that shows a percentage for the exact figure, or a bar you can read at a glance.',
   ],
   cost: [
     'Claude Code sends each status line script the running cost of the session. Some show it as a plain number, others change color as the session gets expensive.',
@@ -20,7 +20,7 @@ export const FACET_INTRO = {
     'Claude Pro and Max plans limit usage in a five-hour window and a weekly one. Pick one that shows the five-hour window if you hit limits during a workday, or one that shows both if you watch the week.',
   ],
   'burn-rate': [
-    'These show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
+    "These show how fast a session uses tokens or money, per hour or as an arrow that says whether you're on pace to hit your limit before it resets.",
   ],
   weather: [
     'These put the local weather beside your session. They call a weather API, so check what each one connects to before you install it.',

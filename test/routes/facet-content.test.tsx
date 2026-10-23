@@ -98,7 +98,9 @@ describe('facet page content', () => {
   it('opens with one line, the count and the topic’s advice, then the list', () => {
     renderFacet('token-usage', 1)
 
-    const line = screen.getByText(/^4 status lines and 1 mod\. Pick a number if you only glance/)
+    const line = screen.getByText(
+      /^4 status lines and 1 mod\. These show how much of your context window is used\./,
+    )
     const list = screen.getByRole('heading', { level: 2, name: 'Status lines and mods' })
     expect(line.compareDocumentPosition(list)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(screen.queryByText('Open one to copy its install prompt.')).toBeNull()
@@ -132,14 +134,16 @@ describe('facet page content', () => {
   it('states the live published count from the cards on the page', () => {
     renderFacet('git')
 
-    expect(screen.getByText(/^4 status lines\. Pick a branch-only line/)).toBeTruthy()
+    expect(screen.getByText(/^4 status lines\. These show your git branch\./)).toBeTruthy()
     expect(screen.queryByText(/this page lists/i)).toBeNull()
   })
 
   it('counts the mods on the page beside the status lines', () => {
     renderFacet('git', 1)
 
-    expect(screen.getByText(/^4 status lines and 1 mod\. Pick a branch-only line/)).toBeTruthy()
+    expect(
+      screen.getByText(/^4 status lines and 1 mod\. These show your git branch\./),
+    ).toBeTruthy()
   })
 
   it('counts only mods when no status line carries the tag', () => {
@@ -158,7 +162,7 @@ describe('facet page content', () => {
     const FacetPage = FacetRoute.options.component
     render(FacetPage ? <FacetPage /> : null)
 
-    expect(screen.getByText(/^2 mods\. Pick a branch-only line/)).toBeTruthy()
+    expect(screen.getByText(/^2 mods\. These show your git branch\./)).toBeTruthy()
   })
 
   it('answers the how-to question first under common questions, pointing to the guide', () => {
