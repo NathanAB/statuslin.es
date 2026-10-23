@@ -67,7 +67,7 @@ describe('ConfigBadges', () => {
   it('does not link a capability tag (no page) — it is an info signal, not a browse link', () => {
     const { container } = renderBadges({ tags: ['network-access'], networkHosts: [] })
     expect(container.querySelector('a')).toBeNull()
-    expect(screen.getByText('Network Access')).toBeTruthy()
+    expect(screen.getByText('Connects to the internet')).toBeTruthy()
   })
 
   it('links only the page tags when a config mixes page and capability tags', () => {
@@ -84,32 +84,21 @@ describe('ConfigBadges', () => {
     }
   })
 
-  it("takes a card's leftover header width but stays at least its widest chip wide", () => {
-    const { container } = render(
-      <TooltipProvider>
-        <ConfigBadges tags={['git', 'minimal']} networkHosts={[]} align="end" />
-      </TooltipProvider>,
-    )
-    const classes = (container.firstChild as HTMLElement).className.split(/\s+/)
-    expect(classes).toContain('flex-1')
-    expect(classes).not.toContain('min-w-0')
-  })
-
   it('marks the network-access hosts badge as a tooltip trigger so it keeps its hover above the overlay', () => {
     renderBadges({ tags: ['network-access'], networkHosts: ['wttr.in'] })
-    const trigger = screen.getByLabelText('Uses network: wttr.in')
+    const trigger = screen.getByLabelText('Connects to wttr.in')
     expect(trigger.getAttribute('data-slot')).toBe('tooltip-trigger')
   })
 
   it('lists the declared hosts in the network-access badge accessible label', () => {
     renderBadges({ tags: ['network-access'], networkHosts: ['wttr.in', 'api.frankfurter.app'] })
-    expect(screen.getByLabelText('Uses network: wttr.in, api.frankfurter.app')).toBeTruthy()
+    expect(screen.getByLabelText('Connects to wttr.in, api.frankfurter.app')).toBeTruthy()
   })
 
   it('omits the accessible label when network-access has no declared hosts', () => {
     renderBadges({ tags: ['network-access'], networkHosts: [] })
     // Still renders the badge/link, just without the hosts label (no tooltip needed).
-    expect(screen.getByText('Network Access')).toBeTruthy()
-    expect(screen.queryByLabelText(/Uses network/)).toBeNull()
+    expect(screen.getByText('Connects to the internet')).toBeTruthy()
+    expect(screen.queryByLabelText(/^Connects to /)).toBeNull()
   })
 })

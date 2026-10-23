@@ -14,8 +14,11 @@ export const BRAND_ICON_PATH = '/apple-touch-icon.png'
 /** Contact + abuse-report address (live, forwarding-verified). Used by the site footer. */
 export const CONTACT_EMAIL = 'hello@statuslin.es'
 
-/** Public source repository. Linked from the site footer and the header's Star on GitHub link. */
+/** Public source repository. Linked from the site footer and the header's GitHub link. */
 export const REPO_URL = 'https://github.com/NathanAB/statuslin.es'
+
+/** How to report a security hole: the repository's policy. */
+export const SECURITY_POLICY_URL = `${REPO_URL}/blob/main/SECURITY.md`
 
 /**
  * License for user-submitted statusline configs (NOT the site's own code, which is MIT).

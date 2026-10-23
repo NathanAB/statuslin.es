@@ -117,7 +117,7 @@ export async function submitConfig(
     .where(sql`${renderJobs.status} IN ('queued', 'running')`)
   const pendingCount = pendingResult[0]?.count ?? 0
   if (pendingCount >= GLOBAL_RENDER_QUEUE_MAX) {
-    throw new HttpError(429, 'Render queue is full, try again shortly')
+    throw new HttpError(429, 'Render queue is full. Try again shortly.')
   }
 
   if (networkHosts.length > 0) {
@@ -126,7 +126,7 @@ export async function submitConfig(
       .from(renderJobs)
       .where(sql`${renderJobs.status} = 'held'`)
     if ((heldResult[0]?.count ?? 0) >= HELD_RENDER_JOBS_MAX) {
-      throw new HttpError(429, 'Network review queue is full, try again shortly')
+      throw new HttpError(429, 'Network review queue is full. Try again shortly.')
     }
   }
 

@@ -92,14 +92,14 @@ describe('AdoptPrompt', () => {
     render(<SharedCopyActions />)
 
     fireEvent.click(promptButton())
-    await waitFor(() => expect(screen.getByText('6 copies')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('6 installs')).toBeTruthy())
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy script' }))
     await waitFor(() => expect(recordCopyFn).toHaveBeenCalledTimes(2))
-    await waitFor(() => expect(screen.getByText('7 copies')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('7 installs')).toBeTruthy())
 
     resolveScriptCopy(6)
-    await waitFor(() => expect(screen.getByText('6 copies')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('6 installs')).toBeTruthy())
   })
 
   it('copies the built Claude prompt and records the copy', async () => {
@@ -121,7 +121,7 @@ describe('AdoptPrompt', () => {
 
     await waitFor(() => expect(writeText).toHaveBeenCalled())
     // No "Copied" feedback, no toast, and the record call never fires.
-    expect(screen.queryByText('Copied')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull()
     expect(recordCopyFn).not.toHaveBeenCalled()
     expect(toast).not.toHaveBeenCalled()
   })
@@ -148,7 +148,13 @@ describe('config source overlay', () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(props.source))
     await waitFor(() =>
       expect(recordCopyFn).toHaveBeenCalledWith({
-        data: { configId: 'cfg-1', kind: 'script', distinctId: 'did-test', sessionId: 'sid-test' },
+        data: {
+          configId: 'cfg-1',
+          kind: 'script',
+          surface: 'page',
+          distinctId: 'did-test',
+          sessionId: 'sid-test',
+        },
       }),
     )
     expect(toast).not.toHaveBeenCalled()

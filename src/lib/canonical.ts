@@ -16,30 +16,44 @@ export interface HomeCanonicalSearch {
   sort?: string
   tags?: string
   kind?: string
+  /** The gallery search: noindex, and its page gets no canonical link. */
+  q?: string | undefined
 }
 
 export function isFilteredHomeSearch(search: HomeCanonicalSearch): boolean {
-  return search.sort !== undefined || search.tags !== undefined || search.kind !== undefined
+  return (
+    search.sort !== undefined ||
+    search.tags !== undefined ||
+    search.kind !== undefined ||
+    search.q !== undefined
+  )
 }
 
 /** Search params for gallery pagination links. The default trending sort is implicit, so keeping
  * it out of the URL prevents an unfiltered page from being mistaken for a noindex sorted view. */
 export function homePaginationSearch<TSort extends string, TKind extends string>(
   page: number,
-  search: { sort?: TSort | undefined; tags?: string | undefined; kind?: TKind | undefined } = {},
-): { page?: number; sort?: TSort; tags?: string; kind?: TKind } {
+  search: {
+    sort?: TSort | undefined
+    tags?: string | undefined
+    kind?: TKind | undefined
+    q?: string | undefined
+  } = {},
+): { page?: number; sort?: TSort; tags?: string; kind?: TKind; q?: string } {
   return {
     ...(search.sort && search.sort !== 'trending' ? { sort: search.sort } : {}),
     ...(page > 1 ? { page } : {}),
     ...(search.tags ? { tags: search.tags } : {}),
     ...(search.kind ? { kind: search.kind } : {}),
+    ...(search.q ? { q: search.q } : {}),
   }
 }
 
 /**
  * Canonical path for the gallery home. Preserve sort, tag, and page state so a paginated URL never
  * canonicalizes to different content. Filtered and sorted views get noindex metadata at the route
- * level; their canonical still describes the exact page whose links crawlers should follow.
+ * level; their canonical still describes the exact page whose links crawlers should follow. A
+ * search gets no canonical at all.
  */
 export function homeCanonicalPath(page: number, search: HomeCanonicalSearch = {}): string {
   const params = new URLSearchParams()

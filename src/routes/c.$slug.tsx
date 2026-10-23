@@ -7,6 +7,7 @@ import { getViewerIsAuthor } from '@/gallery/authorship'
 import { cardClickProperties } from '@/gallery/card-analytics'
 import { configFactTiles } from '@/gallery/config-fact-tiles'
 import { ConfigHeader } from '@/gallery/config-header'
+import { configInstallFacts } from '@/gallery/config-install-facts'
 import { DesktopNote } from '@/gallery/desktop-note'
 import { DesktopPreviewBlock } from '@/gallery/desktop-preview-block'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
@@ -15,21 +16,26 @@ import { OwnerUpdateStrip } from '@/gallery/owner-update-strip'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { configJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { configMetaDescription, configPageTitle, NOT_FOUND_TITLE } from '@/lib/page-title'
+import {
+  configMetaDescription,
+  configPageTitle,
+  NOT_FOUND_TITLE,
+  NOT_SHOWING_GUIDE_PATH,
+} from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { getStatusLineModsFn } from '@/mods/functions'
 import { ModCard } from '@/mods/mod-card'
 import { configSocialMeta } from '@/og/meta'
 import { orderByScenario, SCENARIO_BY_KEY } from '@/render/scenarios'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import { CopyCount } from '@/ui/copy-count'
+import { GalleryList, GalleryRow, RowFacts } from '@/ui/gallery-row'
 import { HighlightedCode } from '@/ui/highlighted-code'
-import { Row, Stack } from '@/ui/layout'
+import { installsLabel } from '@/ui/install-count'
+import { InstallFacts } from '@/ui/install-facts'
+import { Stack } from '@/ui/layout'
+import { PageSection } from '@/ui/page-section'
 import { ScenarioRow } from '@/ui/scenario-row'
-import { SectionCard } from '@/ui/section-card'
 import { PageShell } from '@/ui/shell'
 import { StatuslinePreview } from '@/ui/statusline-preview'
-import { StretchedLink } from '@/ui/stretched-link'
 import { Text, TextLink } from '@/ui/text'
 
 export const Route = createFileRoute('/c/$slug')({
@@ -110,6 +116,13 @@ function ConfigDetail() {
       <DetailPageLayout
         notice={<OwnerUpdateStrip slug={detail.slug} viewerIsAuthor={viewerIsAuthor} />}
         header={<ConfigHeader detail={detail} />}
+        beforeInstall={
+          <InstallFacts
+            heading="Before you install"
+            facts={configInstallFacts(detail)}
+            link={{ label: 'Not showing after you paste? Fix it', to: NOT_SHOWING_GUIDE_PATH }}
+          />
+        }
         install={
           <>
             <AdoptPrompt
@@ -152,6 +165,7 @@ function ConfigDetail() {
         whatItDoes={{ copy: detail.generatedContent, tiles: configFactTiles(detail) }}
         source={
           <HighlightedCode
+            peek
             html={detail.sourceHtml}
             text={detail.source}
             copyLabel="Copy script"
@@ -162,49 +176,40 @@ function ConfigDetail() {
         related={
           <>
             {detail.related.length > 0 && (
-              <SectionCard title="More status lines" headingLevel={2}>
-                <Stack gap={3}>
+              <PageSection title="More status lines">
+                <GalleryList>
                   {detail.related.map((r, index) => (
-                    <Card key={r.slug} interactive>
-                      <CardHeader>
-                        <Row gap={2}>
-                          <CardTitle>
-                            <StretchedLink
-                              to="/c/$slug"
-                              params={{ slug: r.slug }}
-                              onClick={() =>
-                                posthog.capture(
-                                  'statusline_card_clicked',
-                                  cardClickProperties(
-                                    { configId: r.configId, slug: r.slug },
-                                    { surface: 'related', position: index + 1 },
-                                  ),
-                                )
-                              }
-                            >
-                              {r.title}
-                            </StretchedLink>
-                          </CardTitle>
-                          <CopyCount count={r.copyCount} />
-                        </Row>
-                      </CardHeader>
-                      <CardContent>
-                        {r.preview !== null ? (
-                          <StatuslinePreview segments={r.preview} />
-                        ) : (
-                          <Text muted size="sm">
-                            No preview.
-                          </Text>
-                        )}
-                      </CardContent>
-                    </Card>
+                    <GalleryRow
+                      key={r.slug}
+                      to="/c/$slug"
+                      params={{ slug: r.slug }}
+                      onOpen={() =>
+                        posthog.capture(
+                          'statusline_card_clicked',
+                          cardClickProperties(
+                            { configId: r.configId, slug: r.slug },
+                            { surface: 'related', position: index + 1 },
+                          ),
+                        )
+                      }
+                      title={r.title}
+                      facts={<RowFacts>{[installsLabel(r.copyCount)]}</RowFacts>}
+                    >
+                      {r.preview !== null ? (
+                        <StatuslinePreview segments={r.preview} look="strip" />
+                      ) : (
+                        <Text muted size="sm">
+                          No preview.
+                        </Text>
+                      )}
+                    </GalleryRow>
                   ))}
-                </Stack>
-              </SectionCard>
+                </GalleryList>
+              </PageSection>
             )}
             {mods.length > 0 && (
-              <SectionCard title="Related mods" headingLevel={2}>
-                <Stack gap={3}>
+              <PageSection title="Related mods">
+                <GalleryList>
                   {mods.map((card, index) => (
                     <ModCard
                       key={card.slug}
@@ -212,8 +217,8 @@ function ConfigDetail() {
                       analytics={{ surface: 'related', position: index + 1 }}
                     />
                   ))}
-                </Stack>
-              </SectionCard>
+                </GalleryList>
+              </PageSection>
             )}
           </>
         }

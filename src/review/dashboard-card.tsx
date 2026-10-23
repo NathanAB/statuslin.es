@@ -57,7 +57,7 @@ function statusHeadline(renderJob: DashboardRow['renderJob']): ReactNode {
     case 'running':
       return 'Rendering now…'
     case 'failed':
-      return renderJob.attempts > 0
+      return renderJob.attempts > 1
         ? `Render failed after ${renderJob.attempts} attempts`
         : 'Render failed'
     case 'done':
@@ -175,6 +175,7 @@ export function SubmissionCard({
     <SectionCard interactive={linked} title={titleFor(version, detailSlug)}>
       <Stack gap={4}>
         <Row gap={2} align="center" wrap>
+          <Badge variant="outline">Status line</Badge>
           {row.live ? <Badge variant="secondary">{`Update to ${config.slug}`}</Badge> : null}
           <Badge variant={view.variant}>{view.label}</Badge>
           <Text muted size="sm">

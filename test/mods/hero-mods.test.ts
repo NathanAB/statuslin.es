@@ -1,0 +1,93 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import * as schema from '@/db/schema'
+import { HERO_SIZE } from '@/gallery/hero-lines'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
+import { getHeroMods, getModSource } from '@/mods/gallery-queries'
+import {
+  addDesktopPreview,
+  addMod,
+  addVersion,
+  openTestDb,
+  SEEDED_DESKTOP_SHOT,
+  setCurrentVersion,
+  sha,
+  type TestDb,
+} from './seed-mods'
+
+let db: TestDb
+let close: () => Promise<void>
+
+const FOOTPRINT = { events: ['$.http.fetch'], calls: [] }
+
+async function addPublished(slug: string, copies: number, extra: { shot?: boolean } = {}) {
+  const modId = await addMod(db, slug, 'published')
+  const versionId = await addVersion(db, modId, {
+    commitSha: sha(slug.slice(-1)),
+    versionNumber: 1,
+    footprint: FOOTPRINT,
+  })
+  if (extra.shot) await addDesktopPreview(db, versionId, 'shot')
+  await setCurrentVersion(db, modId, versionId)
+  for (let i = 0; i < copies; i++) {
+    await db.insert(schema.modCopyEvents).values({ modId, ipHash: `${slug}-${i}` })
+  }
+}
+
+beforeAll(async () => {
+  ;({ db, close } = await openTestDb())
+  // Ten published mods, copied different amounts, so Trending has an order of its own.
+  for (let i = 0; i < 10; i++) await addPublished(`mod-${i}`, (i * 7) % 10, { shot: i === 7 })
+  // The most copied of all, yet its preview is just a status line: the hero has nothing to show.
+  await addPublished(STATUSLINE_ANYWHERE_MOD_SLUG, 20)
+  await addMod(db, 'drafted', 'draft')
+})
+afterAll(async () => {
+  await close()
+})
+
+// The home hero ranks mods among status lines on one Trending scale, as its gallery does.
+describe('getHeroMods', () => {
+  it('takes the first eight mods in the order the home gallery ranks them', async () => {
+    const gallery = await getModSource(db, {
+      sort: 'trending',
+      excludeSlug: STATUSLINE_ANYWHERE_MOD_SLUG,
+    })
+    const expected = gallery.items.slice(0, HERO_SIZE).map(({ item }) => item.card.slug)
+
+    const mods = await getHeroMods(db)
+
+    expect(mods.map((mod) => mod.slug)).toEqual(expected)
+    expect(mods.map((mod) => mod.slug)).not.toContain('drafted')
+    const keys = mods.map((mod) => mod.sortKey ?? 0)
+    expect(keys).toEqual([...keys].sort((a, b) => b - a))
+  })
+
+  // The card, not the whole shot: a whole shot can end in a sliver of Desktop's prompt box, while a
+  // card ends cleanly (showing the whole box only for a mod that writes in the toolbar).
+  it('carries what the hero shows: its terminal render, Desktop card, footprint and author', async () => {
+    const mods = await getHeroMods(db)
+    const shot = mods.find((mod) => mod.slug === 'mod-7')
+
+    expect(shot).toMatchObject({
+      title: 'mod-7',
+      authorGithub: 'octocat',
+      copyCount: expect.any(Number),
+      render: [{ text: 'meter' }],
+      footprint: FOOTPRINT,
+      desktop: {
+        src: expect.stringMatching(/image=card$/),
+        width: SEEDED_DESKTOP_SHOT.cardWidth,
+        height: SEEDED_DESKTOP_SHOT.cardHeight,
+      },
+    })
+    expect(shot?.modId).toEqual(expect.any(String))
+    expect(mods.find((mod) => mod.slug === 'mod-1')?.desktop).toBeNull()
+  })
+
+  // statusline-anywhere draws a status line in Desktop: shown on its own, there is nothing to see.
+  it('leaves out statusline-anywhere, however much it trends', async () => {
+    expect((await getHeroMods(db)).map((mod) => mod.slug)).not.toContain(
+      STATUSLINE_ANYWHERE_MOD_SLUG,
+    )
+  })
+})

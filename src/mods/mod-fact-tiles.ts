@@ -11,7 +11,12 @@ import {
 import type { ModPageCopy } from '@/content/types'
 import { listPhrase } from '@/gallery/why-line'
 import type { FactTile } from '@/ui/fact-tiles'
-import { DRAW_LOCATION_LABEL, describeModFootprint, SURFACE_LABEL } from './footprint'
+import {
+  DRAW_LOCATION_LABEL,
+  describeModFootprint,
+  footprintRecorded,
+  SURFACE_LABEL,
+} from './footprint'
 import { type FootprintCommands, footprintFacts } from './footprint-facts'
 import type { ModDetail } from './queries'
 
@@ -67,6 +72,8 @@ function reachValue(
   return runsPrograms ? (detail ?? THROUGH_PROGRAMS) : none
 }
 
+const NOT_RECORDED = 'Not recorded yet'
+
 /**
  * A mod's fact tiles. Each yes or no comes from the validator's footprint or the recorded
  * previews; the page copy only words a tile whose fact is yes. The last tiles name the reviewed
@@ -86,6 +93,8 @@ export function modFactTiles(
 ): FactTile[] {
   const { draws, surfaces } = describeModFootprint(mod)
   const facts = footprintFacts(mod.footprint)
+  // An empty footprint was never recorded: say so instead of a row of "Nothing" and "None".
+  const ifRecorded = (fact: string) => (footprintRecorded(mod.footprint) ? fact : NOT_RECORDED)
   const details: ModPageCopy['details'] = mod.generatedContent?.details ?? {}
   const showsUp =
     draws.length > 0
@@ -102,28 +111,30 @@ export function modFactTiles(
         ]
       : []
   return [
-    { icon: PanelTop, label: MOD_TILE_LABEL.showsUp, value: showsUp },
+    { icon: PanelTop, label: MOD_TILE_LABEL.showsUp, value: ifRecorded(showsUp) },
     ...worksIn,
     {
       icon: SquareSlash,
       label: MOD_TILE_LABEL.commands,
-      value: commandsValue(facts.commands, details.commands),
+      value: ifRecorded(commandsValue(facts.commands, details.commands)),
     },
     {
       icon: Coins,
       label: MOD_TILE_LABEL.usesYourPlan,
-      value: facts.callsModel ? (details.usesYourPlan ?? 'Yes') : 'No',
+      value: ifRecorded(facts.callsModel ? (details.usesYourPlan ?? 'Yes') : 'No'),
       caution: facts.callsModel,
     },
     {
       icon: FilePen,
       label: MOD_TILE_LABEL.changesFiles,
-      value: reachValue(facts.writesFiles, facts.runsPrograms, details.changesFiles, 'Nothing'),
+      value: ifRecorded(
+        reachValue(facts.writesFiles, facts.runsPrograms, details.changesFiles, 'Nothing'),
+      ),
     },
     {
       icon: Globe,
       label: MOD_TILE_LABEL.network,
-      value: reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None'),
+      value: ifRecorded(reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None')),
     },
     {
       icon: GitCommitHorizontal,

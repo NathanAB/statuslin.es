@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GuideRouteImport } from './routes/guide'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as MarketplaceDotjsonRouteImport } from './routes/marketplace[.]json'
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
 const GuideRoute = GuideRouteImport.update({
   id: '/guide',
   path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
@@ -226,6 +232,7 @@ const AdminModPreviewsVersionIdDesktopDotpngRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/marketplace.json': typeof MarketplaceDotjsonRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/marketplace.json': typeof MarketplaceDotjsonRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/guide': typeof GuideRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/marketplace.json': typeof MarketplaceDotjsonRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/guide'
+    | '/how-it-works'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/marketplace.json'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/guide'
+    | '/how-it-works'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/marketplace.json'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/guide'
+    | '/how-it-works'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/marketplace.json'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GuideRoute: typeof GuideRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   MarketplaceDotjsonRoute: typeof MarketplaceDotjsonRoute
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/guide'
       fullPath: '/guide'
       preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/llms-full.txt': {
@@ -726,6 +746,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GuideRoute: GuideRoute,
+  HowItWorksRoute: HowItWorksRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   MarketplaceDotjsonRoute: MarketplaceDotjsonRoute,

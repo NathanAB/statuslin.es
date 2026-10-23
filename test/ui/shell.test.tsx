@@ -12,18 +12,24 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 const { CONTACT_EMAIL } = await import('@/lib/site')
+const { PAGE_COLUMN } = await import('@/ui/page-column')
 const { PageShell, CenteredShell } = await import('@/ui/shell')
 
+// Every page's header, content and footer sit on the one column, so nothing jumps between pages.
+function expectOnColumn(el: Element | null) {
+  for (const name of PAGE_COLUMN.split(' ')) expect(el?.classList.contains(name), name).toBe(true)
+}
+
 describe('PageShell', () => {
-  it('renders the header, a constrained main, and its children', () => {
+  it('lines the header, the content and the footer up on the same column', () => {
     const { container } = render(
       <PageShell user={null}>
         <p>body</p>
       </PageShell>,
     )
-    expect(container.querySelector('header')).not.toBeNull()
-    const main = container.querySelector('main') as HTMLElement
-    expect(main.className).toContain('max-w-5xl')
+    expectOnColumn(container.querySelector('header > div'))
+    expectOnColumn(container.querySelector('main'))
+    expectOnColumn(container.querySelector('footer'))
     expect(screen.getByText('body')).toBeTruthy()
   })
 
@@ -63,6 +69,16 @@ describe('CenteredShell', () => {
     expect(screen.getByText('centered')).toBeTruthy()
   })
 
+  it('keeps the header and footer on the same column as every other page', () => {
+    const { container } = render(
+      <CenteredShell user={null}>
+        <p>centered</p>
+      </CenteredShell>,
+    )
+    expectOnColumn(container.querySelector('header > div'))
+    expectOnColumn(container.querySelector('footer'))
+  })
+
   it('renders the site footer with the contact link', () => {
     const { container } = render(
       <CenteredShell user={null}>
@@ -75,15 +91,18 @@ describe('CenteredShell', () => {
   })
 })
 
-describe('PageShell narrow', () => {
-  it('constrains main to max-w-lg when narrow is true', () => {
+describe('PageShell fullBleed', () => {
+  // The home page lays out its own full-width bands, each section placing itself on the column.
+  it('lets main span the window, with the header and footer still on the column', () => {
     const { container } = render(
-      <PageShell user={null} narrow>
-        <p>narrow</p>
+      <PageShell user={null} fullBleed>
+        <p>home</p>
       </PageShell>,
     )
     const main = container.querySelector('main') as HTMLElement
-    expect(main.className).toContain('max-w-lg')
-    expect(main.className).not.toContain('max-w-5xl')
+    expect(main.className).not.toContain('max-w-')
+    expect(main.className).not.toContain('px-')
+    expectOnColumn(container.querySelector('header > div'))
+    expectOnColumn(container.querySelector('footer'))
   })
 })

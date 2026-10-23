@@ -1,14 +1,16 @@
-import { Monitor } from 'lucide-react'
-import { Hint } from '@/ui/hint'
 import { StatuslineAnywhereLink } from '@/ui/statusline-anywhere-link'
 import { Text } from '@/ui/text'
 
-/** Strip on config pages pointing Claude Desktop users at statusline-anywhere. */
+/**
+ * One quiet line under a status line's install button pointing Claude Desktop users at
+ * statusline-anywhere. Not a filled strip: it's a side note, and shouldn't pull the eye from
+ * the install button and its facts.
+ */
 export function DesktopNote() {
   return (
-    <Hint icon={Monitor}>
-      <Text inline>In Claude Desktop?</Text> Add this status line with{' '}
+    <Text muted size="sm">
+      In Claude Desktop? This status line shows there once you also install{' '}
       <StatuslineAnywhereLink surface="config_page" />.
-    </Hint>
+    </Text>
   )
 }

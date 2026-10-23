@@ -10,7 +10,6 @@ import { newestDate, type SitemapMod, type SitemapPage, sitemapResponse } from '
 import { getConfigSource, getPublishedConfigCatalog, getPublishedConfigs } from './config-items'
 import { type FacetMod, getLatestCopyAt } from './facet-queries'
 import type { GallerySource } from './gallery-items'
-import { getPublishedInventory } from './inventory'
 import {
   getCardsByCopies,
   getConfigBySlug,
@@ -25,6 +24,7 @@ import {
   resolveLiveFacet,
 } from './queries'
 import { coerceSourceQuery } from './ranking'
+import { type GallerySearchText, gallerySearchText } from './search'
 import { rankedCard } from './why-line'
 
 /**
@@ -152,7 +152,7 @@ export const llmsFullTxtResponseForRoute = createServerOnlyFn(
 )
 
 /** Narrows a caller's per-mod tag lists, since they arrive over the server-fn boundary. */
-function coerceModTags(value: unknown): FacetMod[] {
+export function coerceModTags(value: unknown): FacetMod[] {
   if (!Array.isArray(value)) return []
   return value.map((tags) => ({
     tags: Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : [],
@@ -163,11 +163,19 @@ export const getGalleryConfigs = createServerFn({ method: 'GET' })
   .validator(coerceSourceQuery)
   .handler(({ data }) => withHttpStatus(() => getConfigSource(db, data)))
 
-export const getGallery = createServerFn({ method: 'GET' }).handler(() =>
-  withHttpStatus(async () => {
-    const inventory = await getPublishedInventory(db)
-    return { ...inventory, asOf: new Date().toISOString().slice(0, 10) }
-  }),
+/** Every published status line's search text, for the home gallery's search. */
+export const getConfigSearchTexts = createServerFn({ method: 'GET' }).handler(() =>
+  withHttpStatus(
+    async (): Promise<GallerySearchText[]> =>
+      (await getPublishedConfigCatalog(db)).map((row) => ({
+        slug: row.slug,
+        searchText: gallerySearchText({
+          ...row,
+          author: row.authorGithub,
+          copy: row.generatedContent,
+        }),
+      })),
+  ),
 )
 
 export const getConfigDetail = createServerFn({ method: 'GET' })

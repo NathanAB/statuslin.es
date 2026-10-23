@@ -16,16 +16,23 @@ Every color is defined as a CSS custom property in `src/styles/app.css` (`@theme
 | Card / panel | `bg-card` |
 | Subtle / hover / muted surface | `bg-muted`, `bg-secondary` |
 | Code / preview box (near-black) | `bg-sunken` |
-| Coral accent (buttons, links, brand) | `bg-primary` / `text-primary` |
+| Coral accent as text, lines and rings (links, brand) | `text-primary` / `border-primary` |
+| Coral as a solid fill under text (buttons, selected states) | `bg-primary-fill`, never `bg-primary` (light text on it fails WCAG AA) |
+| A coral pill under the pointer | `hover:bg-primary-fill-deep` (the fill deepened toward the page, solid; set by `Button`'s pill sizes) |
+| A picked choice on a card | `bg-primary/12`, a faint coral tint, with a filled radio dot; the coral ring stays the focus cue |
 | Text on a coral fill | `text-primary-foreground` |
 | Primary text | `text-foreground` |
 | Secondary text | `text-muted-foreground` |
+| Inactive filter labels (dimmer than secondary) | `text-dim` |
+| The home page terminal's text, dimmed text, rules, your turn | `text-terminal-foreground`, `text-terminal-muted`, `border-terminal-rule`, `bg-terminal-turn` |
 | Borders | `border-border` |
 | Destructive | `bg-destructive` / `text-destructive` |
 | Caution (a cost or a risk) | `bg-warning/10` / `text-warning` |
 | Monospace (status line output, code) | `font-mono` |
 
 The coral accent is `primary` — **not** `accent` (`accent` is a subtle hover surface). Spacing, radii (`rounded-md` / `rounded-lg`), and text sizes (`text-sm` / `text-lg`) use Tailwind's default scale.
+
+The home page redesign (`docs/redesign/home-a/README.md`) adds its own scale for the components it builds in `src/ui`: five text sizes that grow with the viewport (`text-small`, `text-body`, `text-lead`, `text-heading`, `text-display`), the motion curve `ease-settle` (and the terminal's `animate-flash` and `animate-blink`), and the radii `rounded-frame` and `rounded-screen` (the terminal), `rounded-tile` (the picker, the fact tiles) and `rounded-panel` (every borderless surface: gallery rows, `Card`, `Panel`, `Hint`, `Callout`), and `mt-section` between the home page's sections. Use them only in those redesigned components. The page column is site-wide: `PAGE_COLUMN` (`src/ui/page-column.ts`, `px-gutter` side gutters around up to 1280px, `max-w-page`) is the one width the header, every page's content and the footer sit on, so no page picks a width of its own. Everywhere else keeps Tailwind's default scale, and text still renders through `Text` / `Heading`.
 
 The gate enforces three sub-rules on `src/styles/app.css`: (a) define-once — no hex literal may be declared twice; (b) theme-alias — every `--color-*` must be `initial` or `var(…)`, never a literal; (c) token-echo — no file in `src/` or `test/` may restate a literal that equals a token value.
 
@@ -56,7 +63,7 @@ All primitives live in `src/ui/`. Import them by name; never reach for a raw `<d
 
 | Export | What it does |
 | --- | --- |
-| `<Stack gap={n}>` | `flex-col` with a gap from the 6-step scale (`1 \| 1.5 \| 2 \| 3 \| 4 \| 6`) |
+| `<Stack gap={n}>` | `flex-col` with a gap from the scale (`1 \| 1.5 \| 2 \| 3 \| 4 \| 6 \| 7 \| 9`) |
 | `<Row gap={n} align justify wrap>` | `flex-row` with the same gap scale; `align` / `justify` map to flex-align / flex-justify values |
 | `<Box UNSAFE_className="…">` | Escape hatch only — requires a `// REASON:` comment on the preceding line |
 
@@ -66,53 +73,79 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 
 | Export | What it does |
 | --- | --- |
-| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + `max-w-5xl` main |
+| `<PageShell user={user}>` | Full page frame: `min-h-screen` background + `AppHeader` + main + `SiteFooter`, all on `PAGE_COLUMN`. `fullBleed` (the home page) lets main span the window, each section placing itself on the column |
 | `<CenteredShell user={user}>` | Centered screen for login / signed-out-submit views |
 
 ### Typography (`src/ui/text.tsx`)
 
 | Export | What it does |
 | --- | --- |
-| `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. |
+| `<Heading level={1\|2\|3}>` | The only headings. `level` picks both the tag (`h1`/`h2`/`h3`) and a fixed size on one scale; level 3 is the card / section title. Sans-only, no font knob. `size="compact"` is a quiet title; `size="display"` is the home hero's title; `size="page"` every other page's opening title (`PageHeader`), a clear step under it; `size="subsection"` a directory page's section title (statement size, bold; /resources) |
 | `<Text>` | The only body text. `size` is a closed scale (`base\|sm\|xs`), `muted` dims the color, `mono` is for code/data values (slugs, hashes), `inline` renders a `span`. Text always fills its container: there is no line-length cap. |
-| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>` |
+| `<TextLink to="…">` | Router-`Link` styled as `text-primary` with hover underline — use instead of bare `<Link>`. `tone="plain"` uses full-strength text instead (the footer); `tone="muted"` is dimmed text that lights up on hover (a gallery row's tags); `tone="underlined"` is full-strength text underlined at rest (the hero's "Open page" link) |
 
 ### Cards and interactive surfaces
 
 | Export | File | Notes |
 | --- | --- | --- |
-| `<Card interactive>` | `src/ui/card.tsx` | Adds hover lift / glow + entrance animation + `motion-reduce` handling |
+| `<Card interactive>` | `src/ui/card.tsx` | A borderless surface (`bg-card`, `rounded-panel`); `interactive` adds the entrance, a tone lift on hover and a focus ring, with `motion-reduce` handling |
 | `<CardHeader>`, `<CardContent>`, `<CardFooter>`, `<CardTitle>`, `<CardDescription>`, `<CardAction>` | `src/ui/card.tsx` | Subcomponents for card anatomy |
 | `<StretchedLink to="…">` | `src/ui/stretched-link.tsx` | Full-card clickable overlay with focus ring; place inside `<Card interactive>` |
+| `<GalleryRow to params onOpen title byline facts description>` | `src/ui/gallery-row.tsx` | The redesign's gallery card: one full-width row, title link (it opens the whole row) and byline left, `facts` right, the preview as children, the description clamped to two lines; `onOpen` runs when the row opens (its click analytics). Hover and focus raise the tone; inside another card it starts a tone up. `<RowFacts>` sets the facts in a dotted line, `<RowNote icon>` is a fact with an icon, `<GalleryList>` stacks rows (`animateChanges`: the rows move in a view transition when the list changes; the home gallery only) |
+| `<SessionStage label toolbar transcript view motion>` | `src/ui/session-stage.tsx`, screens in `src/ui/terminal.tsx` and `src/ui/desktop-screen.tsx` | The home hero's session: a frame with an optional toolbar (`groups`: each a labelled row of choices, labels above their rows on phones, with an optional `caption` note beside the last row's choices), then one fixed-height screen for `view`. `cli` is the terminal: the conversation (`TranscriptLine[]`), the pick drawn `at` a band above the input box or the status line row under it, its text shrinking until its widest line fits (never below 9px). `desktop` is Claude Desktop's Code tab: the conversation, the pick's recorded shot, and the prompt box under it when `promptBox`. Both conversations sit in `BottomAnchored` (`src/ui/bottom-anchored.tsx`): newest last, the oldest clipped at the top with a fade, never a line cut in half. Either screen is one image to a screen reader, named by `label`. Nothing moves on the first render; after a change (`motion`), a new conversation settles in and a new pick glows (`animate-flash`). |
+| `<ChoiceGroup labelledBy options value onValueChange look>` | `src/ui/choice-group.tsx` | A radio group whose arrow keys pick as they move, for a demo's choices. A tray option's `icon` sits before its label. `look`: `list` (label and detail on a tile: the hero's picker), `tray` (small segments: the hero's app) or `cards` (big side-by-side cards, each named by its label and described by its detail, with a radio dot: the submit page's "What are you submitting?") |
+| `<HeroLayout heading lead stage picker actions>`, `<HeroActions>` | `src/ui/hero-layout.tsx` | The home hero's 12-column grid (the title with its sentence under it, then the demo and its controls); stacks below 900px. On phones the actions show before the picker, so the first screen holds the install button; the DOM (and tab) order stays picker then actions, which still reads as pick, then install. |
+| `<DirectorySection title intro>`, `<LinkCard id title meta description>` | `src/ui/directory-section.tsx`, `src/ui/link-card.tsx` | A directory page's section (/resources): its title at statement size with a short intro under it, then its entries, closer together than the home sections. `LinkCard`: one outside resource as a compact card, its name (usually a `StretchedLink`) with a note under it and a short description; it lifts a tone on hover or focus |
+| `<PageHeader title lead>` | `src/ui/page-header.tsx` | A redesigned page's opening without a demo: the title at page size (`text-heading`, a step under the hero's display) and its sentence right under it, both across the full width of the column (/resources) |
+| `<ColumnGrid>`, `<TileGrid>` | `src/ui/layout.tsx` | `ColumnGrid`: small groups side by side, two up from `sm`, four from `xl`. `TileGrid`: small tiles (`Panel`s) in rows, two up from `sm`, four from `xl` |
+| `<LiveMessage>` | `src/ui/visually-hidden.tsx` | A screen-reader-only `role="status"` message, read out when it changes |
+| `<HomeSection first? id? labelledBy? band?>` | `src/ui/home-section.tsx` | One section of the home page on the page column, `mt-section` from the one above (`first`: just under the header). `band` sets it on a full-width darker band (`bg-sunken`): the checks section after the gallery |
 
 ### Buttons (`src/ui/button.tsx`)
 
 `Button` and `buttonVariants` are exported. Key variants:
 
-- **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link`
-- **size:** `default` · `xs` · `sm` · `lg` · `trigger` (header user-menu trigger) · `icon` · `icon-xs` · `icon-sm` · `icon-lg`
+- **variant:** `default` (coral fill) · `outline` · `secondary` · `ghost` · `destructive` · `link` · `quiet` (dim text that lights up on hover, no surface: the header's links) · `plain` (full-strength text, no surface)
+- **size:** `default` · `xs` · `sm` · `lg` · `nav` (the standalone sign-in button) · `bar` (text-sized, no padding: a header-bar link) · `bar-pill` (the header's one filled action, Submit: a compact pill) · `menu` (the phone menu's big links) · `icon` · `icon-xs` · `icon-sm` · `icon-lg` · `pill` (the redesign's rounded button; requires `trailingIcon`, an icon element set in its own circle, and pairs with `variant="default"` or `"secondary"`) · `round` (the pill's 44px icon-only partner, such as Previous page; give it an `aria-label`).
 - **active:** `true` / `false` — active-tab treatment; pair with `variant="outline"`
 
 ### Other primitives
 
 | Export | File | What it does |
 | --- | --- | --- |
-| `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control; `Copyable` overlays it on a code well |
-| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: "Copy install prompt" button, copy count, toast |
+| `<CopyButton>` / `<Copyable>` | `src/ui/copy-button.tsx` | Clipboard control (`size="pill"`: the redesign's pill, icon trailing); `Copyable` overlays it on a code well. `useCopied` is its Copied state, timer cleared on unmount; `<SwapLabel>` (`src/ui/swap-label.tsx`) swaps the label without changing the width |
+| `<InstallPrompt>` | `src/ui/install-prompt.tsx` | The status line and mod pages' install control: the home hero's "Copy install prompt" pill, install count, toast |
+| `<InstallCount count>` / `installsLabel(n)` | `src/ui/install-count.tsx` | "1 install", "223 installs": how every surface words the count (the data calls it `copyCount`) |
 | `<CodeBlock>` | `src/ui/code-block.tsx` | Styled `<pre>` block for source display; pass `text` to copy |
+| `<HighlightedCode html text? peek?>` | `src/ui/highlighted-code.tsx` | Shiki's highlighted source in a code well; pass `text` to copy. `peek` (a status line's script) folds a script over 20 lines to its first 12 under a fade, with a "Show all N lines" pill under it that grows it open; copy still takes the whole script |
 | `<LineDiff lines={…}>` | `src/ui/line-diff.tsx` | Unified line diff in a code well; `DiffLine[]` with +/- markers |
-| `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | Section with header + optional action slot |
-| `<ScenarioRow>` | `src/ui/scenario-row.tsx` | Labeled row for scenario-level content |
+| `<SectionCard title action={…}>` | `src/ui/section-card.tsx` | A titled card with an optional action slot; admin pages only (public pages use `PageSection`) |
+| `<PageSection title id? step?>`, `<SectionAnchor id>` | `src/ui/page-section.tsx` | One section of a public page (status line, mod, guide): its h2 on the page, then the content. Not a box, so rows, tiles and code inside are the only surface. `id` makes it linkable (`/guide#the-json-your-script-receives`); `step` puts the section's number in a circle before its title (/how-it-works's checks); `SectionAnchor` gives any block a linkable id |
+| `<Panel size>` | `src/ui/panel.tsx` | A borderless surface straight on the page (the guide's fast paths, the submit side panel). Never inside another surface |
+| `<FormLayout asideTitle aside>` | `src/ui/form-layout.tsx` | A form page: the form over 8 of the column's 12 columns, a sticky side panel on the last 4 (the submit page's "What happens next"); stacked below 1024px |
+| `<RuledSections>` | `src/ui/ruled-sections.tsx` | A long page's parts in a column, each after the first set off by a hairline rule with room on both sides: the status line and mod pages' header, then each section |
+| `<AsideLayout aside>` | `src/ui/aside-layout.tsx` | Main part over 8 of the column's 12 columns, `aside` on the last 4, top-aligned; stacked below 1024px. The status line and mod pages' header and install button, with their `InstallFacts` beside them |
+| `<InstallFacts heading facts more? notes? link headingLevel?>` | `src/ui/install-facts.tsx` | The facts a visitor needs before installing, in a `Panel` beside the install button: "Before you install" (review, reach, requirements, then the troubleshooting link) and "What this mod can do" (the review line and every risk, then the plain powers and the good-to-know notes folded into closed `<details>` rows, then the mod safety guide). A `caution` fact is in the warning tint. `headingLevel={3}` where the panel sits inside a page section (/how-it-works) |
+| `<FactSentence subject fact>` | `src/ui/fact-sentence.tsx` | One install fact as a sentence that names its subject, for a tight spot (the home hero, under its button), so it plainly changes with the pick |
+| `<PromptPanel heading lead prompt copyLabel pasteHint>` | `src/ui/prompt-panel.tsx` | A prompt to paste into Claude Code that does the page's job on the visitor's machine (the troubleshooting guide's fix prompt): the copy pill, then the prompt, shown open |
+| `<DocLayout contents>` | `src/ui/doc-layout.tsx` | A long doc page: a sticky contents list (links to section ids) in a left column from 1280px, inline under the intro below that. The list marks the section being read and slides a marker to it (`useActiveSection`) |
+| `<StepList label steps>` | `src/ui/step-list.tsx` | Numbered steps (the guide's "Wire up a script by hand"): a number and an h3 each, then its text and code at full width |
+| `<SideBySide first second>` | `src/ui/side-by-side.tsx` | Two things read together, side by side from 1024px (three fifths and two fifths), stacked below |
+| `<InlineCommand>` | `src/ui/inline-command.tsx` | A short shell command inside a sentence, monospace and kept on one line |
+| `<ShowAllList shown>` | `src/ui/show-all-list.tsx` | A `GalleryList` that shows its first `shown` rows; the rest stay in the server HTML, hidden behind a "Show all N" pill that reveals them and moves focus to the first revealed row (long facet lists) |
+| `<ScenarioRow>` | `src/ui/scenario-row.tsx` | A scenario's label beside its preview strip; the label stacks above it on a phone |
 | `<Notice tone="info\|error" live?>` | `src/ui/notice.tsx` | Inline status / error notice; `live` makes it an alert, for an error that appears after the user acts (a failed submit) |
 | `<SelectField options label …>` | `src/ui/select.tsx` | Closed select with `SelectOption[]` |
 | `<Details summary="…">` | `src/ui/details.tsx` | Styled `<details>` / `<summary>` disclosure |
-| `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles; `caution` uses the warning tint |
+| `<FactTiles tiles={…}>` | `src/ui/fact-tiles.tsx` | Responsive grid of icon + label + short value tiles, each one borderless surface; `caution` uses the warning tint |
+| `<IconList label items look>` | `src/ui/icon-list.tsx` | A short named list, each item an icon and its words. `look`: `tiles` (a few words per tile, two up on a phone, four from 1024px: the mod safety guide's "What a mod can do") or `rows` (sentences stacked, the icon beside each; an item may hold a link) or `cards` (each item's `title` over a muted line: one row per card on a phone, two up from 640px, four from 1024px; the home page's four checks) |
 | `<BulletList items={…}>` / `<NumberedList items={…}>` | `src/ui/bullet-list.tsx`, `src/ui/numbered-list.tsx` | Plain-string lists on the small-text scale; backticks mark code |
 | `<Badge>` | `src/ui/badge.tsx` | Status/label badge (`badgeVariants` also exported) |
-| `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip |
-| `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header; used by shells |
-| `<SignInButton>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger |
-| `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview |
+| `<AuthorChip author={…}>` | `src/ui/author-chip.tsx` | Avatar + username chip, linked to the GitHub profile, everywhere a username shows |
+| `<AppHeader user={…}>` | `src/ui/app-header.tsx` | Site header (Resources, GitHub, a filled Submit pill, then "Sign in" with the GitHub mark or the user menu); used by shells. Phones keep the wordmark and Submit and get `SiteMenu` (`src/ui/site-menu.tsx`), a full-screen menu of the rest; the bar's account dropdown is `UserMenu` (`src/ui/user-menu.tsx`) |
+| `<SignInButton look>` | `src/ui/sign-in-button.tsx` | GitHub OAuth sign-in trigger. `look`: `button` (default, outlined), `bar` (header bar) or `menu` (phone menu) |
+| `<StatuslinePreview segments={…}>` | `src/ui/statusline-preview.tsx` | ANSI-rendered statusline preview. `look="well"` (default) sits it in a code well; `look="strip"` sets it at 15px on a full-width dark strip (gallery rows); `look="terminal"` takes the home terminal's text. A line wider than its strip gets a round "Show more of this status line" button at its right edge, above a gallery row's link, with the line fading out under it |
+| `<SegmentedControl label options value onValueChange look>` | `src/ui/segmented-control.tsx` | One-of-many segments (a radio group; arrow keys move, Space picks). `look`: `boxed` (default, coral selection) or `tray` (segments in a rounded tray: the gallery sort) |
 
 ## Vendoring procedure for new shadcn components
 
@@ -122,11 +155,16 @@ Vertical rhythm between page sections is `Stack gap` on the parent — no margin
 4. TypeScript now enforces closure at every call site. Add any missing variants rather than reopening `className`.
 5. Commit the closed component. Never ship an open `className` prop into `src/ui/`.
 
+### Product fragments (`data-ui`)
+
+A `src/ui` element that depicts the product itself (a status line render, the hero terminal, a Claude Desktop shot) carries `data-ui=""`. It names it as an interface fragment, the way the redesign prototype does: the taste inspector counts it as a picture and leaves its own sizes, rules and shadow out of the page's typography and surface checks. Never put it on page text or around a heading.
+
 ## Structure rules
 
 - `src/ui/` — primitives only. Imports only `src/ui` / `src/lib`. Type-only imports from elsewhere are allowed (erased at build).
 - `src/<feature>/` — feature code colocated (`src/gallery`, `src/submit`, `src/review`, `src/adopt`, `src/votes`). No cross-feature value imports — go through `src/lib` or `src/ui`.
 - `src/mods/` may import `src/gallery`, the shared listing and ranking code that ranks mods and status lines on one scale. `src/gallery` never imports `src/mods` or any other feature folder; a route maps mod data into the gallery's shapes instead.
+- `src/home/` — the home page's sections, composed from the features (gallery, mods, adopt) the way a route would. No feature folder imports it.
 - `src/routes/` — thin: a loader calling a server function + a component composing `src/ui` primitives. No data shaping, no `@/db` import.
 - Files ≤ 250 lines, one responsibility. Named exports (default exports only in `src/routes/`). Components `PascalCase`, files `kebab-case.tsx`.
 
@@ -142,7 +180,7 @@ All rules run in `bun run check` and at the hooks listed below.
 | 4 | Tokens: define-once | Duplicate hex literal in `src/styles/app.css` token declarations | `check-frontend.ts` — gate error |
 | 5 | Tokens: theme-alias var()-only | `--color-*` declaration with a literal value instead of `var(…)` or `initial` | `check-frontend.ts` — gate error |
 | 6 | Tokens: token-echo | Hex literal in any `src/` or `test/` file that equals a token value | `check-frontend.ts` — gate error |
-| 7 | No inline styles | `style={` prop in `.tsx` files (except `src/ui/statusline-preview.tsx` and `src/ui/sonner.tsx`) | `check-frontend.ts` — gate error |
+| 7 | No inline styles | `style={` prop in `.tsx` files (except `src/ui/statusline-preview.tsx`, `src/ui/terminal.tsx` and `src/ui/sonner.tsx`) | `check-frontend.ts` — gate error |
 | 8 | No raw colors | Bare hex / `rgb()` / `hsl()` with literal digits in any `src/` file | `check-frontend.ts` — gate error |
 | 9 | No dead-palette classes | Tailwind default-palette classes (`bg-red-500` etc.) — they render nothing (palette is wiped) | `check-frontend.ts` — gate error |
 | 10 | No arbitrary Tailwind values | `w-[200px]`-style values in app code (allowed in `src/ui/` vendored files) | `check-frontend.ts` — gate error |
@@ -150,6 +188,9 @@ All rules run in `bun run check` and at the hooks listed below.
 | 12 | Centralized font family | A `font-<family>` class (`font-mono`, a typo like `font-heading`, …) outside `src/ui/text.tsx` + the code/header allowlist — text must render through `Text`/`Heading`, which own the font | `check-frontend.ts` — gate error |
 | 13 | Import boundaries | routes ↛ db; `src/ui` ↛ features; `src/gallery` ↛ `src/mods`; no cross-feature value imports | `check-boundaries` (dependency-cruiser) |
 | 14 | Biome lint + format | Style, complexity, naming, import order, `noConsole` | `bun run lint` |
+| 15 | Solid coral fills use `bg-primary-fill` | `bg-primary` / `bg-ring` (or `/50` and up) as a fill, where light text fails WCAG AA | `test/styles/coral-fill.test.ts` (in `bun run check`; not at edit time) |
+| 16 | Focus rings at full strength | A see-through focus ring (`ring-ring/50`, `outline-ring/50`), which falls under WCAG's 3:1 for a focus indicator | `test/styles/coral-fill.test.ts` (in `bun run check`; not at edit time) |
+| 17 | No line-length caps | Text kept narrower than its column: a class string with text classes and a `max-w-*` or `col-span-1` … `col-span-11` (PageHeader's lead once sat on eight of twelve columns), or a measure in text units (`max-w-[30ch]`, `max-w-[22em]`, `w-[40ch]`) or `max-w-prose` anywhere. Text fills its container. Only `src/ui/tooltip.tsx` is allowed a width | `check-frontend.ts` via `scripts/text-width-caps.ts` — gate error |
 
 **Hook schedule:**
 

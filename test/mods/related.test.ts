@@ -78,7 +78,7 @@ describe('getModRelated', () => {
     expect(await related()).toEqual(['status-line:both-tags', 'status-line:one-tag'])
   })
 
-  it('reads only the top four of each from the database: most shared tags, most copied, then newest', async () => {
+  it('reads only the top four of each from the database: most shared tags, most installed, then newest', async () => {
     await mod('viewed', VIEWED.tags)
     await mod('mod-one-tag', ['cost'], { copyCount: 100 })
     await mod('mod-a', VIEWED.tags, { copyCount: 5 })
@@ -137,7 +137,7 @@ describe('getStatusLineMods', () => {
     expect(await statusLineMods(['cost', 'quota'])).toEqual(['both-tags', 'one-tag'])
   })
 
-  it('stops at four, the most copied ahead on a tie', async () => {
+  it('stops at four, the most installed ahead on a tie', async () => {
     for (const n of [1, 2, 3, 4, 5]) await mod(`mod-${n}`, ['cost'], { copyCount: n })
 
     expect(await statusLineMods(['cost'])).toEqual(['mod-5', 'mod-4', 'mod-3', 'mod-2'])

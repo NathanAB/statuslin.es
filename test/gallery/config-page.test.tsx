@@ -80,7 +80,7 @@ const DETAIL: Detail = {
     },
   ],
   facetLabels: ['bash'],
-  primaryFacet: { slug: 'bash', heading: 'Claude Code status lines written in bash' },
+  primaryFacet: { slug: 'bash', topic: 'Bash' },
 }
 
 const COST_MOD: GalleryModCard = {
@@ -130,7 +130,7 @@ describe('status line page', () => {
       screen.getByText('by'),
       screen.getByText('A Powerline-style status line.'),
       screen.getByRole('button', { name: 'Copy install prompt for Powerline Dracula' }),
-      screen.getByText('In Claude Desktop?'),
+      screen.getByText(/^In Claude Desktop\?/),
       h2('Preview'),
       h2('What it does'),
       h2('Source'),
@@ -138,16 +138,81 @@ describe('status line page', () => {
     ])
   })
 
+  // Sections 24px apart, at the size of the text inside them, ran into each other: the header and
+  // each section are set apart by a rule, in one list.
+  it('sets the header and each section apart from the one before it', () => {
+    renderPage()
+
+    const list = h2('Preview').closest('[data-slot="ruled-sections"]')
+    expect(list).not.toBeNull()
+    expect(
+      ['What it does', 'Source', 'More status lines'].map((name) => list?.contains(h2(name))),
+    ).toEqual([true, true, true])
+    expect(
+      list?.contains(screen.getByRole('heading', { level: 1, name: 'Powerline Dracula' })),
+    ).toBe(true)
+  })
+
+  // Nested boxes read as clutter: no section is a card, and the other status lines are the
+  // gallery's own rows, each with its preview, not cards inside a card.
+  it('lists the other status lines as gallery rows, with no box inside a box', () => {
+    const { container } = renderPage(false, [COST_MOD])
+
+    expect(container.querySelector('[data-slot="card"]')).toBeNull()
+    const more = within(screen.getByRole('region', { name: 'More status lines' }))
+    expect(more.getAllByRole('article').map((row) => row.getAttribute('data-slot'))).toEqual([
+      'gallery-row',
+    ])
+    expect(more.getByRole('link', { name: 'Minimal' }).getAttribute('href')).toBe(
+      '/c/minimal-ba63ffb8',
+    )
+  })
+
   it('states the script’s facts and its page copy in What it does', () => {
     renderPage()
 
-    const card = h2('What it does').closest('[data-slot="card"]') as HTMLElement
+    const card = h2('What it does').closest('section') as HTMLElement
     const what = within(card)
     expect(what.getByText('A Powerline bar with the branch and the model.')).toBeTruthy()
     expect(what.getByText('Written in')).toBeTruthy()
     expect(what.getByText('Bash')).toBeTruthy()
-    expect(what.getByText('Uses Nerd Font glyphs')).toBeTruthy()
+    expect(what.queryByText('Uses Nerd Font glyphs')).toBeNull()
     expect(what.queryByText('Reads your Claude login')).toBeNull()
+  })
+
+  // A searcher decides at the install button: that it was reviewed, what it can reach and what it needs
+  // sit right after it, not pages below, and the help for a line that doesn't show is one click.
+  it('says what to know before installing, right after the install button', () => {
+    renderPage()
+
+    const panel = screen.getByRole('region', { name: 'Before you install' })
+    expect([...panel.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
+      'This version was reviewed before it was listed on Jul 6, 2026',
+      "Doesn't ask to connect to the internet",
+      'Uses Nerd Font glyphs',
+    ])
+    expect(
+      within(panel)
+        .getByRole('link', { name: /Not showing after you paste/ })
+        .getAttribute('href'),
+    ).toBe('/guide/status-line-not-showing')
+    expectInOrder([
+      screen.getByRole('button', { name: 'Copy install prompt for Powerline Dracula' }),
+      panel,
+      h2('Preview'),
+    ])
+  })
+
+  // Reading the Claude login or connecting to hosts is a risk to weigh, not a topic: it leaves the topic chips.
+  it('keeps the risk facts out of the topic chips in the header', () => {
+    renderPage(false, [], { ...DETAIL, tags: ['bash', 'reads-token'], readsClaudeToken: true })
+
+    expect(screen.queryByRole('link', { name: /reads token/i })).toBeNull()
+    expect(
+      within(screen.getByRole('region', { name: 'Before you install' })).getByText(
+        'Reads your Claude login',
+      ),
+    ).toBeTruthy()
   })
 
   it('puts the owner’s update strip above the header', () => {
@@ -162,7 +227,7 @@ describe('status line page', () => {
   it('links the mods that share its tags after the other status lines', () => {
     renderPage(false, [COST_MOD])
 
-    const card = h2('Related mods').closest('[data-slot="card"]') as HTMLElement
+    const card = h2('Related mods').closest('section') as HTMLElement
     expect(within(card).getByRole('link', { name: 'Cost Meter' }).getAttribute('href')).toBe(
       '/mods/cost-meter',
     )
@@ -191,7 +256,7 @@ describe('status line page', () => {
 
 describe('status line page in Claude Desktop', () => {
   const SHOT = { src: '/config-previews/v/desktop.png?r=1', width: 790, height: 40 }
-  const preview = () => within(h2('Preview').closest('[data-slot="card"]') as HTMLElement)
+  const preview = () => within(h2('Preview').closest('section') as HTMLElement)
 
   it('shows the Desktop shot under the terminal rows, with the plugin that drew it', () => {
     renderPage(false, [], { ...DETAIL, desktop: { kind: 'shot', shot: SHOT } })
@@ -221,7 +286,7 @@ describe('status line page in Claude Desktop', () => {
     for (const desktop of [{ kind: 'shot' as const, shot: SHOT }, { kind: 'nothing' as const }]) {
       const { unmount } = renderPage(false, [], { ...DETAIL, desktop })
 
-      expect(screen.queryByText('In Claude Desktop?')).toBeNull()
+      expect(screen.queryByText(/^In Claude Desktop\?/)).toBeNull()
       expect(screen.getAllByRole('link', { name: 'statusline-anywhere' })).toHaveLength(1)
       unmount()
     }
@@ -230,7 +295,7 @@ describe('status line page in Claude Desktop', () => {
   it('keeps the Desktop note, and adds nothing to the preview, before it is recorded', () => {
     renderPage()
 
-    expect(screen.getByText('In Claude Desktop?')).toBeTruthy()
+    expect(screen.getByText(/^In Claude Desktop\?/)).toBeTruthy()
     expect(preview().queryByText('In Claude Desktop')).toBeNull()
     expect(preview().queryByRole('link', { name: 'statusline-anywhere' })).toBeNull()
   })

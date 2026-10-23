@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { type CopyKind, copyEvent } from '@/adopt/copy-event'
+import type { CopySurface } from '@/lib/copy-surface'
 
 // The fields every copy carries that a given test doesn't care about: an unpublished/unknown
 // config and no signed-in user.
@@ -52,6 +53,25 @@ describe('copyEvent', () => {
       signedInUserId: 'u1',
     })
     expect(evt?.properties.$process_person_profile).toBe(false)
+  })
+
+  it('says where the copy happened, so a home hero copy can be told from a page copy', () => {
+    const base = { ...anonymous, kind: 'prompt', configId: 'cfg-1', distinctId: 'did-1' } as const
+    expect(copyEvent({ ...base, surface: 'home_hero' })?.properties.surface).toBe('home_hero')
+    expect(copyEvent(base)?.properties.surface).toBe('page')
+  })
+
+  it('counts an unknown surface as a page copy, since the surface is client input', () => {
+    for (const surface of ['__proto__', 'toString', 'nope', 42]) {
+      const evt = copyEvent({
+        ...anonymous,
+        kind: 'prompt',
+        configId: 'cfg-1',
+        distinctId: 'did-1',
+        surface: surface as CopySurface,
+      })
+      expect(evt?.properties.surface).toBe('page')
+    }
   })
 
   it('omits $session_id when no session id is available', () => {

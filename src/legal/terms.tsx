@@ -16,7 +16,7 @@ export function TermsContent() {
         <Heading level={2}>What this is</Heading>
         <Text muted>
           statuslin.es is a community gallery of Claude Code status lines and mods. Submitted status
-          line scripts run in a sandbox and get a human review before they appear. You run anything
+          lines and mods are rendered in a sandbox and reviewed before they appear. You run anything
           you copy or install at your own risk.
         </Text>
       </Stack>

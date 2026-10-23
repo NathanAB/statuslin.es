@@ -236,12 +236,92 @@ const SHOT = {
 /** The card holding the section whose h2 is `title`. */
 function section(title: string) {
   const heading = screen.getByRole('heading', { level: 2, name: title })
-  const card = heading.closest('[data-slot="card"]')
+  const card = heading.closest('section')
   if (!(card instanceof HTMLElement)) throw new Error(`no card around ${title}`)
   return within(card)
 }
 
+/** The panel's lines in sight, then each fold: its summary, whether it's open, and its lines. */
+function panelLines(panel: HTMLElement) {
+  const text = (line: Element) => line.textContent
+  return {
+    shown: [...panel.querySelectorAll('li')].filter((line) => !line.closest('details')).map(text),
+    folded: [...panel.querySelectorAll('details')].map((fold) => [
+      fold.querySelector('summary')?.textContent,
+      fold.open,
+      [...fold.querySelectorAll('li')].map(text),
+    ]),
+  }
+}
+
 describe('mod page', () => {
+  // A mod can hook tool calls and prompts: that sits beside the install button in plain words,
+  // from the footprint, for every mod, not only in the AI-written copy further down.
+  it('says what the mod can do right after the install button, its plain powers folded', () => {
+    renderPage()
+
+    const panel = screen.getByRole('region', { name: 'What this mod can do' })
+    expect(panelLines(panel)).toEqual({
+      shown: [
+        `Reviewed at commit ${SHA.slice(0, 7)}`,
+        "Also uses $.warp.drive, which this page doesn't describe yet",
+      ],
+      folded: [['2 more things it can do', false, ['Reads files', 'Adds the /filetree command']]],
+    })
+    expect(
+      within(panel)
+        .getByRole('link', { name: /Are mods safe\?/ })
+        .getAttribute('href'),
+    ).toBe('/guide/are-claude-code-mods-safe')
+  })
+
+  // Sixteen lines at once was too much: the risks stay in sight, and what can wait opens on a click.
+  it('keeps the risks in sight and folds the plain powers and the notes until opened', () => {
+    renderPage({
+      footprint: { events: ['tool.call', 'command.run{command=filetree}'], calls: ['$.fs.read'] },
+      generatedContent: { ...COPY, goodToKnow: ['Needs `git` on your PATH', 'Works offline'] },
+    })
+
+    const panel = screen.getByRole('region', { name: 'What this mod can do' })
+    expect(panelLines(panel)).toEqual({
+      shown: [
+        `Reviewed at commit ${SHA.slice(0, 7)}`,
+        'Sees each tool call before it runs and can block or change it',
+      ],
+      folded: [
+        ['2 more things it can do', false, ['Reads files', 'Adds the /filetree command']],
+        ['Good to know (2)', false, ['Needs git on your PATH', 'Works offline']],
+      ],
+    })
+    fireEvent.click(within(panel).getByText('Good to know (2)'))
+    expect(panelLines(panel).folded.map(([summary, open]) => [summary, open])).toEqual([
+      ['2 more things it can do', false],
+      ['Good to know (2)', true],
+    ])
+  })
+
+  it('folds nothing when every power is a risk and there are no notes', () => {
+    renderPage({ footprint: { events: ['tool.call'], calls: [] } })
+
+    const panel = screen.getByRole('region', { name: 'What this mod can do' })
+    expect(panelLines(panel).folded).toEqual([])
+  })
+
+  // One mod's page is about that mod: the whole-marketplace command was clutter here, so it lives
+  // on /mods and /resources, where a visitor browses many at once.
+  it('leaves the whole-marketplace command to /mods and /resources', () => {
+    renderPage()
+
+    expect(screen.queryByText(/plugin marketplace add/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copy marketplace command' })).toBeNull()
+  })
+
+  // Nested boxes read as clutter: no section is a card, so only the rows themselves are surfaces.
+  it('puts none of its sections in a card', () => {
+    const { container } = renderPage()
+    expect(container.querySelector('[data-slot="card"]')).toBeNull()
+  })
+
   it('breadcrumbs home › Mods › the mod, linking Mods to the mods page', () => {
     renderPage()
 
@@ -260,6 +340,7 @@ describe('mod page', () => {
       screen.getByRole('heading', { level: 2, name: 'What it does' }),
     ]
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'What this mod can do',
       'Preview',
       'What it does',
     ])
@@ -277,7 +358,7 @@ describe('mod page', () => {
     const dots = screen.getAllByText('·')
     expect(dots).toHaveLength(2)
     expect(dots[0]?.parentElement?.textContent).toMatch(/^·\s*source at/)
-    expect(dots[1]?.parentElement?.textContent).toMatch(/^·\s*MIT licence/)
+    expect(dots[1]?.parentElement?.textContent).toMatch(/^·\s*MIT license/)
   })
 
   it('credits the author with their GitHub avatar', () => {
@@ -369,16 +450,22 @@ describe('mod page', () => {
 
     const button = screen.getByRole('button', { name: PROMPT_BUTTON })
     expect(button.dataset.variant).toBe('default')
-    expect(button.textContent).toBe('Copy install prompt')
+    expect(within(button).getByText('Copy install prompt').getAttribute('aria-hidden')).toBeNull()
     fireEvent.click(button)
 
     await waitFor(() => expect(recordModCopyFn).toHaveBeenCalledTimes(1))
     expect(writeText).toHaveBeenCalledWith(modInstallPrompt(ORIGIN, 'filetree'))
     expect(recordModCopyFn).toHaveBeenCalledWith({
-      data: { modId: MOD.id, kind: 'prompt', distinctId: 'did-test', sessionId: 'sid-test' },
+      data: {
+        modId: MOD.id,
+        kind: 'prompt',
+        surface: 'page',
+        distinctId: 'did-test',
+        sessionId: 'sid-test',
+      },
     })
     expect(toast).toHaveBeenCalledWith('Prompt copied', {
-      description: `Paste it into Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,
+      description: `Paste it into Claude Code or Claude Desktop. Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`,
     })
   })
 
@@ -386,10 +473,10 @@ describe('mod page', () => {
     recordModCopyFn.mockResolvedValue(4)
     renderPage({ copyCount: 3 })
 
-    expect(screen.getByText('3 copies')).toBeTruthy()
+    expect(screen.getByText('3 installs')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: PROMPT_BUTTON }))
 
-    expect(await screen.findByText('4 copies')).toBeTruthy()
+    expect(await screen.findByText('4 installs')).toBeTruthy()
   })
 
   // Installs count only through the copy button, so the page shows no command to run by hand.
@@ -466,7 +553,7 @@ describe('mod page', () => {
     expect(screen.getByRole('link', { name: /@octocat/ }).getAttribute('href')).toBe(
       'https://github.com/octocat',
     )
-    expect(screen.getByText('MIT licence')).toBeTruthy()
+    expect(screen.getByText('MIT license')).toBeTruthy()
   })
 
   it('links a root-level plugin to the repo tree at the commit', () => {
@@ -516,10 +603,10 @@ describe('mod page', () => {
     expect(screen.queryByRole('heading', { name: 'More like this' })).toBeNull()
   })
 
-  it('says so when there is no licence', () => {
+  it('says so when there is no license', () => {
     renderPage({ license: null })
 
-    expect(screen.getByText('No licence')).toBeTruthy()
+    expect(screen.getByText('No license')).toBeTruthy()
   })
 })
 

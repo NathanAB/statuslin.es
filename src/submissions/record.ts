@@ -23,7 +23,10 @@ export async function assertUnderRateLimit(database: Db, submittedBy: string): P
     .from(submissions)
     .where(and(eq(submissions.submittedBy, submittedBy), gt(submissions.createdAt, windowStart)))
   if ((recent?.count ?? 0) >= SUBMISSION_RATE_LIMIT) {
-    throw new HttpError(429, 'Rate limit: too many submissions, try again later')
+    throw new HttpError(
+      429,
+      `You can send ${SUBMISSION_RATE_LIMIT} submissions an hour. Try again later.`,
+    )
   }
 }
 
@@ -59,7 +62,7 @@ export async function supersedeRejectionEmail(
   submission: { id: string; rejectionEmailStatus: string | null },
 ): Promise<void> {
   if (submission.rejectionEmailStatus === 'sending') {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
+    throw new HttpError(409, 'Your rejection email is still being sent. Try again shortly.')
   }
   if (
     !SUPERSEDABLE_REJECTION_EMAIL_STATUSES.some(
@@ -78,6 +81,6 @@ export async function supersedeRejectionEmail(
       ),
   )
   if (!superseded) {
-    throw new HttpError(409, 'wait for rejection email delivery to finish before submitting again')
+    throw new HttpError(409, 'Your rejection email is still being sent. Try again shortly.')
   }
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { DRAW_LOCATION_LABEL, describeFootprint, describeModFootprint } from '@/mods/footprint'
+import { terminalPlacement, writesInToolbar } from '@/mods/draw-placement'
+import {
+  DRAW_LOCATION_LABEL,
+  describeFootprint,
+  describeModFootprint,
+  footprintRecorded,
+} from '@/mods/footprint'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -25,14 +31,32 @@ const FILETREE = {
 }
 
 describe('describeFootprint', () => {
+  // The install panel tints the powers over the session, files, programs and network. The table
+  // marks them, so rewording a phrase can't drop its tint.
+  it('names which phrases are risks to weigh', () => {
+    const { risks } = describeFootprint({
+      events: ['tool.call'],
+      calls: ['$.mcp.call', '$.fs.read', '$.command.run'],
+    })
+    expect(risks).toContain('calls MCP tools')
+    expect(risks).toContain('runs slash commands')
+    expect(risks).toContain('sees each tool call before it runs and can block or change it')
+    expect(risks).not.toContain('reads files')
+  })
+
+  it('tells a recorded footprint from one that was never recorded', () => {
+    expect(footprintRecorded({ events: [], calls: [] })).toBe(false)
+    expect(footprintRecorded({ events: [], calls: ['$.fs.read'] })).toBe(true)
+  })
+
   it('turns a real footprint into plain-words lines, most sensitive first', () => {
     expect(describeFootprint(FILETREE).phrases).toEqual([
       'runs programs',
       'reads files',
       'adds the /filetree command',
-      'watches Read tool calls',
+      'sees each Read tool call before it runs and can block or change it',
       'runs on a timer',
-      'reacts to classic hook events',
+      'runs on Claude Code hooks, such as session start',
     ])
   })
 
@@ -71,7 +95,7 @@ describe('describeFootprint', () => {
       events: ['session.start', 'turn.complete'],
       calls: ['$.state.get', '$.state.set', '$.ui.resolve', '$.ui.invalidate', '$.clock.now'],
     })
-    expect(result).toEqual({ phrases: [], unknown: [], draws: [] })
+    expect(result).toEqual({ phrases: [], risks: [], shortRisks: [], unknown: [], draws: [] })
   })
 
   // flightdeck's hook only reads each message and after's rewrites one; neither adds any.
@@ -85,7 +109,10 @@ describe('describeFootprint', () => {
       events: ['tool.call{tool=/"^mcp__skins__design$"/}', 'command.run'],
       calls: [],
     })
-    expect(phrases).toEqual(['adds slash commands', 'watches tool calls'])
+    expect(phrases).toEqual([
+      'adds slash commands',
+      'sees each tool call before it runs and can block or change it',
+    ])
   })
 
   it("says a mod that calls $.tool.call runs Claude Code's tools, next to running programs", () => {
@@ -98,6 +125,71 @@ describe('describeFootprint', () => {
       'runs programs',
       "runs Claude Code's tools, such as Bash and Edit, which still pass the session's permission check",
       'reads files',
+    ])
+  })
+})
+
+// Each entry's meaning comes from Anthropic's mods reference, API, events and admin pages.
+describe('describeFootprint on the calls and events published mods use', () => {
+  const STORE = 'remembers data between sessions'
+  it.each([
+    ['$.store.delete', STORE, false],
+    ['$.store.keys', STORE, false],
+    [
+      '$.model.fork',
+      'sends the conversation to Claude with its own requests, which uses your tokens',
+      true,
+    ],
+    ['$.prompt.submit', 'submits prompts for you, which can be sent as your own words', true],
+    ['$.prompt.fill', 'puts text in your prompt box, which can replace what you typed', true],
+    ['$.config.set', 'changes your settings in /config', true],
+    ['$.command.list', 'lists the slash commands you can run', false],
+    ['tool.check', 'can approve or deny each tool call before Claude Code asks you', true],
+    [
+      'tool.check{tool=Bash}',
+      'can approve or deny each Bash tool call before Claude Code asks you',
+      true,
+    ],
+    [
+      'prompt.context',
+      'sees the context sent with your first message, such as CLAUDE.md, and can change it',
+      true,
+    ],
+    ['agent.offer', 'can hide subagent types from Claude', true],
+    ['engine.create', 'adds its own methods for other mods to call', false],
+    ['ui.status', 'can change or hide the status entries other mods show', false],
+    ['ui.log', 'can change or hide the transcript lines other mods add', false],
+  ] as const)('describes %s as %j, a risk: %s', (entry, phrase, risk) => {
+    const result = describeFootprint({ events: [entry], calls: [] })
+    expect(result.unknown).toEqual([])
+    expect(result.phrases).toEqual([phrase])
+    expect(result.risks).toEqual(risk ? [phrase] : [])
+  })
+
+  it('says nothing about moving focus inside its own drawing or reading the model name', () => {
+    const result = describeFootprint({ events: [], calls: ['$.ui.focus', '$.session.model'] })
+    expect(result).toEqual({ phrases: [], risks: [], shortRisks: [], unknown: [], draws: [] })
+  })
+
+  // ui.press, ui.input and ui.select fire when someone uses a Button, Input or Select the mod drew
+  // itself (code.claude.com/docs/en/plugins/mods/reference), like the ui events already left unsaid.
+  it('says nothing about responding to its own buttons, inputs and selects', () => {
+    const result = describeFootprint({
+      events: [
+        'ui.press{plugin=pixel-cat, element=settings}',
+        'ui.input{plugin=pixel-cat, element=name}',
+        'ui.select{plugin=pixel-cat, element=scene}',
+      ],
+      calls: [],
+    })
+    expect(result).toEqual({ phrases: [], risks: [], shortRisks: [], unknown: [], draws: [] })
+  })
+
+  // A mod can add its own namespace to the mods API, and calls on it are events; the footprint
+  // can't tell one from a Claude Code event this page doesn't know yet, so it stays named.
+  it("keeps an event on another mod's own namespace unknown", () => {
+    expect(describeFootprint({ events: ['prismantis.markdown'], calls: [] }).unknown).toEqual([
+      'prismantis.markdown',
     ])
   })
 })
@@ -138,5 +230,31 @@ describe('describeModFootprint', () => {
       desktop: null,
     })
     expect(described).toMatchObject(describeFootprint(FILETREE))
+  })
+})
+
+// Where the home hero's terminal draws a mod.
+describe('terminalPlacement', () => {
+  const at = (events: string[]) => terminalPlacement({ events, calls: [] })
+
+  it('draws a prompt hint under the prompt, and everything else above it', () => {
+    expect(at(['ui.render{component=PromptHint}'])).toBe('under-prompt')
+    expect(at(['ui.render{component=AbovePrompt}'])).toBe('above-prompt')
+    expect(at(['ui.render{component=AbovePrompt}', 'ui.render{component=PromptHint}'])).toBe(
+      'above-prompt',
+    )
+    expect(at(['$.ui.open'])).toBe('above-prompt')
+  })
+})
+
+// Desktop records a toolbar write by its pixels; a mod's footprint names it as the session-mode
+// label or a status entry.
+describe('writesInToolbar', () => {
+  const writes = (events: string[]) => writesInToolbar({ events, calls: [] })
+
+  it('counts the session-mode label and a status entry as toolbar writes, and nothing else', () => {
+    expect(writes(['ui.render{component=SessionMode}'])).toBe(true)
+    expect(writes(['$.ui.status'])).toBe(true)
+    expect(writes(['ui.render{component=AbovePrompt}', '$.ui.open'])).toBe(false)
   })
 })

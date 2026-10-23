@@ -87,7 +87,7 @@ function checkedTitle(title: string): string {
     throw new HttpError(400, `The title must be at most ${MOD_TITLE_MAX} characters.`)
   }
   if (CONTROL_OR_FORMAT.test(trimmed)) {
-    throw new HttpError(400, 'The title must not hold control or format characters.')
+    throw new HttpError(400, 'The title must not contain control or format characters.')
   }
   return trimmed
 }
@@ -139,7 +139,7 @@ async function pinSource(db: Db, input: ModSubmitInput, own: OwnMod | null, gith
     throw new HttpError(
       409,
       holder.status === 'draft' && holder.submittedBy === input.submittedBy
-        ? 'That plugin is already submitted. To change your own submission, open it from /me.'
+        ? 'That plugin is already submitted. To change your own submission, open it from My submissions.'
         : `That plugin is already listed as "${holder.slug}".`,
     )
   }

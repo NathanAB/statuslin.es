@@ -1,10 +1,14 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { findTextWidthCaps } from './text-width-caps'
 
 /** Files allowed to use inline styles — their colors come from data (script output)
  * or are a var()-only CSS bridge into a vendored component. */
 const INLINE_STYLE_ALLOW = [
   'src/ui/statusline-preview.tsx',
+  // `--cols`, the widest line of a script's output, sizes the hero terminal's text from the
+  // server render on.
+  'src/ui/terminal.tsx',
   // var()-only CSS bridge to the vendored sonner toaster; the raw-color rule still
   // polices its contents, so it can carry tokens but never a literal.
   'src/ui/sonner.tsx',
@@ -211,6 +215,7 @@ const FONT_FAMILY_ALLOW = [
   'src/ui/line-diff.tsx', // monospace script diff
   'src/ui/statusline-preview.tsx', // ANSI preview (monospace)
   'src/ui/textarea.tsx', // the monospace source-code input
+  'src/ui/terminal.tsx', // the home page's Claude Code terminal (monospace)
   'src/ui/wordmark.tsx', // the statuslin.es wordmark (monospace)
 ]
 // Tailwind `font-<weight>` utilities — these are weights, not families, so they're fine.
@@ -277,6 +282,8 @@ if (!process.env.VITEST) {
     all.push(...findClassNameOutsideUi(p, content))
     // Font-family is centralized: only the typography file + allowlist may set one.
     all.push(...findRawFontFamily(p, content))
+    // Text runs the full width of its column: no line-length caps.
+    all.push(...findTextWidthCaps(p, content))
   }
 
   // Token-echo runs over src/ AND test/: no literal anywhere may restate a token value.

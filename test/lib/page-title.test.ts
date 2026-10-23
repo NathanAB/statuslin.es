@@ -45,8 +45,9 @@ describe('configPageTitle', () => {
     expect(homePageTitle(20).length).toBeLessThanOrEqual(60)
   })
 
-  it('describes the home page status lines first, inside the length Google shows', () => {
-    expect(homeMetaDescription(1, 1)).toMatch(/\bstatus lines\b.*\bmods\b/)
+  it('names both kinds in the home title and description, inside the lengths Google shows', () => {
+    expect(homePageTitle(1)).toBe('Claude Code Mods & Status Lines | statuslin.es')
+    expect(homeMetaDescription(1, 1)).toMatch(/^Claude Code mods and status lines\b/)
     expect(homeMetaDescription(1, 1).length).toBeLessThanOrEqual(160)
     expect(homeMetaDescription(20, 20).length).toBeLessThanOrEqual(160)
   })
@@ -135,7 +136,7 @@ describe('modMetaDescription', () => {
 
   it('falls back to a generic mod description when there is none', () => {
     expect(modMetaDescription(null)).toBe(
-      'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one command.',
+      'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.',
     )
   })
 })

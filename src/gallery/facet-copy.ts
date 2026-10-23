@@ -16,16 +16,16 @@ export const FACET_INTRO = {
     'Claude Code sends each status line script the running cost of the session. Some show it as a plain number, others change color as the session gets expensive.',
   ],
   quota: [
-    'Claude plans limit usage in a five-hour window and a weekly one. Pick one that shows the five-hour window if you hit limits during a workday, or both if you watch the week.',
+    'Claude Pro and Max plans limit usage in a five-hour window and a weekly one. Pick one that shows the five-hour window if you hit limits during a workday, or one that shows both if you watch the week.',
   ],
   'burn-rate': [
-    'These status lines show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
+    'These show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
   ],
   weather: [
-    'These status lines put the local weather beside your session. They call a weather API, so check the network hosts each one declares before you copy it.',
+    'These put the local weather beside your session. They call a weather API, so check what each one connects to before you install it.',
   ],
   markets: [
-    'These status lines show a crypto price, a stock or an exchange rate beside your session. They call a market data API, so check the network hosts each one declares before you copy it.',
+    'These status lines show crypto prices, stock quotes or exchange rates beside your session. They call a market data API, so check what each one connects to before you install it.',
   ],
   minimal: ['These show only the essentials, usually the model, the directory and one number.'],
   'multi-line': [
@@ -53,7 +53,7 @@ export const FACET_ANSWER = {
     'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
   quota:
     "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing.",
-  git: "Claude Code does not send git state in the status line's stdin JSON. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
+  git: "In a normal session, the status line's stdin JSON has no branch or dirty-file count. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
 } satisfies Record<string, string>
 
 export const FACET_FAQ = {
@@ -73,7 +73,7 @@ export const FACET_FAQ = {
     {
       question: 'Why is rate_limits missing from my status line input?',
       answer:
-        'Claude Code can omit `rate_limits`, or send only the `five_hour` window. Check that each window exists before reading `used_percentage`, or the script prints empty values.',
+        "Claude Code sends `rate_limits` only on Pro and Max plans or behind a gateway with a spend limit, and only after the session's first API response. Each window can also be missing on its own. Check that each window exists before reading `used_percentage`, or the script prints empty values.",
     },
     {
       question: 'How do I show when my limit resets?',
@@ -85,7 +85,7 @@ export const FACET_FAQ = {
     {
       question: 'What does the status line show outside a git repository?',
       answer:
-        'Whatever the script prints when git fails. A careful script runs `git rev-parse --is-inside-work-tree` first and skips the git segment when it fails. Each preview includes a directory with no repo, so you can see how each one handles it.',
+        "Whatever the script prints when git fails. A careful script runs `git rev-parse --is-inside-work-tree` first and skips the git segment when it fails. Each status line's page previews it in a directory with no repo, so you can see how it handles one.",
     },
     {
       question: 'Can the status line show the pull request?',
@@ -95,48 +95,6 @@ export const FACET_FAQ = {
   ],
 } satisfies Record<string, FaqEntry[]>
 
-export interface FacetModCopy {
-  titleBase: string
-  heading: string
-  metaDescription: string
-}
-
 /** Shown on a facet page that lists mods: where each kind shows up. */
 export const FACET_KIND_NOTE =
   "Status lines print under the prompt. Each mod's page shows where it draws."
-
-/**
- * Title, heading and description for a facet page that lists mods too, keyed by facet slug. Only
- * facets a published mod carries get an entry (checked against production on 2026-10-15).
- */
-export const FACET_MOD_COPY: Record<string, FacetModCopy> = {
-  'token-usage': {
-    titleBase: 'Claude Code Token Usage: Status Lines & Mods',
-    heading: 'Claude Code status lines and mods that show token usage',
-    metaDescription:
-      'Claude Code status lines and mods that show context window usage, as token counts or meters.',
-  },
-  cost: {
-    titleBase: 'Claude Code Session Cost: Status Lines & Mods',
-    heading: 'Claude Code status lines and mods that track cost',
-    metaDescription:
-      'Claude Code status lines and mods that show session cost, from dollar figures to burn-rate meters.',
-  },
-  quota: {
-    titleBase: 'Claude Code Usage Limits: Status Lines & Mods',
-    heading: 'Claude Code status lines and mods that track usage limits',
-    metaDescription:
-      'Claude Code status lines and mods that show your 5-hour and weekly usage limits and when they reset.',
-  },
-  minimal: {
-    titleBase: 'Minimal Claude Code Status Lines & Mods',
-    heading: 'Minimal Claude Code status lines and mods',
-    metaDescription: 'Single-line Claude Code status lines and mods that show only the essentials.',
-  },
-  'multi-line': {
-    titleBase: 'Multi-Line Claude Code Status Lines & Mods',
-    heading: 'Multi-line Claude Code status lines and mods',
-    metaDescription:
-      'Claude Code status lines and mods that use two or more lines to show tokens, cost and usage limits.',
-  },
-}

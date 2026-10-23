@@ -32,7 +32,7 @@ describe('ModSubmitForm', () => {
     await waitFor(() =>
       expect(submitModFn).toHaveBeenCalledWith({ data: { link: LINK, title: 'Context meter' } }),
     )
-    expect(await screen.findByText('Pinned meter to main at abcdef1.')).toBeTruthy()
+    expect(await screen.findByText('Pinned your link to main at abcdef1.')).toBeTruthy()
     expect(toast.success).toHaveBeenCalledWith('Submitted for review.')
     expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('')
   })
@@ -65,7 +65,7 @@ describe('ModSubmitForm', () => {
 
 describe('modSubmitPageCopy', () => {
   it('names the page for a new mod, a fix and an update', () => {
-    expect(modSubmitPageCopy(null).heading).toBe('Submit a mod')
+    expect(modSubmitPageCopy(null).heading).toBe('Submit a status line or mod')
     expect(
       modSubmitPageCopy({ kind: 'resubmission', slug: 'meter', title: 'M', link: LINK }).heading,
     ).toBe('Fix and resubmit')

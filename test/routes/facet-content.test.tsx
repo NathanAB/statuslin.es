@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -12,10 +12,12 @@ vi.mock('@tanstack/react-router', async () => {
       to,
       params,
       children,
+      activeOptions: _activeOptions,
       ...props
     }: {
       to: string
       params?: Record<string, string>
+      activeOptions?: unknown
       children: React.ReactNode
     }) => {
       const href = params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to
@@ -31,7 +33,9 @@ vi.mock('@/ui/shell', () => ({
   PageShell: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
 vi.mock('@/gallery/config-card', () => ({
-  GalleryConfigCard: () => null,
+  GalleryConfigCard: ({ card }: { card: { slug: string; title: string } }) => (
+    <a href={`/c/${card.slug}`}>{card.title}</a>
+  ),
 }))
 
 const { Route: FacetRoute } = await import('@/routes/status-lines.$facet')
@@ -41,24 +45,83 @@ const statusLines = ['a', 'b', 'c', 'd'].map((slug) => ({
   sortKey: 0,
 }))
 
-function renderFacet(slug: string, mods = 0) {
+function renderFacet(
+  slug: string,
+  mods = 0,
+  { lines = statusLines, otherFacets = [] as Array<{ slug: string; chipLabel: string }> } = {},
+) {
   vi.spyOn(FacetRoute, 'useLoaderData').mockReturnValue({
     user: null,
     page: {
       slug,
-      configs: { items: statusLines, total: statusLines.length },
+      configs: { items: lines, total: lines.length },
       indexable: true,
       updated: '2026-09-08',
-      otherFacets: [],
+      otherFacets,
     },
-    items: statusLines.map(({ item }) => item),
+    items: lines.map(({ item }) => item),
     mods,
   })
   const FacetPage = FacetRoute.options.component
   return render(FacetPage ? <FacetPage /> : null)
 }
 
+const linkTo = (name: string) => screen.getByRole('link', { name }).getAttribute('href')
+
 describe('facet page content', () => {
+  it('shows the trail back home, with no topics hub between', () => {
+    renderFacet('git')
+
+    const trail = within(screen.getByRole('navigation', { name: 'Breadcrumb' }))
+    expect(trail.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/'])
+    expect(trail.getByText('Git')).toBeTruthy()
+  })
+
+  it('links every topic under the heading, this one marked current', () => {
+    renderFacet('git', 0, {
+      otherFacets: [
+        { slug: 'token-usage', chipLabel: 'tokens' },
+        { slug: 'bash', chipLabel: 'bash' },
+      ],
+    })
+
+    const links = within(screen.getByRole('navigation', { name: 'Topics' })).getAllByRole('link')
+    expect(links.map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['Git', '/status-lines/git'],
+      ['Tokens', '/status-lines/token-usage'],
+      ['Bash', '/status-lines/bash'],
+    ])
+    expect(links.map((link) => link.getAttribute('aria-current'))).toEqual(['page', null, null])
+  })
+
+  it('says how to install one from the list', () => {
+    renderFacet('git')
+
+    expect(screen.getByText('Open one to copy its install prompt.')).toBeTruthy()
+  })
+
+  it('ends with links to the best status lines and the gallery', () => {
+    renderFacet('git')
+
+    expect(linkTo('Best status lines')).toBe('/status-lines/best')
+    expect(linkTo('Browse the gallery')).toBe('/')
+  })
+
+  it('shows the first 12 rows and keeps the rest in the page behind Show all', () => {
+    const lines = Array.from({ length: 15 }, (_, i) => ({
+      item: { kind: 'status-line', card: { slug: `line-${i + 1}`, title: `Line ${i + 1}` } },
+      sortKey: 0,
+    }))
+    renderFacet('git', 0, { lines })
+
+    const collapsed = (name: string) =>
+      screen.getByRole('link', { name, hidden: true }).closest('[hidden]') !== null
+    expect(collapsed('Line 12')).toBe(false)
+    expect(collapsed('Line 13')).toBe(true)
+    expect(collapsed('Line 15')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Show all 15' })).toBeTruthy()
+  })
+
   it('states the live published count from the cards on the page', () => {
     renderFacet('git')
 
@@ -131,56 +194,41 @@ describe('facet page content', () => {
     return head?.meta ?? []
   }
 
-  it('names status lines and mods in the title, description and H1 when the page lists mods', async () => {
-    const meta = await headMeta('token-usage', 3)
-    expect(meta).toEqual(
-      expect.arrayContaining([
-        { title: 'Claude Code Token Usage: Status Lines & Mods | statuslin.es' },
-        { property: 'og:title', content: 'Claude Code Token Usage: Status Lines & Mods' },
-        {
-          name: 'description',
-          content: expect.stringMatching(
-            /^Claude Code status lines and mods that show context window usage/,
-          ),
-        },
-      ]),
-    )
-
-    renderFacet('token-usage', 3)
-    expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: 'Claude Code status lines and mods that show token usage',
-      }),
-    ).toBeTruthy()
-    expect(
-      screen.getByText(
-        "Status lines print under the prompt. Each mod's page shows where it draws.",
-      ),
-    ).toBeTruthy()
+  // A tag edit must not retitle a ranking page, so the copy never depends on what the page lists.
+  it("keeps a topic's title, description and H1 whether it lists 0 or 3 mods", async () => {
+    for (const mods of [0, 3]) {
+      expect(await headMeta('git', mods)).toEqual(
+        expect.arrayContaining([
+          { title: 'Claude Code Git Branch Status Lines & Mods | statuslin.es' },
+          { property: 'og:title', content: 'Claude Code Git Branch Status Lines & Mods' },
+          {
+            name: 'description',
+            content: expect.stringMatching(/^Claude Code status lines and mods that show your git/),
+          },
+        ]),
+      )
+      const { unmount } = renderFacet('git', mods)
+      expect(
+        screen.getByRole('heading', {
+          level: 1,
+          name: 'Claude Code status lines and mods that show git status',
+        }),
+      ).toBeTruthy()
+      unmount()
+    }
   })
 
-  it('keeps status-lines wording on a mod-ready facet while it lists no mods', async () => {
-    const meta = await headMeta('token-usage', 0)
-    expect(meta).toContainEqual({
-      title: 'Claude Code Status Lines That Show Token Usage',
-    })
-    expect(meta).toContainEqual({
-      name: 'description',
-      content: expect.stringMatching(/^Status lines that track context window usage/),
-    })
+  it('says where each kind shows up only while the page lists mods', () => {
+    const note = "Status lines print under the prompt. Each mod's page shows where it draws."
+    const { unmount } = renderFacet('token-usage', 0)
+    expect(screen.queryByText(note)).toBeNull()
+    unmount()
 
-    renderFacet('token-usage', 0)
-    expect(
-      screen.getByRole('heading', {
-        level: 1,
-        name: 'Claude Code status lines that show token usage',
-      }),
-    ).toBeTruthy()
-    expect(screen.queryByText(/Each mod's page/)).toBeNull()
+    renderFacet('bash', 1)
+    expect(screen.getByText(note)).toBeTruthy()
   })
 
-  it('never claims mods on a facet with no mod copy, even if a mod carries the tag', async () => {
+  it('keeps status line copy on a topic that lists no mods, even if a mod carries the tag', async () => {
     expect(await headMeta('bash', 1)).toContainEqual({
       title: 'Claude Code Status Lines Written in Bash | statuslin.es',
     })
@@ -191,8 +239,8 @@ describe('facet page content', () => {
   })
 
   it('drops the brand from a facet title that would run past 60 characters', async () => {
-    expect(await headMeta('git')).toContainEqual({
-      title: 'Claude Code Status Lines With Git Branch & Diff Stats',
+    expect(await headMeta('themed')).toContainEqual({
+      title: 'Catppuccin, Dracula & Themed Claude Code Status Lines',
     })
   })
 
@@ -243,6 +291,15 @@ describe('facet page content', () => {
     expect((await headFor('cost')).map((node) => node['@type'])).toEqual([
       'CollectionPage',
       'BreadcrumbList',
+    ])
+  })
+
+  it('names this topic in the breadcrumb JSON-LD, right after home', async () => {
+    const crumbs = (await headFor('token-usage')).find((node) => node['@type'] === 'BreadcrumbList')
+    const trail = (crumbs?.itemListElement ?? []) as Array<{ name: string; item: string }>
+    expect(trail.map(({ name, item }) => [name, item])).toEqual([
+      ['statuslin.es', window.location.origin],
+      ['Tokens', `${window.location.origin}/status-lines/token-usage`],
     ])
   })
 

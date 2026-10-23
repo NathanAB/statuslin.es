@@ -8,7 +8,7 @@ const TILES = [
   { icon: Globe, label: 'Network', value: 'None' },
   {
     icon: Sparkles,
-    label: 'Uses your plan',
+    label: 'Uses your tokens',
     value: 'Asks the model for `/reflect`',
     caution: true,
   },
@@ -28,21 +28,29 @@ describe('FactTiles', () => {
 
     expect(container.querySelector('dl')).toBeTruthy()
     expect(tile('Network').value).toBe('None')
-    expect(tile('Uses your plan').value).toBe('Asks the model for /reflect')
+    expect(tile('Uses your tokens').value).toBe('Asks the model for /reflect')
   })
 
   it('shows backtick-marked code in a value in monospace', () => {
     render(<FactTiles tiles={TILES} />)
 
-    const code = within(tile('Uses your plan').group).getByText('/reflect')
+    const code = within(tile('Uses your tokens').group).getByText('/reflect')
     expect(code.className).toContain('font-mono')
   })
 
   it('draws a cost or risk in the warning tint and leaves the rest plain', () => {
     render(<FactTiles tiles={TILES} />)
 
-    expect(tile('Uses your plan').group.dataset.tone).toBe('caution')
+    expect(tile('Uses your tokens').group.dataset.tone).toBe('caution')
     expect(tile('Network').group.dataset.tone).toBe('plain')
+  })
+
+  // Tiles sit straight on the page as one surface each: no hairline around them.
+  it('draws each tile as one borderless surface', () => {
+    const { container } = render(<FactTiles tiles={TILES} />)
+    for (const tile of container.querySelectorAll('dl > div')) {
+      expect(tile.className).not.toMatch(/\bborder\b/)
+    }
   })
 
   it('gives each tile a decorative icon', () => {

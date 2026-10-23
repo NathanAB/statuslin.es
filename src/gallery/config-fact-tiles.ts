@@ -24,7 +24,7 @@ export function configFactTiles(
   const network =
     config.networkHosts.length > 0
       ? config.networkHosts.map((host) => `\`${host}\``).join(', ')
-      : 'None'
+      : 'None requested'
   return [
     {
       icon: iconFor(config.interpreter),

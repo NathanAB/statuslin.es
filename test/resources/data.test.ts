@@ -1,17 +1,37 @@
 import { describe, expect, it } from 'vitest'
 import { RESOURCE_SECTIONS } from '@/resources/data'
+import { CUSTOMIZATION_SURFACES } from '@/resources/surfaces'
 
 const ALL = RESOURCE_SECTIONS.flatMap((s) => s.resources)
 
 describe('resources data', () => {
-  it('has the five sections in display order', () => {
+  it('has the six sections in display order', () => {
     expect(RESOURCE_SECTIONS.map((s) => s.key)).toEqual([
+      'marketplaces',
       'tools',
-      'generators',
       'usage-tracking',
+      'themes',
+      'beyond',
       'guides',
-      'community-lists',
     ])
+  })
+
+  // The page opens on every way to customize Claude Code, each backed by Anthropic's own docs.
+  it('maps each way to customize Claude Code to its official docs page', () => {
+    expect(CUSTOMIZATION_SURFACES.map((s) => s.name)).toEqual([
+      'Mods',
+      'Status line',
+      'Themes',
+      'Spinner verbs',
+      'Output styles',
+      'Hooks',
+      'Skills',
+      'Subagents',
+    ])
+    for (const surface of CUSTOMIZATION_SURFACES) {
+      expect(surface.docsUrl).toMatch(/^https:\/\/code\.claude\.com\/docs\/en\//)
+      expect(surface.text.trim().length).toBeGreaterThan(20)
+    }
   })
 
   it('every entry has a name, an https URL, and a non-empty description', () => {
@@ -42,5 +62,13 @@ describe('resources data', () => {
         .replaceAll('statusLine', '')
       expect(prose.toLowerCase()).not.toContain('statusline')
     }
+  })
+
+  it('links spinner verbs to their own entry and names every app mods run in', () => {
+    const byName = (name: string) => CUSTOMIZATION_SURFACES.find((s) => s.name === name)
+    expect(byName('Spinner verbs')?.docsUrl).toBe(
+      'https://code.claude.com/docs/en/settings-reference#spinnerverbs',
+    )
+    expect(byName('Mods')?.text).toMatch(/terminal, Claude Desktop and VS Code/)
   })
 })

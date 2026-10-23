@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { HomeHero } from '@/ui/home-hero'
 import { Wordmark } from '@/ui/wordmark'
 
 describe('Wordmark', () => {
@@ -16,12 +15,5 @@ describe('Wordmark', () => {
   it('uses the monospace family', () => {
     const { container } = render(<Wordmark />)
     expect((container.firstChild as HTMLElement).className).toContain('font-mono')
-  })
-})
-
-describe('HomeHero', () => {
-  it('is decoration, not a heading: the gallery intro owns the h1', () => {
-    const { container } = render(<HomeHero />)
-    expect(container.querySelectorAll('h1, h2, h3, [role="heading"]')).toHaveLength(0)
   })
 })

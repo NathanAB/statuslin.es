@@ -15,7 +15,8 @@ export interface FactTile {
 
 /**
  * Small label/value tiles in a responsive grid: one column on a phone, up to three on a wide
- * screen. Each reads as a description-list pair, its icon beside the muted label.
+ * screen. Each reads as a description-list pair, its icon beside the muted label, on one
+ * borderless surface (a caution tile in the warning tint).
  */
 export function FactTiles({ tiles }: { tiles: FactTile[] }) {
   return (
@@ -25,8 +26,8 @@ export function FactTiles({ tiles }: { tiles: FactTile[] }) {
           key={label}
           data-tone={caution ? 'caution' : 'plain'}
           className={cn(
-            'flex flex-col gap-1 rounded-md border p-3',
-            caution ? 'border-warning/40 bg-warning/10' : 'border-border bg-muted/40',
+            'flex flex-col gap-1 rounded-tile px-4 py-3.5',
+            caution ? 'bg-warning/10' : 'bg-card',
           )}
         >
           <dt className="flex items-center gap-2">

@@ -11,11 +11,12 @@ import { Stack } from '@/ui/layout'
 import { StatuslineAnywhereLink } from '@/ui/statusline-anywhere-link'
 import { Heading, Text, TextLink } from '@/ui/text'
 
-// No VS Code row: the mods docs say mods draw there only from extension 2.1.299 behind feature
-// flags, and the status line docs don't say whether status lines show there.
+// The mods docs (plugins/mods/overview, "Where mods run") say what a mod draws shows in the VS Code
+// extension from 2.1.299; the status line docs don't say whether a status line shows there.
 const WHERE_EACH_SHOWS_UP: FactTableRow[] = [
   { label: 'Claude Code in a terminal', cells: ['Yes', 'Yes'] },
   { label: "Claude Desktop's Code tab", cells: ['No', 'Yes'] },
+  { label: 'The VS Code extension', cells: ['Not documented', 'Yes, from extension 2.1.299'] },
 ]
 
 /**
@@ -63,8 +64,8 @@ export function StatusLinesVsModsContent({
         <Text muted>
           Pick a status line for session facts at the bottom of the terminal, such as the model, git
           branch, context use and cost. A few lines of bash is enough. The{' '}
-          <TextLink to={GUIDE_PATH}>setup guide</TextLink> has a working script, and the{' '}
-          <TextLink to="/">gallery</TextLink> shows each one's real output before you copy it.
+          <TextLink to={GUIDE_PATH}>guide to writing your own</TextLink> has a working script, and
+          the <TextLink to="/">gallery</TextLink> shows each one's real output before you copy it.
         </Text>
         <Text muted>
           Pick a mod for what a status line can't do: a pane, a toast, a slash command, or a display

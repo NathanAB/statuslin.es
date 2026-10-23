@@ -15,6 +15,17 @@ port 3110; with another `VERIFY_PORT`, swap the port.
   leaves the machine and no analytics are sent.
 - Never drive the user's dev server, anything on port 3101, or an instance `doctor` doesn't call ours.
 
+## Fresh and populated instances
+
+- A fresh DB can't reach some states through the app: gallery paging needs more than ten published
+  items, and mods need GitHub and E2B to submit. Features that need those say so. Drive them on a
+  populated instance, one whose verify DB already holds published rows copied from another local
+  DB (the [buddy guide](./buddy-guide.md) has the `pg_dump` recipe for mods), or report them skipped.
+- When the instance on 3110 is populated and shared, run the flows that write rows (submit, review,
+  copy counts, sign-out) on a second, fresh one: `VERIFY_PORT=3111 H up`, then the same port on
+  every call, and `VERIFY_PORT=3111 H down` when done. On the shared one, remove the residue of
+  any write you made (a copy event row and its count) and leave its roles signed in.
+
 ## Driving conventions
 
 - One `agent-browser` session per role: `H ab anon …`, `H ab author …`, `H ab admin …`. Sign a
@@ -24,6 +35,9 @@ port 3110; with another `VERIFY_PORT`, swap the port.
 - Locate by role and accessible name (`find role button click --name Approve --exact`) or label
   (`find label "Title" fill …`). Don't use `@eN` refs across snapshots.
 - `snapshot -i` lists controls; `get text main` shows visible copy (badges, decided states).
+- Many names repeat across the header, the phone menu, the page and the footer (`Submit`,
+  `Resources`, `GitHub`, `How it works`, `Are mods safe?`, `Clear search`), and `--name` matches part
+  of a name. Pass `--exact`, and scope with `header …`, `footer …` or `main …` selectors.
 - A feature that needs a published status line creates it through the app: submit as author
   ([submit-status-line](./submit-status-line.md)), approve as admin ([review-queue](./review-queue.md)).
 - Read side effects with `H sql "<query>"`.
@@ -56,16 +70,27 @@ commands, and observable proof.
 
 ## Features
 
+- [Site navigation](./site-navigation.md): the header, the `@handle` user menu, sign-out, the phone
+  menu, and the footer's link columns.
+- [Home hero](./home-hero.md): pick a status line or mod and see it in a Claude Code session, in
+  the terminal or Claude Desktop, and copy its install prompt from there.
+- [Browse the gallery](./gallery.md): the home list's sort, search and pages, the URL filters,
+  topic pages, `/status-lines/best` and `/mods`.
+- [How listings are checked](./how-it-works.md): the home band of four checks and `/how-it-works`
+  with its live examples.
 - [Submit a status line](./submit-status-line.md): the signed-in submit form, the queued toast,
   and the submission on `/me`.
 - [Review queue](./review-queue.md): an admin approves or rejects a submission on `/admin`.
-- [Browse the gallery](./gallery.md): home list, Show filter, sort menu, and facet pages.
-- [Copy a status line to use](./copy-status-line.md): the detail page's install prompt and script
-  copy, and the copy count.
+- [Copy a status line to use](./copy-status-line.md): the detail page's `Before you install`
+  facts, install prompt and script copy, the long-script fold, and the install count.
 - [Mods](./mods.md): submit a mod by GitHub link, `/me`, review and approve on `/admin`, the mod
-  page and its install prompt, and `/marketplace.json`. Submit, render and approve need GitHub and
-  E2B access; see its preconditions.
-- [Status line setup guide](./status-line-guide.md): `/guide`'s sample stdin JSON, its `Copy JSON`
-  button, the field list and the minimal script.
+  page with `What this mod can do` and its install prompt, `/mods`' marketplace line, and
+  `/marketplace.json`. Submit, render and approve need GitHub and E2B access; see its preconditions.
+- [Status line setup guide](./status-line-guide.md): `/guide`'s numbered steps and their copy
+  buttons, the sample stdin JSON with `Copy JSON`, the field list, and `On this page`.
+- [Status line not showing guide](./status-line-not-showing.md): `/guide/status-line-not-showing`'s
+  `Copy fix prompt` and its fixes.
+- [Resources](./resources.md): `/resources`' tool cards, the matching status lines and alternatives
+  links, the customize panels, and its marketplace command copy.
 - [Claude Code buddy guide](./buddy-guide.md): `/guide/claude-code-buddy`, its published pet mod cards,
   the shared-command note, card links to each mod page, and its sitemap, llms.txt and footer links.

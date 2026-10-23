@@ -1,10 +1,10 @@
 import type { LucideIcon } from 'lucide-react'
 import type * as React from 'react'
 
-const STRIP = 'rounded-md border border-border bg-card px-4 py-2.5 text-muted-foreground text-sm'
+const STRIP = 'rounded-panel bg-card px-5 py-3.5 text-muted-foreground text-sm'
 
 /**
- * A one-line pointer with a leading icon: an outlined, card-colored strip in small muted text
+ * A one-line pointer with a leading icon: a borderless, card-colored strip in small muted text
  * (wrap emphasis in `Text inline`). An `action` sits at the strip's end in full-strength text and
  * drops below the message when the row is too narrow for both.
  */

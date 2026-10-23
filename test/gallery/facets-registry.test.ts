@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { FACET_KIND_NOTE, FACET_MOD_COPY } from '@/gallery/facet-copy'
-import { FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
+import { FACET_INTRO, FACET_KIND_NOTE } from '@/gallery/facet-copy'
+import { FACET_BY_SLUG, FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
 import { brandedPageTitle } from '@/lib/page-title'
 import { JOB_BY_TAG } from '@/mods/mod-header'
+
+/** The topics someone decided list mods, each with its fixed title. */
+const TITLES_WITH_MODS = {
+  git: 'Claude Code Git Branch Status Lines & Mods',
+  'token-usage': 'Claude Code Token Usage Status Lines & Mods',
+  cost: 'Claude Code Session Cost: Status Lines & Mods',
+  quota: 'Claude Code Usage Limit Status Lines & Mods',
+  'burn-rate': 'Claude Code Burn Rate Status Lines & Mods',
+  weather: 'Claude Code Weather Status Lines & Mods',
+  minimal: 'Minimal Claude Code Status Lines & Mods',
+  'multi-line': 'Multi-Line Claude Code Status Lines & Mods',
+}
+const pageFacets = FACETS.filter((f) => f.page)
 
 describe('tag registry', () => {
   it('includes the capability tags as badge+filter-only (page: false)', () => {
@@ -20,33 +33,39 @@ describe('tag registry', () => {
       expect(TAG_VOCABULARY).toContain(slug)
     }
   })
-  it('gives mod copy only to the facets published mods carry, sized for search results', () => {
-    // From production on 2026-10-15: burn-meter, context-bar, pixel-cat and token-weather carry
-    // these tags. A facet gains mod copy only once a mod is tagged for it.
-    expect(Object.keys(FACET_MOD_COPY)).toEqual([
-      'token-usage',
-      'cost',
-      'quota',
-      'minimal',
-      'multi-line',
-    ])
-    for (const copy of Object.values(FACET_MOD_COPY)) {
-      expect(brandedPageTitle(copy.titleBase)).toMatch(/ \| statuslin\.es$/)
-      expect(copy.titleBase).toContain('Status Lines & Mods')
-      expect(copy.heading).toContain('status lines and mods')
-      expect(copy.metaDescription.length).toBeLessThanOrEqual(160)
+  // Titles are fixed: a topic someone decided lists mods names both kinds, status lines first.
+  it('names status lines and mods in the copy of the topics that list mods', () => {
+    for (const [slug, title] of Object.entries(TITLES_WITH_MODS)) {
+      const facet = FACET_BY_SLUG.get(slug)
+      expect(facet?.titleBase).toBe(title)
+      expect(brandedPageTitle(title)).toMatch(/ \| statuslin\.es$/)
+      expect(facet?.heading).toMatch(/status lines and mods/)
+      expect(facet?.metaDescription).toMatch(/status lines? (and|or) mods?/i)
+      expect(facet?.metaDescription?.length).toBeLessThanOrEqual(160)
+    }
+  })
+  it('keeps status line copy on the topics that list no mods', () => {
+    for (const facet of pageFacets.filter((f) => !(f.slug in TITLES_WITH_MODS))) {
+      expect(`${facet.titleBase} ${facet.heading} ${facet.metaDescription}`).not.toMatch(
+        /\bmods?\b/i,
+      )
+    }
+  })
+  // A topic that lists mods asks the reader to pick from both kinds, not only status lines.
+  it('words the intros of topics that list mods for both kinds', () => {
+    for (const slug of ['quota', 'burn-rate', 'weather']) {
+      expect(FACET_INTRO[slug as keyof typeof FACET_INTRO].join(' ')).not.toMatch(
+        /Pick a status line|These status lines/,
+      )
     }
   })
   it('claims nothing about where mods draw, which varies by mod and is shown on each mod page', () => {
     // Surfaces and Desktop support come from each mod's recorded facts, never from shared copy.
     const surfaceClaims = /above the prompt|in a pane|claude desktop shows/i
-    for (const copy of Object.values(FACET_MOD_COPY)) {
-      expect(copy.metaDescription).not.toMatch(surfaceClaims)
-    }
+    for (const facet of pageFacets) expect(facet.metaDescription).not.toMatch(surfaceClaims)
     expect(FACET_KIND_NOTE).not.toMatch(surfaceClaims)
   })
-  it('keys mod copy only by real tags, so a typo fails here instead of dropping the copy', () => {
-    for (const slug of Object.keys(FACET_MOD_COPY)) expect(TAG_VOCABULARY).toContain(slug)
+  it('keys mod jobs only by real tags, so a typo fails here instead of dropping the job', () => {
     for (const tag of Object.keys(JOB_BY_TAG)) expect(TAG_VOCABULARY).toContain(tag)
   })
   it('tagHref points page tags to their page and non-page tags to the filtered home', () => {

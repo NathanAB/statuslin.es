@@ -1,64 +1,102 @@
+import type { LinkProps } from '@tanstack/react-router'
+import { cn } from '@/lib/cn'
 import {
   BUDDY_GUIDE_PATH,
   DESKTOP_GUIDE_PATH,
+  GUIDE_LINK_LABEL,
+  GUIDE_PATH,
+  HOW_IT_WORKS_PATH,
   MOD_SAFETY_GUIDE_PATH,
   NOT_SHOWING_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
 } from '@/lib/page-title'
-import { CONTACT_EMAIL, MODS_PATH, REPO_URL } from '@/lib/site'
+import { CONTACT_EMAIL, MODS_PATH, REPO_URL, SITE_NAME } from '@/lib/site'
+import { PAGE_COLUMN } from '@/ui/page-column'
 import { TextLink } from '@/ui/text'
 
-const PAGE_LINKS = [
-  { to: MODS_PATH, label: 'Mods' },
-  { to: '/status-lines/best', label: 'Best status lines' },
-  { to: '/guide', label: 'Guide' },
-  { to: NOT_SHOWING_GUIDE_PATH, label: 'Status line not showing?' },
-  { to: DESKTOP_GUIDE_PATH, label: 'Claude Desktop' },
-  { to: STATUS_LINES_VS_MODS_GUIDE_PATH, label: 'Status lines vs mods' },
-  { to: MOD_SAFETY_GUIDE_PATH, label: 'Are mods safe?' },
-  { to: BUDDY_GUIDE_PATH, label: 'Buddy pets' },
-  { to: '/resources', label: 'Resources' },
-] as const
+// A page of the site (`to`) or an address off it (`href`).
+type FooterLink = { label: string } & ({ to: NonNullable<LinkProps['to']> } | { href: string })
 
-// Each item draws a thin rule in its left gutter, like the bars between a status line's segments.
-// The list is pulled one gutter left inside a clipping box, so the rule before whichever item
-// starts a line is cut off: rules only ever sit between two links, however the row wraps. The
-// box's p-1 keeps link focus rings inside the clip.
-const ITEM =
-  'relative pl-6 before:absolute before:top-1/2 before:left-3 before:h-3.5 before:w-px before:-translate-y-1/2 before:bg-border'
+// The footer's links in three columns, so the layout is the same on every page and at every width.
+const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
+  {
+    title: 'Browse',
+    links: [
+      // The two ranked lists side by side, named alike.
+      { to: MODS_PATH, label: 'Best mods' },
+      { to: '/status-lines/best', label: 'Best status lines' },
+      { to: '/resources', label: 'Resources' },
+      { to: '/submit', label: 'Submit' },
+    ],
+  },
+  {
+    title: 'Guides',
+    links: [
+      { to: GUIDE_PATH, label: GUIDE_LINK_LABEL },
+      { to: NOT_SHOWING_GUIDE_PATH, label: 'Status line not showing?' },
+      { to: DESKTOP_GUIDE_PATH, label: 'Status line in Claude Desktop' },
+      { to: STATUS_LINES_VS_MODS_GUIDE_PATH, label: 'Status lines vs mods' },
+      { to: MOD_SAFETY_GUIDE_PATH, label: 'Are mods safe?' },
+      { to: BUDDY_GUIDE_PATH, label: 'Buddy pets' },
+    ],
+  },
+  {
+    title: 'About',
+    links: [
+      { to: HOW_IT_WORKS_PATH, label: 'How it works' },
+      { href: REPO_URL, label: 'GitHub' },
+      // The abuse-report path.
+      { href: `mailto:${CONTACT_EMAIL}`, label: 'Contact' },
+      { to: '/terms', label: 'Terms' },
+    ],
+  },
+]
 
 /**
- * Shared bottom footer on every page, aligned with the header: the site's pages, then the GitHub
- * source, a mailto contact (the abuse-report path) and Terms.
+ * Shared bottom footer on every page, on the page column: the copyright on the left, then the
+ * links in three named columns (Browse, Guides, About). Phones put the copyright on top and the
+ * columns two up.
  */
 export function SiteFooter() {
   return (
-    <footer className="mx-auto w-full max-w-5xl px-5 py-5">
-      <div className="overflow-hidden p-1">
-        <ul className="-ml-6 flex flex-wrap gap-y-1">
-          {PAGE_LINKS.map(({ to, label }) => (
-            <li key={to} className={ITEM}>
-              <TextLink to={to} size="sm">
-                {label}
-              </TextLink>
-            </li>
+    <footer
+      className={cn('pt-20 pb-10 text-small [view-transition-name:site-footer]', PAGE_COLUMN)}
+    >
+      <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-12">
+        <div className="col-span-2 flex flex-col gap-1.5 text-muted-foreground md:col-span-4 lg:col-span-6">
+          {/* The year is the visitor's clock; it can only differ from the server's on New Year's. */}
+          <p suppressHydrationWarning>{`© ${new Date().getFullYear()} ${SITE_NAME}`}</p>
+        </div>
+        <nav
+          aria-label="Footer"
+          className="col-span-2 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:col-span-8 lg:col-span-6"
+        >
+          {GROUPS.map(({ title, links }) => (
+            <div key={title}>
+              <h2 id={`footer-${title.toLowerCase()}`} className="text-muted-foreground">
+                {title}
+              </h2>
+              <ul
+                aria-labelledby={`footer-${title.toLowerCase()}`}
+                className="mt-3 flex flex-col gap-2"
+              >
+                {links.map((link) => (
+                  <li key={link.label}>
+                    {'to' in link ? (
+                      <TextLink to={link.to} tone="plain">
+                        {link.label}
+                      </TextLink>
+                    ) : (
+                      <TextLink href={link.href} tone="plain">
+                        {link.label}
+                      </TextLink>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-          <li className={ITEM}>
-            <TextLink href={REPO_URL} size="sm">
-              GitHub
-            </TextLink>
-          </li>
-          <li className={ITEM}>
-            <TextLink href={`mailto:${CONTACT_EMAIL}`} size="sm">
-              Contact
-            </TextLink>
-          </li>
-          <li className={ITEM}>
-            <TextLink to="/terms" size="sm">
-              Terms
-            </TextLink>
-          </li>
-        </ul>
+        </nav>
       </div>
     </footer>
   )

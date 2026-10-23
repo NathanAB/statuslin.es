@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { type BrowserCopyTracking, requestCopyIdentity } from '@/lib/copy-identity.server'
+import type { CopySurface } from '@/lib/copy-surface'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
 import { getModDesktopShot } from './desktop-shot'
@@ -33,11 +34,19 @@ export const getModDesktopShotFn = createServerFn({ method: 'GET' })
 
 /** Anonymous on purpose, like config copies: anyone can copy an install command. */
 export const recordModCopyFn = createServerFn({ method: 'POST' })
-  .validator((d: { modId: string; kind: InstallCommandKind } & BrowserCopyTracking) => d)
+  .validator(
+    (d: { modId: string; kind: InstallCommandKind; surface?: CopySurface } & BrowserCopyTracking) =>
+      d,
+  )
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const { ipHash, ...tracking } = await requestCopyIdentity(data)
-      const event = modCopyEvent({ kind: data.kind, modId: data.modId, ...tracking })
+      const event = modCopyEvent({
+        kind: data.kind,
+        modId: data.modId,
+        surface: data.surface,
+        ...tracking,
+      })
       if (event) getPostHogClient()?.capture(event)
       return recordModCopy(db, data.modId, ipHash)
     }),

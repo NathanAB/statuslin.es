@@ -1,15 +1,15 @@
 import { GalleryConfigCard } from '@/gallery/config-card'
 import type { GalleryItem } from '@/gallery/gallery-items'
-import { Stack } from '@/ui/layout'
-import { SectionCard } from '@/ui/section-card'
+import { GalleryList } from '@/ui/gallery-row'
+import { PageSection } from '@/ui/page-section'
 import { ModCard } from './mod-card'
 
 /** The foot of a mod page: the mods, then status lines, that share its tags. Nothing without any. */
 export function ModRelated({ items }: { items: GalleryItem[] }) {
   if (items.length === 0) return null
   return (
-    <SectionCard title="More like this" headingLevel={2}>
-      <Stack gap={3}>
+    <PageSection title="More like this">
+      <GalleryList>
         {items.map((item, index) =>
           item.kind === 'mod' ? (
             <ModCard
@@ -25,7 +25,7 @@ export function ModRelated({ items }: { items: GalleryItem[] }) {
             />
           ),
         )}
-      </Stack>
-    </SectionCard>
+      </GalleryList>
+    </PageSection>
   )
 }

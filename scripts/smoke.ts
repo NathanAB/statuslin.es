@@ -10,10 +10,10 @@
  */
 import { type ChildProcess, spawn } from 'node:child_process'
 import { setTimeout as sleep } from 'node:timers/promises'
-import { HOME_HEADING, HOME_TITLE_BASE } from '../src/lib/page-title'
+import { HOME_HERO_HEADING, HOME_TITLE_BASE } from '../src/lib/page-title'
 
 export const EXPECTED_HOME = {
-  h1: HOME_HEADING,
+  h1: HOME_HERO_HEADING,
   title: `${HOME_TITLE_BASE} | statuslin.es`,
 } as const
 
@@ -172,6 +172,62 @@ async function checkBrowserFacingHome(): Promise<void> {
   check(true, 'home title, canonical, H1, body, and initial resources are valid')
 }
 
+/** Widths every page must fit without scrolling sideways: a small phone, a tablet, a small laptop. */
+export const FIT_WIDTHS = [320, 768, 1024] as const
+
+type WidthMeasure = { path: string; width: number; scrollWidth: number }
+
+/** Each page and width where the document is wider than the window, or wasn't measured at all. */
+export function sideScrollFailures(measured: WidthMeasure[]): string[] {
+  return measured.flatMap((m) =>
+    m.scrollWidth <= 0
+      ? [`${m.path} at ${m.width}px was not measured`]
+      : m.scrollWidth > m.width
+        ? [`${m.path} at ${m.width}px is ${m.scrollWidth}px wide`]
+        : [],
+  )
+}
+
+const scrollWidthOf = async (selector: string): Promise<number> =>
+  Number(
+    (
+      await ab(
+        'eval',
+        `String(document.querySelector(${JSON.stringify(selector)})?.scrollWidth||0)`,
+      )
+    ).replace(/[^0-9]/g, ''),
+  )
+
+/**
+ * Open each page at every FIT_WIDTHS width and fail if it scrolls sideways, then do the same for
+ * the phone menu, opened at the narrowest width. Leaves the window at a desktop size.
+ */
+async function checkFits(label: string, paths: string[]): Promise<void> {
+  const measured: WidthMeasure[] = []
+  for (const width of FIT_WIDTHS) {
+    await ab('set', 'viewport', String(width), '900')
+    for (const path of paths) {
+      await ab('open', `${BASE}${path}`)
+      await ab('wait', '--load', 'networkidle')
+      measured.push({ path, width, scrollWidth: await scrollWidthOf('html') })
+    }
+  }
+  await ab('set', 'viewport', String(FIT_WIDTHS[0]), '900')
+  await ab('open', `${BASE}/`)
+  await ab('wait', '--load', 'networkidle')
+  await ab('find', 'role', 'button', 'click', '--name', 'Menu')
+  await sleep(800)
+  measured.push({
+    path: '/ (phone menu)',
+    width: FIT_WIDTHS[0],
+    scrollWidth: await scrollWidthOf('[role="dialog"]'),
+  })
+  await ab('press', 'Escape')
+  await ab('set', 'viewport', '1280', '900')
+  const failures = sideScrollFailures(measured)
+  check(failures.length === 0, `${label}: no page scrolls sideways`, failures.join(' | '))
+}
+
 async function reachable(url: string): Promise<boolean> {
   try {
     return (await fetch(url, { signal: AbortSignal.timeout(2500) })).ok
@@ -309,6 +365,8 @@ async function checkSignedOut() {
     /Sign in with GitHub/i.test(await ab('snapshot', '-i')),
     'signed-out /admin shows the sign-in prompt',
   )
+
+  await checkFits('signed out', ['/', '/guide', '/submit', ...(detail ? [detail] : [])])
 }
 
 /**
@@ -400,6 +458,9 @@ async function checkSignedInAdmin() {
     me.errs.slice(0, 2).join(' | '),
   )
   check(/My submissions/.test(me.snap), '/me shows the My submissions page')
+
+  // The signed-in header carries the user's name, the widest thing in the bar.
+  await checkFits('signed in', ['/', '/submit', '/me'])
 }
 
 async function main() {

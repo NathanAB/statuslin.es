@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { STATUS_LINE_FIX_PROMPT } from '@/guide/fix-prompt'
 import { NOT_SHOWING_FAQ } from '@/guide/status-line-not-showing-faq'
 
 vi.mock('@tanstack/react-router', () => ({
@@ -15,6 +16,9 @@ vi.mock('@tanstack/react-router', () => ({
   }) => <a href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}>{children}</a>,
 }))
 
+const toast = vi.hoisted(() => vi.fn())
+vi.mock('sonner', () => ({ toast }))
+
 const { StatusLineNotShowingContent } = await import('@/guide/status-line-not-showing-content')
 
 const DOCS = 'https://code.claude.com/docs/en/statusline#troubleshooting'
@@ -24,6 +28,32 @@ function section(heading: RegExp): HTMLElement {
 }
 
 describe('StatusLineNotShowingContent', () => {
+  // Visitors are Claude Code users: the page's checks, as a prompt that runs them on their machine.
+  // It's shown before they copy it, so they see what they're pasting.
+  it('offers a prompt that has Claude Code find the problem, under the intro', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+    render(<StatusLineNotShowingContent />)
+
+    const panel = screen.getByRole('region', { name: 'Let Claude Code find the problem' })
+    const shown = [...panel.querySelectorAll('pre')].map((pre) => pre.textContent)
+    expect(shown).toEqual([STATUS_LINE_FIX_PROMPT])
+    await act(async () => {
+      fireEvent.click(within(panel).getByRole('button', { name: 'Copy fix prompt' }))
+    })
+    expect(writeText).toHaveBeenCalledWith(STATUS_LINE_FIX_PROMPT)
+    expect(toast).toHaveBeenCalledWith('Prompt copied', {
+      description: 'Paste it into Claude Code.',
+    })
+
+    const h1 = screen.getByRole('heading', { level: 1 })
+    const firstFix = screen.getAllByRole('heading', { level: 2 })[1]
+    expect(h1.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      firstFix && panel.compareDocumentPosition(firstFix) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   it('renders the h1 and a section per symptom', () => {
     render(<StatusLineNotShowingContent />)
     expect(
@@ -54,6 +84,8 @@ describe('StatusLineNotShowingContent', () => {
       'Git Bash',
       'disableAllHooks',
       'allowManagedHooksOnly',
+      'off entirely',
+      '--safe-mode',
       'claude --debug',
       'Ask Claude',
     ]

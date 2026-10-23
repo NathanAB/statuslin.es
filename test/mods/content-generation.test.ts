@@ -131,7 +131,7 @@ describe('prepareModContentGenerationRequest', () => {
       expect(end).toBeGreaterThan(readmeAt)
       expect(prompt).toContain('meter')
     }
-    expect(request.contentPrompt).toContain('contacts the internet')
+    expect(request.contentPrompt).toContain('connects to the internet')
     expect(request.contentPrompt).toContain('above the prompt')
   })
 

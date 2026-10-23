@@ -255,7 +255,7 @@ describe('submitConfig', () => {
           interpreter: 'bash',
           source: '#!/bin/bash\necho rate',
         }),
-      ).rejects.toThrow('Rate limit: too many submissions, try again later')
+      ).rejects.toThrow('You can send 3 submissions an hour. Try again later.')
       await expect(
         submitConfig(db, {
           authorId,

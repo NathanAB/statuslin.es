@@ -39,6 +39,7 @@ describe('sitemapResponse', () => {
     expect(xml).toContain(`<loc>${BASE}</loc>`)
     expect(xml).toContain(`<loc>${BASE}/guide</loc>`)
     expect(xml).toContain(`<loc>${BASE}/resources</loc>`)
+    expect(xml).toContain(`<loc>${BASE}/how-it-works</loc>`)
     expect(xml).toContain(`<loc>${BASE}/terms</loc>`)
     expect(xml).not.toContain(`<loc>${BASE}/submit</loc>`)
   })
@@ -85,7 +86,7 @@ describe('sitemapResponse', () => {
 
     expect(entryFor(xml, BASE)).toContain('<lastmod>2026-05-06</lastmod>')
     expect(entryFor(xml, `${BASE}/?page=2`)).toContain('<lastmod>2026-05-06</lastmod>')
-    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-10-18</lastmod>')
+    expect(entryFor(xml, `${BASE}/guide`)).toContain('<lastmod>2026-10-23</lastmod>')
     for (const path of ['/resources', '/terms']) {
       expect(entryFor(xml, `${BASE}${path}`)).not.toContain('<lastmod>')
     }
@@ -131,6 +132,16 @@ describe('sitemapResponse', () => {
     expect(xml).toContain('<loc>https://example.test/status-lines/git</loc>')
     expect(xml).toContain('<lastmod>2026-06-02</lastmod>')
     expect(xml).toContain('<loc>https://example.test/status-lines/bash</loc>')
+  })
+
+  // There is no topics hub: each topic page is listed on its own.
+  it('lists no /status-lines page beside the topic pages', async () => {
+    const xml = await sitemapResponse(
+      BASE,
+      [],
+      [{ slug: 'git', latest: new Date('2026-06-02T00:00:00Z') }],
+    ).text()
+    expect(xml).not.toContain(`<loc>${BASE}/status-lines</loc>`)
   })
 })
 

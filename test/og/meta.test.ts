@@ -33,9 +33,9 @@ describe('social meta', () => {
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
     const description = meta.find((entry) => entry.property === 'og:description')?.content
     expect(description).toMatch(/cop(?:y|ied|ies)/i)
-    expect(description).toMatch(/status lines.*\bmods\b/i)
+    expect(description).toMatch(/^Claude Code mods\b/)
     const pageDescription = meta.find((entry) => entry.name === 'description')?.content
-    expect(pageDescription).toMatch(/status lines.*\bmods\b/i)
+    expect(pageDescription).toMatch(/^Claude Code mods\b/)
     expect(description).toBe(HOME_DESCRIPTION_BASE)
     expect(description).not.toMatch(/curat|pick|chose|behalf/i)
     expect(description).not.toMatch(/upvote/i)

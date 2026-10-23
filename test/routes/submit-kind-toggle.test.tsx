@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -62,6 +62,64 @@ describe('/submit kind toggle analytics', () => {
   })
 })
 
+// A small toggle under "Submit a status line" read as a choice already made, and people skimmed
+// past Mod. Now the page asks first, with each kind described, under a heading that names both.
+describe('/submit kind choice', () => {
+  it('asks what you are submitting before the form, under a heading that names both kinds', () => {
+    renderSubmit('status_line')
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Submit a status line or mod',
+    )
+    const choice = screen.getByRole('radiogroup', { name: 'What are you submitting?' })
+    const radios = within(choice).getAllByRole('radio')
+    expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual(['true', 'false'])
+    expect(screen.getByRole('radio', { name: 'Status line' })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: 'Mod' }).getAttribute('aria-describedby')).toBeTruthy()
+    expect(
+      choice.compareDocumentPosition(screen.getByText(/Paste your script/)) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('describes each kind so the difference is clear at a glance', () => {
+    renderSubmit('mod')
+
+    const described = (name: string) => {
+      const id = screen.getByRole('radio', { name }).getAttribute('aria-describedby') ?? ''
+      return document.getElementById(id)?.textContent
+    }
+    expect(described('Status line')).toMatch(/script/)
+    expect(described('Mod')).toMatch(/plugin/)
+  })
+})
+
+// The form keeps a form's width; beside it, what happens to a submission, so the column isn't
+// half empty and a first-time submitter knows what they're agreeing to.
+describe('/submit layout', () => {
+  const next = () =>
+    within(screen.getByRole('complementary', { name: 'What happens next' }))
+      .getAllByRole('listitem')
+      .map((item) => item.textContent)
+
+  it('says what happens to a status line after it is submitted', () => {
+    renderSubmit('status_line')
+    const steps = next()
+    expect(steps).toHaveLength(3)
+    expect(steps[0]).toMatch(/sandbox/)
+    expect(steps[1]).toMatch(/review/)
+    expect(steps[2]).toMatch(/email/)
+  })
+
+  it('says what happens to a mod after it is submitted', () => {
+    renderSubmit('mod')
+    const steps = next()
+    expect(steps).toHaveLength(3)
+    expect(steps[0]).toMatch(/commit/)
+    expect(steps[2]).toMatch(/email/)
+  })
+})
+
 describe('/submit signed out', () => {
   function renderSignedOut(kind: 'status_line' | 'mod') {
     vi.spyOn(SubmitRoute, 'useLoaderData').mockReturnValue({ kind, user: null } as never)
@@ -69,7 +127,7 @@ describe('/submit signed out', () => {
     return render(Page ? <Page /> : null)
   }
 
-  it('asks a visitor to sign in to submit either kind', () => {
+  it('asks a visitor to sign in to submit either kind when no link picked one', () => {
     renderSignedOut('status_line')
     expect(
       screen.getByRole('heading', { name: 'Sign in to submit a status line or mod' }),

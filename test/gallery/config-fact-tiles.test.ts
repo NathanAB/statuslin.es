@@ -15,7 +15,7 @@ describe('configFactTiles', () => {
   it('states the interpreter, no network and the terminal for a plain script', () => {
     expect(shown(configFactTiles(CONFIG))).toEqual([
       { label: 'Written in', value: 'Bash', caution: false },
-      { label: 'Network access', value: 'None', caution: false },
+      { label: 'Network access', value: 'None requested', caution: false },
       { label: 'Works in', value: 'Terminal', caution: false },
     ])
   })

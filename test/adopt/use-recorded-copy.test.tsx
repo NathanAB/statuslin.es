@@ -24,6 +24,18 @@ beforeEach(() => {
 })
 
 describe('useRecordedCopy', () => {
+  it('sends where the copy happened with the copy', async () => {
+    const { result } = renderHook(() => useRecordedCopy('cfg-1', 5, 'home_hero'))
+
+    await act(async () => {
+      await result.current.record('prompt')
+    })
+
+    expect(recordCopyFn).toHaveBeenCalledWith({
+      data: expect.objectContaining({ configId: 'cfg-1', kind: 'prompt', surface: 'home_hero' }),
+    })
+  })
+
   it('reconciles to the server-returned count', async () => {
     recordCopyFn.mockResolvedValue(42)
     const { result } = renderHook(() => useRecordedCopy('cfg-1', 5))

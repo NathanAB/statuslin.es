@@ -6,6 +6,8 @@ import {
   DESKTOP_GUIDE_TITLE_BASE,
   GUIDE_PATH,
   GUIDE_TITLE_BASE,
+  HOW_IT_WORKS_PATH,
+  HOW_IT_WORKS_TITLE,
   MOD_SAFETY_GUIDE_PATH,
   MOD_SAFETY_GUIDE_TITLE,
   NOT_SHOWING_GUIDE_PATH,
@@ -67,7 +69,7 @@ export function buildLlmsTxt(
     [
       '## Optional',
       '',
-      `- [Full catalog](${base}${LLMS_FULL_PATH}): every published status line and mod, with the copy from its page`,
+      `- [Full catalog](${base}${LLMS_FULL_PATH}): every published mod, with the copy from its page`,
     ].join('\n'),
   )
   return `${blocks.join('\n\n')}\n`
@@ -97,8 +99,8 @@ export function buildLlmsFullTxt(
 function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
   const blocks = [
     '# statuslin.es',
-    '> A gallery of Claude Code status lines and mods, each with a real preview. Copy a status line in one paste or install a mod with one command.',
-    "Status lines are scripts whose output Claude Code shows under the prompt. Mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead.",
+    '> A gallery of Claude Code mods, status lines included, each with a real preview. Install any of them with one copied prompt.',
+    "Status lines are scripts whose output Claude Code shows under the prompt. The other mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -109,8 +111,8 @@ function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
 
 function corePageLinks(base: string): string[] {
   return [
-    `- [Gallery](${base}/): every published status line and mod, sorted by trending, newest, or most copied`,
-    `- [Mods](${base}${MODS_PATH}): every published mod`,
+    `- [Gallery](${base}/): every published mod, sorted by trending, newest, or most installed`,
+    `- [Mods](${base}${MODS_PATH}): the plugin mods, ranked by installs`,
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
     `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
     `- [${GUIDE_TITLE_BASE}](${base}${GUIDE_PATH}): the statusLine setting, the JSON a script receives, and a tested example`,
@@ -119,7 +121,8 @@ function corePageLinks(base: string): string[] {
     `- [${STATUS_LINES_VS_MODS_GUIDE_TITLE}](${base}${STATUS_LINES_VS_MODS_GUIDE_PATH}): where each one shows up, and when to pick which`,
     `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what a mod can do, and how statuslin.es pins and reviews each one`,
     `- [${BUDDY_GUIDE_TITLE}](${base}${BUDDY_GUIDE_PATH}): what happened to /buddy, and pet mods that put a companion back, each with a real preview`,
-    `- [Resources](${base}/resources): other Claude Code status line tools, generators, and guides`,
+    `- [Resources](${base}/resources): every way to customize Claude Code, with plugin marketplaces, status line tools, usage trackers and themes`,
+    `- [${HOW_IT_WORKS_TITLE}](${base}${HOW_IT_WORKS_PATH}): how each mod and status line is pinned, run in a sandbox for its previews and reviewed, and what that can't promise`,
   ]
 }
 
@@ -137,13 +140,13 @@ function summaryLink(
 ): string {
   const summary = escapeMarkdownLinks(oneLine(item.description))
   // A count of 0 tells a reader nothing, so a new entry carries none.
-  const copies = item.copyCount > 0 ? copiedTimes(item.copyCount) : ''
-  const text = [summary, copies].filter(Boolean).join(' ')
+  const installs = item.copyCount > 0 ? installedTimes(item.copyCount) : ''
+  const text = [summary, installs].filter(Boolean).join(' ')
   return `- [${untrusted(item.title)}](${url})${text ? `: ${text}` : ''}`
 }
 
-function copiedTimes(count: number): string {
-  return `Copied ${count} ${count === 1 ? 'time' : 'times'}.`
+function installedTimes(count: number): string {
+  return `Installed ${count} ${count === 1 ? 'time' : 'times'}.`
 }
 
 function catalogSection(
@@ -160,7 +163,7 @@ function catalogEntry(url: string, entry: LlmsCatalogEntry): string {
   const lines = [
     flat(entry.description) ? `- Description: ${untrusted(entry.description)}` : '',
     // As in llms.txt, a count of 0 tells a reader nothing.
-    entry.copyCount > 0 ? `- ${copiedTimes(entry.copyCount)}` : '',
+    entry.copyCount > 0 ? `- ${installedTimes(entry.copyCount)}` : '',
     entry.tagLabels.length > 0 ? `- Tags: ${entry.tagLabels.map(untrusted).join(', ')}` : '',
     ...(entry.generatedContent ? pageCopyLines(entry.generatedContent) : []),
   ].filter(Boolean)

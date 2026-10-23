@@ -1,121 +1,198 @@
+import type { ComponentProps } from 'react'
+import type { ResourcesShowcase } from '@/compare/pages'
+import { RankedCardList } from '@/gallery/ranked-card-list'
 import { CONTACT_EMAIL } from '@/lib/site'
-import { RESOURCE_SECTIONS, resourceAnchor } from '@/resources/data'
-import { Badge } from '@/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import { Grid, Row, Stack } from '@/ui/layout'
+import { MarketplaceLine } from '@/mods/marketplace-line'
+import { CustomizationMap } from '@/resources/customization-map'
+import { RESOURCE_SECTIONS, type ResourceSection, resourceAnchor } from '@/resources/data'
+import { DirectorySection } from '@/ui/directory-section'
+import { HomeSection } from '@/ui/home-section'
+import { ColumnGrid, Row, Stack, TileGrid } from '@/ui/layout'
+import { LinkCard } from '@/ui/link-card'
+import { PageHeader } from '@/ui/page-header'
 import { StretchedLink } from '@/ui/stretched-link'
 import { SubmitCta } from '@/ui/submit-cta'
 import { Heading, Text, TextLink } from '@/ui/text'
+import { VisuallyHidden } from '@/ui/visually-hidden'
+
+const RESOURCES_HEADING = 'Claude Code customization tools & resources'
+// Most of the page's searches are a status line tool's name, so its first sentence names the two
+// biggest (Search Console, 2026-07-21 to 2026-10-20).
+const RESOURCES_LEAD =
+  'Every way to change Claude Code, from status line tools like ccstatusline and claude-powerline to mods and themes.'
+
+/** A section of src/resources/data.ts by key; a missing one is a typo here, so it fails loudly. */
+function sectionOf(key: string): ResourceSection {
+  const section = RESOURCE_SECTIONS.find((s) => s.key === key)
+  if (!section) throw new Error(`No /resources section "${key}"`)
+  return section
+}
+// The small sections, side by side under the status line tools.
+const MORE = ['usage-tracking', 'themes', 'beyond', 'guides'] as const
 
 /**
- * The /resources page body: the curated list from src/resources/data.ts rendered as
- * cards by section, framed by an intro that cross-links the guide and gallery, and a
- * closing "get listed" call-to-action. A component (not inline in the route) so it's
- * unit-testable — same pattern as TermsContent.
+ * The /resources page body, laid out as a directory: the title and one sentence, the status line
+ * tools (what most visitors search for) and the gallery status lines that do the same jobs, every
+ * way to customize Claude Code, the plugin marketplaces beside our marketplace command, the smaller
+ * sections side by side, then a way to get listed. Entries are compact cards in grids, each section
+ * titled with a short intro under it. `showcase` gives a compared tool its alternatives page and the
+ * rendered status lines; `origin` is the site's, for the marketplace command. A component (not
+ * inline in the route) so it's unit-testable, the same pattern as TermsContent.
  */
-export function ResourcesContent({ signedIn }: { signedIn: boolean }) {
+export function ResourcesContent({
+  signedIn,
+  showcase,
+  origin,
+}: {
+  signedIn: boolean
+  showcase: ResourcesShowcase
+  origin: string
+}) {
+  const cards = (key: string) =>
+    cardsOf(sectionOf(key), showcase.alternatives).map(({ key: k, ...card }) => (
+      <LinkCard key={k} {...card} />
+    ))
   return (
-    <Stack gap={6}>
-      <Heading level={1}>Claude Code status line tools & resources</Heading>
+    <>
+      <HomeSection first>
+        <PageHeader title={RESOURCES_HEADING} lead={RESOURCES_LEAD} />
+      </HomeSection>
 
-      <Stack gap={3}>
-        <Heading level={2}>Four ways to get a status line</Heading>
-        <Text muted>
-          Run{' '}
-          <Text inline mono>
-            /statusline
-          </Text>{' '}
-          in Claude Code and describe what you want. It writes the script and settings for you.
-          Start here if you have no status line yet.
-        </Text>
-        <Text muted>
-          Install a tool from the list below for a setup screen, themes or widgets without keeping a
-          script yourself. Start with ccstatusline or claude-powerline. Compare{' '}
-          <TextLink to="/compare/$pair" params={{ pair: 'ccstatusline-vs-claude-powerline' }}>
-            ccstatusline vs claude-powerline
-          </TextLink>
-          ,{' '}
-          <TextLink to="/alternatives/$tool" params={{ tool: 'ccstatusline' }}>
-            ccstatusline alternatives
-          </TextLink>{' '}
-          or{' '}
-          <TextLink to="/alternatives/$tool" params={{ tool: 'claude-powerline' }}>
-            claude-powerline alternatives
-          </TextLink>
-          .
-        </Text>
-        <Text muted>
-          Copy a reviewed script from <TextLink to="/">the gallery</TextLink> to see its real output
-          first. Try the <TextLink to="/status-lines/best">most-copied</TextLink>,{' '}
-          <TextLink to="/c/$slug" params={{ slug: 'powerline-dracula-6936b97c' }}>
-            Powerline Dracula
-          </TextLink>{' '}
-          or{' '}
-          <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
-            status lines that show token usage
-          </TextLink>
-          .{' '}
-          <TextLink to="/c/$slug" params={{ slug: 'quota-fallback-2a730aa6' }}>
-            Quota Fallback
-          </TextLink>{' '}
-          is the reviewed copy of ohugonnot/claude-code-statusline.
-        </Text>
-        <Text muted>
-          Write your own to control every field. The <TextLink to="/guide">setup guide</TextLink>{' '}
-          walks through the JSON Claude Code sends, with a script our tests run on every commit.
-        </Text>
-      </Stack>
+      <DirectorySection
+        title={sectionOf('tools').title}
+        intro={
+          <Text muted>
+            Compare{' '}
+            <TextLink to="/compare/$pair" params={{ pair: 'ccstatusline-vs-claude-powerline' }}>
+              ccstatusline vs claude-powerline
+            </TextLink>
+            , see <TextLink to="/status-lines/best">the best status lines</TextLink>, browse{' '}
+            <TextLink to="/status-lines/$facet" params={{ facet: 'token-usage' }}>
+              ones that show token usage
+            </TextLink>
+            , or <TextLink to="/guide">write your own</TextLink>.
+          </Text>
+        }
+      >
+        <TileGrid>{cards('tools')}</TileGrid>
+      </DirectorySection>
 
-      {RESOURCE_SECTIONS.map((section) => (
-        <Stack gap={3} key={section.key}>
-          <Heading level={2}>{section.title}</Heading>
-          <Grid>
-            {section.resources.map((r) => (
-              <Card key={r.url} interactive>
-                <CardHeader>
-                  <Row gap={2} justify="between">
-                    <CardTitle id={resourceAnchor(r.name)}>
-                      <StretchedLink href={r.url}>{r.name}</StretchedLink>
-                    </CardTitle>
-                    <Badge variant="outline">{domainLabel(r.url)}</Badge>
-                  </Row>
-                </CardHeader>
-                <CardContent>
-                  <Text muted size="sm">
-                    {r.description}
-                  </Text>
-                </CardContent>
-              </Card>
-            ))}
-          </Grid>
-        </Stack>
-      ))}
-
-      <Card>
-        <CardContent>
-          <Stack gap={3}>
-            <Heading level={2}>Get listed</Heading>
+      {showcase.cards.length > 0 ? (
+        <DirectorySection
+          title="Status lines that do the same job"
+          intro={
             <Text muted>
-              Made a status line or mod? <TextLink to="/submit">Submit it</TextLink> for its own
-              page in the gallery. Built a tool for this list? Email{' '}
-              <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
+              Status lines from the gallery that cover at least three of the same features as these
+              tools, each shown with its real output. Install one in a single paste.
             </Text>
-            <Row gap={3}>
-              <SubmitCta signedIn={signedIn} />
-            </Row>
+          }
+        >
+          <RankedCardList items={showcase.cards} surface="resources" />
+        </DirectorySection>
+      ) : null}
+
+      <DirectorySection
+        title="What you can customize"
+        intro={
+          <Text muted>
+            Eight ways to change Claude Code, each with Anthropic's docs and, where the gallery has
+            some, examples to install.
+          </Text>
+        }
+      >
+        <CustomizationMap />
+      </DirectorySection>
+
+      <DirectorySection
+        title={sectionOf('marketplaces').title}
+        intro={
+          <Stack gap={4}>
+            <Text muted>
+              Mods are Claude Code plugins. Each comes from a marketplace: Anthropic's, a community
+              one, or ours.
+            </Text>
+            <MarketplaceLine origin={origin} />
           </Stack>
-        </CardContent>
-      </Card>
-    </Stack>
+        }
+      >
+        <TileGrid>{cards('marketplaces')}</TileGrid>
+      </DirectorySection>
+
+      <DirectorySection title="More tools and lists">
+        <ColumnGrid>
+          {MORE.map((key) => (
+            <Stack key={key} gap={3}>
+              <Heading level={2} size="compact">
+                {sectionOf(key).title}
+              </Heading>
+              {cards(key)}
+              {/* Under the tools, so this column's cards start level with its neighbour's. */}
+              {key === 'usage-tracking' ? (
+                <Text muted size="sm">
+                  Or watch your limits inside Claude Code with{' '}
+                  <TextLink to="/status-lines/$facet" params={{ facet: 'quota' }}>
+                    status lines and mods that track usage limits
+                  </TextLink>
+                  .
+                </Text>
+              ) : null}
+            </Stack>
+          ))}
+        </ColumnGrid>
+      </DirectorySection>
+
+      <DirectorySection
+        title="Get listed"
+        intro={
+          <Text muted>
+            Made a status line or mod? <TextLink to="/submit">Submit it</TextLink> for its own page
+            in the gallery. Built a tool for this list? Email{' '}
+            <TextLink href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</TextLink>.
+          </Text>
+        }
+      >
+        <Row gap={3}>
+          <SubmitCta signedIn={signedIn} />
+        </Row>
+      </DirectorySection>
+    </>
   )
 }
 
-/** Short destination label for a resource card's badge. */
+/**
+ * A section's resources as cards, each name opening the resource off-site, with a note under it
+ * saying where. 93% of this page's visible searches name a tool, so the name takes them to it. A
+ * compared tool (one with an alternatives page) adds a link to that page in its note.
+ */
+function cardsOf(
+  section: ResourceSection,
+  alternatives: Record<string, string>,
+): Array<ComponentProps<typeof LinkCard> & { key: string }> {
+  return section.resources.map((r) => {
+    const tool = alternatives[r.url]
+    return {
+      key: r.url,
+      id: resourceAnchor(r.name),
+      title: <StretchedLink href={r.url}>{r.name}</StretchedLink>,
+      meta: tool ? (
+        <>
+          {domainLabel(r.url)} ·{' '}
+          <TextLink to="/alternatives/$tool" params={{ tool }}>
+            Alternatives <VisuallyHidden>to {r.name}</VisuallyHidden>
+          </TextLink>
+        </>
+      ) : (
+        domainLabel(r.url)
+      ),
+      description: r.description,
+    }
+  })
+}
+
+/** Short destination label for a resource's note. */
 function domainLabel(url: string): string {
   const host = new URL(url).hostname.replace(/^www\./, '')
   if (host === 'github.com') return 'GitHub'
-  if (host === 'gist.github.com') return 'gist'
   if (host === 'code.claude.com') return 'docs'
-  if (host === 'npmjs.com') return 'npm'
   return host
 }

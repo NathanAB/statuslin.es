@@ -6,7 +6,7 @@ import { staticPageSocialMeta } from '@/og/meta'
 import { PageShell } from '@/ui/shell'
 
 const TITLE = 'Terms'
-const DESCRIPTION = 'Licensing and takedown terms for the status lines and mods on statuslin.es.'
+const DESCRIPTION = 'Licensing and takedown terms for the mods on statuslin.es.'
 
 export const Route = createFileRoute('/terms')({
   loader: () => getSession(),

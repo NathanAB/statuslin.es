@@ -16,6 +16,7 @@ function renderLayout(overrides: Partial<Parameters<typeof DetailPageLayout>[0]>
       notice={<p>notice</p>}
       header={<h1>header</h1>}
       install={<p>install</p>}
+      beforeInstall={<p>before you install</p>}
       preview={<p>preview</p>}
       whatItDoes={WHAT_IT_DOES}
       source={<p>source</p>}
@@ -25,12 +26,9 @@ function renderLayout(overrides: Partial<Parameters<typeof DetailPageLayout>[0]>
   )
 }
 
-/** The card holding the section whose h2 is `title`. */
+/** The section whose h2 is `title`. */
 function section(title: string) {
-  const heading = screen.getByRole('heading', { level: 2, name: title })
-  const card = heading.closest('[data-slot="card"]')
-  if (!(card instanceof HTMLElement)) throw new Error(`no card around ${title}`)
-  return within(card)
+  return within(screen.getByRole('region', { name: title }))
 }
 
 describe('DetailPageLayout', () => {
@@ -41,6 +39,7 @@ describe('DetailPageLayout', () => {
       screen.getByText('notice'),
       screen.getByText('header'),
       screen.getByText('install'),
+      screen.getByText('before you install'),
       screen.getByRole('heading', { level: 2, name: 'Preview' }),
       screen.getByRole('heading', { level: 2, name: 'What it does' }),
       screen.getByRole('heading', { level: 2, name: 'Source' }),
@@ -54,7 +53,13 @@ describe('DetailPageLayout', () => {
     }
   })
 
-  it('puts the preview, what it does and the source in their own titled cards', () => {
+  // Nested boxes read as clutter: a section is its heading on the page, never a card.
+  it('boxes none of its sections', () => {
+    const { container } = renderLayout()
+    expect(container.querySelector('[data-slot="card"]')).toBeNull()
+  })
+
+  it('puts the preview, what it does and the source in their own titled sections', () => {
     renderLayout()
 
     expect(section('Preview').getByText('preview')).toBeTruthy()

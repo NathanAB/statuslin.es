@@ -2,6 +2,7 @@ import { usePostHog } from '@posthog/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { HttpError } from '@/lib/http'
+import { SUBMIT_HEADING } from '@/lib/page-title'
 import type { ModDraft } from '@/mods/own-mod'
 import { submitModFn } from '@/mods/submit-fn'
 import { Button } from '@/ui/button'
@@ -19,7 +20,7 @@ interface ModSubmitCopy {
 
 const COPY: Record<ModDraft['kind'] | 'new', ModSubmitCopy> = {
   new: {
-    heading: 'Submit a mod',
+    heading: SUBMIT_HEADING,
     intro:
       'Paste a GitHub link to a Claude Code plugin. We pin it to a commit, check it in a sandbox, render it, and review it before it goes live.',
     button: 'Submit',
@@ -32,7 +33,7 @@ const COPY: Record<ModDraft['kind'] | 'new', ModSubmitCopy> = {
   update: {
     heading: 'Submit an update',
     intro:
-      'Link to a newer commit of the same folder. Your live version stays in the gallery until we’ve reviewed the update.',
+      'Link to a newer commit of the same folder. Your live version stays in the gallery while we review the update.',
     button: 'Submit update',
   },
 }
@@ -67,7 +68,7 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
           ...(draft ? { slug: draft.slug } : {}),
         },
       })
-      setPinned(`Pinned ${result.slug} to ${result.ref} at ${result.commitSha.slice(0, 7)}.`)
+      setPinned(`Pinned your link to ${result.ref} at ${result.commitSha.slice(0, 7)}.`)
       toast.success('Submitted for review.')
       setLink('')
       setTitle(draft?.title ?? '')
@@ -102,7 +103,7 @@ export function ModSubmitForm({ draft }: { draft: ModDraft | null }) {
           />
           <Text muted size="sm">
             The plugin’s folder, its .claude-plugin/plugin.json, or a commit. A branch is pinned to
-            its newest commit, which must be on the default branch.
+            its newest commit. The pinned commit must be on the default branch.
           </Text>
         </Stack>
         {keepsTitle ? null : (

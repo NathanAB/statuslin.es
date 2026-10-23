@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 // Radix DropdownMenu opens on pointerdown (left button), not a plain click — open it
@@ -9,7 +9,7 @@ function openMenu(trigger: Element) {
   fireEvent.pointerUp(trigger, { button: 0, ctrlKey: false, pointerType: 'mouse' })
 }
 
-// Mock the auth client so Log out can be asserted without a real network call.
+// Mock the auth client so Sign out can be asserted without a real network call.
 const signOut = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/auth-client', () => ({
   authClient: { signOut: () => signOut() },
@@ -59,7 +59,7 @@ describe('AppHeader', () => {
     render(<AppHeader user={null} />)
     expect(screen.getByText(/sign in/i)).toBeTruthy()
     expect(screen.queryByText('@ada')).toBeNull()
-    expect(screen.queryByText('Log out')).toBeNull()
+    expect(screen.queryByText('Sign out')).toBeNull()
   })
 
   it('links to the resources page when signed out', () => {
@@ -67,18 +67,35 @@ describe('AppHeader', () => {
     expect(container.querySelector('a[href="/resources"]')).not.toBeNull()
   })
 
-  it('links to the mods page ahead of the guide', () => {
-    render(<AppHeader user={null} />)
-    const mods = screen.getByRole('link', { name: 'Mods' })
-    expect(mods.getAttribute('href')).toBe('/mods')
-    const guide = screen.getByRole('link', { name: 'Guide' })
-    expect(guide.getAttribute('href')).toBe('/guide')
-    expect(mods.compareDocumentPosition(guide) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  // The status line writing guide is one kind's how-to, so the bar doesn't lead with it; the footer
+  // links it. A Mods link with no Status lines link beside it read as out of place, so the bar has
+  // neither: the home page lists both, and the footer links Mods.
+  it('links neither the guide nor a Mods page', () => {
+    const { container } = render(<AppHeader user={null} />)
+    expect(within(screen.getByRole('navigation')).getAllByRole('link')[0]?.textContent).toBe(
+      'Resources',
+    )
+    expect(container.querySelector('a[href="/guide"]')).toBeNull()
+    expect(container.querySelector('a[href="/mods"]')).toBeNull()
   })
 
-  it('shows the Star on GitHub link', () => {
+  // We want people to submit: Submit is the header's one filled button, beside sign-in, and stays
+  // in the bar on phones, where the other links fold into the menu.
+  it('shows Submit as a filled button between Star and sign-in, outside the folding links', () => {
     render(<AppHeader user={null} />)
-    expect(screen.getByRole('link', { name: 'Star statuslin.es on GitHub' })).toBeTruthy()
+    const submit = screen.getByRole('link', { name: 'Submit' })
+    expect(submit.getAttribute('href')).toBe('/submit')
+    expect(submit.getAttribute('data-variant')).toBe('default')
+    expect(submit.closest('nav')).toBeNull()
+    const star = screen.getByRole('link', { name: 'statuslin.es on GitHub' })
+    const signIn = screen.getByRole('button', { name: 'Sign in with GitHub' })
+    expect(star.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(submit.compareDocumentPosition(signIn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows the GitHub link', () => {
+    render(<AppHeader user={null} />)
+    expect(screen.getByRole('link', { name: 'statuslin.es on GitHub' })).toBeTruthy()
   })
 
   it('shows the avatar image and @username for a signed-in user', () => {
@@ -125,14 +142,14 @@ describe('AppHeader', () => {
     expect(trigger.getAttribute('aria-label')).toBe('Ada Lovelace')
   })
 
-  it('opens a Log out menu item on trigger click and calls signOut', async () => {
+  it('opens a Sign out menu item on trigger click and calls signOut', async () => {
     render(
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,
     )
 
     // No Review for a non-admin.
     openMenu(screen.getByText('@ada'))
-    const logout = await screen.findByText('Log out')
+    const logout = await screen.findByText('Sign out')
     expect(screen.queryByText('Review')).toBeNull()
 
     fireEvent.click(logout)
@@ -150,7 +167,7 @@ describe('AppHeader', () => {
       <AppHeader user={{ name: 'Ada Lovelace', username: 'ada', image: null, role: 'user' }} />,
     )
     openMenu(screen.getByText('@ada'))
-    fireEvent.click(await screen.findByText('Log out'))
+    fireEvent.click(await screen.findByText('Sign out'))
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/'))
     await Promise.resolve()
@@ -165,6 +182,6 @@ describe('AppHeader', () => {
     )
     openMenu(screen.getByText('@ada'))
     expect(await screen.findByText('Review')).toBeTruthy()
-    expect(screen.getByText('Log out')).toBeTruthy()
+    expect(screen.getByText('Sign out')).toBeTruthy()
   })
 })

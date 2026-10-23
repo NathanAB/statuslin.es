@@ -1,7 +1,8 @@
 import { and, asc, desc, eq, ne } from 'drizzle-orm'
 import type { PgDatabase, SelectedFields } from 'drizzle-orm/pg-core'
-import { modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
+import { type ModFootprint, modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
 import type { GalleryItem, GalleryModCard, GallerySource } from '@/gallery/gallery-items'
+import { HERO_SIZE } from '@/gallery/hero-lines'
 import { hasAnyTag, sharedTagCount } from '@/gallery/queries'
 import {
   type GallerySourceQuery,
@@ -10,8 +11,10 @@ import {
   type RankedColumns,
 } from '@/gallery/ranking'
 import { MOD_COPY_EVENTS } from '@/gallery/trending'
+import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
+import type { DesktopShotImage } from '@/ui/desktop-shot'
 import {
   desktopPreview,
   desktopPreviewColumns,
@@ -85,6 +88,55 @@ export async function getModSource(db: Db, query: GallerySourceQuery): Promise<G
     items: rows.map(({ sortKey, total: _total, ...row }) => ({ item: modItem(row), sortKey })),
     total: rows[0]?.total ?? 0,
   }
+}
+
+/** A mod the home hero can show, in the terminal or in Claude Desktop. */
+export interface HeroMod {
+  modId: string
+  slug: string
+  title: string
+  authorGithub: string
+  copyCount: number
+  /** What it draws in the terminal, from the Everyday session; null when it drew nothing there. */
+  render: AnsiSegment[] | null
+  /** Its Desktop card: its band (with the prompt box and toolbar when it writes there), or the top
+   *  of its pane; null without a shot. A whole shot can end in a sliver of the prompt box. */
+  desktop: DesktopShotImage | null
+  /** Where it draws and what it can reach come from this, as on its page. */
+  footprint: ModFootprint
+  /** Its Trending value, so the home page can rank it among status lines. */
+  sortKey: number | null
+}
+
+/** The home hero's mods: the first HERO_SIZE the home gallery ranks (Trending), less
+ * statusline-anywhere. */
+export async function getHeroMods(db: Db): Promise<HeroMod[]> {
+  // statusline-anywhere only draws a status line in Desktop: on its own there is nothing to show.
+  const ranking = galleryRanking(MOD_RANKING, {
+    sort: 'trending',
+    excludeSlug: STATUSLINE_ANYWHERE_MOD_SLUG,
+  })
+  const rows = await selectModCards(db, {
+    sortKey: ranking.sortKey,
+    footprint: modVersions.footprint,
+  })
+    .where(ranking.where)
+    .orderBy(...ranking.orderBy)
+    .limit(HERO_SIZE)
+  return rows.map(({ modId, slug, title, authorGithub, copyCount, preview, desktop, ...row }) => {
+    const shot = desktopPreview(desktop)
+    return {
+      modId,
+      slug,
+      title,
+      authorGithub,
+      copyCount,
+      render: preview && preview.length > 0 ? compactSegments(preview) : null,
+      desktop: shot?.kind === 'shot' ? shot.card : null,
+      footprint: row.footprint,
+      sortKey: row.sortKey,
+    }
+  })
 }
 
 /** The card of the published mod with this slug, or null when there is none. */

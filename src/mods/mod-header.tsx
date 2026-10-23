@@ -1,9 +1,9 @@
 import { usePostHog } from '@posthog/react'
-import { ConfigBadges } from '@/gallery/config-badges'
+import { ConfigBadges, topicTags } from '@/gallery/config-badges'
 import { DetailHeader } from '@/gallery/detail-header'
 import { listPhrase } from '@/gallery/why-line'
 import { MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
-import { githubAvatarUrl } from '@/lib/github-avatars'
+import { modAuthor } from '@/mods/mod-author'
 import { modSourceUrl } from './install'
 import { SHORT_SHA_LENGTH } from './mod-fact-tiles'
 import type { ModDetail } from './queries'
@@ -43,13 +43,10 @@ export function ModHeader({ mod }: { mod: ModDetail }) {
       trail={[MODS_CRUMB]}
       title={mod.title}
       subtitle={modSubtitle(mod.tags)}
-      chips={<ConfigBadges tags={mod.tags} networkHosts={[]} />}
+      // What it can reach is said in the install panel beside the button, not as a topic chip.
+      chips={<ConfigBadges tags={topicTags(mod.tags)} networkHosts={[]} />}
       byline={{
-        author: {
-          name: mod.authorGithub,
-          username: mod.authorGithub,
-          image: githubAvatarUrl(mod.authorGithub),
-        },
+        author: modAuthor(mod.authorGithub),
         source: {
           lead: 'source at',
           label: mod.commitSha.slice(0, SHORT_SHA_LENGTH),
@@ -57,7 +54,7 @@ export function ModHeader({ mod }: { mod: ModDetail }) {
           // Reading the source is how a visitor decides to trust a mod before installing it.
           onClick: () => posthog.capture('mod_source_clicked', { modId: mod.id, slug: mod.slug }),
         },
-        license: mod.license ? `${mod.license} licence` : 'No licence',
+        license: mod.license ? `${mod.license} license` : 'No license',
       }}
       description={mod.description}
     />

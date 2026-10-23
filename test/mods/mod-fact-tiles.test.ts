@@ -62,6 +62,23 @@ describe('modFactTiles', () => {
     ])
   })
 
+  // An empty footprint means the validator recorded nothing, not that the mod does nothing: a row
+  // of "Nothing" and "None" next to a preview that plainly draws read as a clean bill of health.
+  it('says not recorded yet, not nothing, for every footprint fact when none was recorded', () => {
+    const tiles = modFactTiles({ ...MOD, footprint: { events: [], calls: [] } })
+    const byLabel = (label: string) => tiles.find((tile) => tile.label === label)?.value
+    for (const label of [
+      'What you see',
+      'Slash commands',
+      'Uses your tokens',
+      'Changes files',
+      'Network access',
+    ]) {
+      expect(byLabel(label), label).toBe('Not recorded yet')
+    }
+    expect(byLabel('Reviewed commit')).toBe('`0123456` on Sep 30, 2026')
+  })
+
   it('keeps the footprint’s no whatever the copy claims', () => {
     const tiles = modFactTiles({ ...MOD, generatedContent: CLAIMS })
     expect(tiles.map((tile) => tile.value).slice(2, 6)).toEqual(['None', 'No', 'Nothing', 'None'])
@@ -94,7 +111,10 @@ describe('modFactTiles', () => {
     const footprint = { events: [ABOVE, 'ui.render{component=Pane}'], calls: ['$.ui.toast'] }
     expect(value({ footprint }, 'What you see')).toBe('Above the prompt, a pane, and a toast')
     expect(
-      value({ footprint: { events: [], calls: [] }, generatedContent: CLAIMS }, 'What you see'),
+      value(
+        { footprint: { events: [], calls: ['$.session.usage'] }, generatedContent: CLAIMS },
+        'What you see',
+      ),
     ).toBe('Nothing on screen')
   })
 

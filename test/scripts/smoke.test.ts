@@ -6,7 +6,10 @@ import {
   browserCommandOutput,
   collectInitialBrowserResources,
   EXPECTED_HOME,
+  FIT_WIDTHS,
+  sideScrollFailures,
 } from '../../scripts/smoke'
+import { HOME_HERO_HEADING } from '../../src/lib/page-title'
 
 const validHome = {
   bodyText: `${EXPECTED_HOME.h1} Trending`,
@@ -34,8 +37,9 @@ describe('browserCommandOutput', () => {
 })
 
 describe('assertHomeDocument', () => {
-  it('expects the gallery heading as the h1', () => {
-    expect(EXPECTED_HOME.h1).toBe('Claude Code status lines and mods')
+  // The smoke test runs before every production deploy; a stale heading here stops the deploy.
+  it("expects the heading the home page's hero renders as its h1", () => {
+    expect(EXPECTED_HOME.h1).toBe(HOME_HERO_HEADING)
   })
 
   it('accepts the expected production homepage shell', () => {
@@ -109,5 +113,30 @@ describe('assertFirstPartyResources', () => {
         'https://statuslin.es',
       ),
     ).toThrow(/no same-origin.*resource/i)
+  })
+})
+
+// Two layout bugs only a real browser showed (the phone menu at 320px, a long signed-in name at
+// 768px) scrolled the page sideways. The smoke run now measures every page at these widths.
+describe('sideScrollFailures', () => {
+  it('names each page and width where the document is wider than the window', () => {
+    expect(
+      sideScrollFailures([
+        { path: '/', width: 320, scrollWidth: 320 },
+        { path: '/', width: 768, scrollWidth: 803 },
+        { path: '/guide (phone menu)', width: 320, scrollWidth: 353 },
+      ]),
+    ).toEqual(['/ at 768px is 803px wide', '/guide (phone menu) at 320px is 353px wide'])
+  })
+
+  // A page that never loaded, or a menu that never opened, measures 0: that's a failure, not a fit.
+  it('fails a measurement that found nothing', () => {
+    expect(sideScrollFailures([{ path: '/ (phone menu)', width: 320, scrollWidth: 0 }])).toEqual([
+      '/ (phone menu) at 320px was not measured',
+    ])
+  })
+
+  it('checks a small phone, a tablet and a small laptop', () => {
+    expect(FIT_WIDTHS).toEqual([320, 768, 1024])
   })
 })

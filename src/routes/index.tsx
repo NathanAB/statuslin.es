@@ -1,86 +1,101 @@
-import { usePostHog } from '@posthog/react'
-import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-import type { GalleryCardAnalytics } from '@/gallery/card-analytics'
-import { GalleryConfigCard } from '@/gallery/config-card'
-import { getGallery, getGalleryConfigs } from '@/gallery/functions'
-import { GalleryControls } from '@/gallery/gallery-controls'
-import { coerceGalleryFilter, type GalleryFilter, loadGalleryPage } from '@/gallery/gallery-items'
-import { HomeGalleryIntro, HomeIndexNote } from '@/gallery/home-gallery-intro'
-import { coercePage, coerceSort, coerceTags, type GallerySort, PAGE_SIZE } from '@/gallery/queries'
-import { getSession } from '@/lib/auth-functions'
+import { createFileRoute, notFound } from '@tanstack/react-router'
+import { getConfigSearchTexts, getGalleryConfigs } from '@/gallery/functions'
 import {
-  canonicalLink,
-  homeCanonicalPath,
-  homePaginationSearch,
-  isFilteredHomeSearch,
-} from '@/lib/canonical'
+  coerceGalleryFilter,
+  type GalleryFilter,
+  galleryView,
+  loadGalleryEntries,
+} from '@/gallery/gallery-items'
+import {
+  coercePage,
+  coerceSort,
+  coerceTags,
+  type GallerySort,
+  galleryPageWindow,
+  PAGE_SIZE,
+} from '@/gallery/queries'
+import { normalizeSearchQuery } from '@/gallery/search'
+import { HomeChecks } from '@/home/home-checks'
+import { HomeGallery } from '@/home/home-gallery'
+import { HomeHero } from '@/home/home-hero'
+import { loadShowcase } from '@/home/load-showcase'
+import { getSession } from '@/lib/auth-functions'
+import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
-import { homeMetaDescription, homePageTitle } from '@/lib/page-title'
+import { HOME_HERO_HEADING, homeMetaDescription, homePageTitle } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
-import { FEATURED_MOD_SLUG } from '@/mods/featured-mod'
-import { FeaturedModRow, GALLERY_ID } from '@/mods/featured-mod-row'
-import { getFeaturedModFn, getGalleryModsFn } from '@/mods/gallery-functions'
-import { ModCard } from '@/mods/mod-card'
+import { getGalleryModsFn, getModSearchTextsFn } from '@/mods/gallery-functions'
 import { homeSocialMeta } from '@/og/meta'
-import { Button } from '@/ui/button'
-import { HomeHero, HomeMasthead } from '@/ui/home-hero'
-import { Row, Stack } from '@/ui/layout'
+import { HomeSection } from '@/ui/home-section'
 import { PageShell } from '@/ui/shell'
-import { SubmitCta } from '@/ui/submit-cta'
 import { Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/')({
-  // sort, page, tags and kind are optional in the URL (defaults: 'trending', page 1, no tags, all
-  // kinds), so Links to "/" can omit them.
+  // sort, page, tags, kind and the search q are optional in the URL (defaults: 'trending', page 1,
+  // no tags, all kinds, no search), so Links to "/" can omit them. q is always returned, undefined
+  // when it isn't a search: the router lays this result over the raw URL search, so an omitted key
+  // would let an array or object through.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { sort?: GallerySort; page?: number; tags?: string; kind?: GalleryFilter } => {
+  ): {
+    sort?: GallerySort
+    page?: number
+    tags?: string
+    kind?: GalleryFilter
+    q?: string | undefined
+  } => {
     const sort = coerceSort(search.sort)
     const page = coercePage(search.page)
     const tags = coerceTags(search.tags).join(',')
     const kind = coerceGalleryFilter(search.kind)
+    const q = normalizeSearchQuery(search.q)
     return {
       ...(sort === 'trending' ? {} : { sort }),
       ...(page === 1 ? {} : { page }),
       ...(tags === '' ? {} : { tags }),
       ...(kind === 'all' ? {} : { kind }),
+      q,
     }
   },
+  // The loader returns every item, so paging and searching (page, q) filter in the browser and
+  // rerun no loader.
   loaderDeps: ({ search }) => ({
     sort: search.sort,
-    page: search.page,
     tags: search.tags,
     kind: search.kind,
   }),
-  loader: async ({ deps }) => {
+  loader: async ({ deps, location }) => {
     const sort = deps.sort ?? 'trending'
     const tags = coerceTags(deps.tags)
-    // The "Featured mod" row shows on page 1 whatever the sort, tags or kind, so switching filters
-    // doesn't move the controls under it.
-    const [listing, gallery, featuredMod] = await Promise.all([
-      loadGalleryPage(
-        { page: deps.page ?? 1, filter: deps.kind ?? 'all' },
-        {
-          'status-line': (limit) => getGalleryConfigs({ data: { sort, tags, limit } }),
-          // The featured mod sits in its own row on page 1, so the grid leaves it out.
-          mod: (limit) =>
-            getGalleryModsFn({ data: { sort, tags, limit, excludeSlug: FEATURED_MOD_SLUG } }),
+    // The showcase (the hero's list) is the same whatever the gallery shows.
+    const [entries, showcase] = await Promise.all([
+      loadGalleryEntries(deps.kind ?? 'all', {
+        'status-line': {
+          items: () => getGalleryConfigs({ data: { sort, tags } }),
+          searchText: () => getConfigSearchTexts(),
         },
-      ),
-      getGallery(),
-      deps.page === undefined ? getFeaturedModFn() : null,
+        mod: {
+          items: () => getGalleryModsFn({ data: { sort, tags } }),
+          searchText: () => getModSearchTextsFn(),
+        },
+      }),
+      loadShowcase(),
     ])
-    if (!listing) throw notFound()
+    const { page } = location.search as { page?: unknown }
+    if (!galleryPageWindow(coercePage(page), entries.length)) throw notFound()
     return {
       user: await getSession(),
-      gallery: { ...gallery, ...listing },
-      featuredMod,
+      entries,
+      showcase,
     }
   },
   head: ({ loaderData, match }) => {
-    const page = loaderData?.gallery.page ?? 1
-    const pageCount = loaderData?.gallery.pageCount ?? 1
+    const view = loaderData
+      ? galleryView(loaderData.entries, { page: match.search.page ?? 1, q: match.search.q })
+      : undefined
+    const page = view?.page ?? 1
+    const pageCount = view?.pageCount ?? 1
     const isFiltered = isFilteredHomeSearch(match.search)
     const canonical = canonicalLink(homeCanonicalPath(page, match.search))
     return {
@@ -90,11 +105,12 @@ export const Route = createFileRoute('/')({
         ...(isFiltered ? [{ name: 'robots', content: 'noindex, follow' }] : []),
         ...(loaderData ? homeSocialMeta({ url: canonical.href, page, pageCount }) : []),
       ],
-      links: loaderData ? [canonical] : [],
-      scripts: loaderData
+      // A search is noindex, and a noindex page whose canonical points elsewhere mixes signals.
+      links: loaderData && match.search.q === undefined ? [canonical] : [],
+      scripts: view
         ? homeJsonLd(
             siteUrl(),
-            loaderData.gallery.items.map(({ kind, card }) => ({
+            view.items.map(({ kind, card }) => ({
               kind,
               slug: card.slug,
               title: card.title,
@@ -118,100 +134,39 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
-  const { user, gallery, featuredMod } = Route.useLoaderData()
-  const { items, page, pageCount, statusLines, mods, copyCount, asOf } = gallery
-  const { sort: rawSort, tags, kind: rawKind } = Route.useSearch()
-  const sort = rawSort ?? 'trending'
-  const kind = rawKind ?? 'all'
-  const selectedTags = tags ? tags.split(',') : []
-  const posthog = usePostHog()
-
-  const pageSearch = (nextPage: number) =>
-    homePaginationSearch(nextPage, { sort, tags, kind: rawKind })
-
-  const cardAnalytics = (index: number): GalleryCardAnalytics => ({
-    surface: 'home',
-    position: index + 1,
-    page,
-    sort,
-    selectedTags,
-    kind,
+  const { user, entries, showcase } = Route.useLoaderData()
+  const search = Route.useSearch()
+  const { items, page, pageCount, total } = galleryView(entries, {
+    page: search.page ?? 1,
+    q: search.q,
   })
 
-  const trackPageChange = (nextPage: number) => {
-    posthog.capture('gallery_page_changed', {
-      page: nextPage,
-      sort,
-      selectedTags,
-      kind,
-    })
-  }
-
   return (
-    <PageShell user={user}>
-      <Stack gap={9}>
-        <HomeMasthead>
-          <HomeHero />
-          <HomeGalleryIntro page={page} />
-        </HomeMasthead>
-        <FeaturedModRow mod={featuredMod} />
-        <section id={GALLERY_ID}>
-          <Stack gap={4}>
-            <VisuallyHidden as="h2">Status lines and mods</VisuallyHidden>
-            <Row gap={4} justify="between" wrap>
-              <GalleryControls kind={kind} sort={sort} tags={tags ? tags.split(',') : []} />
-              <SubmitCta signedIn={!!user} />
-            </Row>
-            {items.length === 0 ? <Text muted>Nothing matches these filters yet.</Text> : null}
-            {items.map((item, index) =>
-              item.kind === 'mod' ? (
-                <ModCard
-                  key={`mod:${item.card.slug}`}
-                  card={item.card}
-                  analytics={cardAnalytics(index)}
-                />
-              ) : (
-                <GalleryConfigCard
-                  key={`status-line:${item.card.slug}`}
-                  card={item.card}
-                  analytics={cardAnalytics(index)}
-                />
-              ),
-            )}
-          </Stack>
-        </section>
-
-        {pageCount > 1 ? (
-          <Row gap={4} align="center" justify="center">
-            {page > 1 ? (
-              <Button asChild variant="ghost" size="sm">
-                <Link
-                  to="/"
-                  onClick={() => trackPageChange(page - 1)}
-                  search={pageSearch(page - 1)}
-                >
-                  ← Previous
-                </Link>
-              </Button>
-            ) : null}
-            <Text muted size="sm">
-              Page {page} of {pageCount}
-            </Text>
-            {page < pageCount ? (
-              <Button asChild variant="ghost" size="sm">
-                <Link
-                  to="/"
-                  onClick={() => trackPageChange(page + 1)}
-                  search={pageSearch(page + 1)}
-                >
-                  Next →
-                </Link>
-              </Button>
-            ) : null}
-          </Row>
-        ) : null}
-        <HomeIndexNote statusLines={statusLines} mods={mods} copyCount={copyCount} asOf={asOf} />
-      </Stack>
+    <PageShell user={user} fullBleed>
+      {/* On every page, so paging changes only the list; the page links land on the gallery. Past
+          page 1 the h1 names the page for search engines and screen readers. */}
+      <HomeSection first>
+        <HomeHero
+          heading={
+            <>
+              {HOME_HERO_HEADING}
+              {page > 1 ? <VisuallyHidden>, page {page}</VisuallyHidden> : null}
+            </>
+          }
+          items={showcase.hero}
+        />
+      </HomeSection>
+      <HomeGallery
+        items={items}
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        sort={search.sort ?? 'trending'}
+        rawKind={search.kind}
+        tags={search.tags}
+        query={search.q}
+      />
+      <HomeChecks />
     </PageShell>
   )
 }

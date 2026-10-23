@@ -64,7 +64,7 @@ describe('buildLlmsFullTxt', () => {
         `### [Everything Bar](${BASE}/c/everything-bar)`,
         '',
         '- Description: Model, branch, and cost. Colors shift as cost grows.',
-        '- Copied 12 times.',
+        '- Installed 12 times.',
         '- Tags: git, cost',
         '- Summary: Shows the model, git branch and session cost on one line.',
         '- How it works:',
@@ -81,7 +81,7 @@ describe('buildLlmsFullTxt', () => {
     const txt = buildLlmsFullTxt(BASE, [], [BARE], [])
 
     expect(txt.endsWith(`### [Bare](${BASE}/c/bare)\n`)).toBe(true)
-    expect(txt).not.toMatch(/Copied 0|Description:|Tags:|Summary:/)
+    expect(txt).not.toMatch(/Installed 0|Description:|Tags:|Summary:/)
   })
 
   it('leaves out an empty how-it-works or good-to-know list', () => {
@@ -111,7 +111,7 @@ describe('buildLlmsFullTxt', () => {
 
     expect(txt.indexOf('## Status lines')).toBeLessThan(txt.indexOf('## Mods'))
     expect(entryFor(txt, `### [Meter](${BASE}/mods/meter)`)).toBe(
-      `### [Meter](${BASE}/mods/meter)\n\n- Copied 1 time.\n`,
+      `### [Meter](${BASE}/mods/meter)\n\n- Installed 1 time.\n`,
     )
   })
 

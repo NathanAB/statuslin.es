@@ -12,6 +12,25 @@ describe('TermsContent', () => {
     expect(screen.getByText(/public domain/i)).toBeTruthy()
   })
 
+  // In Claude Code a mod is a plugin, and a status line is not one.
+  it('calls the gallery one of status lines and mods, two kinds', () => {
+    render(<TermsContent />)
+    expect(
+      screen.getByText(/community gallery of Claude Code status lines and mods\./),
+    ).toBeTruthy()
+  })
+
+  // Both kinds are rendered in a sandbox and reviewed; saying so of status lines alone read as if
+  // mods were not.
+  it('says both kinds are rendered in a sandbox and reviewed before they appear', () => {
+    render(<TermsContent />)
+    expect(
+      screen.getByText(
+        /Submitted status lines and mods are rendered in a sandbox and reviewed before they appear\./,
+      ),
+    ).toBeTruthy()
+  })
+
   it('puts the risk of running a status line or mod on the visitor', () => {
     render(<TermsContent />)
     expect(screen.getByText(/copy or install at your own risk/i)).toBeTruthy()

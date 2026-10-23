@@ -1,10 +1,10 @@
 import { toast } from 'sonner'
 import { CopyButton } from '@/ui/copy-button'
-import { CopyCount } from '@/ui/copy-count'
+import { InstallCount } from '@/ui/install-count'
 import { Row } from '@/ui/layout'
 
 /**
- * The install control on status line and mod pages: a large primary "Copy install prompt" button
+ * The install control on status line and mod pages: the home hero's "Copy install prompt" pill
  * beside the copy count. A successful copy calls `onCopied`, then toasts `pasteHint`.
  */
 export function InstallPrompt({
@@ -30,12 +30,12 @@ export function InstallPrompt({
       <CopyButton
         text={prompt}
         label="Copy install prompt"
-        size="lg"
+        size="pill"
         variant="default"
         ariaLabel={`Copy install prompt for ${title}`}
         onCopied={handleCopied}
       />
-      <CopyCount count={count} />
+      <InstallCount count={count} />
     </Row>
   )
 }

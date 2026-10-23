@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { Children, cloneElement } from 'react'
+import { cloneElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const navigate = vi.fn()
@@ -11,9 +11,24 @@ vi.mock('@posthog/react', () => ({
   usePostHog: () => ({ capture }),
 }))
 
+// A Link's search function, applied to this previous search, shows up as data-search.
+const PREV_SEARCH = { sort: 'top', tags: 'git', kind: 'mods', page: 2 }
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-    <a href={to} {...props}>
+  Link: ({
+    to,
+    children,
+    search,
+    resetScroll: _resetScroll,
+    from: _from,
+    ...props
+  }: {
+    to: string
+    children: React.ReactNode
+    search?: (prev: Record<string, unknown>) => Record<string, unknown>
+    resetScroll?: boolean
+    from?: string
+  }) => (
+    <a href={to} data-search={search ? JSON.stringify(search(PREV_SEARCH)) : undefined} {...props}>
       {children}
     </a>
   ),
@@ -29,60 +44,6 @@ vi.mock('@/ui/button', () => ({
         {children}
       </button>
     ),
-}))
-
-vi.mock('@/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuButtonTrigger: ({ label }: { label: string }) => (
-    <button type="button">{label}</button>
-  ),
-  DropdownMenuCheckboxItem: ({
-    children,
-    checked,
-    onSelect,
-  }: {
-    children: React.ReactNode
-    checked?: boolean
-    onSelect?: (event: { preventDefault: () => void }) => void
-  }) => (
-    <button
-      type="button"
-      aria-checked={checked}
-      role="menuitemcheckbox"
-      onClick={() => onSelect?.({ preventDefault: vi.fn() })}
-    >
-      {children}
-    </button>
-  ),
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuRadioGroup: ({
-    children,
-    onValueChange,
-  }: {
-    children: React.ReactNode
-    onValueChange: (value: string) => void
-  }) => (
-    <div>
-      {Children.map(children, (child) =>
-        cloneElement(child as React.ReactElement<{ onValueChange?: (value: string) => void }>, {
-          onValueChange,
-        }),
-      )}
-    </div>
-  ),
-  DropdownMenuRadioItem: ({
-    children,
-    value,
-    onValueChange,
-  }: {
-    children: React.ReactNode
-    value?: string
-    onValueChange?: (value: string) => void
-  }) => (
-    <button type="button" onClick={() => onValueChange?.(value ?? '')}>
-      {children}
-    </button>
-  ),
 }))
 
 const { GalleryControls } = await import('@/gallery/gallery-controls')
@@ -116,7 +77,7 @@ describe('GalleryControls analytics', () => {
   it('captures sort changes with the active filter state', () => {
     render(<GalleryControls kind="mods" sort="trending" tags={['git']} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Top' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Top' }))
 
     expect(capture).toHaveBeenCalledWith('gallery_sort_changed', {
       sort: 'top',
@@ -125,65 +86,49 @@ describe('GalleryControls analytics', () => {
       kind: 'mods',
     })
   })
-
-  it('captures switching what the gallery shows, from what it showed', () => {
-    render(<GalleryControls kind="all" sort="new" tags={['git']} />)
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
-
-    expect(capture).toHaveBeenCalledWith('gallery_kind_changed', {
-      kind: 'mods',
-      previousKind: 'all',
-      sort: 'new',
-      selectedTags: ['git'],
-    })
-  })
 })
 
-describe('GalleryControls kind filter', () => {
-  const searchAfterClicking = (name: string, prev: Record<string, unknown>) => {
-    fireEvent.click(screen.getByRole('radio', { name }))
-    const call = navigate.mock.calls[0]?.[0] as
-      | { search: (prev: Record<string, unknown>) => Record<string, unknown> }
-      | undefined
-    return call?.search(prev)
-  }
+describe('GalleryControls sort', () => {
+  // The sort sits beside the filter as a small segmented control, so "Trending" is always on screen.
+  it('is one segmented control, with the active sort checked', () => {
+    render(<GalleryControls kind="all" sort="top" tags={[]} />)
 
-  it('is one segmented control, with the active kind checked', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
-
-    const group = screen.getByRole('radiogroup', { name: 'Show' })
+    const group = screen.getByRole('radiogroup', { name: 'Sort' })
     expect(
       within(group)
         .getAllByRole('radio')
-        .map((r) => r.textContent),
-    ).toEqual(['All', 'Status lines', 'Mods'])
-    expect(screen.getByRole('radio', { name: 'Mods' }).getAttribute('aria-checked')).toBe('true')
-    expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('false')
+        .map((r) => [r.textContent, r.getAttribute('aria-checked')]),
+    ).toEqual([
+      ['Trending', 'false'],
+      ['Top', 'true'],
+      ['New', 'false'],
+    ])
   })
 
-  it('writes the chosen kind to the URL and resets the page', () => {
-    render(<GalleryControls kind="all" sort="new" tags={['git']} />)
+  it('writes the chosen sort to the URL and resets the page', () => {
+    render(<GalleryControls kind="all" sort="trending" tags={['git']} />)
 
-    expect(searchAfterClicking('Status lines', { sort: 'new', tags: 'git', page: 3 })).toEqual({
-      sort: 'new',
-      tags: 'git',
-      kind: 'status-lines',
-    })
+    fireEvent.click(screen.getByRole('radio', { name: 'New' }))
+    const call = navigate.mock.calls[0]?.[0] as
+      | { search: (prev: Record<string, unknown>) => Record<string, unknown> }
+      | undefined
+    expect(call?.search({ tags: 'git', page: 3 })).toEqual({ tags: 'git', sort: 'new' })
+  })
+})
+
+// What the gallery shows is no longer a control: status lines and mods are one list. A kind that
+// arrives in the URL still filters, and Clear filters drops it with any tags.
+describe('GalleryControls without a kind filter', () => {
+  it('offers no kind control', () => {
+    render(<GalleryControls kind="all" sort="trending" tags={[]} />)
+    expect(screen.queryByRole('radio', { name: 'Mods' })).toBeNull()
+    expect(screen.queryByRole('radio', { name: 'Status lines' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Clear filters' })).toBeNull()
   })
 
-  it('leaves All out of the URL', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
-
-    expect(searchAfterClicking('All', { kind: 'mods', page: 2 })).toEqual({})
-  })
-
-  it('keeps the active kind when it is clicked again', () => {
-    render(<GalleryControls kind="mods" sort="trending" tags={[]} />)
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Mods' }))
-
-    expect(navigate).not.toHaveBeenCalled()
-    expect(capture).not.toHaveBeenCalled()
+  it('clears a kind that arrived in the URL, with any tags', () => {
+    render(<GalleryControls kind="mods" sort="top" tags={[]} />)
+    const clear = screen.getByRole('link', { name: 'Clear filters' })
+    expect(JSON.parse(clear.getAttribute('data-search') ?? '{}')).toEqual({ sort: 'top' })
   })
 })

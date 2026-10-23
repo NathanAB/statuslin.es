@@ -1,0 +1,45 @@
+// @vitest-environment jsdom
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { MarketplaceLine } from '@/mods/marketplace-line'
+
+const writeText = vi.fn<(text: string) => Promise<void>>()
+
+beforeEach(() => {
+  writeText.mockReset().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { writeText },
+    configurable: true,
+    writable: true,
+  })
+})
+
+const COMMAND = '/plugin marketplace add https://site.example.test/marketplace.json'
+
+describe('MarketplaceLine', () => {
+  // A visitor who adds the marketplace gets the reviewed mods in /plugin without another visit.
+  // Status lines aren't in it, so the line doesn't say "every".
+  it('says what adding the marketplace gets you, then shows the command', () => {
+    const { container } = render(<MarketplaceLine origin="https://site.example.test" />)
+
+    expect(container.textContent).toContain(
+      "To browse the reviewed mods from Claude Code's /plugin menu, add the marketplace from Claude Code in the terminal:",
+    )
+    expect(screen.getByText(COMMAND)).toBeTruthy()
+  })
+
+  // Bare monospace beside a copy icon read as stray text; the guide's commands sit in a code box.
+  it('shows the command in a code box', () => {
+    render(<MarketplaceLine origin="https://site.example.test" />)
+
+    expect(screen.getByText(COMMAND).tagName).toBe('PRE')
+  })
+
+  it('copies the exact command', async () => {
+    render(<MarketplaceLine origin="https://site.example.test" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy marketplace command' }))
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(COMMAND))
+  })
+})

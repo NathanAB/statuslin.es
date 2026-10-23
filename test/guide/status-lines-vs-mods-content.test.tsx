@@ -51,9 +51,11 @@ describe('StatusLinesVsModsContent', () => {
     expect(table.textContent).toMatch(/status line/i)
     expect(table.textContent).toMatch(/mod/i)
     expect(screen.getByRole('rowheader', { name: /claude desktop/i })).toBeTruthy()
-    // The docs say mods draw in VS Code from extension 2.1.299 behind feature flags, and don't
-    // say whether status lines show there, so the table leaves VS Code out.
-    expect(screen.queryByRole('rowheader', { name: /vs code/i })).toBeNull()
+    // The mods docs say what a mod draws shows in the VS Code extension from 2.1.299; the status
+    // line docs don't say whether a status line shows there, so that cell says so.
+    const vsCode = screen.getByRole('rowheader', { name: /vs code/i }).closest('tr')
+    expect(vsCode?.textContent).toContain('Not documented')
+    expect(vsCode?.textContent).toContain('Yes, from extension 2.1.299')
   })
 
   it('states the Claude Code version mods need', () => {

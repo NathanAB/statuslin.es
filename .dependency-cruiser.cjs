@@ -22,7 +22,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/ui' },
       to: {
-        path: '^src/(routes|gallery|submit|review|render|adopt|votes|mods|content|guide|resources|compare)',
+        path: '^src/(routes|gallery|submit|review|render|adopt|votes|mods|content|guide|resources|compare|home)',
         dependencyTypesNot: ['type-only'],
       },
     },
@@ -32,14 +32,14 @@ module.exports = {
         'src/gallery may not import from other feature directories. src/mods builds on the gallery, never the reverse.',
       severity: 'error',
       from: { path: '^src/gallery/' },
-      to: { path: '^src/(submit|review|adopt|votes|mods)/' },
+      to: { path: '^src/(submit|review|adopt|votes|mods|home)/' },
     },
     {
       name: 'submit-no-cross-feature',
       comment: 'src/submit may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/submit/' },
-      to: { path: '^src/(gallery|review|adopt|votes|mods)/' },
+      to: { path: '^src/(gallery|review|adopt|votes|mods|home)/' },
     },
     {
       name: 'review-no-cross-feature',
@@ -48,7 +48,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/review/' },
       to: {
-        path: '^src/(gallery|submit|adopt|votes|mods)/',
+        path: '^src/(gallery|submit|adopt|votes|mods|home)/',
         pathNot: '^src/mods/(publish|listing|queries|github)\\.ts$',
       },
     },
@@ -57,14 +57,14 @@ module.exports = {
       comment: 'src/adopt may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/adopt/' },
-      to: { path: '^src/(gallery|submit|review|votes|mods)/' },
+      to: { path: '^src/(gallery|submit|review|votes|mods|home)/' },
     },
     {
       name: 'votes-no-cross-feature',
       comment: 'src/votes may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/votes/' },
-      to: { path: '^src/(gallery|submit|review|adopt|mods)/' },
+      to: { path: '^src/(gallery|submit|review|adopt|mods|home)/' },
     },
     {
       name: 'submissions-no-feature-imports',
@@ -80,7 +80,7 @@ module.exports = {
         'src/mods may import the shared listing code in src/gallery, but no other feature directory.',
       severity: 'error',
       from: { path: '^src/mods/' },
-      to: { path: '^src/(submit|review|adopt|votes)/' },
+      to: { path: '^src/(submit|review|adopt|votes|home)/' },
     },
   ],
   options: {

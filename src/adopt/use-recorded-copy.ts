@@ -1,6 +1,7 @@
 import { usePostHog } from '@posthog/react'
 import type { CopyKind } from '@/adopt/copy-event'
 import { recordCopyFn } from '@/adopt/functions'
+import type { CopySurface } from '@/lib/copy-surface'
 import { browserFunnelIds } from '@/lib/posthog-funnel-ids'
 import { type CountedCopy, useCountedCopy } from '@/lib/use-counted-copy'
 
@@ -12,9 +13,13 @@ export type RecordedCopyController = CountedCopy<CopyKind>
  * browser's distinct + session ids through so the server event still joins the same person's
  * View→Copy funnel.
  */
-export function useRecordedCopy(configId: string, copyCount: number): RecordedCopyController {
+export function useRecordedCopy(
+  configId: string,
+  copyCount: number,
+  surface: CopySurface = 'page',
+): RecordedCopyController {
   const posthog = usePostHog()
   return useCountedCopy(configId, copyCount, (kind: CopyKind) =>
-    recordCopyFn({ data: { configId, kind, ...browserFunnelIds(posthog) } }),
+    recordCopyFn({ data: { configId, kind, surface, ...browserFunnelIds(posthog) } }),
   )
 }

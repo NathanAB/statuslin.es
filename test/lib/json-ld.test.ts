@@ -53,7 +53,7 @@ describe('homeJsonLd', () => {
     expect(nodes[2]).toEqual({
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Claude Code Status Lines & Mods',
+      name: 'Claude Code Mods & Status Lines',
       url: 'https://statuslin.es',
       mainEntity: {
         '@type': 'ItemList',
@@ -92,20 +92,20 @@ describe('configJsonLd', () => {
       howItWorks: ['Reads the session JSON on stdin', 'Runs `git` for the branch.'],
       goodToKnow: ['Needs Bash 4 or newer.', 'Uses Nerd Font glyphs'],
     } as PageCopy | null,
-    primaryFacet: null as { slug: string; heading: string } | null,
+    primaryFacet: null as { slug: string; topic: string } | null,
   }
 
-  it('breadcrumbs through the primary facet page when the config has one', () => {
+  it('breadcrumbs through the primary topic page by its short name when the config has one', () => {
     const [, crumbs] = configJsonLd('https://statuslin.es', {
       ...base,
-      primaryFacet: { slug: 'git', heading: 'Claude Code status lines that show git status' },
+      primaryFacet: { slug: 'git', topic: 'Git' },
     }) as Array<Record<string, unknown>>
     expect(crumbs?.itemListElement).toEqual([
       { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://statuslin.es' },
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Claude Code status lines that show git status',
+        name: 'Git',
         item: 'https://statuslin.es/status-lines/git',
       },
       {
@@ -235,7 +235,7 @@ describe('guideJsonLd', () => {
       description: GUIDE_DESCRIPTION,
       author: { '@type': 'Organization', name: 'statuslin.es', url: 'https://statuslin.es' },
       datePublished: '2026-08-14',
-      dateModified: '2026-10-18',
+      dateModified: '2026-10-23',
     })
     expect(nodes[1]).toEqual({
       '@context': 'https://schema.org',
@@ -304,7 +304,11 @@ describe('resourcesJsonLd', () => {
 })
 
 describe('facetJsonLd', () => {
-  const facet = { slug: 'git', titleBase: 'Claude Code Status Lines That Show Git Status' }
+  const facet = {
+    slug: 'git',
+    titleBase: 'Claude Code Status Lines That Show Git Status',
+    topic: 'Git',
+  }
   const [page, crumbs] = facetJsonLd(
     'https://example.test',
     facet,
@@ -334,14 +338,14 @@ describe('facetJsonLd', () => {
       { '@type': 'ListItem', position: 2, name: 'A', url: 'https://example.test/c/a' },
     ])
   })
-  it('carries a breadcrumb trail back to the gallery', () => {
+  it('carries the breadcrumb trail the page shows: home, then this topic', () => {
     expect(crumbs['@type']).toBe('BreadcrumbList')
     expect(crumbs.itemListElement).toEqual([
       { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://example.test' },
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Claude Code Status Lines That Show Git Status',
+        name: 'Git',
         item: 'https://example.test/status-lines/git',
       },
     ])

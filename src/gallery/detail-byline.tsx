@@ -30,22 +30,36 @@ function LaterFact({ children }: { children: React.ReactNode }) {
   )
 }
 
+/** "by" and the author's avatar and GitHub link. */
+function ByAuthor({ author }: { author: ConfigAuthor }) {
+  return (
+    <Row gap={1.5}>
+      <Text muted size="sm">
+        by
+      </Text>
+      <AuthorChip author={author} />
+    </Row>
+  )
+}
+
+/** "A mod by @author": the hero's line under its install button, naming what's picked and who
+ *  made it ("A status line" alone without an author). The list beside it already shows the
+ *  installs. */
+export function AuthorByline({ kind, author }: { kind: string; author: ConfigAuthor | null }) {
+  return (
+    <Row gap={1.5} wrap>
+      <Text muted size="sm">
+        {author ? `${kind} by` : kind}
+      </Text>
+      {author ? <AuthorChip author={author} /> : null}
+    </Row>
+  )
+}
+
 /** "by @author · source · licence", dot-separated. Each fact wraps as a unit with its dot. */
 export function DetailByline({ author, source, license }: Byline) {
   const facts: Array<{ key: string; fact: React.ReactNode }> = []
-  if (author) {
-    facts.push({
-      key: 'author',
-      fact: (
-        <Row gap={1.5}>
-          <Text muted size="sm">
-            by
-          </Text>
-          <AuthorChip author={author} />
-        </Row>
-      ),
-    })
-  }
+  if (author) facts.push({ key: 'author', fact: <ByAuthor author={author} /> })
   if (source) {
     facts.push({
       key: 'source',

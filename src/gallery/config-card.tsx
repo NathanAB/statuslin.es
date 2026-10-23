@@ -1,17 +1,17 @@
 import { usePostHog } from '@posthog/react'
 import { cardClickProperties, type GalleryCardAnalytics } from '@/gallery/card-analytics'
-import { ConfigBadges } from '@/gallery/config-badges'
+import { CardMeta } from '@/gallery/card-meta'
 import type { GalleryCard } from '@/gallery/queries'
 import { AuthorChip } from '@/ui/author-chip'
-import { Badge } from '@/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card'
-import { CopyCount } from '@/ui/copy-count'
-import { Row, Stack } from '@/ui/layout'
+import { GalleryRow } from '@/ui/gallery-row'
 import { StatuslinePreview } from '@/ui/statusline-preview'
-import { StretchedLink } from '@/ui/stretched-link'
 import { Text } from '@/ui/text'
 
-/** One gallery card: title, badges, preview, description, author. Used by the home gallery and facet pages. */
+/**
+ * One status line in the gallery, as a full-width row: its name and author, what it can reach, its
+ * tags and copies, then the status line itself and its description. Used by the home gallery,
+ * the facet and best pages, and the related lists.
+ */
 export function GalleryConfigCard({
   card,
   analytics,
@@ -22,50 +22,30 @@ export function GalleryConfigCard({
   const posthog = usePostHog()
 
   return (
-    <Card interactive>
-      <CardHeader>
-        <Row gap={2} align="start" justify="between">
-          <Row gap={2} wrap>
-            <CardTitle>
-              <StretchedLink
-                to="/c/$slug"
-                params={{ slug: card.slug }}
-                onClick={() => {
-                  if (!analytics) return
-                  posthog.capture(
-                    'statusline_card_clicked',
-                    cardClickProperties({ configId: card.configId, slug: card.slug }, analytics),
-                  )
-                }}
-              >
-                {card.title}
-              </StretchedLink>
-            </CardTitle>
-            <Badge variant="outline">Status line</Badge>
-            <CopyCount count={card.copyCount} />
-          </Row>
-          <ConfigBadges tags={card.tags} networkHosts={card.networkHosts} align="end" />
-        </Row>
-      </CardHeader>
-      <CardContent>
-        <Stack gap={3}>
-          {card.preview !== null ? (
-            <StatuslinePreview segments={card.preview} />
-          ) : (
-            <Text muted size="sm">
-              No preview.
-            </Text>
-          )}
-          <Row gap={3} justify="between">
-            <Text muted size="sm" breakLong>
-              {card.description}
-            </Text>
-            <Row gap={1} aboveOverlay>
-              <AuthorChip author={card.author} />
-            </Row>
-          </Row>
-        </Stack>
-      </CardContent>
-    </Card>
+    <GalleryRow
+      to="/c/$slug"
+      params={{ slug: card.slug }}
+      onOpen={() => {
+        if (!analytics) return
+        posthog.capture(
+          'statusline_card_clicked',
+          cardClickProperties({ configId: card.configId, slug: card.slug }, analytics),
+        )
+      }}
+      title={card.title}
+      byline={<AuthorChip author={card.author} />}
+      facts={
+        <CardMeta tags={card.tags} networkHosts={card.networkHosts} copyCount={card.copyCount} />
+      }
+      description={card.description}
+    >
+      {card.preview !== null ? (
+        <StatuslinePreview segments={card.preview} look="strip" />
+      ) : (
+        <Text muted size="sm">
+          No preview.
+        </Text>
+      )}
+    </GalleryRow>
   )
 }

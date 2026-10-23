@@ -137,16 +137,18 @@ describe('llms.txt with mods', () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
     expect(txt).toMatch(
-      /\n## Mods\n\n- \[Context Meter\]\(https:\/\/staging\.statuslin\.es\/mods\/context-meter\): Shows how full the context is\. Copied 3 times\.\n\n## Optional\n/,
+      /\n## Mods\n\n- \[Context Meter\]\(https:\/\/staging\.statuslin\.es\/mods\/context-meter\): Shows how full the context is\. Installed 3 times\.\n\n## Optional\n/,
     )
     expect(txt).not.toContain('draft-mod')
     expect(txt).not.toContain('removed-mod')
   })
 
-  it('links a facet that mods make indexable', async () => {
+  it('links a facet that mods make indexable, by its page heading', async () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
-    expect(txt).toContain(`(${BASE}/status-lines/minimal)`)
+    expect(txt).toContain(
+      `[Minimal Claude Code status lines and mods](${BASE}/status-lines/minimal)`,
+    )
   })
 
   it('no longer says every submission is a shell script', async () => {
@@ -154,7 +156,7 @@ describe('llms.txt with mods', () => {
 
     expect(txt).not.toMatch(/every submission is a shell script/i)
     expect(txt).toContain('Status lines are scripts')
-    expect(txt).toContain('Mods are Claude Code plugins')
+    expect(txt).toContain('mods are Claude Code plugins')
   })
 
   it('keeps the llms.txt content type', async () => {
@@ -187,7 +189,7 @@ describe('llms-full.txt with mods', () => {
         `### [Context Meter](${BASE}/mods/context-meter)`,
         '',
         '- Description: Shows how full the context is',
-        '- Copied 3 times.',
+        '- Installed 3 times.',
         '- Tags: minimal',
         '- Summary: Shows how full the context window is.',
         '- How it works:',

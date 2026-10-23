@@ -31,20 +31,20 @@ function isAllowedHostBase(host: string): boolean {
 }
 
 function validateOne(host: string): string {
-  if (host.includes('://')) throw new HttpError(400, `host must not include a scheme: ${host}`)
-  if (host.includes('/')) throw new HttpError(400, `host must not include a path: ${host}`)
-  if (host.includes(':')) throw new HttpError(400, `host must not include a port: ${host}`)
+  if (host.includes('://')) throw new HttpError(400, `Host must not include a scheme: ${host}`)
+  if (host.includes('/')) throw new HttpError(400, `Host must not include a path: ${host}`)
+  if (host.includes(':')) throw new HttpError(400, `Host must not include a port: ${host}`)
 
   if (host.startsWith('*.')) {
     const rest = host.slice(2)
     if (rest.includes('*'))
-      throw new HttpError(400, `only a single leading wildcard is allowed: ${host}`)
+      throw new HttpError(400, `Only a single leading wildcard is allowed: ${host}`)
     if (!isAllowedHostBase(rest))
-      throw new HttpError(400, `wildcard must sit on a registrable ICANN domain: ${host}`)
+      throw new HttpError(400, `A wildcard must sit on a registrable ICANN domain: ${host}`)
     return host
   }
-  if (host.includes('*')) throw new HttpError(400, `wildcard must be a leading *.label: ${host}`)
-  if (!isAllowedHostBase(host)) throw new HttpError(400, `not an allowed hostname: ${host}`)
+  if (host.includes('*')) throw new HttpError(400, `A wildcard must be a leading *.label: ${host}`)
+  if (!isAllowedHostBase(host)) throw new HttpError(400, `Not an allowed hostname: ${host}`)
   return host
 }
 
@@ -57,6 +57,6 @@ export function validateNetworkHosts(raw: string[]): string[] {
     if (!cleaned.includes(host)) cleaned.push(validateOne(host))
   }
   if (cleaned.length > MAX_NETWORK_HOSTS)
-    throw new HttpError(400, `at most ${MAX_NETWORK_HOSTS} network hosts allowed`)
+    throw new HttpError(400, `At most ${MAX_NETWORK_HOSTS} network hosts are allowed`)
   return cleaned
 }

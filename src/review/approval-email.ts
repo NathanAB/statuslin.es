@@ -28,7 +28,7 @@ const APPROVAL_WORDING: Record<
 > = {
   submission: {
     subject: 'Your statuslin.es submission was approved',
-    headline: (noun, title) => `Your ${noun} "${title}" was approved.`,
+    headline: (noun, title) => `Your ${noun} "${title}" was approved and is live.`,
   },
   update: {
     subject: 'Your statuslin.es update is live',

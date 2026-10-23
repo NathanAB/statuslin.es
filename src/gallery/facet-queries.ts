@@ -2,6 +2,7 @@ import { and, desc, eq, max, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { configs, configVersions, copyEvents, submissions, user } from '@/db/schema'
 import { galleryCardSelection, mapCardRows } from './card-rows'
+import { facetTopicName } from './facet-page-copy'
 import { FACET_BY_SLUG, FACETS, type Facet } from './facets'
 import { type GalleryCard, selectCardPreviews } from './queries'
 
@@ -128,14 +129,15 @@ export function isIndexableFacet(slug: string, stats: Map<string, FacetStats>): 
   return (stats.get(slug)?.count ?? 0) >= MIN_INDEXABLE_FACET_CONFIGS
 }
 
+/** A status line's first indexable topic, with the short name its breadcrumb shows: "Git". */
 export function primaryFacet(
   tags: string[],
   stats: Map<string, FacetStats>,
-): { slug: string; heading: string } | null {
+): { slug: string; topic: string } | null {
   for (const slug of tags) {
     const facet = FACET_BY_SLUG.get(slug)
-    if (facet?.page && facet.heading && isIndexableFacet(slug, stats)) {
-      return { slug, heading: facet.heading }
+    if (facet?.page && isIndexableFacet(slug, stats)) {
+      return { slug, topic: facetTopicName(facet) }
     }
   }
   return null

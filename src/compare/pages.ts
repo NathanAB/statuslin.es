@@ -12,6 +12,7 @@ import { PAGE_TITLE_BRAND } from '@/lib/page-title'
 
 const MIN_SHARED_JOBS = 3
 const PREVIEWS_PER_PAGE = 6
+const RESOURCES_PREVIEWS = 3
 const GALLERY_WANTS = 'to read one script and see its real output first'
 
 export type CompareLink =
@@ -73,9 +74,13 @@ const SPECS: PageSpec[] = [
 
 export const COMPARE_PATHS = SPECS.map((s) => s.path)
 
+function sharesJobs(jobs: string[], card: GalleryCard): boolean {
+  return jobs.filter((job) => card.tags.includes(job)).length >= MIN_SHARED_JOBS
+}
+
 function relevantCards(jobs: string[], cards: GalleryCard[]): RankedCard[] {
   return cards
-    .filter((c) => jobs.filter((job) => c.tags.includes(job)).length >= MIN_SHARED_JOBS)
+    .filter((c) => sharesJobs(jobs, c))
     .slice(0, PREVIEWS_PER_PAGE)
     .map(rankedCard)
 }
@@ -182,4 +187,26 @@ export function liveComparePages(gallery: GalleryCard[]): LiveComparePage[] {
     const verifiedAt = tools.map((t) => t.verifiedAt).sort()[tools.length - 1] ?? ''
     return [{ path: spec.path, verifiedAt, slugs: page.cards.map(({ card }) => card.slug) }]
   })
+}
+
+/** What /resources takes from the gallery, so its tool list leads somewhere a visitor can act. */
+export interface ResourcesShowcase {
+  /** Status lines that do a compared tool's job, most-installed first. */
+  cards: RankedCard[]
+  /** Each compared tool whose alternatives page is live: its repo URL, then the page's tool slug. */
+  alternatives: Record<string, string>
+}
+
+export function resourcesShowcase(gallery: GalleryCard[]): ResourcesShowcase {
+  return {
+    cards: gallery
+      .filter((c) => TOOLS.some((t) => sharesJobs(t.jobs, c)))
+      .slice(0, RESOURCES_PREVIEWS)
+      .map(rankedCard),
+    alternatives: Object.fromEntries(
+      TOOLS.filter((t) => buildComparePage(`/alternatives/${t.slug}`, gallery) !== null).map(
+        (t) => [t.repoUrl, t.slug],
+      ),
+    ),
+  }
 }

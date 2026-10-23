@@ -1,3 +1,4 @@
+import { type CopySurface, copySurface } from '@/lib/copy-surface'
 import { copierPersonProperties } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
 import { MARKETPLACE_PATH } from '@/lib/site'
@@ -38,6 +39,14 @@ export function modInstallCommands(origin: string, entryName: string, claude = '
   ]
 }
 
+/**
+ * What a terminal Claude Code session runs to add the site's marketplace, so `/plugin` lists every
+ * reviewed mod. Adding it installs nothing, and Desktop has no `/plugin` command.
+ */
+export function marketplaceAddCommand(origin: string): string {
+  return `/plugin marketplace add ${origin}${MARKETPLACE_PATH}`
+}
+
 /** The mod's folder on GitHub at its pinned commit. */
 export function modSourceUrl(pin: { repoUrl: string; path: string; commitSha: string }): string {
   const tree = `${pin.repoUrl}/tree/${pin.commitSha}`
@@ -60,11 +69,13 @@ export function modCopyEvent(input: {
   distinctId: string | null | undefined
   signedInUserId: string | null
   sessionId?: string | null | undefined
+  surface?: CopySurface | undefined
 }): ServerEvent | null {
   if (!input.distinctId || !Object.hasOwn(COMMAND_KINDS, input.kind)) return null
   const properties: Record<string, unknown> = {
     modId: input.modId,
     command: input.kind,
+    surface: copySurface(input.surface),
     ...copierPersonProperties(input.distinctId, input.signedInUserId),
   }
   if (input.sessionId) properties[SESSION_ID_PROP] = input.sessionId

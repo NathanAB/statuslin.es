@@ -23,6 +23,19 @@ describe('buildClaudePrompt', () => {
   const source = '#!/usr/bin/env bash\necho "hello world"'
   const title = 'My Statusline'
 
+  // Trying a second status line used to replace the first one's script without a word.
+  it('backs up an existing script and reports an existing statusLine before replacing them', () => {
+    const result = buildClaudePrompt({ source: 'echo hi', interpreter: 'bash', title: 'X' })
+    // Only the first backup is kept: a second install must not replace the visitor's own original.
+    expect(result).toContain(
+      "If ~/.claude/statusline.sh exists and ~/.claude/statusline.sh.bak doesn't yet, rename it to ~/.claude/statusline.sh.bak first and tell me.",
+    )
+    expect(result).toContain(
+      'If it already has a "statusLine", tell me what it was before you replace it.',
+    )
+    expect(result.indexOf('statusline.sh.bak')).toBeLessThan(result.indexOf('Save this script'))
+  })
+
   it('includes the exact source verbatim', () => {
     const result = buildClaudePrompt({ source, interpreter: 'bash', title })
     expect(result).toContain(source)
@@ -99,6 +112,14 @@ describe('buildClaudePrompt', () => {
 describe('buildShellInstall', () => {
   const source = '#!/usr/bin/env bash\necho "hello $USER"'
   const title = 'Test'
+
+  it('copies an existing script to .bak before writing the new one', () => {
+    const result = buildShellInstall({ source: 'echo hi', interpreter: 'bash', title: 'X' })
+    expect(result).toContain(
+      '[ -e ~/.claude/statusline.sh ] && [ ! -e ~/.claude/statusline.sh.bak ] && cp ~/.claude/statusline.sh ~/.claude/statusline.sh.bak',
+    )
+    expect(result.indexOf('.bak')).toBeLessThan(result.indexOf('cat >'))
+  })
 
   it('uses a quoted heredoc so the script is not expanded', () => {
     const result = buildShellInstall({ source, interpreter: 'bash', title })

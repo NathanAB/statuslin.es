@@ -1,30 +1,31 @@
 import type * as React from 'react'
-
+import { cn } from '@/lib/cn'
 import { AppHeader, type AppHeaderUser } from '@/ui/app-header'
+import { PAGE_COLUMN } from '@/ui/page-column'
 import { SiteFooter } from '@/ui/site-footer'
 import { TooltipProvider } from '@/ui/tooltip'
 
 /**
- * The standard page frame: full-height background, shared header, and a centered
- * max-width main column. Used by the gallery and detail pages.
+ * The standard page frame: full-height background, shared header, the page's content and the
+ * footer, all three on the one page column (`PAGE_COLUMN`), so every page lines up the same.
  *
- * `narrow` switches the main column to max-w-lg — for top-aligned single-column
- * forms like the submit page that are NOT vertically centered (use CenteredShell for that).
+ * `fullBleed` is the home page: main spans the window, since some of its sections are
+ * full-width bands, and each section places itself on the column.
  */
 export function PageShell({
   user,
-  narrow = false,
+  fullBleed = false,
   children,
 }: {
   user: AppHeaderUser | null
-  narrow?: boolean
+  fullBleed?: boolean
   children: React.ReactNode
 }) {
   return (
     <TooltipProvider>
       <div className="flex min-h-screen flex-col bg-background">
         <AppHeader user={user} />
-        <main className={`mx-auto w-full flex-1 px-6 py-8 ${narrow ? 'max-w-lg' : 'max-w-5xl'}`}>
+        <main className={fullBleed ? 'w-full flex-1' : cn(PAGE_COLUMN, 'flex-1 py-8')}>
           {children}
         </main>
         <SiteFooter />

@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { PAGE_SIZE } from '@/gallery/queries'
 import { Route as HomeRoute } from '@/routes/index'
+
+/** A loader entry: a gallery item and the text a search matches it on. */
+const entry = (kind: string, slug: string, title: string, searchText = slug) => ({
+  item: { kind, card: { slug, title } },
+  searchText,
+})
+const filler = (count: number) =>
+  Array.from({ length: count }, (_, i) => entry('status-line', `filler-${i}`, `Filler ${i}`))
 
 const ORIGINAL_URL = process.env.BETTER_AUTH_URL
 afterEach(() => {
@@ -9,55 +18,43 @@ afterEach(() => {
 describe('home search indexing metadata', () => {
   it('gives page 1 the base gallery title and description', async () => {
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 1,
-          pageCount: 3,
-          items: [],
-        },
-      },
+      loaderData: { entries: filler(3 * PAGE_SIZE) },
       match: { search: {} },
     } as never)
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Status Lines & Mods | statuslin.es' },
+        { title: 'Claude Code Mods & Status Lines | statuslin.es' },
         {
           name: 'description',
           content:
-            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command.',
+            'Claude Code mods and status lines with real previews. Install any of them with one copied prompt.',
         },
       ]),
     )
   })
 
-  it('gives page 2 distinct metadata using the loader-clamped page values', async () => {
+  it('gives page 2 distinct metadata', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 2,
-          pageCount: 3,
-          items: [],
-        },
-      },
-      match: { search: { page: 999 } },
+      loaderData: { entries: filler(3 * PAGE_SIZE) },
+      match: { search: { page: 2 } },
     } as never)
 
     expect(head?.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Claude Code Status Lines & Mods — Page 2 | statuslin.es' },
+        { title: 'Claude Code Mods & Status Lines — Page 2 | statuslin.es' },
         {
           name: 'description',
           content:
-            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
+            'Claude Code mods and status lines with real previews. Install any of them with one copied prompt. Page 2 of 3.',
         },
         { property: 'og:url', content: 'https://statuslin.es/?page=2' },
-        { property: 'og:title', content: 'Claude Code Status Lines & Mods — Page 2' },
+        { property: 'og:title', content: 'Claude Code Mods & Status Lines — Page 2' },
         {
           property: 'og:description',
           content:
-            'Claude Code status lines and mods with real previews. Copy a status line in one paste or install a mod with one command. Page 2 of 3.',
+            'Claude Code mods and status lines with real previews. Install any of them with one copied prompt. Page 2 of 3.',
         },
       ]),
     )
@@ -71,20 +68,14 @@ describe('home search indexing metadata', () => {
       .map((script) => JSON.parse(script.children) as Record<string, unknown>)
       .find((node) => node['@type'] === 'CollectionPage')
     expect(collectionPage).toMatchObject({
-      name: 'Claude Code Status Lines & Mods — Page 2',
+      name: 'Claude Code Mods & Status Lines — Page 2',
       url: 'https://statuslin.es/?page=2',
     })
   })
 
   it('renders WebSite, Organization and CollectionPage as separate JSON-LD scripts', async () => {
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 1,
-          pageCount: 1,
-          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
-        },
-      },
+      loaderData: { entries: [entry('status-line', 'alpha', 'Alpha')] },
       match: { search: {} },
     } as never)
 
@@ -102,16 +93,13 @@ describe('home search indexing metadata', () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
       loaderData: {
-        gallery: {
-          page: 2,
-          pageCount: 2,
-          items: [
-            { kind: 'mod', card: { slug: 'meter', title: 'Meter' } },
-            { kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } },
-          ],
-        },
+        entries: [
+          ...filler(PAGE_SIZE),
+          entry('mod', 'meter', 'Meter'),
+          entry('status-line', 'alpha', 'Alpha'),
+        ],
       },
-      match: { search: {} },
+      match: { search: { page: 2 } },
     } as never)
 
     const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
@@ -127,37 +115,10 @@ describe('home search indexing metadata', () => {
     ])
   })
 
-  // The ItemList is the ranked gallery, numbered across pages. The "Featured mod" row is a separate
-  // section whose mod also ranks in the gallery, so listing it would shift page 1's numbering and
-  // list that mod twice.
-  it('lists only the ranked gallery in the CollectionPage, not the "Featured mod" row', async () => {
-    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
-    const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 1,
-          pageCount: 2,
-          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
-        },
-        featuredMod: { slug: 'meter', title: 'Meter' },
-      },
-      match: { search: {} },
-    } as never)
-
-    const collectionPage = ((head?.scripts ?? []) as Array<{ children: string }>)
-      .map((script) => JSON.parse(script.children) as Record<string, unknown>)
-      .find((node) => node['@type'] === 'CollectionPage') as
-      | { mainEntity: { itemListElement: Array<{ position: number; url: string }> } }
-      | undefined
-    expect(
-      collectionPage?.mainEntity.itemListElement.map(({ position, url }) => ({ position, url })),
-    ).toEqual([{ position: 1, url: 'https://statuslin.es/c/alpha' }])
-  })
-
   it('canonicalizes a kind-filtered gallery to itself and marks it noindex', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
-      loaderData: { gallery: { page: 1, pageCount: 1, items: [] } },
+      loaderData: { entries: [] },
       match: { search: { kind: 'mods' } },
     } as never)
 
@@ -168,7 +129,7 @@ describe('home search indexing metadata', () => {
   it('keeps the kind in the canonical of a later kind-filtered page', async () => {
     process.env.BETTER_AUTH_URL = 'https://statuslin.es'
     const head = await HomeRoute.options.head?.({
-      loaderData: { gallery: { page: 2, pageCount: 2, items: [] } },
+      loaderData: { entries: filler(PAGE_SIZE + 1) },
       match: { search: { kind: 'mods', page: 2 } },
     } as never)
 
@@ -189,13 +150,7 @@ describe('home search indexing metadata', () => {
 
   it('omits CollectionPage JSON-LD from filtered noindex views', async () => {
     const head = await HomeRoute.options.head?.({
-      loaderData: {
-        gallery: {
-          page: 2,
-          pageCount: 3,
-          items: [{ kind: 'status-line', card: { slug: 'alpha', title: 'Alpha' } }],
-        },
-      },
+      loaderData: { entries: filler(3 * PAGE_SIZE) },
       match: { search: { sort: 'new', page: 2 } },
     } as never)
 
@@ -204,6 +159,56 @@ describe('home search indexing metadata', () => {
       'WebSite',
       'Organization',
     ])
+  })
+
+  // A noindex page whose canonical points elsewhere sends search engines mixed signals.
+  it('marks a search noindex with no canonical link and omits CollectionPage', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const head = await HomeRoute.options.head?.({
+      loaderData: { entries: [entry('status-line', 'alpha', 'Alpha'), ...filler(3)] },
+      match: { search: { q: 'alpha' } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(head?.links).toEqual([])
+    const scripts = (head?.scripts ?? []) as Array<{ children: string }>
+    expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
+      'WebSite',
+      'Organization',
+    ])
+  })
+
+  it('pages the matches of a search, showing their last page for a page past it', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const matching = Array.from({ length: PAGE_SIZE + 1 }, (_, i) =>
+      entry('status-line', `weather-${i}`, `Weather ${i}`),
+    )
+    const head = await HomeRoute.options.head?.({
+      loaderData: { entries: [...filler(3 * PAGE_SIZE), ...matching] },
+      match: { search: { q: 'weather', page: 3 } },
+    } as never)
+
+    expect(head?.meta).toContainEqual({
+      title: 'Claude Code Mods & Status Lines — Page 2 | statuslin.es',
+    })
+    expect(head?.links).toEqual([])
+  })
+
+  it('gives /?q=git noindex and no canonical while /?page=2 keeps its canonical', async () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+    const headFor = (search: Record<string, unknown>) =>
+      HomeRoute.options.head?.({
+        loaderData: { entries: filler(3 * PAGE_SIZE) },
+        match: { search },
+      } as never)
+
+    const searched = await headFor({ q: 'git' })
+    expect(searched?.meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(searched?.links).toEqual([])
+
+    const paged = await headFor({ page: 2 })
+    expect(paged?.meta).not.toContainEqual({ name: 'robots', content: 'noindex, follow' })
+    expect(paged?.links).toEqual([{ rel: 'canonical', href: 'https://statuslin.es/?page=2' }])
   })
 
   it('does not noindex the unfiltered gallery', async () => {

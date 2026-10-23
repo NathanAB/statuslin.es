@@ -99,7 +99,7 @@ export function configJsonLd(
     license: string | null
     keywords: string[]
     updatedAt: string | null
-    primaryFacet: { slug: string; heading: string } | null
+    primaryFacet: { slug: string; topic: string } | null
   },
 ): object[] {
   const url = `${origin}/c/${config.slug}`
@@ -108,7 +108,7 @@ export function configJsonLd(
     ...(config.primaryFacet
       ? [
           {
-            name: config.primaryFacet.heading,
+            name: config.primaryFacet.topic,
             item: `${origin}/status-lines/${config.primaryFacet.slug}`,
           },
         ]
@@ -175,7 +175,8 @@ export function resourcesJsonLd(
 
 export function facetJsonLd(
   origin: string,
-  facet: { slug: string; titleBase: string },
+  /** `topic` names the facet in the breadcrumb, as the page's own trail does. */
+  facet: { slug: string; titleBase: string; topic: string },
   /** The page's status lines and mods, in the order it shows them. */
   items: GalleryListEntry[],
   /** ISO date (YYYY-MM-DD) of the newest config in the facet, or null — a freshness signal. */
@@ -201,7 +202,7 @@ export function facetJsonLd(
   }
   const breadcrumbs = breadcrumbJsonLd([
     { name: HOME_CRUMB_NAME, item: origin },
-    { name: facet.titleBase, item: url },
+    { name: facet.topic, item: url },
   ])
   const nodes =
     options.includeCollectionPage === false ? [breadcrumbs] : [collectionPage, breadcrumbs]

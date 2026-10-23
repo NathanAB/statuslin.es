@@ -59,7 +59,7 @@ describe('/mods page', () => {
   it('shows a card per mod, each linking its page', () => {
     renderPage(MODS)
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Claude Code mods' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Best Claude Code mods' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Meter' }).getAttribute('href')).toBe('/mods/meter')
     expect(screen.getByRole('link', { name: 'File Tree' }).getAttribute('href')).toBe(
       '/mods/file-tree',
@@ -120,13 +120,24 @@ describe('/mods page', () => {
     expect(screen.queryByRole('heading', { name: 'How do I install a mod by hand?' })).toBeNull()
   })
 
-  // Installs count only through each mod page's copy button, so the FAQ gives no commands.
-  it('points installs at the copy button and shows no commands to run by hand', () => {
+  // Installs count only through each mod page's copy button, so the FAQ gives no install commands.
+  // The one command to run by hand adds the whole marketplace, which installs nothing by itself.
+  it('points installs at the copy button and shows only the marketplace command', () => {
     const { container } = renderPage(MODS)
 
     const pageText = container.textContent ?? ''
     expect(pageText).toContain("Copy the install prompt from the mod's page")
-    expect(pageText).not.toMatch(/plugin (marketplace add|install)|--plugin-dir/)
+    expect(pageText).not.toMatch(/plugin install|--plugin-dir/)
+    expect(pageText.match(/plugin marketplace add/g)).toHaveLength(1)
+    expect(screen.getByText(`/plugin marketplace add ${ORIGIN}/marketplace.json`)).toBeTruthy()
+  })
+
+  // Status lines are mods too, but this page lists only the plugins: it says where the rest are.
+  it('ranks by installs and points to the gallery for status lines', () => {
+    const { container } = renderPage(MODS)
+
+    expect(container.textContent).toContain('ranked by installs')
+    expect(screen.getByRole('link', { name: 'the gallery' }).getAttribute('href')).toBe('/')
   })
 
   it('links the safety guide once, from the intro', () => {

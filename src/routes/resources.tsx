@@ -6,14 +6,18 @@ import { RESOURCES_TITLE_BASE } from '@/lib/page-title'
 import { siteUrl } from '@/lib/site'
 import { staticPageSocialMeta } from '@/og/meta'
 import { RESOURCE_SECTIONS } from '@/resources/data'
+import { getResourcesShowcaseFn } from '@/resources/functions'
 import { ResourcesContent } from '@/resources/resources-content'
 import { PageShell } from '@/ui/shell'
 
 const DESCRIPTION =
-  'ccstatusline, claude-powerline, CCometixLine, and other Claude Code status line tools, generators, guides, and resources, each with a short note of our own.'
+  'ccstatusline, claude-powerline and other Claude Code status line tools, plus mods, plugin marketplaces, usage trackers and themes.'
 
 export const Route = createFileRoute('/resources')({
-  loader: () => getSession(),
+  loader: async () => {
+    const [user, showcase] = await Promise.all([getSession(), getResourcesShowcaseFn()])
+    return { user, showcase, origin: siteUrl() }
+  },
   head: () => ({
     meta: [
       { title: RESOURCES_TITLE_BASE },
@@ -38,10 +42,10 @@ export const Route = createFileRoute('/resources')({
 })
 
 function Resources() {
-  const user = Route.useLoaderData()
+  const { user, showcase, origin } = Route.useLoaderData()
   return (
-    <PageShell user={user}>
-      <ResourcesContent signedIn={!!user} />
+    <PageShell user={user} fullBleed>
+      <ResourcesContent signedIn={!!user} showcase={showcase} origin={origin} />
     </PageShell>
   )
 }

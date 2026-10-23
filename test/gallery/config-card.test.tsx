@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { GalleryCard } from '@/gallery/queries'
 
 const capture = vi.fn()
 
@@ -22,7 +23,7 @@ vi.mock('@tanstack/react-router', () => ({
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
   }) => (
     <a
-      href={params ? to.replace('$slug', params.slug ?? '') : to}
+      href={params ? to.replace(/\$(\w+)/g, (_, k) => params[k] ?? '') : to}
       onClick={(event) => {
         event.preventDefault()
         onClick?.(event)
@@ -38,12 +39,12 @@ const { GalleryConfigCard } = await import('@/gallery/config-card')
 
 afterEach(() => capture.mockClear())
 
-const exampleCard = {
+const exampleCard: GalleryCard = {
   configId: 'config-1',
   slug: 'example',
   title: 'Example',
   description: 'An example status line.',
-  interpreter: 'bash' as const,
+  interpreter: 'bash',
   copyCount: 2,
   author: null,
   preview: null,
@@ -53,22 +54,52 @@ const exampleCard = {
 }
 
 describe('GalleryConfigCard', () => {
-  it('names its kind with a Status line chip, as mod cards say Mod', () => {
+  it('links its title to the status line page', () => {
     render(<GalleryConfigCard card={exampleCard} />)
 
-    expect(screen.getByText('Status line')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Example' }).getAttribute('href')).toBe('/c/example')
   })
 
-  it("keeps the author's GitHub link clickable above the card's overlay", () => {
-    render(
+  // The A2 row names no kind for a status line; a mod row says Mod.
+  it('has no kind chip', () => {
+    render(<GalleryConfigCard card={exampleCard} />)
+
+    expect(screen.queryByText('Status line')).toBeNull()
+  })
+
+  it("keeps the author's GitHub link, with their avatar, clickable above the card's overlay", () => {
+    const { container } = render(
       <GalleryConfigCard
-        card={{ ...exampleCard, author: { name: 'Octo', username: 'octocat', image: null } }}
+        card={{ ...exampleCard, author: { name: 'Octo', username: 'octocat', image: 'a.png' } }}
       />,
     )
 
     const author = screen.getByRole('link', { name: '@octocat' })
     expect(author.getAttribute('href')).toBe('https://github.com/octocat')
     expect(author.closest('.z-10')).toBeTruthy()
+    expect(author.querySelector('img')?.getAttribute('src')).toBe('a.png')
+    expect(container.querySelectorAll('img')).toHaveLength(1)
+  })
+
+  it('shows the status line, then the whole description', () => {
+    render(
+      <GalleryConfigCard
+        card={{ ...exampleCard, preview: [{ text: 'main · ctx 22%' }], tags: ['git'] }}
+      />,
+    )
+
+    const line = screen.getByText('main · ctx 22%')
+    const description = screen.getByText('An example status line.')
+    expect(
+      line.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Git' }).getAttribute('href')).toBe('/status-lines/git')
+  })
+
+  it('says so when there is no preview yet', () => {
+    render(<GalleryConfigCard card={exampleCard} />)
+
+    expect(screen.getByText('No preview.')).toBeTruthy()
   })
 })
 
@@ -76,19 +107,7 @@ describe('GalleryConfigCard analytics', () => {
   it('captures the discovery context when a card opens', () => {
     render(
       <GalleryConfigCard
-        card={{
-          configId: 'config-1',
-          slug: 'example',
-          title: 'Example',
-          description: 'An example status line.',
-          interpreter: 'bash',
-          copyCount: 2,
-          author: null,
-          preview: null,
-          networkHosts: [],
-          readsClaudeToken: false,
-          tags: [],
-        }}
+        card={exampleCard}
         analytics={{
           surface: 'home',
           position: 2,
@@ -101,7 +120,7 @@ describe('GalleryConfigCard analytics', () => {
     )
 
     fireEvent.click(screen.getByRole('link', { name: 'Example' }))
-    expect(screen.getByText('2 copies')).toBeTruthy()
+    expect(screen.getByText('2 installs')).toBeTruthy()
     expect(screen.queryByText(/⇧|upvote/i)).toBeNull()
 
     expect(capture).toHaveBeenCalledWith('statusline_card_clicked', {

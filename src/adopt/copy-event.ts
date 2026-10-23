@@ -1,3 +1,4 @@
+import { type CopySurface, copySurface } from '@/lib/copy-surface'
 import { copierPersonProperties } from '@/lib/posthog-person'
 import type { CopiedConfig } from './copy'
 
@@ -31,6 +32,8 @@ interface CopyEventInput {
   signedInUserId: string | null
   /** The browser's PostHog session id, so the server-fired event ties back to the same session. */
   sessionId?: string | null | undefined
+  /** Where the visitor copied it; the browser sends it, so it's checked here. */
+  surface?: CopySurface | undefined
 }
 
 /**
@@ -45,6 +48,7 @@ export function copyEvent(input: CopyEventInput): CopyCaptureMessage | null {
   if (!Object.hasOwn(EVENT_BY_KIND, input.kind)) return null
   const properties: Record<string, unknown> = {
     configId: input.configId,
+    surface: copySurface(input.surface),
     ...input.config,
     ...copierPersonProperties(input.distinctId, input.signedInUserId),
   }
