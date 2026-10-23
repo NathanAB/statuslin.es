@@ -94,8 +94,12 @@ Every title ends in `| statuslin.es`, which the table leaves out.
 Changes that touch pages in this comparison, so the week-4 read can tell them apart from the
 launch itself.
 
-- **Topic page header** (opened 2026-10-23, deployed: _not yet_). Every topic page opens with one
-  line, the count and the topic's advice, and then the list. The git, token-usage and quota pages
-  move their how-to answer from above the list to the first of their common questions, with a link
-  to `/guide`. Titles, descriptions, h1s and canonicals don't change, and every word stays on the
-  page. The kinds note and "Open one to copy its install prompt" are gone.
+- **Topic page header** (#211, deployed 2026-10-23 at 20:38 UTC, production release v80, image
+  `sha256:c64d37574c460f37e0b55d74b1c8ea11ad0bea122b8f25e73190896de94d0347`). Every topic page
+  opens with one line, the count and what the topic's status lines show, and then the list. The
+  git, token-usage and quota pages move their how-to answer from above the list to the first of
+  their common questions, with a link to `/guide`. The token-usage, git and burn-rate intros are
+  reworded to say what their status lines show before asking you to pick. The kinds note and "Open
+  one to copy its install prompt" are gone. A search snapshot diff around the deploy showed no
+  change to any page's status, title, description, canonical, robots tag or h1; only the three
+  pages' FAQPage JSON-LD changed.
