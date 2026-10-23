@@ -1,4 +1,5 @@
 import type { FaqEntry } from '@/lib/json-ld'
+import { GUIDE_PATH } from '@/lib/page-title'
 
 /**
  * The intro paragraphs shown under each facet page's h1, keyed by facet slug. Split out of
@@ -7,10 +8,10 @@ import type { FaqEntry } from '@/lib/json-ld'
  */
 export const FACET_INTRO = {
   git: [
-    'Pick a branch-only line if that is all you need, one with dirty-file counts if you commit from the session, or one with ahead and behind markers if you track remotes.',
+    'These show your git branch. Pick one that also counts changed files if you commit as you work, or one that shows commits ahead and behind if you push to a remote.',
   ],
   'token-usage': [
-    'Pick a number if you only glance at it. Pick a bar if you work near the limit and want to read the fill at a distance.',
+    'These show how much of your context window is used. Pick one that shows a percentage for the exact figure, or a bar you can read at a glance.',
   ],
   cost: [
     'Claude Code sends each status line script the running cost of the session. Some show it as a plain number, others change color as the session gets expensive.',
@@ -19,7 +20,7 @@ export const FACET_INTRO = {
     'Claude Pro and Max plans limit usage in a five-hour window and a weekly one. Pick one that shows the five-hour window if you hit limits during a workday, or one that shows both if you watch the week.',
   ],
   'burn-rate': [
-    'These show how fast a session spends: tokens or dollars per hour, or an arrow that says whether you are ahead of or behind pace for the window. Several also show your usage-limit percentage.',
+    "These show how fast a session uses tokens or money, per hour or as an arrow that says whether you're on pace to hit your limit before it resets.",
   ],
   weather: [
     'These put the local weather beside your session. They call a weather API, so check what each one connects to before you install it.',
@@ -48,13 +49,32 @@ export const FACET_INTRO = {
   ],
 } satisfies Record<string, string[]>
 
+const GUIDE_LINK: NonNullable<FaqEntry['link']> = {
+  to: GUIDE_PATH,
+  label: 'Every field Claude Code sends is in the status line guide.',
+}
+
+/** The how-to answer a facet page shows first under its common questions. */
 export const FACET_ANSWER = {
-  'token-usage':
-    'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
-  quota:
-    "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing.",
-  git: "In a normal session, the status line's stdin JSON has no branch or dirty-file count. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
-} satisfies Record<string, string>
+  'token-usage': {
+    question: 'How does a status line read token usage?',
+    answer:
+      'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
+    link: GUIDE_LINK,
+  },
+  quota: {
+    question: 'How does a status line get my usage limits?',
+    answer:
+      "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing.",
+    link: GUIDE_LINK,
+  },
+  git: {
+    question: 'How does a status line get the git branch?',
+    answer:
+      "In a normal session, the status line's stdin JSON has no branch or dirty-file count. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
+    link: GUIDE_LINK,
+  },
+} satisfies Record<string, FaqEntry>
 
 export const FACET_FAQ = {
   'token-usage': [
@@ -94,7 +114,3 @@ export const FACET_FAQ = {
     },
   ],
 } satisfies Record<string, FaqEntry[]>
-
-/** Shown on a facet page that lists mods: where each kind shows up. */
-export const FACET_KIND_NOTE =
-  "Status lines print under the prompt. Each mod's page shows where it draws."

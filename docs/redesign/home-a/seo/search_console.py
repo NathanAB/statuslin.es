@@ -24,8 +24,12 @@ GROUPS = [
 def query(start, end):
     body = {'site_url': SITE, 'start_date': start, 'end_date': end, 'dimensions': ['page'],
             'row_limit': 1000, 'data_state': 'all'}
-    out = subprocess.run(['composio', 'execute', 'GOOGLE_SEARCH_CONSOLE_SEARCH_ANALYTICS_QUERY',
-                          '-d', json.dumps(body)], capture_output=True, text=True).stdout
+    out = json.loads(subprocess.run(['composio', 'execute', 'GOOGLE_SEARCH_CONSOLE_SEARCH_ANALYTICS_QUERY',
+                                     '-d', json.dumps(body)], capture_output=True, text=True).stdout)
+    # A large response comes back as a path to a file instead of inline.
+    if out.get('storedInFile'):
+        with open(out['outputFilePath']) as f:
+            out = json.load(f)
 
     def rows(o):
         if isinstance(o, dict):
@@ -37,7 +41,10 @@ def query(start, end):
                     return found
         return None
 
-    return rows(json.loads(out)) or []
+    found = rows(out)
+    if found is None:
+        sys.exit(f'Search Console returned no rows for {start}..{end}: {json.dumps(out)[:300]}')
+    return found
 
 
 def group(url):

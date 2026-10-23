@@ -26,7 +26,7 @@ export interface Facet {
   heading?: string
   metaDescription?: string
   intro?: string[]
-  answer?: string
+  answer?: FaqEntry
   faq?: FaqEntry[]
 }
 

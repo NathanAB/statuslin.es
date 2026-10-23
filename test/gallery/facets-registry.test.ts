@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FACET_INTRO, FACET_KIND_NOTE } from '@/gallery/facet-copy'
+import { FACET_INTRO } from '@/gallery/facet-copy'
 import { FACET_BY_SLUG, FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
 import { brandedPageTitle } from '@/lib/page-title'
 import { JOB_BY_TAG } from '@/mods/mod-header'
@@ -63,7 +63,6 @@ describe('tag registry', () => {
     // Surfaces and Desktop support come from each mod's recorded facts, never from shared copy.
     const surfaceClaims = /above the prompt|in a pane|claude desktop shows/i
     for (const facet of pageFacets) expect(facet.metaDescription).not.toMatch(surfaceClaims)
-    expect(FACET_KIND_NOTE).not.toMatch(surfaceClaims)
   })
   it('keys mod jobs only by real tags, so a typo fails here instead of dropping the job', () => {
     for (const tag of Object.keys(JOB_BY_TAG)) expect(TAG_VOCABULARY).toContain(tag)
