@@ -91,9 +91,8 @@ The prototype was a design artifact. These are required in the real build, mostl
 2. **Keep tags as links.** Today a tag badge links to its facet page, or to `/?tags=slug`
    (`src/gallery/facets.ts:217-226`). In A2 they render as plain text ("Git · Tokens · Cost"); keep
    that look, but make each tag a link with the same targets.
-3. **Keep the capability badges** for network access and reading the Claude token
-   (`src/gallery/config-badges.tsx`). They're trust signals for running someone else's script. Show
-   them in the card's top line, quieter than today but always visible.
+3. **Capability badges stay off the card** (changed 2026-10-23; see "A card lists its page
+   header's tags" below). The card shows the tags its page header shows.
 4. **Author is a link** to their GitHub profile, as today (`AuthorChip`).
 5. **Filters and sort stay URL-driven** (`?kind=`, `?sort=`, `?tags=`, `?page=`) through the router,
    exactly like `GalleryControls` today. The prototype hides cards in the browser; the real one must
@@ -366,8 +365,8 @@ owner waived CLAUDE.md's five-production-file cap for this PR. Every step:
 - **A card lists its page header's tags (owner, 2026-10-23).** In a card's dotted row, "Connects
   to the internet" and "Reads your Claude login" read like topics, and the page header already
   left them out. Each page still says what the code can reach in its "What it does" tiles, and a
-  status line's install panel says it beside the button. This replaces item 3 under "Decisions
-  already made".
+  status line's install panel says it beside the button. This replaces item 3 under "Where to
+  deliberately differ from the prototype".
 - **"Reviewed", never "read by a person".** Review is agent-assisted: a person approves each
   listing, with agents helping check the code. `test/content/review-claims.test.ts` fails on any
   page copy that says a person read or reviews it.

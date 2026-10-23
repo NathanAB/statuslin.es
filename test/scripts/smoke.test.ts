@@ -4,6 +4,7 @@ import {
   assertFirstPartyResources,
   assertHomeDocument,
   browserCommandOutput,
+  bylineBaselineFailures,
   collectInitialBrowserResources,
   EXPECTED_HOME,
   FIT_WIDTHS,
@@ -138,5 +139,21 @@ describe('sideScrollFailures', () => {
 
   it('checks a small phone, a tablet and a small laptop', () => {
     expect(FIT_WIDTHS).toEqual([320, 768, 1024])
+  })
+})
+
+describe('bylineBaselineFailures', () => {
+  it("names each gallery row whose author sits off its title's baseline", () => {
+    expect(
+      bylineBaselineFailures([
+        { title: 'Deck', titleBaseline: 450.5, bylineBaseline: 450.5 },
+        { title: 'Sub Meter', titleBaseline: 600, bylineBaseline: 595 },
+        { title: 'Context Bar', titleBaseline: 700, bylineBaseline: 700.75 },
+      ]),
+    ).toEqual(['Sub Meter: the author sits 5px above the title'])
+  })
+
+  it('fails a page with no rows to measure', () => {
+    expect(bylineBaselineFailures([])).toEqual(['no gallery rows with an author were measured'])
   })
 })

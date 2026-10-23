@@ -228,6 +228,51 @@ async function checkFits(label: string, paths: string[]): Promise<void> {
   check(failures.length === 0, `${label}: no page scrolls sideways`, failures.join(' | '))
 }
 
+type RowBaselines = { title: string; titleBaseline: number; bylineBaseline: number }
+
+/** Each gallery row whose author sits more than a pixel off its title's baseline. */
+export function bylineBaselineFailures(rows: RowBaselines[]): string[] {
+  if (rows.length === 0) return ['no gallery rows with an author were measured']
+  return rows.flatMap(({ title, titleBaseline, bylineBaseline }) => {
+    const off = titleBaseline - bylineBaseline
+    return Math.abs(off) <= 1
+      ? []
+      : [
+          `${title}: the author sits ${Math.round(Math.abs(off))}px ${off > 0 ? 'above' : 'below'} the title`,
+        ]
+  })
+}
+
+// A zero-height inline block appended to a line of text sits on that line's baseline.
+const ROW_BASELINES_SCRIPT = `JSON.stringify((()=>{const base=el=>{const m=document.createElement('span');m.style.cssText='display:inline-block;width:0;height:0';el.append(m);const y=m.getBoundingClientRect().top;m.remove();return y};const rows=[...document.querySelectorAll('[data-slot=gallery-row]')];return {rows:rows.length,measured:rows.flatMap(row=>{const name=row.querySelector('h3 + div :is(a,span) > span:last-child');const title=row.querySelector('[data-row-link]');return name&&title?[{title:title.textContent,titleBaseline:base(title),bylineBaseline:base(name)}]:[]})}})())`
+
+/** Mod rows are measured too: a mod's author always has a GitHub avatar, the image the baseline
+ * used to come from. */
+async function checkBylineBaselines(): Promise<void> {
+  await ab('set', 'viewport', '1280', '900')
+  let rows = 0
+  const measured: RowBaselines[] = []
+  for (const path of ['/', '/?kind=mods']) {
+    await ab('open', `${BASE}${path}`)
+    await ab('wait', '--load', 'networkidle')
+    const page = parseBrowserJson<{ rows: number; measured: RowBaselines[] }>(
+      await ab('eval', ROW_BASELINES_SCRIPT),
+    )
+    rows += page.rows
+    measured.push(...page.measured)
+  }
+  if (rows === 0) {
+    console.log('  · (no gallery rows to measure the author baseline — skipped)')
+    return
+  }
+  const failures = bylineBaselineFailures(measured)
+  check(
+    failures.length === 0,
+    "gallery rows: the author sits on the title's baseline",
+    failures.join(' | '),
+  )
+}
+
 async function reachable(url: string): Promise<boolean> {
   try {
     return (await fetch(url, { signal: AbortSignal.timeout(2500) })).ok
@@ -343,6 +388,7 @@ async function checkSignedOut() {
   await pageConsoleClean('home', '/')
   await checkBrowserFacingHome()
   check(/Trending/i.test(await ab('snapshot', '-i')), 'home gallery renders')
+  await checkBylineBaselines()
 
   const detail = (
     await ab('eval', 'document.querySelector(\'a[href^="/c/"]\')?.getAttribute("href") || ""')
