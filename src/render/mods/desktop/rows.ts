@@ -22,6 +22,20 @@ const CARD_MIN_HEIGHT = 60
 
 const isBlank = (share: number | undefined) => share === 0
 
+/** The prompt box's rounded top corners keep its first rows off the plate strips. */
+const PROMPT_CORNER_ROWS = 5
+
+/**
+ * The prompt box's top: it grows upward a line at a time as a draft wraps, from PROMPT_BOX, the
+ * one-line box, read from where its plate starts above its middle row.
+ */
+export function promptTop(plate: RowProfile): number {
+  let y = PROMPT_BOX.y + PROMPT_BOX.height / 2
+  if ((plate[y] ?? 0) < PLATE_MIN) return PROMPT_BOX.y
+  while (y > 0 && (plate[y - 1] ?? 0) >= PLATE_MIN) y--
+  return Math.min(PROMPT_BOX.y, y - PROMPT_CORNER_ROWS)
+}
+
 /** The plate Desktop draws a band (AbovePrompt) on, ending just above the prompt box. */
 export function bandAbovePrompt(
   rows: RowProfile,

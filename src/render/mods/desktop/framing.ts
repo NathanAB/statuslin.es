@@ -1,5 +1,12 @@
 import type { RegionGrey } from './imagemagick'
-import { bandAbovePrompt, cardBottom, drawnRows, type RowProfile, uncutTop } from './rows'
+import {
+  bandAbovePrompt,
+  cardBottom,
+  drawnRows,
+  promptTop,
+  type RowProfile,
+  uncutTop,
+} from './rows'
 import {
   type BORDER_PROBES,
   CARD_MAX_HEIGHT,
@@ -93,10 +100,11 @@ const PROMPT_RIGHT = PROMPT_BOX.x + PROMPT_BOX.width
  * and the prompt box and toolbar too when it writes in the toolbar. Null when it does neither.
  */
 function promptCard(plate: RowProfile, left: number, right: number, toolbar: boolean): Rect | null {
-  const band = bandAbovePrompt(plate, PROMPT_BOX.y)
+  const boxTop = promptTop(plate)
+  const band = bandAbovePrompt(plate, boxTop)
   if (!band && !toolbar) return null
-  const top = band ? band.top - CARD_PAD : PROMPT_BOX.y - CROP_MARGIN
-  return clamp(left, top, right, toolbar ? CONTENT.bottom : PROMPT_BOX.y)
+  const top = band ? band.top - CARD_PAD : boxTop - CROP_MARGIN
+  return clamp(left, top, right, toolbar ? CONTENT.bottom : boxTop)
 }
 
 /**
