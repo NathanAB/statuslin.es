@@ -94,10 +94,17 @@ describe('facet page content', () => {
     expect(links.map((link) => link.getAttribute('aria-current'))).toEqual(['page', null, null])
   })
 
-  it('says how to install one from the list', () => {
-    renderFacet('git')
+  // A visitor came to pick one: the list starts after a single line, not a column of notes.
+  it('opens with one line, the count and the topic’s advice, then the list', () => {
+    renderFacet('token-usage', 1)
 
-    expect(screen.getByText('Open one to copy its install prompt.')).toBeTruthy()
+    const line = screen.getByText(/^4 status lines and 1 mod\. Pick a number if you only glance/)
+    const list = screen.getByRole('heading', { level: 2, name: 'Status lines and mods' })
+    expect(line.compareDocumentPosition(list)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(screen.queryByText('Open one to copy its install prompt.')).toBeNull()
+    expect(screen.queryByText(/Status lines print under the prompt/)).toBeNull()
+    const answer = screen.getByText(/Token usage is under/)
+    expect(list.compareDocumentPosition(answer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 
   it('ends with links to the best status lines and the gallery', () => {
@@ -125,14 +132,14 @@ describe('facet page content', () => {
   it('states the live published count from the cards on the page', () => {
     renderFacet('git')
 
-    expect(screen.getByText('4 status lines.')).toBeTruthy()
+    expect(screen.getByText(/^4 status lines\. Pick a branch-only line/)).toBeTruthy()
     expect(screen.queryByText(/this page lists/i)).toBeNull()
   })
 
   it('counts the mods on the page beside the status lines', () => {
     renderFacet('git', 1)
 
-    expect(screen.getByText('4 status lines and 1 mod.')).toBeTruthy()
+    expect(screen.getByText(/^4 status lines and 1 mod\. Pick a branch-only line/)).toBeTruthy()
   })
 
   it('counts only mods when no status line carries the tag', () => {
@@ -151,23 +158,26 @@ describe('facet page content', () => {
     const FacetPage = FacetRoute.options.component
     render(FacetPage ? <FacetPage /> : null)
 
-    expect(screen.getByText('2 mods.')).toBeTruthy()
+    expect(screen.getByText(/^2 mods\. Pick a branch-only line/)).toBeTruthy()
   })
 
-  it('answers the how-to question and shows common questions on answered facets', () => {
+  it('answers the how-to question first under common questions, pointing to the guide', () => {
     renderFacet('token-usage')
 
-    const answer = [...document.querySelectorAll('p')].find((p) =>
-      p.textContent?.includes('Token usage is under context_window.'),
-    )
+    const faq = screen.getByRole('heading', { level: 2, name: 'Common questions' }).parentElement
+    const questions = within(faq as HTMLElement).getAllByRole('heading', { level: 3 })
+    expect(questions.map((q) => q.textContent)).toEqual([
+      'How does a status line read token usage?',
+      'How do I show a context bar instead of a number?',
+      'Does the context window size change with the model?',
+    ])
+    const answer = questions[0]?.nextElementSibling
     expect(answer?.querySelector('.font-mono')?.textContent).toBe('context_window')
-    expect(screen.getByRole('heading', { level: 2, name: 'Common questions' })).toBeTruthy()
     expect(
-      screen.getByRole('heading', {
-        level: 3,
-        name: 'How do I show a context bar instead of a number?',
-      }),
-    ).toBeTruthy()
+      within(answer as HTMLElement)
+        .getByRole('link', { name: 'Every field Claude Code sends is in the status line guide.' })
+        .getAttribute('href'),
+    ).toBe('/guide')
   })
 
   it('shows no common questions on facets without an FAQ', () => {
@@ -216,16 +226,6 @@ describe('facet page content', () => {
       ).toBeTruthy()
       unmount()
     }
-  })
-
-  it('says where each kind shows up only while the page lists mods', () => {
-    const note = "Status lines print under the prompt. Each mod's page shows where it draws."
-    const { unmount } = renderFacet('token-usage', 0)
-    expect(screen.queryByText(note)).toBeNull()
-    unmount()
-
-    renderFacet('bash', 1)
-    expect(screen.getByText(note)).toBeTruthy()
   })
 
   it('keeps status line copy on a topic that lists no mods, even if a mod carries the tag', async () => {
@@ -285,6 +285,7 @@ describe('facet page content', () => {
     expect(
       (faqPage?.mainEntity as Array<{ name: string }> | undefined)?.map((q) => q.name),
     ).toEqual([
+      'How does a status line get my usage limits?',
       'Why is rate_limits missing from my status line input?',
       'How do I show when my limit resets?',
     ])

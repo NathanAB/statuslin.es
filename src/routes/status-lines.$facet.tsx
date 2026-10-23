@@ -1,9 +1,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { GalleryConfigCard } from '@/gallery/config-card'
 import { DetailBreadcrumb } from '@/gallery/detail-breadcrumb'
-import { FACET_KIND_NOTE } from '@/gallery/facet-copy'
 import { BrowseOnLinks, FacetTopicLinks } from '@/gallery/facet-links'
-import { facetTopicName } from '@/gallery/facet-page-copy'
+import { facetQuestions, facetTopicName } from '@/gallery/facet-page-copy'
 import { FACET_BY_SLUG } from '@/gallery/facets'
 import { getFacetPage } from '@/gallery/functions'
 import { mergeGalleryItems } from '@/gallery/gallery-items'
@@ -17,7 +16,6 @@ import { getGalleryModsFn, getPublishedModTagsFn } from '@/mods/gallery-function
 import { ModCard } from '@/mods/mod-card'
 import { staticPageSocialMeta } from '@/og/meta'
 import { FaqSection } from '@/ui/faq-section'
-import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { ShowAllList } from '@/ui/show-all-list'
@@ -68,7 +66,7 @@ export const Route = createFileRoute('/status-lines/$facet')({
         { slug: facet.slug, titleBase, topic: facetTopicName(facet) },
         loaderData.items.map(({ kind, card }) => ({ kind, slug: card.slug, title: card.title })),
         loaderData.page.updated,
-        { includeCollectionPage: loaderData.page.indexable, faq: facet.faq },
+        { includeCollectionPage: loaderData.page.indexable, faq: facetQuestions(facet) },
       ).map(jsonLdScript),
     }
   },
@@ -85,6 +83,7 @@ function FacetPage() {
   const { page, items, mods, user } = Route.useLoaderData()
   const facet = FACET_BY_SLUG.get(page.slug)
   if (!facet) return null
+  const questions = facetQuestions(facet)
   return (
     <PageShell user={user}>
       <Stack gap={6}>
@@ -92,31 +91,10 @@ function FacetPage() {
           <DetailBreadcrumb trail={[]} title={facetTopicName(facet)} />
           <Heading level={1}>{facet.heading}</Heading>
           <FacetTopicLinks current={page.slug} others={page.otherFacets} />
-          {(facet.intro ?? []).map((paragraph) => (
-            <Text key={paragraph.slice(0, 24)} muted size="sm">
-              {paragraph}
-            </Text>
-          ))}
-          {facet.answer ? (
-            <Text size="sm">
-              <InlineCodeText text={facet.answer} />
-            </Text>
-          ) : null}
-          {mods > 0 ? (
-            <Text muted size="sm">
-              {FACET_KIND_NOTE}
-            </Text>
-          ) : null}
+          {/* One line, so the list starts on a phone's first screen; the how-to answer leads the
+              common questions below the list. */}
           <Text muted size="sm">
-            {kindCount(page.configs.total, mods)}.
-          </Text>
-          {page.updated ? (
-            <Text muted size="sm">
-              Updated {page.updated}
-            </Text>
-          ) : null}
-          <Text muted size="sm">
-            Open one to copy its install prompt.
+            {[`${kindCount(page.configs.total, mods)}.`, ...(facet.intro ?? [])].join(' ')}
           </Text>
         </Stack>
         <Stack gap={4}>
@@ -138,8 +116,13 @@ function FacetPage() {
               ),
             )}
           </ShowAllList>
+          {page.updated ? (
+            <Text muted size="sm">
+              Updated {page.updated}
+            </Text>
+          ) : null}
         </Stack>
-        {facet.faq ? <FaqSection entries={facet.faq} /> : null}
+        {questions.length > 0 ? <FaqSection entries={questions} /> : null}
         <BrowseOnLinks />
       </Stack>
     </PageShell>

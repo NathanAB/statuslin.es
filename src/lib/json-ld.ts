@@ -1,3 +1,4 @@
+import type { LinkProps } from '@tanstack/react-router'
 import type { GalleryKind } from '@/gallery/gallery-items'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME } from '@/lib/breadcrumb-json-ld'
 import { withoutInlineCode } from '@/lib/inline-code'
@@ -136,6 +137,8 @@ export function configJsonLd(
 export interface FaqEntry {
   question: string
   answer: string
+  /** A link the page shows after the answer; it stays out of the FAQPage JSON-LD. */
+  link?: { to: NonNullable<LinkProps['to']>; label: string }
 }
 
 export function faqPageJsonLd(entries: FaqEntry[]): object | null {

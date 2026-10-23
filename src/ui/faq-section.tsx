@@ -1,7 +1,7 @@
 import type { FaqEntry } from '@/lib/json-ld'
 import { InlineCodeText } from '@/ui/inline-code-text'
 import { Stack } from '@/ui/layout'
-import { Heading, Text } from '@/ui/text'
+import { Heading, Text, TextLink } from '@/ui/text'
 
 export function FaqSection({ entries }: { entries: FaqEntry[] }) {
   return (
@@ -12,6 +12,12 @@ export function FaqSection({ entries }: { entries: FaqEntry[] }) {
           <Heading level={3}>{entry.question}</Heading>
           <Text muted breakLong>
             <InlineCodeText text={entry.answer} />
+            {entry.link ? (
+              <>
+                {' '}
+                <TextLink to={entry.link.to}>{entry.link.label}</TextLink>
+              </>
+            ) : null}
           </Text>
         </Stack>
       ))}

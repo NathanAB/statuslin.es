@@ -88,3 +88,14 @@ Deploy date: 2026-10-23, 18:05 UTC (production release v79, image
 | `/status-lines/weather` | Claude Code Status Lines That Show the Weather | Claude Code Weather Status Lines & Mods |
 
 Every title ends in `| statuslin.es`, which the table leaves out.
+
+## Changes to the same pages after launch
+
+Changes that touch pages in this comparison, so the week-4 read can tell them apart from the
+launch itself.
+
+- **Topic page header** (opened 2026-10-23, deployed: _not yet_). Every topic page opens with one
+  line, the count and the topic's advice, and then the list. The git, token-usage and quota pages
+  move their how-to answer from above the list to the first of their common questions, with a link
+  to `/guide`. Titles, descriptions, h1s and canonicals don't change, and every word stays on the
+  page. The kinds note and "Open one to copy its install prompt" are gone.

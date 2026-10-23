@@ -1,4 +1,5 @@
 import type { FaqEntry } from '@/lib/json-ld'
+import { GUIDE_PATH } from '@/lib/page-title'
 
 /**
  * The intro paragraphs shown under each facet page's h1, keyed by facet slug. Split out of
@@ -48,13 +49,32 @@ export const FACET_INTRO = {
   ],
 } satisfies Record<string, string[]>
 
+const GUIDE_LINK: NonNullable<FaqEntry['link']> = {
+  to: GUIDE_PATH,
+  label: 'Every field Claude Code sends is in the status line guide.',
+}
+
+/** The how-to answer a facet page shows first under its common questions. */
 export const FACET_ANSWER = {
-  'token-usage':
-    'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
-  quota:
-    "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing.",
-  git: "In a normal session, the status line's stdin JSON has no branch or dirty-file count. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
-} satisfies Record<string, string>
+  'token-usage': {
+    question: 'How does a status line read token usage?',
+    answer:
+      'Claude Code pipes a JSON payload to your status line script on stdin each time the line refreshes. Token usage is under `context_window`. Read `context_window.used_percentage` for a percentage, or `total_input_tokens` and `context_window_size` for raw counts. `used_percentage` is null in a fresh session, so default it to 0 in jq with `// 0`.',
+    link: GUIDE_LINK,
+  },
+  quota: {
+    question: 'How does a status line get my usage limits?',
+    answer:
+      "Claude Code passes your plan's usage limits to the status line script as `rate_limits` in its stdin JSON. `rate_limits.five_hour` and `rate_limits.seven_day` each carry `used_percentage` and `resets_at`, a Unix timestamp for when the window resets. Either window can be missing, so guard both before printing.",
+    link: GUIDE_LINK,
+  },
+  git: {
+    question: 'How does a status line get the git branch?',
+    answer:
+      "In a normal session, the status line's stdin JSON has no branch or dirty-file count. Scripts that show a branch run git themselves in `workspace.current_dir`, for example `git branch --show-current`. Dirty-file counts come from `git status --porcelain`. Handle the no-repo case, or the line prints an error outside a repository.",
+    link: GUIDE_LINK,
+  },
+} satisfies Record<string, FaqEntry>
 
 export const FACET_FAQ = {
   'token-usage': [
@@ -94,7 +114,3 @@ export const FACET_FAQ = {
     },
   ],
 } satisfies Record<string, FaqEntry[]>
-
-/** Shown on a facet page that lists mods: where each kind shows up. */
-export const FACET_KIND_NOTE =
-  "Status lines print under the prompt. Each mod's page shows where it draws."

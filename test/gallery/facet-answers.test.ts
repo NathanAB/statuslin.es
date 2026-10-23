@@ -35,8 +35,9 @@ describe('facet answers and FAQ', () => {
   it('keeps each answer between 40 and 60 words with 2 or 3 FAQ entries', () => {
     for (const slug of ANSWERED) {
       const facet = FACET_BY_SLUG.get(slug)
-      const words = facet?.answer?.split(/\s+/).length ?? 0
+      const words = facet?.answer?.answer.split(/\s+/).length ?? 0
       expect({ slug, fits: words >= 40 && words <= 60 }).toEqual({ slug, fits: true })
+      expect(facet?.answer?.question).toMatch(/^How .+\?$/)
       expect([2, 3]).toContain(facet?.faq?.length)
     }
   })
@@ -45,17 +46,23 @@ describe('facet answers and FAQ', () => {
     const real = payloadFieldNames()
     for (const slug of ANSWERED) {
       const facet = FACET_BY_SLUG.get(slug)
-      const prose = [facet?.answer ?? '', ...(facet?.faq ?? []).map((e) => e.answer)].join(' ')
+      const prose = [facet?.answer?.answer ?? '', ...(facet?.faq ?? []).map((e) => e.answer)].join(
+        ' ',
+      )
       const invented = citedFields(prose).filter((name) => !real.has(name))
       expect({ slug, invented }).toEqual({ slug, invented: [] })
     }
   })
 
   it('cites the fields a visitor needs for each facet', () => {
-    expect(citedFields(FACET_BY_SLUG.get('token-usage')?.answer ?? '')).toContain(
+    expect(citedFields(FACET_BY_SLUG.get('token-usage')?.answer?.answer ?? '')).toContain(
       'context_window.used_percentage',
     )
-    expect(citedFields(FACET_BY_SLUG.get('quota')?.answer ?? '')).toContain('rate_limits.five_hour')
-    expect(citedFields(FACET_BY_SLUG.get('git')?.answer ?? '')).toContain('workspace.current_dir')
+    expect(citedFields(FACET_BY_SLUG.get('quota')?.answer?.answer ?? '')).toContain(
+      'rate_limits.five_hour',
+    )
+    expect(citedFields(FACET_BY_SLUG.get('git')?.answer?.answer ?? '')).toContain(
+      'workspace.current_dir',
+    )
   })
 })
