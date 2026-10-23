@@ -13,13 +13,16 @@ vi.mock('@/lib/auth-functions', () => ({
 }))
 vi.mock('@/gallery/functions', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  getGallery: vi.fn().mockResolvedValue({ statusLines: 0, mods: 0, copyCount: 0, asOf: '' }),
   getGalleryConfigs: emptySource,
+  getConfigSearchTexts: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('@/mods/gallery-functions', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getGalleryModsFn: emptySource,
-  getFeaturedModFn: vi.fn().mockResolvedValue(null),
+  getModSearchTextsFn: vi.fn().mockResolvedValue([]),
+}))
+vi.mock('@/home/functions', () => ({
+  getHomeShowcaseFn: vi.fn().mockResolvedValue({ hero: [] }),
 }))
 
 const { getRouter } = await import('@/router')

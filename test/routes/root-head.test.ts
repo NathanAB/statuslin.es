@@ -16,7 +16,7 @@ describe('root head', () => {
   })
 
   it('preloads the interface font that app.css loads, so swapping it in shifts no text', async () => {
-    const head = await RootRoute.options.head?.({} as never)
+    const head = await RootRoute.options.head?.({ match: {} } as never)
     const preload = head?.links?.find((link) => link?.rel === 'preload')
 
     expect(preload).toMatchObject({ as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' })
