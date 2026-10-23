@@ -3,7 +3,8 @@
     python3 -I seo_snapshot.py snapshot https://statuslin.es prod-before.json
     python3 -I seo_snapshot.py diff prod-before.json prod-after.json
 
-A snapshot records, for each sitemap URL: the status code (redirects are not followed), the title,
+A snapshot records, for each sitemap URL: the status code (redirects are not followed), the
+X-Robots-Tag header, the title,
 meta description, canonical, robots meta, Open Graph and Twitter tags, the h1 text and the JSON-LD.
 It also records robots.txt and the sitemap's URL list. The site's origin is written as {site}, so
 a staging snapshot compares with a production one.
@@ -97,7 +98,8 @@ def snapshot(base, out):
     pages = {}
     for path in paths:
         status, headers, body = fetch(f'{base}{path}')
-        page = {'status': status}
+        # NOINDEX_SITE noindexes a whole app through this header, not through the page's meta tags.
+        page = {'status': status, 'x-robots-tag': headers.get('X-Robots-Tag')}
         if 300 <= status < 400:
             page['location'] = headers.get('Location')
         if 'html' in (headers.get('Content-Type') or ''):

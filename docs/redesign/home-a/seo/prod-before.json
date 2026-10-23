@@ -100,7 +100,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?kind=mods": {
       "canonical": "{site}/?kind=mods",
@@ -131,7 +132,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?page=2": {
       "canonical": "{site}/?page=2",
@@ -232,7 +234,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods \u2014 Page 2 | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?page=3": {
       "canonical": "{site}/?page=3",
@@ -333,7 +336,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods \u2014 Page 3 | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?page=4": {
       "canonical": "{site}/?page=4",
@@ -434,7 +438,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods \u2014 Page 4 | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?page=5": {
       "canonical": "{site}/?page=5",
@@ -535,7 +540,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods \u2014 Page 5 | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?page=6": {
       "canonical": "{site}/?page=6",
@@ -636,7 +642,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods \u2014 Page 6 | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?page=7": {
       "canonical": "{site}/?page=7",
@@ -737,7 +744,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods \u2014 Page 7 | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?page=8": {
       "canonical": "{site}/?page=8",
@@ -808,7 +816,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods \u2014 Page 8 | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?sort=top": {
       "canonical": "{site}/?sort=top",
@@ -839,7 +848,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/?tags=git": {
       "canonical": "{site}/?tags=git",
@@ -870,7 +880,8 @@
       "status": 200,
       "title": "Claude Code Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/alternatives/ccometixline": {
       "canonical": "{site}/alternatives/ccometixline",
@@ -952,7 +963,8 @@
       "status": 200,
       "title": "CCometixLine Alternatives for Claude Code | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/alternatives/ccstatusline": {
       "canonical": "{site}/alternatives/ccstatusline",
@@ -1034,7 +1046,8 @@
       "status": 200,
       "title": "ccstatusline Alternatives for Claude Code | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/alternatives/claude-hud": {
       "canonical": "{site}/alternatives/claude-hud",
@@ -1116,7 +1129,8 @@
       "status": 200,
       "title": "claude-hud Alternatives for Claude Code | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/alternatives/claude-powerline": {
       "canonical": "{site}/alternatives/claude-powerline",
@@ -1198,7 +1212,8 @@
       "status": 200,
       "title": "claude-powerline Alternatives for Claude Code | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/c/activity-feed-b2164f9d": {
       "canonical": "{site}/c/activity-feed-b2164f9d",
@@ -1254,7 +1269,8 @@
       "status": 200,
       "title": "Activity Feed \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/activity-feed-b2164f9d.png"
+      "twitter:image": "{site}/og/c/activity-feed-b2164f9d.png",
+      "x-robots-tag": null
     },
     "/c/burn-rate-bars-2a7d93bc": {
       "canonical": "{site}/c/burn-rate-bars-2a7d93bc",
@@ -1310,7 +1326,8 @@
       "status": 200,
       "title": "Burn Rate Bars \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/burn-rate-bars-2a7d93bc.png"
+      "twitter:image": "{site}/og/c/burn-rate-bars-2a7d93bc.png",
+      "x-robots-tag": null
     },
     "/c/burn-rate-trio-6c6c78d8": {
       "canonical": "{site}/c/burn-rate-trio-6c6c78d8",
@@ -1366,7 +1383,8 @@
       "status": 200,
       "title": "Burn Rate Trio \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/burn-rate-trio-6c6c78d8.png"
+      "twitter:image": "{site}/og/c/burn-rate-trio-6c6c78d8.png",
+      "x-robots-tag": null
     },
     "/c/cache-clock-line-7f2a97e8": {
       "canonical": "{site}/c/cache-clock-line-7f2a97e8",
@@ -1422,7 +1440,8 @@
       "status": 200,
       "title": "Cache Clock Line \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/cache-clock-line-7f2a97e8.png"
+      "twitter:image": "{site}/og/c/cache-clock-line-7f2a97e8.png",
+      "x-robots-tag": null
     },
     "/c/catppuccin-frapp-88ba1499": {
       "canonical": "{site}/c/catppuccin-frapp-88ba1499",
@@ -1478,7 +1497,8 @@
       "status": 200,
       "title": "Catppuccin Frapp\u00e9 \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/catppuccin-frapp-88ba1499.png"
+      "twitter:image": "{site}/og/c/catppuccin-frapp-88ba1499.png",
+      "x-robots-tag": null
     },
     "/c/catppuccin-wide-bars-b90946ed": {
       "canonical": "{site}/c/catppuccin-wide-bars-b90946ed",
@@ -1534,7 +1554,8 @@
       "status": 200,
       "title": "Catppuccin Wide Bars \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/catppuccin-wide-bars-b90946ed.png"
+      "twitter:image": "{site}/og/c/catppuccin-wide-bars-b90946ed.png",
+      "x-robots-tag": null
     },
     "/c/cc-statusbar-a1eb8593": {
       "canonical": "{site}/c/cc-statusbar-a1eb8593",
@@ -1590,7 +1611,8 @@
       "status": 200,
       "title": "cc-statusbar \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/cc-statusbar-a1eb8593.png"
+      "twitter:image": "{site}/og/c/cc-statusbar-a1eb8593.png",
+      "x-robots-tag": null
     },
     "/c/claude-usage-cc6759bb": {
       "canonical": "{site}/c/claude-usage-cc6759bb",
@@ -1646,7 +1668,8 @@
       "status": 200,
       "title": "claude-usage \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/claude-usage-cc6759bb.png"
+      "twitter:image": "{site}/og/c/claude-usage-cc6759bb.png",
+      "x-robots-tag": null
     },
     "/c/clay-braille-bars-570ef464": {
       "canonical": "{site}/c/clay-braille-bars-570ef464",
@@ -1702,7 +1725,8 @@
       "status": 200,
       "title": "Clay Braille Bars \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/clay-braille-bars-570ef464.png"
+      "twitter:image": "{site}/og/c/clay-braille-bars-570ef464.png",
+      "x-robots-tag": null
     },
     "/c/color-coded-context-a73a8105": {
       "canonical": "{site}/c/color-coded-context-a73a8105",
@@ -1758,7 +1782,8 @@
       "status": 200,
       "title": "Color-Coded Context \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/color-coded-context-a73a8105.png"
+      "twitter:image": "{site}/og/c/color-coded-context-a73a8105.png",
+      "x-robots-tag": null
     },
     "/c/context-burn-bar-ee4b4d78": {
       "canonical": "{site}/c/context-burn-bar-ee4b4d78",
@@ -1814,7 +1839,8 @@
       "status": 200,
       "title": "Context Burn Bar \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/context-burn-bar-ee4b4d78.png"
+      "twitter:image": "{site}/og/c/context-burn-bar-ee4b4d78.png",
+      "x-robots-tag": null
     },
     "/c/context-burn-countdown-462254d7": {
       "canonical": "{site}/c/context-burn-countdown-462254d7",
@@ -1870,7 +1896,8 @@
       "status": 200,
       "title": "Context Burn Countdown \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/context-burn-countdown-462254d7.png"
+      "twitter:image": "{site}/og/c/context-burn-countdown-462254d7.png",
+      "x-robots-tag": null
     },
     "/c/context-growth-watch-f66e82ac": {
       "canonical": "{site}/c/context-growth-watch-f66e82ac",
@@ -1926,7 +1953,8 @@
       "status": 200,
       "title": "Context Growth Watch \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/context-growth-watch-f66e82ac.png"
+      "twitter:image": "{site}/og/c/context-growth-watch-f66e82ac.png",
+      "x-robots-tag": null
     },
     "/c/cost-thresholds-c8eb535b": {
       "canonical": "{site}/c/cost-thresholds-c8eb535b",
@@ -1982,7 +2010,8 @@
       "status": 200,
       "title": "Cost Thresholds \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/cost-thresholds-c8eb535b.png"
+      "twitter:image": "{site}/og/c/cost-thresholds-c8eb535b.png",
+      "x-robots-tag": null
     },
     "/c/dot-gauge-trio-e7fde974": {
       "canonical": "{site}/c/dot-gauge-trio-e7fde974",
@@ -2038,7 +2067,8 @@
       "status": 200,
       "title": "Dot Gauge Trio \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/dot-gauge-trio-e7fde974.png"
+      "twitter:image": "{site}/og/c/dot-gauge-trio-e7fde974.png",
+      "x-robots-tag": null
     },
     "/c/dracula-two-liner-4214fb52": {
       "canonical": "{site}/c/dracula-two-liner-4214fb52",
@@ -2094,7 +2124,8 @@
       "status": 200,
       "title": "Dracula Two-Liner \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/dracula-two-liner-4214fb52.png"
+      "twitter:image": "{site}/og/c/dracula-two-liner-4214fb52.png",
+      "x-robots-tag": null
     },
     "/c/dreambase-flat-f5cbd3ff": {
       "canonical": "{site}/c/dreambase-flat-f5cbd3ff",
@@ -2150,7 +2181,8 @@
       "status": 200,
       "title": "Dreambase Flat \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/dreambase-flat-f5cbd3ff.png"
+      "twitter:image": "{site}/og/c/dreambase-flat-f5cbd3ff.png",
+      "x-robots-tag": null
     },
     "/c/dreambase-panel-78f0344b": {
       "canonical": "{site}/c/dreambase-panel-78f0344b",
@@ -2206,7 +2238,8 @@
       "status": 200,
       "title": "Dreambase Panel \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/dreambase-panel-78f0344b.png"
+      "twitter:image": "{site}/og/c/dreambase-panel-78f0344b.png",
+      "x-robots-tag": null
     },
     "/c/everything-bar-6754d090": {
       "canonical": "{site}/c/everything-bar-6754d090",
@@ -2262,7 +2295,8 @@
       "status": 200,
       "title": "Everything Bar \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/everything-bar-6754d090.png"
+      "twitter:image": "{site}/og/c/everything-bar-6754d090.png",
+      "x-robots-tag": null
     },
     "/c/fable-all-models-usage-relative-to-weekly-reset-pace-f90de875": {
       "canonical": "{site}/c/fable-all-models-usage-relative-to-weekly-reset-pace-f90de875",
@@ -2318,7 +2352,8 @@
       "status": 200,
       "title": "Fable / All Models usage\u2026 \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/fable-all-models-usage-relative-to-weekly-reset-pace-f90de875.png"
+      "twitter:image": "{site}/og/c/fable-all-models-usage-relative-to-weekly-reset-pace-f90de875.png",
+      "x-robots-tag": null
     },
     "/c/framed-pill-row-df4615d4": {
       "canonical": "{site}/c/framed-pill-row-df4615d4",
@@ -2374,7 +2409,8 @@
       "status": 200,
       "title": "Framed Pill Row \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/framed-pill-row-df4615d4.png"
+      "twitter:image": "{site}/og/c/framed-pill-row-df4615d4.png",
+      "x-robots-tag": null
     },
     "/c/git-detective-cb282aa6": {
       "canonical": "{site}/c/git-detective-cb282aa6",
@@ -2430,7 +2466,8 @@
       "status": 200,
       "title": "Git Detective \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/git-detective-cb282aa6.png"
+      "twitter:image": "{site}/og/c/git-detective-cb282aa6.png",
+      "x-robots-tag": null
     },
     "/c/gradient-dashboard-f05bd5f9": {
       "canonical": "{site}/c/gradient-dashboard-f05bd5f9",
@@ -2486,7 +2523,8 @@
       "status": 200,
       "title": "Gradient Dashboard \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/gradient-dashboard-f05bd5f9.png"
+      "twitter:image": "{site}/og/c/gradient-dashboard-f05bd5f9.png",
+      "x-robots-tag": null
     },
     "/c/heat-dot-line-101f2040": {
       "canonical": "{site}/c/heat-dot-line-101f2040",
@@ -2542,7 +2580,8 @@
       "status": 200,
       "title": "Heat Dot Line \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/heat-dot-line-101f2040.png"
+      "twitter:image": "{site}/og/c/heat-dot-line-101f2040.png",
+      "x-robots-tag": null
     },
     "/c/hourly-burn-lines-86763350": {
       "canonical": "{site}/c/hourly-burn-lines-86763350",
@@ -2598,7 +2637,8 @@
       "status": 200,
       "title": "Hourly Burn Lines \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/hourly-burn-lines-86763350.png"
+      "twitter:image": "{site}/og/c/hourly-burn-lines-86763350.png",
+      "x-robots-tag": null
     },
     "/c/instrument-panel-rows-1de0ef38": {
       "canonical": "{site}/c/instrument-panel-rows-1de0ef38",
@@ -2654,7 +2694,8 @@
       "status": 200,
       "title": "Instrument Panel Rows \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/instrument-panel-rows-1de0ef38.png"
+      "twitter:image": "{site}/og/c/instrument-panel-rows-1de0ef38.png",
+      "x-robots-tag": null
     },
     "/c/kanji-rain-44ef4b3b": {
       "canonical": "{site}/c/kanji-rain-44ef4b3b",
@@ -2710,7 +2751,8 @@
       "status": 200,
       "title": "Kanji Rain \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/kanji-rain-44ef4b3b.png"
+      "twitter:image": "{site}/og/c/kanji-rain-44ef4b3b.png",
+      "x-robots-tag": null
     },
     "/c/keyblade-status-bar-4a772931": {
       "canonical": "{site}/c/keyblade-status-bar-4a772931",
@@ -2766,7 +2808,8 @@
       "status": 200,
       "title": "Keyblade Status bar \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/keyblade-status-bar-4a772931.png"
+      "twitter:image": "{site}/og/c/keyblade-status-bar-4a772931.png",
+      "x-robots-tag": null
     },
     "/c/meanwhile-ea4997b8": {
       "canonical": "{site}/c/meanwhile-ea4997b8",
@@ -2822,7 +2865,8 @@
       "status": 200,
       "title": "Meanwhile \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/meanwhile-ea4997b8.png"
+      "twitter:image": "{site}/og/c/meanwhile-ea4997b8.png",
+      "x-robots-tag": null
     },
     "/c/middle-dot-ledger-147df137": {
       "canonical": "{site}/c/middle-dot-ledger-147df137",
@@ -2878,7 +2922,8 @@
       "status": 200,
       "title": "Middle-Dot Ledger \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/middle-dot-ledger-147df137.png"
+      "twitter:image": "{site}/og/c/middle-dot-ledger-147df137.png",
+      "x-robots-tag": null
     },
     "/c/mocha-two-liner-853347d3": {
       "canonical": "{site}/c/mocha-two-liner-853347d3",
@@ -2934,7 +2979,8 @@
       "status": 200,
       "title": "Mocha Two-Liner \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/mocha-two-liner-853347d3.png"
+      "twitter:image": "{site}/og/c/mocha-two-liner-853347d3.png",
+      "x-robots-tag": null
     },
     "/c/nerd-font-duo-5af014c4": {
       "canonical": "{site}/c/nerd-font-duo-5af014c4",
@@ -2990,7 +3036,8 @@
       "status": 200,
       "title": "Nerd Font Duo \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/nerd-font-duo-5af014c4.png"
+      "twitter:image": "{site}/og/c/nerd-font-duo-5af014c4.png",
+      "x-robots-tag": null
     },
     "/c/noctu-3c3b3b95": {
       "canonical": "{site}/c/noctu-3c3b3b95",
@@ -3046,7 +3093,8 @@
       "status": 200,
       "title": "Noctu \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/noctu-3c3b3b95.png"
+      "twitter:image": "{site}/og/c/noctu-3c3b3b95.png",
+      "x-robots-tag": null
     },
     "/c/one-dark-triptych-071e85e2": {
       "canonical": "{site}/c/one-dark-triptych-071e85e2",
@@ -3102,7 +3150,8 @@
       "status": 200,
       "title": "One Dark Triptych \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/one-dark-triptych-071e85e2.png"
+      "twitter:image": "{site}/og/c/one-dark-triptych-071e85e2.png",
+      "x-robots-tag": null
     },
     "/c/overage-watcher-8158fde7": {
       "canonical": "{site}/c/overage-watcher-8158fde7",
@@ -3158,7 +3207,8 @@
       "status": 200,
       "title": "Overage Watcher \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/overage-watcher-8158fde7.png"
+      "twitter:image": "{site}/og/c/overage-watcher-8158fde7.png",
+      "x-robots-tag": null
     },
     "/c/pace-arrows-2b3b519b": {
       "canonical": "{site}/c/pace-arrows-2b3b519b",
@@ -3214,7 +3264,8 @@
       "status": 200,
       "title": "Pace Arrows \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/pace-arrows-2b3b519b.png"
+      "twitter:image": "{site}/og/c/pace-arrows-2b3b519b.png",
+      "x-robots-tag": null
     },
     "/c/pace-dot-meters-31dbf032": {
       "canonical": "{site}/c/pace-dot-meters-31dbf032",
@@ -3270,7 +3321,8 @@
       "status": 200,
       "title": "Pace Dot Meters \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/pace-dot-meters-31dbf032.png"
+      "twitter:image": "{site}/og/c/pace-dot-meters-31dbf032.png",
+      "x-robots-tag": null
     },
     "/c/plain-python-bar-5fd2e490": {
       "canonical": "{site}/c/plain-python-bar-5fd2e490",
@@ -3326,7 +3378,8 @@
       "status": 200,
       "title": "Plain Python Bar \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/plain-python-bar-5fd2e490.png"
+      "twitter:image": "{site}/og/c/plain-python-bar-5fd2e490.png",
+      "x-robots-tag": null
     },
     "/c/powerline-dracula-6936b97c": {
       "canonical": "{site}/c/powerline-dracula-6936b97c",
@@ -3382,7 +3435,8 @@
       "status": 200,
       "title": "Powerline Dracula \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/powerline-dracula-6936b97c.png"
+      "twitter:image": "{site}/og/c/powerline-dracula-6936b97c.png",
+      "x-robots-tag": null
     },
     "/c/quota-fallback-2a730aa6": {
       "canonical": "{site}/c/quota-fallback-2a730aa6",
@@ -3438,7 +3492,8 @@
       "status": 200,
       "title": "Quota Fallback \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/quota-fallback-2a730aa6.png"
+      "twitter:image": "{site}/og/c/quota-fallback-2a730aa6.png",
+      "x-robots-tag": null
     },
     "/c/rate-limit-pace-context-jpy-cost-gauge-0f6f06cd": {
       "canonical": "{site}/c/rate-limit-pace-context-jpy-cost-gauge-0f6f06cd",
@@ -3494,7 +3549,8 @@
       "status": 200,
       "title": "Rate-limit Pace + Context + JPY\u2026 \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/rate-limit-pace-context-jpy-cost-gauge-0f6f06cd.png"
+      "twitter:image": "{site}/og/c/rate-limit-pace-context-jpy-cost-gauge-0f6f06cd.png",
+      "x-robots-tag": null
     },
     "/c/simple-two-lines-14b512af": {
       "canonical": "{site}/c/simple-two-lines-14b512af",
@@ -3550,7 +3606,8 @@
       "status": 200,
       "title": "Simple two-lines \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/simple-two-lines-14b512af.png"
+      "twitter:image": "{site}/og/c/simple-two-lines-14b512af.png",
+      "x-robots-tag": null
     },
     "/c/single-line-usage-31dcb76e": {
       "canonical": "{site}/c/single-line-usage-31dcb76e",
@@ -3606,7 +3663,8 @@
       "status": 200,
       "title": "Single-line usage \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/single-line-usage-31dcb76e.png"
+      "twitter:image": "{site}/og/c/single-line-usage-31dcb76e.png",
+      "x-robots-tag": null
     },
     "/c/tasqr-queue-c085b5c3": {
       "canonical": "{site}/c/tasqr-queue-c085b5c3",
@@ -3662,7 +3720,8 @@
       "status": 200,
       "title": "Tasqr Queue \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/tasqr-queue-c085b5c3.png"
+      "twitter:image": "{site}/og/c/tasqr-queue-c085b5c3.png",
+      "x-robots-tag": null
     },
     "/c/three-line-cockpit-2864c871": {
       "canonical": "{site}/c/three-line-cockpit-2864c871",
@@ -3718,7 +3777,8 @@
       "status": 200,
       "title": "Three-Line Cockpit \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/three-line-cockpit-2864c871.png"
+      "twitter:image": "{site}/og/c/three-line-cockpit-2864c871.png",
+      "x-robots-tag": null
     },
     "/c/timestamped-quota-line-44cc6bbc": {
       "canonical": "{site}/c/timestamped-quota-line-44cc6bbc",
@@ -3774,7 +3834,8 @@
       "status": 200,
       "title": "Timestamped Quota Line \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/timestamped-quota-line-44cc6bbc.png"
+      "twitter:image": "{site}/og/c/timestamped-quota-line-44cc6bbc.png",
+      "x-robots-tag": null
     },
     "/c/todo-ticker-650e026e": {
       "canonical": "{site}/c/todo-ticker-650e026e",
@@ -3830,7 +3891,8 @@
       "status": 200,
       "title": "Todo Ticker \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/todo-ticker-650e026e.png"
+      "twitter:image": "{site}/og/c/todo-ticker-650e026e.png",
+      "x-robots-tag": null
     },
     "/c/usage-dot-bars-83846124": {
       "canonical": "{site}/c/usage-dot-bars-83846124",
@@ -3886,7 +3948,8 @@
       "status": 200,
       "title": "Usage Dot Bars \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/usage-dot-bars-83846124.png"
+      "twitter:image": "{site}/og/c/usage-dot-bars-83846124.png",
+      "x-robots-tag": null
     },
     "/c/weather-bitcoin-bar-7036303a": {
       "canonical": "{site}/c/weather-bitcoin-bar-7036303a",
@@ -3942,7 +4005,8 @@
       "status": 200,
       "title": "Weather & Bitcoin Bar \u2014 Claude Code Status Line",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/weather-bitcoin-bar-7036303a.png"
+      "twitter:image": "{site}/og/c/weather-bitcoin-bar-7036303a.png",
+      "x-robots-tag": null
     },
     "/c/width-aware-monitor-54e121c6": {
       "canonical": "{site}/c/width-aware-monitor-54e121c6",
@@ -3998,7 +4062,8 @@
       "status": 200,
       "title": "Width-Aware Monitor \u2014 Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/c/width-aware-monitor-54e121c6.png"
+      "twitter:image": "{site}/og/c/width-aware-monitor-54e121c6.png",
+      "x-robots-tag": null
     },
     "/compare/ccstatusline-vs-claude-powerline": {
       "canonical": "{site}/compare/ccstatusline-vs-claude-powerline",
@@ -4080,7 +4145,8 @@
       "status": 200,
       "title": "ccstatusline vs claude-powerline Compared | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/compare/claude-hud-vs-ccstatusline": {
       "canonical": "{site}/compare/claude-hud-vs-ccstatusline",
@@ -4162,7 +4228,8 @@
       "status": 200,
       "title": "claude-hud vs ccstatusline Compared | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/guide": {
       "canonical": "{site}/guide",
@@ -4232,7 +4299,8 @@
       "status": 200,
       "title": "How to Set Up a Claude Code Status Line | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/guide/are-claude-code-mods-safe": {
       "canonical": "{site}/guide/are-claude-code-mods-safe",
@@ -4316,7 +4384,8 @@
       "status": 200,
       "title": "Are Claude Code Mods Safe? What a Mod Can Touch",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/guide/claude-code-buddy": {
       "canonical": "{site}/guide/claude-code-buddy",
@@ -4400,7 +4469,8 @@
       "status": 200,
       "title": "Claude Code Buddy Removed? Pet Mods That Replace It",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/guide/claude-desktop": {
       "canonical": "{site}/guide/claude-desktop",
@@ -4454,7 +4524,8 @@
       "status": 200,
       "title": "Claude Code Status Line Not Showing in Claude Desktop | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/guide/status-line-not-showing": {
       "canonical": "{site}/guide/status-line-not-showing",
@@ -4538,7 +4609,8 @@
       "status": 200,
       "title": "Claude Code Status Line Not Showing? How to Fix It",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/guide/status-lines-vs-mods": {
       "canonical": "{site}/guide/status-lines-vs-mods",
@@ -4622,7 +4694,8 @@
       "status": 200,
       "title": "Claude Code Status Lines vs Mods: Which to Use",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/mods": {
       "canonical": "{site}/mods",
@@ -4862,7 +4935,8 @@
       "status": 200,
       "title": "Claude Code Mods Directory & Marketplace | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/mods/after": {
       "canonical": "{site}/mods/after",
@@ -4917,7 +4991,8 @@
       "status": 200,
       "title": "After \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/after.png"
+      "twitter:image": "{site}/og/mods/after.png",
+      "x-robots-tag": null
     },
     "/mods/better-prompt": {
       "canonical": "{site}/mods/better-prompt",
@@ -4972,7 +5047,8 @@
       "status": 200,
       "title": "Better Prompt \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/better-prompt.png"
+      "twitter:image": "{site}/og/mods/better-prompt.png",
+      "x-robots-tag": null
     },
     "/mods/burn-meter": {
       "canonical": "{site}/mods/burn-meter",
@@ -5028,7 +5104,8 @@
       "status": 200,
       "title": "Burn Meter \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/burn-meter.png"
+      "twitter:image": "{site}/og/mods/burn-meter.png",
+      "x-robots-tag": null
     },
     "/mods/cache-tax": {
       "canonical": "{site}/mods/cache-tax",
@@ -5083,7 +5160,8 @@
       "status": 200,
       "title": "Cache Tax \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/cache-tax.png"
+      "twitter:image": "{site}/og/mods/cache-tax.png",
+      "x-robots-tag": null
     },
     "/mods/code-pet": {
       "canonical": "{site}/mods/code-pet",
@@ -5138,7 +5216,8 @@
       "status": 200,
       "title": "Code Pet \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/code-pet.png"
+      "twitter:image": "{site}/og/mods/code-pet.png",
+      "x-robots-tag": null
     },
     "/mods/context-bar": {
       "canonical": "{site}/mods/context-bar",
@@ -5194,7 +5273,8 @@
       "status": 200,
       "title": "Context Bar \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/context-bar.png"
+      "twitter:image": "{site}/og/mods/context-bar.png",
+      "x-robots-tag": null
     },
     "/mods/ctx-handoff": {
       "canonical": "{site}/mods/ctx-handoff",
@@ -5250,7 +5330,8 @@
       "status": 200,
       "title": "Ctx Handoff \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/ctx-handoff.png"
+      "twitter:image": "{site}/og/mods/ctx-handoff.png",
+      "x-robots-tag": null
     },
     "/mods/deck": {
       "canonical": "{site}/mods/deck",
@@ -5306,7 +5387,8 @@
       "status": 200,
       "title": "Deck \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/deck.png"
+      "twitter:image": "{site}/og/mods/deck.png",
+      "x-robots-tag": null
     },
     "/mods/familiar": {
       "canonical": "{site}/mods/familiar",
@@ -5361,7 +5443,8 @@
       "status": 200,
       "title": "Familiar \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/familiar.png"
+      "twitter:image": "{site}/og/mods/familiar.png",
+      "x-robots-tag": null
     },
     "/mods/filetree": {
       "canonical": "{site}/mods/filetree",
@@ -5417,7 +5500,8 @@
       "status": 200,
       "title": "Filetree \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/filetree.png"
+      "twitter:image": "{site}/og/mods/filetree.png",
+      "x-robots-tag": null
     },
     "/mods/flightdeck": {
       "canonical": "{site}/mods/flightdeck",
@@ -5473,7 +5557,8 @@
       "status": 200,
       "title": "Flightdeck \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/flightdeck.png"
+      "twitter:image": "{site}/og/mods/flightdeck.png",
+      "x-robots-tag": null
     },
     "/mods/flow-scenes": {
       "canonical": "{site}/mods/flow-scenes",
@@ -5528,7 +5613,8 @@
       "status": 200,
       "title": "Flow \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/flow-scenes.png"
+      "twitter:image": "{site}/og/mods/flow-scenes.png",
+      "x-robots-tag": null
     },
     "/mods/leitstand": {
       "canonical": "{site}/mods/leitstand",
@@ -5584,7 +5670,8 @@
       "status": 200,
       "title": "Leitstand \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/leitstand.png"
+      "twitter:image": "{site}/og/mods/leitstand.png",
+      "x-robots-tag": null
     },
     "/mods/pets": {
       "canonical": "{site}/mods/pets",
@@ -5639,7 +5726,8 @@
       "status": 200,
       "title": "Claude Pets \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/pets.png"
+      "twitter:image": "{site}/og/mods/pets.png",
+      "x-robots-tag": null
     },
     "/mods/pixel-cat": {
       "canonical": "{site}/mods/pixel-cat",
@@ -5695,7 +5783,8 @@
       "status": 200,
       "title": "Pixel Cat \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/pixel-cat.png"
+      "twitter:image": "{site}/og/mods/pixel-cat.png",
+      "x-robots-tag": null
     },
     "/mods/pixelband": {
       "canonical": "{site}/mods/pixelband",
@@ -5750,7 +5839,8 @@
       "status": 200,
       "title": "Pixelband \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/pixelband.png"
+      "twitter:image": "{site}/og/mods/pixelband.png",
+      "x-robots-tag": null
     },
     "/mods/pixipet": {
       "canonical": "{site}/mods/pixipet",
@@ -5805,7 +5895,8 @@
       "status": 200,
       "title": "Pixipet \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/pixipet.png"
+      "twitter:image": "{site}/og/mods/pixipet.png",
+      "x-robots-tag": null
     },
     "/mods/prismantis": {
       "canonical": "{site}/mods/prismantis",
@@ -5860,7 +5951,8 @@
       "status": 200,
       "title": "Prismantis \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/prismantis.png"
+      "twitter:image": "{site}/og/mods/prismantis.png",
+      "x-robots-tag": null
     },
     "/mods/recording-mode": {
       "canonical": "{site}/mods/recording-mode",
@@ -5915,7 +6007,8 @@
       "status": 200,
       "title": "Recording Mode \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/recording-mode.png"
+      "twitter:image": "{site}/og/mods/recording-mode.png",
+      "x-robots-tag": null
     },
     "/mods/reflect-mod": {
       "canonical": "{site}/mods/reflect-mod",
@@ -5970,7 +6063,8 @@
       "status": 200,
       "title": "Reflect \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/reflect-mod.png"
+      "twitter:image": "{site}/og/mods/reflect-mod.png",
+      "x-robots-tag": null
     },
     "/mods/statusline-anywhere": {
       "canonical": "{site}/mods/statusline-anywhere",
@@ -6025,7 +6119,8 @@
       "status": 200,
       "title": "Status Line Anywhere \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/statusline-anywhere.png"
+      "twitter:image": "{site}/og/mods/statusline-anywhere.png",
+      "x-robots-tag": null
     },
     "/mods/sub-meter": {
       "canonical": "{site}/mods/sub-meter",
@@ -6081,7 +6176,8 @@
       "status": 200,
       "title": "Sub Meter \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/sub-meter.png"
+      "twitter:image": "{site}/og/mods/sub-meter.png",
+      "x-robots-tag": null
     },
     "/mods/token-meter": {
       "canonical": "{site}/mods/token-meter",
@@ -6137,7 +6233,8 @@
       "status": 200,
       "title": "Token Meter \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/token-meter.png"
+      "twitter:image": "{site}/og/mods/token-meter.png",
+      "x-robots-tag": null
     },
     "/mods/token-weather": {
       "canonical": "{site}/mods/token-weather",
@@ -6193,7 +6290,8 @@
       "status": 200,
       "title": "Token Weather \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/token-weather.png"
+      "twitter:image": "{site}/og/mods/token-weather.png",
+      "x-robots-tag": null
     },
     "/mods/token-weather-usage": {
       "canonical": "{site}/mods/token-weather-usage",
@@ -6249,7 +6347,8 @@
       "status": 200,
       "title": "Token Weather Usage \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/token-weather-usage.png"
+      "twitter:image": "{site}/og/mods/token-weather-usage.png",
+      "x-robots-tag": null
     },
     "/mods/use-haiku": {
       "canonical": "{site}/mods/use-haiku",
@@ -6304,7 +6403,8 @@
       "status": 200,
       "title": "Use Haiku \u2014 Claude Code mod | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/mods/use-haiku.png"
+      "twitter:image": "{site}/og/mods/use-haiku.png",
+      "x-robots-tag": null
     },
     "/resources": {
       "canonical": "{site}/resources",
@@ -6451,7 +6551,8 @@
       "status": 200,
       "title": "ccstatusline, claude-powerline & More Claude Code Tools",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/bash": {
       "canonical": "{site}/status-lines/bash",
@@ -6677,7 +6778,8 @@
       "status": 200,
       "title": "Claude Code Status Lines Written in Bash | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/best": {
       "canonical": "{site}/status-lines/best",
@@ -6783,7 +6885,8 @@
       "status": 200,
       "title": "Best Claude Code Status Line Examples (October 2026)",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/burn-rate": {
       "canonical": "{site}/status-lines/burn-rate",
@@ -6907,7 +7010,8 @@
       "status": 200,
       "title": "Claude Code Status Lines That Show Burn Rate | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/cost": {
       "canonical": "{site}/status-lines/cost",
@@ -7127,7 +7231,8 @@
       "status": 200,
       "title": "Claude Code Session Cost: Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/git": {
       "canonical": "{site}/status-lines/git",
@@ -7435,7 +7540,8 @@
       "status": 200,
       "title": "Claude Code Status Lines With Git Branch & Diff Stats",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/markets": {
       "canonical": "{site}/status-lines/markets",
@@ -7470,7 +7576,8 @@
       "status": 200,
       "title": "Claude Code Status Lines That Show Market Data",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/minimal": {
       "canonical": "{site}/status-lines/minimal",
@@ -7540,7 +7647,8 @@
       "status": 200,
       "title": "Minimal Claude Code Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/multi-line": {
       "canonical": "{site}/status-lines/multi-line",
@@ -7778,7 +7886,8 @@
       "status": 200,
       "title": "Multi-Line Claude Code Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/node": {
       "canonical": "{site}/status-lines/node",
@@ -7878,7 +7987,8 @@
       "status": 200,
       "title": "Claude Code Status Lines Written in Node.js | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/powerline": {
       "canonical": "{site}/status-lines/powerline",
@@ -7913,7 +8023,8 @@
       "status": 200,
       "title": "Powerline-Style Claude Code Status Lines | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/python": {
       "canonical": "{site}/status-lines/python",
@@ -8025,7 +8136,8 @@
       "status": 200,
       "title": "Claude Code Status Lines Written in Python | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/quota": {
       "canonical": "{site}/status-lines/quota",
@@ -8357,7 +8469,8 @@
       "status": 200,
       "title": "Claude Code Usage Limits: Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/themed": {
       "canonical": "{site}/status-lines/themed",
@@ -8439,7 +8552,8 @@
       "status": 200,
       "title": "Catppuccin, Dracula & Themed Claude Code Status Lines",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/token-usage": {
       "canonical": "{site}/status-lines/token-usage",
@@ -8843,7 +8957,8 @@
       "status": 200,
       "title": "Claude Code Token Usage: Status Lines & Mods | statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/status-lines/weather": {
       "canonical": "{site}/status-lines/weather",
@@ -8907,7 +9022,8 @@
       "status": 200,
       "title": "Claude Code Status Lines That Show the Weather",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/submit": {
       "canonical": "{site}/submit",
@@ -8923,7 +9039,8 @@
       "status": 200,
       "title": "Submit a status line or mod \u2014 statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     },
     "/terms": {
       "canonical": "{site}/terms",
@@ -8938,7 +9055,8 @@
       "status": 200,
       "title": "Terms \u2014 statuslin.es",
       "twitter:card": "summary_large_image",
-      "twitter:image": "{site}/og/home.png"
+      "twitter:image": "{site}/og/home.png",
+      "x-robots-tag": null
     }
   },
   "robots": "User-agent: *\nAllow: /\nDisallow: /api\n\nSitemap: {site}/sitemap.xml\n",
@@ -9056,5 +9174,5 @@
     "/status-lines/weather",
     "/terms"
   ],
-  "taken_at": "2026-10-23T15:10:53+00:00"
+  "taken_at": "2026-10-23T15:28:19+00:00"
 }
