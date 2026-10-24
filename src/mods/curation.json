@@ -73,7 +73,7 @@
   {
     "repoUrl": "https://github.com/furqan-khan07/pixelband",
     "path": "",
-    "commitSha": "b4c05b0a8017ef0eb41f4fd5373d5c8842944357",
+    "commitSha": "9e9f99b2ad0aab57a4428c98ddb4a5007eb78bbd",
     "pluginName": "pixelband",
     "title": "Pixelband",
     "inputSteps": [
@@ -103,7 +103,7 @@
   {
     "repoUrl": "https://github.com/augiefra/claude-mods",
     "path": "plugins/token-weather-usage",
-    "commitSha": "550611d4f8092fd4b97358ad6faa8e7bf01ca5bb",
+    "commitSha": "797ec6a14cec30b0dceafb2aa910e1add8a3393e",
     "pluginName": "token-weather-usage",
     "title": "Token Weather Usage"
   },
@@ -130,7 +130,7 @@
   {
     "repoUrl": "https://github.com/karanb192/cache-tax",
     "path": "",
-    "commitSha": "b735f3393d630ca848538e974fe415e2c745c21b",
+    "commitSha": "e4940afcc62c109bd667bae1b996bee765021759",
     "pluginName": "cache-tax",
     "title": "Cache Tax",
     "inputSteps": [
@@ -147,7 +147,7 @@
   {
     "repoUrl": "https://github.com/data-goblin/claude-code-filetree",
     "path": "",
-    "commitSha": "1b3e72ce1bd265b0a9aeedb993bdf848139e29cc",
+    "commitSha": "2489b4e4e7ffc3f5fac39aff108071380cae1f09",
     "pluginName": "filetree",
     "title": "Filetree",
     "inputSteps": [
@@ -160,7 +160,7 @@
   {
     "repoUrl": "https://github.com/scasella/claude-flightdeck",
     "path": "",
-    "commitSha": "6150b9f40b0a36e42c22d39f03ddb81aaefe1844",
+    "commitSha": "f9c3c5230775109de4bd08c5c7a42112a6a2a885",
     "pluginName": "flightdeck",
     "title": "Flightdeck",
     "inputSteps": [
@@ -177,7 +177,7 @@
   {
     "repoUrl": "https://github.com/NahumLitvin/prismantis",
     "path": "",
-    "commitSha": "2923b67afec972d0b2e185db8f030b3c56a1b112",
+    "commitSha": "86492531383be01074ac066b2e3c9734e6837918",
     "pluginName": "prismantis",
     "title": "Prismantis",
     "inputSteps": [
@@ -232,7 +232,7 @@
   {
     "repoUrl": "https://github.com/midudev/better-claude",
     "path": "plugins/sub-meter",
-    "commitSha": "8eb089014b3afb62eb307364dd0bb947299519e9",
+    "commitSha": "9306204b4807fb13f31e8f952fabde360f4a68d0",
     "pluginName": "sub-meter",
     "title": "Sub Meter"
   },
