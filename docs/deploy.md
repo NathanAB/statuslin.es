@@ -488,8 +488,10 @@ goes live.
 
 To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and
 `inputSteps` if the new version needs them) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another
-repository imports as a new mod, named `<name>-<owner>`. The mod's title and description stay as
-they were first imported.
+repository imports as a new mod, named `<name>-<owner>`. The mod's title stays as it was first
+imported. Its description is the published version's plugin.json `description`: publishing reads
+it at the pinned commit, prints it in the dry run, and refuses a commit whose plugin.json GitHub
+can't serve.
 
 **One command for every step.** `run-repin-mods.ts` runs steps 2–5 below for several mods under one
 `with-env` decrypt, so Touch ID is asked once per env. Run it in the operator's terminal (in the

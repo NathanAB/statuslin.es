@@ -589,6 +589,42 @@ describe('pluginVersion', () => {
   })
 })
 
+describe('pluginDescription', () => {
+  const folderManifest = api(`/contents/plugins/meter/.claude-plugin/plugin.json?ref=${SHA}`)
+
+  it("reads the description from the folder's plugin.json at the commit", async () => {
+    const { fetchFn } = fakeFetch({
+      [folderManifest]: { status: 200, body: { description: 'Tokens at a glance.' } },
+    })
+
+    expect(await createGitHub(fetchFn).pluginDescription(REPO, 'plugins/meter', SHA)).toBe(
+      'Tokens at a glance.',
+    )
+  })
+
+  it('answers an empty description when plugin.json has none, as the import stores it', async () => {
+    const { fetchFn } = fakeFetch({ [folderManifest]: { status: 200, body: { name: 'meter' } } })
+
+    expect(await createGitHub(fetchFn).pluginDescription(REPO, 'plugins/meter', SHA)).toBe('')
+  })
+
+  it.each([
+    ['there is no plugin.json', {}],
+    [
+      'the description is not a string',
+      { [folderManifest]: { status: 200, body: { description: 13 } } },
+    ],
+    [
+      'plugin.json is not JSON',
+      { [folderManifest]: { status: 200, body: new TextEncoder().encode('{"description":') } },
+    ],
+  ])('answers null when %s', async (_name, routes: Record<string, Route>) => {
+    const { fetchFn } = fakeFetch(routes)
+
+    expect(await createGitHub(fetchFn).pluginDescription(REPO, 'plugins/meter', SHA)).toBeNull()
+  })
+})
+
 describe('reading GitHub safely', () => {
   it('asks for the bare hash when resolving a ref', async () => {
     const accepts: (string | null)[] = []

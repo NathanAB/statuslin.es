@@ -106,6 +106,17 @@ describe('approving a mod', () => {
     expect(send).toHaveBeenCalledWith(expect.objectContaining({ kind: 'update' }))
   })
 
+  it("takes the description from the approved update's plugin.json", async () => {
+    const { modId, versionId: first } = await submitMod()
+    await approveVersion(db, first, 'admin', fakeGitHub({ pluginDescription: 'Seven scenes.' }))
+    const update = await submitUpdate(modId)
+
+    await approveVersion(db, update, 'admin', fakeGitHub({ pluginDescription: 'Eight scenes.' }))
+
+    const [mod] = await db.select().from(schema.mods).where(eq(schema.mods.id, modId))
+    expect(mod?.description).toBe('Eight scenes.')
+  })
+
   it('derives the network tag from the approved version, keeping the curated tags', async () => {
     const { modId, versionId: first } = await submitMod()
     await db
@@ -150,8 +161,12 @@ describe('approving a mod', () => {
 
     await approveVersion(db, update, 'admin', github)
 
-    expect(firstGitHub.calls).toEqual([`on-default:${sha('a')}`])
-    expect(github.calls).toEqual([`on-default:${sha('b')}`, `compare:${sha('a')}...${sha('b')}`])
+    expect(firstGitHub.calls).toEqual([`description:${sha('a')}`, `on-default:${sha('a')}`])
+    expect(github.calls).toEqual([
+      `description:${sha('b')}`,
+      `on-default:${sha('b')}`,
+      `compare:${sha('a')}...${sha('b')}`,
+    ])
   })
 
   it.each([

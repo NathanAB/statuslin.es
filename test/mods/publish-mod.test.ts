@@ -47,6 +47,14 @@ async function publish(args: string[], github: FakeGitHub = fakeGitHub()) {
   return { exitCode, lines, output: lines.join('\n') }
 }
 
+async function description(slug: string): Promise<string | undefined> {
+  const [mod] = await db
+    .select({ description: schema.mods.description })
+    .from(schema.mods)
+    .where(eq(schema.mods.slug, slug))
+  return mod?.description
+}
+
 async function draftMod(slug = 'meter', rendered = true) {
   const modId = await addMod(db, slug, 'draft')
   const versionId = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1, rendered })
@@ -111,6 +119,47 @@ describe('publish confirmation', () => {
 
     expect(exitCode).toBe(0)
     expect(await modState(db, 'meter')).toEqual({ status: 'published', currentVersionId: nextId })
+  })
+
+  it("replaces the description with the new version's plugin.json, which the dry run prints", async () => {
+    const { modId } = await publishedMod({})
+    await db
+      .update(schema.mods)
+      .set({ description: 'Seven scenes.' })
+      .where(eq(schema.mods.id, modId))
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    const github = fakeGitHub({ pluginDescription: 'Eight scenes.' })
+
+    const dryRun = await publish(['meter', sha('b')], github)
+    const storedAfterDryRun = await description('meter')
+    await publish(['meter', sha('b'), '--apply', '--confirm=meter'], github)
+
+    expect(dryRun.lines).toContain('description: Eight scenes.')
+    expect(storedAfterDryRun).toBe('Seven scenes.')
+    expect(await description('meter')).toBe('Eight scenes.')
+    expect(github.calls).toContain(`description:${sha('b')}`)
+  })
+
+  it('refuses a version whose plugin.json GitHub cannot serve, and keeps the description', async () => {
+    const { modId, currentId } = await publishedMod({})
+    await db
+      .update(schema.mods)
+      .set({ description: 'Seven scenes.' })
+      .where(eq(schema.mods.id, modId))
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+
+    const { exitCode, output } = await publish(
+      ['meter', sha('b'), '--apply', '--confirm=meter'],
+      fakeGitHub({ pluginDescription: null }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/plugin\.json/)
+    expect(await modState(db, 'meter')).toEqual({
+      status: 'published',
+      currentVersionId: currentId,
+    })
+    expect(await description('meter')).toBe('Seven scenes.')
   })
 
   it('derives the network tag from the re-pinned version, keeping the curated tags', async () => {
@@ -504,13 +553,12 @@ describe('publish report escaping', () => {
   })
 
   it('prints the description the marketplace and llms.txt will show, escaped', async () => {
-    const { modId } = await draftMod()
-    await db
-      .update(schema.mods)
-      .set({ description: `](https://evil.example) ${FORGED}` })
-      .where(eq(schema.mods.id, modId))
+    await draftMod()
 
-    const { lines } = await publish(['meter', sha('a')])
+    const { lines } = await publish(
+      ['meter', sha('a')],
+      fakeGitHub({ pluginDescription: `](https://evil.example) ${FORGED}` }),
+    )
 
     expect(lines).toContain(
       'description: ](https://evil.example) evil.ts\\u000a\\u001b[1A\\u001b[2KWARN forged: nothing to see',
