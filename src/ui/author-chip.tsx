@@ -16,12 +16,12 @@ export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
       loading="lazy"
       width={20}
       height={20}
-      className="size-5 shrink-0 rounded-full ring-primary/0 group-hover:ring-2 group-hover:ring-primary/60"
+      className="size-5 shrink-0 self-center rounded-full ring-primary/0 group-hover:ring-2 group-hover:ring-primary/60"
     />
   ) : (
     <span
       aria-hidden="true"
-      className="flex size-5 shrink-0 items-center justify-center rounded-full bg-sunken font-medium text-muted-foreground text-xs ring-primary/0 group-hover:ring-2 group-hover:ring-primary/60"
+      className="flex size-5 shrink-0 items-center justify-center self-center rounded-full bg-sunken font-medium text-muted-foreground text-xs ring-primary/0 group-hover:ring-2 group-hover:ring-primary/60"
     >
       {author.name.charAt(0).toUpperCase()}
     </span>
@@ -33,7 +33,7 @@ export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
         href={`https://github.com/${author.username}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="group flex min-w-0 shrink-0 items-center gap-1.5"
+        className="group flex min-w-0 shrink-0 items-baseline gap-1.5"
       >
         {avatar}
         <span className="truncate text-muted-foreground text-sm group-hover:text-foreground group-hover:underline">
@@ -44,7 +44,7 @@ export function AuthorChip({ author }: { author: ConfigAuthor | null }) {
   }
 
   return (
-    <span className="flex min-w-0 shrink-0 items-center gap-1.5">
+    <span className="flex min-w-0 shrink-0 items-baseline gap-1.5">
       {avatar}
       <span className="truncate text-muted-foreground text-sm">{author.name}</span>
     </span>

@@ -7,11 +7,6 @@ import { GalleryRow } from '@/ui/gallery-row'
 import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Text } from '@/ui/text'
 
-/**
- * One status line in the gallery, as a full-width row: its name and author, what it can reach, its
- * tags and copies, then the status line itself and its description. Used by the home gallery,
- * the facet and best pages, and the related lists.
- */
 export function GalleryConfigCard({
   card,
   analytics,
@@ -34,9 +29,7 @@ export function GalleryConfigCard({
       }}
       title={card.title}
       byline={<AuthorChip author={card.author} />}
-      facts={
-        <CardMeta tags={card.tags} networkHosts={card.networkHosts} copyCount={card.copyCount} />
-      }
+      facts={<CardMeta tags={card.tags} copyCount={card.copyCount} />}
       description={card.description}
     >
       {card.preview !== null ? (

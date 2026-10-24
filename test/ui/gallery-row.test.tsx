@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react'
-import { Globe } from 'lucide-react'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 
@@ -21,7 +20,7 @@ vi.mock('@tanstack/react-router', () => ({
   ),
 }))
 
-const { GalleryList, GalleryRow, RowFacts, RowNote } = await import('@/ui/gallery-row')
+const { GalleryList, GalleryRow, RowFacts } = await import('@/ui/gallery-row')
 
 const DESCRIPTION =
   'A long description that the row clamps to two lines on screen, while every word of it stays in the page for search engines and screen readers alike.'
@@ -35,16 +34,7 @@ function renderRow(onOpen = vi.fn()) {
         onOpen={onOpen}
         title="Meter"
         byline={<a href="https://github.com/octocat">@octocat</a>}
-        facts={
-          <RowFacts>
-            {[
-              <RowNote key="net" icon={Globe}>
-                Network Access
-              </RowNote>,
-              '3 installs',
-            ]}
-          </RowFacts>
-        }
+        facts={<RowFacts>{['Git', '3 installs']}</RowFacts>}
         description={DESCRIPTION}
       >
         <code>ctx 42%</code>
@@ -76,7 +66,7 @@ describe('GalleryRow', () => {
     renderRow()
 
     const items = screen.getAllByRole('listitem')
-    expect(items.map((item) => item.textContent)).toEqual(['Network Access', '·3 installs'])
+    expect(items.map((item) => item.textContent)).toEqual(['Git', '·3 installs'])
     expect(items[1]?.querySelector('[aria-hidden="true"]')?.textContent).toBe('·')
   })
 
