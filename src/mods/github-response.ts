@@ -49,3 +49,18 @@ export async function readAtMost(
   if (truncated) throw tooLarge()
   return bytes
 }
+
+/** The body as a JSON object, or null when it is past `maxBytes`, not JSON or not an object. */
+export async function readJsonObject(
+  res: Response,
+  maxBytes: number,
+): Promise<Record<string, unknown> | null> {
+  const { bytes, truncated } = await readUpTo(res, maxBytes)
+  if (truncated) return null
+  try {
+    const value: unknown = JSON.parse(new TextDecoder().decode(bytes))
+    return value && typeof value === 'object' ? (value as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}

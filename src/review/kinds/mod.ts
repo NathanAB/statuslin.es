@@ -3,7 +3,7 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModStatus, mods, modVersions, submissions } from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import { modPath } from '@/lib/site'
-import type { CommitComparison, GitHub } from '@/mods/github'
+import type { CommitComparison, GitHub, GitHubSource } from '@/mods/github'
 import { marketplaceName } from '@/mods/listing'
 import {
   alreadyCurrentGuard,
@@ -23,7 +23,8 @@ import type { ApprovalContext, Publish, RejectionContext, ReviewKind } from './k
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 /** What approving a mod asks GitHub. */
-export type ModReviewGitHub = Pick<GitHub, 'commitIsOnDefaultBranch' | 'compareCommits'>
+export type ModReviewGitHub = Pick<GitHub, 'commitIsOnDefaultBranch' | 'compareCommits'> &
+  Pick<GitHubSource, 'pluginDescription'>
 
 const NOUN = 'mod'
 const NOT_PENDING = 'version not in a reviewable (pending) state'
@@ -37,7 +38,6 @@ async function versionMod(database: Db, versionId: string) {
       authorGithub: mods.authorGithub,
       title: mods.title,
       status: mods.status,
-      description: mods.description,
       currentVersionId: mods.currentVersionId,
       versionNumber: modVersions.versionNumber,
     })
@@ -62,7 +62,7 @@ interface ReadMod {
  * mod's status and pointer are what the approval checked against; otherwise a 409 says what
  * changed. Writes only through `tx`.
  */
-function publishStep(target: PublishVersion, read: ReadMod): Publish {
+function publishStep(target: PublishVersion, description: string, read: ReadMod): Publish {
   return async (tx) => {
     const [mod] = await tx
       .select({ status: mods.status, currentVersionId: mods.currentVersionId, tags: mods.tags })
@@ -77,7 +77,7 @@ function publishStep(target: PublishVersion, read: ReadMod): Publish {
     const slug = read.status === 'draft' ? await marketplaceName(tx, read, target) : read.slug
     await tx
       .update(mods)
-      .set({ slug, ...publishedRow(target, mod.tags) })
+      .set({ slug, ...publishedRow(target, mod.tags, description) })
       .where(eq(mods.id, read.id))
   }
 }
@@ -139,10 +139,15 @@ export function modReview(github: ModReviewGitHub): ReviewKind {
           `"${mod.slug}" v${mod.versionNumber} is older than the live v${live}; approve a newer version`,
         )
       }
+      const description = await github.pluginDescription(
+        target.repoUrl,
+        target.path,
+        target.commitSha,
+      )
       const guards = publishGuards({
         slug: mod.slug,
         modStatus: mod.status,
-        description: mod.description,
+        description,
         target,
         current,
         onDefaultBranch: await github.commitIsOnDefaultBranch(target.repoUrl, target.commitSha),
@@ -151,10 +156,10 @@ export function modReview(github: ModReviewGitHub): ReviewKind {
         comparedToLive: await compareToLive(github, current, target),
       })
       const refusals = guards.filter((guard) => guard.level === 'refuse')
-      if (refusals.length > 0) {
+      if (refusals.length > 0 || description === null) {
         throw new HttpError(409, refusals.map((guard) => guard.message).join('; '))
       }
-      return publishStep(target, mod)
+      return publishStep(target, description, mod)
     },
 
     async approvalContext(database, versionId): Promise<ApprovalContext> {

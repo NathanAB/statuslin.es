@@ -1,10 +1,15 @@
 import { refuseArchiveDifferences, type TreeEntry } from './archive-differences'
-import { failure, readAtMost, readUpTo } from './github-response'
+import { failure, readAtMost, readJsonObject, readUpTo } from './github-response'
+import {
+  encodeParts,
+  GITHUB_API,
+  GITHUB_ARCHIVES,
+  manifestUrl,
+  repoApiUrl,
+  repoPath,
+} from './github-urls'
 
-const GITHUB_API = 'https://api.github.com'
-const GITHUB_ARCHIVES = 'https://codeload.github.com'
 const REQUEST_TIMEOUT_MS = 10_000
-const PLUGIN_MANIFEST = '.claude-plugin/plugin.json'
 
 /** Caps on a mod repository's download; every mod the #38 spike rendered fits well inside both. */
 export const TARBALL_MAX_BYTES = 20 * 1024 * 1024
@@ -32,6 +37,8 @@ export interface GitHubSource {
   pluginManifestExists(repoUrl: string, path: string, sha: string): Promise<boolean>
   /** The `version` string in `path`'s plugin.json at `sha`; null when absent or past 64 KiB. */
   pluginVersion(repoUrl: string, path: string, sha: string): Promise<string | null>
+  /** The `description` in `path`'s plugin.json at `sha`, '' when it has none; null when unreadable. */
+  pluginDescription(repoUrl: string, path: string, sha: string): Promise<string | null>
   /**
    * The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. Downloaded
    * once per repository and commit for the life of this source; a failed download stays failed.
@@ -52,39 +59,11 @@ export interface GitHub {
   commitIsFetchable(repoUrl: string, sha: string): Promise<boolean>
 }
 
-function repoPath(repoUrl: string): string {
-  const match = /^https:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?\/?$/.exec(
-    repoUrl,
-  )
-  if (!match || match[2] === '.' || match[2] === '..')
-    throw new Error(`"${repoUrl}" is not a https://github.com/<owner>/<repo> URL`)
-  return `${match[1]}/${match[2]}`
-}
-
 /** How much of a README content generation hands the copy-writing agent. */
 export const README_MAX_CHARS = 20_000
 /** UTF-8 spends at most 3 bytes per UTF-16 unit, so a README cut here still runs past
  * README_MAX_CHARS and gets its cut-off note. */
 export const README_MAX_BYTES = 4 * README_MAX_CHARS
-
-const repoApiUrl = (repoUrl: string) => `${GITHUB_API}/repos/${repoPath(repoUrl)}`
-
-/**
- * Encodes each part of a "/"-separated ref or path, keeping the "/" GitHub reads between them. A
- * ".", ".." or empty part is refused: fetch would collapse it and walk the request up the API.
- */
-function encodeParts(value: string): string {
-  const parts = value.split('/')
-  if (parts.some((part) => part === '' || part === '.' || part === '..')) {
-    throw new Error(`"${value}" has an empty, "." or ".." part`)
-  }
-  return parts.map(encodeURIComponent).join('/')
-}
-
-function manifestUrl(repoUrl: string, path: string, sha: string): string {
-  const file = encodeParts(path === '' ? PLUGIN_MANIFEST : `${path}/${PLUGIN_MANIFEST}`)
-  return `${repoApiUrl(repoUrl)}/contents/${file}?ref=${sha}`
-}
 
 /**
  * `fetchFn` is injected so tests never touch the network. An optional `GITHUB_TOKEN` raises the
@@ -161,6 +140,19 @@ export function createGitHub(
     return readAtMost(res, TARBALL_MAX_BYTES, url)
   }
 
+  /** plugin.json at `sha`, or null when it is missing, past 64 KiB or not a JSON object. */
+  async function readManifest(
+    repoUrl: string,
+    path: string,
+    sha: string,
+  ): Promise<Record<string, unknown> | null> {
+    const url = manifestUrl(repoUrl, path, sha)
+    const res = await send(url, 'application/vnd.github.raw+json')
+    if (res.status === 404) return null
+    if (!res.ok) throw failure(res, url)
+    return readJsonObject(res, PLUGIN_MANIFEST_MAX_BYTES)
+  }
+
   const downloads = new Map<string, Promise<Uint8Array>>()
 
   return {
@@ -190,17 +182,15 @@ export function createGitHub(
     },
 
     async pluginVersion(repoUrl, path, sha) {
-      const url = manifestUrl(repoUrl, path, sha)
-      const res = await send(url, 'application/vnd.github.raw+json')
-      if (res.status === 404) return null
-      if (!res.ok) throw failure(res, url)
-      const { bytes, truncated } = await readUpTo(res, PLUGIN_MANIFEST_MAX_BYTES)
-      try {
-        const { version } = JSON.parse(new TextDecoder().decode(bytes)) as { version?: unknown }
-        return !truncated && typeof version === 'string' ? version : null
-      } catch {
-        return null
-      }
+      const manifest = await readManifest(repoUrl, path, sha)
+      return typeof manifest?.version === 'string' ? manifest.version : null
+    },
+
+    async pluginDescription(repoUrl, path, sha) {
+      const manifest = await readManifest(repoUrl, path, sha)
+      if (!manifest) return null
+      const { description = '' } = manifest
+      return typeof description === 'string' ? description : null
     },
 
     async commitIsOnDefaultBranch(repoUrl, sha, defaultBranch) {

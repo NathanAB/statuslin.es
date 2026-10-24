@@ -39,14 +39,15 @@ import { terminalLine } from '@/mods/terminal-line'
  * mod to 'published', which puts it in /marketplace.json at that commit.
  *
  * Guards. It refuses a SHA that is not 40 lowercase hex, a SHA that matches more than one version of
- * the mod, a commit not on the repo's default branch, a commit not ahead of the live one, a version
- * that has not rendered, a delisted mod (use delist-mod.ts --restore), the version a published mod
+ * the mod, a commit not on the repo's default branch, a commit not ahead of the live one, a commit
+ * whose plugin.json GitHub can't serve, a version that has not rendered, a delisted mod (use delist-mod.ts --restore), the version a published mod
  * already points at, and a mod a user submitted (approve it on /admin, which names it and checks
  * its folder). A draft's publish is a first publish, with nothing to compare against. It prints the
- * repository and path, the files changed since the current commit, and the footprint, before and
- * after. It warns when the repository or path changes, when GitHub truncates the file list, when
- * the footprint adds events or $ calls, and when plugin.json's `version` is unchanged (Claude Code
- * then won't update existing installs).
+ * description the listing will show, from the version's plugin.json, then the repository and path,
+ * the files changed since the current commit, and the footprint, before and after. It warns when
+ * the repository or path changes, when GitHub truncates the file list, when the footprint adds
+ * events or $ calls, and when plugin.json's `version` is unchanged (Claude Code then won't update
+ * existing installs).
  *
  * AGENT USAGE — a dry run by default; nothing changes without `--apply --confirm=<slug>`:
  *
@@ -66,7 +67,7 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface PublishDeps {
   db: Db
-  github: GitHub & Pick<GitHubSource, 'readme'>
+  github: GitHub & Pick<GitHubSource, 'readme' | 'pluginDescription'>
   log: (line: string) => void
   writePng: PngWriter
 }
@@ -82,12 +83,11 @@ const submittedGuard = (slug: string): Guard => ({
   message: `"${slug}" was submitted by a user: approve it on /admin`,
 })
 
-async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
+async function loadFacts(db: Db, github: PublishDeps['github'], slug: string, sha: string) {
   const [mod] = await db
     .select({
       id: schema.mods.id,
       status: schema.mods.status,
-      description: schema.mods.description,
       currentVersionId: schema.mods.currentVersionId,
     })
     .from(schema.mods)
@@ -116,7 +116,7 @@ async function loadFacts(db: Db, github: GitHub, slug: string, sha: string) {
   const facts: PublishFacts = {
     slug,
     modStatus: mod.status,
-    description: mod.description,
+    description: await github.pluginDescription(target.repoUrl, target.path, sha),
     target,
     current,
     onDefaultBranch: await github.commitIsOnDefaultBranch(target.repoUrl, sha),
@@ -140,12 +140,14 @@ async function makeCurrent(
   {
     modId,
     target,
+    description,
     slug,
     readStatus,
     readPointerId,
   }: {
     modId: string
     target: PublishVersion
+    description: string
     slug: string
     readStatus: schema.ModStatus
     readPointerId: string | null
@@ -166,7 +168,7 @@ async function makeCurrent(
     }
     await tx
       .update(schema.mods)
-      .set(publishedRow(target, mod.tags))
+      .set(publishedRow(target, mod.tags, description))
       .where(eq(schema.mods.id, modId))
     return null
   })
@@ -211,7 +213,7 @@ export async function runPublish(argv: string[], deps: PublishDeps): Promise<num
   for (const line of [...publishReport(facts), ...(await reviewLines(deps, facts))]) log(line)
   for (const g of guards) log(guardLine(g))
 
-  if (refuses(guards)) return 1
+  if (refuses(guards) || facts.description === null) return 1
   if (!apply) {
     log(`dry run: nothing changed. Rerun with --apply --confirm=${slug} to publish.`)
     return 0
@@ -219,6 +221,7 @@ export async function runPublish(argv: string[], deps: PublishDeps): Promise<num
   const refusal = await makeCurrent(db, {
     modId,
     target: facts.target,
+    description: facts.description,
     slug,
     readStatus: facts.modStatus,
     readPointerId,

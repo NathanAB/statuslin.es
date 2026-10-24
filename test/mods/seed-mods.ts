@@ -151,7 +151,7 @@ export async function modState(db: TestDb, slug: string) {
   return row
 }
 
-export interface FakeGitHub extends GitHub, Pick<GitHubSource, 'readme'> {
+export interface FakeGitHub extends GitHub, Pick<GitHubSource, 'readme' | 'pluginDescription'> {
   calls: string[]
 }
 
@@ -160,6 +160,8 @@ interface FakeGitHubOptions {
   filesChanged?: string[]
   comparedToLive?: CommitComparison
   readme?: string | null
+  /** plugin.json's description at the commit; null when GitHub can't serve a readable plugin.json. */
+  pluginDescription?: string | null
   /** Runs inside the default-branch lookup, between the script's reads and its write. */
   meanwhile?: () => Promise<void>
 }
@@ -186,6 +188,10 @@ export function fakeGitHub(opts: FakeGitHubOptions = {}): FakeGitHub {
     },
     async readme() {
       return opts.readme ?? null
+    },
+    async pluginDescription(_repo, _path, commit) {
+      calls.push(`description:${commit}`)
+      return opts.pluginDescription === undefined ? 'Tokens at a glance.' : opts.pluginDescription
     },
   }
 }

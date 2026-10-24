@@ -14,14 +14,17 @@ export function modAllTags(tags: string[], footprint: ModFootprint): string[] {
   return mergeTags(tags, footprint.calls.includes('$.http.fetch') ? ['network-access'] : [])
 }
 
+/** `description` is the target's plugin.json description, so the listing describes the live version. */
 export function publishedRow(
   target: PublishVersion,
   tags: string[],
-): { currentVersionId: string; status: ModStatus; allTags: string[] } {
+  description: string,
+): { currentVersionId: string; status: ModStatus; allTags: string[]; description: string } {
   return {
     currentVersionId: target.id,
     status: 'published',
     allTags: modAllTags(tags, target.footprint),
+    description,
   }
 }
 
@@ -81,8 +84,11 @@ export interface ListingFacts {
 export interface PublishFacts extends ListingFacts {
   slug: string
   modStatus: ModStatus
-  /** From plugin.json at import; the marketplace and llms.txt show it once the mod is published. */
-  description: string
+  /**
+   * The target's plugin.json description, which the marketplace and llms.txt show once it is
+   * published; null when GitHub can't serve a readable plugin.json at the target commit.
+   */
+  description: string | null
   current: PublishVersion | null
   /** Files changed since `compareBase`; null when there is no base to compare against. */
   filesChanged: string[] | null
@@ -176,6 +182,16 @@ function aheadOfLiveGuards({ current, target, comparedToLive }: PublishFacts): G
   return [refuse('not-ahead-of-live', `commit ${target.commitSha} ${why}`)]
 }
 
+function descriptionGuards({ target, description }: PublishFacts): Guard[] {
+  if (description !== null) return []
+  return [
+    refuse(
+      'description-unreadable',
+      `GitHub serves no readable plugin.json at ${target.commitSha}, so its description is unknown`,
+    ),
+  ]
+}
+
 export function listingGuards({ target, onDefaultBranch }: ListingFacts): Guard[] {
   const offDefault = `commit ${target.commitSha} is not on the repository's default branch`
   const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop)`
@@ -208,6 +224,7 @@ export function publishGuards(facts: PublishFacts): Guard[] {
     ...(facts.modStatus === 'removed' ? [removedGuard(facts.slug)] : []),
     ...listingGuards(facts),
     ...aheadOfLiveGuards(facts),
+    ...descriptionGuards(facts),
     ...sourceGuards(facts),
     ...truncationGuards(facts),
     ...footprintGuards(facts),
