@@ -48,9 +48,8 @@ describe('dropExtensionExceptions', () => {
     expect(dropExtensionExceptions(event)).toBe(event)
   })
 
-  it('passes through non-exception events and null unchanged', () => {
+  it('passes through non-exception events unchanged', () => {
     const pageview = { uuid: 'test', event: '$pageview', properties: {} } as CaptureResult
     expect(dropExtensionExceptions(pageview)).toBe(pageview)
-    expect(dropExtensionExceptions(null)).toBeNull()
   })
 })

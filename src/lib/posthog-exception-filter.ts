@@ -28,8 +28,8 @@ function exceptionMessages(properties: Record<string, unknown>): string {
     .join('\n')
 }
 
-export function dropExtensionExceptions(result: CaptureResult | null): CaptureResult | null {
-  if (result?.event !== '$exception') return result
+export function dropExtensionExceptions(result: CaptureResult): CaptureResult | null {
+  if (result.event !== '$exception') return result
   const properties = result.properties ?? {}
   // Our own errors: a real site source file, or the router tag.
   if (properties.$exception_source || properties.source === 'router') return result
