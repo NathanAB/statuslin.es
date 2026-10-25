@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1
 ARG PREVIOUS_IMAGE=asset-retention-bootstrap
 
-FROM oven/bun:1.4.3 AS asset-retention-bootstrap
+FROM oven/bun:1.4.4 AS asset-retention-bootstrap
 RUN mkdir -p /app/.output/public/assets
 
 FROM ${PREVIOUS_IMAGE} AS previous
 
-FROM oven/bun:1.4.3 AS base
+FROM oven/bun:1.4.4 AS base
 WORKDIR /app
 
 FROM base AS build
