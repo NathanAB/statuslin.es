@@ -79,8 +79,6 @@ export const NOT_FOUND_TITLE = `Page not found — ${SITE_NAME}`
  * mods" search, so a mods-only title gave up the searches home does get.
  */
 export const HOME_TITLE_BASE = 'Claude Code Mods & Status Lines'
-/** The site's short name on screen: the h1 past page 1, the footer tagline and the share card. */
-export const HOME_HEADING = 'Claude Code mods'
 /**
  * The hero's h1. Google can build a result's title from the h1, and readers scan its first two
  * words, so it opens on the product and names mods: "customize claude code" and "claude code mods"

@@ -12,7 +12,7 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 const { CONTACT_EMAIL, MODS_PATH, REPO_URL, SITE_NAME } = await import('@/lib/site')
-const { GUIDE_SUBPAGES, HOME_HEADING } = await import('@/lib/page-title')
+const { GUIDE_SUBPAGES } = await import('@/lib/page-title')
 const { SiteFooter } = await import('@/ui/site-footer')
 
 describe('SiteFooter', () => {
@@ -55,7 +55,7 @@ describe('SiteFooter', () => {
   // The owner dropped the tagline and the home page's inventory line: only the copyright stays.
   it('carries a copyright line and no tagline', () => {
     render(<SiteFooter />)
-    expect(screen.queryByText(HOME_HEADING)).toBeNull()
+    expect(screen.queryByText('Claude Code mods')).toBeNull()
     expect(screen.getByText(`© ${new Date().getFullYear()} ${SITE_NAME}`)).toBeTruthy()
   })
 
