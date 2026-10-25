@@ -42,8 +42,8 @@ export function browserSignals(): BrowserSignals {
 }
 
 export function tagAutomatedBrowser(signals: () => BrowserSignals = browserSignals): BeforeSendFn {
-  return (result: CaptureResult | null) => {
-    if (!result || !isAutomatedBrowser(signals())) return result
+  return (result: CaptureResult) => {
+    if (!isAutomatedBrowser(signals())) return result
     return { ...result, properties: { ...result.properties, isBot: true } }
   }
 }

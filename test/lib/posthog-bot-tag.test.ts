@@ -86,8 +86,4 @@ describe('tagAutomatedBrowser', () => {
     expect(result?.event).toBe('$pageview')
     expect(result?.properties.$pathname).toBe('/')
   })
-
-  it('passes a dropped event through as dropped', () => {
-    expect(tagAutomatedBrowser(() => PERSON)(null)).toBeNull()
-  })
 })
