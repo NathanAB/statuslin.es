@@ -89,21 +89,16 @@ export const PANE_BODY: Rect = {
   width: PANE.width - 2,
   height: PANE.height - 32 - 12,
 }
-/** The chat column's left and right edges (its prompt box's borders) while a pane is open. */
+/** The chat column's left edge (its prompt box's border) while a pane is open. */
 export const PANE_CHAT_LEFT = 41
-export const PANE_CHAT_RIGHT = 693
 
 export interface Column {
   x: number
   width: number
 }
 
-/** The chat column, with and without a pane: each layout's prompt box, which a band's plate spans. */
+/** The chat column with no pane open: its prompt box, which a band's plate spans. */
 export const CHAT_COLUMN: Column = { x: PROMPT_BOX.x, width: PROMPT_BOX.width }
-export const PANE_CHAT_COLUMN: Column = {
-  x: PANE_CHAT_LEFT,
-  width: PANE_CHAT_RIGHT - PANE_CHAT_LEFT,
-}
 
 /**
  * A band's plate pads what a mod draws by 8px, so these strips just inside its left and right
