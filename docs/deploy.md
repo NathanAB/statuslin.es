@@ -303,7 +303,9 @@ engine on a virtual display (ADR 0004):
 ```sh
 bun run scripts/build-e2b-desktop-template.ts
 ```
-Commit what it prints as its header comment says. Rebuild it only for a Desktop upgrade (below).
+Commit what it prints as its header comment says. Rebuild it for a Desktop upgrade (below) or a
+change to `managedSettings()`, which the build bakes in. After either, re-record every Desktop
+preview as in step 3 of the upgrade runbook.
 
 ### Desktop upgrade runbook
 
