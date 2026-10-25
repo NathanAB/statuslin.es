@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import satori from 'satori'
+import satori, { type SatoriNode } from 'satori'
 import { describe, expect, it } from 'vitest'
 import { HERO_LEAD } from '@/home/home-hero'
 import { HOME_HERO_HEADING } from '@/lib/page-title'
@@ -10,8 +10,6 @@ import type { AnsiSegment } from '@/render/types'
 import { SEEDED_DESKTOP_SHOT } from '../mods/seed-mods'
 
 type Box = { left: number; top: number; width: number; height: number }
-/** satori sets textContent only on an element whose one child is a string. */
-type DrawnNode = Box & { textContent?: string }
 
 const seg = (text: string, fg: string | null = null): AnsiSegment => ({
   text,
@@ -24,8 +22,8 @@ const seg = (text: string, fg: string | null = null): AnsiSegment => ({
 
 /** Where satori puts each element, split into the card's root element and everything inside it.
  * The PNG tests only prove an image comes out; these boxes show where the content landed. */
-async function layout(element: ReactElement): Promise<{ root: Box; content: DrawnNode[] }> {
-  const nodes: DrawnNode[] = []
+async function layout(element: ReactElement): Promise<{ root: Box; content: SatoriNode[] }> {
+  const nodes: SatoriNode[] = []
   await satori(element, { ...cardSatoriOptions(), onNodeDetected: (node) => nodes.push(node) })
   const [root, ...content] = [...nodes].sort((a, b) => b.width * b.height - a.width * a.height)
   if (!root) throw new Error('satori laid out no elements')
@@ -71,8 +69,6 @@ const FILLS_THE_CARD = { left: 0, top: 0, width: CARD_WIDTH, height: CARD_HEIGHT
 // A satori upgrade (0.26 → 0.47) started adding the root's padding to its 100% size, pushing every
 // card's content off-center and past the right edge while the PNG tests still passed.
 describe('og card layout', () => {
-  // The terminal and its conversation run off the right edge on purpose. An early sketch pushed its
-  // status line off with them.
   it('keeps the home card headline, lead and status line inside the card', async () => {
     const { root, content } = await layout(homeCard())
     const statusLine = HOME_CARD_STATUS_LINE.map((s) => s.text)

@@ -15,7 +15,6 @@ export type SatoriFont = Required<Pick<FontOptions, 'data' | 'weight' | 'style'>
   name: string
 }
 
-/** The site's interface font (`--font-sans` in app.css), for the card text that isn't terminal. */
 export const SANS_FONT = 'Hanken Grotesk'
 
 let cached: SatoriFont[] | null = null

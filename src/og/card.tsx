@@ -120,7 +120,6 @@ function well(child: ReactElement, padding: string): ReactElement {
   )
 }
 
-// `seg` fills the AnsiSegment fields the cards don't vary.
 const seg = (text: string, fg: string | null = null): AnsiSegment => ({
   text,
   fg,
@@ -130,9 +129,6 @@ const seg = (text: string, fg: string | null = null): AnsiSegment => ({
   underline: false,
 })
 
-/** The home card's status line: the Everyday session (scenario `clean-main`) the hero shows, in a
- * status line's own colors. Its terminal runs off the card, so it leaves out the 5-hour reset
- * (` ↻2h07`), which would run off with it. */
 export const HOME_CARD_STATUS_LINE: AnsiSegment[] = [
   seg('◆ ', 'rgb(217,119,87)'),
   seg(OPUS.display_name),
@@ -145,8 +141,6 @@ export const HOME_CARD_STATUS_LINE: AnsiSegment[] = [
   seg('26%', 'rgb(229,192,123)'),
 ]
 
-/** A line of the hero's conversation, in the text and colors TranscriptRow (src/ui/terminal.tsx)
- * draws it with. */
 function transcriptRow(line: TranscriptLine): { text: string; color: string; fill?: string } {
   switch (line.kind) {
     case 'prompt':
@@ -162,10 +156,16 @@ function transcriptRow(line: TranscriptLine): { text: string; color: string; fil
   }
 }
 
-// The home card's terminal is wider than the room right of the headline, so the card crops it at
-// the right edge like a screenshot instead of squeezing its lines.
-const HOME_TERMINAL = { left: 620, top: 56, width: 700, height: 534, padding: 8 }
+const HOME_TERMINAL = { left: 620, top: 56, height: 534, padding: 8, overhang: 120 }
 const HOME_TERMINAL_FONT_SIZE = 19
+const STATUS_RING_INSET = 10
+const STATUS_RING_GLOW_OPACITY = 0.35
+
+/** `opacity` as the two hex digits that end an #rrggbbaa color. */
+const alphaHex = (opacity: number) =>
+  Math.round(opacity * 255)
+    .toString(16)
+    .padStart(2, '0')
 
 function homeTerminal(): ReactElement {
   return (
@@ -173,9 +173,10 @@ function homeTerminal(): ReactElement {
       style={{
         display: 'flex',
         position: 'absolute',
+        boxSizing: 'border-box',
         left: HOME_TERMINAL.left,
         top: HOME_TERMINAL.top,
-        width: HOME_TERMINAL.width,
+        width: CARD_WIDTH - HOME_TERMINAL.left + HOME_TERMINAL.overhang,
         height: HOME_TERMINAL.height,
         padding: HOME_TERMINAL.padding,
         borderRadius: 26,
@@ -226,17 +227,14 @@ function homeTerminal(): ReactElement {
           <span style={{ color: OG_PALETTE.terminalMuted, whiteSpace: 'pre' }}>❯ </span>
           <div style={{ width: '0.6em', height: '1.1em', background: OG_PALETTE.foreground }} />
         </div>
-        {/* The hero rings its status line in coral. The negative margin keeps the text in line with
-            the rows above. */}
         <div
           style={{
             display: 'flex',
-            margin: '10px -10px 0',
-            padding: '4px 10px',
+            margin: `10px -${STATUS_RING_INSET}px 0`,
+            padding: `4px ${STATUS_RING_INSET}px`,
             border: `1.5px solid ${OG_PALETTE.primary}`,
             borderRadius: 8,
-            // primary at 35% opacity
-            boxShadow: `0 0 24px ${OG_PALETTE.primary}59`,
+            boxShadow: `0 0 24px ${OG_PALETTE.primary}${alphaHex(STATUS_RING_GLOW_OPACITY)}`,
           }}
         >
           {drawStatusLine(HOME_CARD_STATUS_LINE, HOME_TERMINAL_FONT_SIZE)}
@@ -246,7 +244,6 @@ function homeTerminal(): ReactElement {
   )
 }
 
-/** The home page's share card: the hero's headline and lead, beside its terminal. */
 export function homeCard(): ReactElement {
   return (
     <div
@@ -258,7 +255,6 @@ export function homeCard(): ReactElement {
         background: OG_PALETTE.background,
       }}
     >
-      {/* Level with the terminal's screen, inside its frame. */}
       <div
         style={{
           display: 'flex',
@@ -267,7 +263,7 @@ export function homeCard(): ReactElement {
           left: 72,
           top: HOME_TERMINAL.top + HOME_TERMINAL.padding,
           width: 520,
-          height: HOME_TERMINAL.height - HOME_TERMINAL.padding,
+          height: HOME_TERMINAL.height - 2 * HOME_TERMINAL.padding,
         }}
       >
         {drawWordmark(30)}
