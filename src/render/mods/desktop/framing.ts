@@ -16,8 +16,6 @@ import {
   PANE_BODY,
   PANE_BORDER_GREY,
   PANE_CARD_MAX_HEIGHT,
-  PANE_CHAT_LEFT,
-  PANE_CHAT_RIGHT,
   PANE_MARGIN,
   PROMPT_BORDER_GREY,
   PROMPT_BOX,
@@ -48,23 +46,24 @@ export function readLayout(greys: Record<keyof typeof BORDER_PROBES, RegionGrey>
   )
 }
 
-export interface ShotFacts {
+/** A final shot with no pane open, read where the mod may draw. */
+export interface ChatShot {
   /**
    * The bounding box, in CSS pixels, of what differs from the no-mod baseline (outside the prompt
-   * text and the scrollbar gutter); null if nothing.
+   * text and the scrollbar gutter).
    */
-  changed: Rect | null
-  paneOpen: boolean
-  /** The final shot, row by row, across its layout's chat column. */
+  changed: Rect
+  /** The final shot, row by row, across the chat column. */
   rows: RowProfile
-  /** The final shot, row by row, across the plate strips at its chat column's two edges. */
+  /** The final shot, row by row, across the plate strips at the chat column's two edges. */
   plate: RowProfile
-  /** The final shot, row by row, across the pane's body: read only when a pane is open. */
-  pane?: RowProfile
 }
 
 /** Where to crop the shot for the mod page, and for its card. */
-export type Frame = { kind: 'nothing' } | { kind: 'crop'; rect: Rect; card: Rect }
+export interface Frame {
+  rect: Rect
+  card: Rect
+}
 
 /** Above a band's plate, the blank rows a card keeps so the plate's rounded top shows. */
 const CARD_PAD = 6
@@ -125,11 +124,11 @@ function paneCard(pane: RowProfile): Rect | null {
 const topCard = (rect: Rect, bottom: number): Rect => ({ ...rect, height: bottom - rect.y })
 
 /**
- * The chat column from the topmost change, or the prompt box if lower, down through the toolbar,
- * widened to a change outside it (a toast) but never into the scrollbar gutter, and never starting
- * halfway through an element.
+ * Where to crop a shot with no pane open: the chat column from the topmost change, or the prompt
+ * box if lower, down through the toolbar, widened to a change outside it (a toast) but never into
+ * the scrollbar gutter, and never starting halfway through an element.
  */
-function chatFrame(changed: Rect, rows: RowProfile, plate: RowProfile): Frame {
+export function frameChat({ changed, rows, plate }: ChatShot): Frame {
   // A change inside the margin, such as an antialiased edge, is already in the crop.
   const left = Math.min(PROMPT_BOX.x, changed.x + CROP_MARGIN) - CROP_MARGIN
   const right = Math.max(PROMPT_RIGHT, changed.x + changed.width - CROP_MARGIN) + CROP_MARGIN
@@ -139,23 +138,17 @@ function chatFrame(changed: Rect, rows: RowProfile, plate: RowProfile): Frame {
   const card =
     promptCard(plate, PROMPT_BOX.x - CROP_MARGIN, PROMPT_RIGHT + CROP_MARGIN, toolbar) ??
     topCard(rect, cardBottom(rows, rect.y, rect.y + rect.height))
-  return { kind: 'crop', rect, card }
+  return { rect, card }
 }
 
 /**
- * Where to crop the final shot. With a pane open the chat column narrows, so a comparison with the
- * baseline says nothing and the crop is fixed: the pane alone. Its card is a band above the prompt
- * box, or else what the mod draws in the pane.
+ * Where to crop a shot with a pane open, from `pane`, the shot read row by row across the pane's
+ * body. The chat column narrows, so a comparison with the baseline says nothing and the crop is
+ * fixed: the pane alone. Its card is what the mod draws in the pane, never a band beside it that
+ * the crop leaves out.
  */
-export function frameShot({ changed, paneOpen, rows, plate, pane }: ShotFacts): Frame {
-  if (paneOpen) {
-    const rect = PANE_ONLY
-    const card =
-      promptCard(plate, PANE_CHAT_LEFT - CROP_MARGIN, PANE_CHAT_RIGHT + CROP_MARGIN, false) ??
-      (pane && paneCard(pane)) ??
-      topCard(rect, rect.y + Math.min(CARD_MAX_HEIGHT, rect.height))
-    return { kind: 'crop', rect, card }
-  }
-  if (!changed) return { kind: 'nothing' }
-  return chatFrame(changed, rows, plate)
+export function framePane(pane: RowProfile): Frame {
+  const rect = PANE_ONLY
+  const card = paneCard(pane) ?? topCard(rect, rect.y + Math.min(CARD_MAX_HEIGHT, rect.height))
+  return { rect, card }
 }

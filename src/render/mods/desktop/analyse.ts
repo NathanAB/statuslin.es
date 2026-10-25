@@ -1,6 +1,6 @@
 import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import type { AnalysisSandbox } from './desktop-sandbox'
-import { frameShot, readLayout } from './framing'
+import { type Frame, frameChat, framePane, readLayout } from './framing'
 import {
   changedBoxCommand,
   croppedPngCommand,
@@ -32,7 +32,6 @@ import {
   type Column,
   CROP_MARGIN,
   PANE_BODY,
-  PANE_CHAT_COLUMN,
   PROMPT_TEXT,
   plateStrips,
   type Rect,
@@ -133,6 +132,16 @@ async function cropped(
   return { png, width: rect.width, height }
 }
 
+/** The page crop with `cuts` left out, and the card crop. */
+async function croppedShot(
+  analysis: AnalysisSandbox,
+  { rect, card }: Frame,
+  cuts: readonly RowCut[] = [],
+): Promise<Analysis> {
+  const page = await cropped(analysis, rect, cuts)
+  return { kind: 'shot', ...page, card: await cropped(analysis, card) }
+}
+
 /** Rows of a message the user sent, read across the chat column's plate strips. */
 async function userBubbles(analysis: AnalysisSandbox, path: string): Promise<boolean[]> {
   const [left, right] = plateStrips(CHAT_COLUMN)
@@ -204,29 +213,18 @@ export async function analyseShot(
     { path: BASELINE, data: baseline },
   ])
   if ((await layoutOf(analysis, BASELINE)) !== 'chat') throw new Error('the baseline shows a pane')
-  const paneOpen = (await layoutOf(analysis, SHOT)) === 'pane'
-  const changed = paneOpen ? null : await changedBox(analysis)
-  if (!paneOpen && !changed) return { kind: 'nothing' }
-  const column = paneOpen ? PANE_CHAT_COLUMN : CHAT_COLUMN
-  const plate = await rowProfile(analysis, plateStrips(column))
-  // The steps' turns are not the mod's drawing, so they cannot make a shot; a crop still shows them.
-  if (!paneOpen && typedSteps && !(await changedBox(analysis, [stepTurns(plate)]))) {
-    return { kind: 'nothing' }
+  if ((await layoutOf(analysis, SHOT)) === 'pane') {
+    // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
+    return croppedShot(analysis, framePane(await rowProfile(analysis, [PANE_BODY])))
   }
-  const rows = await rowProfile(analysis, [column])
-  const frame = frameShot({
-    changed,
-    paneOpen,
-    rows,
-    plate,
-    ...(paneOpen && { pane: await rowProfile(analysis, [PANE_BODY]) }),
-  })
-  if (frame.kind === 'nothing') return { kind: 'nothing' }
-  // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
-  const cuts = paneOpen
-    ? []
-    : await chatCuts(analysis, frame.rect, { column: rows, plate }, typedSlashCommand)
+  const changed = await changedBox(analysis)
+  if (!changed) return { kind: 'nothing' }
+  const plate = await rowProfile(analysis, plateStrips(CHAT_COLUMN))
+  // The steps' turns are not the mod's drawing, so they cannot make a shot; a crop still shows them.
+  if (typedSteps && !(await changedBox(analysis, [stepTurns(plate)]))) return { kind: 'nothing' }
+  const rows = await rowProfile(analysis, [CHAT_COLUMN])
+  const frame = frameChat({ changed, rows, plate })
+  const cuts = await chatCuts(analysis, frame.rect, { column: rows, plate }, typedSlashCommand)
   if (!cuts) return { kind: 'nothing' }
-  const page = await cropped(analysis, frame.rect, cuts)
-  return { kind: 'shot', ...page, card: await cropped(analysis, frame.card) }
+  return croppedShot(analysis, frame, cuts)
 }
