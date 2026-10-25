@@ -73,8 +73,6 @@ async function magic(res: Response) {
 }
 
 describe('og card responses', () => {
-  // The card draws the hero's copy, so a copy edit changes it. A short cache lets scrapers pick that
-  // up without a new URL.
   it('home card response is image/png with the short cache', async () => {
     const res = await homeCardResponse()
     expect(res.headers.get('content-type')).toBe('image/png')

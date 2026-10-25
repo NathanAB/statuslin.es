@@ -135,7 +135,7 @@ export const HOME_CARD_STATUS_LINE: AnsiSegment[] = [
   seg('  \uE0A0 main', 'rgb(198,120,221)'),
   seg('  ctx ', OG_PALETTE.terminalMuted),
   seg('━'.repeat(2), 'rgb(152,195,121)'),
-  seg('━'.repeat(6), 'rgb(58,56,51)'),
+  seg('━'.repeat(6), OG_PALETTE.terminalRule),
   seg(' 22%', 'rgb(152,195,121)'),
   seg('  5h ', OG_PALETTE.terminalMuted),
   seg('26%', 'rgb(229,192,123)'),
@@ -282,7 +282,7 @@ export function homeCard(): ReactElement {
               fontFamily: SANS_FONT,
               fontWeight: 600,
               fontSize: 76,
-              lineHeight: 0.98,
+              lineHeight: 0.95,
               letterSpacing: '-0.04em',
               color: OG_PALETTE.foreground,
             }}
@@ -297,7 +297,8 @@ export function homeCard(): ReactElement {
               fontFamily: SANS_FONT,
               fontSize: 26,
               lineHeight: 1.3,
-              color: OG_PALETTE.mutedForeground,
+              letterSpacing: '-0.015em',
+              color: OG_PALETTE.foreground,
             }}
           >
             {HERO_LEAD[0]}

@@ -32,8 +32,9 @@ describe('loadOgFonts', () => {
     )
   })
 
-  // satori draws a family it wasn't given in its first font, the mono one, without an error.
-  it('hands satori the sans family the home card sets its headline in', async () => {
+  // satori draws a family it wasn't given in its first font, the mono one, without an error. It
+  // also draws a missing weight without one, and differently, so the weights are checked by name.
+  it('hands satori the sans family at the weights the home card sets its text in', async () => {
     const draw = (fontFamily: string) =>
       toElementPng(
         createElement('div', { style: { display: 'flex', fontFamily, fontSize: 64 } }, 'Customize'),
@@ -43,5 +44,9 @@ describe('loadOgFonts', () => {
     const [sans, mono] = await Promise.all([draw(SANS_FONT), draw('StatuslineNerd')])
 
     expect(Buffer.from(sans).equals(Buffer.from(mono))).toBe(false)
+    const sansWeights = loadOgFonts()
+      .filter((f) => f.name === SANS_FONT)
+      .map((f) => f.weight)
+    expect(sansWeights).toEqual([400, 600])
   })
 })

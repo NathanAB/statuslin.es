@@ -17,32 +17,35 @@ async function homePngBytes(): Promise<Uint8Array> {
   return homePngCache
 }
 
-function pngResponse(bytes: Uint8Array, cacheControl: string): Response {
+// Every card can change: a config or mod moves to a new version, and the home card draws the hero's
+// copy. An hour lets scrapers pick that up without a new URL.
+const CARD_CACHE = 'public, max-age=3600'
+
+function pngResponse(bytes: Uint8Array): Response {
   // Blob accepts the typed array directly (BlobPart), so we don't rely on bytes.buffer being the
   // exact PNG — a subarray view would otherwise leak its whole backing buffer into the response.
   return new Response(new Blob([bytes as BufferSource]), {
-    headers: { 'Content-Type': 'image/png', 'Cache-Control': cacheControl },
+    headers: { 'Content-Type': 'image/png', 'Cache-Control': CARD_CACHE },
   })
 }
 
 export async function homeCardResponse(): Promise<Response> {
-  return pngResponse(await homePngBytes(), 'public, max-age=3600')
+  return pngResponse(await homePngBytes())
 }
 
-/** Per-config card. Unknown/unpublished slug → the home card BYTES with the SHORT (1h) cache: this
- * URL is keyed to a slug that may publish later, and a cached fallback must expire so scrapers
- * refetch the real card once it exists. A known slug also gets 1h (a config can update to a new
- * version). Always 200 — a shared link never 404s a scraper. */
+/** Per-config card. Unknown/unpublished slug → the home card BYTES: this URL is keyed to a slug
+ * that may publish later, and the cached fallback expires so scrapers refetch the real card once it
+ * exists. Always 200 — a shared link never 404s a scraper. */
 export async function configCardResponse(db: Db, slug: string): Promise<Response> {
   const detail = await getConfigBySlug(db, slug)
-  if (!detail) return pngResponse(await homePngBytes(), 'public, max-age=3600')
+  if (!detail) return pngResponse(await homePngBytes())
   const author = detail.author?.username
     ? `@${detail.author.username}`
     : (detail.author?.name ?? null)
   const png = await toElementPng(
     configCard({ title: detail.title, author, previews: detail.previews }),
   )
-  return pngResponse(png, 'public, max-age=3600')
+  return pngResponse(png)
 }
 
 /** Route-level wrapper: uses the real production db so route files don't import @/db directly
@@ -70,7 +73,7 @@ export async function modCardResponse(db: Db, slug: string): Promise<Response> {
   const png = await toElementPng(
     modCard({ title: mod.title, authorGithub: mod.authorGithub, body: await modCardBody(db, mod) }),
   )
-  return pngResponse(png, 'public, max-age=3600')
+  return pngResponse(png)
 }
 
 export async function modCardResponseForRoute(slug: string): Promise<Response> {
