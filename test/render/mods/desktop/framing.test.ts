@@ -287,7 +287,7 @@ describe('frameShot with a pane open', () => {
     })
   })
 
-  it('cards a band above the narrowed prompt box, over the pane', () => {
+  it('cards what the mod draws in its pane, not a band beside it that the crop leaves out', () => {
     const frame = frameShot({
       changed: null,
       paneOpen: true,
@@ -297,7 +297,8 @@ describe('frameShot with a pane open', () => {
     })
 
     expect(frame).toMatchObject({
-      card: { x: 33, y: 769, width: 701 - 33, height: PROMPT_BOX.y - 769 },
+      rect: PANE_ONLY,
+      card: { ...PANE_INSIDE, y: 85 - 8, height: 270 + 1 + 8 - (85 - 8) },
     })
   })
 })

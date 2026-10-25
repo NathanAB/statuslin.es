@@ -16,8 +16,6 @@ import {
   PANE_BODY,
   PANE_BORDER_GREY,
   PANE_CARD_MAX_HEIGHT,
-  PANE_CHAT_LEFT,
-  PANE_CHAT_RIGHT,
   PANE_MARGIN,
   PROMPT_BORDER_GREY,
   PROMPT_BOX,
@@ -144,16 +142,14 @@ function chatFrame(changed: Rect, rows: RowProfile, plate: RowProfile): Frame {
 
 /**
  * Where to crop the final shot. With a pane open the chat column narrows, so a comparison with the
- * baseline says nothing and the crop is fixed: the pane alone. Its card is a band above the prompt
- * box, or else what the mod draws in the pane.
+ * baseline says nothing and the crop is fixed: the pane alone. Its card is what the mod draws in
+ * the pane, never a band beside it that the crop leaves out.
  */
 export function frameShot({ changed, paneOpen, rows, plate, pane }: ShotFacts): Frame {
   if (paneOpen) {
     const rect = PANE_ONLY
     const card =
-      promptCard(plate, PANE_CHAT_LEFT - CROP_MARGIN, PANE_CHAT_RIGHT + CROP_MARGIN, false) ??
-      (pane && paneCard(pane)) ??
-      topCard(rect, rect.y + Math.min(CARD_MAX_HEIGHT, rect.height))
+      (pane && paneCard(pane)) ?? topCard(rect, rect.y + Math.min(CARD_MAX_HEIGHT, rect.height))
     return { kind: 'crop', rect, card }
   }
   if (!changed) return { kind: 'nothing' }
