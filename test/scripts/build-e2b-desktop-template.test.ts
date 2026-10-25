@@ -98,12 +98,17 @@ describe('desktop template definition', () => {
     const settings = managedSettings()
     expect(settings.inferenceProvider).toBe('gateway')
     expect(settings.inferenceGatewayBaseUrl).toBe(MODEL_URL)
-    expect(settings.inferenceModels).toEqual([feedStdin(feedScenario()).model.id])
     expect(settings.disableAutoUpdates).toBe(true)
     const encoded = Buffer.from(JSON.stringify(settings)).toString('base64')
     expect(await runCommands(desktopTemplate())).toContain(
       `echo ${encoded} | base64 -d > ${SANDBOX_DESKTOP_MANAGED_SETTINGS}`,
     )
+  })
+
+  it("pins a model to every tier alias a mod can name, the feed's model first", () => {
+    const models = managedSettings().inferenceModels
+    expect(models.map((m) => m.anthropicFamilyTier)).toEqual(['opus', 'sonnet', 'haiku'])
+    expect(models[0]?.name).toBe(feedStdin(feedScenario()).model.id)
   })
 })
 
