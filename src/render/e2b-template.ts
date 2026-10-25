@@ -7,7 +7,7 @@
 export const E2B_TEMPLATE_BUILD_NAME = 'statuslines-render-build'
 
 /** Immutable E2B snapshot selected by every render. Updated only after a reviewed template build. */
-export const E2B_TEMPLATE_ID = 'vyu32r2hpq6q92smes7j:default'
+export const E2B_TEMPLATE_ID = 'qcb5zszzqdayeaf4mo9g:default'
 
 /**
  * Repo-relative path to the fixture copied into the render sandbox as the user's
@@ -38,7 +38,7 @@ export const E2B_MOD_TEMPLATE_BUILD_NAME = 'statuslines-mod-render-build'
  * Create sandboxes from it with the SDK's default `secure: true`: without it, envd takes commands
  * with no access token, so code inside the sandbox could ask envd to run commands as root.
  */
-export const E2B_MOD_TEMPLATE_ID = 'xwhhq2gqlkp8dx6lbh4l:default'
+export const E2B_MOD_TEMPLATE_ID = 'bvcb1ed4j68ilt3jqcyk:default'
 
 /** Root-owned npm prefix holding Claude Code in the mod template, and the binary to run. */
 export const SANDBOX_CLAUDE_CODE_PREFIX = '/opt/statuslines/claude-code'
