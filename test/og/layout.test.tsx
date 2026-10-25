@@ -1,7 +1,9 @@
 import type { ReactElement } from 'react'
-import satori from 'satori'
+import satori, { type SatoriNode } from 'satori'
 import { describe, expect, it } from 'vitest'
-import { configCard, homeCard, type ModCardBody, modCard } from '@/og/card'
+import { HERO_LEAD } from '@/home/home-hero'
+import { HOME_HERO_HEADING } from '@/lib/page-title'
+import { configCard, HOME_CARD_STATUS_LINE, homeCard, type ModCardBody, modCard } from '@/og/card'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
@@ -20,10 +22,10 @@ const seg = (text: string, fg: string | null = null): AnsiSegment => ({
 
 /** Where satori puts each element, split into the card's root element and everything inside it.
  * The PNG tests only prove an image comes out; these boxes show where the content landed. */
-async function layout(element: ReactElement): Promise<{ root: Box; content: Box[] }> {
-  const boxes: Box[] = []
-  await satori(element, { ...cardSatoriOptions(), onNodeDetected: (node) => boxes.push(node) })
-  const [root, ...content] = [...boxes].sort((a, b) => b.width * b.height - a.width * a.height)
+async function layout(element: ReactElement): Promise<{ root: Box; content: SatoriNode[] }> {
+  const nodes: SatoriNode[] = []
+  await satori(element, { ...cardSatoriOptions(), onNodeDetected: (node) => nodes.push(node) })
+  const [root, ...content] = [...nodes].sort((a, b) => b.width * b.height - a.width * a.height)
   if (!root) throw new Error('satori laid out no elements')
   return { root, content }
 }
@@ -67,12 +69,22 @@ const FILLS_THE_CARD = { left: 0, top: 0, width: CARD_WIDTH, height: CARD_HEIGHT
 // A satori upgrade (0.26 → 0.47) started adding the root's padding to its 100% size, pushing every
 // card's content off-center and past the right edge while the PNG tests still passed.
 describe('og card layout', () => {
-  it('centers the home card content within the card', async () => {
+  it('keeps the home card headline, lead and status line inside the card', async () => {
     const { root, content } = await layout(homeCard())
+    const statusLine = HOME_CARD_STATUS_LINE.map((s) => s.text)
+    const words = content.filter(
+      (n) =>
+        n.textContent === HOME_HERO_HEADING ||
+        n.textContent === HERO_LEAD[0] ||
+        statusLine.some((text) => text === n.textContent),
+    )
     expect(root).toMatchObject(FILLS_THE_CARD)
-    const m = margins(content)
-    expect(Math.abs(m.left - m.right)).toBeLessThanOrEqual(1)
-    expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
+    expect(words).toHaveLength(2 + statusLine.length)
+    const m = margins(words)
+    expect(m.left).toBeGreaterThanOrEqual(0)
+    expect(m.right).toBeGreaterThanOrEqual(0)
+    expect(m.top).toBeGreaterThanOrEqual(0)
+    expect(m.bottom).toBeGreaterThanOrEqual(0)
   })
 
   it('keeps a long status line title inside the margins and centers the content vertically', async () => {

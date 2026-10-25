@@ -73,11 +73,11 @@ async function magic(res: Response) {
 }
 
 describe('og card responses', () => {
-  it('home card response is image/png', async () => {
+  it('home card response is image/png with the short cache', async () => {
     const res = await homeCardResponse()
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(await magic(res)).toEqual(PNG_MAGIC)
-    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
   })
   it('per-config response renders the config card for a published slug', async () => {
     const res = await configCardResponse(db, 'card-one')
@@ -91,8 +91,7 @@ describe('og card responses', () => {
     const res = await configCardResponse(db, 'does-not-exist')
     expect(res.status).toBe(200)
     expect(await magic(res)).toEqual(PNG_MAGIC)
-    // The fallback MUST expire (1h) so a later-published slug refetches the real card — it must not
-    // be the year-long immutable cache keyed to the home image.
+    // The fallback MUST expire (1h) so a later-published slug refetches the real card.
     expect(res.headers.get('cache-control')).toContain('max-age=3600')
     expect(res.headers.get('cache-control')).not.toContain('immutable')
   })

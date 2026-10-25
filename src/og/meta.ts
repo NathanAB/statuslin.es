@@ -11,6 +11,10 @@ import {
 import { modPath, SITE_NAME, siteUrl } from '@/lib/site'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
+// Until October 2026 /og/home.png was served immutable for a year. Slack's and Discord's image
+// proxies keep that old card under the bare URL, so the share tags use a new one.
+const HOME_CARD_PATH = '/og/home.png?v=2'
+
 export function rootSocialMeta(): Array<Record<string, string>> {
   const base = siteUrl()
   return [
@@ -23,11 +27,11 @@ export function rootSocialMeta(): Array<Record<string, string>> {
     { property: 'og:url', content: base },
     { property: 'og:title', content: HOME_TITLE_BASE },
     { property: 'og:description', content: HOME_DESCRIPTION_BASE },
-    { property: 'og:image', content: `${base}/og/home.png` },
+    { property: 'og:image', content: `${base}${HOME_CARD_PATH}` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:image', content: `${base}/og/home.png` },
+    { name: 'twitter:image', content: `${base}${HOME_CARD_PATH}` },
   ]
 }
 
@@ -98,10 +102,10 @@ export function staticPageSocialMeta(input: {
     { property: 'og:url', content: `${base}${input.path}` },
     { property: 'og:title', content: input.title },
     { property: 'og:description', content: input.description },
-    { property: 'og:image', content: `${base}/og/home.png` },
+    { property: 'og:image', content: `${base}${HOME_CARD_PATH}` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:image', content: `${base}/og/home.png` },
+    { name: 'twitter:image', content: `${base}${HOME_CARD_PATH}` },
   ]
 }

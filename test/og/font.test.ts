@@ -1,5 +1,7 @@
+import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
-import { loadOgFonts } from '@/og/font'
+import { loadOgFonts, SANS_FONT } from '@/og/font'
+import { toElementPng } from '@/og/render'
 import { fontGlyphAdvanceEm } from './cmap'
 
 describe('loadOgFonts', () => {
@@ -28,5 +30,23 @@ describe('loadOgFonts', () => {
     expect(fontGlyphAdvanceEm(symbols!.data, 0x1fb95)).toBe(
       fontGlyphAdvanceEm(primary!.data, 0x2588),
     )
+  })
+
+  // satori draws a family it wasn't given in its first font, the mono one, without an error. It
+  // also draws a missing weight without one, and differently, so the weights are checked by name.
+  it('hands satori the sans family at the weights the home card sets its text in', async () => {
+    const draw = (fontFamily: string) =>
+      toElementPng(
+        createElement('div', { style: { display: 'flex', fontFamily, fontSize: 64 } }, 'Customize'),
+        { width: 400, height: 100 },
+      )
+
+    const [sans, mono] = await Promise.all([draw(SANS_FONT), draw('StatuslineNerd')])
+
+    expect(Buffer.from(sans).equals(Buffer.from(mono))).toBe(false)
+    const sansWeights = loadOgFonts()
+      .filter((f) => f.name === SANS_FONT)
+      .map((f) => f.weight)
+    expect(sansWeights).toEqual([400, 600])
   })
 })

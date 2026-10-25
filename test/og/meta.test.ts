@@ -26,7 +26,11 @@ describe('social meta', () => {
     const meta = rootSocialMeta()
     expect(meta).toContainEqual({
       property: 'og:image',
-      content: 'https://statuslin.es/og/home.png',
+      content: 'https://statuslin.es/og/home.png?v=2',
+    })
+    expect(meta).toContainEqual({
+      name: 'twitter:image',
+      content: 'https://statuslin.es/og/home.png?v=2',
     })
     expect(meta).toContainEqual({ property: 'og:url', content: 'https://statuslin.es' })
     expect(meta).toContainEqual({ property: 'og:title', content: HOME_TITLE_BASE })
@@ -114,7 +118,11 @@ describe('social meta', () => {
     expect(meta).toContainEqual({ property: 'og:url', content: 'https://statuslin.es/resources' })
     expect(meta).toContainEqual({
       property: 'og:image',
-      content: 'https://statuslin.es/og/home.png',
+      content: 'https://statuslin.es/og/home.png?v=2',
+    })
+    expect(meta).toContainEqual({
+      name: 'twitter:image',
+      content: 'https://statuslin.es/og/home.png?v=2',
     })
     expect(meta).toContainEqual({ name: 'twitter:card', content: 'summary_large_image' })
   })
