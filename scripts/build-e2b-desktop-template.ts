@@ -5,8 +5,8 @@ import {
   SANDBOX_DESKTOP_ENGINE_VERSION,
   SANDBOX_DESKTOP_MANAGED_SETTINGS,
 } from '@/render/e2b-template'
-import { feedScenario, feedStdin } from '@/render/mods/scenario-feed'
 import { FAKE_API_KEY, MODEL_URL } from '@/render/mods/session'
+import { HAIKU, OPUS, SONNET } from '@/render/scenario-helpers'
 import { MOD_HARDENING, modRenderTemplate } from './build-e2b-mod-template'
 import { buildSnapshot, hardenSnapshot } from './build-e2b-template'
 
@@ -58,14 +58,23 @@ const DESKTOP_PACKAGES = [
   'fonts-noto-color-emoji',
 ]
 
-/** Desktop's managed settings: gateway mode on the canned model, nothing phoning home. */
+/**
+ * Desktop's managed settings: gateway mode on the canned model, nothing phoning home. Desktop
+ * passes `inferenceModels` to its engine as the model allowlist and pins each tier alias to its
+ * entry, so a mod's `$.model.complete({ model: 'haiku' })` reaches the canned model as it does in
+ * the terminal. The feed's model comes first, and Desktop opens the session on it.
+ */
 export function managedSettings() {
   return {
     inferenceProvider: 'gateway',
     inferenceGatewayBaseUrl: MODEL_URL,
     inferenceGatewayApiKey: FAKE_API_KEY,
     inferenceGatewayAuthScheme: 'x-api-key',
-    inferenceModels: [feedStdin(feedScenario()).model.id],
+    inferenceModels: [
+      { name: OPUS.id, anthropicFamilyTier: 'opus' },
+      { name: SONNET.id, anthropicFamilyTier: 'sonnet' },
+      { name: HAIKU.id, anthropicFamilyTier: 'haiku' },
+    ],
     disableEssentialTelemetry: true,
     disableNonessentialTelemetry: true,
     disableNonessentialServices: true,

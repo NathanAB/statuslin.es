@@ -303,7 +303,10 @@ engine on a virtual display (ADR 0004):
 ```sh
 bun run scripts/build-e2b-desktop-template.ts
 ```
-Commit what it prints as its header comment says. Rebuild it only for a Desktop upgrade (below).
+Commit what it prints as its header comment says. Rebuild it for a Desktop upgrade (below) or a
+change to `managedSettings()`, which the build bakes in. After either, re-render every mod and
+re-record every status line's Desktop preview with `--all` (below): a settings-only rebuild keeps
+the Desktop and engine versions, so the default run counts every stored preview as current.
 
 ### Desktop upgrade runbook
 
