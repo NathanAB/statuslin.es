@@ -3,7 +3,14 @@ import satori, { type SatoriNode } from 'satori'
 import { describe, expect, it } from 'vitest'
 import { HERO_LEAD } from '@/home/home-hero'
 import { HOME_HERO_HEADING } from '@/lib/page-title'
-import { configCard, HOME_CARD_STATUS_LINE, homeCard, type ModCardBody, modCard } from '@/og/card'
+import {
+  configCard,
+  DETAIL_PADDING_Y,
+  HOME_CARD_STATUS_LINE,
+  homeCard,
+  type ModCardBody,
+  modCard,
+} from '@/og/card'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
@@ -129,6 +136,25 @@ describe('og card layout', () => {
       expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
     },
   )
+
+  // The body's room is the card less its header, summed before satori lays the header out. When the
+  // title moved to the sans font, a sum that kept the mono font's line height for it cut a row the
+  // card had room for.
+  it('fills a status line card with a preview taller than the card down to its padding', async () => {
+    const { content } = await layout(
+      configCard({
+        title: 'Dreambase Panel',
+        author: '@kyleledbetter',
+        previews: [{ scenarioKey: 'clean-main', segments: boxPreview(30) }],
+      }),
+    )
+    const row = content.find((n) => n.textContent?.startsWith('│ row 2'))
+    if (!row) throw new Error('the preview drew no rows')
+    const m = margins(content)
+    // Centered, so each margin takes half the room left under the last row.
+    expect(m.bottom).toBeGreaterThanOrEqual(DETAIL_PADDING_Y)
+    expect(m.bottom).toBeLessThan(DETAIL_PADDING_Y + row.height / 2)
+  })
 
   it.each<[string, ModCardBody]>([
     [

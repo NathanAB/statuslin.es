@@ -3,9 +3,10 @@ const CELL_EM = 0.6
 /** A line is 1.32em tall: the Nerd Font's ascent plus descent, satori's normal line height. */
 const LINE_EM = 1.32
 
-/** How many pixels tall satori lays out one line of text at `fontSize`. */
-export function lineHeight(fontSize: number): number {
-  return Math.round(fontSize * LINE_EM)
+/** How many pixels tall satori lays out one line of text at `fontSize`: in the Nerd Font, unless the
+ * text sets its own `lineHeight` in em. */
+export function lineHeight(fontSize: number, lineHeightEm = LINE_EM): number {
+  return Math.round(fontSize * lineHeightEm)
 }
 
 // A terminal gives East Asian wide and fullwidth characters two cells. satori draws pictographs

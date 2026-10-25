@@ -310,8 +310,18 @@ export function homeCard(): ReactElement {
   )
 }
 
-// The detail card header's font sizes, and the space below its wordmark and above its byline.
-const HEADER = { wordmarkSize: 30, wordmarkGap: 14, titleSize: 54, bylineGap: 10, bylineSize: 24 }
+// The detail card header's font sizes and line heights, and the space below its wordmark and above
+// its byline. The title takes the line height and tracking of the site's page titles (--text-heading
+// in app.css), the byline the home card lead's.
+const HEADER = {
+  wordmarkSize: 30,
+  wordmarkGap: 18,
+  titleSize: 60,
+  titleLineHeight: 1,
+  bylineGap: 12,
+  bylineSize: 26,
+  bylineLineHeight: 1.3,
+}
 
 function cardHeader(title: string, byline: string): ReactElement {
   return (
@@ -322,9 +332,11 @@ function cardHeader(title: string, byline: string): ReactElement {
       <div
         style={{
           display: 'flex',
-          fontFamily: FONT,
-          fontWeight: 700,
+          fontFamily: SANS_FONT,
+          fontWeight: 600,
           fontSize: HEADER.titleSize,
+          lineHeight: HEADER.titleLineHeight,
+          letterSpacing: '-0.04em',
           color: OG_PALETTE.foreground,
         }}
       >
@@ -333,8 +345,9 @@ function cardHeader(title: string, byline: string): ReactElement {
       <div
         style={{
           display: 'flex',
-          fontFamily: FONT,
+          fontFamily: SANS_FONT,
           fontSize: HEADER.bylineSize,
+          lineHeight: HEADER.bylineLineHeight,
           color: OG_PALETTE.mutedForeground,
           marginTop: HEADER.bylineGap,
         }}
@@ -348,7 +361,7 @@ function cardHeader(title: string, byline: string): ReactElement {
 // The detail card's padding, the gap between its header and body, and the room it leaves the body
 // below a one-line title.
 const DETAIL_PADDING_X = 72
-const DETAIL_PADDING_Y = 60
+export const DETAIL_PADDING_Y = 60
 const DETAIL_GAP = 30
 const DETAIL_BODY_WIDTH = CARD_WIDTH - 2 * DETAIL_PADDING_X
 const DETAIL_BODY_HEIGHT =
@@ -357,9 +370,9 @@ const DETAIL_BODY_HEIGHT =
   DETAIL_GAP -
   (lineHeight(HEADER.wordmarkSize) +
     HEADER.wordmarkGap +
-    lineHeight(HEADER.titleSize) +
+    lineHeight(HEADER.titleSize, HEADER.titleLineHeight) +
     HEADER.bylineGap +
-    lineHeight(HEADER.bylineSize))
+    lineHeight(HEADER.bylineSize, HEADER.bylineLineHeight))
 
 // A status line preview's well, as status line and mod cards draw it.
 const PREVIEW_FONT_SIZE = 19

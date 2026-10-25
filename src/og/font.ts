@@ -32,8 +32,9 @@ let cached: SatoriFont[] | null = null
  *  5. GNU Unifont: covers the entire Basic Multilingual Plane by design, so it catches every remaining
  *     symbol (⎇ U+2387, ⟳ U+27F3, …) and any CJK char the JP slice lacks. It's the never-tofu backstop
  *     — a future submission with a rare BMP glyph degrades to blocky-but-readable instead of a box.
- *  6. Hanken Grotesk (SANS_FONT), Regular and SemiBold: the home card's headline and lead. Last, so
- *     its proportional glyphs never stand in for a terminal glyph the fonts above cover.
+ *  6. Hanken Grotesk (SANS_FONT), Regular and SemiBold: the home card's headline and lead, and each
+ *     detail card's title and byline. Last, so its proportional glyphs never stand in for a
+ *     terminal glyph the fonts above cover.
  * (The private-use area — e.g. U+E7D5 Powerline icons — has no standard glyphs, so nothing here
  * covers it; that needs a fuller Nerd build.) Emoji are handled separately via loadAdditionalAsset
  * (twemoji), which is why the clock emoji ⏰⏱⏳ never reach these fonts. */
