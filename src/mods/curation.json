@@ -371,19 +371,6 @@
     ]
   },
   {
-    "repoUrl": "https://github.com/bradtraversy/traversy-claude-mods",
-    "path": "next-steps",
-    "commitSha": "cf828aeff615deb19ea8deecccf07e3a3c0b4ba3",
-    "pluginName": "next-steps",
-    "title": "Next Steps",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "Run the tests"
-      }
-    ]
-  },
-  {
     "repoUrl": "https://github.com/YeonwooSung/my-claude-code-mods",
     "path": "token-run",
     "commitSha": "93fa0f7e84e37705da049ef2727530ec01af3dd9",
@@ -465,36 +452,6 @@
       {
         "type": "text",
         "text": "/mission who"
-      }
-    ]
-  },
-  {
-    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
-    "path": "mods/heatmap",
-    "commitSha": "fd249d5e8dfd7f1094d741e42e0b1cca5f75311a",
-    "pluginName": "heatmap",
-    "title": "Heatmap",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "/heatmap"
-      }
-    ]
-  },
-  {
-    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
-    "path": "mods/snake",
-    "commitSha": "fd249d5e8dfd7f1094d741e42e0b1cca5f75311a",
-    "pluginName": "snake",
-    "title": "Snake",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "/snake"
-      },
-      {
-        "type": "text",
-        "text": "Run the tests"
       }
     ]
   }
