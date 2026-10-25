@@ -26,14 +26,13 @@ function pngResponse(bytes: Uint8Array, cacheControl: string): Response {
 }
 
 export async function homeCardResponse(): Promise<Response> {
-  // The home image really is immutable — its own URL can cache for a year.
-  return pngResponse(await homePngBytes(), 'public, max-age=31536000, immutable')
+  return pngResponse(await homePngBytes(), 'public, max-age=3600')
 }
 
-/** Per-config card. Unknown/unpublished slug → the home card BYTES but with the SHORT (1h) cache,
- * never the immutable one: this URL is keyed to a slug that may publish later, and a cached
- * fallback must expire so scrapers refetch the real card once it exists. A known slug also gets 1h
- * (a config can update to a new version). Always 200 — a shared link never 404s a scraper. */
+/** Per-config card. Unknown/unpublished slug → the home card BYTES with the SHORT (1h) cache: this
+ * URL is keyed to a slug that may publish later, and a cached fallback must expire so scrapers
+ * refetch the real card once it exists. A known slug also gets 1h (a config can update to a new
+ * version). Always 200 — a shared link never 404s a scraper. */
 export async function configCardResponse(db: Db, slug: string): Promise<Response> {
   const detail = await getConfigBySlug(db, slug)
   if (!detail) return pngResponse(await homePngBytes(), 'public, max-age=3600')
