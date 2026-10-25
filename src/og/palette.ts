@@ -10,4 +10,9 @@ export const OG_PALETTE = {
   mutedForeground: '#b0aea5',
   primary: '#c96442',
   sunken: '#0c0b0a',
+  card: '#1c1b18',
+  terminalForeground: '#e8e6dc',
+  terminalMuted: '#8f8d86',
+  terminalRule: '#3a3833',
+  terminalTurn: '#2e2c28',
 } as const

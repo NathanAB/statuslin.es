@@ -4,6 +4,8 @@
 // import.meta.url would resolve relative to the built bundle, where the font is absent.
 import type { Font as FontOptions } from 'satori'
 import fallbackData from './fonts/dejavu-sans-mono.ttf?arraybuffer'
+import sansRegularData from './fonts/hanken-grotesk-regular.ttf?arraybuffer'
+import sansSemiBoldData from './fonts/hanken-grotesk-semibold.ttf?arraybuffer'
 import cjkData from './fonts/noto-sans-mono-cjk-jp.otf?arraybuffer'
 import legacySymbolsData from './fonts/statusline-legacy-symbols.ttf?arraybuffer'
 import fontData from './fonts/statusline-nerd-full.ttf?arraybuffer'
@@ -12,6 +14,9 @@ import unifontData from './fonts/unifont.otf?arraybuffer'
 export type SatoriFont = Required<Pick<FontOptions, 'data' | 'weight' | 'style'>> & {
   name: string
 }
+
+/** The site's interface font (`--font-sans` in app.css), for the card text that isn't terminal. */
+export const SANS_FONT = 'Hanken Grotesk'
 
 let cached: SatoriFont[] | null = null
 
@@ -28,6 +33,8 @@ let cached: SatoriFont[] | null = null
  *  5. GNU Unifont: covers the entire Basic Multilingual Plane by design, so it catches every remaining
  *     symbol (⎇ U+2387, ⟳ U+27F3, …) and any CJK char the JP slice lacks. It's the never-tofu backstop
  *     — a future submission with a rare BMP glyph degrades to blocky-but-readable instead of a box.
+ *  6. Hanken Grotesk (SANS_FONT), Regular and SemiBold: the home card's headline and lead. Last, so
+ *     its proportional glyphs never stand in for a terminal glyph the fonts above cover.
  * (The private-use area — e.g. U+E7D5 Powerline icons — has no standard glyphs, so nothing here
  * covers it; that needs a fuller Nerd build.) Emoji are handled separately via loadAdditionalAsset
  * (twemoji), which is why the clock emoji ⏰⏱⏳ never reach these fonts. */
@@ -44,6 +51,8 @@ export function loadOgFonts(): SatoriFont[] {
     { name: 'OgFallback', data: fallbackData, weight: 400, style: 'normal' },
     { name: 'NotoSansMonoCJKjp', data: cjkData, weight: 400, style: 'normal' },
     { name: 'Unifont', data: unifontData, weight: 400, style: 'normal' },
+    { name: SANS_FONT, data: sansRegularData, weight: 400, style: 'normal' },
+    { name: SANS_FONT, data: sansSemiBoldData, weight: 600, style: 'normal' },
   ]
   return cached
 }

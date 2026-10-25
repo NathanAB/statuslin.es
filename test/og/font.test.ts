@@ -1,5 +1,7 @@
+import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
-import { loadOgFonts } from '@/og/font'
+import { loadOgFonts, SANS_FONT } from '@/og/font'
+import { toElementPng } from '@/og/render'
 import { fontGlyphAdvanceEm } from './cmap'
 
 describe('loadOgFonts', () => {
@@ -28,5 +30,18 @@ describe('loadOgFonts', () => {
     expect(fontGlyphAdvanceEm(symbols!.data, 0x1fb95)).toBe(
       fontGlyphAdvanceEm(primary!.data, 0x2588),
     )
+  })
+
+  // satori draws a family it wasn't given in its first font, the mono one, without an error.
+  it('hands satori the sans family the home card sets its headline in', async () => {
+    const draw = (fontFamily: string) =>
+      toElementPng(
+        createElement('div', { style: { display: 'flex', fontFamily, fontSize: 64 } }, 'Customize'),
+        { width: 400, height: 100 },
+      )
+
+    const [sans, mono] = await Promise.all([draw(SANS_FONT), draw('StatuslineNerd')])
+
+    expect(Buffer.from(sans).equals(Buffer.from(mono))).toBe(false)
   })
 })

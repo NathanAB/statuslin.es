@@ -1,11 +1,16 @@
 import type { ReactElement } from 'react'
-import { HOME_HEADING } from '@/lib/page-title'
+import { HERO_TRANSCRIPT } from '@/home/hero-transcript'
+import { HERO_LEAD } from '@/home/home-hero'
+import { HOME_HERO_HEADING } from '@/lib/page-title'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { fitFontSize, fitWithin, lineHeight } from '@/og/fit'
+import { SANS_FONT } from '@/og/font'
 import { OG_PALETTE } from '@/og/palette'
+import { OPUS } from '@/render/scenario-helpers'
 import { orderByScenario } from '@/render/scenarios'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
+import type { TranscriptLine } from '@/ui/terminal'
 
 const FONT = 'StatuslineNerd'
 
@@ -115,62 +120,195 @@ function well(child: ReactElement, padding: string): ReactElement {
   )
 }
 
-// The mockup's SC['post-compact'] scenario as AnsiSegment[]. Deliberately short so it never
-// overflows the ~1056px usable width. `seg` fills the AnsiSegment fields the cards don't vary.
-const seg = (text: string, fg: string | null = null, bold = false): AnsiSegment => ({
+// `seg` fills the AnsiSegment fields the cards don't vary.
+const seg = (text: string, fg: string | null = null): AnsiSegment => ({
   text,
   fg,
   bg: null,
-  bold,
+  bold: false,
   italic: false,
   underline: false,
 })
-const POST_COMPACT: AnsiSegment[] = [
-  seg('app', null, true),
-  seg(' · '),
-  seg('main', 'rgb(187,0,187)'),
-  seg(' · '),
-  seg('Haiku-4.5', 'rgb(0,0,187)'),
-  seg(' · '),
-  seg('ctx'),
-  seg(' '),
-  seg('0%', 'rgb(0,187,0)'),
-  seg(' · '),
-  seg('5h'),
-  seg(' '),
-  seg('52%', 'rgb(187,187,0)'),
-  seg(' '),
-  seg('↻4h1m'),
+
+/** The home card's status line: the Everyday session (scenario `clean-main`) the hero shows, in a
+ * status line's own colors. Its terminal runs off the card, so it leaves out the 5-hour reset
+ * (` ↻2h07`), which would run off with it. */
+export const HOME_CARD_STATUS_LINE: AnsiSegment[] = [
+  seg('◆ ', 'rgb(217,119,87)'),
+  seg(OPUS.display_name),
+  seg('  \uE0A0 main', 'rgb(198,120,221)'),
+  seg('  ctx ', OG_PALETTE.terminalMuted),
+  seg('━'.repeat(2), 'rgb(152,195,121)'),
+  seg('━'.repeat(6), 'rgb(58,56,51)'),
+  seg(' 22%', 'rgb(152,195,121)'),
+  seg('  5h ', OG_PALETTE.terminalMuted),
+  seg('26%', 'rgb(229,192,123)'),
 ]
 
+/** A line of the hero's conversation, in the text and colors TranscriptRow (src/ui/terminal.tsx)
+ * draws it with. */
+function transcriptRow(line: TranscriptLine): { text: string; color: string; fill?: string } {
+  switch (line.kind) {
+    case 'prompt':
+      return { text: `❯ ${line.text}`, color: OG_PALETTE.foreground, fill: OG_PALETTE.terminalTurn }
+    case 'tool':
+      return { text: `● ${line.name}(${line.target})`, color: OG_PALETTE.terminalForeground }
+    case 'result':
+      return { text: `  ⎿  ${line.text}`, color: OG_PALETTE.terminalMuted }
+    case 'say':
+      return { text: `● ${line.lines.join('\n  ')}`, color: OG_PALETTE.terminalForeground }
+    case 'note':
+      return { text: line.text, color: OG_PALETTE.terminalMuted }
+  }
+}
+
+// The home card's terminal is wider than the room right of the headline, so the card crops it at
+// the right edge like a screenshot instead of squeezing its lines.
+const HOME_TERMINAL = { left: 620, top: 56, width: 700, height: 534, padding: 8 }
+const HOME_TERMINAL_FONT_SIZE = 19
+
+function homeTerminal(): ReactElement {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        position: 'absolute',
+        left: HOME_TERMINAL.left,
+        top: HOME_TERMINAL.top,
+        width: HOME_TERMINAL.width,
+        height: HOME_TERMINAL.height,
+        padding: HOME_TERMINAL.padding,
+        borderRadius: 26,
+        background: OG_PALETTE.card,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-end',
+          flexGrow: 1,
+          overflow: 'hidden',
+          padding: '22px 26px',
+          borderRadius: 19,
+          background: OG_PALETTE.sunken,
+          fontFamily: FONT,
+          fontSize: HOME_TERMINAL_FONT_SIZE,
+          lineHeight: 1.45,
+          color: OG_PALETTE.terminalForeground,
+        }}
+      >
+        {HERO_TRANSCRIPT.map(transcriptRow).map((row, i) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: a fixed transcript, ordered, with no ids.
+            key={i}
+            style={{
+              display: 'flex',
+              alignSelf: 'flex-start',
+              whiteSpace: 'pre',
+              color: row.color,
+              background: row.fill,
+            }}
+          >
+            {row.text}
+          </div>
+        ))}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginTop: 14,
+            padding: '6px 0',
+            borderTop: `1px solid ${OG_PALETTE.terminalRule}`,
+            borderBottom: `1px solid ${OG_PALETTE.terminalRule}`,
+          }}
+        >
+          <span style={{ color: OG_PALETTE.terminalMuted, whiteSpace: 'pre' }}>❯ </span>
+          <div style={{ width: '0.6em', height: '1.1em', background: OG_PALETTE.foreground }} />
+        </div>
+        {/* The hero rings its status line in coral. The negative margin keeps the text in line with
+            the rows above. */}
+        <div
+          style={{
+            display: 'flex',
+            margin: '10px -10px 0',
+            padding: '4px 10px',
+            border: `1.5px solid ${OG_PALETTE.primary}`,
+            borderRadius: 8,
+            // primary at 35% opacity
+            boxShadow: `0 0 24px ${OG_PALETTE.primary}59`,
+          }}
+        >
+          {drawStatusLine(HOME_CARD_STATUS_LINE, HOME_TERMINAL_FONT_SIZE)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The home page's share card: the hero's headline and lead, beside its terminal. */
 export function homeCard(): ReactElement {
   return (
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
+        position: 'relative',
         width: '100%',
-        boxSizing: 'border-box',
         height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 36,
         background: OG_PALETTE.background,
-        padding: 64,
       }}
     >
-      {drawWordmark(82)}
-      {well(drawStatusLine(POST_COMPACT, 30), '22px 34px')}
+      {/* Level with the terminal's screen, inside its frame. */}
       <div
         style={{
           display: 'flex',
-          color: OG_PALETTE.mutedForeground,
-          fontFamily: FONT,
-          fontSize: 30,
+          flexDirection: 'column',
+          position: 'absolute',
+          left: 72,
+          top: HOME_TERMINAL.top + HOME_TERMINAL.padding,
+          width: 520,
+          height: HOME_TERMINAL.height - HOME_TERMINAL.padding,
         }}
       >
-        {HOME_HEADING}
+        {drawWordmark(30)}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flexGrow: 1,
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              maxWidth: 500,
+              fontFamily: SANS_FONT,
+              fontWeight: 600,
+              fontSize: 76,
+              lineHeight: 0.98,
+              letterSpacing: '-0.04em',
+              color: OG_PALETTE.foreground,
+            }}
+          >
+            {HOME_HERO_HEADING}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              maxWidth: 470,
+              marginTop: 24,
+              fontFamily: SANS_FONT,
+              fontSize: 26,
+              lineHeight: 1.3,
+              color: OG_PALETTE.mutedForeground,
+            }}
+          >
+            {HERO_LEAD[0]}
+          </div>
+        </div>
       </div>
+      {homeTerminal()}
     </div>
   )
 }
