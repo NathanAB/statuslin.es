@@ -460,11 +460,11 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/mission who"
+        "text": "/preview-busy"
       },
       {
         "type": "text",
-        "text": "/preview-busy"
+        "text": "/mission who"
       }
     ]
   },
