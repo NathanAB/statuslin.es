@@ -76,7 +76,10 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
   to `bun run generate:content --apply`. The copy has one format for status lines and mods
   (`src/content/types.ts`, strict zod caps): a `summary` of 1 or 2 sentences, up to 4 `howItWorks`
   steps, up to 3 `goodToKnow` notes (requirements go here), and optional `details` that word a fact
-  tile on the "What it does" card. A tile's yes or no comes from the footprint or the stored script
+  tile on the "What it does" card. Mod copy may also carry a `headline` (the problem the mod solves,
+  in searchers' words, used in the page title and subtitle) and up to 4 `faq` entries shown as
+  "Common questions"; a Claude Code fact in a FAQ answer gets a row in `docs/guide-claims.md`.
+  A tile's yes or no comes from the footprint or the stored script
   facts, never from the copy. Apply validates and transactionally writes
   `config_versions.generated_content` plus tags. Copy stored in an older format doesn't render and
   counts as missing, so `--all --prepare` lists it again. Inspect the stored result before publishing and
