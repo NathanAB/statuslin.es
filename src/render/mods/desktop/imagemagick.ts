@@ -74,16 +74,30 @@ const rectangle = ({ x, y, width, height }: Rect) =>
   `-draw 'rectangle ${x * SCALE},${y * SCALE} ${(x + width) * SCALE - 1},${(y + height) * SCALE - 1}'`
 
 /**
- * Prints whether the shots differ anywhere outside `masks`, and the trim box of the difference.
- * The one-pixel black border keeps that box defined when nothing differs.
+ * Prints whether a difference image differs anywhere, and its trim box. The one-pixel black border
+ * keeps that box defined when nothing differs.
  */
+const DIFFERENCE_BOX = [
+  `-colorspace Gray -threshold ${FAINT_CHANGE} -bordercolor black -border 1`,
+  `-format '%[fx:maxima] %@' info:`,
+].join(' ')
+
+/** Prints whether the shots differ anywhere outside `masks`, and the trim box of the difference. */
 export function changedBoxCommand(baseline: string, shot: string, masks: readonly Rect[]): string {
   return [
     `convert ${pngInput(baseline)} ${pngInput(shot)}`,
     '-compose difference -composite',
     ['-compose over -fill black', ...masks.map(rectangle)].join(' '),
-    `-colorspace Gray -threshold ${FAINT_CHANGE} -bordercolor black -border 1`,
-    `-format '%[fx:maxima] %@' info:`,
+    DIFFERENCE_BOX,
+  ].join(' ')
+}
+
+/** Prints, as changedBoxCommand does, whether the shots differ inside `region`, the box relative to it. */
+export function changedInRegionCommand(baseline: string, shot: string, region: Rect): string {
+  return [
+    `convert ${pngInput(baseline)} ${pngInput(shot)} -crop ${geometry(region)} +repage`,
+    '-compose difference -composite',
+    DIFFERENCE_BOX,
   ].join(' ')
 }
 

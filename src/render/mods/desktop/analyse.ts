@@ -1,8 +1,9 @@
 import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import type { AnalysisSandbox } from './desktop-sandbox'
-import { type Frame, frameChat, framePane, readLayout } from './framing'
+import { type ChatShot, type Frame, frameChat, framePane, readLayout } from './framing'
 import {
   changedBoxCommand,
+  changedInRegionCommand,
   croppedPngCommand,
   parseChangedBox,
   parseProbes,
@@ -32,6 +33,7 @@ import {
   type Column,
   CROP_MARGIN,
   PANE_BODY,
+  PROMPT_BOX,
   PROMPT_TEXT,
   plateStrips,
   type Rect,
@@ -92,6 +94,16 @@ async function changedBox(analysis: AnalysisSandbox, masks: Rect[] = []): Promis
   return parseChangedBox(
     expectOk(await analysis.run(compare), 'comparing with the baseline').stdout,
   )
+}
+
+/**
+ * Whether the prompt text differs from the baseline's. The baseline typed the same input steps, so
+ * a difference there is the mod restyling what was typed, as a mod that underlines words does.
+ */
+async function restyledPrompt(analysis: AnalysisSandbox): Promise<boolean> {
+  const compare = changedInRegionCommand(BASELINE, SHOT, PROMPT_TEXT)
+  const { stdout } = expectOk(await analysis.run(compare), 'comparing the prompt text')
+  return parseChangedBox(stdout) !== null
 }
 
 /** Where the chat ends: at the band's top, or at the prompt box when there is no band. */
@@ -165,12 +177,6 @@ async function rowSignatures(
   return parseRowSignatures(stdout, WINDOW.height)
 }
 
-/** The shot's column and plate strips, read row by row. */
-interface ShotRows {
-  column: RowProfile
-  plate: RowProfile
-}
-
 /**
  * The cuts that leave only what the mod drew in a chat crop, as the terminal crop keeps only rows
  * off the common subsequence: every row the baseline has too, though the mod's drawing pushed it
@@ -181,7 +187,7 @@ interface ShotRows {
 async function chatCuts(
   analysis: AnalysisSandbox,
   rect: Rect,
-  { column, plate }: ShotRows,
+  { rows, plate, restylesPrompt }: ChatShot,
   typedSlashCommand: boolean,
 ): Promise<RowCut[] | null> {
   const notInBaseline = rowsNotInBaseline(
@@ -194,9 +200,12 @@ async function chatCuts(
   const baselineMessages = typedSlashCommand ? await userBubbles(analysis, BASELINE) : noMessages
   const messages = wholeElements(
     shotMessages.map((message, y) => message && Boolean(baselineMessages[y])),
-    column,
+    rows,
   )
-  const kept = notInBaseline.map((row, y) => row && !messages[y])
+  // Restyled text keeps its shape, so its rows match the baseline's and would be cut.
+  const boxTop = promptTop(plate)
+  const inBox = (y: number) => restylesPrompt && y >= boxTop && y < PROMPT_BOX.y + PROMPT_BOX.height
+  const kept = notInBaseline.map((row, y) => (row && !messages[y]) || inBox(y))
   return keptRowCuts(kept, rect.y, rect.y + rect.height)
 }
 
@@ -217,14 +226,19 @@ export async function analyseShot(
     // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
     return croppedShot(analysis, framePane(await rowProfile(analysis, [PANE_BODY])))
   }
-  const changed = await changedBox(analysis)
+  const restylesPrompt = await restyledPrompt(analysis)
+  // changedBox leaves the prompt text out, so restyled text is the drawing when nothing else changed.
+  const drawn = async (masks: Rect[] = []) =>
+    (await changedBox(analysis, masks)) ?? (restylesPrompt ? PROMPT_TEXT : null)
+  const changed = await drawn()
   if (!changed) return { kind: 'nothing' }
   const plate = await rowProfile(analysis, plateStrips(CHAT_COLUMN))
   // The steps' turns are not the mod's drawing, so they cannot make a shot; a crop still shows them.
-  if (typedSteps && !(await changedBox(analysis, [stepTurns(plate)]))) return { kind: 'nothing' }
+  if (typedSteps && !(await drawn([stepTurns(plate)]))) return { kind: 'nothing' }
   const rows = await rowProfile(analysis, [CHAT_COLUMN])
-  const frame = frameChat({ changed, rows, plate })
-  const cuts = await chatCuts(analysis, frame.rect, { column: rows, plate }, typedSlashCommand)
+  const chat: ChatShot = { changed, rows, plate, restylesPrompt }
+  const frame = frameChat(chat)
+  const cuts = await chatCuts(analysis, frame.rect, chat, typedSlashCommand)
   if (!cuts) return { kind: 'nothing' }
   return croppedShot(analysis, frame, cuts)
 }

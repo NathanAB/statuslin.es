@@ -31,6 +31,7 @@ const BAND_PLATE = rows([775, 814, 1])
 const NO_PLATE = rows()
 const BAND = { x: 166, y: 775, width: 768, height: 40 }
 const COLUMN = { x: 158, width: 784 }
+const PROMPT_BOTTOM = PROMPT_BOX.y + PROMPT_BOX.height
 
 describe('frameChat', () => {
   it('crops the chat column from the topmost change down through the toolbar', () => {
@@ -38,6 +39,7 @@ describe('frameChat', () => {
       changed: BAND,
       rows: BAND_ROWS,
       plate: BAND_PLATE,
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({
@@ -50,6 +52,7 @@ describe('frameChat', () => {
       changed: BAND,
       rows: BAND_ROWS,
       plate: BAND_PLATE,
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({
@@ -65,6 +68,7 @@ describe('frameChat', () => {
       changed,
       rows: content,
       plate: rows([732, 812, 1]),
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({ card: { y: 732 - 6, height: PROMPT_BOX.y - (732 - 6) } })
@@ -78,6 +82,7 @@ describe('frameChat', () => {
       changed,
       rows: profile,
       plate: plateOf(profile),
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({ rect: { y: 292 }, card: { y: 769 } })
@@ -91,6 +96,7 @@ describe('frameChat', () => {
       changed,
       rows: profile,
       plate: plateOf(profile),
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({
@@ -106,9 +112,37 @@ describe('frameChat', () => {
       changed,
       rows: profile,
       plate: plateOf(profile),
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({ card: { y: 769, height: CONTENT.bottom - 769 } })
+  })
+
+  it('cards the band down through the prompt box when the mod restyled its text', () => {
+    const frame = frameChat({
+      changed: BAND,
+      rows: BAND_ROWS,
+      plate: BAND_PLATE,
+      restylesPrompt: true,
+    })
+
+    expect(frame).toMatchObject({ card: { ...COLUMN, y: 769, height: PROMPT_BOTTOM + 6 - 769 } })
+  })
+
+  it('cards the prompt box alone when the mod restyled its text and drew no band', () => {
+    const changed = { x: 166, y: 300, width: 768, height: 41 }
+    const profile = rows([300, 340, 0.4], PROMPT)
+
+    const frame = frameChat({
+      changed,
+      rows: profile,
+      plate: plateOf(profile),
+      restylesPrompt: true,
+    })
+
+    expect(frame).toMatchObject({
+      card: { ...COLUMN, y: PROMPT_BOX.y - 8, height: PROMPT_BOTTOM + 6 - (PROMPT_BOX.y - 8) },
+    })
   })
 
   it('cards the top of the shot when there is no band, stopping in a blank row', () => {
@@ -119,6 +153,7 @@ describe('frameChat', () => {
       changed,
       rows: profile,
       plate: plateOf(profile),
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({ card: { ...COLUMN, y: 292, height: 400 - 292 } })
@@ -132,6 +167,7 @@ describe('frameChat', () => {
       changed,
       rows: profile,
       plate: plateOf(profile),
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({ card: { y: 292, height: CARD_MAX_HEIGHT } })
@@ -145,6 +181,7 @@ describe('frameChat', () => {
       changed,
       rows: profile,
       plate: plateOf(profile),
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({ rect: { y: CHAT_TOP + 5 } })
@@ -157,6 +194,7 @@ describe('frameChat', () => {
       changed: toast,
       rows: rows(),
       plate: NO_PLATE,
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({
@@ -171,6 +209,7 @@ describe('frameChat', () => {
       changed,
       rows: BAND_ROWS,
       plate: BAND_PLATE,
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({ rect: COLUMN })
@@ -183,6 +222,7 @@ describe('frameChat', () => {
       changed: everything,
       rows: rows(),
       plate: NO_PLATE,
+      restylesPrompt: false,
     })
 
     expect(frame).toMatchObject({

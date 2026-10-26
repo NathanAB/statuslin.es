@@ -12,8 +12,10 @@ const TURN_DURATION_MASKS: readonly RowMask[] = [
   { name: 'clock', pattern: /\b\d{1,2}:\d{2}(?:\s?[AP]M)?\b/g, replacement: 'HH:MM' },
 ]
 
-/** The prompt, and every message typed at it: Claude Code's, never the mod's. */
+/** The prompt, and every message typed at it: Claude Code's, unless the mod restyled what was typed. */
 const PROMPT_ROW = /^❯(?:\s|$)/
+/** A prompt row with something typed at it, unlike the empty prompt and its cursor. */
+const TYPED_PROMPT = /^❯\s*\S/
 /** Claude Code's permission-mode hint, on the footer row a mod can add its own entry to. */
 const MODE_HINT = /⏵⏵ .*?\(shift\+tab to cycle\)(?: · ← for agents)?/u
 // Built with fromCharCode so the ESC doesn't trip Biome's noControlCharactersInRegex (as ansi.ts).
@@ -28,8 +30,13 @@ export function cropModPreview(
   const masks = [...TURN_DURATION_MASKS, ...modMasks]
   const masked = (row: string) => masks.reduce((r, m) => r.replace(m.pattern, m.replacement), row)
   const common = modRowsOnCommonSubsequence(baseline.map(masked), modScreen.map(masked))
+  const text = (row: string) => plainText(masked(row)).trim()
+  // The baseline types the same input steps, so a prompt row with its text is one the mod restyled.
+  const typedPrompts = new Set(baseline.map(text).filter((row) => TYPED_PROMPT.test(row)))
   const kept = modScreen.flatMap((row, y) => {
-    if (common.has(y) || PROMPT_ROW.test(plainText(row).trimStart())) return []
+    if (common.has(y)) return []
+    const rowText = text(row)
+    if (PROMPT_ROW.test(rowText) && !typedPrompts.has(rowText)) return []
     const modOnly = blankMatch(row, MODE_HINT)
     return showsNothing(modOnly) ? [] : [modOnly]
   })
