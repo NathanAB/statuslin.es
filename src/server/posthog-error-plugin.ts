@@ -1,3 +1,4 @@
+import { HTTPError } from 'h3'
 import { definePlugin } from 'nitro'
 // Relative (not @/) imports: a plugin listed in nitro() config is bundled by Nitro, which doesn't
 // resolve the app's tsconfig path alias. nitro-error-context has no runtime import of its own.
@@ -16,6 +17,8 @@ export default definePlugin((nitroApp) => {
     // A browser closing the connection mid-request is not a crash — drop it before it reaches error
     // tracking, where it would sit as a fake issue next to real ones.
     if (isClientDisconnect(error)) return
+    // A 4xx is the server rejecting a bad request (a scanner's undecodable URL), not a crash.
+    if (HTTPError.isError(error) && error.status < 500) return
     captureServerException(error, serverErrorContextFromNitro(ctx))
   })
 })
