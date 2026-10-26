@@ -32,8 +32,9 @@ function modSubtitle(tags: string[]): string | null {
 
 /**
  * A mod page's header. The breadcrumb runs through the mods page; the tag chips match
- * the mod's gallery card; the subtitle names its job from its tags; the byline links the source
- * at the pinned commit and always names the licence, or says there is none.
+ * the mod's gallery card; the subtitle is the reviewed headline, or else names its job from its
+ * tags; the byline links the source at the pinned commit and always names the licence, or says
+ * there is none.
  */
 export function ModHeader({ mod }: { mod: ModDetail }) {
   const posthog = usePostHog()
@@ -42,7 +43,7 @@ export function ModHeader({ mod }: { mod: ModDetail }) {
     <DetailHeader
       trail={[MODS_CRUMB]}
       title={mod.title}
-      subtitle={modSubtitle(mod.tags)}
+      subtitle={mod.generatedContent?.headline ?? modSubtitle(mod.tags)}
       // What it can reach is said in the install panel beside the button, not as a topic chip.
       chips={<ConfigBadges tags={topicTags(mod.tags)} networkHosts={[]} />}
       byline={{

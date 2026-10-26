@@ -59,8 +59,12 @@ export function configMetaDescription(description: string | null | undefined): s
   return metaDescription(description, CONFIG_META_DESCRIPTION_FALLBACK)
 }
 
-export function modPageTitle(title: string): string {
-  return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
+/**
+ * `<name>: <headline>` when the reviewed copy names the problem the mod solves, so the page can
+ * rank for that problem and not only for the mod's name.
+ */
+export function modPageTitle(title: string, headline?: string): string {
+  return keywordPageTitle(title, headline ? `: ${headline}` : MOD_PAGE_TITLE_KEYWORD)
 }
 
 export function modMetaDescription(description: string | null | undefined): string {

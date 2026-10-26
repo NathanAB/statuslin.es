@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GalleryItem } from '@/gallery/gallery-items'
+import { faqPageJsonLd } from '@/lib/json-ld'
 import {
   HOME_TITLE_BASE,
   MOD_NOT_FOUND_TITLE,
@@ -93,6 +94,18 @@ const COPY: NonNullable<ModDetail['generatedContent']> = {
   details: { showsUp: 'A file tree pane on the right' },
 }
 
+const SEARCH_COPY: NonNullable<ModDetail['generatedContent']> = {
+  ...COPY,
+  headline: 'Browse your project in a pane',
+  faq: [
+    {
+      question: 'Does it work outside a git repo?',
+      answer: 'Yes, it lists the current folder.',
+    },
+    { question: 'How do I open it?', answer: 'Run `/filetree` in a session.' },
+  ],
+}
+
 const RELATED: GalleryItem[] = [
   {
     kind: 'mod',
@@ -172,11 +185,32 @@ describe('mod page head', () => {
     expect(JSON.stringify(nodes[1])).toContain(`"item":"${ORIGIN}/mods"`)
   })
 
-  it('adds no FAQPage when the version has page copy', () => {
-    expect(jsonLd({ ...MOD, generatedContent: COPY }).map((node) => node['@type'])).toEqual([
+  it('adds no FAQPage when the page copy has no FAQ, or an empty one', () => {
+    for (const copy of [COPY, { ...SEARCH_COPY, faq: [] }]) {
+      expect(jsonLd({ ...MOD, generatedContent: copy }).map((node) => node['@type'])).toEqual([
+        'SoftwareSourceCode',
+        'BreadcrumbList',
+      ])
+    }
+  })
+
+  it('emits the FAQ the page shows as a FAQPage', () => {
+    const nodes = jsonLd({ ...MOD, generatedContent: SEARCH_COPY })
+
+    expect(nodes.map((node) => node['@type'])).toEqual([
       'SoftwareSourceCode',
       'BreadcrumbList',
+      'FAQPage',
     ])
+    expect(nodes[2]).toEqual(faqPageJsonLd(SEARCH_COPY.faq ?? []))
+  })
+
+  it('titles and shares the mod by the problem its headline names', () => {
+    const meta = head({ ...MOD, generatedContent: SEARCH_COPY }).meta
+    const expected = 'File Tree: Browse your project in a pane | statuslin.es'
+
+    expect(meta[0]).toEqual({ title: expected })
+    expect(meta.find((m) => m.property === 'og:title')?.content).toBe(expected)
   })
 
   it('titles and describes the mod through the page-title helpers', () => {
@@ -513,6 +547,39 @@ describe('mod page', () => {
         'A Claude Code mod that shows git state, live weather, and live market prices',
       ),
     ).toBeTruthy()
+  })
+
+  it('subtitles the mod with its headline over the job its tags name', () => {
+    renderPage({ tags: ['cost'], generatedContent: SEARCH_COPY })
+
+    const title = screen.getByRole('heading', { level: 1, name: 'File Tree' })
+    const subtitle = screen.getByText('Browse your project in a pane')
+    expect(title.compareDocumentPosition(subtitle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByText(/A Claude Code mod that shows/)).toBeNull()
+  })
+
+  it('shows the reviewed FAQ after what it does, each question with its answer', () => {
+    renderPage({ generatedContent: SEARCH_COPY, related: RELATED })
+
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'What this mod can do',
+      'Preview',
+      'What it does',
+      'Common questions',
+      'More like this',
+    ])
+    const questions = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    expect(questions).toContain('Does it work outside a git repo?')
+    expect(questions).toContain('How do I open it?')
+    expect(screen.getByText('Yes, it lists the current folder.')).toBeTruthy()
+  })
+
+  it('shows no FAQ when the copy has none, or an empty one', () => {
+    for (const copy of [COPY, { ...SEARCH_COPY, faq: [] }]) {
+      const { unmount } = renderPage({ generatedContent: copy })
+      expect(screen.queryByRole('heading', { name: 'Common questions' })).toBeNull()
+      unmount()
+    }
   })
 
   it('shows no subtitle when no tag names a job', () => {

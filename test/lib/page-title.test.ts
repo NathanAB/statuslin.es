@@ -117,6 +117,18 @@ describe('modPageTitle', () => {
     ).toBe('A very long mod title that would… — Claude Code mod')
   })
 
+  it('names the problem from the headline, on the brand when it fits', () => {
+    expect(modPageTitle('Cache Tax', 'Warm prompt cache')).toBe(
+      'Cache Tax: Warm prompt cache | statuslin.es',
+    )
+  })
+
+  it('drops the brand when the headline title would pass 60 characters', () => {
+    expect(modPageTitle('Cache Tax', "Keep Claude Code's prompt cache warm")).toBe(
+      "Cache Tax: Keep Claude Code's prompt cache warm",
+    )
+  })
+
   it('keeps the not-found title on-brand', () => {
     expect(MOD_NOT_FOUND_TITLE).toBe('Mod not found — statuslin.es')
   })

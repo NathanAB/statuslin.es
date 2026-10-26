@@ -24,6 +24,7 @@ import { ModRelated } from '@/mods/mod-related'
 import type { ModDetail } from '@/mods/queries'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
+import { FaqSection } from '@/ui/faq-section'
 import { InstallFacts } from '@/ui/install-facts'
 import { PageShell } from '@/ui/shell'
 import { Text, TextLink } from '@/ui/text'
@@ -51,11 +52,16 @@ export const Route = createFileRoute('/mods/$slug')({
   head: ({ loaderData }) => {
     const mod = loaderData?.mod
     if (!mod) return { meta: [{ title: MOD_NOT_FOUND_TITLE }] }
+    const headline = mod.generatedContent?.headline
     return {
       meta: [
-        { title: modPageTitle(mod.title) },
+        { title: modPageTitle(mod.title, headline) },
         { name: 'description', content: modMetaDescription(searchDescription(mod)) },
-        ...modSocialMeta(loaderData.origin, { ...mod, description: searchDescription(mod) }),
+        ...modSocialMeta(loaderData.origin, {
+          ...mod,
+          headline,
+          description: searchDescription(mod),
+        }),
       ],
       links: [canonicalLink(modPath(mod.slug))],
       scripts: modJsonLd(loaderData.origin, mod).map(jsonLdScript),
@@ -74,6 +80,7 @@ function ModPage() {
   const posthog = usePostHog()
   const { mod, user, origin } = Route.useLoaderData()
   const copyController = useRecordModCopy(mod.id, mod.copyCount)
+  const faq = mod.generatedContent?.faq ?? []
 
   useEffect(() => {
     posthog.capture('mod_detail_viewed', { modId: mod.id, slug: mod.slug })
@@ -100,6 +107,7 @@ function ModPage() {
         }
         preview={<ModPreview mod={mod} />}
         whatItDoes={{ copy: mod.generatedContent, tiles: modFactTiles(mod) }}
+        faq={faq.length > 0 ? <FaqSection entries={faq} /> : undefined}
         related={<ModRelated items={mod.related} />}
       />
     </PageShell>
