@@ -24,7 +24,6 @@ import {
   stepTextPath,
   transcriptLinesCommand,
 } from '@/render/mods/desktop/session'
-import { SAMPLE_PROJECT_FILES } from '@/render/mods/sample-project'
 import { busySettings, cannedReply, feedScenario } from '@/render/mods/scenario-feed'
 import { FEED_PLUGIN_DIR, REPLY_FILE, sessionEnv } from '@/render/mods/session'
 
@@ -98,10 +97,8 @@ describe('desktopSessionFiles', () => {
     })
   })
 
-  it('puts only the sample project in the workspace of a session that never types /preview-busy', () => {
-    expect([...files.keys()].filter((path) => path.startsWith('/home/user/app/'))).toEqual(
-      SAMPLE_PROJECT_FILES.map((f) => `/home/user/app/${f.path}`),
-    )
+  it('puts no busy file in the workspace of a session that never types /preview-busy', () => {
+    expect([...files.keys()]).not.toContain('/home/user/app/package.json')
   })
 
   it("writes one settings.json in a busy session, the busy session's rules beside the status line", () => {

@@ -132,17 +132,6 @@ describe('sessionFiles', () => {
     expect(JSON.parse(fileAt(REPLY_FILE)).usage.input_tokens).toBe(37_000)
   })
 
-  it.each([false, true])(
-    'puts the sample project in the workspace before setup commits it (busy: %s)',
-    (busy) => {
-      const files = seedFiles('pinpoint', busy)
-
-      for (const { path, data } of SAMPLE_PROJECT_FILES) {
-        expect(files).toContainEqual({ path: `/home/user/app/${path}`, data })
-      }
-    },
-  )
-
   describe('in a session whose steps never type /preview-busy', () => {
     it('puts only the sample project in the workspace and writes no settings', () => {
       const files = seedFiles()

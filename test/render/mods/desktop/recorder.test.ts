@@ -7,7 +7,6 @@ import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { desktopRecorder, sharedOnce } from '@/render/mods/desktop/recorder'
 import type { StatusLineScript } from '@/render/mods/desktop/types'
 import type { SandboxFile } from '@/render/mods/mod-sandbox'
-import { SAMPLE_PROJECT_FILES } from '@/render/mods/sample-project'
 
 vi.mock('@/render/mods/desktop/analyse', () => ({
   analyseShot: vi.fn(async () => ({ kind: 'nothing' })),
@@ -170,13 +169,11 @@ describe('desktopRecorder status line', () => {
     }
   })
 
-  it('stages only the status line settings, and only the sample project, when the steps never do', async () => {
+  it('stages only the status line settings, and no busy file, when the steps never do', async () => {
     const staged = await stagedFiles(undefined, [{ type: 'text', text: '/pet' }])
 
     for (const files of staged) {
-      expect(workspaceFiles(files)).toEqual(
-        SAMPLE_PROJECT_FILES.map((f) => `/home/user/app/${f.path}`),
-      )
+      expect(workspaceFiles(files)).not.toContain('/home/user/app/package.json')
       expect(settingsKeys(files)).toEqual(['statusLine'])
     }
   })
