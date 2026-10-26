@@ -68,7 +68,13 @@ export function modPageTitle(title: string, headline?: string): string {
   const lead = `${normalizeWhitespace(title)}: `
   const branded = `${lead}${headline}${PAGE_TITLE_BRAND}`
   if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
-  return `${lead}${truncateAtWordBoundary(headline, PAGE_TITLE_MAX_LENGTH - lead.length)}`
+  const budget = PAGE_TITLE_MAX_LENGTH - lead.length
+  const firstWord = headline.split(' ', 1)[0] ?? ''
+  // A headline cut inside its first word reads as noise; the plain title says more.
+  if (headline.length > budget && firstWord.length + 1 > budget) {
+    return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
+  }
+  return `${lead}${truncateAtWordBoundary(headline, budget)}`
 }
 
 export function modMetaDescription(description: string | null | undefined): string {

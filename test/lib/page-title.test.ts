@@ -138,6 +138,11 @@ describe('modPageTitle', () => {
     expect(title.length).toBeLessThanOrEqual(60)
   })
 
+  it('falls back to the plain mod title when the name leaves no room for a headline word', () => {
+    const name = 'A Mod Whose Name Runs On Long Enough To Fill The Title'
+    expect(modPageTitle(name, 'Keep Claude Code warm')).toBe(modPageTitle(name))
+  })
+
   it('keeps the not-found title on-brand', () => {
     expect(MOD_NOT_FOUND_TITLE).toBe('Mod not found — statuslin.es')
   })
