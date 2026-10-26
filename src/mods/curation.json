@@ -147,7 +147,7 @@
   {
     "repoUrl": "https://github.com/data-goblin/claude-code-filetree",
     "path": "",
-    "commitSha": "2489b4e4e7ffc3f5fac39aff108071380cae1f09",
+    "commitSha": "12723d93032b16802fb90204a1d29fa64c296879",
     "pluginName": "filetree",
     "title": "Filetree",
     "inputSteps": [
@@ -177,7 +177,7 @@
   {
     "repoUrl": "https://github.com/NahumLitvin/prismantis",
     "path": "",
-    "commitSha": "86492531383be01074ac066b2e3c9734e6837918",
+    "commitSha": "bffa006c2dd72c0488abd2c12e2c421384b49ab3",
     "pluginName": "prismantis",
     "title": "Prismantis",
     "inputSteps": [
