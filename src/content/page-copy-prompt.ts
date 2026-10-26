@@ -37,14 +37,13 @@ const SEARCH_ASKS = `
 
 /**
  * The output instructions both kinds of page copy share: the JSON shape, each part's length
- * cap (from the schema's constants), and the tile wording keys that apply to this page. `search`
- * adds the headline and FAQ only a mod's copy has.
+ * cap (from the schema's constants), and the tile wording keys that apply to this page.
  */
 export function pageCopyTask(ask: {
   steps: string
   notes: string
   details: TileDetailAsk[]
-  search?: boolean
+  headlineAndFaq?: boolean
 }): string {
   const shape =
     ask.details.length > 0
@@ -61,11 +60,11 @@ ${ask.details.map((d) => `  - ${d.key}: ${d.says}`).join('\n')}`
   "summary": string,
   "howItWorks": string[],
   "goodToKnow": string[],
-  "details": ${shape}${ask.search ? SEARCH_KEYS : ''}
+  "details": ${shape}${ask.headlineAndFaq ? SEARCH_KEYS : ''}
 }
 
 - summary: 1 or 2 plain sentences, at most ${SUMMARY_MAX_CHARS} characters, saying what a user sees and what it is for.
 - howItWorks: up to ${MAX_STEPS} steps, each at most ${STEP_MAX_CHARS} characters, in order: ${ask.steps}
 - goodToKnow: up to ${MAX_NOTES} notes, each at most ${NOTE_MAX_CHARS} characters: ${ask.notes} Leave out what the fact tiles already state.
-${details}${ask.search ? SEARCH_ASKS : ''}`
+${details}${ask.headlineAndFaq ? SEARCH_ASKS : ''}`
 }

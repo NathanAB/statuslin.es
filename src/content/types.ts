@@ -50,8 +50,7 @@ export const configPageCopySchema = z.strictObject({
 
 /**
  * A mod version's page copy, stored in mod_versions.generated_content. `headline` names the
- * problem the mod solves for its page title and subtitle; `faq` is shown on the page and as
- * FAQPage JSON-LD. Copy written before either existed still parses.
+ * problem the mod solves. Copy written before `headline` and `faq` existed still parses.
  */
 export const modPageCopySchema = z.strictObject({
   ...pageCopyFields,
