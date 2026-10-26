@@ -60,11 +60,15 @@ export function configMetaDescription(description: string | null | undefined): s
 }
 
 /**
- * `<name>: <headline>` when the reviewed copy names the problem the mod solves, so the page can
- * rank for that problem and not only for the mod's name.
+ * With a reviewed headline, the title names the problem the mod solves so the page ranks for it,
+ * not only for the mod's name. The headline gives way to fit, never the name.
  */
 export function modPageTitle(title: string, headline?: string): string {
-  return keywordPageTitle(title, headline ? `: ${headline}` : MOD_PAGE_TITLE_KEYWORD)
+  if (!headline) return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
+  const lead = `${normalizeWhitespace(title)}: `
+  const branded = `${lead}${headline}${PAGE_TITLE_BRAND}`
+  if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
+  return `${lead}${truncateAtWordBoundary(headline, PAGE_TITLE_MAX_LENGTH - lead.length)}`
 }
 
 export function modMetaDescription(description: string | null | undefined): string {

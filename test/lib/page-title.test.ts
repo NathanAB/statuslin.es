@@ -129,6 +129,15 @@ describe('modPageTitle', () => {
     )
   })
 
+  it('keeps a long name whole and shortens the headline to fit 60 characters', () => {
+    const title = modPageTitle(
+      'Status Line Anywhere',
+      'Your status line drawn in Claude Desktop and in VS',
+    )
+    expect(title).toBe('Status Line Anywhere: Your status line drawn in Claude…')
+    expect(title.length).toBeLessThanOrEqual(60)
+  })
+
   it('keeps the not-found title on-brand', () => {
     expect(MOD_NOT_FOUND_TITLE).toBe('Mod not found — statuslin.es')
   })
