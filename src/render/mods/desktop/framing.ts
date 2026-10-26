@@ -53,6 +53,11 @@ export interface ChatShot {
    * text and the scrollbar gutter).
    */
   changed: Rect
+  /**
+   * The prompt text differs from the baseline's, which typed the same input steps: the mod restyled
+   * it, so the prompt box is part of its drawing.
+   */
+  restylesPrompt: boolean
   /** The final shot, row by row, across the chat column. */
   rows: RowProfile
   /** The final shot, row by row, across the plate strips at the chat column's two edges. */
@@ -65,7 +70,10 @@ export interface Frame {
   card: Rect
 }
 
-/** Above a band's plate, the blank rows a card keeps so the plate's rounded top shows. */
+/**
+ * Above a band's plate, or below the prompt box, the blank rows a card keeps so its rounded corners
+ * show.
+ */
 const CARD_PAD = 6
 
 const clamp = (
@@ -94,16 +102,30 @@ const PANE_ONLY = clamp(
 
 const PROMPT_RIGHT = PROMPT_BOX.x + PROMPT_BOX.width
 
+/** How far down a card by the prompt box reaches: what the mod draws there, lowest first. */
+type PromptReach = 'toolbar' | 'box' | 'band'
+
 /**
  * The card when the mod draws by the prompt box: its band, from the plate down to the prompt box,
- * and the prompt box and toolbar too when it writes in the toolbar. Null when it does neither.
+ * then the prompt box too when it restyles the prompt text, and the toolbar when it writes there.
+ * Null when it draws none of them.
  */
-function promptCard(plate: RowProfile, left: number, right: number, toolbar: boolean): Rect | null {
+function promptCard(
+  plate: RowProfile,
+  left: number,
+  right: number,
+  reach: PromptReach,
+): Rect | null {
   const boxTop = promptTop(plate)
   const band = bandAbovePrompt(plate, boxTop)
-  if (!band && !toolbar) return null
+  if (!band && reach === 'band') return null
   const top = band ? band.top - CARD_PAD : boxTop - CROP_MARGIN
-  return clamp(left, top, right, toolbar ? CONTENT.bottom : boxTop)
+  const bottom = {
+    toolbar: CONTENT.bottom,
+    box: PROMPT_BOX.y + PROMPT_BOX.height + CARD_PAD,
+    band: boxTop,
+  }[reach]
+  return clamp(left, top, right, bottom)
 }
 
 /**
@@ -128,15 +150,16 @@ const topCard = (rect: Rect, bottom: number): Rect => ({ ...rect, height: bottom
  * box if lower, down through the toolbar, widened to a change outside it (a toast) but never into
  * the scrollbar gutter, and never starting halfway through an element.
  */
-export function frameChat({ changed, rows, plate }: ChatShot): Frame {
+export function frameChat({ changed, rows, plate, restylesPrompt }: ChatShot): Frame {
   // A change inside the margin, such as an antialiased edge, is already in the crop.
   const left = Math.min(PROMPT_BOX.x, changed.x + CROP_MARGIN) - CROP_MARGIN
   const right = Math.max(PROMPT_RIGHT, changed.x + changed.width - CROP_MARGIN) + CROP_MARGIN
   const top = uncutTop(rows, Math.max(CONTENT.top, Math.min(PROMPT_BOX.y, changed.y) - CROP_MARGIN))
   const rect = clamp(left, top, right, CONTENT.bottom, SCROLL_GUTTER.x)
   const toolbar = changed.y + changed.height > PROMPT_BOX.y + PROMPT_BOX.height
+  const reach: PromptReach = toolbar ? 'toolbar' : restylesPrompt ? 'box' : 'band'
   const card =
-    promptCard(plate, PROMPT_BOX.x - CROP_MARGIN, PROMPT_RIGHT + CROP_MARGIN, toolbar) ??
+    promptCard(plate, PROMPT_BOX.x - CROP_MARGIN, PROMPT_RIGHT + CROP_MARGIN, reach) ??
     topCard(rect, cardBottom(rows, rect.y, rect.y + rect.height))
   return { rect, card }
 }

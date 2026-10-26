@@ -6,6 +6,7 @@ import {
   PANE_BORDER_GREY,
   PROMPT_BORDER_GREY,
   PROMPT_BOX,
+  PROMPT_TEXT,
   type Rect,
   SCALE,
   WINDOW,
@@ -118,6 +119,22 @@ function comparisonOf(command: string, changes: readonly Rect[]): string {
   return `1 ${(right - x) * SCALE}x${(bottom - y) * SCALE}+${x * SCALE + 1}+${y * SCALE + 1}`
 }
 
+/** What a comparison inside one region prints: whether any of `changes` reaches into it. */
+function regionComparisonOf(region: RegExpExecArray, changes: readonly Rect[]): string {
+  const [width = 0, height = 0, x = 0, y = 0] = region.slice(1).map((n) => Number(n) / SCALE)
+  const reaches = (c: Rect) =>
+    c.x < x + width && c.x + c.width > x && c.y < y + height && c.y + c.height > y
+  return changes.some(reaches) ? '1 2x2+1+1' : SAME
+}
+
+/** What a comparison command prints; null for any other command. */
+function comparisonFor(command: string, opts: FakeShots): string | null {
+  const region = /-crop (\d+)x(\d+)\+(\d+)\+(\d+) \+repage -compose difference/.exec(command)
+  if (region) return regionComparisonOf(region, opts.changes ?? [])
+  if (!command.includes('-compose difference -composite -compose over')) return null
+  return opts.changes ? comparisonOf(command, opts.changes) : (opts.compare ?? SAME)
+}
+
 /** Answers the analysis commands as ImageMagick would for the given layouts and comparison. */
 function fakeAnalysis(opts: FakeShots) {
   const uploaded: string[] = []
@@ -129,9 +146,8 @@ function fakeAnalysis(opts: FakeShots) {
     run: async (command) => {
       ran.push(command)
       const answer = (stdout: string) => ({ exitCode: 0, stdout, stderr: '' })
-      if (command.includes('-compose difference -composite -compose over')) {
-        return answer(opts.changes ? comparisonOf(command, opts.changes) : (opts.compare ?? SAME))
-      }
+      const comparison = comparisonFor(command, opts)
+      if (comparison) return answer(comparison)
       if (command.includes('od -An')) return answer(profileFor(command, opts))
       if (command.includes('| base64')) return answer(signaturesFor(command, opts))
       const layout = command.includes('baseline.png') ? opts.baseline : opts.shot
@@ -165,6 +181,9 @@ const BAND_SHOT: FakeShots = {
   plate: profile(BAND_ROWS),
   shotRows: [[...BAND_ROWS, 1]],
 }
+const PROMPT_BOTTOM = PROMPT_BOX.y + PROMPT_BOX.height
+/** Typed text the mod underlined, inside the prompt box. */
+const RESTYLED_TEXT: Rect = { x: PROMPT_TEXT.x + 40, y: PROMPT_TEXT.y + 8, width: 300, height: 20 }
 /** A crop of the band alone: its rows and the crop margin above and below. */
 const BAND_HEIGHT = BAND_ROWS[1] + 1 - BAND_ROWS[0] + 2 * 8
 
@@ -272,6 +291,40 @@ describe('analyseShot', () => {
 
     const compare = ran.find((c) => c.includes('-compose difference -composite -compose over'))
     expect(compare?.match(/-draw 'rectangle/g)).toHaveLength(2)
+  })
+
+  it('crops the band down through the prompt box when the mod restyled its text', async () => {
+    const { analysis } = fakeAnalysis({
+      changes: [{ x: 166, y: 775, width: 768, height: 40 }, RESTYLED_TEXT],
+      content: profile(BAND_ROWS, PROMPT_ROWS),
+      plate: profile(BAND_ROWS),
+      shotRows: [[...BAND_ROWS, 1]],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      typedSlashCommand: false,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot', height: PROMPT_BOTTOM + 8 - 767 })
+  })
+
+  it("counts restyled prompt text as the mod's drawing when nothing else changed", async () => {
+    const { analysis } = fakeAnalysis({
+      changes: [...STEP_TURNS, RESTYLED_TEXT],
+      content: profile([275, 433], PROMPT_ROWS),
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      typedSlashCommand: false,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot', height: PROMPT_BOTTOM + 8 - (PROMPT_BOX.y - 8) })
   })
 
   it('finds nothing when the shot matches the baseline', async () => {

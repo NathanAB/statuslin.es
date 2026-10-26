@@ -111,6 +111,33 @@ describe('cropModPreview', () => {
     )
   })
 
+  it('keeps a prompt row whose typed text the mod restyled, below its band', () => {
+    const promptRow = baseline.findIndex((row) => row.startsWith('❯'))
+    const typedAt = (screen: readonly string[], prompt: string) =>
+      screen.map((row, y) => (y === promptRow ? `❯ ${prompt}\x1b[0;30;47m \x1b[0m` : row))
+    const typed = typedAt(baseline, 'tidy the header, the card.')
+    const band = '\x1b[1;36m pinpoint  header.tsx · card.tsx\x1b[0m'
+    const underlined = typedAt(
+      baseline,
+      'tidy \x1b[4;33mthe header\x1b[0m, \x1b[4;33mthe card\x1b[0m.',
+    )
+    const withBand = [
+      ...underlined.slice(0, promptRow - 1),
+      band,
+      ...underlined.slice(promptRow - 1),
+    ]
+
+    const result = cropModPreview(typed, withBand)
+
+    expect(lines(result).map((line) => line.trim())).toEqual([
+      'pinpoint  header.tsx · card.tsx',
+      '❯ tidy the header, the card.',
+    ])
+    expect(renderedSegments(result)).toContainEqual(
+      expect.objectContaining({ text: 'the header', underline: true }),
+    )
+  })
+
   it('is not rendered when only the prompt row is left', () => {
     const recoloredCursor = baseline.map((row) => row.replace('\x1b[0;30;47m', '\x1b[0;30;46m'))
     expect(recoloredCursor.filter((row, y) => row !== baseline[y])).toEqual([
