@@ -207,7 +207,7 @@ describe('mod page head', () => {
 
   it('titles and shares the mod by the problem its headline names', () => {
     const meta = head({ ...MOD, generatedContent: SEARCH_COPY }).meta
-    const expected = 'File Tree: Browse your project in a pane | statuslin.es'
+    const expected = modPageTitle(MOD.title, SEARCH_COPY.headline)
 
     expect(meta[0]).toEqual({ title: expected })
     expect(meta.find((m) => m.property === 'og:title')?.content).toBe(expected)

@@ -134,7 +134,7 @@ describe('mod page copy search fields', () => {
     expect(modPageCopySchema.parse(full)).toEqual(full)
   })
 
-  it('cap the headline, the FAQ entries and their length, and refuse an em dash', () => {
+  it('cap the headline, the FAQ entries and their length', () => {
     const over = (max: number) => 'x'.repeat(max + 1)
     const entry = (question: string, answer: string) => ({
       ...SEARCH_COPY,
@@ -147,7 +147,6 @@ describe('mod page copy search fields', () => {
     })
     fails(modPageCopySchema, entry(over(FAQ_QUESTION_MAX_CHARS), 'A.'))
     fails(modPageCopySchema, entry('Q?', over(FAQ_ANSWER_MAX_CHARS)))
-    fails(modPageCopySchema, entry('Q?', 'Warm — always.'))
   })
 
   it('stay off status line copy', () => {

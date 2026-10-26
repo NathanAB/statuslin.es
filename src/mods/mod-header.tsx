@@ -32,8 +32,8 @@ function modSubtitle(tags: string[]): string | null {
 
 /**
  * A mod page's header. The breadcrumb runs through the mods page; the tag chips match
- * the mod's gallery card; the byline links the source at the pinned commit and always names the licence, or says
- * there is none.
+ * the mod's gallery card; the subtitle is the reviewed headline, else the job its tags name; the
+ * byline links the source at the pinned commit and always names the licence, or says there is none.
  */
 export function ModHeader({ mod }: { mod: ModDetail }) {
   const posthog = usePostHog()
