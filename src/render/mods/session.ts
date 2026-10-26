@@ -5,6 +5,7 @@ import type { InputStep } from '@/mods/curation'
 import { SANDBOX_CANNED_MODEL_SERVER_DEST, SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
+import { SAMPLE_PROJECT_FILES } from './sample-project'
 import {
   BUSY_WORKSPACE_FILES,
   busySettings,
@@ -104,9 +105,10 @@ function settingsFiles(
 }
 
 /** Uploaded before setup runs, whose seed commit then holds them. */
-function busyWorkspaceFiles(scenario: Scenario): SessionFile[] {
+function workspaceFiles(scenario: Scenario, busy: boolean): SessionFile[] {
   const workspace = feedStdin(scenario).workspace.current_dir
-  return BUSY_WORKSPACE_FILES.map(({ path, data }) => ({ path: `${workspace}/${path}`, data }))
+  const files = [...SAMPLE_PROJECT_FILES, ...(busy ? BUSY_WORKSPACE_FILES : [])]
+  return files.map(({ path, data }) => ({ path: `${workspace}/${path}`, data }))
 }
 
 export function sessionFiles(
@@ -117,7 +119,7 @@ export function sessionFiles(
   return [
     { path: `${CONFIG_DIR}/.claude.json`, data: claudeJson(scenario, claudeCodeVersion) },
     ...settingsFiles(scenario, busy, ownSettings),
-    ...(busy ? busyWorkspaceFiles(scenario) : []),
+    ...workspaceFiles(scenario, busy),
     { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs, busy)) },
     { path: REPLY_FILE, data: JSON.stringify(cannedReply(scenario)) },
     ...FEED_PLUGIN_ASSETS.map((asset) => ({

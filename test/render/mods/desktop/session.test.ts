@@ -98,7 +98,7 @@ describe('desktopSessionFiles', () => {
   })
 
   it('puts no busy file in the workspace of a session that never types /preview-busy', () => {
-    expect([...files.keys()].filter((path) => path.startsWith('/home/user/app/'))).toEqual([])
+    expect([...files.keys()]).not.toContain('/home/user/app/package.json')
   })
 
   it("writes one settings.json in a busy session, the busy session's rules beside the status line", () => {

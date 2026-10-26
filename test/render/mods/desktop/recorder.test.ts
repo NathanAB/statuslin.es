@@ -169,11 +169,11 @@ describe('desktopRecorder status line', () => {
     }
   })
 
-  it('stages only the status line settings, and no workspace file, when the steps never do', async () => {
+  it('stages only the status line settings, and no busy file, when the steps never do', async () => {
     const staged = await stagedFiles(undefined, [{ type: 'text', text: '/pet' }])
 
     for (const files of staged) {
-      expect(workspaceFiles(files)).toEqual([])
+      expect(workspaceFiles(files)).not.toContain('/home/user/app/package.json')
       expect(settingsKeys(files)).toEqual(['statusLine'])
     }
   })
