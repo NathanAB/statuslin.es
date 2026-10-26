@@ -64,6 +64,8 @@ describe('buildContentPrompt', () => {
       expect(prompt).toContain(key)
     }
     expect(prompt).not.toMatch(/whatItShows|behaviorNotes/)
+    // A status line's copy has no search headline or FAQ: its schema refuses both keys.
+    expect(prompt).not.toMatch(/"headline"|"faq"/)
     expect(prompt).toMatch(/return only a json object/i)
   })
 

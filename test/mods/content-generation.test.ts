@@ -1,6 +1,12 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import type { ModPageCopy } from '@/content/types'
+import {
+  FAQ_ANSWER_MAX_CHARS,
+  FAQ_QUESTION_MAX_CHARS,
+  HEADLINE_MAX_CHARS,
+  MAX_FAQ,
+  type ModPageCopy,
+} from '@/content/types'
 import * as schema from '@/db/schema'
 import {
   applyModContentGenerationResponses,
@@ -172,6 +178,22 @@ describe('prepareModContentGenerationRequest', () => {
     expect(contentPrompt).toContain(
       `The page already says it needs Claude Code ${MOD_INSTALL_MIN_VERSION} or later; mention a minimum version only if the mod needs a higher one.`,
     )
+  })
+
+  it('asks for a search headline and FAQ under the caps the copy format enforces', async () => {
+    await seedMod('searched')
+
+    const { contentPrompt } = await prepareModContentGenerationRequest(db, 'searched', readme)
+
+    expect(contentPrompt).toContain('"headline": string')
+    expect(contentPrompt).toContain('"faq": [{ "question": string, "answer": string }]')
+    expect(contentPrompt).toContain(`- headline: at most ${HEADLINE_MAX_CHARS} characters`)
+    expect(contentPrompt).toMatch(/never the mod's name/i)
+    expect(contentPrompt).toContain(
+      `- faq: up to ${MAX_FAQ} entries, each question at most ${FAQ_QUESTION_MAX_CHARS} characters and each answer at most ${FAQ_ANSWER_MAX_CHARS},`,
+    )
+    expect(contentPrompt).toContain('code.claude.com')
+    expect(contentPrompt).toMatch(/return \[\] when unsure/)
   })
 
   it('lists Claude Desktop as a surface when the mod has a Desktop shot', async () => {
