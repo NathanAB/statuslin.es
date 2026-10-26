@@ -56,6 +56,25 @@ describe('PostHog Nitro error plugin', () => {
     )
   })
 
+  it('drops the 400 H3 answers a malformed URL with instead of forwarding it to PostHog', async () => {
+    const hooks = createHooks<{
+      error: (error: Error, context: Record<string, unknown>) => void
+    }>()
+    plugin({ hooks })
+    const app = new H3({
+      async onError(error, event) {
+        await hooks.callHook('error', error, { event })
+      },
+    })
+    app.use(() => 'ok')
+
+    // A scanner probe seen in production: %c0 is not valid UTF-8, so the path can't be decoded.
+    const response = await app.request('https://statuslin.es/%c0')
+
+    expect(response.status).toBe(400)
+    expect(captureServerException).not.toHaveBeenCalled()
+  })
+
   it('drops a client disconnect instead of forwarding it to PostHog', async () => {
     const hooks = createHooks<{
       error: (error: Error, context: Record<string, unknown>) => void
