@@ -1,4 +1,8 @@
 import {
+  FAQ_ANSWER_MAX_CHARS,
+  FAQ_QUESTION_MAX_CHARS,
+  HEADLINE_MAX_CHARS,
+  MAX_FAQ,
   MAX_NOTES,
   MAX_STEPS,
   NOTE_MAX_CHARS,
@@ -23,6 +27,14 @@ export interface TileDetailAsk {
   says: string
 }
 
+const SEARCH_KEYS = `,
+  "headline": string,
+  "faq": [{ "question": string, "answer": string }]`
+
+const SEARCH_ASKS = `
+- headline: at most ${HEADLINE_MAX_CHARS} characters, in sentence case with no trailing period, naming the problem the mod solves in the words someone would search, such as "Keep Claude Code's prompt cache warm". Never the mod's name.
+- faq: up to ${MAX_FAQ} entries, each question at most ${FAQ_QUESTION_MAX_CHARS} characters and each answer at most ${FAQ_ANSWER_MAX_CHARS}, for questions people search about the problem this mod solves. Answers state only what the README, the checks above, or Claude Code's own docs (code.claude.com) say; return [] when unsure.`
+
 /**
  * The output instructions both kinds of page copy share: the JSON shape, each part's length
  * cap (from the schema's constants), and the tile wording keys that apply to this page.
@@ -31,6 +43,7 @@ export function pageCopyTask(ask: {
   steps: string
   notes: string
   details: TileDetailAsk[]
+  headlineAndFaq?: boolean
 }): string {
   const shape =
     ask.details.length > 0
@@ -47,11 +60,11 @@ ${ask.details.map((d) => `  - ${d.key}: ${d.says}`).join('\n')}`
   "summary": string,
   "howItWorks": string[],
   "goodToKnow": string[],
-  "details": ${shape}
+  "details": ${shape}${ask.headlineAndFaq ? SEARCH_KEYS : ''}
 }
 
 - summary: 1 or 2 plain sentences, at most ${SUMMARY_MAX_CHARS} characters, saying what a user sees and what it is for.
 - howItWorks: up to ${MAX_STEPS} steps, each at most ${STEP_MAX_CHARS} characters, in order: ${ask.steps}
 - goodToKnow: up to ${MAX_NOTES} notes, each at most ${NOTE_MAX_CHARS} characters: ${ask.notes} Leave out what the fact tiles already state.
-${details}`
+${details}${ask.headlineAndFaq ? SEARCH_ASKS : ''}`
 }

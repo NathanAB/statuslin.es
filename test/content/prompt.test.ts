@@ -67,6 +67,10 @@ describe('buildContentPrompt', () => {
     expect(prompt).toMatch(/return only a json object/i)
   })
 
+  it('never asks a status line for a headline or FAQ, which its schema refuses', () => {
+    expect(buildContentPrompt(BASE)).not.toMatch(/"headline"|"faq"/)
+  })
+
   it('states every length cap the format enforces', () => {
     const prompt = buildContentPrompt({ ...BASE, readsClaudeToken: true })
     expect(prompt).toContain(`at most ${SUMMARY_MAX_CHARS} characters`)

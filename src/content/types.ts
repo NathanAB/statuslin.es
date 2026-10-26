@@ -10,6 +10,10 @@ export const MAX_NOTES = 3
 export const NOTE_MAX_CHARS = 110
 export const TILE_DETAIL_MAX_CHARS = 60
 export const MAX_COMMANDS = 6
+export const HEADLINE_MAX_CHARS = 50
+export const MAX_FAQ = 4
+export const FAQ_QUESTION_MAX_CHARS = 90
+export const FAQ_ANSWER_MAX_CHARS = 400
 
 /**
  * One line of page copy: trimmed, non-empty and capped, since source text can steer the
@@ -44,9 +48,22 @@ export const configPageCopySchema = z.strictObject({
   details: z.strictObject({ readsClaudeLogin: tileDetail }).default({}),
 })
 
-/** A mod version's page copy, stored in mod_versions.generated_content. */
+/**
+ * A mod version's page copy, stored in mod_versions.generated_content. `headline` names the
+ * problem the mod solves. Copy written before `headline` and `faq` existed still parses.
+ */
 export const modPageCopySchema = z.strictObject({
   ...pageCopyFields,
+  headline: copyLine(HEADLINE_MAX_CHARS).optional(),
+  faq: z
+    .array(
+      z.strictObject({
+        question: copyLine(FAQ_QUESTION_MAX_CHARS),
+        answer: copyLine(FAQ_ANSWER_MAX_CHARS),
+      }),
+    )
+    .max(MAX_FAQ)
+    .optional(),
   details: z
     .strictObject({
       showsUp: tileDetail,

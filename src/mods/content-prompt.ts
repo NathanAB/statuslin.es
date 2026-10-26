@@ -101,6 +101,7 @@ export function buildModContentPrompt(
     steps: 'when it runs in a session, what it reads, and what it draws or changes.',
     notes: `requirements such as an account or API key, or a setting to turn on (The page already says it needs Claude Code ${MOD_INSTALL_MIN_VERSION} or later; mention a minimum version only if the mod needs a higher one.); then limits and surprises.`,
     details: detailAsks(checks),
+    headlineAndFaq: true,
   })
   const fenced = fenceUntrusted(pin, untrusted)
   return `You are writing factual copy for a gallery page about one Claude Code mod: a plugin that draws in Claude Code, installed from a marketplace.
@@ -118,7 +119,7 @@ ${fenced.block}
 ${task}
 
 Hard rules:
-- State ONLY what the checks above, the preview, or the README shows. If you cannot point to the exact line that proves a claim, leave the claim out. Never guess.
+- State ONLY what the checks above, the preview, or the README shows; FAQ answers may also state what Claude Code's own docs say. If you cannot point to the exact line that proves a claim, leave the claim out. Never guess.
 ${COPY_STYLE_RULES}`
 }
 

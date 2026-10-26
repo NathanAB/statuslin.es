@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   configPageCopySchema,
+  FAQ_ANSWER_MAX_CHARS,
+  FAQ_QUESTION_MAX_CHARS,
+  HEADLINE_MAX_CHARS,
+  MAX_FAQ,
   MAX_NOTES,
   MAX_STEPS,
   modPageCopySchema,
@@ -101,6 +105,53 @@ describe('page copy schemas', () => {
   it('take a mod command only as a slash command', () => {
     fails(modPageCopySchema, { ...MOD_COPY, details: { commands: ['burn'] } })
     fails(modPageCopySchema, { ...MOD_COPY, details: { commands: ['/burn now'] } })
+  })
+})
+
+describe('mod page copy search fields', () => {
+  const FAQ = [
+    {
+      question: 'Does the prompt cache expire between turns?',
+      answer: 'Yes, after five minutes without a request.',
+    },
+  ]
+  const SEARCH_COPY = { ...MOD_COPY, headline: "Keep Claude Code's prompt cache warm", faq: FAQ }
+
+  it('accept a headline and FAQ on mod copy, and mod copy without them', () => {
+    expect(modPageCopySchema.parse(SEARCH_COPY)).toEqual(SEARCH_COPY)
+    expect(modPageCopySchema.parse(MOD_COPY)).toEqual(MOD_COPY)
+  })
+
+  it('accept them at every cap', () => {
+    const full = {
+      ...MOD_COPY,
+      headline: 'h'.repeat(HEADLINE_MAX_CHARS),
+      faq: Array.from({ length: MAX_FAQ }, (_, i) => ({
+        question: `${i}`.padEnd(FAQ_QUESTION_MAX_CHARS, 'q'),
+        answer: 'a'.repeat(FAQ_ANSWER_MAX_CHARS),
+      })),
+    }
+    expect(modPageCopySchema.parse(full)).toEqual(full)
+  })
+
+  it('cap the headline, the FAQ entries and their length', () => {
+    const over = (max: number) => 'x'.repeat(max + 1)
+    const entry = (question: string, answer: string) => ({
+      ...SEARCH_COPY,
+      faq: [{ question, answer }],
+    })
+    fails(modPageCopySchema, { ...SEARCH_COPY, headline: over(HEADLINE_MAX_CHARS) })
+    fails(modPageCopySchema, {
+      ...SEARCH_COPY,
+      faq: Array.from({ length: MAX_FAQ + 1 }, (_, i) => ({ question: `Q${i}?`, answer: 'A.' })),
+    })
+    fails(modPageCopySchema, entry(over(FAQ_QUESTION_MAX_CHARS), 'A.'))
+    fails(modPageCopySchema, entry('Q?', over(FAQ_ANSWER_MAX_CHARS)))
+  })
+
+  it('stay off status line copy', () => {
+    fails(configPageCopySchema, { ...CONFIG_COPY, headline: 'Show the branch' })
+    fails(configPageCopySchema, { ...CONFIG_COPY, faq: [] })
   })
 })
 
