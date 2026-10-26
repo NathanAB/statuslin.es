@@ -7,6 +7,7 @@ import {
   SANDBOX_CLAUDE_CODE_BIN,
   SANDBOX_CLAUDE_SETTINGS_DEST,
 } from '@/render/e2b-template'
+import { SAMPLE_PROJECT_FILES } from '@/render/mods/sample-project'
 import {
   BUSY_WORKSPACE_FILES,
   busySettings,
@@ -131,12 +132,25 @@ describe('sessionFiles', () => {
     expect(JSON.parse(fileAt(REPLY_FILE)).usage.input_tokens).toBe(37_000)
   })
 
-  describe('in a session whose steps never type /preview-busy', () => {
-    it('puts no file in the workspace and writes no settings, as before /preview-busy', () => {
-      const paths = seedFiles().map((f) => f.path)
+  it.each([false, true])(
+    'puts the sample project in the workspace before setup commits it (busy: %s)',
+    (busy) => {
+      const files = seedFiles('pinpoint', busy)
 
-      expect(paths.filter((path) => path.startsWith('/home/user/app/'))).toEqual([])
-      expect(paths).not.toContain(`${env.CLAUDE_CONFIG_DIR}/settings.json`)
+      for (const { path, data } of SAMPLE_PROJECT_FILES) {
+        expect(files).toContainEqual({ path: `/home/user/app/${path}`, data })
+      }
+    },
+  )
+
+  describe('in a session whose steps never type /preview-busy', () => {
+    it('puts only the sample project in the workspace and writes no settings', () => {
+      const files = seedFiles()
+
+      expect(files.filter((f) => f.path.startsWith('/home/user/app/'))).toEqual(
+        SAMPLE_PROJECT_FILES.map(({ path, data }) => ({ path: `/home/user/app/${path}`, data })),
+      )
+      expect(files.map((f) => f.path)).not.toContain(`${env.CLAUDE_CONFIG_DIR}/settings.json`)
     })
 
     it('feeds no busy calls', () => {
@@ -151,6 +165,17 @@ describe('sessionFiles', () => {
       for (const { path, data } of BUSY_WORKSPACE_FILES) {
         expect(files).toContainEqual({ path: `/home/user/app/${path}`, data })
       }
+    })
+
+    it("holds both the sample project and the busy session's files, no path twice", () => {
+      const workspace = seedFiles('code-pet', true)
+        .map((f) => f.path)
+        .filter((path) => path.startsWith('/home/user/app/'))
+
+      expect(workspace).toEqual(
+        [...SAMPLE_PROJECT_FILES, ...BUSY_WORKSPACE_FILES].map((f) => `/home/user/app/${f.path}`),
+      )
+      expect(new Set(workspace).size).toBe(workspace.length)
     })
 
     it("writes the busy session's permission rules and sandbox settings", () => {
