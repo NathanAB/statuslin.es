@@ -682,17 +682,7 @@
     "path": "mods/diff",
     "commitSha": "08c6a4f5121ae140d3c1b5c96e3e5ae53587b54b",
     "pluginName": "diff",
-    "title": "Diff",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "/preview-busy"
-      },
-      {
-        "type": "text",
-        "text": "/diff"
-      }
-    ]
+    "title": "Diff"
   },
   {
     "repoUrl": "https://github.com/Atoll92/agent-standup",
