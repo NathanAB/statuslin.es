@@ -531,5 +531,181 @@
         "text": "/pokemon pikachu"
       }
     ]
+  },
+  {
+    "repoUrl": "https://github.com/anthropics/claude-code",
+    "path": "mods/diff",
+    "commitSha": "08c6a4f5121ae140d3c1b5c96e3e5ae53587b54b",
+    "pluginName": "diff",
+    "title": "Diff",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      },
+      {
+        "type": "text",
+        "text": "/diff"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/anthropics/claude-plugins-community",
+    "path": "next-steps",
+    "commitSha": "06ec7b6a0a82bdc4bec44bd82d4368c42f20d7c1",
+    "pluginName": "next-steps",
+    "title": "Next Steps"
+  },
+  {
+    "repoUrl": "https://github.com/zenbu-labs/terminal-browser",
+    "path": "claude-code-plugin",
+    "commitSha": "e8ca7483af401672a377c45f931439fde5a67dfa",
+    "pluginName": "terminal-browser",
+    "title": "Terminal Browser"
+  },
+  {
+    "repoUrl": "https://github.com/jarrodwatts/claude-image-view",
+    "path": "",
+    "commitSha": "370b8e7bc0708bebe9762e63534f7ca18bc3e802",
+    "pluginName": "image-view",
+    "title": "Image View"
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/image-preview",
+    "commitSha": "a2babd9fdc2470ab7541e993b3e6cce55c46d032",
+    "pluginName": "image-preview",
+    "title": "Image Preview"
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/think-hard",
+    "commitSha": "a2babd9fdc2470ab7541e993b3e6cce55c46d032",
+    "pluginName": "think-hard",
+    "title": "Think Hard"
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/quick-peek",
+    "commitSha": "a2babd9fdc2470ab7541e993b3e6cce55c46d032",
+    "pluginName": "quick-peek",
+    "title": "Quick Peek"
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/narrator",
+    "commitSha": "a2babd9fdc2470ab7541e993b3e6cce55c46d032",
+    "pluginName": "narrator",
+    "title": "Narrator",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/narrator"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/now-playing",
+    "commitSha": "2e759613bf854b3b8815e79c86daf717346ea2dc",
+    "pluginName": "now-playing",
+    "title": "Now Playing"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/snake",
+    "commitSha": "2e759613bf854b3b8815e79c86daf717346ea2dc",
+    "pluginName": "snake",
+    "title": "Snake",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/snake"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/reels",
+    "commitSha": "2e759613bf854b3b8815e79c86daf717346ea2dc",
+    "pluginName": "reels",
+    "title": "Reels",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/reels"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/heatmap",
+    "commitSha": "2e759613bf854b3b8815e79c86daf717346ea2dc",
+    "pluginName": "heatmap",
+    "title": "Heatmap",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/heatmap"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/md-preview",
+    "commitSha": "2e759613bf854b3b8815e79c86daf717346ea2dc",
+    "pluginName": "md-preview",
+    "title": "Markdown Preview"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/agent-radar",
+    "commitSha": "2e759613bf854b3b8815e79c86daf717346ea2dc",
+    "pluginName": "agent-radar",
+    "title": "Agent Radar",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/radar"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/YeonwooSung/my-claude-code-mods",
+    "path": "loop-detective",
+    "commitSha": "93fa0f7e84e37705da049ef2727530ec01af3dd9",
+    "pluginName": "loop-detective",
+    "title": "Loop Detective",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      },
+      {
+        "type": "text",
+        "text": "/loop-pane"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/Atoll92/agent-standup",
+    "path": "plugin-band",
+    "commitSha": "191c777e00b86c0f1c86a22d22702386fab91d35",
+    "pluginName": "agent-standup-band",
+    "title": "Agent Standup"
+  },
+  {
+    "repoUrl": "https://github.com/halluton/Mindful-Claude",
+    "path": "",
+    "commitSha": "411c9c4f4f1c3d128159be7315823341ae7d9e2d",
+    "pluginName": "mindful-claude",
+    "title": "Mindful Claude"
+  },
+  {
+    "repoUrl": "https://github.com/arturogarrido/claudinho",
+    "path": "packages/plugin",
+    "commitSha": "54e76c4e2ea8286c2e6a534b5d8f0ad81f543262",
+    "pluginName": "claudinho",
+    "title": "Claudinho"
   }
 ]
