@@ -309,6 +309,13 @@
       "when": 1792363428736,
       "tag": "0043_config_desktop_previews",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793143116513,
+      "tag": "0044_mod_versions_card_surface",
+      "breakpoints": true
     }
   ]
 }

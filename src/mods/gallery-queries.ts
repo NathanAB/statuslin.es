@@ -49,6 +49,7 @@ function selectModCards<Extra extends SelectedFields>(db: Db, extra: Extra) {
       tags: mods.allTags,
       preview: modPreviews.segments,
       desktop: desktopPreviewColumns,
+      cardSurface: modVersions.cardSurface,
       ...extra,
     })
     .from(mods)

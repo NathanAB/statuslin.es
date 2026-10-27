@@ -22,6 +22,10 @@ export type ModFootprint = { events: string[]; calls: string[] }
 
 export type ModInputSteps = unknown[]
 
+/** The preview a mod's gallery card shows first; null on a version shows Claude Desktop first. */
+export const CARD_SURFACES = ['terminal', 'desktop'] as const
+export type CardSurface = (typeof CARD_SURFACES)[number]
+
 /** Claude Code's plugin id rule (src/mods/curation.ts): a slug lands in marketplace entries and shell commands. */
 const PLUGIN_ID = '^[A-Za-z0-9][A-Za-z0-9._-]*$'
 
@@ -70,6 +74,7 @@ export const modVersions = pgTable(
     footprint: jsonb('footprint').$type<ModFootprint>().notNull(),
     validatedWith: text('validated_with').notNull(),
     inputSteps: jsonb('input_steps').$type<ModInputSteps>().notNull().default(sql`'[]'::jsonb`),
+    cardSurface: text('card_surface').$type<CardSurface>(),
     generatedContent: jsonb('generated_content'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -83,6 +88,10 @@ export const modVersions = pgTable(
     check(
       'mod_versions_repo_url_check',
       sql`${t.repoUrl} ~ '^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+$' AND ${t.repoUrl} !~* '(\\.git|/\\.{1,2})$'`,
+    ),
+    check(
+      'mod_versions_card_surface_check',
+      sql`${t.cardSurface} IN (${sql.raw(CARD_SURFACES.map((surface) => `'${surface}'`).join(', '))})`,
     ),
     check(
       'mod_versions_path_check',

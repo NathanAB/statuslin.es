@@ -1,3 +1,4 @@
+import type { CardSurface } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import { type GalleryCard, galleryPageCount, PAGE_SIZE } from './queries'
@@ -18,6 +19,8 @@ export interface GalleryModCard {
   /** Null when there is nothing to show: no result yet, or the mod drew nothing there. */
   preview: AnsiSegment[] | null
   desktopShot: DesktopShotImage | null
+  /** The preview the card shows when it has one there; null shows the Desktop shot first. */
+  cardSurface: CardSurface | null
 }
 
 export type GalleryItem =

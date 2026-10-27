@@ -92,6 +92,8 @@ export interface NewVersion {
   facts: PluginFacts
   license: string | null
   inputSteps: InputStep[]
+  /** Left out for a submitted mod, whose card keeps the default. */
+  cardSurface?: schema.CardSurface | undefined
 }
 
 /** Adds the mod's next version; returns its number. */
@@ -111,6 +113,7 @@ export async function insertNextVersion(db: Db, version: NewVersion): Promise<nu
     footprint: version.facts.footprint,
     validatedWith: version.facts.claudeCodeVersion,
     inputSteps: version.inputSteps,
+    cardSurface: version.cardSurface,
   })
   return next
 }
