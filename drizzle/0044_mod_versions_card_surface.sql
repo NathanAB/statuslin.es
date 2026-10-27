@@ -1,0 +1,2 @@
+ALTER TABLE "mod_versions" ADD COLUMN "card_surface" text;--> statement-breakpoint
+ALTER TABLE "mod_versions" ADD CONSTRAINT "mod_versions_card_surface_check" CHECK ("mod_versions"."card_surface" = 'terminal');

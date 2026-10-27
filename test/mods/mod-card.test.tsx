@@ -45,6 +45,7 @@ const card: GalleryModCard = {
   tags: [],
   preview: [{ text: 'ctx 42%' }],
   desktopShot: null,
+  cardSurface: null,
 }
 
 const SHOT = {
@@ -87,6 +88,21 @@ describe('ModCard', () => {
     expect(image.getAttribute('height')).toBe('52')
     expect(image.getAttribute('loading')).toBe('lazy')
     expect(screen.queryByText('ctx 42%')).toBeNull()
+  })
+
+  it('shows its terminal preview over its Desktop shot when its card picks the terminal', () => {
+    render(<ModCard card={{ ...card, desktopShot: SHOT, cardSurface: 'terminal' }} />)
+
+    expect(screen.getByText('ctx 42%')).toBeTruthy()
+    expect(screen.queryByRole('img', { name: 'Meter in Claude Desktop' })).toBeNull()
+  })
+
+  it('shows its Desktop shot when its card picks the terminal but the terminal drew nothing', () => {
+    render(
+      <ModCard card={{ ...card, preview: null, desktopShot: SHOT, cardSurface: 'terminal' }} />,
+    )
+
+    expect(screen.getByRole('img', { name: 'Meter in Claude Desktop' })).toBeTruthy()
   })
 
   it('says so when it has no preview at all', () => {

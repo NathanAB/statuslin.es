@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
 import { DesktopShot } from '@/ui/desktop-shot'
 import { Stack } from '@/ui/layout'
 import { StatuslinePreview } from '@/ui/statusline-preview'
@@ -62,14 +63,22 @@ export function ModPreview({ mod }: { mod: Pick<ModDetail, 'title' | 'preview' |
   )
 }
 
-/** A gallery row's preview: the mod's Claude Desktop shot, or its terminal line while it has none. */
+/**
+ * A gallery row's preview: the surface its card picks, else its Claude Desktop shot, falling back
+ * to the other surface when that one has nothing to show.
+ */
 export function ModRowPreview({
   card,
 }: {
-  card: Pick<GalleryModCard, 'title' | 'preview' | 'desktopShot'>
+  card: Pick<GalleryModCard, 'title' | 'preview' | 'desktopShot' | 'cardSurface'>
 }) {
-  if (card.desktopShot !== null)
-    return <DesktopShot shot={card.desktopShot} alt={desktopAlt(card.title)} fit="card" />
-  if (card.preview !== null) return <StatuslinePreview segments={card.preview} look="strip" />
-  return <NoPreview />
+  const desktop =
+    card.desktopShot !== null ? (
+      <DesktopShot shot={card.desktopShot} alt={desktopAlt(card.title)} fit="card" />
+    ) : null
+  const terminal =
+    card.preview !== null ? <StatuslinePreview segments={card.preview} look="strip" /> : null
+  const [first, second] =
+    card.cardSurface === TERMINAL_CARD_SURFACE ? [terminal, desktop] : [desktop, terminal]
+  return first ?? second ?? <NoPreview />
 }

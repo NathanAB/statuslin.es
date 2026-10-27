@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
+import { type CardSurface, TERMINAL_CARD_SURFACE } from '../lib/card-surface'
 import type { DesktopRecording } from '../render/mods/desktop/types'
 import type { AnsiSegment } from '../render/types'
 
@@ -70,6 +71,7 @@ export const modVersions = pgTable(
     footprint: jsonb('footprint').$type<ModFootprint>().notNull(),
     validatedWith: text('validated_with').notNull(),
     inputSteps: jsonb('input_steps').$type<ModInputSteps>().notNull().default(sql`'[]'::jsonb`),
+    cardSurface: text('card_surface').$type<CardSurface>(),
     generatedContent: jsonb('generated_content'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -83,6 +85,10 @@ export const modVersions = pgTable(
     check(
       'mod_versions_repo_url_check',
       sql`${t.repoUrl} ~ '^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+$' AND ${t.repoUrl} !~* '(\\.git|/\\.{1,2})$'`,
+    ),
+    check(
+      'mod_versions_card_surface_check',
+      sql`${t.cardSurface} = ${sql.raw(`'${TERMINAL_CARD_SURFACE}'`)}`,
     ),
     check(
       'mod_versions_path_check',

@@ -42,6 +42,7 @@ function mod(slug: string, title: string): GalleryModCard {
     tags: [],
     preview: [{ text: `${slug} preview` }],
     desktopShot: null,
+    cardSurface: null,
   }
 }
 
