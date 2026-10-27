@@ -54,6 +54,9 @@ async function blobSha(bytes: Uint8Array): Promise<string> {
 const named = (entry: TreeEntry, name: string) =>
   entry.path.split('/').at(-1)?.toLowerCase() === name
 
+export const isAttributesFile = (entry: TreeEntry) =>
+  entry.type === 'blob' && named(entry, '.gitattributes')
+
 async function refuseAttributes(sha: string, path: string, readBlob: ReadBlob): Promise<void> {
   const { bytes, truncated } = await readBlob(sha, GITATTRIBUTES_MAX_BYTES)
   if (!truncated && (await blobSha(bytes)) !== sha) {
@@ -83,7 +86,7 @@ export async function refuseArchiveDifferences(
       'the plugin folder has git submodules, which statuslin.es cannot inspect',
     )
   }
-  const attributes = tree.filter((entry) => entry.type === 'blob' && named(entry, '.gitattributes'))
+  const attributes = tree.filter(isAttributesFile)
   if (attributes.length > GITATTRIBUTES_MAX_FILES) {
     throw new PluginRefusal(
       `more than ${GITATTRIBUTES_MAX_FILES} .gitattributes apply to the plugin folder`,

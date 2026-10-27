@@ -17,10 +17,10 @@ interface Limits {
 
 /**
  * Bounds the work a mod submission costs before anything is stored: GitHub calls, a sandbox that
- * fetches up to 20 MB, and a sandbox that reads it. The submission rate limit counts stored submissions, so a submission
- * that fails validation would otherwise cost nothing to repeat. One check per user at a time, an
- * hourly cap on attempts, and a cap per process. Kept in memory, so each machine counts its own: a
- * backstop for abuse, not an exact quota.
+ * fetches up to 20 MB, and a sandbox that reads it. The submission rate limit counts stored
+ * submissions, so a submission that fails validation would otherwise cost nothing to repeat. One
+ * check per user at a time, an hourly cap on attempts, and a cap per process. Kept in memory, so
+ * each machine counts its own: a backstop for abuse, not an exact quota.
  */
 export function createSubmitGuard({
   perUserPerHour,

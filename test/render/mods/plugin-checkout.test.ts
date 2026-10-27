@@ -212,6 +212,7 @@ describe('createPluginFetcher', () => {
 
   it.each([
     ['a parent folder', 'mods/.gitattributes', true],
+    ['the root, named in another case', '.GitAttributes', true],
     ['a sibling folder', 'mods/other/.gitattributes', false],
   ])('a .gitattributes using LFS in %s refuses the plugin: %s', async (_name, at, refused) => {
     const sha = await commit({
@@ -246,6 +247,18 @@ describe('createPluginFetcher', () => {
     expect((result as Error).message).toMatch(`is larger than ${TARBALL_MAX_BYTES} bytes`)
     expect(read).not.toHaveBeenCalled()
   }, 30_000)
+
+  it('says which step failed, without the command or its folders, since the message can reach the submitter', async () => {
+    await commit({ '.claude-plugin/plugin.json': '{}' })
+
+    const result = await fetchPlugin('', 'f'.repeat(40))
+
+    expect(result).toBeInstanceOf(Error)
+    const { message } = result as Error
+    expect(message).toMatch(/^could not fetch the commit from GitHub/)
+    expect(message).not.toMatch('--filter=blob:none')
+    expect(message).not.toMatch(sandboxTmp)
+  })
 
   it('fetches a plugin folder at a commit once for every caller', async () => {
     const sha = await commit({
