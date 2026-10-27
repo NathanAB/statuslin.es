@@ -118,11 +118,7 @@ function run(
   const tarballs: string[] = []
   const reviews: { lines: string[]; question: string }[] = []
   const pngs: string[] = []
-  const github: Pick<GitHubSource, 'tarball' | 'readme'> = {
-    async tarball(repoUrl, commitSha) {
-      tarballs.push(`${repoUrl}@${commitSha}`)
-      return TARBALL
-    },
+  const github: Pick<GitHubSource, 'readme'> = {
     async readme() {
       return README
     },
@@ -132,6 +128,10 @@ function run(
     recorder,
     desktopRecorder,
     github,
+    fetchPlugin: async ({ repoUrl, commitSha }) => {
+      tarballs.push(`${repoUrl}@${commitSha}`)
+      return TARBALL
+    },
     log: (line) => lines.push(line),
     review: async (reviewLines, question) => {
       reviews.push({ lines: reviewLines, question })

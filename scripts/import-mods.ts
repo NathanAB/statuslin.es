@@ -10,6 +10,7 @@ import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import {
+  type FetchPlugin,
   hasSubmission,
   importedSlug,
   insertDraftMod,
@@ -19,6 +20,7 @@ import {
 } from '@/mods/import'
 import { terminalLine } from '@/mods/terminal-line'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
+import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 
 /**
  * Import the curated mods as drafts. For each entry in the curation file it downloads the
@@ -50,7 +52,8 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface ImportDeps {
   db: Db
-  github: Pick<GitHubSource, 'repoInfo' | 'tarball'>
+  github: Pick<GitHubSource, 'repoInfo'>
+  fetchPlugin: FetchPlugin
   withSandbox: typeof withModSandbox
   log: (line: string) => void
 }
@@ -111,7 +114,7 @@ async function updateInputSteps(db: Db, entry: CurationEntry): Promise<boolean> 
 
 async function importEntry(
   entry: CurationEntry,
-  { db, github, withSandbox }: ImportDeps,
+  { db, github, fetchPlugin, withSandbox }: ImportDeps,
 ): Promise<string> {
   const name = entry.pluginName
   const imported = await importedSlug(db, entry)
@@ -128,7 +131,7 @@ async function importEntry(
   if (canonical !== entry.repoUrl) throw new Error(`write the repository URL as ${canonical}`)
   const owner = repo.fullName.slice(0, repo.fullName.indexOf('/'))
   const slug = existing?.slug ?? (await pickSlug(db, name, owner))
-  const facts = await inspectSource(entry, { github, withSandbox })
+  const facts = await inspectSource(entry, { fetchPlugin, withSandbox })
   if (facts.manifest.name !== name) {
     throw new Error(`plugin.json names the plugin "${facts.manifest.name}", not "${name}"`)
   }
@@ -184,6 +187,7 @@ async function main(): Promise<number> {
     return await importMods(JSON.parse(readFileSync(file, 'utf8')), {
       db,
       github: createGitHub(),
+      fetchPlugin: createPluginFetcher(),
       withSandbox: withModSandbox,
       log: (line) => console.log(line),
     })

@@ -4,7 +4,6 @@ import * as schema from '@/db/schema'
 import { HttpError } from '@/lib/http'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
 import type { InputStep } from './curation'
-import type { GitHubSource } from './github'
 import { inspectPlugin, type PluginFacts } from './plugin-facts'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -17,9 +16,15 @@ export interface PinnedSource {
   commitSha: string
 }
 
-/** What reading a pinned plugin needs: its download and an offline sandbox to read it in. */
+/**
+ * The plugin folder at the commit as `.tar.gz` bytes, one top-level folder holding `<path>/…`:
+ * data only, never unpacked on the host.
+ */
+export type FetchPlugin = (source: PinnedSource) => Promise<Uint8Array>
+
+/** What reading a pinned plugin needs: its fetch and an offline sandbox to read it in. */
 export interface InspectDeps {
-  github: Pick<GitHubSource, 'tarball'>
+  fetchPlugin: FetchPlugin
   withSandbox: typeof withModSandbox
 }
 
@@ -58,14 +63,14 @@ export async function importedSlug(db: Db, source: PinnedSource): Promise<string
 }
 
 /**
- * Downloads the repository at the commit and reads the plugin in an offline sandbox: its
- * plugin.json and `claude plugin validate`'s footprint. Nothing from the download runs on the host.
+ * Fetches the plugin folder at the commit and reads it in an offline sandbox: its plugin.json and
+ * `claude plugin validate`'s footprint. Nothing from the fetch runs on the host.
  */
 export async function inspectSource(
   source: PinnedSource,
-  { github, withSandbox }: InspectDeps,
+  { fetchPlugin, withSandbox }: InspectDeps,
 ): Promise<PluginFacts> {
-  const tarball = await github.tarball(source.repoUrl, source.commitSha)
+  const tarball = await fetchPlugin(source)
   return withSandbox({ tarball, path: source.path }, inspectPlugin)
 }
 

@@ -12,6 +12,7 @@ import { writeTmpPng } from '@/mods/preview-review'
 import { terminalLine } from '@/mods/terminal-line'
 import { e2bDesktopRecorder } from '@/render/mods/desktop/recorder'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
+import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 import { e2bModRecorder } from '@/render/mods/recorder'
 import { openAgentPipe } from './agent-pipe'
 import { parseDeployEnv } from './deploy-env'
@@ -71,6 +72,7 @@ async function main(): Promise<number> {
   const client = postgres(url, isPooledUrl(url) ? { prepare: false } : {})
   const db = drizzle({ client, schema }) as unknown as Db
   const github = createGitHub()
+  const fetchPlugin = createPluginFetcher()
   const pipe = await openAgentPipe(() =>
     log(`the page-copy requests were not all read; run cat '${pipe.requests}' again`),
   )
@@ -84,6 +86,7 @@ async function main(): Promise<number> {
           importMods(JSON.parse(onDisk), {
             db,
             github,
+            fetchPlugin,
             withSandbox: withModSandbox,
             log,
           }),
@@ -95,6 +98,7 @@ async function main(): Promise<number> {
               recorder: e2bModRecorder,
               desktopRecorder: e2bDesktopRecorder(),
               github,
+              fetchPlugin,
               log,
               // The live version's new previews are never stored unreviewed here; the newly pinned
               // version is reviewed against its README at its publish step.
@@ -126,7 +130,10 @@ async function main(): Promise<number> {
             writeStderr: log,
           }),
         renderStatusLineDesktop: () =>
-          renderStatusLineDesktop({}, { db, desktopRecorder: e2bDesktopRecorder(), github, log }),
+          renderStatusLineDesktop(
+            {},
+            { db, desktopRecorder: e2bDesktopRecorder(), fetchPlugin, log },
+          ),
       },
       {
         log,

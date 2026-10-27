@@ -28,7 +28,7 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 type SubmitGitHub = LinkGitHub & Pick<GitHub, 'compareCommits'>
 
 export type ModSubmitDeps = InspectDeps & {
-  github: SubmitGitHub & InspectDeps['github']
+  github: SubmitGitHub
   guard: SubmitGuard
 }
 
@@ -70,7 +70,7 @@ function refuseInspection(error: unknown): never {
   if (error instanceof Error && TOO_LARGE.test(error.message)) {
     throw new HttpError(
       400,
-      'The repository is over 2,000 files or 20 MB: put the mod in its own repository.',
+      'The plugin folder is over 2,000 files or 20 MB: trim it to what the plugin needs.',
     )
   }
   throw error

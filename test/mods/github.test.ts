@@ -1,14 +1,10 @@
-import { createHash } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createGitHub,
   GITHUB_JSON_MAX_BYTES,
   PLUGIN_MANIFEST_MAX_BYTES,
   README_MAX_BYTES,
-  TARBALL_MAX_BYTES,
-  TARBALL_MAX_FILES,
 } from '@/mods/github'
-import { PluginRefusal } from '@/mods/plugin-facts'
 
 const REPO = 'https://github.com/octocat/meter'
 const SHA = 'a'.repeat(40)
@@ -169,195 +165,6 @@ describe('repoInfo', () => {
   })
 })
 
-describe('tarball', () => {
-  const tree = (entries: number, truncated = false) => ({
-    status: 200,
-    body: { truncated, tree: Array.from({ length: entries }, (_, i) => ({ path: `f${i}` })) },
-  })
-  const archiveUrl = `https://codeload.github.com/octocat/meter/tar.gz/${SHA}`
-
-  it('downloads the repository at the commit as bytes', async () => {
-    const bytes = new Uint8Array([31, 139, 8, 0])
-    const { fetchFn } = fakeFetch({
-      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
-      [archiveUrl]: { status: 200, body: bytes },
-    })
-
-    expect(await createGitHub(fetchFn).tarball(REPO, SHA)).toEqual(bytes)
-  })
-
-  it('downloads a repository at a commit once for every caller in a run', async () => {
-    const bytes = new Uint8Array([31, 139, 8, 0])
-    const { fetchFn, requested } = fakeFetch({
-      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
-      [archiveUrl]: { status: 200, body: bytes },
-      [api(`/git/trees/${BASE}?recursive=1`)]: tree(3),
-      [`https://codeload.github.com/octocat/meter/tar.gz/${BASE}`]: { status: 200, body: bytes },
-    })
-    const github = createGitHub(fetchFn)
-
-    await Promise.all([github.tarball(REPO, SHA), github.tarball(REPO, SHA)])
-    await github.tarball(REPO, SHA)
-    await github.tarball(REPO, BASE)
-
-    expect(requested.filter((url) => url.includes('/tar.gz/'))).toEqual([
-      archiveUrl,
-      `https://codeload.github.com/octocat/meter/tar.gz/${BASE}`,
-    ])
-  })
-
-  it.each([
-    ['more files than the limit', tree(TARBALL_MAX_FILES + 1), /files/],
-    ['a tree GitHub truncated', tree(10, true), /files/],
-  ])('refuses a repository with %s before downloading it', async (_name, route, message) => {
-    const { fetchFn, requested } = fakeFetch({
-      [api(`/git/trees/${SHA}?recursive=1`)]: route,
-      [archiveUrl]: { status: 200, body: new Uint8Array(4) },
-    })
-
-    await expect(createGitHub(fetchFn).tarball(REPO, SHA)).rejects.toThrow(message)
-    expect(requested).not.toContain(archiveUrl)
-  })
-
-  describe("what makes GitHub's archive differ from the checkout Claude Code installs", () => {
-    /** Git's id for a file holding `text`, which GitHub's tree lists it by. */
-    const blobSha = (text: string) =>
-      createHash('sha1')
-        .update(`blob ${Buffer.byteLength(text)}\0${text}`)
-        .digest('hex')
-    const entries = (...extra: object[]) => ({
-      status: 200,
-      body: { truncated: false, tree: [{ path: 'hooks/register.ts', type: 'blob' }, ...extra] },
-    })
-    const attributes = (path: string, text: string) => ({ path, type: 'blob', sha: blobSha(text) })
-    const blobRoutes = (...texts: string[]) =>
-      Object.fromEntries(
-        texts.map((text) => [
-          api(`/git/blobs/${blobSha(text)}`),
-          { status: 200, body: new TextEncoder().encode(text) },
-        ]),
-      )
-    const download = async (tree: Route, blobs: Record<string, Route> = {}) => {
-      const bytes = new Uint8Array([31, 139, 8, 0])
-      const { fetchFn, requested } = fakeFetch({
-        [api(`/git/trees/${SHA}?recursive=1`)]: tree,
-        ...blobs,
-        [archiveUrl]: { status: 200, body: bytes },
-      })
-      const result = await createGitHub(fetchFn)
-        .tarball(REPO, SHA)
-        .catch((error: unknown) => error)
-      return { result, bytes, requested }
-    }
-
-    it.each([
-      ['a submodule', { path: 'lib', type: 'commit' }, null],
-      ['a .gitmodules', { path: '.gitmodules', type: 'blob' }, null],
-    ])('refuses a repository with %s before downloading it', async (_name, entry) => {
-      const { result, requested } = await download(entries(entry))
-
-      expect(result).toBeInstanceOf(PluginRefusal)
-      expect((result as Error).message).toMatch(/submodules/)
-      expect(requested).not.toContain(archiveUrl)
-    })
-
-    it.each([
-      ['export-ignore', '/mod/monitors export-ignore\n'],
-      ['export-subst', 'hooks/*.ts export-subst\n'],
-      [
-        'working-tree-encoding, which a Mac checkout converts',
-        'hooks/register.ts working-tree-encoding=SHIFT_JIS\n',
-      ],
-      ['ident', '*.ts ident\n'],
-      ['filter=lfs', '*.ts filter=lfs diff=lfs merge=lfs -text\n'],
-      ['a macro', '[attr]plain text\n*.ts plain\n'],
-      ['a quoted pattern glued to its attribute', '"*"working-tree-encoding=SHIFT_JIS\n'],
-      ['a quoted macro', '"[attr]x"working-tree-encoding=SHIFT_JIS\n'],
-      ['a quoted pattern with a space', '"my file.ts" text\n'],
-      ['a pattern that is a non-ASCII space', '\u00a0 working-tree-encoding=SHIFT_JIS\n'],
-      ['a pattern git reads where JS sees a comment', '\v#x/** working-tree-encoding=SHIFT_JIS\n'],
-      ['a byte-order mark before a pattern', '\ufeff#x working-tree-encoding=SHIFT_JIS\n'],
-      ['a byte-order mark before a quoted pattern', '\ufeff"*"working-tree-encoding=SHIFT_JIS\n'],
-    ])('refuses a .gitattributes using %s, before downloading', async (_name, text) => {
-      const { result, requested } = await download(
-        entries(attributes('mod/.GitAttributes', text)),
-        blobRoutes(text),
-      )
-
-      expect(result).toBeInstanceOf(PluginRefusal)
-      expect((result as Error).message).toMatch(/mod\/\.GitAttributes sets more than line endings/)
-      expect(requested).not.toContain(archiveUrl)
-    })
-
-    it('downloads a repository whose .gitattributes only sets line endings and how git diffs', async () => {
-      const text =
-        '# endings\r\n* text=auto eol=lf\n\n*.png binary\n*.md linguist-documentation -diff\n'
-      const { result, bytes } = await download(
-        entries(attributes('.gitattributes', text)),
-        blobRoutes(text),
-      )
-
-      expect(result).toEqual(bytes)
-    })
-
-    it('reads a .gitattributes shared by many paths once', async () => {
-      const text = '* text=auto\n'
-      const { requested } = await download(
-        entries(attributes('.gitattributes', text), attributes('a/.gitattributes', text)),
-        blobRoutes(text),
-      )
-
-      expect(requested.filter((url) => url.includes('/git/blobs/'))).toHaveLength(1)
-    })
-
-    it('refuses more than 10 .gitattributes without reading any', async () => {
-      const many = Array.from({ length: 11 }, (_, i) =>
-        attributes(`d${i}/.gitattributes`, `${i}\n`),
-      )
-
-      const { result, requested } = await download(entries(...many))
-
-      expect(result).toBeInstanceOf(PluginRefusal)
-      expect(requested.filter((url) => url.includes('/git/blobs/'))).toEqual([])
-    })
-
-    it('fails as our own error when the bytes GitHub sends are not the blob the tree names', async () => {
-      const text = '* text=auto\n'
-      const { result } = await download(entries(attributes('.gitattributes', text)), {
-        [api(`/git/blobs/${blobSha(text)}`)]: {
-          status: 200,
-          body: new TextEncoder().encode('* t'),
-        },
-      })
-
-      expect(result).toBeInstanceOf(Error)
-      expect(result).not.toBeInstanceOf(PluginRefusal)
-    })
-  })
-
-  it('refuses an archive larger than the limit', async () => {
-    const { fetchFn } = fakeFetch({
-      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
-      [archiveUrl]: { status: 200, body: new Uint8Array(TARBALL_MAX_BYTES + 1) },
-    })
-
-    await expect(createGitHub(fetchFn).tarball(REPO, SHA)).rejects.toThrow(/larger than/)
-  })
-
-  it('refuses an archive whose declared size is over the limit without reading it', async () => {
-    const { fetchFn } = fakeFetch({
-      [api(`/git/trees/${SHA}?recursive=1`)]: tree(3),
-      [archiveUrl]: {
-        status: 200,
-        body: new Uint8Array(4),
-        headers: { 'content-length': String(TARBALL_MAX_BYTES + 1) },
-      },
-    })
-
-    await expect(createGitHub(fetchFn).tarball(REPO, SHA)).rejects.toThrow(/larger than/)
-  })
-})
-
 describe('readme', () => {
   function readmeFetch(status: number, body = '') {
     const calls: Array<{ url: string; accept: string | null }> = []
@@ -416,29 +223,22 @@ describe('GITHUB_TOKEN', () => {
     vi.unstubAllEnvs()
   })
 
-  const archiveUrl = `https://codeload.github.com/octocat/meter/tar.gz/${SHA}`
-
   function recordAuthorization() {
     const calls: Array<{ url: string; authorization: string | null }> = []
     const fetchFn = (async (url: string, init?: RequestInit) => {
       calls.push({ url, authorization: new Headers(init?.headers).get('authorization') })
-      return url === archiveUrl
-        ? new Response(new Uint8Array(4))
-        : Response.json({ truncated: false, tree: [] })
+      return Response.json({ sha: SHA })
     }) as unknown as typeof fetch
     return { calls, fetchFn }
   }
 
-  it('authenticates API requests with the token, and keeps it off the archive host', async () => {
+  it('authenticates API requests with the token', async () => {
     vi.stubEnv('GITHUB_TOKEN', 'ghp_test')
     const { calls, fetchFn } = recordAuthorization()
 
-    await createGitHub(fetchFn).tarball(REPO, SHA)
+    await createGitHub(fetchFn).commitIsFetchable(REPO, SHA)
 
-    expect(calls).toEqual([
-      { url: api(`/git/trees/${SHA}?recursive=1`), authorization: 'Bearer ghp_test' },
-      { url: archiveUrl, authorization: null },
-    ])
+    expect(calls).toEqual([{ url: api(`/commits/${SHA}`), authorization: 'Bearer ghp_test' }])
   })
 
   it.each([
@@ -448,9 +248,9 @@ describe('GITHUB_TOKEN', () => {
     vi.stubEnv('GITHUB_TOKEN', token)
     const { calls, fetchFn } = recordAuthorization()
 
-    await createGitHub(fetchFn).tarball(REPO, SHA)
+    await createGitHub(fetchFn).commitIsFetchable(REPO, SHA)
 
-    expect(calls.map((call) => call.authorization)).toEqual([null, null])
+    expect(calls.map((call) => call.authorization)).toEqual([null])
   })
 })
 describe('findRepo', () => {

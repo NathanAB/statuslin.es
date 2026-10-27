@@ -1,19 +1,8 @@
-import { refuseArchiveDifferences, type TreeEntry } from './archive-differences'
 import { failure, readAtMost, readJsonObject, readUpTo } from './github-response'
-import {
-  encodeParts,
-  GITHUB_API,
-  GITHUB_ARCHIVES,
-  manifestUrl,
-  repoApiUrl,
-  repoPath,
-} from './github-urls'
+import { encodeParts, GITHUB_API, manifestUrl, repoApiUrl } from './github-urls'
 
 const REQUEST_TIMEOUT_MS = 10_000
 
-/** Caps on a mod repository's download; every mod the #38 spike rendered fits well inside both. */
-export const TARBALL_MAX_BYTES = 20 * 1024 * 1024
-export const TARBALL_MAX_FILES = 2_000
 /** A JSON answer past this is refused: the largest one read is a compare listing up to 300 files. */
 export const GITHUB_JSON_MAX_BYTES = 10 * 1024 * 1024
 /** A bare commit hash, with room for a newline. */
@@ -39,11 +28,6 @@ export interface GitHubSource {
   pluginVersion(repoUrl: string, path: string, sha: string): Promise<string | null>
   /** The `description` in `path`'s plugin.json at `sha`, '' when it has none; null when unreadable. */
   pluginDescription(repoUrl: string, path: string, sha: string): Promise<string | null>
-  /**
-   * The repository at `sha` as `.tar.gz` bytes: data only, never unpacked on the host. Downloaded
-   * once per repository and commit for the life of this source; a failed download stays failed.
-   */
-  tarball(repoUrl: string, sha: string): Promise<Uint8Array>
   /** The raw README GitHub picks for `path` at `sha`, or null when the folder has none. */
   readme(repoUrl: string, path: string, sha: string): Promise<string | null>
 }
@@ -119,27 +103,6 @@ export function createGitHub(
     return repo
   }
 
-  async function readBlob(repoUrl: string, sha: string, maxBytes: number) {
-    const url = `${repoApiUrl(repoUrl)}/git/blobs/${sha}`
-    const res = await send(url, 'application/vnd.github.raw+json')
-    if (!res.ok) throw failure(res, url)
-    return readUpTo(res, maxBytes)
-  }
-
-  async function download(repoUrl: string, sha: string): Promise<Uint8Array> {
-    const { truncated, tree } = (await request(
-      `${repoApiUrl(repoUrl)}/git/trees/${sha}?recursive=1`,
-    )) as { truncated: boolean; tree: TreeEntry[] }
-    if (truncated || tree.length > TARBALL_MAX_FILES) {
-      throw new Error(`${repoUrl} at ${sha} has more than ${TARBALL_MAX_FILES} files`)
-    }
-    await refuseArchiveDifferences(tree, (blob, maxBytes) => readBlob(repoUrl, blob, maxBytes))
-    const url = `${GITHUB_ARCHIVES}/${repoPath(repoUrl)}/tar.gz/${sha}`
-    const res = await send(url)
-    if (!res.ok) throw failure(res, url)
-    return readAtMost(res, TARBALL_MAX_BYTES, url)
-  }
-
   /** plugin.json at `sha`, or null when it is missing, past 64 KiB or not a JSON object. */
   async function readManifest(
     repoUrl: string,
@@ -152,8 +115,6 @@ export function createGitHub(
     if (!res.ok) throw failure(res, url)
     return readJsonObject(res, PLUGIN_MANIFEST_MAX_BYTES)
   }
-
-  const downloads = new Map<string, Promise<Uint8Array>>()
 
   return {
     repoInfo,
@@ -214,13 +175,6 @@ export function createGitHub(
         status: CommitComparison
       }
       return status
-    },
-
-    tarball(repoUrl, sha) {
-      const key = `${repoPath(repoUrl)}@${sha}`
-      const pending = downloads.get(key) ?? download(repoUrl, sha)
-      downloads.set(key, pending)
-      return pending
     },
 
     async readme(repoUrl, path, sha) {

@@ -73,7 +73,7 @@ export interface ModSource {
 }
 
 /**
- * GitHub tarballs wrap the repository in one top-level folder, so strip it plus `path`. The member
+ * The tarball wraps the checkout in one top-level folder, so strip it plus `path`. The member
  * is named exactly under that folder; a wildcard would also match `<path>` nested elsewhere.
  */
 function unpackCommand(path: string): string {
@@ -154,6 +154,10 @@ export async function writeFiles(sandbox: Sandbox, files: SandboxFile[]): Promis
     })),
     { user: SANDBOX_USER },
   )
+}
+
+export async function readFile(sandbox: Sandbox, path: string): Promise<Uint8Array> {
+  return sandbox.files.read(path, { format: 'bytes', user: SANDBOX_USER })
 }
 
 export async function unpack(sandbox: Sandbox, source: ModSource): Promise<void> {

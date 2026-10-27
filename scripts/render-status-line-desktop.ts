@@ -9,7 +9,7 @@ import { requireEnv } from '@/lib/env'
 import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { inputStepsSchema } from '@/mods/curation'
-import { createGitHub, type GitHubSource } from '@/mods/github'
+import type { FetchPlugin } from '@/mods/import'
 import { terminalLine } from '@/mods/terminal-line'
 import type { DesktopVersions } from '@/render/mods/desktop/desktop-sandbox'
 import { e2bDesktopRecorder } from '@/render/mods/desktop/recorder'
@@ -20,6 +20,7 @@ import type {
   DesktopRecordRequest,
   StatusLineScript,
 } from '@/render/mods/desktop/types'
+import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 import { INTERPRETERS, type Interpreter } from '@/render/types'
 
 /**
@@ -54,7 +55,7 @@ export interface RenderStatusLineDesktopDeps {
   desktopRecorder: DesktopRecorder & {
     baseline(inputSteps: DesktopRecordRequest['inputSteps']): Promise<DesktopVersions>
   }
-  github: Pick<GitHubSource, 'tarball'>
+  fetchPlugin: FetchPlugin
   log: (line: string) => void
 }
 
@@ -179,7 +180,7 @@ export async function renderStatusLineDesktop(
     return 1
   }
 
-  const tarball = await deps.github.tarball(mod.repoUrl, mod.commitSha)
+  const tarball = await deps.fetchPlugin(mod)
   const request: Omit<DesktopRecordRequest, 'statusLine'> = {
     mod: { source: { tarball, path: mod.path }, pluginName: mod.pluginName },
     inputSteps: inputStepsSchema.parse(mod.inputSteps),
@@ -233,7 +234,7 @@ async function main(): Promise<number> {
     return await renderStatusLineDesktop(values, {
       db,
       desktopRecorder: e2bDesktopRecorder(),
-      github: createGitHub(),
+      fetchPlugin: createPluginFetcher(),
       log: (line) => console.log(line),
     })
   } finally {
