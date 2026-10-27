@@ -2,7 +2,7 @@
 
 Accepted 2026-10-27. Import, submit and render downloaded a mod's whole repository as one GitHub archive, then unpacked only the plugin folder in the sandbox. The download was capped at 2,000 files and 20 MB, so a mod in a folder of a large repository was refused for the size of everything around it. Anthropic's `diff` mod (`anthropics/claude-code`, over 2,000 files) and the Agent Standup band (`Atoll92/agent-standup`, over 20 MB) were both refused, although their folders hold 828 files in 523 KB and 8 files in 164 KB.
 
-Claude Code installs a plugin that lives in a folder from a `git-subdir` source, and checks out only that folder. What a user installs is the folder, so the folder is what statuslin.es needs to inspect.
+Claude Code installs a plugin that lives in a folder from a `git-subdir` source, with a sparse partial clone of that folder. The folder is the plugin Claude Code loads, so the folder is what statuslin.es needs to inspect.
 
 ## What changes
 
@@ -13,7 +13,7 @@ Claude Code installs a plugin that lives in a folder from a `git-subdir` source,
 
 ## What others do
 
-- Claude Code's [`git-subdir` plugin source](https://code.claude.com/docs/en/plugins/marketplace-reference#git-subdir-plugin-source) fetches "one subdirectory of a git repository, fetched with a sparse checkout", asking the server for a partial clone. We run the same kind of fetch, so the inspected files are the installed files.
+- Claude Code's [`git-subdir` plugin source](https://code.claude.com/docs/en/plugins/marketplace-reference#git-subdir-plugin-source) fetches "one subdirectory of a git repository, fetched with a sparse checkout", asking the server for a partial clone. We run the same kind of fetch, so the plugin folder we inspect is the one Claude Code installs.
 - Git's own tools for this are [partial clone](https://git-scm.com/docs/partial-clone) and [`git sparse-checkout`](https://git-scm.com/docs/git-sparse-checkout). GitHub serves both. GitHub's archive download has no option for one folder, which is why the whole repository was downloaded before.
 
 ## Considered options
@@ -28,4 +28,5 @@ Claude Code installs a plugin that lives in a folder from a `git-subdir` source,
 - Each fetch starts one extra sandbox, about 5 to 7 seconds. A run fetches each repository, folder and commit once.
 - The only sandbox with network access holds git and the fetched files, and reaches only github.com.
 - A submitted mod is now refused for the size of its folder, not its repository.
+- Claude Code's sparse checkout runs in cone mode (`sparse-checkout set --cone` in Claude Code 2.1.310), which also puts the repository root's files and the files directly in each folder above the plugin on the user's disk. Our checkout leaves them out, since they aren't part of the plugin. A symbolic link to one is refused at inspection, but code that reads or imports one by a relative path would run something nobody reviewed. The whole-repository download had the same gap. [#237](https://github.com/NathanAB/statuslin.es/issues/237) tracks it.
 - The `.gitattributes` rule is unchanged. It still refuses `export-ignore` and `export-subst`, which only change an archive download and so no longer matter. Relaxing it is a separate decision.
