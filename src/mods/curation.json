@@ -676,5 +676,29 @@
     "commitSha": "411c9c4f4f1c3d128159be7315823341ae7d9e2d",
     "pluginName": "mindful-claude",
     "title": "Mindful Claude"
+  },
+  {
+    "repoUrl": "https://github.com/anthropics/claude-code",
+    "path": "mods/diff",
+    "commitSha": "08c6a4f5121ae140d3c1b5c96e3e5ae53587b54b",
+    "pluginName": "diff",
+    "title": "Diff",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      },
+      {
+        "type": "text",
+        "text": "/diff"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/Atoll92/agent-standup",
+    "path": "plugin-band",
+    "commitSha": "191c777e00b86c0f1c86a22d22702386fab91d35",
+    "pluginName": "agent-standup-band",
+    "title": "Agent Standup"
   }
 ]
