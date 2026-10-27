@@ -419,8 +419,13 @@ preview types at most 13 steps (`INPUT_STEPS_MAX`, set by the recording's time l
 
 A mod's gallery card shows its Claude Desktop shot, or its terminal preview while it has no shot.
 When the terminal reads better, set the entry's `cardSurface` to `"terminal"` in
-`src/mods/curation.json` (`"desktop"` or leaving it out keeps the default). The card falls back to
-the other surface when the one it picks has nothing to show. The mod page shows both either way.
+`src/mods/curation.json`. Leave the field out to keep the default. The card falls back to the other
+surface when the one it picks has nothing to show. The mod page shows both either way.
+
+Run this only after the change that added `cardSurface` has deployed to that environment. The
+operator scripts on this code fail against a database that lacks the column. The choice is stored on
+the version built from the entry's pinned commit, so set it while the entry pins the live commit.
+After a re-pin, it lands on the new version and takes effect when that version publishes.
 Then, on staging and then production:
 ```sh
 DATABASE_URL='<env pooled url>' bun run import:mods                 # prints "updated <slug>: its card shows terminal first"

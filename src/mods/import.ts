@@ -1,6 +1,7 @@
 import { and, eq, exists, max, not, type SQL } from 'drizzle-orm'
 import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
+import type { CardSurface } from '@/lib/card-surface'
 import { HttpError } from '@/lib/http'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
 import type { InputStep } from './curation'
@@ -93,7 +94,7 @@ export interface NewVersion {
   license: string | null
   inputSteps: InputStep[]
   /** Left out for a submitted mod, whose card keeps the default. */
-  cardSurface?: schema.CardSurface | undefined
+  cardSurface?: CardSurface | undefined
 }
 
 /** Adds the mod's next version; returns its number. */

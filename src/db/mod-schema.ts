@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
+import { type CardSurface, TERMINAL_CARD_SURFACE } from '../lib/card-surface'
 import type { DesktopRecording } from '../render/mods/desktop/types'
 import type { AnsiSegment } from '../render/types'
 
@@ -21,10 +22,6 @@ export type ModStatus = (typeof MOD_STATUSES)[number]
 export type ModFootprint = { events: string[]; calls: string[] }
 
 export type ModInputSteps = unknown[]
-
-/** The preview a mod's gallery card shows first; null on a version shows Claude Desktop first. */
-export const CARD_SURFACES = ['terminal', 'desktop'] as const
-export type CardSurface = (typeof CARD_SURFACES)[number]
 
 /** Claude Code's plugin id rule (src/mods/curation.ts): a slug lands in marketplace entries and shell commands. */
 const PLUGIN_ID = '^[A-Za-z0-9][A-Za-z0-9._-]*$'
@@ -91,7 +88,7 @@ export const modVersions = pgTable(
     ),
     check(
       'mod_versions_card_surface_check',
-      sql`${t.cardSurface} IN (${sql.raw(CARD_SURFACES.map((surface) => `'${surface}'`).join(', '))})`,
+      sql`${t.cardSurface} = ${sql.raw(`'${TERMINAL_CARD_SURFACE}'`)}`,
     ),
     check(
       'mod_versions_path_check',

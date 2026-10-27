@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { CARD_SURFACES } from '@/db/schema'
+import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
 
 /** Relative to the repo root, where the import script and the tests both run. */
 export const CURATION_FILE = 'src/mods/curation.json'
@@ -47,7 +47,7 @@ const entrySchema = z.strictObject({
   title: z.string().trim().min(1, 'must not be empty'),
   inputSteps: inputStepsSchema.default([]),
   /** Left out, the card shows the Claude Desktop shot first. */
-  cardSurface: z.enum(CARD_SURFACES).optional(),
+  cardSurface: z.literal(TERMINAL_CARD_SURFACE).optional(),
 })
 
 export type InputStep = z.infer<typeof inputStepSchema>

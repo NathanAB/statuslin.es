@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { GalleryModCard } from '@/gallery/gallery-items'
+import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
 import { DesktopShot } from '@/ui/desktop-shot'
 import { Stack } from '@/ui/layout'
 import { StatuslinePreview } from '@/ui/statusline-preview'
@@ -78,6 +79,6 @@ export function ModRowPreview({
   const terminal =
     card.preview !== null ? <StatuslinePreview segments={card.preview} look="strip" /> : null
   const [first, second] =
-    card.cardSurface === 'terminal' ? [terminal, desktop] : [desktop, terminal]
+    card.cardSurface === TERMINAL_CARD_SURFACE ? [terminal, desktop] : [desktop, terminal]
   return first ?? second ?? <NoPreview />
 }

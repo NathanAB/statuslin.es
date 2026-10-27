@@ -1,4 +1,4 @@
-import type { CardSurface } from '@/db/schema'
+import type { CardSurface } from '@/lib/card-surface'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import { type GalleryCard, galleryPageCount, PAGE_SIZE } from './queries'

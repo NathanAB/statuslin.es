@@ -1,5 +1,5 @@
 {
-  "id": "d32771ba-03fd-4fe0-9e1e-cf4c77e04b12",
+  "id": "2db475e5-dbfc-4d81-87f9-93196c206eb4",
   "prevId": "e6c1671d-3ae4-4e28-aa35-e352db6bd63f",
   "version": "7",
   "dialect": "postgresql",
@@ -1694,7 +1694,7 @@
         },
         "mod_versions_card_surface_check": {
           "name": "mod_versions_card_surface_check",
-          "value": "\"mod_versions\".\"card_surface\" IN ('terminal', 'desktop')"
+          "value": "\"mod_versions\".\"card_surface\" = 'terminal'"
         },
         "mod_versions_path_check": {
           "name": "mod_versions_path_check",
