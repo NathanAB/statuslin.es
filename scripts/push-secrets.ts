@@ -11,7 +11,7 @@ import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { z } from 'zod'
 import { assertProductionDbTls } from '@/db/assert-tls'
-import { type DeployEnv, parseDeployEnv, spawnVarlock } from './deploy-env'
+import { type DeployEnv, deployEnvFile, parseDeployEnv, spawnVarlock } from './deploy-env'
 
 /** The Fly config `fly deploy` uses for each env, so the app name lives only there. */
 const FLY_CONFIG: Record<DeployEnv, string> = {
@@ -146,7 +146,7 @@ export function main(args: string[]): void {
   const config = FLY_CONFIG[deployEnv]
   const plan = planPush({
     items: loadFlyItems(deployEnv),
-    envFileText: readFileSync(`.env.${deployEnv}`, 'utf8'),
+    envFileText: readFileSync(deployEnvFile(deployEnv, process.cwd()), 'utf8'),
     flyNames: listFlySecrets(config),
   })
 

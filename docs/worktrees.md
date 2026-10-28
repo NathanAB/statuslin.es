@@ -15,7 +15,8 @@ A worktree is a separate working directory. It does **not** inherit the main che
 2. Copy the local env in: `cp <main-repo>/.env.local <worktree>/.env.local`. Without it, every
    DB-backed test fails with `Missing required environment variable: DATABASE_URL` (the test DB is
    PGlite, but `src/db/index.ts` reads `DATABASE_URL` at import). `.env.local` is gitignored, so it
-   is never copied automatically.
+   is never copied automatically. Don't copy `.env.staging` or `.env.production`: `with-env`,
+   `secrets:push` and `deploy:staging` read them from the main checkout when the worktree has none.
 3. Baseline the suite from the worktree root: `bun --bun run test`. Expect it green before you start.
 
 ## Run the gate from the worktree root, not the main repo
