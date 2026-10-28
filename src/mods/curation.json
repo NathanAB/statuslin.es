@@ -454,5 +454,64 @@
         "text": "/mission who"
       }
     ]
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/context-meter",
+    "commitSha": "a2babd9fdc2470ab7541e993b3e6cce55c46d032",
+    "pluginName": "context-meter",
+    "title": "Context Meter"
+  },
+  {
+    "repoUrl": "https://github.com/YeonwooSung/my-claude-code-mods",
+    "path": "agent-profiler",
+    "commitSha": "93fa0f7e84e37705da049ef2727530ec01af3dd9",
+    "pluginName": "agent-profiler",
+    "title": "Agent Profiler",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      },
+      {
+        "type": "text",
+        "text": "/profile-pane"
+      }
+    ],
+    "cardSurface": "terminal"
+  },
+  {
+    "repoUrl": "https://github.com/JohnnyVizz/claude-kit",
+    "path": "plugins/session-band",
+    "commitSha": "c871c153ead54ad9547cc717d0f3e5a676c73986",
+    "pluginName": "session-band",
+    "title": "Session Band",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/session_data demo 15"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/sezaakgun/cc-arcade",
+    "path": "",
+    "commitSha": "0baff06d31295850283c2eebe052f39bbc35473f",
+    "pluginName": "cc-arcade",
+    "title": "CC Arcade",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/arcade"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/dgokcin/claude-pokemon-mod",
+    "path": "",
+    "commitSha": "a5c646322149a16ba0eed0378817898248a0f7ed",
+    "pluginName": "pokemon",
+    "title": "Claude Pokémon",
+    "cardSurface": "terminal"
   }
 ]
