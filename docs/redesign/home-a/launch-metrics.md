@@ -103,3 +103,31 @@ launch itself.
   one to copy its install prompt" are gone. A search snapshot diff around the deploy showed no
   change to any page's status, title, description, canonical, robots tag or h1; only the three
   pages' FAQPage JSON-LD changed.
+- **Gallery cards and six curated mods** (#212, #213, #214, #221, #224, #225, #227 and dependency
+  updates including Bun 1.4.4, deployed 2026-10-25 at 16:35 UTC, production release v81, image
+  `sha256:438c3ca0a1e1a51e54f98a9b6825994a532385e9225a301e47d0bb9d745f0b71`). Gallery cards list
+  their page's tags, and the author sits on the title's baseline. Session HUD, Token Run, Time
+  Machine, Context Inspector, Pin Memo and Mission Control join the gallery and
+  `/marketplace.json`, so mod page views and copies after this date come from a larger catalog.
+  Curated mods re-pin to their new releases, and publishing a version updates a mod's description
+  from its plugin.json.
+- **Share cards** (#228, #229, deployed 2026-10-26 at 01:23 UTC, production release v83, image
+  `sha256:18ddbf9e26fbedd1fb4c2d05eacd218265b7594d7132d2a2d5e9af69b00c3312`; v82 failed with the
+  same image). The home page's share card is redrawn as the new hero, and the detail pages' cards
+  set their title and byline in the sans font. Pages themselves don't change.
+- **Exception tracking** (#230, deployed 2026-10-26 at 13:23 UTC, production release v84, image
+  `sha256:021eee0dcd5c0a38123b14aee1b1af0b6933036dff054753d022e65ba05bd29e`). The server stops
+  sending 4xx responses to PostHog as `$exception`. Three of the five exceptions between the
+  launch and this release were these server-side `Bad Request` errors, so leave them out of both
+  windows when comparing the `$exception` count.
+- **Mod page titles and install counts** (#231, #232, #233, #234, #236, #238, #239, #240, deployed
+  2026-10-28 at 11:54 UTC, production release v85, image
+  `sha256:def1534e15b3e45947708b7dbfcd45141ee63749f0c889338e39d3175a6e4c11`). A mod page whose page
+  copy has a reviewed headline is titled and subtitled by it and shows "Common questions" (Context
+  Inspector's title became "Context Inspector: Find what is wasting your Claude Code…"). A search
+  change on a mod page starts at this date; the drop in `/mods/*` clicks on 2026-10-24 to 26 (9
+  against 31 on the same weekdays a week earlier, at a steady position) came before it. Install
+  counts below 3 are hidden. Mod previews record in a sample project and show the prompt box when a
+  mod restyles its text. #239 lets a curated mod's card show its terminal preview, but only two of
+  #236's five new mods use it, and none of the five was published on 2026-10-28. #242, which turns
+  it on for published mods' cards, wasn't yet on production.
