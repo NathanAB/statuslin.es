@@ -375,11 +375,7 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
    its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
    it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result.
-   A published mod's live previews are replaced only after you approve them, so run it in a
-   terminal. Once every mod has rendered, the run prints each published mod's new previews beside
-   its README, then asks one question listing them all: answer `y` to replace every one, `n` (or
-   nothing) to keep them all, or the slugs to leave out, separated by spaces or commas, to replace
-   the rest. A slug it doesn't recognise replaces none:
+   A published mod's live previews are replaced as soon as it renders:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
    ```

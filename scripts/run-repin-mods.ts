@@ -97,13 +97,8 @@ async function main(): Promise<number> {
               db,
               recorder: e2bModRecorder,
               desktopRecorder: e2bDesktopRecorder(),
-              github,
               fetchPlugin,
               log,
-              // The live version's new previews are never stored unreviewed here; the newly pinned
-              // version is reviewed against its README at its publish step.
-              review: async () => '',
-              writePng: writeTmpPng,
             },
           ),
         publishMod: (argv, publishLog) =>
