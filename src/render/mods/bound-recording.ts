@@ -1,5 +1,5 @@
 import type { Recording } from './recorder'
-import { TERMINAL } from './session'
+import { TERMINAL } from './terminal'
 
 export const RECORDING_MAX_ROWS = TERMINAL.rows
 /** A truecolor foreground and background on every cell of a row fits with room to spare. */

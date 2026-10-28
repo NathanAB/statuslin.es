@@ -12,7 +12,7 @@ import {
   REPLAY_SCRIPT_SRC,
   replayInSandbox,
 } from '@/render/mods/replay'
-import { TERMINAL } from '@/render/mods/session'
+import { TERMINAL } from '@/render/mods/terminal'
 import styledRows from './fixtures/styled-session.rows.json'
 
 const bytes = (text: string) => new TextEncoder().encode(text)

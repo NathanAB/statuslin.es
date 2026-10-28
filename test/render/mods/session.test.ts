@@ -277,6 +277,13 @@ describe('keystrokes', () => {
     expect(keystrokes({ type: 'text', text: '/radar', submit: true })).toEqual(['/radar', '\r'])
   })
 
+  it('clicks a cell by pressing then releasing the left button at its column and row', () => {
+    expect(keystrokes({ type: 'click', row: 21, col: 50 })).toEqual([
+      '\u001b[<0;50;21M',
+      '\u001b[<0;50;21m',
+    ])
+  })
+
   it('leaves the text unsent when submit is false', () => {
     expect(keystrokes({ type: 'text', text: 'look at [Image #1]', submit: false })).toEqual([
       'look at [Image #1]',

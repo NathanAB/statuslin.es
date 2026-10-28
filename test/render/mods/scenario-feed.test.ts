@@ -119,6 +119,13 @@ describe('playsBusySession', () => {
   ])('is $busy for steps typing $texts', ({ texts, busy }) => {
     expect(playsBusySession(texts.map(step))).toBe(busy)
   })
+
+  it('reads past a click step to the text steps', () => {
+    const click = { type: 'click' as const, row: 21, col: 50 }
+
+    expect(playsBusySession([click])).toBe(false)
+    expect(playsBusySession([click, step('/preview-busy')])).toBe(true)
+  })
 })
 
 describe('busy session workspace', () => {

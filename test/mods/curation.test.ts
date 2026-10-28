@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CURATION_FILE, parseCuration } from '@/mods/curation'
+import { TERMINAL } from '@/render/mods/terminal'
 
 const SHA = 'a'.repeat(40)
 
@@ -36,6 +37,33 @@ describe('parseCuration', () => {
     const result = parseCuration([entry({ inputSteps })])
 
     expect(result.ok && result.entries[0]?.inputSteps).toEqual(inputSteps)
+  })
+
+  it("keeps click steps on the recording terminal's corner cells", () => {
+    const inputSteps = [
+      { type: 'click', row: 1, col: 1 },
+      { type: 'click', row: TERMINAL.rows, col: TERMINAL.cols },
+    ]
+
+    const result = parseCuration([entry({ inputSteps })])
+
+    expect(result.ok && result.entries[0]?.inputSteps).toEqual(inputSteps)
+  })
+
+  it.each([
+    ['row 0', { row: 0 }, /inputSteps\.0\.row/],
+    ['a row below the terminal', { row: TERMINAL.rows + 1 }, /inputSteps\.0\.row/],
+    ['column 0', { col: 0 }, /inputSteps\.0\.col/],
+    ['a column past the terminal', { col: TERMINAL.cols + 1 }, /inputSteps\.0\.col/],
+    ['half a row', { row: 2.5 }, /inputSteps\.0\.row/],
+    ['text to type as well', { text: 'w' }, /inputSteps\.0.*text/],
+  ])('refuses a click step with %s', (_name, overrides, message) => {
+    const inputSteps = [{ type: 'click', row: 21, col: 50, ...overrides }]
+
+    const errors = errorsFor([entry({ inputSteps })])
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toMatch(message)
   })
 
   it.each([

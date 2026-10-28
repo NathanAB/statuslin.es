@@ -22,8 +22,8 @@ import {
   sessionEnv,
   sessionFiles,
   setupCommand,
-  TERMINAL,
 } from './session'
+import { TERMINAL } from './terminal'
 
 export interface ModUnderRender {
   source: ModSource

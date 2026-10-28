@@ -407,9 +407,17 @@ commit, edit the entry in `src/mods/curation.json`, then, on staging and then pr
 DATABASE_URL='<env pooled url>' bun run import:mods                 # prints "updated <slug>: new input steps"
 DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
 ```
-For a published mod, `render:mods` prints the new previews beside the README and asks, in its one
-question for the run, before it replaces the live ones; nothing needs publishing. A
-preview types at most 13 steps (`INPUT_STEPS_MAX`, set by the recording's time limit).
+For a published mod, `render:mods` replaces its live previews as soon as it renders; nothing needs
+publishing. A preview types at most 13 steps (`INPUT_STEPS_MAX`, set by the recording's time limit).
+
+A step is text to type, `{"type": "text", "text": "/arcade doom"}` (add `"submit": false` to leave
+it unsent), or a left click on one terminal cell, `{"type": "click", "row": 21, "col": 50}`. Use a
+click for a mod that waits for one, such as cc-arcade's Doom, which shows "CLICK HERE TO PLAY".
+`row` and `col` count from 1 at the top left of the 100x30 recording terminal, and the import
+refuses a cell outside it. A click is for the terminal preview only: it names no place in the Desktop
+window, so the Desktop recording skips it and types the text steps alone. When a key would also
+start the mod, prefer the click anyway: a typed key is a text step, so the no-mod baseline types it
+into its prompt too.
 
 ### Pick a mod's card preview
 

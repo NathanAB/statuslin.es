@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/useNamingConvention: env var names and Claude Code config keys are external contracts.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { InputStep } from '@/mods/curation'
+import type { InputStep, TextStep } from '@/mods/curation'
 import { SANDBOX_CANNED_MODEL_SERVER_DEST, SANDBOX_CLAUDE_CODE_BIN } from '../e2b-template'
 import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
@@ -13,8 +13,6 @@ import {
   feedFile,
   feedStdin,
 } from './scenario-feed'
-
-export const TERMINAL = { cols: 100, rows: 30 }
 
 const HOME = '/home/user/session-home'
 const CONFIG_DIR = `${HOME}/.claude`
@@ -32,7 +30,7 @@ const FEED_PLUGIN_ASSETS = ['.claude-plugin/plugin.json', 'hooks/hooks.json', 'h
 const FEED_PLUGIN_SRC = join(import.meta.dirname, 'sandbox/scenario-feed')
 
 /** Typed before the input steps, so every recording has a finished turn. */
-export const SCRIPTED_PROMPT: InputStep = { type: 'text', text: 'hello' }
+export const SCRIPTED_PROMPT: TextStep = { type: 'text', text: 'hello' }
 
 /** Opus 4.8 reports a 1M window unless 1M context is off, which leaves it at 200k (measured on 2.1.296). */
 function contextWindowEnv(windowSize: number): Record<string, string> {
@@ -159,6 +157,13 @@ export function launchCommand(scenario: Scenario, modPluginDir: string | null): 
   return `exec ${SANDBOX_CLAUDE_CODE_BIN} --model ${shellQuote(feedStdin(scenario).model.id)} ${flags}`
 }
 
+/** An SGR mouse report of the left button at a 1-based cell: `M` presses it, `m` releases it. */
+const leftButton = (row: number, col: number, action: 'M' | 'm') =>
+  `\u001b[<0;${col};${row}${action}`
+
 export function keystrokes(step: InputStep): string[] {
+  if (step.type === 'click') {
+    return [leftButton(step.row, step.col, 'M'), leftButton(step.row, step.col, 'm')]
+  }
   return step.submit === false ? [step.text] : [step.text, '\r']
 }

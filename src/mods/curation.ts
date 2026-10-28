@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
+import { TERMINAL } from '@/render/mods/terminal'
 
 /** Relative to the repo root, where the import script and the tests both run. */
 export const CURATION_FILE = 'src/mods/curation.json'
@@ -15,11 +16,20 @@ const PATH_SEGMENT = /^[A-Za-z0-9._-]+$/
 const segments = (path: string) => (path === '' ? [] : path.split('/'))
 
 /** Typed into the prompt after the scripted turn; `submit: false` leaves it unsent. */
-const inputStepSchema = z.strictObject({
+const textStepSchema = z.strictObject({
   type: z.literal('text'),
   text: z.string().min(1),
   submit: z.boolean().optional(),
 })
+
+/** A left click on a 1-based cell of the recording terminal, for a mod that starts on a click. */
+const clickStepSchema = z.strictObject({
+  type: z.literal('click'),
+  row: z.int().min(1).max(TERMINAL.rows),
+  col: z.int().min(1).max(TERMINAL.cols),
+})
+
+const inputStepSchema = z.discriminatedUnion('type', [textStepSchema, clickStepSchema])
 
 /** Also parses the steps the import stored, since mod_versions.input_steps is untyped jsonb. */
 export const inputStepsSchema = z.array(inputStepSchema)
@@ -51,6 +61,7 @@ const entrySchema = z.strictObject({
 })
 
 export type InputStep = z.infer<typeof inputStepSchema>
+export type TextStep = z.infer<typeof textStepSchema>
 export type CurationEntry = z.infer<typeof entrySchema>
 
 export type CurationResult =
