@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { and, eq, inArray, not, sql } from 'drizzle-orm'
+import { and, eq, inArray, not, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -37,8 +37,10 @@ import { createPluginFetcher } from '@/render/mods/plugin-checkout'
  *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
  * request, so rerunning the same file changes nothing. If only its `inputSteps` changed, they are
- * stored on that version in place, and its previews need rendering again (render:mods --slug). The whole file's format is checked before
- * anything is fetched or written; an entry refused later is reported and the others still import.
+ * stored on that version in place, and its previews need rendering again (render:mods --slug). A
+ * changed `cardSurface` is stored in place too, and needs no render. The whole file's format is
+ * checked before anything is fetched or written; an entry refused later is reported and the others
+ * still import.
  *
  * AGENT USAGE (needs E2B_API_KEY and DATABASE_URL):
  *
@@ -85,6 +87,22 @@ async function modToRepin(
   return rows[0]
 }
 
+/** The curated versions already built from the entry's commit; a user's submission of it is theirs. */
+function curatedVersionOf(db: Db, entry: CurationEntry): SQL | undefined {
+  return and(
+    eq(schema.modVersions.repoUrl, entry.repoUrl),
+    eq(schema.modVersions.path, entry.path),
+    eq(schema.modVersions.commitSha, entry.commitSha),
+    inArray(
+      schema.modVersions.modId,
+      db
+        .select({ id: schema.mods.id })
+        .from(schema.mods)
+        .where(not(hasSubmission(db))),
+    ),
+  )
+}
+
 /**
  * Stores an entry's input steps on the curated version already built from its commit, when they
  * changed. They only drive the preview recording, so the version stays the same one.
@@ -95,17 +113,24 @@ async function updateInputSteps(db: Db, entry: CurationEntry): Promise<boolean> 
     .set({ inputSteps: entry.inputSteps })
     .where(
       and(
-        eq(schema.modVersions.repoUrl, entry.repoUrl),
-        eq(schema.modVersions.path, entry.path),
-        eq(schema.modVersions.commitSha, entry.commitSha),
+        curatedVersionOf(db, entry),
         sql`${schema.modVersions.inputSteps} is distinct from ${JSON.stringify(entry.inputSteps)}::jsonb`,
-        inArray(
-          schema.modVersions.modId,
-          db
-            .select({ id: schema.mods.id })
-            .from(schema.mods)
-            .where(not(hasSubmission(db))),
-        ),
+      ),
+    )
+    .returning({ id: schema.modVersions.id })
+  return updated.length > 0
+}
+
+/** Stores the surface an entry picks for its gallery card, when it changed. The card reads it as is. */
+async function updateCardSurface(db: Db, entry: CurationEntry): Promise<boolean> {
+  const cardSurface = entry.cardSurface ?? null
+  const updated = await db
+    .update(schema.modVersions)
+    .set({ cardSurface })
+    .where(
+      and(
+        curatedVersionOf(db, entry),
+        sql`${schema.modVersions.cardSurface} is distinct from ${cardSurface}`,
       ),
     )
     .returning({ id: schema.modVersions.id })
@@ -119,8 +144,13 @@ async function importEntry(
   const name = entry.pluginName
   const imported = await importedSlug(db, entry)
   if (imported) {
-    if (await updateInputSteps(db, entry)) {
-      return `updated ${imported}: new input steps at ${entry.commitSha}; render it again (render:mods --slug ${imported})`
+    const newSteps = await updateInputSteps(db, entry)
+    const newSurface = await updateCardSurface(db, entry)
+    if (newSteps) {
+      return `updated ${imported}: new input steps${newSurface ? ' and card surface' : ''} at ${entry.commitSha}; render it again (render:mods --slug ${imported})`
+    }
+    if (newSurface) {
+      return `updated ${imported}: its card shows ${entry.cardSurface ?? 'the default'} first at ${entry.commitSha}; nothing to render`
     }
     return `unchanged ${imported}: already imported at ${entry.commitSha}`
   }
@@ -149,6 +179,7 @@ async function importEntry(
       facts,
       license: repo.license,
       inputSteps: entry.inputSteps,
+      cardSurface: entry.cardSurface,
     })
   })
   const { events, calls } = facts.footprint

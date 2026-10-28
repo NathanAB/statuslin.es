@@ -50,6 +50,7 @@ describe('parseCuration', () => {
     ['a ".." path segment', { path: 'mods/../meter' }, /path/],
     ['a trailing slash in the path', { path: 'mods/meter/' }, /path/],
     ['an empty title', { title: ' ' }, /title/],
+    ['a card surface other than the terminal', { cardSurface: 'desktop' }, /cardSurface/],
     [
       'a hand-made Desktop screenshot, which render:mods now records',
       { desktopScreenshot: '/mods/meter.png' },

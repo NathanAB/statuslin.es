@@ -178,6 +178,27 @@ describe('importMods', () => {
     expect(versions[0]?.inputSteps).toEqual(steps)
   })
 
+  it('stores the surface an entry picks for its gallery card on the new version', async () => {
+    await run([entry({ cardSurface: 'terminal' })])
+
+    const [version] = await allVersions()
+    expect(version?.cardSurface).toBe('terminal')
+  })
+
+  it('updates the card surface of an imported commit in place, with nothing to render', async () => {
+    await run([entry()])
+
+    const second = await run([entry({ cardSurface: 'terminal' })])
+
+    expect(second.exitCode).toBe(0)
+    expect(second.calls).toEqual([])
+    expect(second.output).toMatch(/^updated skins: .*card.*terminal/)
+    expect(second.output).not.toMatch(/render it again/)
+    const versions = await allVersions()
+    expect(versions).toHaveLength(1)
+    expect(versions[0]?.cardSurface).toBe('terminal')
+  })
+
   it("leaves a user's submission of the same commit alone when updating input steps", async () => {
     await run([entry()])
     const [curated] = await allVersions()

@@ -102,6 +102,22 @@ describe('getModSource', () => {
     expect(cards.get('blank-desktop')).toMatchObject({ card: { desktopShot: null } })
   })
 
+  it("carries the surface its current version's card picks, and null for none", async () => {
+    const pickedId = await publishedMod('picked', { desktop: 'shot' })
+    await publishedMod('default', { desktop: 'shot' })
+    await db
+      .update(schema.modVersions)
+      .set({ cardSurface: 'terminal' })
+      .where(eq(schema.modVersions.modId, pickedId))
+
+    const cards = new Map(
+      (await getModSource(db, { sort: 'new' })).items.map(({ item }) => [item.card.slug, item]),
+    )
+
+    expect(cards.get('picked')).toMatchObject({ card: { cardSurface: 'terminal' } })
+    expect(cards.get('default')).toMatchObject({ card: { cardSurface: null } })
+  })
+
   it('carries no terminal preview for a mod that draws nothing in the terminal', async () => {
     const modId = await publishedMod('blank')
     await db.update(schema.modPreviews).set({ segments: [] })

@@ -119,6 +119,7 @@ const RELATED: GalleryItem[] = [
       tags: [],
       preview: [{ text: 'meter' }],
       desktopShot: null,
+      cardSurface: null,
     },
   },
   {

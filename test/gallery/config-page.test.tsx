@@ -93,6 +93,7 @@ const COST_MOD: GalleryModCard = {
   tags: ['bash'],
   preview: [{ text: 'meter' }],
   desktopShot: null,
+  cardSurface: null,
 }
 
 function renderPage(viewerIsAuthor = false, mods: GalleryModCard[] = [], detail: Detail = DETAIL) {

@@ -10,7 +10,7 @@ import { ModRowPreview } from './mod-preview'
 
 /**
  * One mod in the gallery, as a full-width row like a status line's: its name and author, tags and
- * copies, then how it looks in Claude Desktop (or the terminal, while it has no Desktop shot).
+ * copies, then how it looks in Claude Desktop or the terminal (`ModRowPreview` picks which).
  */
 export function ModCard({
   card,
