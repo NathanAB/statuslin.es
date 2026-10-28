@@ -184,7 +184,7 @@ Investigate first, and roll back if no fix is quick, on these:
   Check copying on the local verify instance (`.claude/skills/verify`), which records to its own
   database, and look in the exceptions for errors near the copy button.
 - Home LCP at p75 above 2.5 s, or INP at p75 above 200 ms, over 7 days with at least 100 values.
-  Those are Google's "good" limits; the baseline in `launch-metrics.md` is 1.28 s and 96 ms. A
+  Those are Google's "good" limits; the baseline in `launch-metrics.md` is 1.36 s and 72 ms. A
   single day is too noisy: the home page logs 5 to 25 values of each a day, and the old code had
   days with INP at 280 ms.
 
@@ -218,11 +218,15 @@ exception. Then:
 
 ### PostHog
 
-Project 475282. Paste these into PostHog's SQL editor, with `{deploy}` set to the deploy time in
-UTC, the project's timezone, for example `toDateTime('2026-10-24 14:00:00')`.
+Project 475282. Paste these into PostHog's SQL editor. Under **Filters**, turn on **Filter out
+internal and test users**, so `{filters}` leaves out bot traffic (`docs/analytics-filter.md`). Set
+`{deploy}` to the deploy time with its timezone, for example
+`toDateTime('2026-10-23 18:05:00', 'UTC')`. A time with no timezone is read in the project's
+timezone, America/New_York.
 
 Sessions that start on `/`, the share that open a detail page, and the share that copy (the primary
-metric):
+metric). Run it once for each four-week window, with `{from}` and `{to}` set like `{deploy}`. With
+the bot filter on, one query over eight weeks times out:
 
 ```sql
 select toStartOfWeek(t0) as wk, count() as sessions,
@@ -233,7 +237,7 @@ from (
     max(event in ('statusline_detail_viewed', 'mod_detail_viewed')) as has_detail,
     max(event in ('statusline_prompt_copied', 'statusline_script_copied', 'mod_install_command_copied')) as has_adopt
   from events
-  where timestamp >= now() - interval 56 day and $session_id != ''
+  where timestamp >= {from} and timestamp < {to} and $session_id != '' and {filters}
   group by sid
 )
 where entry = '/'
@@ -251,11 +255,11 @@ select multiIf(properties.$pathname = '/', 'home', properties.$pathname like '/c
   round(quantile(0.75)(toFloat(properties.$web_vitals_INP_value))) as inp_p75_ms,
   round(quantile(0.75)(toFloat(properties.$web_vitals_CLS_value)), 3) as cls_p75
 from events
-where event = '$web_vitals' and timestamp >= {deploy}
+where event = '$web_vitals' and timestamp >= {deploy} and {filters}
 group by page order by lcp_n desc
 ```
 
-Exceptions, newest first:
+Exceptions, newest first. This query leaves out `{filters}`, so it shows an error whoever hit it:
 
 ```sql
 select timestamp, $session_id as session, properties.$exception_types as types,
@@ -272,16 +276,21 @@ select event, properties.surface as surface, count() as n
 from events
 where event in ('statusline_prompt_copied', 'statusline_script_copied', 'mod_install_command_copied',
     'statusline_detail_viewed', 'mod_detail_viewed')
-  and timestamp >= {deploy}
+  and timestamp >= {deploy} and {filters}
 group by event, surface order by n desc
 ```
 
-Home bounce rate by week:
+Home bounce rate by week. `{filters}` fails on the `sessions` table, so the query keeps the sessions
+whose page views pass it:
 
 ```sql
 select toStartOfWeek($start_timestamp) as wk, count() as sessions, round(avg($is_bounce), 3) as bounce
 from sessions
 where $entry_pathname = '/' and $start_timestamp >= now() - interval 56 day
+  and session_id in (
+    select $session_id from events
+    where event = '$pageview' and timestamp >= now() - interval 56 day and {filters}
+  )
 group by wk order by wk
 ```
 
