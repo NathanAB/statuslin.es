@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
-import { withoutInlineCode } from '@/lib/inline-code'
 import { jsonLdScript } from '@/lib/json-ld'
 import {
   MOD_NOT_FOUND_TITLE,
@@ -12,6 +11,7 @@ import {
   modMetaDescription,
   modPageTitle,
 } from '@/lib/page-title'
+import { searchDescription } from '@/lib/search-description'
 import { modPath, siteUrl } from '@/lib/site'
 import { getModDetailFn } from '@/mods/functions'
 import { ModInstallPrompt } from '@/mods/install-prompt'
@@ -21,27 +21,12 @@ import { ModHeader } from '@/mods/mod-header'
 import { modInstallFacts } from '@/mods/mod-install-facts'
 import { ModPreview } from '@/mods/mod-preview'
 import { ModRelated } from '@/mods/mod-related'
-import type { ModDetail } from '@/mods/queries'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
 import { FaqSection } from '@/ui/faq-section'
 import { InstallFacts } from '@/ui/install-facts'
 import { PageShell } from '@/ui/shell'
 import { Text, TextLink } from '@/ui/text'
-
-/** Below this, an author's description says too little for a search snippet. */
-const MIN_DESCRIPTION_CHARS = 60
-
-/**
- * The author's description, or the reviewed page summary when the author's is short. The summary
- * marks code with backticks for the page, so they're dropped here: snippets show plain text.
- */
-function searchDescription(mod: Pick<ModDetail, 'description' | 'generatedContent'>): string {
-  const summary = mod.generatedContent?.summary
-  return summary && mod.description.trim().length < MIN_DESCRIPTION_CHARS
-    ? withoutInlineCode(summary)
-    : mod.description
-}
 
 export const Route = createFileRoute('/mods/$slug')({
   loader: async ({ params }) => {
@@ -56,11 +41,14 @@ export const Route = createFileRoute('/mods/$slug')({
     return {
       meta: [
         { title: modPageTitle(mod.title, headline) },
-        { name: 'description', content: modMetaDescription(searchDescription(mod)) },
+        {
+          name: 'description',
+          content: modMetaDescription(searchDescription(mod.description, mod.generatedContent)),
+        },
         ...modSocialMeta(loaderData.origin, {
           ...mod,
           headline,
-          description: searchDescription(mod),
+          description: searchDescription(mod.description, mod.generatedContent),
         }),
       ],
       links: [canonicalLink(modPath(mod.slug))],

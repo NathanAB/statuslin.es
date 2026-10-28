@@ -238,9 +238,11 @@ describe('mod page head', () => {
   const description = (mod: ModDetail) =>
     head(mod).meta.find((m) => m.name === 'description')?.content
 
-  it('describes the mod by its page summary when the author’s description is short', () => {
+  it('describes the mod by its page summary whenever it has one', () => {
+    const long = 'A file tree of the current folder, in a pane beside the chat.'
     expect(description({ ...MOD, generatedContent: COPY })).toBe(COPY.summary)
     expect(description({ ...MOD, description: '', generatedContent: COPY })).toBe(COPY.summary)
+    expect(description({ ...MOD, description: long, generatedContent: COPY })).toBe(COPY.summary)
   })
 
   it('drops code marks from the summary and shares the same text in og:description', () => {
@@ -249,12 +251,6 @@ describe('mod page head', () => {
     const expected = 'Run /burn to see the session cost in a pane.'
     expect(meta.find((m) => m.name === 'description')?.content).toBe(expected)
     expect(meta.find((m) => m.property === 'og:description')?.content).toBe(expected)
-  })
-
-  it('keeps an author’s description of 60 characters or more over the summary', () => {
-    const long = 'A file tree of the current folder, in a pane beside the chat.'
-    expect(long.length).toBeGreaterThanOrEqual(60)
-    expect(description({ ...MOD, description: long, generatedContent: COPY })).toBe(long)
   })
 
   it('titles a missing mod as not found', () => {
