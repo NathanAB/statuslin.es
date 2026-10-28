@@ -22,6 +22,7 @@ import {
   NOT_FOUND_TITLE,
   NOT_SHOWING_GUIDE_PATH,
 } from '@/lib/page-title'
+import { searchDescription } from '@/lib/search-description'
 import { siteUrl } from '@/lib/site'
 import { getStatusLineModsFn } from '@/mods/functions'
 import { ModCard } from '@/mods/mod-card'
@@ -58,13 +59,15 @@ export const Route = createFileRoute('/c/$slug')({
         { title: detail ? configPageTitle(detail.title) : NOT_FOUND_TITLE },
         {
           name: 'description',
-          content: configMetaDescription(detail?.description),
+          content: configMetaDescription(
+            detail && searchDescription(detail.description, detail.generatedContent),
+          ),
         },
         ...(detail
           ? configSocialMeta({
               slug: detail.slug,
               title: detail.title,
-              description: detail.description,
+              description: searchDescription(detail.description, detail.generatedContent),
             })
           : []),
       ],
