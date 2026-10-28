@@ -1,9 +1,10 @@
 # Launch metrics for the home redesign
 
 The numbers to compare once the redesign is on production, and the numbers from before it.
-The baseline was pulled on 2026-10-22, before the redesign reached production. Compare the
-four weeks after the deploy with the four weeks before it. `launch-plan.md` has the deploy steps,
-when to roll back, and the queries that produce these numbers.
+The baseline covers the weeks before the deploy, up to 2026-10-23 at 18:05 UTC. It was re-pulled on
+2026-10-28 with PostHog's bot filter on (`docs/analytics-filter.md`). Compare the four weeks after
+the deploy with the four weeks before it. `launch-plan.md` has the deploy steps, when to roll back,
+and the queries that produce these numbers.
 
 ## What to compare
 
@@ -22,22 +23,22 @@ PostHog sessions that started on `/`, by week (weeks start Sunday):
 
 | Week of | Sessions | Opened a detail page | Copied or installed |
 |---|---|---|---|
-| 2026-09-20 | 156 | 37.8% | 19.9% |
-| 2026-09-27 | 152 | 41.4% | 25.0% |
-| 2026-10-04 | 151 | 38.4% | 14.6% |
-| 2026-10-11 | 157 | 35.0% | 19.1% |
-| 2026-10-18 (partial) | 161 | 38.5% | 17.4% |
+| 2026-09-20 | 139 | 41.7% | 22.3% |
+| 2026-09-27 | 137 | 46.7% | 29.2% |
+| 2026-10-04 | 132 | 41.7% | 15.9% |
+| 2026-10-11 | 130 | 40.8% | 21.5% |
+| 2026-10-18 (to the deploy) | 131 | 39.7% | 22.1% |
 
-Home bounce rate was 21% to 28% a week over the same weeks.
+Home bounce rate was 14% to 25% a week over the same weeks.
 
-Week of 2026-10-18 (partial):
+Week of 2026-10-18, to the deploy:
 
-- Status line copies per status line page view: 36 / 144 (25%).
-- Mod install copies per mod page view: 107 / 402 (27%).
-- `marketplace_fetched`: 122, up from 40 the week before, when mods launched.
+- Status line copies per status line page view: 37 / 126 (29%).
+- Mod install copies per mod page view: 130 / 433 (30%).
+- `marketplace_fetched`: 130, up from 48 the week before, when mods launched.
 
-Web vitals, p75 over the 14 days to 2026-10-22: home LCP 1.28 s, CLS 0.001, INP 96 ms. There
-were 7 `$exception` events in the 28 days to 2026-10-22.
+Web vitals, p75 over 2026-10-08 to 2026-10-22: home LCP 1.36 s, CLS 0.005, INP 72 ms. There were 7
+`$exception` events in the 28 days to 2026-10-22, counted without the bot filter.
 
 Search Console for 2026-09-22 to 2026-10-19:
 
@@ -56,8 +57,12 @@ The week of 2026-10-19 alone had 81 clicks, 1,173 impressions and an average pos
 
 - Mods launched in mid-October, and traffic doubled in the week of 2026-10-18. Compare rates,
   not counts.
-- About 160 sessions a week start on `/`, so a weekly copy rate moves by about 6 points by chance
-  alone. Read four-week windows, not single weeks.
+- About 135 sessions a week start on `/` once bots are left out, so a weekly copy rate moves by
+  about 7 points by chance alone. Read four-week windows, not single weeks.
+- The bot filter applies to both windows, with one gap. The `isBot` tag exists only on events from
+  2026-10-19, so the weeks before it keep up to 15 sessions a week that start on `/` from a
+  full-screen browser window, which the filter drops after that date. These sessions rarely copy,
+  so they lower the baseline's copy rate a little and favor the redesign.
 - From this release, copy events carry `surface`: `home_hero` for the hero's button and `page`
   for a detail page. Older events have no `surface`, and all of them came from a page, since the
   hero didn't exist yet.
