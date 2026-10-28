@@ -423,12 +423,9 @@ describe('importMods', () => {
         {},
         {
           ...silent,
-          github: { ...deps.github, readme: async () => null },
           fetchPlugin: deps.fetchPlugin,
           recorder: new FakeModRecorder({ baseline, mods: { skins } }),
           desktopRecorder: new FakeDesktopRecorder(),
-          review: async () => '',
-          writePng: () => 'unused.png',
         },
       )
     const publish = (sha: string, ...flags: string[]) =>
