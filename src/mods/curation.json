@@ -477,7 +477,8 @@
         "type": "text",
         "text": "/profile-pane"
       }
-    ]
+    ],
+    "cardSurface": "terminal"
   },
   {
     "repoUrl": "https://github.com/JohnnyVizz/claude-kit",
@@ -510,6 +511,7 @@
     "path": "",
     "commitSha": "a5c646322149a16ba0eed0378817898248a0f7ed",
     "pluginName": "pokemon",
-    "title": "Claude Pokémon"
+    "title": "Claude Pokémon",
+    "cardSurface": "terminal"
   }
 ]
