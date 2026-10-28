@@ -68,7 +68,8 @@
     "path": "plugins/pixel-cat",
     "commitSha": "a8fe0f7d2fdaff45f1ab47c6d29a4ec5094b2d1c",
     "pluginName": "pixel-cat",
-    "title": "Pixel Cat"
+    "title": "Pixel Cat",
+    "cardSurface": "terminal"
   },
   {
     "repoUrl": "https://github.com/furqan-khan07/pixelband",
@@ -142,7 +143,8 @@
         "type": "text",
         "text": "/cache-tax"
       }
-    ]
+    ],
+    "cardSurface": "terminal"
   },
   {
     "repoUrl": "https://github.com/data-goblin/claude-code-filetree",
@@ -234,7 +236,8 @@
     "path": "plugins/sub-meter",
     "commitSha": "9306204b4807fb13f31e8f952fabde360f4a68d0",
     "pluginName": "sub-meter",
-    "title": "Sub Meter"
+    "title": "Sub Meter",
+    "cardSurface": "terminal"
   },
   {
     "repoUrl": "https://github.com/midudev/better-claude",
@@ -335,14 +338,16 @@
         "type": "text",
         "text": "/preview-busy"
       }
-    ]
+    ],
+    "cardSurface": "terminal"
   },
   {
     "repoUrl": "https://github.com/VibeMage/claude-mod-pet",
     "path": "",
     "commitSha": "fde0b0c59ce0b592a5d13923bc7f2ad5c56992f8",
     "pluginName": "pixipet",
-    "title": "Pixipet"
+    "title": "Pixipet",
+    "cardSurface": "terminal"
   },
   {
     "repoUrl": "https://github.com/lucenity0/claude-familiar",
@@ -415,7 +420,8 @@
         "type": "text",
         "text": "/preview-busy"
       }
-    ]
+    ],
+    "cardSurface": "terminal"
   },
   {
     "repoUrl": "https://github.com/YeonwooSung/my-claude-code-mods",
@@ -512,6 +518,20 @@
     "commitSha": "a5c646322149a16ba0eed0378817898248a0f7ed",
     "pluginName": "pokemon",
     "title": "Claude Pokémon",
+    "cardSurface": "terminal"
+  },
+  {
+    "repoUrl": "https://github.com/midudev/better-claude",
+    "path": "plugins/narrator",
+    "commitSha": "a2babd9fdc2470ab7541e993b3e6cce55c46d032",
+    "pluginName": "narrator",
+    "title": "Narrator",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/narrator"
+      }
+    ],
     "cardSurface": "terminal"
   }
 ]
