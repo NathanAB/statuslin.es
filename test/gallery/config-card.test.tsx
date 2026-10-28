@@ -45,7 +45,7 @@ const exampleCard: GalleryCard = {
   title: 'Example',
   description: 'An example status line.',
   interpreter: 'bash',
-  copyCount: 2,
+  copyCount: 3,
   author: null,
   preview: null,
   networkHosts: [],
@@ -120,7 +120,7 @@ describe('GalleryConfigCard analytics', () => {
     )
 
     fireEvent.click(screen.getByRole('link', { name: 'Example' }))
-    expect(screen.getByText('2 installs')).toBeTruthy()
+    expect(screen.getByText('3 installs')).toBeTruthy()
     expect(screen.queryByText(/⇧|upvote/i)).toBeNull()
 
     expect(capture).toHaveBeenCalledWith('statusline_card_clicked', {

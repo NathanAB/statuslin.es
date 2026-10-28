@@ -13,6 +13,7 @@ export function CardMeta({
   tags: string[]
   copyCount: number
 }) {
+  const installs = installsLabel(copyCount)
   return (
     <RowFacts>
       {[
@@ -26,7 +27,7 @@ export function CardMeta({
             facetLabel(slug)
           ),
         ),
-        installsLabel(copyCount),
+        ...(installs ? [installs] : []),
       ]}
     </RowFacts>
   )

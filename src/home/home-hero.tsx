@@ -120,7 +120,7 @@ export function HomeHero({ heading, items }: { heading: ReactNode; items: HeroIt
             options={items.map((i) => ({
               value: keyOf(i),
               label: titleOf(i),
-              detail: installsLabel(i === item ? copies.count : copiesOf(i)),
+              detail: installsLabel(i === item ? copies.count : copiesOf(i)) ?? '',
             }))}
             value={keyOf(item)}
             onValueChange={(next) => {

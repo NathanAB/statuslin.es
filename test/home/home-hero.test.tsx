@@ -165,7 +165,7 @@ describe('HomeHero', () => {
       'Deck120 installs',
       'Pace Dot Meters94 installs',
       'Cost Hint5 installs',
-      'Kanji Rain1 install',
+      'Kanji Rain',
     ])
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
       'true',
