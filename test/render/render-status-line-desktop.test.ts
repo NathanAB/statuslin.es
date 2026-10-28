@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
-import type { GitHubSource } from '@/mods/github'
 import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import type { DesktopRecordRequest } from '@/render/mods/desktop/types'
 import { renderStatusLineDesktop } from '../../scripts/render-status-line-desktop'
@@ -97,16 +96,13 @@ async function seedStored(
 function run(recorder: FakeDesktopRecorder, options: { slug?: string; all?: boolean } = {}) {
   const lines: string[] = []
   const tarballs: string[] = []
-  const github: Pick<GitHubSource, 'tarball'> = {
-    async tarball(repoUrl, commitSha) {
-      tarballs.push(`${repoUrl}@${commitSha}`)
-      return TARBALL
-    },
-  }
   const exitCode = renderStatusLineDesktop(options, {
     db,
     desktopRecorder: recorder,
-    github,
+    fetchPlugin: async ({ repoUrl, commitSha }) => {
+      tarballs.push(`${repoUrl}@${commitSha}`)
+      return TARBALL
+    },
     log: (line) => lines.push(line),
   })
   return { exitCode, lines, tarballs }

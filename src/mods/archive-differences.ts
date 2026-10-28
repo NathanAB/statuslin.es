@@ -1,24 +1,24 @@
 import { PluginRefusal } from './plugin-facts'
 
-/** A .gitattributes past this is refused unread, as is a repository with more of them. */
+/** A .gitattributes past this is refused unread, as is a plugin folder with more of them. */
 const GITATTRIBUTES_MAX_BYTES = 64 * 1024
 const GITATTRIBUTES_MAX_FILES = 10
 /**
  * What a .gitattributes may set: line endings, and how git diffs and merges or GitHub labels a
- * file. Anything else can make GitHub's archive differ from the checkout Claude Code installs
- * (export-ignore, export-subst, working-tree-encoding, filter, ident, a macro…).
+ * file. Anything else is refused, since some of it makes a checkout depend on the machine's git
+ * (filter, working-tree-encoding, a macro…).
  */
 const LINE_ENDINGS_ATTRIBUTE =
   /^(?:[-!]?(?:text|binary|crlf|diff|merge|delta|whitespace|linguist-[a-z-]+)(?:=[A-Za-z0-9._,-]+)?|eol=(?:lf|crlf))$/
 
-/** An entry of GitHub's recursive tree of a commit. */
+/** An entry of git's recursive tree of a commit. */
 export interface TreeEntry {
   path: string
   type: string
   sha: string
 }
 
-/** A blob's bytes as GitHub serves them, cut at `maxBytes`. */
+/** A blob's bytes, cut at `maxBytes`. */
 export type ReadBlob = (
   sha: string,
   maxBytes: number,
@@ -54,37 +54,42 @@ async function blobSha(bytes: Uint8Array): Promise<string> {
 const named = (entry: TreeEntry, name: string) =>
   entry.path.split('/').at(-1)?.toLowerCase() === name
 
+export const isAttributesFile = (entry: TreeEntry) =>
+  entry.type === 'blob' && named(entry, '.gitattributes')
+
 async function refuseAttributes(sha: string, path: string, readBlob: ReadBlob): Promise<void> {
   const { bytes, truncated } = await readBlob(sha, GITATTRIBUTES_MAX_BYTES)
   if (!truncated && (await blobSha(bytes)) !== sha) {
-    throw new Error(`GitHub sent other bytes than blob ${sha}`)
+    throw new Error(`read other bytes than blob ${sha}`)
   }
   // Git reads a byte-order mark as the start of a pattern from a commit, and strips it from a file
   // in the work tree, so both readings must set only line endings.
   const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes)
   if (truncated || ![text, text.replace(/^\uFEFF/, '')].every(setsOnlyLineEndings)) {
     throw new PluginRefusal(
-      `${path} sets more than line endings, so GitHub's archive of the repository can differ from what Claude Code installs`,
+      `${path} sets more than line endings, so the checkout statuslin.es inspects can differ from what Claude Code installs`,
     )
   }
 }
 
 /**
- * The sandbox inspects GitHub's archive of the commit, but Claude Code installs a git checkout of
- * it. So refuse what makes the two differ: submodules, and a .gitattributes that sets more than
- * line endings. Each one is read once, after a cap, so a repository can't spend the token.
+ * The sandbox inspects a checkout of the plugin folder made with its own git, but Claude Code
+ * installs one made with the user's. So refuse what can make the two differ: submodules, and a
+ * .gitattributes that sets more than line endings. Each one is read once, after a cap.
  */
 export async function refuseArchiveDifferences(
   tree: TreeEntry[],
   readBlob: ReadBlob,
 ): Promise<void> {
   if (tree.some((entry) => entry.type === 'commit' || named(entry, '.gitmodules'))) {
-    throw new PluginRefusal('the repository has git submodules, which statuslin.es cannot inspect')
+    throw new PluginRefusal(
+      'the plugin folder has git submodules, which statuslin.es cannot inspect',
+    )
   }
-  const attributes = tree.filter((entry) => entry.type === 'blob' && named(entry, '.gitattributes'))
+  const attributes = tree.filter(isAttributesFile)
   if (attributes.length > GITATTRIBUTES_MAX_FILES) {
     throw new PluginRefusal(
-      `the repository has more than ${GITATTRIBUTES_MAX_FILES} .gitattributes`,
+      `more than ${GITATTRIBUTES_MAX_FILES} .gitattributes apply to the plugin folder`,
     )
   }
   for (const [sha, path] of new Map(attributes.map((entry) => [entry.sha, entry.path]))) {

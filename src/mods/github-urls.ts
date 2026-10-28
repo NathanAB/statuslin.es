@@ -1,5 +1,4 @@
 export const GITHUB_API = 'https://api.github.com'
-export const GITHUB_ARCHIVES = 'https://codeload.github.com'
 const PLUGIN_MANIFEST = '.claude-plugin/plugin.json'
 
 export function repoPath(repoUrl: string): string {

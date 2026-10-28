@@ -73,10 +73,10 @@ function fakes({
       calls.push(`repoInfo:${repoUrl}`)
       return { fullName, license, defaultBranch: 'main' }
     },
-    async tarball(repoUrl, sha) {
-      calls.push(`tarball:${repoUrl}@${sha}`)
-      return TARBALL
-    },
+  }
+  const fetchPlugin: ImportDeps['fetchPlugin'] = async ({ repoUrl, commitSha }) => {
+    calls.push(`fetch:${repoUrl}@${commitSha}`)
+    return TARBALL
   }
   // What each sandbox command prints, matched in order; anything else is "command not found".
   const answers: [(command: string) => boolean, string][] = [
@@ -97,7 +97,7 @@ function fakes({
     if (sandboxError) throw sandboxError
     return use(sandbox)
   }
-  return { calls, github, withSandbox }
+  return { calls, github, fetchPlugin, withSandbox }
 }
 
 async function run(curation: unknown, deps = fakes()) {
@@ -116,7 +116,7 @@ describe('importMods', () => {
     expect(exitCode).toBe(0)
     expect(calls).toEqual([
       'repoInfo:https://github.com/hellosverre/claude-skins',
-      `tarball:https://github.com/hellosverre/claude-skins@${SHA}`,
+      `fetch:https://github.com/hellosverre/claude-skins@${SHA}`,
       'sandbox:(root):4',
     ])
     const [mod] = await allMods()
@@ -219,7 +219,7 @@ describe('importMods', () => {
     expect(output).toMatch(new RegExp(`^imported skins v2 at ${newSha}: plugin 1\\.5\\.0`))
     expect(calls).toEqual([
       'repoInfo:https://github.com/hellosverre/claude-skins',
-      `tarball:https://github.com/hellosverre/claude-skins@${newSha}`,
+      `fetch:https://github.com/hellosverre/claude-skins@${newSha}`,
       'sandbox:(root):4',
     ])
     expect(await allMods()).toEqual([before])
@@ -403,6 +403,7 @@ describe('importMods', () => {
         {
           ...silent,
           github: { ...deps.github, readme: async () => null },
+          fetchPlugin: deps.fetchPlugin,
           recorder: new FakeModRecorder({ baseline, mods: { skins } }),
           desktopRecorder: new FakeDesktopRecorder(),
           review: async () => '',

@@ -2,11 +2,11 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
-import { createGitHub } from '@/mods/github'
 import { terminalLine } from '@/mods/terminal-line'
 import { E2B_DESKTOP_SANDBOXES } from '@/render/mods/desktop/desktop-sandbox'
 import { desktopRecorder } from '@/render/mods/desktop/recorder'
 import type { DesktopRecording } from '@/render/mods/desktop/types'
+import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 
 /**
  * Desktop-upgrade smoke test: records the no-mod baseline and the given curated mods (default: all)
@@ -45,7 +45,7 @@ async function main(): Promise<number> {
   if (unknown.length > 0) throw new Error(`not curated: ${unknown.join(', ')}`)
   const entries = curation.entries.filter((e) => names.length === 0 || names.includes(e.pluginName))
 
-  const github = createGitHub()
+  const fetchPlugin = createPluginFetcher()
   const recorder = desktopRecorder(E2B_DESKTOP_SANDBOXES)
   const started = performance.now()
   const baseline = recorder.baseline([])
@@ -55,10 +55,7 @@ async function main(): Promise<number> {
     const at = performance.now()
     const outcome: Outcome = { mod: entry.pluginName, ms: 0, result: '' }
     try {
-      const source = {
-        tarball: await github.tarball(entry.repoUrl, entry.commitSha),
-        path: entry.path,
-      }
+      const source = { tarball: await fetchPlugin(entry), path: entry.path }
       const recording = await recorder.record({
         mod: { source, pluginName: entry.pluginName },
         inputSteps: entry.inputSteps,

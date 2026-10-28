@@ -33,7 +33,7 @@ afterAll(async () => {
 interface FakeOptions {
   head?: string
   manifest?: Record<string, unknown>
-  tarballError?: Error
+  fetchError?: Error
   sandboxError?: Error
   comparedToLive?: CommitComparison
 }
@@ -41,7 +41,7 @@ interface FakeOptions {
 function deps({
   head = sha('a'),
   manifest = { name: 'meter', version: '1.0.0', description: 'A context meter.' },
-  tarballError,
+  fetchError,
   sandboxError,
   comparedToLive = 'ahead',
 }: FakeOptions = {}): ModSubmitDeps & { calls: string[] } {
@@ -81,11 +81,11 @@ function deps({
       async pluginManifestExists() {
         return true
       },
-      async tarball(_repo, commit) {
-        calls.push(`tarball:${commit}`)
-        if (tarballError) throw tarballError
-        return new Uint8Array([31, 139])
-      },
+    },
+    async fetchPlugin({ commitSha }) {
+      calls.push(`fetch:${commitSha}`)
+      if (fetchError) throw fetchError
+      return new Uint8Array([31, 139])
     },
     async withSandbox<T>(_source: ModSource, use: (s: ModSandbox) => Promise<T>) {
       if (sandboxError) throw sandboxError
@@ -219,12 +219,16 @@ describe('submitMod', () => {
     })
   })
 
-  it('refuses a repository over the download caps, saying to give the mod its own', async () => {
-    const d = deps({ tarballError: new Error(`${REPO} at ${sha('a')} has more than 2000 files`) })
+  it('refuses a plugin folder over the fetch caps, saying to trim it', async () => {
+    const d = deps({
+      fetchError: new Error(
+        `${REPO} folder "plugins/meter" at ${sha('a')} has more than 2000 files`,
+      ),
+    })
 
     await expect(submit({}, d)).rejects.toMatchObject({
       status: 400,
-      message: expect.stringMatching(/its own repository/),
+      message: expect.stringMatching(/plugin folder is over 2,000 files or 20 MB/),
     })
   })
 
@@ -282,7 +286,7 @@ describe('submitMod', () => {
         status: 409,
         message: expect.stringMatching(/already listed as "curated"/),
       })
-      expect(d.calls.filter((c) => c.startsWith('tarball'))).toEqual([])
+      expect(d.calls.filter((c) => c.startsWith('fetch'))).toEqual([])
     },
   )
 
@@ -351,7 +355,7 @@ describe('a new version of your own mod', () => {
         status: 409,
         message: expect.stringContaining(message),
       })
-      expect(d.calls.filter((c) => c.startsWith('tarball:'))).toEqual([])
+      expect(d.calls.filter((c) => c.startsWith('fetch:'))).toEqual([])
       expect(await submissionsOf(first.modId)).toHaveLength(1)
     },
   )

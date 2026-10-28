@@ -11,6 +11,7 @@ import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { type InputStep, inputStepsSchema } from '@/mods/curation'
 import type { Surface } from '@/mods/footprint'
 import { createGitHub, type GitHubSource } from '@/mods/github'
+import type { FetchPlugin } from '@/mods/import'
 import { type PngWriter, previewReviewLines, writeTmpPng } from '@/mods/preview-review'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { parseReplaceAnswer, replaceQuestion } from '@/mods/replace-live-previews'
@@ -19,6 +20,7 @@ import { boundRecording } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
 import { e2bDesktopRecorder } from '@/render/mods/desktop/recorder'
 import type { DesktopRecorder, DesktopRecording } from '@/render/mods/desktop/types'
+import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 import {
   e2bModRecorder,
   type ModRecorder,
@@ -68,7 +70,8 @@ export interface RenderModsDeps {
   db: Db
   recorder: ModRecorder
   desktopRecorder: DesktopRecorder
-  github: Pick<GitHubSource, 'tarball' | 'readme'>
+  github: Pick<GitHubSource, 'readme'>
+  fetchPlugin: FetchPlugin
   log: (line: string) => void
   /** Shows the operator the review lines, then asks the question, and returns their raw answer. */
   review: (lines: string[], question: string) => Promise<string>
@@ -312,7 +315,7 @@ async function renderTarget(
   let request: ModRequest
   try {
     const inputSteps = inputStepsSchema.parse(target.inputSteps)
-    const tarball = await deps.github.tarball(target.repoUrl, target.commitSha)
+    const tarball = await deps.fetchPlugin(target)
     const source = { tarball, path: target.path }
     request = { mod: { source, pluginName: target.pluginName }, inputSteps }
   } catch (error) {
@@ -444,6 +447,7 @@ async function main(): Promise<number> {
       recorder: e2bModRecorder,
       desktopRecorder: e2bDesktopRecorder(),
       github: createGitHub(),
+      fetchPlugin: createPluginFetcher(),
       log: (line) => console.log(line),
       review: askInTerminal,
       writePng: writeTmpPng,

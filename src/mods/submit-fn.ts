@@ -6,6 +6,7 @@ import { HttpError } from '@/lib/http'
 import { withHttpStatus } from '@/lib/http.server'
 import { captureServerEvent } from '@/lib/posthog-server'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
+import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 import { PLUGIN_NAME } from './curation'
 import { createGitHub } from './github'
 import { getOwnModDraft } from './own-mod'
@@ -21,11 +22,16 @@ export const submitModFn = createServerFn({ method: 'POST' })
     withHttpStatus(async () => {
       const session = await auth.api.getSession({ headers: getRequestHeaders() })
       if (!session?.user) throw new HttpError(401, 'must be signed in to submit')
-      // A client per request: it keeps every download it makes for its own lifetime.
+      // A fetcher per request: it keeps every plugin it fetches for its own lifetime.
       const result = await submitMod(
         db,
         { ...data, submittedBy: session.user.id },
-        { github: createGitHub(), withSandbox: withModSandbox, guard: modSubmitGuard },
+        {
+          github: createGitHub(),
+          fetchPlugin: createPluginFetcher(),
+          withSandbox: withModSandbox,
+          guard: modSubmitGuard,
+        },
       )
       const event = modSubmittedEvent({
         userId: session.user.id,
