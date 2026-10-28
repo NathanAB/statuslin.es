@@ -39,20 +39,20 @@ describe('CardMeta', () => {
     expect(meta.textContent).toBe('Git·Cost·Bash·223 installs')
   })
 
-  it('counts one copy in the singular', () => {
-    expect(renderMeta({ tags: [], copyCount: 1 }).textContent).toBe('1 install')
+  it('leaves out an install count below three', () => {
+    expect(renderMeta({ tags: ['git'], copyCount: 2 }).textContent).toBe('Git')
   })
 
   it('lists the tags its page header shows, leaving out what the code can reach', () => {
-    const meta = renderMeta({ tags: ['network-access', 'git', 'reads-token'], copyCount: 2 })
+    const meta = renderMeta({ tags: ['network-access', 'git', 'reads-token'], copyCount: 3 })
 
-    expect(meta.textContent).toBe('Git·2 installs')
+    expect(meta.textContent).toBe('Git·3 installs')
   })
 
   it('starts a mod card with the word Mod', () => {
     const meta = renderMeta({ kind: 'Mod', tags: ['git'], copyCount: 0 })
 
-    expect(meta.textContent).toBe('Mod·Git·0 installs')
+    expect(meta.textContent).toBe('Mod·Git')
   })
 
   it('keeps the separators out of what a screen reader hears', () => {

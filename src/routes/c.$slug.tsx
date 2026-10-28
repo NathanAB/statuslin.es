@@ -193,7 +193,11 @@ function ConfigDetail() {
                         )
                       }
                       title={r.title}
-                      facts={<RowFacts>{[installsLabel(r.copyCount)]}</RowFacts>}
+                      facts={
+                        <RowFacts>
+                          {[installsLabel(r.copyCount)].filter((fact) => fact !== null)}
+                        </RowFacts>
+                      }
                     >
                       {r.preview !== null ? (
                         <StatuslinePreview segments={r.preview} look="strip" />
