@@ -508,7 +508,12 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/arcade"
+        "text": "/arcade doom"
+      },
+      {
+        "type": "click",
+        "row": 21,
+        "col": 50
       }
     ]
   },

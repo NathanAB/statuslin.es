@@ -5,6 +5,7 @@ import { analyseShot } from '@/render/mods/desktop/analyse'
 import type { RecordingSetup } from '@/render/mods/desktop/desktop-sandbox'
 import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { desktopRecorder, sharedOnce } from '@/render/mods/desktop/recorder'
+import { stepTextPath } from '@/render/mods/desktop/session'
 import type { StatusLineScript } from '@/render/mods/desktop/types'
 import type { SandboxFile } from '@/render/mods/mod-sandbox'
 
@@ -12,6 +13,7 @@ vi.mock('@/render/mods/desktop/analyse', () => ({
   analyseShot: vi.fn(async () => ({ kind: 'nothing' })),
 }))
 
+const CLICK = { type: 'click' as const, row: 21, col: 50 }
 const MOD = { source: { tarball: new Uint8Array(), path: '' }, pluginName: 'token-weather' }
 const FULL_SHOT = { desktopVersion: '2.31226.1', engineVersion: '2.1.0', png: new Uint8Array() }
 
@@ -97,6 +99,21 @@ describe('desktopRecorder', () => {
     expect(baselineSteps).toEqual([['/pet'], []])
   })
 
+  it('stages only the text steps for a baseline asked for on its own', async () => {
+    const staged: SandboxFile[][] = []
+    const sandboxes = {
+      withRecordingDesktop: vi.fn().mockImplementation(async (setup: RecordingSetup) => {
+        staged.push(setup.files(FULL_SHOT).filter((f) => /\/step-\d+\.txt$/.test(f.path)))
+        return FULL_SHOT
+      }),
+      withAnalysisSandbox: vi.fn(),
+    }
+
+    await desktopRecorder(sandboxes).baseline([CLICK, { type: 'text', text: '/pet' }])
+
+    expect(staged).toEqual([[{ path: stepTextPath(0), data: '/pet' }]])
+  })
+
   it.each([
     {
       steps: [{ type: 'text' as const, text: '/stand' }],
@@ -109,6 +126,7 @@ describe('desktopRecorder', () => {
       typedSlashCommand: false,
     },
     { steps: [], typedSteps: false, typedSlashCommand: false },
+    { steps: [CLICK], typedSteps: false, typedSlashCommand: false },
   ])(
     'tells the analysis whether the sessions typed input steps ($typedSteps) and a slash command ($typedSlashCommand)',
     async ({ steps, typedSteps, typedSlashCommand }) => {
@@ -166,6 +184,22 @@ describe('desktopRecorder status line', () => {
     for (const files of staged) {
       expect(workspaceFiles(files)).toContain('/home/user/app/package.json')
       expect(settingsKeys(files)).toEqual(['permissions', 'sandbox', 'statusLine'])
+    }
+  })
+
+  it('stages only the text steps for both sessions, in order, and no click', async () => {
+    const staged = await stagedFiles(undefined, [
+      { type: 'text', text: '/arcade doom' },
+      CLICK,
+      { type: 'text', text: 'w', submit: false },
+    ])
+
+    for (const files of staged) {
+      const steps = [...files].filter(([path]) => /\/step-\d+\.txt$/.test(path))
+      expect(steps).toEqual([
+        [stepTextPath(0), '/arcade doom'],
+        [stepTextPath(1), 'w'],
+      ])
     }
   })
 

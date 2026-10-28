@@ -19,7 +19,8 @@ import {
   type SessionTiming,
 } from '@/render/mods/recorder'
 import { feedScenario } from '@/render/mods/scenario-feed'
-import { sessionFiles, setupCommand, TERMINAL } from '@/render/mods/session'
+import { sessionFiles, setupCommand } from '@/render/mods/session'
+import { TERMINAL } from '@/render/mods/terminal'
 
 const SESSION_TEST_TIMEOUT_MS = 20_000
 /** The real waits are seconds long; the fake pty answers at once. */

@@ -58,7 +58,7 @@ const BUSY_STEP = '/preview-busy'
  * settings and its calls: a mod that never types it, or a status line, previews as it always has.
  */
 export function playsBusySession(steps: readonly InputStep[]): boolean {
-  return steps.some((step) => step.text.trim() === BUSY_STEP)
+  return steps.some((step) => step.type === 'text' && step.text.trim() === BUSY_STEP)
 }
 
 /** The files `/preview-busy` works on, relative to the workspace, in its seed commit. */

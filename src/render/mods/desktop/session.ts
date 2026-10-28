@@ -1,7 +1,7 @@
 // biome-ignore-all lint/style/useNamingConvention: env var names and settings keys are external contracts.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { InputStep } from '@/mods/curation'
+import type { TextStep } from '@/mods/curation'
 import { externalNetworkHosts, shouldMockAnthropicUsage } from '../../anthropic-usage-mock'
 import {
   anthropicUsageMockFiles,
@@ -169,7 +169,7 @@ export function desktopSessionFiles(
 /** Where input step `index`'s text is staged; the recorder types it from there. */
 export const stepTextPath = (index: number) => `${SANDBOX_WORK_DIR}/step-${index}.txt`
 
-export function stepFiles(steps: readonly InputStep[]): { path: string; data: string }[] {
+export function stepFiles(steps: readonly TextStep[]): { path: string; data: string }[] {
   return steps.map((step, i) => ({ path: stepTextPath(i), data: step.text }))
 }
 

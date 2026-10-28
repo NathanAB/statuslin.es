@@ -1,4 +1,4 @@
-import type { InputStep } from '@/mods/curation'
+import type { InputStep, TextStep } from '@/mods/curation'
 import type { ModSource } from '../mod-sandbox'
 import { analyseShot } from './analyse'
 import {
@@ -44,7 +44,7 @@ export function sharedOnce<T>(make: () => Promise<T>): () => Promise<T> {
   }
 }
 
-function checkInputSteps(steps: readonly InputStep[]): void {
+function checkInputSteps(steps: readonly TextStep[]): void {
   if (steps.length > MAX_INPUT_STEPS) {
     throw new Error(
       `${steps.length} input steps cannot finish inside the sandbox lifetime; at most ${MAX_INPUT_STEPS} can`,
@@ -76,6 +76,10 @@ function recordFullShot(
   })
 }
 
+/** A click names a terminal cell, which is nowhere in the Desktop window: Desktop types the rest. */
+const desktopSteps = (steps: readonly InputStep[]): TextStep[] =>
+  steps.filter((step) => step.type === 'text')
+
 const sameVersions = (a: DesktopVersions, b: DesktopVersions) =>
   a.desktopVersion === b.desktopVersion && a.engineVersion === b.engineVersion
 
@@ -89,7 +93,7 @@ export function desktopRecorder(
   sandboxes: Sandboxes,
 ): DesktopRecorder & { baseline(inputSteps: readonly InputStep[]): Promise<FullShot> } {
   const bySteps = new Map<string, () => Promise<FullShot>>()
-  const baseline = (inputSteps: readonly InputStep[]) => {
+  const textBaseline = (inputSteps: readonly TextStep[]) => {
     const key = JSON.stringify(inputSteps)
     const shared =
       bySteps.get(key) ??
@@ -98,12 +102,13 @@ export function desktopRecorder(
     return shared()
   }
   return {
-    baseline,
-    record: async ({ mod, inputSteps, statusLine }): Promise<DesktopRecording> => {
+    baseline: (inputSteps) => textBaseline(desktopSteps(inputSteps)),
+    record: async ({ mod, inputSteps: steps, statusLine }): Promise<DesktopRecording> => {
+      const inputSteps = desktopSteps(steps)
       checkInputSteps(inputSteps)
       const network = desktopSessionNetwork(statusLine)
       // Started now, alongside the mod's session; awaited only to frame its shot.
-      const pendingBaseline = baseline(inputSteps)
+      const pendingBaseline = textBaseline(inputSteps)
       pendingBaseline.catch(() => {})
       const shot = await recordFullShot(
         sandboxes,

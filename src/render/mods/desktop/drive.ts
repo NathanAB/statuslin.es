@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises'
-import type { InputStep } from '@/mods/curation'
+import type { TextStep } from '@/mods/curation'
 import { COMMAND_TIMEOUT_MS, REQUEST_TIMEOUT_MS, type SandboxFile } from '../mod-sandbox'
 import { feedScenario, playsBusySession } from '../scenario-feed'
 import { setupCommand } from '../session'
@@ -84,7 +84,7 @@ export const MAX_INPUT_STEPS = Math.floor(
 export interface DriveRequest {
   /** The mod's plugin.json name, which the scenario feed answers; null for the baseline. */
   target: string | null
-  inputSteps: readonly InputStep[]
+  inputSteps: readonly TextStep[]
   statusLine?: StatusLineScript | undefined
 }
 
@@ -130,7 +130,7 @@ async function openSession(desktop: RecordingDesktop): Promise<void> {
   throw new Error('the session never asked to trust the workspace')
 }
 
-async function typeStep(desktop: RecordingDesktop, step: InputStep, index: number): Promise<void> {
+async function typeStep(desktop: RecordingDesktop, step: TextStep, index: number): Promise<void> {
   expectOk(await desktop.run(clickCommand(PROMPT_FOCUS)), 'focusing the prompt')
   expectOk(
     await desktop.run(typeFileCommand(stepTextPath(index)), typingMs(step.text) + COMMAND_SLACK_MS),
@@ -147,7 +147,7 @@ async function typeStep(desktop: RecordingDesktop, step: InputStep, index: numbe
  */
 export async function driveSession(
   desktop: RecordingDesktop,
-  inputSteps: readonly InputStep[],
+  inputSteps: readonly TextStep[],
 ): Promise<void> {
   await bootDesktop(desktop)
   expectOk(await desktop.run(keyCommand('ctrl+b')), 'collapsing the sidebar')

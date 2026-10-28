@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { SANDBOX_REPLAY_DIR } from '../e2b-template'
 import { RECORDING_MAX_BYTES, RECORDING_MAX_ROWS } from './bound-recording'
 import { REPLAY_TIMEOUT_MS, type ReplaySandbox, SANDBOX_WORK_DIR } from './mod-sandbox'
-import { TERMINAL } from './session'
+import { TERMINAL } from './terminal'
 
 export const REPLAY_SCRIPT_SRC = join(import.meta.dirname, 'sandbox/replay.cjs')
 const SCRIPT_FILE = `${SANDBOX_WORK_DIR}/replay.cjs`
