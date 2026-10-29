@@ -43,13 +43,19 @@ function next(plugin: string): Next {
   )
 }
 
+/** Keyed by event, and a `command.run` hook by its command too, as `command.run preview-busy`. */
 async function hooks(): Promise<Map<string, { matcher?: unknown; hook: Hook }>> {
   vi.resetModules()
   const { register } = await import('@/render/mods/sandbox/scenario-feed/hooks/register')
   const registered = new Map<string, { matcher?: unknown; hook: Hook }>()
   register((event: string, ...rest: unknown[]) => {
     const hook = rest.at(-1) as Hook
-    registered.set(event, rest.length === 2 ? { matcher: rest[0], hook } : { hook })
+    if (rest.length === 1) {
+      registered.set(event, { hook })
+      return
+    }
+    const matcher = rest[0] as { command: string }
+    registered.set(`${event} ${matcher.command}`, { matcher, hook })
   })
   return registered
 }
@@ -95,6 +101,29 @@ describe('scenario feed plugin', () => {
     expect(n).toHaveBeenCalledWith({ source: 'startup' })
   })
 
+  it('registers /preview-waiting at session start too', async () => {
+    const { $ } = fakeEngine(null)
+
+    await call('session.start', $, { source: 'startup' }, next('scenario-feed'))
+
+    expect($.command.register).toHaveBeenCalledWith({
+      name: 'preview-waiting',
+      description: expect.any(String),
+    })
+  })
+
+  it('answers /preview-waiting with no output, and makes no call', async () => {
+    const { $ } = fakeEngine(null)
+    const entry = (await hooks()).get('command.run preview-waiting')
+
+    expect(entry?.matcher).toEqual({ command: 'preview-waiting' })
+    expect(await entry?.hook($, { command: 'preview-waiting', args: '' }, next('x'))).toEqual({
+      text: '',
+    })
+    for (const fn of $.clock.after.mock.calls.map(([, fn]) => fn)) fn()
+    expect($.tool.call).not.toHaveBeenCalled()
+  })
+
   it('lets the session start when /preview-busy cannot be registered', async () => {
     const { $ } = fakeEngine(null)
     $.command.register.mockRejectedValueOnce(new Error('name taken'))
@@ -106,7 +135,7 @@ describe('scenario feed plugin', () => {
 
   it('answers /preview-busy with no output, then plays the busy calls in order', async () => {
     const { $, runPending } = fakeEngine(null)
-    const entry = (await hooks()).get('command.run')
+    const entry = (await hooks()).get('command.run preview-busy')
 
     expect(entry?.matcher).toEqual({ command: 'preview-busy' })
     expect(await entry?.hook($, { command: 'preview-busy', args: '' }, next('x'))).toEqual({
@@ -121,7 +150,7 @@ describe('scenario feed plugin', () => {
 
   it('makes no call in a session whose steps never type /preview-busy, and leaves no status', async () => {
     const { $ } = fakeEngine('pixel-cat', false)
-    await (await hooks()).get('command.run')?.hook($, {}, next('x'))
+    await (await hooks()).get('command.run preview-busy')?.hook($, {}, next('x'))
 
     for (const fn of $.clock.after.mock.calls.map(([, fn]) => fn)) fn()
 
@@ -135,7 +164,7 @@ describe('scenario feed plugin', () => {
     $.tool.call.mockImplementationOnce(
       () => new Promise((resolve) => (release = () => resolve({ text: 'ran' }))),
     )
-    await (await hooks()).get('command.run')?.hook($, {}, next('x'))
+    await (await hooks()).get('command.run preview-busy')?.hook($, {}, next('x'))
     const played = runPending()
     await vi.waitFor(() => expect($.tool.call).toHaveBeenCalledOnce())
     expect(ticks).toHaveLength(1)
@@ -155,7 +184,7 @@ describe('scenario feed plugin', () => {
   it('stops redrawing and clears its status when a call fails', async () => {
     const { $, ticks } = fakeEngine(null)
     $.tool.call.mockRejectedValueOnce(new Error("the mod's hook threw"))
-    await (await hooks()).get('command.run')?.hook($, {}, next('x'))
+    await (await hooks()).get('command.run preview-busy')?.hook($, {}, next('x'))
 
     for (const fn of $.clock.after.mock.calls.map(([, fn]) => fn)) fn()
 

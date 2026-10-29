@@ -13,6 +13,7 @@ import {
   busySettings,
   feedFile,
   feedScenario,
+  feedStdin,
 } from '@/render/mods/scenario-feed'
 import {
   FEED_FILE,
@@ -59,8 +60,14 @@ function scenarioWith(value: string): Scenario {
   } as Scenario
 }
 
-const seedFiles = (target: string | null = 'token-weather', busy = false) =>
-  sessionFiles(feedScenario(), { target, nowMs: NOW_MS, claudeCodeVersion: '2.1.296', busy })
+const seedFiles = (target: string | null = 'token-weather', busy = false, waiting = false) =>
+  sessionFiles(feedScenario(), {
+    target,
+    nowMs: NOW_MS,
+    claudeCodeVersion: '2.1.296',
+    busy,
+    waiting,
+  })
 
 function fileAt(path: string, target: string | null = 'token-weather', busy = false): string {
   const file = seedFiles(target, busy).find((f) => f.path === path)
@@ -180,10 +187,47 @@ describe('sessionFiles', () => {
     })
   })
 
+  describe('in a session that types /preview-waiting', () => {
+    const sessionsDir = `${env.CLAUDE_CONFIG_DIR}/sessions/`
+    const waitingFiles = (waiting: boolean) =>
+      seedFiles('agent-standup-band', false, waiting).filter((f) => f.path.startsWith(sessionsDir))
+
+    it("seeds one other session's status file, waiting for an approval, as pid 1", () => {
+      const [file, ...rest] = waitingFiles(true)
+      const stdin = feedStdin(feedScenario())
+
+      expect(rest).toEqual([])
+      expect(file?.path).toBe(`${sessionsDir}1.json`)
+      const status = JSON.parse(String(file?.data))
+      expect(status).toMatchObject({
+        pid: 1,
+        kind: 'interactive',
+        status: 'waiting',
+        waitingFor: 'permission prompt',
+        version: stdin.version,
+      })
+      expect(status.sessionId).not.toBe(stdin.session_id)
+      expect(status.cwd.startsWith(stdin.workspace.current_dir)).toBe(false)
+      for (const at of [status.startedAt, status.updatedAt, status.statusUpdatedAt]) {
+        expect(at).toBeLessThanOrEqual(NOW_MS)
+      }
+    })
+
+    it('seeds no session status file in a session that never types it', () => {
+      expect(waitingFiles(false)).toEqual([])
+    })
+  })
+
   it("adds a surface's own settings beside the busy session's, or alone", () => {
     const statusLine = { type: 'command', command: 'cat | bash /x.sh' }
     const settings = (busy: boolean) => {
-      const seed = { target: null, nowMs: NOW_MS, claudeCodeVersion: '2.1.296', busy }
+      const seed = {
+        target: null,
+        nowMs: NOW_MS,
+        claudeCodeVersion: '2.1.296',
+        busy,
+        waiting: false,
+      }
       const file = sessionFiles(feedScenario(), seed, { statusLine }).find((f) =>
         f.path.endsWith('/settings.json'),
       )

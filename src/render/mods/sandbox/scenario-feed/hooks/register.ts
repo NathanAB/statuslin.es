@@ -5,6 +5,17 @@ const FEED_PLUGIN = 'scenario-feed'
 const MERGED = new Set(['session.usage'])
 /** Well inside the terminal recorder's 2 s of quiet (`SESSION_TIMING` in recorder.ts). */
 const TICK_MS = 500
+/** The steps a preview may type, registered as the session starts. */
+const PREVIEW_COMMANDS = [
+  {
+    name: 'preview-busy',
+    description: 'Plays a short busy session for the statuslin.es preview.',
+  },
+  {
+    name: 'preview-waiting',
+    description: 'Starts the statuslin.es preview with another session waiting for an approval.',
+  },
+]
 
 type Usage = { context?: Record<string, unknown> } & Record<string, unknown>
 type Feed = { target: string | null; answers: Record<string, unknown>; busy: unknown[] }
@@ -83,12 +94,7 @@ export const register: Register = (on) => {
   // Registered in the baseline too, so both sessions type the same steps.
   on('session.start', async ($, e, next) => {
     // A failed registration must not keep the mod's own session.start from running.
-    await $.command
-      .register({
-        name: 'preview-busy',
-        description: 'Plays a short busy session for the statuslin.es preview.',
-      })
-      .catch(() => undefined)
+    for (const command of PREVIEW_COMMANDS) await $.command.register(command).catch(() => undefined)
     return next(e)
   })
   // An empty text draws one bare reply row; no text at all draws nothing, but leaves no transcript
@@ -101,4 +107,6 @@ export const register: Register = (on) => {
     })
     return { text: '' }
   })
+  // The waiting session's status file is uploaded before launch, so the command only answers.
+  on('command.run', { command: 'preview-waiting' }, async () => ({ text: '' }))
 }

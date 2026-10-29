@@ -417,7 +417,8 @@ click for a mod that waits for one, such as cc-arcade's Doom, which shows "CLICK
 refuses a cell outside it. A click is for the terminal preview only: it names no place in the Desktop
 window, so the Desktop recording skips it and types the text steps alone. When a key would also
 start the mod, prefer the click anyway: a typed key is a text step, so the no-mod baseline types it
-into its prompt too.
+into its prompt too. The text step `/preview-waiting` starts both recordings with another Claude Code
+session waiting for an approval, for a mod that shows other sessions.
 
 ### Pick a mod's card preview
 
