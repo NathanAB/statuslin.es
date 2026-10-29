@@ -3,6 +3,7 @@ import type { TextStep } from '@/mods/curation'
 import { COMMAND_TIMEOUT_MS, REQUEST_TIMEOUT_MS, type SandboxFile } from '../mod-sandbox'
 import { feedScenario, playsBusySession } from '../scenario-feed'
 import { setupCommand } from '../session'
+import { playsWaitingSession } from '../waiting-session'
 import {
   DESKTOP_SANDBOX_TIMEOUT_MS,
   type DesktopVersions,
@@ -98,6 +99,7 @@ export function sessionUploads(
     nowMs: Date.now(),
     claudeCodeVersion: engineVersion,
     busy: playsBusySession(inputSteps),
+    waiting: playsWaitingSession(inputSteps),
   }
   return [...desktopSessionFiles(feedScenario(), seed, statusLine), ...stepFiles(inputSteps)]
 }

@@ -84,6 +84,16 @@ describe('prepareInputStepsRequests', () => {
     expect(request?.prompt).not.toMatch(/subagent|model calls/)
   })
 
+  it('offers /preview-waiting for a mod that shows other sessions', async () => {
+    await pendingMod('meter')
+
+    const [request] = await prepareInputStepsRequests(db, null, readme)
+
+    expect(request?.prompt).toMatch(
+      /`\/preview-waiting` starts the recording with another Claude Code session/,
+    )
+  })
+
   it('asks about one mod by slug', async () => {
     await pendingMod('meter')
     await pendingMod('gauge')

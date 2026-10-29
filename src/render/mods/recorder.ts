@@ -24,6 +24,7 @@ import {
   setupCommand,
 } from './session'
 import { TERMINAL } from './terminal'
+import { playsWaitingSession } from './waiting-session'
 
 export interface ModUnderRender {
   source: ModSource
@@ -183,6 +184,7 @@ export async function recordInSandbox(
     nowMs: Date.now(),
     claudeCodeVersion: version,
     busy: playsBusySession(inputSteps),
+    waiting: playsWaitingSession(inputSteps),
   }
   await sandbox.writeFiles(sessionFiles(scenario, seed))
   const setup = await sandbox.run(setupCommand(scenario))

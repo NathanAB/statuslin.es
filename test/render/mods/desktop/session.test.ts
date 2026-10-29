@@ -29,7 +29,13 @@ import { FEED_PLUGIN_DIR, REPLY_FILE, sessionEnv } from '@/render/mods/session'
 
 const scenario = feedScenario()
 const CONFIG_DIR = sessionEnv(scenario).CLAUDE_CONFIG_DIR
-const SEED = { target: 'token-weather', nowMs: 0, claudeCodeVersion: '2.1.295', busy: false }
+const SEED = {
+  target: 'token-weather',
+  nowMs: 0,
+  claudeCodeVersion: '2.1.295',
+  busy: false,
+  waiting: false,
+}
 
 describe('desktopEnv', () => {
   it('loads the scenario feed before the mod', () => {

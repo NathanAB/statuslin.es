@@ -42,6 +42,7 @@ ${fenced.warning}
 ## How the preview is recorded
 A scripted session starts with the mod installed, sends one prompt and waits for the reply. Then each step's text is typed into the prompt box, and sent with Enter unless "submit" is false. The terminal and Claude Desktop are recorded after the last step. Steps can run the mod's slash commands, or type text it reacts to. Many mods draw without any step: then answer with no steps.
 The step \`/preview-busy\` plays a short busy session into the mod: Claude runs \`npm test\` and it fails, reads and edits a file, runs \`npm test\` again and it passes, then tries \`rm -rf build\` and is denied. Add it when the README says the mod reacts to tool calls, test runs, failures or blocked commands.
+The step \`/preview-waiting\` starts the recording with another Claude Code session on the computer waiting for an approval. Add it when the README says the mod shows or reacts to other sessions.
 
 ## From the mod
 ${fenced.block}

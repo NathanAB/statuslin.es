@@ -13,6 +13,7 @@ import {
   feedFile,
   feedStdin,
 } from './scenario-feed'
+import { waitingSessionFile } from './waiting-session'
 
 const HOME = '/home/user/session-home'
 const CONFIG_DIR = `${HOME}/.claude`
@@ -83,6 +84,8 @@ export interface SessionSeed {
   claudeCodeVersion: string
   /** Whether the input steps type `/preview-busy` (`playsBusySession`). */
   busy: boolean
+  /** Whether the input steps type `/preview-waiting` (`playsWaitingSession`). */
+  waiting: boolean
 }
 
 type SessionFile = { path: string; data: string }
@@ -111,12 +114,13 @@ function workspaceFiles(scenario: Scenario, busy: boolean): SessionFile[] {
 
 export function sessionFiles(
   scenario: Scenario,
-  { target, nowMs, claudeCodeVersion, busy }: SessionSeed,
+  { target, nowMs, claudeCodeVersion, busy, waiting }: SessionSeed,
   ownSettings: Record<string, unknown> = {},
 ): SessionFile[] {
   return [
     { path: `${CONFIG_DIR}/.claude.json`, data: claudeJson(scenario, claudeCodeVersion) },
     ...settingsFiles(scenario, busy, ownSettings),
+    ...(waiting ? [waitingSessionFile(scenario, CONFIG_DIR, nowMs)] : []),
     ...workspaceFiles(scenario, busy),
     { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs, busy)) },
     { path: REPLY_FILE, data: JSON.stringify(cannedReply(scenario)) },

@@ -187,6 +187,17 @@ describe('desktopRecorder status line', () => {
     }
   })
 
+  it("stages a waiting session's status file for both sessions when the steps type /preview-waiting", async () => {
+    const staged = await stagedFiles(undefined, [{ type: 'text', text: '/preview-waiting' }])
+
+    expect(staged).toHaveLength(2)
+    for (const files of staged) {
+      expect([...files.keys()].filter((path) => path.includes('/.claude/sessions/'))).toEqual([
+        '/home/user/session-home/.claude/sessions/1.json',
+      ])
+    }
+  })
+
   it('stages only the text steps for both sessions, in order, and no click', async () => {
     const staged = await stagedFiles(undefined, [
       { type: 'text', text: '/arcade doom' },

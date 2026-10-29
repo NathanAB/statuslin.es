@@ -98,7 +98,13 @@ describe('recordInSandbox', () => {
         `${SANDBOX_CLAUDE_CODE_BIN} --version`,
         setupCommand(feedScenario()),
       ])
-      const seed = { target: null, nowMs: 0, claudeCodeVersion: '2.1.296', busy: false }
+      const seed = {
+        target: null,
+        nowMs: 0,
+        claudeCodeVersion: '2.1.296',
+        busy: false,
+        waiting: false,
+      }
       expect(fake.writtenPaths).toEqual(sessionFiles(feedScenario(), seed).map((f) => f.path))
       expect(fake.pty.killed).toBe(true)
     },
@@ -117,6 +123,23 @@ describe('recordInSandbox', () => {
 
       expect(fake.writtenPaths.includes('/home/user/app/package.json')).toBe(busy)
       expect(fake.writtenPaths.some((path) => path.endsWith('/settings.json'))).toBe(busy)
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it.each([
+    { text: '/preview-waiting', waiting: true },
+    { text: '/preview-busy', waiting: false },
+  ])(
+    "uploads a waiting session's status file only when a step types /preview-waiting ($text)",
+    async ({ text, waiting }) => {
+      const fake = fakeSandbox(claudeSession, () => {})
+
+      await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [{ type: 'text', text }] }, FAST)
+
+      expect(fake.writtenPaths.some((path) => path.endsWith('/.claude/sessions/1.json'))).toBe(
+        waiting,
+      )
     },
     SESSION_TEST_TIMEOUT_MS,
   )
