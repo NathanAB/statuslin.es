@@ -176,13 +176,13 @@
     "inputSteps": [
       {
         "type": "text",
-        "text": "/flightdeck open"
-      },
-      {
-        "type": "text",
         "text": "/preview-busy"
       }
-    ]
+    ],
+    "terminal": {
+      "cols": 144,
+      "fullscreen": true
+    }
   },
   {
     "repoUrl": "https://github.com/NahumLitvin/prismantis",
