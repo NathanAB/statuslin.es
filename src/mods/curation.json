@@ -155,6 +155,10 @@
     "inputSteps": [
       {
         "type": "text",
+        "text": "/filetree open"
+      },
+      {
+        "type": "text",
         "text": "/preview-busy"
       }
     ],
