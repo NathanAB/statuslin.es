@@ -23,7 +23,7 @@ import {
   sessionFiles,
   setupCommand,
 } from './session'
-import { TERMINAL } from './terminal'
+import { TERMINAL, type TerminalSetup } from './terminal'
 import { playsWaitingSession } from './waiting-session'
 
 export interface ModUnderRender {
@@ -36,6 +36,7 @@ export interface RecordRequest {
   /** null records the baseline: the same session with no mod. */
   mod: ModUnderRender | null
   inputSteps: readonly InputStep[]
+  terminal: TerminalSetup
 }
 
 export interface Recording {
@@ -116,6 +117,7 @@ async function recordSession(
   scenario: Scenario,
   modPluginDir: string | null,
   inputSteps: readonly InputStep[],
+  cols: number,
   timing: SessionTiming,
 ): Promise<Uint8Array> {
   const output = new PtyOutput()
@@ -124,7 +126,8 @@ async function recordSession(
   let promptShown = false
   const decoder = new TextDecoder()
   const terminal = await sandbox.openTerminal({
-    ...TERMINAL,
+    cols,
+    rows: TERMINAL.rows,
     cwd: feedStdin(scenario).workspace.current_dir,
     envs: sessionEnv(scenario),
     onData: (bytes) => {
@@ -174,7 +177,7 @@ export interface SessionCapture {
 
 export async function recordInSandbox(
   sandbox: RecordingSandbox,
-  { mod, inputSteps }: RecordRequest,
+  { mod, inputSteps, terminal }: RecordRequest,
   timing: SessionTiming = SESSION_TIMING,
 ): Promise<SessionCapture> {
   const scenario = feedScenario()
@@ -186,11 +189,20 @@ export async function recordInSandbox(
     busy: playsBusySession(inputSteps),
     waiting: playsWaitingSession(inputSteps),
   }
-  await sandbox.writeFiles(sessionFiles(scenario, seed))
+  // Claude Code's fullscreen layout, which some mods need to draw at all.
+  const layout = terminal.fullscreen ? { tui: 'fullscreen' } : {}
+  await sandbox.writeFiles(sessionFiles(scenario, seed, layout))
   const setup = await sandbox.run(setupCommand(scenario))
   if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)
   const modPluginDir = mod ? sandbox.pluginDir : null
-  const pty = await recordSession(sandbox, scenario, modPluginDir, inputSteps, timing)
+  const pty = await recordSession(
+    sandbox,
+    scenario,
+    modPluginDir,
+    inputSteps,
+    terminal.cols,
+    timing,
+  )
   return { pty, claudeCodeVersion: version }
 }
 
@@ -219,7 +231,9 @@ export function modRecorder(
         request.mod?.source ?? null,
         (sandbox) => recordInSandbox(sandbox, request, timing),
       )
-      const rows = await sandboxes.withReplaySandbox((sandbox) => replayInSandbox(sandbox, pty))
+      const rows = await sandboxes.withReplaySandbox((sandbox) =>
+        replayInSandbox(sandbox, pty, request.terminal.cols),
+      )
       return boundRecording({ rows, claudeCodeVersion })
     },
   }

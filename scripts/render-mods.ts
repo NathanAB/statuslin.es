@@ -7,7 +7,7 @@ import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { forEachConcurrently } from '@/lib/for-each-concurrently'
-import { type InputStep, inputStepsSchema } from '@/mods/curation'
+import { type InputStep, inputStepsSchema, terminalSetupSchema } from '@/mods/curation'
 import type { Surface } from '@/mods/footprint'
 import type { FetchPlugin } from '@/mods/import'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
@@ -23,6 +23,7 @@ import {
   type ModUnderRender,
   type Recording,
 } from '@/render/mods/recorder'
+import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import type { AnsiSegment } from '@/render/types'
 
 /**
@@ -32,9 +33,10 @@ import type { AnsiSegment } from '@/render/types'
  * publish-mod.ts makes it current. A submitted version whose submission was rejected or replaced is
  * skipped: it will never go live.
  *
- * Terminal: every mod is recorded in its own offline E2B sandbox and cropped against a baseline
- * recording (the same session, typing the same input steps, with no mod), shared across the run by
- * mods with the same input steps while the Claude Code version matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
+ * Terminal: every mod is recorded in its own offline E2B sandbox, in its stored terminal setup, and
+ * cropped against a baseline recording (the same session in the same terminal, typing the same
+ * input steps, with no mod), shared across the run by mods with the same terminal and input steps
+ * while the Claude Code version matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
  * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames what the mod draws
  * there, and stores the PNG, or the fact that it drew nothing.
  *
@@ -84,6 +86,8 @@ interface Target {
   commitSha: string
   /** Stored jsonb, parsed in renderTarget so a malformed row fails only its own mod. */
   inputSteps: unknown
+  /** Stored jsonb like inputSteps; null records in the default terminal. */
+  terminal: unknown
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
@@ -100,6 +104,7 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       path: schema.modVersions.path,
       commitSha: schema.modVersions.commitSha,
       inputSteps: schema.modVersions.inputSteps,
+      terminal: schema.modVersions.terminal,
     })
     .from(schema.mods)
     .innerJoin(schema.modVersions, eq(schema.modVersions.modId, schema.mods.id))
@@ -145,19 +150,24 @@ function label(target: Target): string {
   return `${target.slug} v${target.versionNumber} (not current)`
 }
 
-type BaselineFor = (version: string, inputSteps: InputStep[]) => Promise<Recording>
+type BaselineFor = (
+  version: string,
+  inputSteps: InputStep[],
+  terminal: TerminalSetup,
+) => Promise<Recording>
 
 /**
- * The baseline types the mod's input steps too, so the turns they start crop away and only what
- * the mod drew is left. One per list of steps, shared by the mods that type the same ones.
+ * The baseline types the mod's input steps too, in the mod's terminal, so the turns they start crop
+ * away and only what the mod drew is left. One per terminal and list of steps, shared by the mods
+ * that record in the same terminal and type the same steps.
  */
 function sharedBaselines(recorder: ModRecorder): BaselineFor {
-  const bySteps = new Map<string, (version: string) => Promise<Recording>>()
-  return (version, inputSteps) => {
-    const key = JSON.stringify(inputSteps)
-    const forSteps = bySteps.get(key) ?? baselinesByVersion(recorder, inputSteps)
-    bySteps.set(key, forSteps)
-    return forSteps(version)
+  const bySetup = new Map<string, (version: string) => Promise<Recording>>()
+  return (version, inputSteps, terminal) => {
+    const key = JSON.stringify([terminal, inputSteps])
+    const forSetup = bySetup.get(key) ?? baselinesByVersion(recorder, inputSteps, terminal)
+    bySetup.set(key, forSetup)
+    return forSetup(version)
   }
 }
 
@@ -165,8 +175,10 @@ function sharedBaselines(recorder: ModRecorder): BaselineFor {
 function baselinesByVersion(
   recorder: ModRecorder,
   inputSteps: InputStep[],
+  terminal: TerminalSetup,
 ): (version: string) => Promise<Recording> {
-  const record = async () => boundRecording(await recorder.record({ mod: null, inputSteps }))
+  const record = async () =>
+    boundRecording(await recorder.record({ mod: null, inputSteps, terminal }))
   const byVersion = new Map<string, Promise<Recording>>()
   let first: Promise<Recording> | undefined
   return async (version) => {
@@ -246,12 +258,13 @@ const storeResults = (db: Db, versionId: string): Results => ({
 
 async function renderTerminal(
   request: ModRequest,
+  terminal: TerminalSetup,
   { recorder }: RenderModsDeps,
   baselineFor: BaselineFor,
   results: Results,
 ): Promise<Outcome> {
-  const recording = boundRecording(await recorder.record(request))
-  const baseline = await baselineFor(recording.claudeCodeVersion, request.inputSteps)
+  const recording = boundRecording(await recorder.record({ ...request, terminal }))
+  const baseline = await baselineFor(recording.claudeCodeVersion, request.inputSteps, terminal)
   const crop = cropModPreview(baseline.rows, recording.rows)
   const segments = crop.kind === 'rendered' ? crop.segments : []
   await results.terminal({ segments, claudeCodeVersion: recording.claudeCodeVersion })
@@ -281,8 +294,11 @@ async function renderTarget(
   results: Results,
 ): Promise<Record<Surface, Outcome>> {
   let request: ModRequest
+  let setup: TerminalSetup
   try {
     const inputSteps = inputStepsSchema.parse(target.inputSteps)
+    setup =
+      target.terminal === null ? DEFAULT_TERMINAL_SETUP : terminalSetupSchema.parse(target.terminal)
     const tarball = await deps.fetchPlugin(target)
     const source = { tarball, path: target.path }
     request = { mod: { source, pluginName: target.pluginName }, inputSteps }
@@ -290,7 +306,7 @@ async function renderTarget(
     return { terminal: failure(error), desktop: failure(error) }
   }
   const [terminal, desktop] = await Promise.all([
-    renderTerminal(request, deps, baselineFor, results).catch(failure),
+    renderTerminal(request, setup, deps, baselineFor, results).catch(failure),
     renderDesktop(request, deps, results).catch(failure),
   ])
   return { terminal, desktop }

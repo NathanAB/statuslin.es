@@ -6,5 +6,5 @@ export type TerminalSetup = { cols: number; fullscreen: boolean }
 
 export const DEFAULT_TERMINAL_SETUP: TerminalSetup = { cols: TERMINAL.cols, fullscreen: false }
 
-/** A full row of styled cells this wide still fits the per-row and whole-recording byte caps. */
+/** A row restyled at every cell this wide still fits the per-row byte cap. */
 export const MAX_TERMINAL_COLS = 160
