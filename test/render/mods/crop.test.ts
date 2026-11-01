@@ -4,6 +4,8 @@ import type { AnsiSegment } from '@/render/types'
 import baseline from './fixtures/baseline.json'
 import filetree from './fixtures/filetree.json'
 import filetreeBaseline from './fixtures/filetree-baseline.json'
+import flightdeck from './fixtures/flightdeck.json'
+import flightdeckBaseline from './fixtures/flightdeck-baseline.json'
 import skins from './fixtures/skins.json'
 import switchboard from './fixtures/switchboard.json'
 import tokenWeather from './fixtures/token-weather.json'
@@ -62,6 +64,16 @@ describe('cropModPreview', () => {
     expect(renderedSegments(cropModPreview(filetreeBaseline, filetree))).toContainEqual(
       expect.objectContaining({ text: '■ src', bg: 'rgb(38, 38, 38)' }),
     )
+  })
+
+  it('keeps the whole side pane when the pane draws boxes of its own', () => {
+    const kept = lines(cropModPreview(flightdeckBaseline, flightdeck)).map((line) => line.trimEnd())
+
+    expect(kept).toHaveLength(25)
+    expect(kept[1]?.trim()).toBe('FLIGHTDECK · OPUS 5.5 IDLE')
+    expect(kept[3]).toMatch(/^╭─+╮$/)
+    expect(kept[4]).toMatch(/^│ Opus 5\.5 · main +○ idle │$/)
+    for (const line of kept) expect(line).not.toMatch(BRANDING)
   })
 
   it('is not rendered when the baseline draws the same pane', () => {
