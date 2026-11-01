@@ -87,7 +87,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
-    "@electric-sql/pglite": "0.5.11",
+    "@electric-sql/pglite": "0.5.13",
     "@posthog/rollup-plugin": "1.6.2",
     "@swc/core": "1.16.20",
     "@testing-library/react": "16.3.3",

@@ -38,7 +38,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "2.5.15",
-        "@electric-sql/pglite": "0.5.11",
+        "@electric-sql/pglite": "0.5.13",
         "@posthog/rollup-plugin": "1.6.2",
         "@swc/core": "1.16.20",
         "@testing-library/react": "16.3.3",
@@ -166,7 +166,7 @@
 
     "@e2b/dockerfile-utils": ["@e2b/dockerfile-utils@0.1.1", "", {}, "sha512-eDmlWRMrJNzSUbBOf6Y/qTChd1Ys/o3YY8PK6tRQmwkV2u7z3ZS2cak/YJB07odHMT/Z6HJKoUElR/b0N6bHUw=="],
 
-    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.11", "", {}, "sha512-SWuqsTjA4DDWqgZ05PC1RJaq8e00p5KACxbqaikDFQ8dIGA0SLRzuPniky7IW+q/c5RDNMdEXwv7mFBWIx9Hxw=="],
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.13", "", {}, "sha512-4rZuxK1k07w6sSpJzjMri0B9+HuXuC7V9pxVB51pR0T9KPqXg6TD0mdaEwBA9rkcL4jdht4tGDf/wYzAiGhT7g=="],
 
     "@esbuild-kit/core-utils": ["@esbuild-kit/core-utils@3.3.2", "", { "dependencies": { "esbuild": "~0.18.20", "source-map-support": "^0.5.21" } }, "sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ=="],
 
