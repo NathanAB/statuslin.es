@@ -10,7 +10,6 @@ export const REPLAY_SCRIPT_SRC = join(import.meta.dirname, 'sandbox/replay.cjs')
 const SCRIPT_FILE = `${SANDBOX_WORK_DIR}/replay.cjs`
 const RECORDING_FILE = `${SANDBOX_WORK_DIR}/recording.bin`
 const XTERM_DIR = `${SANDBOX_REPLAY_DIR}/node_modules/@xterm/headless`
-const COMMAND = `node ${SCRIPT_FILE} ${XTERM_DIR} ${RECORDING_FILE} ${TERMINAL.cols} ${TERMINAL.rows}`
 
 /**
  * The JSON of a screen inside the recording caps: JSON escapes a byte into at most six (`\u001b`),
@@ -29,12 +28,17 @@ export function parseScreen(stdout: string): string[] {
   return screenSchema.parse(JSON.parse(stdout))
 }
 
-export async function replayInSandbox(sandbox: ReplaySandbox, pty: Uint8Array): Promise<string[]> {
+export async function replayInSandbox(
+  sandbox: ReplaySandbox,
+  pty: Uint8Array,
+  cols: number,
+): Promise<string[]> {
   await sandbox.writeFiles([
     { path: RECORDING_FILE, data: pty },
     { path: SCRIPT_FILE, data: readFileSync(REPLAY_SCRIPT_SRC, 'utf8') },
   ])
-  const { exitCode, stdout, stderr } = await sandbox.runBounded(COMMAND, {
+  const command = `node ${SCRIPT_FILE} ${XTERM_DIR} ${RECORDING_FILE} ${cols} ${TERMINAL.rows}`
+  const { exitCode, stdout, stderr } = await sandbox.runBounded(command, {
     timeoutMs: REPLAY_TIMEOUT_MS,
     maxOutputBytes: REPLAY_OUTPUT_MAX_BYTES,
   })

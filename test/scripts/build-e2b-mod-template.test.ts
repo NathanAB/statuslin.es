@@ -172,7 +172,7 @@ const MOD_USER_ASSERTIONS = [
     '/opt/statuslines',
     '/opt',
   ].map(notWritable),
-  `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "2.1.296"`,
+  `test "$(${SANDBOX_CLAUDE_CODE_BIN} --version | cut -d' ' -f1)" = "2.1.309"`,
   `cd ${SANDBOX_REPLAY_DIR} && node -e "require('@xterm/headless')"`,
 ]
 

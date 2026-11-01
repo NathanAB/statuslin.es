@@ -155,9 +155,17 @@
     "inputSteps": [
       {
         "type": "text",
+        "text": "/filetree open"
+      },
+      {
+        "type": "text",
         "text": "/preview-busy"
       }
-    ]
+    ],
+    "terminal": {
+      "cols": 120,
+      "fullscreen": true
+    }
   },
   {
     "repoUrl": "https://github.com/scasella/claude-flightdeck",

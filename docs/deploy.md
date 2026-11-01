@@ -420,6 +420,25 @@ start the mod, prefer the click anyway: a typed key is a text step, so the no-mo
 into its prompt too. The text step `/preview-waiting` starts both recordings with another Claude Code
 session waiting for an approval, for a mod that shows other sessions.
 
+### Record a mod's terminal preview wider or fullscreen
+
+A mod's terminal preview is recorded in a 100x30 terminal with Claude Code's default layout. Some
+mods draw only in a wider terminal or in the fullscreen layout (`/tui fullscreen`). filetree's
+sidebar, for example, needs both and at least 110 columns. For such a mod, set the entry's
+`terminal` in `src/mods/curation.json`, as in `"terminal": {"cols": 120, "fullscreen": true}`.
+`cols` runs from 100 to 160; the import refuses a width outside that range, since a wider row can
+pass the recording's size limit. The rows stay 30, and a click step still names a cell of the
+100x30 area. The Claude Desktop recording ignores the field, because Desktop docks panes on its own.
+Leave the field out to keep the default.
+
+Run this only after the change that added `terminal` has deployed to that environment. Like input
+steps, the import stores a changed `terminal` on the imported version in place, and the previews
+need rendering again. On staging and then production:
+```sh
+DATABASE_URL='<env pooled url>' bun run import:mods                 # prints "updated <slug>: new terminal"
+DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
+```
+
 ### Pick a mod's card preview
 
 A mod's gallery card shows its Claude Desktop shot, or its terminal preview while it has no shot.

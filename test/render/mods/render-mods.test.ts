@@ -9,6 +9,7 @@ import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import type { DesktopRecorder } from '@/render/mods/desktop/types'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModRecorder, Recording, RecordRequest } from '@/render/mods/recorder'
+import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import { insertPendingSubmission } from '@/submissions/record'
 import { renderMods } from '../../../scripts/render-mods'
 import {
@@ -49,6 +50,7 @@ interface Seed {
   rendered?: boolean
   path?: string
   inputSteps?: InputStep[]
+  terminal?: TerminalSetup | null
 }
 
 async function seedMod(
@@ -59,6 +61,7 @@ async function seedMod(
     rendered = false,
     path = '',
     inputSteps = [],
+    terminal = null,
   }: Seed = {},
 ) {
   const modId = await addMod(db, slug, status)
@@ -70,7 +73,7 @@ async function seedMod(
   })
   await db
     .update(schema.modVersions)
-    .set({ inputSteps })
+    .set({ inputSteps, terminal })
     .where(eq(schema.modVersions.id, versionId))
   await setCurrentVersion(db, modId, versionId)
   return versionId
@@ -225,6 +228,23 @@ describe('renderMods', () => {
     ])
   })
 
+  it('fails a mod whose stored terminal does not parse on both surfaces, without recording it', async () => {
+    const malformed = { cols: 999 } as unknown as TerminalSetup
+    await seedMod('radar', { terminal: malformed })
+    const recorder = new FakeModRecorder({ baseline })
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    const { exitCode, lines } = run(recorder, {}, desktopRecorder)
+
+    expect(await exitCode).toBe(1)
+    expect(recorder.requests).toEqual([])
+    expect(desktopRecorder.requests).toEqual([])
+    expect(lines).toEqual([
+      expect.stringMatching(/^failed radar in the terminal: /),
+      expect.stringMatching(/^failed radar in Claude Desktop: /),
+    ])
+  })
+
   it('records each version with its tarball, path, plugin name and input steps', async () => {
     const inputSteps: InputStep[] = [{ type: 'text', text: '/radar', submit: false }]
     await seedMod('radar', { commitSha: sha('d'), path: 'mods/radar', inputSteps })
@@ -238,6 +258,7 @@ describe('renderMods', () => {
       {
         mod: { source: { tarball: TARBALL, path: 'mods/radar' }, pluginName: 'radar' },
         inputSteps,
+        terminal: DEFAULT_TERMINAL_SETUP,
       },
     ])
   })
@@ -282,7 +303,9 @@ describe('renderMods', () => {
 
     expect(await run(recorder).exitCode).toBe(0)
 
-    expect(baselineRequests(recorder.requests)).toEqual([{ mod: null, inputSteps: [] }])
+    expect(baselineRequests(recorder.requests)).toEqual([
+      { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+    ])
     expect(modRequests(recorder.requests)).toHaveLength(2)
   })
 
@@ -302,10 +325,36 @@ describe('renderMods', () => {
     expect(baselines).toHaveLength(2)
     expect(baselines).toEqual(
       expect.arrayContaining([
-        { mod: null, inputSteps },
-        { mod: null, inputSteps: [] },
+        { mod: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP },
+        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
       ]),
     )
+  })
+
+  it('records each mod in its own terminal setup, with one baseline per setup', async () => {
+    const wide = { cols: 120, fullscreen: true }
+    await seedMod('skins', { terminal: wide })
+    await seedMod('token-weather', { terminal: wide })
+    await seedMod('radar')
+    const recorder = new FakeModRecorder({
+      baseline,
+      mods: { skins, 'token-weather': tokenWeather },
+    })
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    const baselines = baselineRequests(recorder.requests)
+    expect(baselines).toHaveLength(2)
+    expect(baselines).toEqual(
+      expect.arrayContaining([
+        { mod: null, inputSteps: [], terminal: wide },
+        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+      ]),
+    )
+    const setups = Object.fromEntries(
+      modRequests(recorder.requests).map((r) => [r.mod?.pluginName, r.terminal]),
+    )
+    expect(setups).toEqual({ skins: wide, 'token-weather': wide, radar: DEFAULT_TERMINAL_SETUP })
   })
 
   it('re-records the baseline when a mod ran a different Claude Code version', async () => {

@@ -4,6 +4,7 @@ import * as schema from '@/db/schema'
 import type { CardSurface } from '@/lib/card-surface'
 import { HttpError } from '@/lib/http'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
+import type { TerminalSetup } from '@/render/mods/terminal'
 import type { InputStep } from './curation'
 import { inspectPlugin, type PluginFacts } from './plugin-facts'
 
@@ -100,6 +101,8 @@ export interface NewVersion {
   inputSteps: InputStep[]
   /** Left out for a submitted mod, whose card keeps the default. */
   cardSurface?: CardSurface | undefined
+  /** Left out for a submitted mod, whose terminal preview is recorded in the default terminal. */
+  terminal?: TerminalSetup | undefined
 }
 
 /** Adds the mod's next version; returns its number. */
@@ -120,6 +123,7 @@ export async function insertNextVersion(db: Db, version: NewVersion): Promise<nu
     validatedWith: version.facts.claudeCodeVersion,
     inputSteps: version.inputSteps,
     cardSurface: version.cardSurface,
+    terminal: version.terminal,
   })
   return next
 }

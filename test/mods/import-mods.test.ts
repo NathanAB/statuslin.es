@@ -199,6 +199,29 @@ describe('importMods', () => {
     expect(versions[0]?.cardSurface).toBe('terminal')
   })
 
+  it('stores the terminal an entry records in on the new version', async () => {
+    const terminal = { cols: 120, fullscreen: true }
+
+    await run([entry({ terminal })])
+
+    const [version] = await allVersions()
+    expect(version?.terminal).toEqual(terminal)
+  })
+
+  it('updates the terminal of an imported commit in place, fetching nothing', async () => {
+    await run([entry({ terminal: { cols: 120, fullscreen: true } })])
+    const terminal = { cols: 140, fullscreen: false }
+
+    const second = await run([entry({ terminal })])
+
+    expect(second.exitCode).toBe(0)
+    expect(second.calls).toEqual([])
+    expect(second.output).toMatch(/^updated skins: .*terminal.*render it again/)
+    const versions = await allVersions()
+    expect(versions).toHaveLength(1)
+    expect(versions[0]?.terminal).toEqual(terminal)
+  })
+
   it("leaves a user's submission of the same commit alone when updating input steps", async () => {
     await run([entry()])
     const [curated] = await allVersions()

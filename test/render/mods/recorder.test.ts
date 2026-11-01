@@ -20,7 +20,7 @@ import {
 } from '@/render/mods/recorder'
 import { feedScenario } from '@/render/mods/scenario-feed'
 import { sessionFiles, setupCommand } from '@/render/mods/session'
-import { TERMINAL } from '@/render/mods/terminal'
+import { DEFAULT_TERMINAL_SETUP, TERMINAL } from '@/render/mods/terminal'
 
 const SESSION_TEST_TIMEOUT_MS = 20_000
 /** The real waits are seconds long; the fake pty answers at once. */
@@ -31,7 +31,8 @@ type Emit = (text: string | Uint8Array) => void
 /** A sandbox whose pty answers each input with `respond`; it records every command and file. */
 function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit: Emit) => void) {
   const commands: string[] = []
-  const writtenPaths: string[] = []
+  const written: SandboxFile[] = []
+  const terminalSizes: { cols: number; rows: number }[] = []
   const pty = { killed: false }
   const sandbox: RecordingSandbox = {
     pluginDir: '/home/user/plugins/mod',
@@ -41,9 +42,10 @@ function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit
       return { exitCode: 0, stdout, stderr: '' }
     },
     writeFiles: async (files) => {
-      writtenPaths.push(...files.map((f) => f.path))
+      written.push(...files)
     },
-    openTerminal: async ({ onData }) => {
+    openTerminal: async ({ cols, rows, onData }) => {
+      terminalSizes.push({ cols, rows })
       const emit: Emit = (data) => {
         if (!pty.killed) onData(typeof data === 'string' ? new TextEncoder().encode(data) : data)
       }
@@ -56,7 +58,8 @@ function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit
       }
     },
   }
-  return { sandbox, commands, writtenPaths, pty }
+  const writtenPaths = () => written.map((f) => f.path)
+  return { sandbox, commands, written, writtenPaths, terminalSizes, pty }
 }
 
 const isLaunch = (input: string) => input.startsWith('clear; ')
@@ -87,7 +90,11 @@ describe('recordInSandbox', () => {
     async () => {
       const fake = fakeSandbox(claudeSession, (emit) => emit('shell banner $ '))
 
-      const capture = await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [] }, FAST)
+      const capture = await recordInSandbox(
+        fake.sandbox,
+        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        FAST,
+      )
 
       expect(capture.claudeCodeVersion).toBe('2.1.296')
       const pty = new TextDecoder().decode(capture.pty)
@@ -105,7 +112,7 @@ describe('recordInSandbox', () => {
         busy: false,
         waiting: false,
       }
-      expect(fake.writtenPaths).toEqual(sessionFiles(feedScenario(), seed).map((f) => f.path))
+      expect(fake.writtenPaths()).toEqual(sessionFiles(feedScenario(), seed).map((f) => f.path))
       expect(fake.pty.killed).toBe(true)
     },
     SESSION_TEST_TIMEOUT_MS,
@@ -119,10 +126,18 @@ describe('recordInSandbox', () => {
     async ({ text, busy }) => {
       const fake = fakeSandbox(claudeSession, () => {})
 
-      await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [{ type: 'text', text }] }, FAST)
+      await recordInSandbox(
+        fake.sandbox,
+        {
+          mod: null,
+          inputSteps: [{ type: 'text', text }],
+          terminal: DEFAULT_TERMINAL_SETUP,
+        },
+        FAST,
+      )
 
-      expect(fake.writtenPaths.includes('/home/user/app/package.json')).toBe(busy)
-      expect(fake.writtenPaths.some((path) => path.endsWith('/settings.json'))).toBe(busy)
+      expect(fake.writtenPaths().includes('/home/user/app/package.json')).toBe(busy)
+      expect(fake.writtenPaths().some((path) => path.endsWith('/settings.json'))).toBe(busy)
     },
     SESSION_TEST_TIMEOUT_MS,
   )
@@ -135,11 +150,33 @@ describe('recordInSandbox', () => {
     async ({ text, waiting }) => {
       const fake = fakeSandbox(claudeSession, () => {})
 
-      await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [{ type: 'text', text }] }, FAST)
+      await recordInSandbox(
+        fake.sandbox,
+        {
+          mod: null,
+          inputSteps: [{ type: 'text', text }],
+          terminal: DEFAULT_TERMINAL_SETUP,
+        },
+        FAST,
+      )
 
-      expect(fake.writtenPaths.some((path) => path.endsWith('/.claude/sessions/1.json'))).toBe(
+      expect(fake.writtenPaths().some((path) => path.endsWith('/.claude/sessions/1.json'))).toBe(
         waiting,
       )
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    "turns on Claude Code's fullscreen layout for a fullscreen terminal",
+    async () => {
+      const fake = fakeSandbox(claudeSession, () => {})
+      const terminal = { cols: TERMINAL.cols, fullscreen: true }
+
+      await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [], terminal }, FAST)
+
+      const settings = fake.written.find((f) => f.path.endsWith('/settings.json'))
+      expect(JSON.parse(String(settings?.data))).toEqual({ tui: 'fullscreen' })
     },
     SESSION_TEST_TIMEOUT_MS,
   )
@@ -161,7 +198,11 @@ describe('recordInSandbox', () => {
         () => {},
       )
 
-      const recording = recordInSandbox(fake.sandbox, { mod: null, inputSteps: [] }, FAST)
+      const recording = recordInSandbox(
+        fake.sandbox,
+        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        FAST,
+      )
 
       await expect(recording).rejects.toThrow(`pty output passed ${PTY_MAX_BYTES} bytes`)
       expect(performance.now() - floodStartedAt).toBeLessThan(1_000)
@@ -174,12 +215,14 @@ describe('recordInSandbox', () => {
 function fakeSandboxes(rows: string[]) {
   const events: string[] = []
   const uploads: SandboxFile[] = []
+  const replayCommands: string[] = []
   const session = fakeSandbox(claudeSession, () => {})
   const replay: ReplaySandbox = {
     writeFiles: async (files) => {
       uploads.push(...files)
     },
-    runBounded: async () => {
+    runBounded: async (command) => {
+      replayCommands.push(command)
       events.push('replay')
       return { exitCode: 0, stdout: JSON.stringify(rows), stderr: '' }
     },
@@ -204,7 +247,7 @@ function fakeSandboxes(rows: string[]) {
     { withRecordingSandbox: recordingSandbox, withReplaySandbox: replaySandbox },
     FAST,
   )
-  return { recorder, events, uploads }
+  return { recorder, events, uploads, replayCommands, session }
 }
 
 describe('modRecorder', () => {
@@ -214,7 +257,11 @@ describe('modRecorder', () => {
       const printed = ['from the replay sandbox', '❯']
       const { recorder, events, uploads } = fakeSandboxes(printed)
 
-      const recording = await recorder.record({ mod: null, inputSteps: [] })
+      const recording = await recorder.record({
+        mod: null,
+        inputSteps: [],
+        terminal: DEFAULT_TERMINAL_SETUP,
+      })
 
       expect(events).toEqual([
         'create recording sandbox',
@@ -231,13 +278,27 @@ describe('modRecorder', () => {
   )
 
   it(
+    "records and replays in the request's terminal width",
+    async () => {
+      const { recorder, replayCommands, session } = fakeSandboxes(['❯'])
+      const terminal = { cols: 120, fullscreen: false }
+
+      await recorder.record({ mod: null, inputSteps: [], terminal })
+
+      expect(session.terminalSizes).toEqual([{ cols: 120, rows: TERMINAL.rows }])
+      expect(replayCommands).toEqual([expect.stringMatching(` 120 ${TERMINAL.rows}$`)])
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
     'fails the recording when the replay gives more rows than the terminal has',
     async () => {
       const { recorder } = fakeSandboxes(Array(TERMINAL.rows + 1).fill(''))
 
-      await expect(recorder.record({ mod: null, inputSteps: [] })).rejects.toThrow(
-        `recording has ${TERMINAL.rows + 1} rows, over the ${TERMINAL.rows} limit`,
-      )
+      await expect(
+        recorder.record({ mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP }),
+      ).rejects.toThrow(`recording has ${TERMINAL.rows + 1} rows, over the ${TERMINAL.rows} limit`)
     },
     SESSION_TEST_TIMEOUT_MS,
   )
@@ -256,7 +317,9 @@ describe('e2bModRecorder', () => {
       text: '/radar',
     }))
 
-    await expect(e2bModRecorder.record({ mod: null, inputSteps })).rejects.toThrow(
+    await expect(
+      e2bModRecorder.record({ mod: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP }),
+    ).rejects.toThrow(
       `${MAX_INPUT_STEPS + 1} input steps cannot finish inside the sandbox lifetime`,
     )
   })

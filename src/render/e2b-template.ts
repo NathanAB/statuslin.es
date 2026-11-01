@@ -38,7 +38,7 @@ export const E2B_MOD_TEMPLATE_BUILD_NAME = 'statuslines-mod-render-build'
  * Create sandboxes from it with the SDK's default `secure: true`: without it, envd takes commands
  * with no access token, so code inside the sandbox could ask envd to run commands as root.
  */
-export const E2B_MOD_TEMPLATE_ID = 'bvcb1ed4j68ilt3jqcyk:default'
+export const E2B_MOD_TEMPLATE_ID = 'g9mzcbn1mdrr7wgnyd8p:default'
 
 /** Root-owned npm prefix holding Claude Code in the mod template, and the binary to run. */
 export const SANDBOX_CLAUDE_CODE_PREFIX = '/opt/statuslines/claude-code'

@@ -26,7 +26,7 @@ import {
  * Run:  bun run build:e2b-mod-template
  */
 
-const CLAUDE_CODE_VERSION = '2.1.296'
+const CLAUDE_CODE_VERSION = '2.1.309'
 const XTERM_HEADLESS_VERSION = '6.0.0'
 
 /**
@@ -41,13 +41,13 @@ export const MOD_TEMPLATE_PACKAGES = [
     name: '@anthropic-ai/claude-code',
     version: CLAUDE_CODE_VERSION,
     integrity:
-      'sha512-OX/k/rpcthMqnFKOWcpNcbiLsMKtAjLOpQNJHlYiDCFUznWCIwdRTyl/p9SdHVrsrzZuPMCNqZjnpakIni6upw==',
+      'sha512-+lBYZRuXOJpiKJcRv/CK7gF+5UFNWyJE7hSxkgGUKDZOWgANl9MAabfTkrJk183Tp3B0Nv4xF/DU1t0BaKXOPw==',
   },
   {
     name: '@anthropic-ai/claude-code-linux-x64',
     version: CLAUDE_CODE_VERSION,
     integrity:
-      'sha512-+m01urgelnI+VJxPaKPEK0wixgq42uZ8PeCaUk5tX/8YoDBvSmC/REVQG2jQfJAr8dxunpjJ600FvLrcj1WWTw==',
+      'sha512-36D6kMC0fWdWLwBA8XYaJTSTXEWvw0Kc3WQYqterieKDtplIfUsE5jurZAYilhzOeF+uNL9SNn4DkwhQmUrRMg==',
   },
   {
     name: '@xterm/headless',
@@ -62,7 +62,7 @@ export const MOD_TEMPLATE_PACKAGES = [
  * by two fresh installs of this version on E2B's base image. Update it with the version.
  */
 export const CLAUDE_CODE_BINARY_SHA256 =
-  '24972e3bc859fab2b46ed4c1e51f7d6130f06d3bd550811a114640de3370d0de'
+  '4d704a8aecbe038affa3000f498ae17c1b4f753add8facb8764120affc99b658'
 
 const MATCHES_CLAUDE_CODE_BINARY_PIN = `echo "${CLAUDE_CODE_BINARY_SHA256}  ${SANDBOX_CLAUDE_CODE_BIN}" | sha256sum -c -`
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { type CropResult, cropModPreview, type RowMask } from '@/render/mods/crop'
 import type { AnsiSegment } from '@/render/types'
 import baseline from './fixtures/baseline.json'
+import filetree from './fixtures/filetree.json'
+import filetreeBaseline from './fixtures/filetree-baseline.json'
 import skins from './fixtures/skins.json'
 import switchboard from './fixtures/switchboard.json'
 import tokenWeather from './fixtures/token-weather.json'
@@ -45,6 +47,25 @@ describe('cropModPreview', () => {
     expect(kept.at(-1)).toMatch(/^╰─+╯$/)
     expect(kept).not.toContain('● The repo is clean and the tests pass.')
     expect(kept.some((line) => line.startsWith('❯ hello'))).toBe(false)
+  })
+
+  it('keeps only the side pane a mod draws beside the transcript, every row of it', () => {
+    const kept = lines(cropModPreview(filetreeBaseline, filetree)).map((line) => line.trimEnd())
+
+    expect(kept).toHaveLength(26)
+    expect(kept).toContain('  ▸ ■ routes')
+    expect(kept).toContain('    ∙ sum.js                              +1 -1 M')
+    for (const line of kept) {
+      expect(line).not.toMatch(BRANDING)
+      expect(line).not.toMatch(/│|The repo is clean|❯|filetree:/)
+    }
+    expect(renderedSegments(cropModPreview(filetreeBaseline, filetree))).toContainEqual(
+      expect.objectContaining({ text: '■ src', bg: 'rgb(38, 38, 38)' }),
+    )
+  })
+
+  it('is not rendered when the baseline draws the same pane', () => {
+    expect(cropModPreview(filetree, filetree)).toEqual({ kind: 'not-rendered' })
   })
 
   it('never keeps a message typed at the prompt', () => {
@@ -94,6 +115,13 @@ describe('cropModPreview', () => {
     )
 
     expect(cropModPreview(baseline, sameSession)).toEqual({ kind: 'not-rendered' })
+  })
+
+  it("is not rendered when only Claude Code's effort hint appears", () => {
+    const hintRow = baseline.findIndex((row) => row.includes('/effort'))
+    const withoutHint = baseline.map((row, y) => (y === hintRow ? '' : row))
+
+    expect(cropModPreview(withoutHint, baseline)).toEqual({ kind: 'not-rendered' })
   })
 
   it('applies a per-mod mask to hide a random word difference', () => {

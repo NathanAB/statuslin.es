@@ -12,7 +12,7 @@ import {
   REPLAY_SCRIPT_SRC,
   replayInSandbox,
 } from '@/render/mods/replay'
-import { TERMINAL } from '@/render/mods/terminal'
+import { MAX_TERMINAL_COLS, TERMINAL } from '@/render/mods/terminal'
 import styledRows from './fixtures/styled-session.rows.json'
 
 const bytes = (text: string) => new TextEncoder().encode(text)
@@ -21,23 +21,23 @@ const scratch = mkdtempSync(join(tmpdir(), 'replay-test-'))
 afterAll(() => rmSync(scratch, { recursive: true, force: true }))
 
 /** Trusted fixture bytes only: the script runs on the host here. */
-async function replayScript(recording: Uint8Array): Promise<string[]> {
+async function replayScript(recording: Uint8Array, cols = TERMINAL.cols): Promise<string[]> {
   const path = join(scratch, `${performance.now()}.bin`)
   writeFileSync(path, recording)
   const { stdout } = await promisify(execFile)('node', [
     REPLAY_SCRIPT_SRC,
     HOST_XTERM_DIR,
     path,
-    String(TERMINAL.cols),
+    String(cols),
     String(TERMINAL.rows),
   ])
   return JSON.parse(stdout)
 }
 
 /** One cell per column, each with its own truecolor pair and every flag: the longest a row styles. */
-function mostStyledRow(seed: number): string {
+function mostStyledRow(seed: number, cols: number): string {
   let row = ''
-  for (let x = 0; x < TERMINAL.cols; x++) {
+  for (let x = 0; x < cols; x++) {
     const c = (seed + x) % 250
     row += `\u001b[1;2;3;4;38;2;${c};${c + 1};${c + 2};48;2;${c + 3};${c + 4};${c + 5}m█`
   }
@@ -67,8 +67,8 @@ describe('the sandbox replay script', () => {
     expect(row).toBe('abbbb')
   })
 
-  it('keeps a row restyled at every cell inside the row cap', async () => {
-    const [row] = await replayScript(bytes(mostStyledRow(0)))
+  it('keeps a row restyled at every cell of the widest terminal inside the row cap', async () => {
+    const [row] = await replayScript(bytes(mostStyledRow(0, MAX_TERMINAL_COLS)), MAX_TERMINAL_COLS)
 
     expect(Buffer.byteLength(row ?? '')).toBeGreaterThan(4_000)
     expect(Buffer.byteLength(row ?? '')).toBeLessThanOrEqual(RECORDING_MAX_ROW_BYTES)
@@ -126,7 +126,7 @@ describe('replayInSandbox', () => {
       stderr: '',
     }))
 
-    expect(await replayInSandbox(fake.sandbox, pty)).toEqual(printed)
+    expect(await replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).toEqual(printed)
     expect(fake.uploads.map((u) => u.data)).toEqual([pty, readFileSync(REPLAY_SCRIPT_SRC, 'utf8')])
     expect(fake.commands).toHaveLength(1)
   })
@@ -138,7 +138,7 @@ describe('replayInSandbox', () => {
       stderr: 'RangeError: Out of memory',
     }))
 
-    await expect(replayInSandbox(fake.sandbox, pty)).rejects.toThrow(
+    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).rejects.toThrow(
       'replay exited 1: RangeError: Out of memory',
     )
   })
@@ -148,7 +148,9 @@ describe('replayInSandbox', () => {
       throw new Error('command ran past 20000 ms')
     })
 
-    await expect(replayInSandbox(fake.sandbox, pty)).rejects.toThrow('command ran past 20000 ms')
+    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).rejects.toThrow(
+      'command ran past 20000 ms',
+    )
   })
 
   it('fails the recording when the replay prints too much', async () => {
@@ -158,7 +160,7 @@ describe('replayInSandbox', () => {
       stderr: '',
     }))
 
-    await expect(replayInSandbox(fake.sandbox, pty)).rejects.toThrow(
+    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).rejects.toThrow(
       `replay output is over the ${REPLAY_OUTPUT_MAX_BYTES}-byte limit`,
     )
   })
@@ -170,7 +172,7 @@ describe('replayInSandbox', () => {
       stderr: 'x'.repeat(100_000),
     }))
 
-    const error = await replayInSandbox(fake.sandbox, pty).catch((e: Error) => e)
+    const error = await replayInSandbox(fake.sandbox, pty, TERMINAL.cols).catch((e: Error) => e)
 
     expect((error as Error).message.length).toBeLessThan(1_000)
   })

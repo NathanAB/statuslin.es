@@ -1,5 +1,6 @@
 import { parseAnsi } from '@/render/ansi'
 import type { AnsiSegment } from '@/render/types'
+import { sidePaneRows } from './side-pane'
 
 /** A rewrite applied to every row of both screens before they are compared. Kept rows show the real text. */
 export type RowMask = { name: string; pattern: RegExp; replacement: string }
@@ -18,6 +19,8 @@ const PROMPT_ROW = /^❯(?:\s|$)/
 const TYPED_PROMPT = /^❯\s*\S/
 /** Claude Code's permission-mode hint, on the footer row a mod can add its own entry to. */
 const MODE_HINT = /⏵⏵ .*?\(shift\+tab to cycle\)(?: · ← for agents)?/u
+/** Claude Code's effort hint, which shows in one of two recordings of the same session and not the other. */
+const EFFORT_HINT = /\S \p{L}+ · \/effort/u
 // Built with fromCharCode so the ESC doesn't trip Biome's noControlCharactersInRegex (as ansi.ts).
 const SGR = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'y')
 
@@ -27,6 +30,8 @@ export function cropModPreview(
   modScreen: readonly string[],
   modMasks: readonly RowMask[] = [],
 ): CropResult {
+  const pane = sidePaneRows(baseline, modScreen)
+  if (pane) return { kind: 'rendered', segments: parseAnsi(pane.join('\n')) }
   const masks = [...TURN_DURATION_MASKS, ...modMasks]
   const masked = (row: string) => masks.reduce((r, m) => r.replace(m.pattern, m.replacement), row)
   const common = modRowsOnCommonSubsequence(baseline.map(masked), modScreen.map(masked))
@@ -37,7 +42,7 @@ export function cropModPreview(
     if (common.has(y)) return []
     const rowText = text(row)
     if (PROMPT_ROW.test(rowText) && !typedPrompts.has(rowText)) return []
-    const modOnly = blankMatch(row, MODE_HINT)
+    const modOnly = blankMatch(blankMatch(row, MODE_HINT), EFFORT_HINT)
     return showsNothing(modOnly) ? [] : [modOnly]
   })
   if (kept.length === 0) return { kind: 'not-rendered' }
