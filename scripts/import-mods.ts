@@ -36,11 +36,11 @@ import { createPluginFetcher } from '@/render/mods/plugin-checkout'
  * (ADR 0005).
  *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
- * request, so rerunning the same file changes nothing. If only its `inputSteps` changed, they are
- * stored on that version in place, and its previews need rendering again (render:mods --slug). A
- * changed `cardSurface` is stored in place too, and needs no render. The whole file's format is
- * checked before anything is fetched or written; an entry refused later is reported and the others
- * still import.
+ * request, so rerunning the same file changes nothing. If only its `inputSteps` or `terminal`
+ * changed, they are stored on that version in place, and its previews need rendering again
+ * (render:mods --slug). A changed `cardSurface` is stored in place too, and needs no render. The
+ * whole file's format is checked before anything is fetched or written; an entry refused later is
+ * reported and the others still import.
  *
  * AGENT USAGE (needs E2B_API_KEY and DATABASE_URL):
  *
@@ -121,6 +121,24 @@ async function updateInputSteps(db: Db, entry: CurationEntry): Promise<boolean> 
   return updated.length > 0
 }
 
+/** Stores the terminal an entry records its terminal preview in, when it changed. */
+async function updateTerminal(db: Db, entry: CurationEntry): Promise<boolean> {
+  // SQL NULL for a missing setup: JSON.stringify(null) would compare as the jsonb 'null', which is
+  // distinct from the stored NULL, and every rerun would report an update.
+  const stored = entry.terminal ? JSON.stringify(entry.terminal) : null
+  const updated = await db
+    .update(schema.modVersions)
+    .set({ terminal: entry.terminal ?? null })
+    .where(
+      and(
+        curatedVersionOf(db, entry),
+        sql`${schema.modVersions.terminal} is distinct from ${stored}::jsonb`,
+      ),
+    )
+    .returning({ id: schema.modVersions.id })
+  return updated.length > 0
+}
+
 /** Stores the surface an entry picks for its gallery card, when it changed. The card reads it as is. */
 async function updateCardSurface(db: Db, entry: CurationEntry): Promise<boolean> {
   const cardSurface = entry.cardSurface ?? null
@@ -145,9 +163,15 @@ async function importEntry(
   const imported = await importedSlug(db, entry)
   if (imported) {
     const newSteps = await updateInputSteps(db, entry)
+    const newTerminal = await updateTerminal(db, entry)
     const newSurface = await updateCardSurface(db, entry)
-    if (newSteps) {
-      return `updated ${imported}: new input steps${newSurface ? ' and card surface' : ''} at ${entry.commitSha}; render it again (render:mods --slug ${imported})`
+    if (newSteps || newTerminal) {
+      const changed = [
+        newSteps && 'input steps',
+        newTerminal && 'terminal',
+        newSurface && 'card surface',
+      ].filter(Boolean)
+      return `updated ${imported}: new ${changed.join(' and ')} at ${entry.commitSha}; render it again (render:mods --slug ${imported})`
     }
     if (newSurface) {
       return `updated ${imported}: its card shows ${entry.cardSurface ?? 'the default'} first at ${entry.commitSha}; nothing to render`
@@ -180,6 +204,7 @@ async function importEntry(
       license: repo.license,
       inputSteps: entry.inputSteps,
       cardSurface: entry.cardSurface,
+      terminal: entry.terminal,
     })
   })
   const { events, calls } = facts.footprint

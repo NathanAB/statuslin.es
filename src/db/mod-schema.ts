@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { type CardSurface, TERMINAL_CARD_SURFACE } from '../lib/card-surface'
 import type { DesktopRecording } from '../render/mods/desktop/types'
+import type { TerminalSetup } from '../render/mods/terminal'
 import type { AnsiSegment } from '../render/types'
 
 const MOD_STATUSES = ['draft', 'published', 'removed'] as const
@@ -72,6 +73,8 @@ export const modVersions = pgTable(
     validatedWith: text('validated_with').notNull(),
     inputSteps: jsonb('input_steps').$type<ModInputSteps>().notNull().default(sql`'[]'::jsonb`),
     cardSurface: text('card_surface').$type<CardSurface>(),
+    /** null records the terminal preview in the default terminal. */
+    terminal: jsonb('terminal').$type<TerminalSetup>(),
     generatedContent: jsonb('generated_content'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

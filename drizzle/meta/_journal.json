@@ -316,6 +316,13 @@
       "when": 1793144548194,
       "tag": "0044_mod_versions_card_surface",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793543409188,
+      "tag": "0045_mod_versions_terminal",
+      "breakpoints": true
     }
   ]
 }
