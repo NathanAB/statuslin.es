@@ -18,6 +18,8 @@ const PROMPT_ROW = /^❯(?:\s|$)/
 const TYPED_PROMPT = /^❯\s*\S/
 /** Claude Code's permission-mode hint, on the footer row a mod can add its own entry to. */
 const MODE_HINT = /⏵⏵ .*?\(shift\+tab to cycle\)(?: · ← for agents)?/u
+/** Claude Code's effort hint, which shows in one of two recordings of the same session and not the other. */
+const EFFORT_HINT = /\S \p{L}+ · \/effort/u
 // Built with fromCharCode so the ESC doesn't trip Biome's noControlCharactersInRegex (as ansi.ts).
 const SGR = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'y')
 
@@ -37,7 +39,7 @@ export function cropModPreview(
     if (common.has(y)) return []
     const rowText = text(row)
     if (PROMPT_ROW.test(rowText) && !typedPrompts.has(rowText)) return []
-    const modOnly = blankMatch(row, MODE_HINT)
+    const modOnly = blankMatch(blankMatch(row, MODE_HINT), EFFORT_HINT)
     return showsNothing(modOnly) ? [] : [modOnly]
   })
   if (kept.length === 0) return { kind: 'not-rendered' }

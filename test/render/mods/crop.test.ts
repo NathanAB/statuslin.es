@@ -96,6 +96,13 @@ describe('cropModPreview', () => {
     expect(cropModPreview(baseline, sameSession)).toEqual({ kind: 'not-rendered' })
   })
 
+  it("is not rendered when only Claude Code's effort hint appears", () => {
+    const hintRow = baseline.findIndex((row) => row.includes('/effort'))
+    const withoutHint = baseline.map((row, y) => (y === hintRow ? '' : row))
+
+    expect(cropModPreview(withoutHint, baseline)).toEqual({ kind: 'not-rendered' })
+  })
+
   it('applies a per-mod mask to hide a random word difference', () => {
     const otherRun = skins.map((row) => row.replace('Settled in 16s', 'Done in 16s'))
 
