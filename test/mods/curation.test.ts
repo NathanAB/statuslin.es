@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CURATION_FILE, parseCuration } from '@/mods/curation'
-import { TERMINAL } from '@/render/mods/terminal'
+import { MAX_TERMINAL_COLS, TERMINAL } from '@/render/mods/terminal'
 
 const SHA = 'a'.repeat(40)
 
@@ -79,6 +79,16 @@ describe('parseCuration', () => {
     ['a trailing slash in the path', { path: 'mods/meter/' }, /path/],
     ['an empty title', { title: ' ' }, /title/],
     ['a card surface other than the terminal', { cardSurface: 'desktop' }, /cardSurface/],
+    [
+      'a terminal narrower than the default',
+      { terminal: { cols: TERMINAL.cols - 1, fullscreen: true } },
+      /terminal\.cols/,
+    ],
+    [
+      'a terminal wider than the recording caps allow',
+      { terminal: { cols: MAX_TERMINAL_COLS + 1, fullscreen: true } },
+      /terminal\.cols/,
+    ],
     [
       'a hand-made Desktop screenshot, which render:mods now records',
       { desktopScreenshot: '/mods/meter.png' },

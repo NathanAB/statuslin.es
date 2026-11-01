@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
-import { TERMINAL } from '@/render/mods/terminal'
+import { MAX_TERMINAL_COLS, TERMINAL } from '@/render/mods/terminal'
 
 /** Relative to the repo root, where the import script and the tests both run. */
 export const CURATION_FILE = 'src/mods/curation.json'
@@ -34,6 +34,15 @@ const inputStepSchema = z.discriminatedUnion('type', [textStepSchema, clickStepS
 /** Also parses the steps the import stored, since mod_versions.input_steps is untyped jsonb. */
 export const inputStepsSchema = z.array(inputStepSchema)
 
+/**
+ * A wider or fullscreen terminal, for a mod that draws only there. Also parses the stored setup,
+ * since mod_versions.terminal is untyped jsonb.
+ */
+export const terminalSetupSchema = z.strictObject({
+  cols: z.int().min(TERMINAL.cols).max(MAX_TERMINAL_COLS),
+  fullscreen: z.boolean(),
+})
+
 /** The folder holding `.claude-plugin/plugin.json`; '' for the repository root. */
 export const pluginPathSchema = z
   .string()
@@ -58,6 +67,8 @@ const entrySchema = z.strictObject({
   inputSteps: inputStepsSchema.default([]),
   /** Left out, the card shows the Claude Desktop shot first. */
   cardSurface: z.literal(TERMINAL_CARD_SURFACE).optional(),
+  /** Left out, the terminal preview is recorded in the default terminal. */
+  terminal: terminalSetupSchema.optional(),
 })
 
 export type InputStep = z.infer<typeof inputStepSchema>
