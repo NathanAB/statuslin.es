@@ -1,5 +1,6 @@
 import { parseAnsi } from '@/render/ansi'
 import type { AnsiSegment } from '@/render/types'
+import { sidePaneRows } from './side-pane'
 
 /** A rewrite applied to every row of both screens before they are compared. Kept rows show the real text. */
 export type RowMask = { name: string; pattern: RegExp; replacement: string }
@@ -29,6 +30,8 @@ export function cropModPreview(
   modScreen: readonly string[],
   modMasks: readonly RowMask[] = [],
 ): CropResult {
+  const pane = sidePaneRows(baseline, modScreen)
+  if (pane) return { kind: 'rendered', segments: parseAnsi(pane.join('\n')) }
   const masks = [...TURN_DURATION_MASKS, ...modMasks]
   const masked = (row: string) => masks.reduce((r, m) => r.replace(m.pattern, m.replacement), row)
   const common = modRowsOnCommonSubsequence(baseline.map(masked), modScreen.map(masked))
