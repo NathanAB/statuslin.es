@@ -582,34 +582,6 @@
     ]
   },
   {
-    "repoUrl": "https://github.com/achimala/claude-toons",
-    "path": "",
-    "commitSha": "0fac2edc29d06493597d486cae3799441ecef7d8",
-    "pluginName": "toons",
-    "title": "Claude Toons",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "/preview-busy"
-      }
-    ],
-    "cardSurface": "terminal"
-  },
-  {
-    "repoUrl": "https://github.com/halluton/Mindful-Claude",
-    "path": "",
-    "commitSha": "411c9c4f4f1c3d128159be7315823341ae7d9e2d",
-    "pluginName": "mindful-claude",
-    "title": "Mindful Claude",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "/preview-busy"
-      }
-    ],
-    "cardSurface": "terminal"
-  },
-  {
     "repoUrl": "https://github.com/KRNL-Studio/usage-meter",
     "path": "mod",
     "commitSha": "0c8bc64633c7244d348be53d114e1376fe24e367",
