@@ -22,7 +22,7 @@ export function DetailHeader({
   subtitle?: string | null
   chips?: React.ReactNode
   byline: Byline
-  description: string | null
+  description: React.ReactNode
 }) {
   return (
     <Stack gap={3}>

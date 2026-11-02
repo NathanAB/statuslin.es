@@ -40,6 +40,18 @@ describe('modJsonLd', () => {
     })
   })
 
+  it('describes a mod with page copy by its summary, without code marks', () => {
+    const generatedContent = {
+      summary: 'A file tree of the folder. Run `/filetree` to open it.',
+      howItWorks: [],
+      goodToKnow: [],
+      details: {},
+    }
+    expect(
+      nodeOfType(modJsonLd(ORIGIN, { ...MOD, generatedContent }), 'SoftwareSourceCode'),
+    ).toMatchObject({ description: 'A file tree of the folder. Run /filetree to open it.' })
+  })
+
   it('points a root-level plugin at the repo tree at its commit', () => {
     expect(nodeOfType(modJsonLd(ORIGIN, { ...MOD, path: '' }), 'SoftwareSourceCode')).toMatchObject(
       { codeRepository: `https://github.com/octocat/mods/tree/${SHA}` },

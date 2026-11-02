@@ -4,6 +4,7 @@ import { DetailHeader } from '@/gallery/detail-header'
 import { listPhrase } from '@/gallery/why-line'
 import { MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
 import { modAuthor } from '@/mods/mod-author'
+import { InlineCodeText } from '@/ui/inline-code-text'
 import { modSourceUrl } from './install'
 import { SHORT_SHA_LENGTH } from './mod-fact-tiles'
 import type { ModDetail } from './queries'
@@ -34,6 +35,8 @@ function modSubtitle(tags: string[]): string | null {
  * A mod page's header. The breadcrumb runs through the mods page; the tag chips match
  * the mod's gallery card; the subtitle is the reviewed headline, else the job its tags name; the
  * byline links the source at the pinned commit and always names the licence, or says there is none.
+ * It leads with the page summary, ours, rather than the author's description that GitHub and other
+ * directories also show; the author's words move to "What it does".
  */
 export function ModHeader({ mod }: { mod: ModDetail }) {
   const posthog = usePostHog()
@@ -56,7 +59,13 @@ export function ModHeader({ mod }: { mod: ModDetail }) {
         },
         license: mod.license ? `${mod.license} license` : 'No license',
       }}
-      description={mod.description}
+      description={
+        mod.generatedContent ? (
+          <InlineCodeText text={mod.generatedContent.summary} />
+        ) : (
+          mod.description
+        )
+      }
     />
   )
 }

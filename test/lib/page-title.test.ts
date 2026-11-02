@@ -149,18 +149,49 @@ describe('modPageTitle', () => {
 
 describe('modMetaDescription', () => {
   it('normalizes whitespace without changing short descriptions', () => {
-    expect(modMetaDescription('  A file\ttree\npane.  ')).toBe('A file tree pane.')
+    expect(
+      modMetaDescription({
+        title: 'File Tree',
+        description: '  A file\ttree\npane.  ',
+        copy: null,
+      }),
+    ).toBe('A file tree pane.')
   })
 
   it('caps long descriptions at a whole word', () => {
-    const description = modMetaDescription(`A mod with ${'useful details '.repeat(30)}`)
+    const description = modMetaDescription({
+      title: 'File Tree',
+      description: `A mod with ${'useful details '.repeat(30)}`,
+      copy: null,
+    })
 
     expect(description.length).toBeLessThanOrEqual(160)
     expect(description).toMatch(/\S…$/)
   })
 
+  it('names the mod for Claude Code, then its page summary without code marks', () => {
+    expect(
+      modMetaDescription({
+        title: 'Cache Tax',
+        description: 'The author says this.',
+        copy: { summary: 'Keeps the prompt cache warm while you `/afk`.' },
+      }),
+    ).toBe('Cache Tax for Claude Code: Keeps the prompt cache warm while you /afk.')
+  })
+
+  it('caps a summary description at a whole word', () => {
+    const description = modMetaDescription({
+      title: 'Cache Tax',
+      description: '',
+      copy: { summary: `Keeps ${'the prompt cache warm '.repeat(9)}` },
+    })
+
+    expect(description.length).toBeLessThanOrEqual(160)
+    expect(description).toMatch(/^Cache Tax for Claude Code: Keeps the prompt cache warm .*\S…$/)
+  })
+
   it('falls back to a generic mod description when there is none', () => {
-    expect(modMetaDescription(null)).toBe(
+    expect(modMetaDescription({ title: 'File Tree', description: '', copy: null })).toBe(
       'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.',
     )
   })

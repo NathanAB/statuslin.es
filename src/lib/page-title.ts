@@ -1,3 +1,4 @@
+import { withoutInlineCode } from '@/lib/inline-code'
 import {
   keywordPageTitle,
   metaDescription,
@@ -50,8 +51,24 @@ export function modPageTitle(title: string, headline?: string): string {
   return `${lead}${truncateAtWordBoundary(headline, budget)}`
 }
 
-export function modMetaDescription(description: string | null | undefined): string {
-  return metaDescription(description, MOD_META_DESCRIPTION_FALLBACK)
+/**
+ * With page copy, `<Name> for Claude Code: <summary>`: the name and "Claude Code" match how mods
+ * are searched, and the summary is ours, unlike the author's sentence GitHub also shows. Without
+ * page copy, the author's description. Snippets show plain text, so code marks are dropped.
+ */
+export function modMetaDescription({
+  title,
+  description,
+  copy,
+}: {
+  title: string
+  description: string
+  copy: { summary: string } | null
+}): string {
+  const text = copy
+    ? `${normalizeWhitespace(title)} for Claude Code: ${withoutInlineCode(copy.summary)}`
+    : description
+  return metaDescription(text, MOD_META_DESCRIPTION_FALLBACK)
 }
 
 export const MOD_NOT_FOUND_TITLE = `Mod not found — ${SITE_NAME}`
