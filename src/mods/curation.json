@@ -546,5 +546,46 @@
       }
     ],
     "cardSurface": "terminal"
+  },
+  {
+    "repoUrl": "https://github.com/oikon48/prompt-rail",
+    "path": "plugins/prompt-rail",
+    "commitSha": "b36e926cc419590ace89979edd9fcfab4ca6090e",
+    "pluginName": "prompt-rail",
+    "title": "Prompt Rail",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "Run the tests again"
+      },
+      {
+        "type": "text",
+        "text": "Check the lint too"
+      },
+      {
+        "type": "text",
+        "text": "Summarize what changed"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/JetsonChan/CC-Usage-Band",
+    "path": "usage-band",
+    "commitSha": "60cd60949b1f52c96ddba3ea24ed0848ff302196",
+    "pluginName": "usage-band",
+    "title": "CC Usage Band"
+  },
+  {
+    "repoUrl": "https://github.com/lakmadev/pixel-pet",
+    "path": "",
+    "commitSha": "5e07b948b66f39471850ee296510ce35fa2f26d6",
+    "pluginName": "pixel-pet",
+    "title": "Pixel Pet",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      }
+    ]
   }
 ]
