@@ -14,6 +14,8 @@ export const BUDDY_ISSUE_URL = `https://github.com/anthropics/claude-code/issues
 export const BUDDY_PET_MOD_SLUGS = [
   'pixipet',
   'pixel-cat',
+  'pixel-pet',
+  'pokemon',
   'familiar',
   'pets',
   'code-pet',
