@@ -1,49 +1,21 @@
+import {
+  keywordPageTitle,
+  metaDescription,
+  normalizeWhitespace,
+  PAGE_TITLE_BRAND,
+  PAGE_TITLE_MAX_LENGTH,
+  truncateAtWordBoundary,
+} from '@/lib/search-text'
 import { SITE_NAME } from '@/lib/site'
 import { RESOURCE_SECTIONS, type ResourceSection } from '@/resources/data'
 
 const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
 const MOD_PAGE_TITLE_KEYWORD = ' — Claude Code mod'
-export const PAGE_TITLE_BRAND = ` | ${SITE_NAME}`
-const PAGE_TITLE_MAX_LENGTH = 60
-const META_DESCRIPTION_MAX_LENGTH = 160
 
 export const CONFIG_META_DESCRIPTION_FALLBACK =
   'A reviewed Claude Code status line. See its preview and source, then copy it in one paste.'
 const MOD_META_DESCRIPTION_FALLBACK =
   'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.'
-
-function normalizeWhitespace(value: string): string {
-  return value.trim().replace(/\s+/g, ' ')
-}
-
-function truncateAtWordBoundary(value: string, maxLength: number): string {
-  if (value.length <= maxLength) return value
-
-  const contentLength = maxLength - 1
-  const boundary = value.slice(0, contentLength).lastIndexOf(' ')
-  const end = boundary > 0 ? boundary : contentLength
-  return `${value.slice(0, end).trimEnd()}…`
-}
-
-/** `<name><keyword> | statuslin.es`, dropping the brand and then truncating the name to fit. */
-function keywordPageTitle(name: string, keyword: string): string {
-  const normalizedName = normalizeWhitespace(name)
-  const branded = `${normalizedName}${keyword}${PAGE_TITLE_BRAND}`
-  if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
-
-  const nameBudget = PAGE_TITLE_MAX_LENGTH - keyword.length
-  return `${truncateAtWordBoundary(normalizedName, nameBudget)}${keyword}`
-}
-
-/** `<name> | statuslin.es` under the same 60-character guard as status line and mod titles. */
-export function brandedPageTitle(name: string): string {
-  return keywordPageTitle(name, '')
-}
-
-function metaDescription(description: string | null | undefined, fallback: string): string {
-  const normalizedDescription = normalizeWhitespace(description ?? '')
-  return truncateAtWordBoundary(normalizedDescription || fallback, META_DESCRIPTION_MAX_LENGTH)
-}
 
 /**
  * <title> templates for config pages. The template exists so every config page's

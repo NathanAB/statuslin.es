@@ -8,7 +8,7 @@ import {
 } from '@/compare/tools'
 import { type GalleryCard, MIN_INDEXABLE_FACET_CONFIGS } from '@/gallery/queries'
 import { listPhrase, type RankedCard, rankedCard } from '@/gallery/why-line'
-import { PAGE_TITLE_BRAND } from '@/lib/page-title'
+import { PAGE_TITLE_BRAND } from '@/lib/search-text'
 
 const MIN_SHARED_JOBS = 3
 const PREVIEWS_PER_PAGE = 6
