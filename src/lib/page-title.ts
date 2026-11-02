@@ -225,7 +225,7 @@ export const BUDDY_GUIDE_PATH = '/guide/claude-code-buddy'
  */
 export const BUDDY_GUIDE_TITLE = 'Claude Code Buddy Removed? Pet Mods That Replace It'
 
-export const BUDDY_GUIDE_DATES = { published: '2026-10-17', modified: '2026-10-23' } as const
+export const BUDDY_GUIDE_DATES = { published: '2026-10-17', modified: '2026-11-02' } as const
 
 /** /guide/claude-code-buddy meta description — the description tag, OG, and JSON-LD. */
 export const BUDDY_GUIDE_DESCRIPTION =
