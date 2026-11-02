@@ -1,49 +1,22 @@
+import { withoutInlineCode } from '@/lib/inline-code'
+import {
+  keywordPageTitle,
+  metaDescription,
+  normalizeWhitespace,
+  PAGE_TITLE_BRAND,
+  PAGE_TITLE_MAX_LENGTH,
+  truncateAtWordBoundary,
+} from '@/lib/search-text'
 import { SITE_NAME } from '@/lib/site'
 import { RESOURCE_SECTIONS, type ResourceSection } from '@/resources/data'
 
 const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
 const MOD_PAGE_TITLE_KEYWORD = ' — Claude Code mod'
-export const PAGE_TITLE_BRAND = ` | ${SITE_NAME}`
-const PAGE_TITLE_MAX_LENGTH = 60
-const META_DESCRIPTION_MAX_LENGTH = 160
 
 export const CONFIG_META_DESCRIPTION_FALLBACK =
   'A reviewed Claude Code status line. See its preview and source, then copy it in one paste.'
 const MOD_META_DESCRIPTION_FALLBACK =
   'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.'
-
-function normalizeWhitespace(value: string): string {
-  return value.trim().replace(/\s+/g, ' ')
-}
-
-function truncateAtWordBoundary(value: string, maxLength: number): string {
-  if (value.length <= maxLength) return value
-
-  const contentLength = maxLength - 1
-  const boundary = value.slice(0, contentLength).lastIndexOf(' ')
-  const end = boundary > 0 ? boundary : contentLength
-  return `${value.slice(0, end).trimEnd()}…`
-}
-
-/** `<name><keyword> | statuslin.es`, dropping the brand and then truncating the name to fit. */
-function keywordPageTitle(name: string, keyword: string): string {
-  const normalizedName = normalizeWhitespace(name)
-  const branded = `${normalizedName}${keyword}${PAGE_TITLE_BRAND}`
-  if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
-
-  const nameBudget = PAGE_TITLE_MAX_LENGTH - keyword.length
-  return `${truncateAtWordBoundary(normalizedName, nameBudget)}${keyword}`
-}
-
-/** `<name> | statuslin.es` under the same 60-character guard as status line and mod titles. */
-export function brandedPageTitle(name: string): string {
-  return keywordPageTitle(name, '')
-}
-
-function metaDescription(description: string | null | undefined, fallback: string): string {
-  const normalizedDescription = normalizeWhitespace(description ?? '')
-  return truncateAtWordBoundary(normalizedDescription || fallback, META_DESCRIPTION_MAX_LENGTH)
-}
 
 /**
  * <title> templates for config pages. The template exists so every config page's
@@ -61,11 +34,12 @@ export function configMetaDescription(description: string | null | undefined): s
 
 /**
  * With a reviewed headline, the title names the problem the mod solves so the page ranks for it,
- * not only for the mod's name. The headline gives way to fit, never the name.
+ * not only for the mod's name. "mod" follows the name because people search "<name> mod". The
+ * headline gives way to fit, never the name.
  */
 export function modPageTitle(title: string, headline?: string): string {
   if (!headline) return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
-  const lead = `${normalizeWhitespace(title)}: `
+  const lead = `${normalizeWhitespace(title)} mod: `
   const branded = `${lead}${headline}${PAGE_TITLE_BRAND}`
   if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
   const budget = PAGE_TITLE_MAX_LENGTH - lead.length
@@ -77,8 +51,24 @@ export function modPageTitle(title: string, headline?: string): string {
   return `${lead}${truncateAtWordBoundary(headline, budget)}`
 }
 
-export function modMetaDescription(description: string | null | undefined): string {
-  return metaDescription(description, MOD_META_DESCRIPTION_FALLBACK)
+/**
+ * With page copy, `<Name> for Claude Code: <summary>`: the name and "Claude Code" match how mods
+ * are searched, and the summary is ours, unlike the author's sentence GitHub also shows. Without
+ * page copy, the author's description. Snippets show plain text, so code marks are dropped.
+ */
+export function modMetaDescription({
+  title,
+  description,
+  copy,
+}: {
+  title: string
+  description: string
+  copy: { summary: string } | null
+}): string {
+  const text = copy
+    ? `${normalizeWhitespace(title)} for Claude Code: ${withoutInlineCode(copy.summary)}`
+    : description
+  return metaDescription(text, MOD_META_DESCRIPTION_FALLBACK)
 }
 
 export const MOD_NOT_FOUND_TITLE = `Mod not found — ${SITE_NAME}`
@@ -99,6 +89,17 @@ export const HOME_TITLE_BASE = 'Claude Code Mods & Status Lines'
  * are both searched (Google autocomplete, 2026-10-21).
  */
 export const HOME_HERO_HEADING = 'Customize Claude Code with mods'
+
+/**
+ * /mods title base: the <title> tag, og:title and its CollectionPage name. "Claude Code mods" is
+ * the biggest search the site didn't rank for (Search Console, 2026-11), so the page leads with it
+ * and names what only statuslin.es checks.
+ */
+export const MODS_TITLE_BASE = 'Claude Code Mods, Previewed and Reviewed'
+export const MODS_HEADING = 'Claude Code mods'
+/** /mods meta description: the description tag and og:description. */
+export const MODS_DESCRIPTION =
+  'Claude Code mods, each previewed from its real output in the terminal and Claude Desktop, reviewed before it goes live and pinned to the reviewed commit.'
 
 /** /submit's heading over the status line or mod choice, so it never reads as a choice already made. */
 export const SUBMIT_HEADING = 'Submit a status line or mod'

@@ -12,6 +12,11 @@ export interface WhatItDoesContent {
   copy: PageCopy | null
   /** The facts, each from the footprint or the stored script facts, never from the copy. */
   tiles: FactTile[]
+  /**
+   * Set on a mod page whose header shows the summary: the author's own description, shown here,
+   * labeled, in the summary's place.
+   */
+  authorWords?: string | undefined
 }
 
 function Titled({ title, children }: { title: string; children: ReactNode }) {
@@ -28,15 +33,21 @@ function Titled({ title, children }: { title: string; children: ReactNode }) {
  * then the numbered steps. The good-to-know notes sit in the install panel by the button instead.
  * Without generated copy it still states the facts.
  */
-export function WhatItDoes({ copy, tiles }: WhatItDoesContent) {
+export function WhatItDoes({ copy, tiles, authorWords }: WhatItDoesContent) {
   return (
     <PageSection title="What it does">
       <Stack gap={6}>
-        {copy && (
-          <Text>
-            <InlineCodeText text={copy.summary} />
-          </Text>
-        )}
+        {authorWords === undefined
+          ? copy && (
+              <Text>
+                <InlineCodeText text={copy.summary} />
+              </Text>
+            )
+          : authorWords && (
+              <Titled title="In the author's words">
+                <Text muted>{authorWords}</Text>
+              </Titled>
+            )}
         <FactTiles tiles={tiles} />
         {copy && copy.howItWorks.length > 0 && (
           <Titled title="How it works">

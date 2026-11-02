@@ -3,7 +3,14 @@ import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { faqPageJsonLd, jsonLdScript } from '@/lib/json-ld'
 import { configListPageJsonLd } from '@/lib/json-ld-lists'
-import { MOD_SAFETY_GUIDE_PATH, STATUS_LINES_VS_MODS_GUIDE_PATH } from '@/lib/page-title'
+import {
+  MOD_SAFETY_GUIDE_PATH,
+  MODS_DESCRIPTION,
+  MODS_HEADING,
+  MODS_TITLE_BASE,
+  STATUS_LINES_VS_MODS_GUIDE_PATH,
+} from '@/lib/page-title'
+import { PAGE_TITLE_BRAND } from '@/lib/search-text'
 import { MODS_PATH, modPath, siteUrl } from '@/lib/site'
 import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { MarketplaceLine } from '@/mods/marketplace-line'
@@ -16,12 +23,6 @@ import { Stack } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { VisuallyHidden } from '@/ui/visually-hidden'
-
-// The home page owns the bare "Claude Code mods" search, so this page is the best-of list: the
-// plugin mods ranked by installs, which listicles rank for without showing previews.
-const TITLE_BASE = 'Best Claude Code Mods, Ranked by Installs'
-const DESCRIPTION =
-  'The best Claude Code mods, ranked by installs and previewed in the terminal and Claude Desktop. Each is reviewed before listing.'
 
 export const Route = createFileRoute('/mods/')({
   loader: async () => {
@@ -40,14 +41,23 @@ export const Route = createFileRoute('/mods/')({
     const faq = faqPageJsonLd(modsFaq())
     return {
       meta: [
-        { title: `${TITLE_BASE} | statuslin.es` },
-        { name: 'description', content: DESCRIPTION },
+        { title: `${MODS_TITLE_BASE}${PAGE_TITLE_BRAND}` },
+        { name: 'description', content: MODS_DESCRIPTION },
         ...(mods.length === 0 ? [{ name: 'robots', content: 'noindex, follow' } as const] : []),
-        ...staticPageSocialMeta({ path: MODS_PATH, title: TITLE_BASE, description: DESCRIPTION }),
+        ...staticPageSocialMeta({
+          path: MODS_PATH,
+          title: MODS_TITLE_BASE,
+          description: MODS_DESCRIPTION,
+        }),
       ],
       links: [canonicalLink(MODS_PATH)],
       scripts: [
-        ...configListPageJsonLd(siteUrl(), { path: MODS_PATH, name: TITLE_BASE }, mods, modPath),
+        ...configListPageJsonLd(
+          siteUrl(),
+          { path: MODS_PATH, name: MODS_TITLE_BASE },
+          mods,
+          modPath,
+        ),
         ...(faq ? [faq] : []),
       ].map(jsonLdScript),
     }
@@ -61,11 +71,12 @@ function ModsPage() {
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
-          <Heading level={1}>Best Claude Code mods</Heading>
+          <Heading level={1}>{MODS_HEADING}</Heading>
           <Text muted>
-            Plugins that change how Claude Code looks and works, ranked by installs. Each one is
-            reviewed before listing, and the install pins the reviewed commit. For status lines, see{' '}
-            <TextLink to="/">the gallery</TextLink>.
+            Plugins that change how Claude Code looks and works, ranked by installs. Each mod's
+            preview is recorded from its real output in the terminal and Claude Desktop. Every
+            version is reviewed before it goes live, and the install is pinned to the reviewed
+            commit. For status lines, see <TextLink to="/">the gallery</TextLink>.
           </Text>
           <Text muted>
             New to mods?{' '}

@@ -219,9 +219,15 @@ describe('mod page head', () => {
 
     expect(head(long).meta.slice(0, 2)).toEqual([
       { title: modPageTitle(MOD.title) },
-      { name: 'description', content: modMetaDescription(long.description) },
+      {
+        name: 'description',
+        content: modMetaDescription({
+          title: MOD.title,
+          description: long.description,
+          copy: null,
+        }),
+      },
     ])
-    expect(modMetaDescription(long.description).length).toBeLessThanOrEqual(160)
   })
 
   it('shares the mod under its own url, title and description, not the home page', () => {
@@ -231,24 +237,27 @@ describe('mod page head', () => {
     expect(og('og:url')).toBe(`${ORIGIN}/mods/filetree`)
     expect(og('og:title')).toBe(modPageTitle(MOD.title))
     expect(og('og:title')).not.toBe(HOME_TITLE_BASE)
-    expect(og('og:description')).toBe(modMetaDescription(MOD.description))
+    expect(og('og:description')).toBe(
+      modMetaDescription({ title: MOD.title, description: MOD.description, copy: null }),
+    )
     expect(og('og:image')).toBe(`${ORIGIN}/og/mods/filetree.png`)
   })
 
   const description = (mod: ModDetail) =>
     head(mod).meta.find((m) => m.name === 'description')?.content
 
-  it('describes the mod by its page summary whenever it has one', () => {
+  it('describes the mod by name for Claude Code, then its page summary, whenever it has one', () => {
     const long = 'A file tree of the current folder, in a pane beside the chat.'
-    expect(description({ ...MOD, generatedContent: COPY })).toBe(COPY.summary)
-    expect(description({ ...MOD, description: '', generatedContent: COPY })).toBe(COPY.summary)
-    expect(description({ ...MOD, description: long, generatedContent: COPY })).toBe(COPY.summary)
+    const expected = `File Tree for Claude Code: ${COPY.summary}`
+    expect(description({ ...MOD, generatedContent: COPY })).toBe(expected)
+    expect(description({ ...MOD, description: '', generatedContent: COPY })).toBe(expected)
+    expect(description({ ...MOD, description: long, generatedContent: COPY })).toBe(expected)
   })
 
   it('drops code marks from the summary and shares the same text in og:description', () => {
     const copy = { ...COPY, summary: 'Run `/burn` to see the session cost in a pane.' }
     const meta = head({ ...MOD, generatedContent: copy }).meta
-    const expected = 'Run /burn to see the session cost in a pane.'
+    const expected = 'File Tree for Claude Code: Run /burn to see the session cost in a pane.'
     expect(meta.find((m) => m.name === 'description')?.content).toBe(expected)
     expect(meta.find((m) => m.property === 'og:description')?.content).toBe(expected)
   })
@@ -381,6 +390,33 @@ describe('mod page', () => {
         earlier.compareDocumentPosition(order[i] as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy()
     }
+  })
+
+  it("leads the header with the page summary and shows the author's words lower, labeled", () => {
+    renderPage({ generatedContent: COPY })
+
+    const summary = screen.getByText(COPY.summary)
+    const button = screen.getByRole('button', { name: PROMPT_BUTTON })
+    expect(summary.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const what = section('What it does')
+    expect(what.queryByText(COPY.summary)).toBeNull()
+    const label = what.getByRole('heading', { level: 3, name: "In the author's words" })
+    const authorWords = what.getByText(MOD.description)
+    expect(
+      label.compareDocumentPosition(authorWords) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(screen.getAllByText(MOD.description)).toHaveLength(1)
+  })
+
+  it("leads the header with the author's description when the mod has no page copy", () => {
+    renderPage()
+
+    const authorWords = screen.getByText(MOD.description)
+    const button = screen.getByRole('button', { name: PROMPT_BUTTON })
+    expect(
+      authorWords.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: "In the author's words" })).toBeNull()
   })
 
   it('separates the byline facts with a dot that starts each later fact', () => {
@@ -628,11 +664,10 @@ describe('mod page', () => {
     )
   })
 
-  it('renders the page copy in What it does when the version has it', () => {
+  it('renders the steps and tile wording in What it does when the version has page copy', () => {
     renderPage({ generatedContent: COPY })
 
     const what = section('What it does')
-    expect(what.getByText(COPY.summary)).toBeTruthy()
     expect(what.getByRole('heading', { level: 3, name: 'How it works' })).toBeTruthy()
     expect(what.getByText('Folders open on click')).toBeTruthy()
     expect(what.getByText('A file tree pane on the right')).toBeTruthy()

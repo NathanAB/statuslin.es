@@ -51,7 +51,7 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
 
 - **Make the smallest correct change.** Implement only the requested behavior; do not address hypothetical edge cases or expand the feature without approval.
 - **Ask before adding infrastructure.** Get explicit approval before introducing providers, queues, compatibility layers, broad abstractions, new frameworks, or other cross-cutting machinery.
-- **Keep the diff focused.** If the work needs more than five production files or starts touching unrelated areas, stop and explain why before continuing.
+- **Keep the diff focused.** If the work starts touching unrelated areas, stop and explain why before continuing.
 - **Bound the feedback loop.** Run focused tests once after implementation, then run `bun run check` once. If either fails, make the minimal fix and rerun only what the fix invalidated. Do not repeatedly rerun green checks.
 - **Use one review pass.** Treat review findings outside the acceptance criteria as follow-ups, not blockers. Stop and ask before acting on feedback that materially expands scope.
 - **Stop after two blocked attempts.** Explain the blocker and options instead of continuing to add complexity.
@@ -87,7 +87,8 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
   no request/response files; use staging first, then prod. Run it again after approving an update:
   the newly live version starts with no generated content, and `--all --prepare` lists it. Mods use
   the same commands with `--mod` added; `--all --prepare --mod` lists published mods and curated
-  drafts whose current version has no content (a submitted mod gets its copy once approved).
+  drafts whose current version has no content or copy without a `headline`, which keeps rendering
+  until new copy is applied (a submitted mod gets its copy once approved).
 - **Front-end:** see `docs/frontend-guidelines.md` for the three rules: tokens define-once in `src/styles/app.css`; `src/ui` components are closed (no `className` prop — variants only); zero `className=` outside `src/ui` (only `Box UNSAFE_className` with a `// REASON:` comment). Every rule in that doc's enforcement table is gate-enforced at edit / Stop / commit / push.
 - **Commits:** Conventional Commits (`feat` / `fix` / `chore` / `docs` / `refactor`); small and focused; only on green gates.
 - **Deploy:** staging → production runbook in `docs/deploy.md`. Same image, three environments; deploy staging with `bun run deploy:staging`, then promote with the gated `bun run deploy:prod` (smokes staging in a real browser, promotes the validated image by digest). There is no worker process: each web machine renders status line jobs on submit, on the admin's re-queue and "Run network preview", and at startup (`src/server/render-drain.ts`). A job cut off mid-render is re-queued once it has been `running` for 15 minutes.

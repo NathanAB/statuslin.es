@@ -56,7 +56,8 @@ describe('social meta', () => {
     const modPage = modSocialMeta('https://statuslin.es', {
       slug: 'filetree',
       title: 'File Tree',
-      description: null,
+      description: '',
+      generatedContent: null,
     })
     for (const meta of [statusLinePage, modPage]) {
       expect(meta.some((m) => m.property === 'og:site_name')).toBe(false)
@@ -144,6 +145,7 @@ describe('social meta', () => {
         slug: 'file-tree',
         title: 'File Tree',
         description: 'A file tree pane.',
+        generatedContent: null,
       }),
     ).toEqual([
       { property: 'og:type', content: 'website' },

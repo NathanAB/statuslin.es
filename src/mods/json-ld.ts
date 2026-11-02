@@ -1,12 +1,14 @@
 import { tagKeywords } from '@/gallery/facets'
 import { breadcrumbJsonLd, HOME_CRUMB_NAME, MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
 import { faqPageJsonLd, RUNTIME_PLATFORM } from '@/lib/json-ld'
+import { searchDescription } from '@/lib/search-description'
 import { MODS_PATH, modPath } from '@/lib/site'
 import { modSourceUrl } from './install'
 import type { ModDetail } from './queries'
 
 /**
- * A mod page as SoftwareSourceCode + its breadcrumb (home › Mods › the mod, as the page shows),
+ * A mod page as SoftwareSourceCode, described by its page summary as the page leads with it,
+ * + its breadcrumb (home › Mods › the mod, as the page shows),
  * then a FAQPage when its reviewed copy has the questions the page shows. The source is the folder
  * at the pinned commit, the one a person reviewed. A mod without a licence claims none.
  */
@@ -34,7 +36,7 @@ export function modJsonLd(
       '@context': 'https://schema.org',
       '@type': 'SoftwareSourceCode',
       name: mod.title,
-      description: mod.description,
+      description: searchDescription(mod.description, mod.generatedContent),
       url,
       codeRepository: modSourceUrl(mod),
       runtimePlatform: RUNTIME_PLATFORM,

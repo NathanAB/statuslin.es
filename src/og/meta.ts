@@ -70,14 +70,26 @@ export function configSocialMeta(input: {
 /** The mod page's share tags; `base` is the loader's origin. */
 export function modSocialMeta(
   base: string,
-  mod: { slug: string; title: string; headline?: string | undefined; description: string | null },
+  mod: {
+    slug: string
+    title: string
+    description: string
+    generatedContent: { summary: string; headline?: string | undefined } | null
+  },
 ): Array<Record<string, string>> {
   const image = `${base}/og/mods/${mod.slug}.png`
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}${modPath(mod.slug)}` },
-    { property: 'og:title', content: modPageTitle(mod.title, mod.headline) },
-    { property: 'og:description', content: modMetaDescription(mod.description) },
+    { property: 'og:title', content: modPageTitle(mod.title, mod.generatedContent?.headline) },
+    {
+      property: 'og:description',
+      content: modMetaDescription({
+        title: mod.title,
+        description: mod.description,
+        copy: mod.generatedContent,
+      }),
+    },
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },

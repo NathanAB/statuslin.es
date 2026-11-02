@@ -381,8 +381,8 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```
    `bun run dev` shows the stored Desktop images on mod pages and cards, like staging and production.
 4. Generate the page copy. `--all --prepare --mod` prints a request for every published mod and
-   curated draft without content in the current format; a submitted mod gets its copy once it is
-   approved. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
+   curated draft without content in the current format or without a headline (that copy keeps
+   rendering until the new copy is applied); a submitted mod gets its copy once it is approved. Answer it per the "Generated page copy" convention in `CLAUDE.md`, and send
    the response JSON to apply on stdin, without writing it to a file:
    ```sh
    DATABASE_URL='<env pooled url>' bun run generate:content --all --prepare --mod

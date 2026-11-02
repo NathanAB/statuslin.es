@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  brandedPageTitle,
   configMetaDescription,
   configPageTitle,
   GUIDE_DESCRIPTION,
@@ -117,15 +116,15 @@ describe('modPageTitle', () => {
     ).toBe('A very long mod title that would… — Claude Code mod')
   })
 
-  it('names the problem from the headline, on the brand when it fits', () => {
+  it('names the mod as a mod, then the problem from the headline, on the brand when it fits', () => {
     expect(modPageTitle('Cache Tax', 'Warm prompt cache')).toBe(
-      'Cache Tax: Warm prompt cache | statuslin.es',
+      'Cache Tax mod: Warm prompt cache | statuslin.es',
     )
   })
 
   it('drops the brand when the headline title would pass 60 characters', () => {
     expect(modPageTitle('Cache Tax', "Keep Claude Code's prompt cache warm")).toBe(
-      "Cache Tax: Keep Claude Code's prompt cache warm",
+      "Cache Tax mod: Keep Claude Code's prompt cache warm",
     )
   })
 
@@ -134,7 +133,7 @@ describe('modPageTitle', () => {
       'Status Line Anywhere',
       'Your status line drawn in Claude Desktop and in VS',
     )
-    expect(title).toBe('Status Line Anywhere: Your status line drawn in Claude…')
+    expect(title).toBe('Status Line Anywhere mod: Your status line drawn in Claude…')
     expect(title.length).toBeLessThanOrEqual(60)
   })
 
@@ -150,36 +149,50 @@ describe('modPageTitle', () => {
 
 describe('modMetaDescription', () => {
   it('normalizes whitespace without changing short descriptions', () => {
-    expect(modMetaDescription('  A file\ttree\npane.  ')).toBe('A file tree pane.')
+    expect(
+      modMetaDescription({
+        title: 'File Tree',
+        description: '  A file\ttree\npane.  ',
+        copy: null,
+      }),
+    ).toBe('A file tree pane.')
   })
 
   it('caps long descriptions at a whole word', () => {
-    const description = modMetaDescription(`A mod with ${'useful details '.repeat(30)}`)
+    const description = modMetaDescription({
+      title: 'File Tree',
+      description: `A mod with ${'useful details '.repeat(30)}`,
+      copy: null,
+    })
 
     expect(description.length).toBeLessThanOrEqual(160)
     expect(description).toMatch(/\S…$/)
   })
 
+  it('names the mod for Claude Code, then its page summary without code marks', () => {
+    expect(
+      modMetaDescription({
+        title: 'Cache Tax',
+        description: 'The author says this.',
+        copy: { summary: 'Keeps the prompt cache warm while you `/afk`.' },
+      }),
+    ).toBe('Cache Tax for Claude Code: Keeps the prompt cache warm while you /afk.')
+  })
+
+  it('caps a summary description at a whole word', () => {
+    const description = modMetaDescription({
+      title: 'Cache Tax',
+      description: '',
+      copy: { summary: `Keeps ${'the prompt cache warm '.repeat(9)}` },
+    })
+
+    expect(description.length).toBeLessThanOrEqual(160)
+    expect(description).toMatch(/^Cache Tax for Claude Code: Keeps the prompt cache warm .*\S…$/)
+  })
+
   it('falls back to a generic mod description when there is none', () => {
-    expect(modMetaDescription(null)).toBe(
+    expect(modMetaDescription({ title: 'File Tree', description: '', copy: null })).toBe(
       'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.',
     )
-  })
-})
-
-describe('brandedPageTitle', () => {
-  it('adds the brand when the whole title fits in 60 characters', () => {
-    expect(brandedPageTitle('Minimal Claude Code Status Lines & Mods')).toBe(
-      'Minimal Claude Code Status Lines & Mods | statuslin.es',
-    )
-  })
-
-  it('drops the brand, then truncates, to stay within 60 characters', () => {
-    expect(brandedPageTitle('Catppuccin, Dracula & Themed Claude Code Status Lines')).toBe(
-      'Catppuccin, Dracula & Themed Claude Code Status Lines',
-    )
-    expect(
-      brandedPageTitle('A facet title long enough that it cannot fit even without the brand'),
-    ).toBe('A facet title long enough that it cannot fit even without…')
   })
 })

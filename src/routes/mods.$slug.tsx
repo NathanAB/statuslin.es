@@ -11,7 +11,6 @@ import {
   modMetaDescription,
   modPageTitle,
 } from '@/lib/page-title'
-import { searchDescription } from '@/lib/search-description'
 import { modPath, siteUrl } from '@/lib/site'
 import { getModDetailFn } from '@/mods/functions'
 import { ModInstallPrompt } from '@/mods/install-prompt'
@@ -37,19 +36,18 @@ export const Route = createFileRoute('/mods/$slug')({
   head: ({ loaderData }) => {
     const mod = loaderData?.mod
     if (!mod) return { meta: [{ title: MOD_NOT_FOUND_TITLE }] }
-    const headline = mod.generatedContent?.headline
     return {
       meta: [
-        { title: modPageTitle(mod.title, headline) },
+        { title: modPageTitle(mod.title, mod.generatedContent?.headline) },
         {
           name: 'description',
-          content: modMetaDescription(searchDescription(mod.description, mod.generatedContent)),
+          content: modMetaDescription({
+            title: mod.title,
+            description: mod.description,
+            copy: mod.generatedContent,
+          }),
         },
-        ...modSocialMeta(loaderData.origin, {
-          ...mod,
-          headline,
-          description: searchDescription(mod.description, mod.generatedContent),
-        }),
+        ...modSocialMeta(loaderData.origin, mod),
       ],
       links: [canonicalLink(modPath(mod.slug))],
       scripts: modJsonLd(loaderData.origin, mod).map(jsonLdScript),
@@ -94,7 +92,12 @@ function ModPage() {
           />
         }
         preview={<ModPreview mod={mod} />}
-        whatItDoes={{ copy: mod.generatedContent, tiles: modFactTiles(mod) }}
+        whatItDoes={{
+          copy: mod.generatedContent,
+          tiles: modFactTiles(mod),
+          // The header leads with the summary, so the author's own words take its place here.
+          authorWords: mod.generatedContent ? mod.description : undefined,
+        }}
         faq={faq.length > 0 ? <FaqSection entries={faq} /> : undefined}
         related={<ModRelated items={mod.related} />}
       />

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FACET_INTRO } from '@/gallery/facet-copy'
 import { FACET_BY_SLUG, FACETS, TAG_VOCABULARY, tagHref } from '@/gallery/facets'
-import { brandedPageTitle } from '@/lib/page-title'
+import { brandedPageTitle } from '@/lib/search-text'
 import { JOB_BY_TAG } from '@/mods/mod-header'
 
 /** The topics someone decided list mods, each with its fixed title. */

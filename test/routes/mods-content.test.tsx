@@ -60,12 +60,21 @@ describe('/mods page', () => {
   it('shows a card per mod, each linking its page', () => {
     renderPage(MODS)
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Best Claude Code mods' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Claude Code mods' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Meter' }).getAttribute('href')).toBe('/mods/meter')
     expect(screen.getByRole('link', { name: 'File Tree' }).getAttribute('href')).toBe(
       '/mods/file-tree',
     )
     expect(screen.queryByText('No mods yet.')).toBeNull()
+  })
+
+  it('says in its intro how statuslin.es checks each mod: real previews, review, pinned installs', () => {
+    const { container } = renderPage(MODS)
+
+    const text = container.textContent ?? ''
+    expect(text).toContain('recorded from its real output in the terminal and Claude Desktop')
+    expect(text).toContain('Every version is reviewed before it goes live')
+    expect(text).toContain('pinned to the reviewed commit')
   })
 
   it('links the guides that compare mods with status lines and explain mod safety', () => {
