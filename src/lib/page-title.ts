@@ -90,6 +90,17 @@ export const HOME_TITLE_BASE = 'Claude Code Mods & Status Lines'
  */
 export const HOME_HERO_HEADING = 'Customize Claude Code with mods'
 
+/**
+ * /mods title base: the <title> tag, og:title and its CollectionPage name. "Claude Code mods" is
+ * the biggest search the site didn't rank for (Search Console, 2026-11), so the page leads with it
+ * and names what only statuslin.es checks.
+ */
+export const MODS_TITLE_BASE = 'Claude Code Mods, Previewed and Reviewed'
+export const MODS_HEADING = 'Claude Code mods'
+/** /mods meta description: the description tag and og:description. */
+export const MODS_DESCRIPTION =
+  'Claude Code mods, each previewed from its real output in the terminal and Claude Desktop, reviewed before it goes live and pinned to the reviewed commit.'
+
 /** /submit's heading over the status line or mod choice, so it never reads as a choice already made. */
 export const SUBMIT_HEADING = 'Submit a status line or mod'
 /** Home's meta description names both kinds, as its title does. */

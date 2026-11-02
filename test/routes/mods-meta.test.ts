@@ -49,11 +49,11 @@ describe('/mods head', () => {
 
     expect(h.meta).toEqual(
       expect.arrayContaining([
-        { title: 'Best Claude Code Mods, Ranked by Installs | statuslin.es' },
+        { title: 'Claude Code Mods, Previewed and Reviewed | statuslin.es' },
         {
           name: 'description',
           content:
-            'The best Claude Code mods, ranked by installs and previewed in the terminal and Claude Desktop. Each is reviewed before listing.',
+            'Claude Code mods, each previewed from its real output in the terminal and Claude Desktop, reviewed before it goes live and pinned to the reviewed commit.',
         },
         { property: 'og:url', content: `${ORIGIN}/mods` },
       ]),
@@ -68,8 +68,8 @@ describe('/mods head', () => {
 
     expect(title.length).toBeLessThanOrEqual(60)
     expect(description.length).toBeLessThanOrEqual(160)
-    // Home owns the bare "Claude Code mods" search; this page aims at "best Claude Code mods".
-    expect(title.startsWith('Best Claude Code Mods')).toBe(true)
+    expect(title.startsWith('Claude Code Mods')).toBe(true)
+    expect(description.startsWith('Claude Code mods')).toBe(true)
   })
 
   it('names the page the same in og:title and the CollectionPage', async () => {
@@ -78,9 +78,9 @@ describe('/mods head', () => {
 
     expect(h.meta).toContainEqual({
       property: 'og:title',
-      content: 'Best Claude Code Mods, Ranked by Installs',
+      content: 'Claude Code Mods, Previewed and Reviewed',
     })
-    expect(collection?.name).toBe('Best Claude Code Mods, Ranked by Installs')
+    expect(collection?.name).toBe('Claude Code Mods, Previewed and Reviewed')
   })
 
   it('lets crawlers index the page while it lists mods', async () => {
