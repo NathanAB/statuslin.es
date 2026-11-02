@@ -313,7 +313,7 @@ describe('listModSlugsMissingContent', () => {
     const done = await seedMod('done-one', { status: 'published', commit: sha('d') })
     await db
       .update(schema.modVersions)
-      .set({ generatedContent: CONTENT })
+      .set({ generatedContent: { ...CONTENT, headline: 'Watch your context window fill' } })
       .where(eq(schema.modVersions.id, done.versionId))
     const old = await seedMod('old-copy', { status: 'published', commit: sha('e') })
     await db
@@ -322,6 +322,21 @@ describe('listModSlugsMissingContent', () => {
       .where(eq(schema.modVersions.id, old.versionId))
 
     expect(await listModSlugsMissingContent(db)).toEqual(['draft-one', 'published-one', 'old-copy'])
+  })
+
+  it('lists a mod whose page copy has no headline, and not one whose copy has it', async () => {
+    const headless = await seedMod('no-headline', { status: 'published' })
+    await db
+      .update(schema.modVersions)
+      .set({ generatedContent: CONTENT })
+      .where(eq(schema.modVersions.id, headless.versionId))
+    const headed = await seedMod('has-headline', { status: 'published', commit: sha('b') })
+    await db
+      .update(schema.modVersions)
+      .set({ generatedContent: { ...CONTENT, headline: 'Watch your context window fill' } })
+      .where(eq(schema.modVersions.id, headed.versionId))
+
+    expect(await listModSlugsMissingContent(db)).toEqual(['no-headline'])
   })
 })
 

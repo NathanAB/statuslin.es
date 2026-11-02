@@ -131,7 +131,10 @@ export async function prepareModContentGenerationRequest(
   }
 }
 
-/** Published mods and curated drafts whose current version has no page copy in the current format. */
+/**
+ * Published mods and curated drafts whose current version has no page copy in the current format,
+ * or copy without a headline: the headline puts the problem the mod solves in its page title.
+ */
 export async function listModSlugsMissingContent(db: Db): Promise<string[]> {
   const rows = await db
     .select({ slug: mods.slug, generatedContent: modVersions.generatedContent })
@@ -140,7 +143,7 @@ export async function listModSlugsMissingContent(db: Db): Promise<string[]> {
     .where(and(inArray(mods.status, ['draft', 'published']), not(inReview(db))))
     .orderBy(asc(mods.createdAt), asc(mods.slug))
   return rows
-    .filter((row) => readPageCopy(modPageCopySchema, row.generatedContent) === null)
+    .filter((row) => !readPageCopy(modPageCopySchema, row.generatedContent)?.headline)
     .map((row) => row.slug)
 }
 
