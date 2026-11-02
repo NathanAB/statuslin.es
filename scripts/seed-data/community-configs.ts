@@ -416,7 +416,7 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     githubId: '197928511',
     title: 'Bordered Dashboard',
     description:
-      "A boxed Node dashboard: folder, lines changed, branch, model, effort, session and all-time cost and tokens, context, and five-hour and seven-day quota bars. Rows fed by the repo's hooks stay empty without them. No network calls; keeps state under ~/.claude and moves its older state files out of the temp folder on first run.",
+      "A boxed Node dashboard: folder, branch, model, effort, cost, tokens, context, and five-hour and seven-day quota bars. Keeps files under ~/.claude it never deletes, and moves its old temp files on first run. If the author's ~/.claude/hooks/mcp-status-refresh.js exists, it starts that in the background every 90 seconds, which runs `claude mcp list`.",
     interpreter: 'node',
     source: src('32-bordered-dashboard.js'),
     networkHosts: [],
@@ -425,24 +425,11 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
       'https://github.com/NYCU-Chung/cc-statusline/blob/ef58a8236c4fe256cfb242a3d6b0300bfd4f7f0e/statusline.js',
   },
   {
-    githubLogin: 'wolfdenpublishing',
-    githubId: '20097694',
-    title: 'Performance Badge Line',
-    description:
-      'One Python line: a four-dot badge set by cache hit rate and response time, folder, git branch with a modified-file count, model, token counts and session cost priced from the transcript. Nine themes, five separator styles and more fields through PYCCSL_* environment variables. Standard library only, no network calls.',
-    interpreter: 'python',
-    source: src('33-performance-badge-line.py'),
-    networkHosts: [],
-    license: 'MIT',
-    sourceUrl:
-      'https://github.com/wolfdenpublishing/pyccsl/blob/b0e0482bdeb0ba068d441d6dd97fce20beec383b/pyccsl.py',
-  },
-  {
     githubLogin: 'jonahmabry',
     githubId: '119716062',
     title: 'Minecraft Bars',
     description:
-      'Three Minecraft-style lines: the model tinted by material (netherite, diamond, gold or iron), folder, git branch, cost, session time and cache tokens; hearts for five-hour usage and drumsticks for seven-day usage, emptying as they climb, with reset countdowns; then an XP bar for the context window. Node built-ins only, no network calls.',
+      'Three Minecraft-style lines: the model tinted by material (netherite, diamond, gold or iron), folder, git branch, cost and session time; hearts for five-hour usage and drumsticks for seven-day usage, emptying as they climb, with reset countdowns; then an XP bar for the context window. Node built-ins only, no network calls.',
     interpreter: 'node',
     source: src('34-minecraft-bars.js'),
     networkHosts: [],
