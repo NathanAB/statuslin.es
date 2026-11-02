@@ -61,11 +61,12 @@ export function configMetaDescription(description: string | null | undefined): s
 
 /**
  * With a reviewed headline, the title names the problem the mod solves so the page ranks for it,
- * not only for the mod's name. The headline gives way to fit, never the name.
+ * not only for the mod's name. "mod" follows the name because people search "<name> mod". The
+ * headline gives way to fit, never the name.
  */
 export function modPageTitle(title: string, headline?: string): string {
   if (!headline) return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
-  const lead = `${normalizeWhitespace(title)}: `
+  const lead = `${normalizeWhitespace(title)} mod: `
   const branded = `${lead}${headline}${PAGE_TITLE_BRAND}`
   if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
   const budget = PAGE_TITLE_MAX_LENGTH - lead.length

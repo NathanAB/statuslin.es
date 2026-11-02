@@ -117,15 +117,15 @@ describe('modPageTitle', () => {
     ).toBe('A very long mod title that would… — Claude Code mod')
   })
 
-  it('names the problem from the headline, on the brand when it fits', () => {
+  it('names the mod as a mod, then the problem from the headline, on the brand when it fits', () => {
     expect(modPageTitle('Cache Tax', 'Warm prompt cache')).toBe(
-      'Cache Tax: Warm prompt cache | statuslin.es',
+      'Cache Tax mod: Warm prompt cache | statuslin.es',
     )
   })
 
   it('drops the brand when the headline title would pass 60 characters', () => {
     expect(modPageTitle('Cache Tax', "Keep Claude Code's prompt cache warm")).toBe(
-      "Cache Tax: Keep Claude Code's prompt cache warm",
+      "Cache Tax mod: Keep Claude Code's prompt cache warm",
     )
   })
 
@@ -134,7 +134,7 @@ describe('modPageTitle', () => {
       'Status Line Anywhere',
       'Your status line drawn in Claude Desktop and in VS',
     )
-    expect(title).toBe('Status Line Anywhere: Your status line drawn in Claude…')
+    expect(title).toBe('Status Line Anywhere mod: Your status line drawn in Claude…')
     expect(title.length).toBeLessThanOrEqual(60)
   })
 
