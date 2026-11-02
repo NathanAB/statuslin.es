@@ -411,4 +411,56 @@ export const COMMUNITY_CONFIGS: CommunityConfig[] = [
     sourceUrl:
       'https://github.com/GourangaDasSamrat/dotfiles/blob/a88a74367048a7b3cfa4ffd265ea1659631b2940/claude/.claude/statusline.sh',
   },
+  {
+    githubLogin: 'NYCU-Chung',
+    githubId: '197928511',
+    title: 'Bordered Dashboard',
+    description:
+      "A boxed Node dashboard: folder, lines changed, branch, model, effort, session and all-time cost and tokens, context, and five-hour and seven-day quota bars. Rows fed by the repo's hooks stay empty without them. No network calls; keeps state under ~/.claude and moves its older state files out of the temp folder on first run.",
+    interpreter: 'node',
+    source: src('32-bordered-dashboard.js'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/NYCU-Chung/cc-statusline/blob/ef58a8236c4fe256cfb242a3d6b0300bfd4f7f0e/statusline.js',
+  },
+  {
+    githubLogin: 'wolfdenpublishing',
+    githubId: '20097694',
+    title: 'Performance Badge Line',
+    description:
+      'One Python line: a four-dot badge set by cache hit rate and response time, folder, git branch with a modified-file count, model, token counts and session cost priced from the transcript. Nine themes, five separator styles and more fields through PYCCSL_* environment variables. Standard library only, no network calls.',
+    interpreter: 'python',
+    source: src('33-performance-badge-line.py'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/wolfdenpublishing/pyccsl/blob/b0e0482bdeb0ba068d441d6dd97fce20beec383b/pyccsl.py',
+  },
+  {
+    githubLogin: 'jonahmabry',
+    githubId: '119716062',
+    title: 'Minecraft Bars',
+    description:
+      'Three Minecraft-style lines: the model tinted by material (netherite, diamond, gold or iron), folder, git branch, cost, session time and cache tokens; hearts for five-hour usage and drumsticks for seven-day usage, emptying as they climb, with reset countdowns; then an XP bar for the context window. Node built-ins only, no network calls.',
+    interpreter: 'node',
+    source: src('34-minecraft-bars.js'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/jonahmabry/minecraft-statusline/blob/54c4417d137c901dcf7aa85389a996537896e879/bin/statusline.js',
+  },
+  {
+    githubLogin: 'yimleunggggg',
+    githubId: '275984800',
+    title: 'Starfield Line',
+    description:
+      "Two lines in ice cyan and apricot: a per-session emoji, your computer's name, and the project with its git branch; then the model and context use. A label in an optional ~/.config/starfield-terminal/config.json replaces the computer name. Python standard library only, no network calls.",
+    interpreter: 'python',
+    source: src('35-starfield-line.py'),
+    networkHosts: [],
+    license: 'MIT',
+    sourceUrl:
+      'https://github.com/yimleunggggg/starfield-terminal/blob/7795b859d63fe9566192870f6628c2dec2fd75ed/src/statusline.py',
+  },
 ]

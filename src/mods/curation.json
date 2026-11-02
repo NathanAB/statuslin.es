@@ -546,5 +546,104 @@
       }
     ],
     "cardSurface": "terminal"
+  },
+  {
+    "repoUrl": "https://github.com/petekp/inbox",
+    "path": "",
+    "commitSha": "b8560fc433785788fe975e04136999df670bcb26",
+    "pluginName": "inbox",
+    "title": "Inbox",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/inbox demo"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/oikon48/prompt-rail",
+    "path": "plugins/prompt-rail",
+    "commitSha": "b36e926cc419590ace89979edd9fcfab4ca6090e",
+    "pluginName": "prompt-rail",
+    "title": "Prompt Rail",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "Run the tests again"
+      },
+      {
+        "type": "text",
+        "text": "Check the lint too"
+      },
+      {
+        "type": "text",
+        "text": "Summarize what changed"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/achimala/claude-toons",
+    "path": "",
+    "commitSha": "0fac2edc29d06493597d486cae3799441ecef7d8",
+    "pluginName": "toons",
+    "title": "Claude Toons",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      }
+    ],
+    "cardSurface": "terminal"
+  },
+  {
+    "repoUrl": "https://github.com/halluton/Mindful-Claude",
+    "path": "",
+    "commitSha": "411c9c4f4f1c3d128159be7315823341ae7d9e2d",
+    "pluginName": "mindful-claude",
+    "title": "Mindful Claude",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      }
+    ],
+    "cardSurface": "terminal"
+  },
+  {
+    "repoUrl": "https://github.com/KRNL-Studio/usage-meter",
+    "path": "mod",
+    "commitSha": "0c8bc64633c7244d348be53d114e1376fe24e367",
+    "pluginName": "usage-meter",
+    "title": "Usage Meter",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "Run the tests"
+      },
+      {
+        "type": "text",
+        "text": "/burn"
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/JetsonChan/CC-Usage-Band",
+    "path": "usage-band",
+    "commitSha": "60cd60949b1f52c96ddba3ea24ed0848ff302196",
+    "pluginName": "usage-band",
+    "title": "CC Usage Band"
+  },
+  {
+    "repoUrl": "https://github.com/lakmadev/pixel-pet",
+    "path": "",
+    "commitSha": "5e07b948b66f39471850ee296510ce35fa2f26d6",
+    "pluginName": "pixel-pet",
+    "title": "Pixel Pet",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/preview-busy"
+      }
+    ]
   }
 ]
