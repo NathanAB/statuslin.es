@@ -548,19 +548,6 @@
     "cardSurface": "terminal"
   },
   {
-    "repoUrl": "https://github.com/petekp/inbox",
-    "path": "",
-    "commitSha": "b8560fc433785788fe975e04136999df670bcb26",
-    "pluginName": "inbox",
-    "title": "Inbox",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "/inbox demo"
-      }
-    ]
-  },
-  {
     "repoUrl": "https://github.com/oikon48/prompt-rail",
     "path": "plugins/prompt-rail",
     "commitSha": "b36e926cc419590ace89979edd9fcfab4ca6090e",
@@ -578,23 +565,6 @@
       {
         "type": "text",
         "text": "Summarize what changed"
-      }
-    ]
-  },
-  {
-    "repoUrl": "https://github.com/KRNL-Studio/usage-meter",
-    "path": "mod",
-    "commitSha": "0c8bc64633c7244d348be53d114e1376fe24e367",
-    "pluginName": "usage-meter",
-    "title": "Usage Meter",
-    "inputSteps": [
-      {
-        "type": "text",
-        "text": "Run the tests"
-      },
-      {
-        "type": "text",
-        "text": "/burn"
       }
     ]
   },
