@@ -51,7 +51,7 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
 
 - **Make the smallest correct change.** Implement only the requested behavior; do not address hypothetical edge cases or expand the feature without approval.
 - **Ask before adding infrastructure.** Get explicit approval before introducing providers, queues, compatibility layers, broad abstractions, new frameworks, or other cross-cutting machinery.
-- **Keep the diff focused.** If the work needs more than five production files or starts touching unrelated areas, stop and explain why before continuing.
+- **Keep the diff focused.** If the work starts touching unrelated areas, stop and explain why before continuing.
 - **Bound the feedback loop.** Run focused tests once after implementation, then run `bun run check` once. If either fails, make the minimal fix and rerun only what the fix invalidated. Do not repeatedly rerun green checks.
 - **Use one review pass.** Treat review findings outside the acceptance criteria as follow-ups, not blockers. Stop and ask before acting on feedback that materially expands scope.
 - **Stop after two blocked attempts.** Explain the blocker and options instead of continuing to add complexity.
