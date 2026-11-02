@@ -9,7 +9,7 @@
   {
     "repoUrl": "https://github.com/hamzafer/claude-code-mods",
     "path": "mods/context-bar",
-    "commitSha": "77f1ebcd5d228db98ceecdc7ca9ec063287b9f07",
+    "commitSha": "5cef0d32daad002b7936920e47a317fd2fd066f0",
     "pluginName": "context-bar",
     "title": "Context Bar"
   },
@@ -149,7 +149,7 @@
   {
     "repoUrl": "https://github.com/data-goblin/claude-code-filetree",
     "path": "",
-    "commitSha": "12723d93032b16802fb90204a1d29fa64c296879",
+    "commitSha": "94848a8ebb31b2ffa3b5f4c9e5d2c09e7abe0391",
     "pluginName": "filetree",
     "title": "Filetree",
     "inputSteps": [
@@ -187,7 +187,7 @@
   {
     "repoUrl": "https://github.com/NahumLitvin/prismantis",
     "path": "",
-    "commitSha": "bffa006c2dd72c0488abd2c12e2c421384b49ab3",
+    "commitSha": "e349856cada8f25eb3356108859c47a9ce483442",
     "pluginName": "prismantis",
     "title": "Prismantis",
     "inputSteps": [
@@ -455,7 +455,7 @@
   {
     "repoUrl": "https://github.com/hamzafer/claude-code-mods",
     "path": "mods/mission-control",
-    "commitSha": "fd249d5e8dfd7f1094d741e42e0b1cca5f75311a",
+    "commitSha": "5cef0d32daad002b7936920e47a317fd2fd066f0",
     "pluginName": "mission-control",
     "title": "Mission Control",
     "inputSteps": [
@@ -528,7 +528,7 @@
   {
     "repoUrl": "https://github.com/dgokcin/claude-pokemon-mod",
     "path": "",
-    "commitSha": "a5c646322149a16ba0eed0378817898248a0f7ed",
+    "commitSha": "3aa620df9366406015b9ebb4ba210f3d261f3b2a",
     "pluginName": "pokemon",
     "title": "Claude Pokémon",
     "cardSurface": "terminal"
