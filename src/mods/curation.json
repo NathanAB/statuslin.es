@@ -104,7 +104,7 @@
   {
     "repoUrl": "https://github.com/augiefra/claude-mods",
     "path": "plugins/token-weather-usage",
-    "commitSha": "797ec6a14cec30b0dceafb2aa910e1add8a3393e",
+    "commitSha": "0fb381984b0c17c7b1a470daffae264988b6b02b",
     "pluginName": "token-weather-usage",
     "title": "Token Weather Usage"
   },
@@ -131,7 +131,7 @@
   {
     "repoUrl": "https://github.com/karanb192/cache-tax",
     "path": "",
-    "commitSha": "e4940afcc62c109bd667bae1b996bee765021759",
+    "commitSha": "b05ec14e8d327021ade8c4969003547be8076812",
     "pluginName": "cache-tax",
     "title": "Cache Tax",
     "inputSteps": [
@@ -149,7 +149,7 @@
   {
     "repoUrl": "https://github.com/data-goblin/claude-code-filetree",
     "path": "",
-    "commitSha": "94848a8ebb31b2ffa3b5f4c9e5d2c09e7abe0391",
+    "commitSha": "a3d36b1a56c0d982b307a58ef88fd3e857c977e6",
     "pluginName": "filetree",
     "title": "Filetree",
     "inputSteps": [
@@ -170,7 +170,7 @@
   {
     "repoUrl": "https://github.com/scasella/claude-flightdeck",
     "path": "",
-    "commitSha": "f9c3c5230775109de4bd08c5c7a42112a6a2a885",
+    "commitSha": "bf433171558f63a2fef46e8b92560968b2033e4f",
     "pluginName": "flightdeck",
     "title": "Flightdeck",
     "inputSteps": [
@@ -243,7 +243,7 @@
   {
     "repoUrl": "https://github.com/midudev/better-claude",
     "path": "plugins/sub-meter",
-    "commitSha": "9306204b4807fb13f31e8f952fabde360f4a68d0",
+    "commitSha": "249f0f60c054d9fc37543e203f7ba21ffde04fe6",
     "pluginName": "sub-meter",
     "title": "Sub Meter",
     "cardSurface": "terminal"
@@ -251,7 +251,7 @@
   {
     "repoUrl": "https://github.com/midudev/better-claude",
     "path": "plugins/token-meter",
-    "commitSha": "c2ee6a456c8dfb540dc1f0763c58ebf486d0b60d",
+    "commitSha": "249f0f60c054d9fc37543e203f7ba21ffde04fe6",
     "pluginName": "token-meter",
     "title": "Token Meter",
     "inputSteps": [
@@ -529,7 +529,7 @@
   {
     "repoUrl": "https://github.com/dgokcin/claude-pokemon-mod",
     "path": "",
-    "commitSha": "3aa620df9366406015b9ebb4ba210f3d261f3b2a",
+    "commitSha": "a364389b66c5face709d3b559ff171a1654a6a19",
     "pluginName": "pokemon",
     "title": "Claude Pokémon",
     "cardSurface": "terminal"
