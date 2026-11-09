@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
-import { MAX_TERMINAL_COLS, TERMINAL } from '@/render/mods/terminal'
+import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
 
 /** Relative to the repo root, where the import script and the tests both run. */
 export const CURATION_FILE = 'src/mods/curation.json'
@@ -35,11 +35,12 @@ const inputStepSchema = z.discriminatedUnion('type', [textStepSchema, clickStepS
 export const inputStepsSchema = z.array(inputStepSchema)
 
 /**
- * A wider or fullscreen terminal, for a mod that draws only there. Also parses the stored setup,
+ * A wider, taller or fullscreen terminal, for a mod that draws only there. Also parses the stored setup,
  * since mod_versions.terminal is untyped jsonb.
  */
 export const terminalSetupSchema = z.strictObject({
   cols: z.int().min(TERMINAL.cols).max(MAX_TERMINAL_COLS),
+  rows: z.int().min(TERMINAL.rows).max(MAX_TERMINAL_ROWS).optional(),
   fullscreen: z.boolean(),
 })
 

@@ -20,7 +20,7 @@ import {
 } from '@/render/mods/recorder'
 import { feedScenario } from '@/render/mods/scenario-feed'
 import { sessionFiles, setupCommand } from '@/render/mods/session'
-import { DEFAULT_TERMINAL_SETUP, TERMINAL } from '@/render/mods/terminal'
+import { DEFAULT_TERMINAL_SETUP, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
 
 const SESSION_TEST_TIMEOUT_MS = 20_000
 /** The real waits are seconds long; the fake pty answers at once. */
@@ -292,13 +292,42 @@ describe('modRecorder', () => {
   )
 
   it(
-    'fails the recording when the replay gives more rows than the terminal has',
+    "records and replays in the request's terminal height",
     async () => {
-      const { recorder } = fakeSandboxes(Array(TERMINAL.rows + 1).fill(''))
+      const { recorder, replayCommands, session } = fakeSandboxes(['❯'])
+      const terminal = { cols: 144, rows: 50, fullscreen: true }
+
+      await recorder.record({ mod: null, inputSteps: [], terminal })
+
+      expect(session.terminalSizes).toEqual([{ cols: 144, rows: 50 }])
+      expect(replayCommands).toEqual([expect.stringMatching(' 144 50$')])
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    'keeps every row of the tallest terminal',
+    async () => {
+      const { recorder } = fakeSandboxes(Array(MAX_TERMINAL_ROWS).fill(''))
+      const terminal = { cols: TERMINAL.cols, rows: MAX_TERMINAL_ROWS, fullscreen: true }
+
+      const { rows } = await recorder.record({ mod: null, inputSteps: [], terminal })
+
+      expect(rows).toHaveLength(MAX_TERMINAL_ROWS)
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    'fails the recording when the replay gives more rows than the tallest terminal has',
+    async () => {
+      const { recorder } = fakeSandboxes(Array(MAX_TERMINAL_ROWS + 1).fill(''))
 
       await expect(
         recorder.record({ mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP }),
-      ).rejects.toThrow(`recording has ${TERMINAL.rows + 1} rows, over the ${TERMINAL.rows} limit`)
+      ).rejects.toThrow(
+        `recording has ${MAX_TERMINAL_ROWS + 1} rows, over the ${MAX_TERMINAL_ROWS} limit`,
+      )
     },
     SESSION_TEST_TIMEOUT_MS,
   )
