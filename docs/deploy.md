@@ -420,15 +420,16 @@ start the mod, prefer the click anyway: a typed key is a text step, so the no-mo
 into its prompt too. The text step `/preview-waiting` starts both recordings with another Claude Code
 session waiting for an approval, for a mod that shows other sessions.
 
-### Record a mod's terminal preview wider or fullscreen
+### Record a mod's terminal preview wider, taller or fullscreen
 
 A mod's terminal preview is recorded in a 100x30 terminal with Claude Code's default layout. Some
 mods draw only in a wider terminal or in the fullscreen layout (`/tui fullscreen`). filetree's
 sidebar, for example, needs both and at least 110 columns. For such a mod, set the entry's
 `terminal` in `src/mods/curation.json`, as in `"terminal": {"cols": 120, "fullscreen": true}`.
 `cols` runs from 100 to 160; the import refuses a width outside that range, since a wider row can
-pass the recording's size limit. The rows stay 30, and a click step still names a cell of the
-100x30 area. The Claude Desktop recording ignores the field, because Desktop docks panes on its own.
+pass the recording's size limit. A mod whose pane runs past the bottom of the terminal also sets
+`rows`, from 30 to 60 (the default is 30). flightdeck's session log needs at least 35. A click step
+still names a cell of the 100x30 area. The Claude Desktop recording ignores the field, because Desktop docks panes on its own.
 Leave the field out to keep the default.
 
 Run this only after the change that added `terminal` has deployed to that environment. Like input

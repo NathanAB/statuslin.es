@@ -1,7 +1,7 @@
 import type { Recording } from './recorder'
-import { TERMINAL } from './terminal'
+import { MAX_TERMINAL_ROWS } from './terminal'
 
-export const RECORDING_MAX_ROWS = TERMINAL.rows
+export const RECORDING_MAX_ROWS = MAX_TERMINAL_ROWS
 /** A truecolor foreground and background on every cell of a row fits with room to spare. */
 export const RECORDING_MAX_ROW_BYTES = 8 * 1024
 export const RECORDING_MAX_BYTES = 128 * 1024

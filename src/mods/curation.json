@@ -181,6 +181,7 @@
     ],
     "terminal": {
       "cols": 144,
+      "rows": 36,
       "fullscreen": true
     }
   },

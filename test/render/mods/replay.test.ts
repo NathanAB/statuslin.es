@@ -126,7 +126,7 @@ describe('replayInSandbox', () => {
       stderr: '',
     }))
 
-    expect(await replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).toEqual(printed)
+    expect(await replayInSandbox(fake.sandbox, pty, TERMINAL.cols, TERMINAL.rows)).toEqual(printed)
     expect(fake.uploads.map((u) => u.data)).toEqual([pty, readFileSync(REPLAY_SCRIPT_SRC, 'utf8')])
     expect(fake.commands).toHaveLength(1)
   })
@@ -138,7 +138,7 @@ describe('replayInSandbox', () => {
       stderr: 'RangeError: Out of memory',
     }))
 
-    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).rejects.toThrow(
+    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols, TERMINAL.rows)).rejects.toThrow(
       'replay exited 1: RangeError: Out of memory',
     )
   })
@@ -148,7 +148,7 @@ describe('replayInSandbox', () => {
       throw new Error('command ran past 20000 ms')
     })
 
-    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).rejects.toThrow(
+    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols, TERMINAL.rows)).rejects.toThrow(
       'command ran past 20000 ms',
     )
   })
@@ -160,7 +160,7 @@ describe('replayInSandbox', () => {
       stderr: '',
     }))
 
-    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols)).rejects.toThrow(
+    await expect(replayInSandbox(fake.sandbox, pty, TERMINAL.cols, TERMINAL.rows)).rejects.toThrow(
       `replay output is over the ${REPLAY_OUTPUT_MAX_BYTES}-byte limit`,
     )
   })
@@ -172,7 +172,9 @@ describe('replayInSandbox', () => {
       stderr: 'x'.repeat(100_000),
     }))
 
-    const error = await replayInSandbox(fake.sandbox, pty, TERMINAL.cols).catch((e: Error) => e)
+    const error = await replayInSandbox(fake.sandbox, pty, TERMINAL.cols, TERMINAL.rows).catch(
+      (e: Error) => e,
+    )
 
     expect((error as Error).message.length).toBeLessThan(1_000)
   })

@@ -117,7 +117,7 @@ async function recordSession(
   scenario: Scenario,
   modPluginDir: string | null,
   inputSteps: readonly InputStep[],
-  cols: number,
+  { cols, rows }: { cols: number; rows: number },
   timing: SessionTiming,
 ): Promise<Uint8Array> {
   const output = new PtyOutput()
@@ -127,7 +127,7 @@ async function recordSession(
   const decoder = new TextDecoder()
   const terminal = await sandbox.openTerminal({
     cols,
-    rows: TERMINAL.rows,
+    rows,
     cwd: feedStdin(scenario).workspace.current_dir,
     envs: sessionEnv(scenario),
     onData: (bytes) => {
@@ -200,7 +200,7 @@ export async function recordInSandbox(
     scenario,
     modPluginDir,
     inputSteps,
-    terminal.cols,
+    { cols: terminal.cols, rows: terminal.rows ?? TERMINAL.rows },
     timing,
   )
   return { pty, claudeCodeVersion: version }
@@ -232,7 +232,12 @@ export function modRecorder(
         (sandbox) => recordInSandbox(sandbox, request, timing),
       )
       const rows = await sandboxes.withReplaySandbox((sandbox) =>
-        replayInSandbox(sandbox, pty, request.terminal.cols),
+        replayInSandbox(
+          sandbox,
+          pty,
+          request.terminal.cols,
+          request.terminal.rows ?? TERMINAL.rows,
+        ),
       )
       return boundRecording({ rows, claudeCodeVersion })
     },

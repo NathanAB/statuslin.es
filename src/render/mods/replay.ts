@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { SANDBOX_REPLAY_DIR } from '../e2b-template'
 import { RECORDING_MAX_BYTES, RECORDING_MAX_ROWS } from './bound-recording'
 import { REPLAY_TIMEOUT_MS, type ReplaySandbox, SANDBOX_WORK_DIR } from './mod-sandbox'
-import { TERMINAL } from './terminal'
 
 export const REPLAY_SCRIPT_SRC = join(import.meta.dirname, 'sandbox/replay.cjs')
 const SCRIPT_FILE = `${SANDBOX_WORK_DIR}/replay.cjs`
@@ -32,12 +31,13 @@ export async function replayInSandbox(
   sandbox: ReplaySandbox,
   pty: Uint8Array,
   cols: number,
+  rows: number,
 ): Promise<string[]> {
   await sandbox.writeFiles([
     { path: RECORDING_FILE, data: pty },
     { path: SCRIPT_FILE, data: readFileSync(REPLAY_SCRIPT_SRC, 'utf8') },
   ])
-  const command = `node ${SCRIPT_FILE} ${XTERM_DIR} ${RECORDING_FILE} ${cols} ${TERMINAL.rows}`
+  const command = `node ${SCRIPT_FILE} ${XTERM_DIR} ${RECORDING_FILE} ${cols} ${rows}`
   const { exitCode, stdout, stderr } = await sandbox.runBounded(command, {
     timeoutMs: REPLAY_TIMEOUT_MS,
     maxOutputBytes: REPLAY_OUTPUT_MAX_BYTES,

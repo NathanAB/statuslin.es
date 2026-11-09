@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CURATION_FILE, parseCuration } from '@/mods/curation'
-import { MAX_TERMINAL_COLS, TERMINAL } from '@/render/mods/terminal'
+import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
 
 const SHA = 'a'.repeat(40)
 
@@ -83,6 +83,16 @@ describe('parseCuration', () => {
       'a terminal narrower than the default',
       { terminal: { cols: TERMINAL.cols - 1, fullscreen: true } },
       /terminal\.cols/,
+    ],
+    [
+      'a terminal shorter than the default',
+      { terminal: { cols: TERMINAL.cols, rows: TERMINAL.rows - 1, fullscreen: true } },
+      /terminal\.rows/,
+    ],
+    [
+      'a terminal taller than the recording caps allow',
+      { terminal: { cols: TERMINAL.cols, rows: MAX_TERMINAL_ROWS + 1, fullscreen: true } },
+      /terminal\.rows/,
     ],
     [
       'a terminal wider than the recording caps allow',
