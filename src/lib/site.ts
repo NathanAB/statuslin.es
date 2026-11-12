@@ -55,6 +55,28 @@ export function modPath(slug: string): string {
   return MOD_ROUTE.replace('$slug', () => slug)
 }
 
+/** A listing is a published status line or a published mod; the words analytics events use. */
+export type ListingKind = 'status_line' | 'mod'
+
+/** A listing's URL segment: /c/<slug> and /og/c/<slug>.png, /mods/<slug> and /og/mods/<slug>.png. */
+function listingSegment(kind: ListingKind): string {
+  return kind === 'mod' ? 'mods' : 'c'
+}
+
+export function listingPath(kind: ListingKind, slug: string): string {
+  return kind === 'mod' ? modPath(slug) : `/c/${slug}`
+}
+
+/** A listing's Open Graph card image. */
+export function listingCardPath(kind: ListingKind, slug: string): string {
+  return `/og/${listingSegment(kind)}/${slug}.png`
+}
+
+/** A listing's README badge image, with its live install count. */
+export function listingBadgePath(kind: ListingKind, slug: string): string {
+  return `/badge/${listingSegment(kind)}/${slug}.svg`
+}
+
 /** An unreviewed mod's page (ADR 0011): addressed by repository owner and plugin name, never a slug. */
 export const UNREVIEWED_MOD_ROUTE = '/mods/unreviewed/$owner/$pluginName'
 

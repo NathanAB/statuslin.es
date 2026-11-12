@@ -9,6 +9,7 @@ export const OG_PALETTE = {
   foreground: '#faf9f5',
   mutedForeground: '#b0aea5',
   primary: '#c96442',
+  primaryFill: '#b85533',
   sunken: '#0c0b0a',
   card: '#1c1b18',
   terminalForeground: '#e8e6dc',
