@@ -38,5 +38,11 @@ export function modsFaq(): FaqEntry[] {
       answer:
         'A mod runs with your permissions and no sandbox, so it can read your files, run programs and use the network. Every mod listed here is reviewed, and its install is pinned to the reviewed commit. Each mod page lists what it can touch, from `claude plugin validate`.',
     },
+    {
+      question: 'What does "Not reviewed" mean on a mod?',
+      // ADR 0011: an unreviewed mod has a page and no install, and is not a listing.
+      answer:
+        "Nobody at statuslin.es has read that mod's code. Its page shows facts from its repository and what `claude plugin validate` reports it can reach, and links to the repository. It can't be installed from statuslin.es and isn't ranked with the listed mods. Its author or anyone else can submit it for review.",
+    },
   ]
 }

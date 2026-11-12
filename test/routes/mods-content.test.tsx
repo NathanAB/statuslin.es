@@ -50,8 +50,18 @@ const MODS = [mod('meter', 'Meter'), mod('file-tree', 'File Tree')]
 
 const ORIGIN = 'https://statuslin.es'
 
-function renderPage(mods: GalleryModCard[]) {
-  vi.spyOn(ModsRoute, 'useLoaderData').mockReturnValue({ mods, user: null, origin: ORIGIN })
+const UNREVIEWED = [
+  { owner: 'OctoCat', pluginName: 'radar', description: 'Watches the build.' },
+  { owner: 'ada', pluginName: 'zen', description: `${'calm '.repeat(80)}end` },
+]
+
+function renderPage(mods: GalleryModCard[], unreviewed: typeof UNREVIEWED = []) {
+  vi.spyOn(ModsRoute, 'useLoaderData').mockReturnValue({
+    mods,
+    unreviewed,
+    user: null,
+    origin: ORIGIN,
+  })
   const Page = ModsRoute.options.component
   return render(Page ? <Page /> : null)
 }
@@ -157,6 +167,50 @@ describe('/mods page', () => {
     expect(links).toHaveLength(1)
     expect(links[0]?.getAttribute('href')).toBe('/guide/are-claude-code-mods-safe')
     expect(screen.queryByRole('link', { name: 'Read the mod safety guide' })).toBeNull()
+  })
+
+  it('lists unreviewed mods in their own section, after the ranked list and before the FAQ', () => {
+    renderPage(MODS, UNREVIEWED)
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Mods not reviewed' })
+    const section = heading.parentElement as HTMLElement
+    expect(section.textContent).toContain(
+      "Nobody at statuslin.es has read these mods' code, and they can't be installed from here.",
+    )
+    expect(within(section).getByRole('link', { name: 'radar' }).getAttribute('href')).toBe(
+      '/mods/unreviewed/OctoCat/radar',
+    )
+    expect(section.textContent).toContain('by OctoCat')
+    expect(section.textContent).toContain('Watches the build.')
+    const lastCard = screen.getByRole('link', { name: 'File Tree' })
+    const faq = screen.getByRole('heading', { level: 2, name: 'Common questions' })
+    expect(
+      lastCard.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(heading.compareDocumentPosition(faq) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it("cuts an unreviewed mod's description short", () => {
+    renderPage(MODS, UNREVIEWED)
+
+    const shown = screen.getByText(/^calm calm/).textContent ?? ''
+    expect(shown.length).toBeLessThanOrEqual(160)
+    expect(shown.endsWith('…')).toBe(true)
+  })
+
+  it('has no unreviewed section when there are none', () => {
+    renderPage(MODS)
+
+    expect(screen.queryByRole('heading', { name: 'Mods not reviewed' })).toBeNull()
+  })
+
+  it('explains "Not reviewed" and still says every mod listed here is reviewed', () => {
+    const answers = modsFaq().map((entry) => entry.answer)
+
+    expect(modsFaq().map((entry) => entry.question)).toContain(
+      'What does "Not reviewed" mean on a mod?',
+    )
+    expect(answers.join('\n')).toContain('Every mod listed here is reviewed')
   })
 
   it('says so when no mod is published', () => {

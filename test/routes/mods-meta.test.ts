@@ -35,7 +35,12 @@ interface Head {
 async function head(mods: GalleryModCard[]): Promise<Head> {
   process.env.BETTER_AUTH_URL = ORIGIN
   return (await ModsRoute.options.head?.({
-    loaderData: { mods, user: null, origin: ORIGIN },
+    loaderData: {
+      mods,
+      unreviewed: [{ owner: 'OctoCat', pluginName: 'radar', description: 'Watches the build.' }],
+      user: null,
+      origin: ORIGIN,
+    },
   } as never)) as Head
 }
 
