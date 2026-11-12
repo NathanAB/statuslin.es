@@ -140,22 +140,28 @@ describe('unreviewed mod page', () => {
     expect(shown.endsWith('…')).toBe(true)
   })
 
-  it('sends one review request event, then thanks the visitor', () => {
+  it('sends one review request event, then thanks the visitor in a status already on the page', () => {
     renderPage()
+    const status = screen.getByRole('status')
+    expect(status.textContent).toBe('')
+    const button = screen.getByRole('button', { name: 'Request a review' })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Request a review' }))
+    fireEvent.click(button)
+    fireEvent.click(button)
 
     expect(capture.mock.calls).toEqual([
       ['unreviewed_mod_review_requested', { owner: 'OctoCat', pluginName: 'meter' }],
     ])
-    expect(screen.queryByRole('button', { name: 'Request a review' })).toBeNull()
-    expect(screen.getByRole('status').textContent).toMatch(/^Thanks/)
+    expect(screen.getByRole('button', { name: 'Requested' })).toBe(button)
+    expect((button as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('status')).toBe(status)
+    expect(status.textContent).toBe('Thanks. Requests decide which mods are reviewed next.')
   })
 
   it("points the author at the mod submit page and the site's contact address", () => {
     renderPage()
 
-    expect(screen.getByRole('link', { name: 'Ask for a review' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'Submit it for review' }).getAttribute('href')).toBe(
       '/submit?kind=mod',
     )
     expect(screen.getByRole('link', { name: 'have it removed' }).getAttribute('href')).toBe(

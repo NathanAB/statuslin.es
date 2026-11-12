@@ -75,7 +75,7 @@ export function UnreviewedModPage({ mod }: { mod: UnreviewedMod }) {
       <Text muted size="sm">
         Is this yours?{' '}
         <TextLink to="/submit" search={{ kind: 'mod' }}>
-          Ask for a review
+          Submit it for review
         </TextLink>{' '}
         or <TextLink href={`mailto:${CONTACT_EMAIL}`}>have it removed</TextLink>.
       </Text>
