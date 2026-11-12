@@ -3,6 +3,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { AdoptPrompt } from '@/adopt/adopt-actions'
 import { useRecordedCopy } from '@/adopt/use-recorded-copy'
+import { ReadmeBadgeSection } from '@/badge/readme-badge-section'
 import { getViewerIsAuthor } from '@/gallery/authorship'
 import { cardClickProperties } from '@/gallery/card-analytics'
 import { configFactTiles } from '@/gallery/config-fact-tiles'
@@ -48,7 +49,7 @@ export const Route = createFileRoute('/c/$slug')({
       getViewerIsAuthor({ data: { slug: params.slug } }),
       getStatusLineModsFn({ data: { tags: detail.tags } }),
     ])
-    return { detail, user, viewerIsAuthor, mods }
+    return { detail, user, viewerIsAuthor, mods, origin: siteUrl() }
   },
   head: ({ loaderData }) => {
     // loaderData is undefined when the loader throws notFound() (the 404 page),
@@ -100,7 +101,7 @@ export const Route = createFileRoute('/c/$slug')({
 
 function ConfigDetail() {
   const posthog = usePostHog()
-  const { detail, user, viewerIsAuthor, mods } = Route.useLoaderData()
+  const { detail, user, viewerIsAuthor, mods, origin } = Route.useLoaderData()
   const copyController = useRecordedCopy(detail.id, detail.copyCount)
 
   useEffect(() => {
@@ -175,6 +176,7 @@ function ConfigDetail() {
             onCopied={() => copyController.record('script')}
           />
         }
+        badge={<ReadmeBadgeSection kind="status_line" slug={detail.slug} origin={origin} />}
         // Internal links: without these, every config page is a crawl dead end.
         related={
           <>

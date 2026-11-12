@@ -13,12 +13,14 @@ export function CodeBlock({
   wrap = false,
   text,
   copyLabel,
+  onCopied,
   children,
 }: {
   compact?: boolean | undefined
   wrap?: boolean | undefined
   text?: string | undefined
   copyLabel?: string | undefined
+  onCopied?: (() => void) | undefined
   children: React.ReactNode
 }) {
   const className = cn(
@@ -28,7 +30,7 @@ export function CodeBlock({
     wrap && 'wrap-anywhere whitespace-pre-wrap pr-12',
   )
   return (
-    <Copyable text={text} copyLabel={copyLabel}>
+    <Copyable text={text} copyLabel={copyLabel} onCopied={onCopied}>
       <pre className={className}>{children}</pre>
     </Copyable>
   )

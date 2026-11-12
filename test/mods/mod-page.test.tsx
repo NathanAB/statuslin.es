@@ -383,6 +383,7 @@ describe('mod page', () => {
       'What this mod can do',
       'Preview',
       'What it does',
+      'Badge for your README',
     ])
     for (let i = 1; i < order.length; i++) {
       const earlier = order[i - 1] as Node
@@ -599,6 +600,7 @@ describe('mod page', () => {
       'Preview',
       'What it does',
       'Common questions',
+      'Badge for your README',
       'More like this',
     ])
     const questions = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
@@ -751,5 +753,41 @@ describe('mod page analytics', () => {
       surface: 'mod_related',
       position: 2,
     })
+  })
+})
+
+describe('mod page README badge', () => {
+  const LINK = `${ORIGIN}/mods/filetree?utm_source=readme-badge`
+  const BADGE_MARKDOWN = `[![Reviewed on statuslin.es](${ORIGIN}/badge/mods/filetree.svg)](${LINK})`
+  const CARD_MARKDOWN = `[![Preview on statuslin.es](${ORIGIN}/og/mods/filetree.png)](${LINK})`
+
+  it('offers the live badge and both snippets, with fixed alt text and never the title', () => {
+    renderPage({ title: 'Evil ](javascript:x) Title' })
+
+    const section = within(screen.getByRole('region', { name: 'Badge for your README' }))
+    expect(section.getByRole('img', { name: 'Reviewed on statuslin.es' }).getAttribute('src')).toBe(
+      `${ORIGIN}/badge/mods/filetree.svg`,
+    )
+    expect(section.getByText(BADGE_MARKDOWN)).toBeTruthy()
+    expect(section.getByText(CARD_MARKDOWN)).toBeTruthy()
+  })
+
+  it.each([
+    ['badge', 'Copy badge Markdown', BADGE_MARKDOWN],
+    ['card', 'Copy preview card Markdown', CARD_MARKDOWN],
+  ])('copies the %s snippet as an event, never as an install', async (snippet, button, text) => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: button }))
+
+    await waitFor(() =>
+      expect(capture).toHaveBeenCalledWith('badge_snippet_copied', {
+        kind: 'mod',
+        slug: 'filetree',
+        snippet,
+      }),
+    )
+    expect(writeText).toHaveBeenCalledWith(text)
+    expect(recordModCopyFn).not.toHaveBeenCalled()
   })
 })
