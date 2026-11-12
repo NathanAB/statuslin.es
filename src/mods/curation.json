@@ -600,6 +600,11 @@
         "type": "text",
         "text": "/gallery demo"
       }
-    ]
+    ],
+    "terminal": {
+      "cols": 144,
+      "rows": 36,
+      "fullscreen": true
+    }
   }
 ]
