@@ -93,6 +93,19 @@ describe('mod badge', () => {
     expect((await res.text()).startsWith('<svg')).toBe(true)
   })
 
+  it('lets nothing load or run when the badge URL is opened as a page', async () => {
+    const res = await modBadgeResponse(db, 'mod-many')
+
+    expect(res.headers.get('content-security-policy')).toBe("default-src 'none'")
+  })
+
+  // The policy blocks inline styles, so the badge must draw with presentation attributes only.
+  it('draws without inline styles, so the policy leaves it unchanged', async () => {
+    const svg = await (await modBadgeResponse(db, 'mod-many')).text()
+
+    expect(svg).not.toMatch(/<style|style=/)
+  })
+
   // A mod's seeded title is its slug, so this also proves the title stays out.
   it('draws no text from the listing', async () => {
     const svg = await (await modBadgeResponse(db, 'mod-many')).text()
@@ -123,6 +136,7 @@ describe('status line badge', () => {
     expect(res.headers.get('content-type')).toBe('image/svg+xml; charset=utf-8')
     expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(res.headers.get('content-security-policy')).toBe("default-src 'none'")
   })
 
   it('draws no text from the listing', async () => {

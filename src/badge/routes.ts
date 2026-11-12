@@ -10,6 +10,10 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 // The count moves with every install; an hour keeps GitHub's image proxy from asking on every view.
 const BADGE_CACHE = 'public, max-age=3600'
 
+// Opened directly, the badge is a page. badge-maker draws with presentation attributes only, so
+// it needs nothing loaded or inlined; any script or style a future change adds stays blocked.
+const BADGE_CSP = "default-src 'none'"
+
 function badgeResponse(copyCount: number | null): Response {
   if (copyCount === null) return new Response('Not found', { status: 404 })
   return new Response(badgeSvg(copyCount), {
@@ -17,6 +21,7 @@ function badgeResponse(copyCount: number | null): Response {
       'Content-Type': 'image/svg+xml; charset=utf-8',
       'Cache-Control': BADGE_CACHE,
       'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': BADGE_CSP,
     },
   })
 }
