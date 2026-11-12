@@ -124,7 +124,7 @@ test('a mod opens with its facts, and Install fills the prompt box and sends not
   ])
   await ui.press({ key: 'token-weather' })
   expect(await ui.find({ type: 'Text', text: 'A band above the prompt' })).toBeDefined()
-  expect((await ui.find({ type: 'Link' }))?.text).toBe('statuslin.es/mods/token-weather')
+  expect((await ui.find({ type: 'Link' }))?.text).toBe('https://statuslin.es/mods/token-weather')
 
   await ui.press({ key: 'install' })
   expect(seen.fills).toEqual([

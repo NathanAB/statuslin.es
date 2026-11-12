@@ -94,9 +94,9 @@ describe('pageOf', () => {
 })
 
 describe('pageSizeFor', () => {
-  it('fits three-row entries under the filter and the paging row, one to nine of them', () => {
+  it('fits four-row entries under the filter and the paging row, one to nine of them', () => {
     expect(pageSizeFor(4)).toBe(1)
-    expect(pageSizeFor(18)).toBe(4)
+    expect(pageSizeFor(18)).toBe(3)
     expect(pageSizeFor(100)).toBe(9)
   })
 })

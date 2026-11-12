@@ -2,7 +2,7 @@
 // the prompt box for the person to read and send. It fetches one URL, runs nothing, and writes
 // nothing but its own store.
 
-import type { Elements, EngineInterface, Register, RenderSurface } from 'claude-code'
+import type { Elements, EngineInterface, Register } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 import type { Browse, Load } from '../types'
 import {
@@ -35,7 +35,9 @@ const browse = atom({ plugin: 'mod-gallery', key: 'browse' } as const, START, {
 
 type Ready = Extract<Load, { kind: 'ready' }>
 type Loaded = Exclude<Load, { kind: 'loading' }>
-type Ui = Elements[Exclude<RenderSurface, 'mobile'>]
+/** The elements the pane draws with; a surface without `Input` gets the list without the filter. */
+type Ui = Pick<Elements['terminal'], 'Box' | 'Button' | 'Link' | 'Text'> &
+  Partial<Pick<Elements['terminal'], 'Input'>>
 
 async function fetchCatalogue($: EngineInterface) {
   try {
@@ -108,14 +110,16 @@ function listView(
 
   return (
     <Box flexDirection="column">
-      <Input
-        key="filter"
-        label="Filter"
-        placeholder="words to match"
-        value={at.query}
-        onInput={setQuery}
-        onSubmit={setQuery}
-      />
+      {Input && (
+        <Input
+          key="filter"
+          label="Filter"
+          placeholder="words to match"
+          value={at.query}
+          onInput={setQuery}
+          onSubmit={setQuery}
+        />
+      )}
       <Text dimColor wrap="truncate-end">
         {at.query.trim() === ''
           ? ageLine(loaded, now)
@@ -182,7 +186,7 @@ function detailView(
     await update($, browse, (b) => ({
       ...b,
       notice: filled.isFilled
-        ? 'The install prompt is in your prompt box. Read it, then press Esc and Enter to send it. Nothing runs until you do.'
+        ? 'The install prompt is in your prompt box. Read it there and send it when you are ready. Nothing runs until you do.'
         : 'The prompt box could not take the install prompt. Close any open dialog and press Install again.',
     }))
   }
@@ -206,7 +210,7 @@ function detailView(
         ))}
       </Box>
       <Box marginTop={1}>
-        <Link href={page} label={page.replace('https://', '')} />
+        <Link href={page} />
       </Box>
       <Box flexDirection="row" flexWrap="wrap" columnGap={2} marginTop={1}>
         <Button key="install" plain hotkey="i" label="Install" onPress={() => void install()} />

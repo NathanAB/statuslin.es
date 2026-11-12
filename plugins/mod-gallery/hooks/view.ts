@@ -1,5 +1,5 @@
-/** Rows each listed mod takes: its title, its byline and one line of summary. */
-const ROWS_PER_MOD = 3
+/** Rows each listed mod takes: a gap, its title, its byline and one line of summary. */
+const ROWS_PER_MOD = 4
 /** Rows the list keeps for itself: the filter, the count line and the paging row, with a gap. */
 const CHROME_ROWS = 6
 /** Digits 1 to 9 open the mods on a page, so a page holds nine at most. */
