@@ -421,6 +421,15 @@ DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
 For a published mod, `render:mods` replaces its live previews as soon as it renders; nothing needs
 publishing. A preview types at most 13 steps (`INPUT_STEPS_MAX`, set by the recording's time limit).
 
+Set these in the entry before the first import, since each one found later costs a pull request
+and a render:
+- **A mod that fetches data.** A render has no network, so the preview records the mod's failure
+  state. Give it an input step that opens a demo with built-in data, such as `/burn demo` or
+  `/gallery demo`. A mod without one needs its author to add it.
+- **A mod that draws a pane.** Recorded inline in the default 100x30 terminal, a pane has room for
+  about one row. Give the entry `"terminal": {"cols": 144, "rows": 36, "fullscreen": true}`, as
+  Flightdeck and Mod Gallery have.
+
 A step is text to type, `{"type": "text", "text": "/arcade doom"}` (add `"submit": false` to leave
 it unsent), or a left click on one terminal cell, `{"type": "click", "row": 21, "col": 50}`. Use a
 click for a mod that waits for one, such as cc-arcade's Doom, which shows "CLICK HERE TO PLAY".
