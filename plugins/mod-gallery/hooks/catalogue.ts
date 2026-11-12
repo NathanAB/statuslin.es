@@ -210,3 +210,239 @@ export function readCache(
     ? { catalogue: read.catalogue, fetchedAt: stored.fetchedAt }
     : undefined
 }
+
+/**
+ * Six reviewed mods as the site listed them on 2026-11-12, for `/gallery demo`. A preview is
+ * recorded with no network, so it has no site to ask. Read through `parseCatalogue` like any other.
+ */
+export const SAMPLE_DOCUMENT: unknown = {
+  version: CATALOGUE_VERSION,
+  generatedAt: '2026-11-12T00:00:00.000Z',
+  marketplace: MARKETPLACE.name,
+  mods: [
+    {
+      slug: 'token-weather-usage',
+      title: 'Token Weather Usage',
+      author: 'augiefra',
+      summary:
+        "One band above the prompt with your context tokens, 5-hour and 7-day limits, the prompt cache's time left, the session cost and the subagents running.",
+      installs: 118,
+      tags: ['token-usage', 'cost', 'quota', 'burn-rate'],
+      facts: [
+        {
+          label: 'What you see',
+          value: 'A one-line band of pills above the prompt',
+        },
+        {
+          label: 'Works in',
+          value: 'Terminal and Claude Desktop',
+        },
+        {
+          label: 'Slash commands',
+          value: 'None',
+        },
+        {
+          label: 'Uses your tokens',
+          value: 'No',
+        },
+        {
+          label: 'Changes files',
+          value: 'Nothing',
+        },
+        {
+          label: 'Network access',
+          value: 'None',
+        },
+      ],
+      license: 'Apache-2.0',
+    },
+    {
+      slug: 'sub-meter',
+      title: 'Sub Meter',
+      author: 'midudev',
+      summary:
+        "A meter at the bottom right of Claude Code, on the permission mode line, showing how much of your 5-hour and weekly subscription windows you've used and when each resets.",
+      installs: 48,
+      tags: ['quota', 'minimal'],
+      facts: [
+        {
+          label: 'What you see',
+          value: 'A usage bar at the bottom right, beside the mode',
+        },
+        {
+          label: 'Works in',
+          value: 'Terminal and Claude Desktop',
+        },
+        {
+          label: 'Slash commands',
+          value: 'None',
+        },
+        {
+          label: 'Uses your tokens',
+          value: 'No',
+        },
+        {
+          label: 'Changes files',
+          value: 'Nothing',
+        },
+        {
+          label: 'Network access',
+          value: 'None',
+        },
+      ],
+      license: 'MIT',
+    },
+    {
+      slug: 'deck',
+      title: 'Deck',
+      author: 'nvr0x5',
+      summary:
+        'A collapsible panel above the prompt shows plan progress, subagents, context, and your 5-hour and weekly limits with reset countdowns and burn rates.',
+      installs: 46,
+      tags: [
+        'token-usage',
+        'cost',
+        'quota',
+        'burn-rate',
+        'weather',
+        'multi-line',
+        'network-access',
+      ],
+      facts: [
+        {
+          label: 'What you see',
+          value: 'A collapsible panel above the prompt, or one line',
+        },
+        {
+          label: 'Works in',
+          value: 'Terminal and Claude Desktop',
+        },
+        {
+          label: 'Slash commands',
+          value: '`/deck`',
+        },
+        {
+          label: 'Uses your tokens',
+          value: 'No',
+        },
+        {
+          label: 'Changes files',
+          value: 'Nothing',
+        },
+        {
+          label: 'Network access',
+          value: 'Weather from Open-Meteo, only once you set a city',
+        },
+      ],
+      license: 'MIT',
+    },
+    {
+      slug: 'context-bar',
+      title: 'Context Bar',
+      author: 'hamzafer',
+      summary:
+        'A stacked bar above the prompt that splits your context window by category, with token counts and the point where Claude Code compacts.',
+      installs: 23,
+      tags: ['token-usage', 'multi-line'],
+      facts: [
+        {
+          label: 'What you see',
+          value: 'A framed bar with a legend above the prompt',
+        },
+        {
+          label: 'Works in',
+          value: 'Terminal and Claude Desktop',
+        },
+        {
+          label: 'Slash commands',
+          value: '`/context-bar`',
+        },
+        {
+          label: 'Uses your tokens',
+          value: 'No',
+        },
+        {
+          label: 'Changes files',
+          value: 'Nothing',
+        },
+        {
+          label: 'Network access',
+          value: 'None',
+        },
+      ],
+      license: 'MIT',
+    },
+    {
+      slug: 'filetree',
+      title: 'Filetree',
+      author: 'data-goblin',
+      summary:
+        'An IDE-style file tree pane with git status on every file, where the files Claude reads, writes and commits shimmer. Search, preview and diff files without leaving the session.',
+      installs: 19,
+      tags: ['git'],
+      facts: [
+        {
+          label: 'What you see',
+          value: 'An IDE-style file tree pane',
+        },
+        {
+          label: 'Works in',
+          value: 'Terminal and Claude Desktop',
+        },
+        {
+          label: 'Slash commands',
+          value: '`/filetree`',
+        },
+        {
+          label: 'Uses your tokens',
+          value: 'No',
+        },
+        {
+          label: 'Changes files',
+          value: 'Yes',
+        },
+        {
+          label: 'Network access',
+          value: 'Only through programs it runs',
+        },
+      ],
+      license: 'MIT',
+    },
+    {
+      slug: 'better-prompt',
+      title: 'Better Prompt',
+      author: 'bpstack',
+      summary:
+        'Press a key and Haiku rewrites the draft in your prompt box, keeping its intent. You read its version above the prompt and choose whether to use it.',
+      installs: 14,
+      tags: [],
+      facts: [
+        {
+          label: 'What you see',
+          value: "A rewrite button, then Haiku's version above the prompt",
+        },
+        {
+          label: 'Works in',
+          value: 'Terminal and Claude Desktop',
+        },
+        {
+          label: 'Slash commands',
+          value: 'None',
+        },
+        {
+          label: 'Uses your tokens',
+          value: 'Sends your draft to Haiku when you ask for a rewrite',
+        },
+        {
+          label: 'Changes files',
+          value: 'Nothing',
+        },
+        {
+          label: 'Network access',
+          value: 'None',
+        },
+      ],
+      license: 'MIT',
+    },
+  ],
+}

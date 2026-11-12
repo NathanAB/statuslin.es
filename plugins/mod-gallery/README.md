@@ -31,6 +31,16 @@ It keeps the last catalogue it fetched in its own store for five minutes, and sh
 
 Everything in the catalogue is checked before it's shown. Fields of the wrong type, oversized fields and slugs that aren't plugin names drop that mod from the list, and control characters are stripped. A mod's slug is the only part of the catalogue that reaches the prompt box. The install command and the marketplace address are written into the mod itself.
 
+## Install it
+
+Open its page on statuslin.es and copy the install prompt, or run:
+
+```sh
+claude plugin marketplace add https://statuslin.es/marketplace.json && claude plugin install mod-gallery@statuslines
+```
+
+`/gallery demo` shows six sample mods without asking the site. It exists so a preview recorded with no network has something to draw.
+
 ## Develop it
 
 - Load it from this folder: `claude --plugin-dir plugins/mod-gallery`.
