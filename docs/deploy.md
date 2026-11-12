@@ -286,6 +286,12 @@ also the mod's marketplace entry name: the plugin's own name, or `<name>-<owner>
 already has that name (ADR 0005). It never changes once published. Every script below prints its
 full usage in its header comment.
 
+`/gallery.json` lists the same published mods in the order `/mods` ranks them, with the facts only
+this site has: each mod's install count (null below the count its page hides) and the "what it can
+reach" tiles its page shows. `/marketplace.json` can't carry these, since it follows Claude Code's
+marketplace schema. Tools, writers and installed mods read it, so bump its `version` on any change
+an old reader would misread, such as a renamed or removed field.
+
 ### The mods E2B template
 
 Mods render in their own E2B template, separate from the status line template:
