@@ -111,5 +111,8 @@ export function configDesktopPreviewPath(versionId: string, renderedAt: Date): s
 
 export const MARKETPLACE_PATH = '/marketplace.json'
 
+/** The reviewed mods as JSON with this site's facts (installs, reach), for tools and an installed mod. */
+export const GALLERY_JSON_PATH = '/gallery.json'
+
 /** The full plain-markdown catalog that /llms.txt links (see llmstxt.org). */
 export const LLMS_FULL_PATH = '/llms-full.txt'

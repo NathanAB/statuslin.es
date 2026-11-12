@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, ne } from 'drizzle-orm'
 import type { PgDatabase, SelectedFields } from 'drizzle-orm/pg-core'
+import { modPageCopySchema, readPageCopy } from '@/content/types'
 import { type ModFootprint, modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
 import type { GalleryItem, GalleryModCard, GallerySource } from '@/gallery/gallery-items'
 import { HERO_SIZE } from '@/gallery/hero-lines'
@@ -15,6 +16,7 @@ import { STATUSLINE_ANYWHERE_MOD_SLUG } from '@/lib/statusline-anywhere'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
+import type { GalleryCatalogueMod } from './gallery-catalogue'
 import {
   desktopPreview,
   desktopPreviewColumns,
@@ -138,6 +140,31 @@ export async function getHeroMods(db: Db): Promise<HeroMod[]> {
       sortKey: row.sortKey,
     }
   })
+}
+
+/** Every published mod in the order /mods ranks them, with what its page facts are built from: one query. */
+export async function getGalleryCatalogueMods(db: Db): Promise<GalleryCatalogueMod[]> {
+  const ranking = galleryRanking(MOD_RANKING, { sort: 'top' })
+  const rows = await selectModCards(db, {
+    license: modVersions.license,
+    footprint: modVersions.footprint,
+    generatedContent: modVersions.generatedContent,
+  })
+    .where(ranking.where)
+    .orderBy(...ranking.orderBy)
+  return rows.map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    description: row.description,
+    authorGithub: row.authorGithub,
+    copyCount: row.copyCount,
+    tags: row.tags,
+    license: row.license,
+    footprint: row.footprint,
+    preview: row.preview,
+    desktop: desktopPreview(row.desktop),
+    generatedContent: readPageCopy(modPageCopySchema, row.generatedContent),
+  }))
 }
 
 /** The card of the published mod with this slug, or null when there is none. */

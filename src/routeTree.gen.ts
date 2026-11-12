@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GalleryDotjsonRouteImport } from './routes/gallery[.]json'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
@@ -51,6 +52,11 @@ import { Route as ModsUnreviewedOwnerPluginNameRouteImport } from './routes/mods
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryDotjsonRoute = GalleryDotjsonRouteImport.update({
+  id: '/gallery.json',
+  path: '/gallery.json',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuideRoute = GuideRouteImport.update({
@@ -252,6 +258,7 @@ const ModsUnreviewedOwnerPluginNameRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/gallery.json': typeof GalleryDotjsonRoute
   '/guide': typeof GuideRoute
   '/how-it-works': typeof HowItWorksRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/gallery.json': typeof GalleryDotjsonRoute
   '/guide': typeof GuideRoute
   '/how-it-works': typeof HowItWorksRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -333,6 +341,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/gallery.json': typeof GalleryDotjsonRoute
   '/guide': typeof GuideRoute
   '/how-it-works': typeof HowItWorksRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -375,6 +384,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/gallery.json'
     | '/guide'
     | '/how-it-works'
     | '/llms-full.txt'
@@ -415,6 +425,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/gallery.json'
     | '/guide'
     | '/how-it-works'
     | '/llms-full.txt'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/gallery.json'
     | '/guide'
     | '/how-it-works'
     | '/llms-full.txt'
@@ -496,6 +508,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GalleryDotjsonRoute: typeof GalleryDotjsonRoute
   GuideRoute: typeof GuideRoute
   HowItWorksRoute: typeof HowItWorksRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
@@ -542,6 +555,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery.json': {
+      id: '/gallery.json'
+      path: '/gallery.json'
+      fullPath: '/gallery.json'
+      preLoaderRoute: typeof GalleryDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guide': {
@@ -808,6 +828,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GalleryDotjsonRoute: GalleryDotjsonRoute,
   GuideRoute: GuideRoute,
   HowItWorksRoute: HowItWorksRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
