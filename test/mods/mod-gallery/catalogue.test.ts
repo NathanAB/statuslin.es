@@ -7,6 +7,8 @@ import { CONTROL_OR_FORMAT } from '@/mods/terminal-line'
 import {
   CATALOGUE_URL,
   CATALOGUE_VERSION,
+  FRESH_FOR_MS,
+  isFresh,
   MARKETPLACE,
   PLUGIN_NAME,
   parseCatalogue,
@@ -224,5 +226,20 @@ describe('readCache', () => {
     expect(
       readCache({ fetchedAt: 1, text: JSON.stringify(document({ version: 2 })) }),
     ).toBeUndefined()
+  })
+})
+
+describe('isFresh', () => {
+  const fetchedAt = Date.parse('2026-11-12T20:00:00Z')
+
+  it('uses a stored catalogue for the freshness window and no longer', () => {
+    expect(isFresh(fetchedAt, fetchedAt)).toBe(true)
+    expect(isFresh(fetchedAt, fetchedAt + FRESH_FOR_MS - 1)).toBe(true)
+    expect(isFresh(fetchedAt, fetchedAt + FRESH_FOR_MS)).toBe(false)
+  })
+
+  it('never trusts a catalogue stored with a time still to come', () => {
+    expect(isFresh(fetchedAt + 60_000, fetchedAt)).toBe(false)
+    expect(isFresh(Number.POSITIVE_INFINITY, fetchedAt)).toBe(false)
   })
 })

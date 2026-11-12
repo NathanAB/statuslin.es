@@ -7,8 +7,8 @@ import { atom, read, update } from 'claude-code'
 import type { Browse, Load } from '../types'
 import {
   CATALOGUE_URL,
-  FRESH_FOR_MS,
   type GalleryMod,
+  isFresh,
   readCache,
   readCatalogueResponse,
 } from './catalogue'
@@ -55,7 +55,7 @@ function stale(cached: ReturnType<typeof readCache>, reason: string): Loaded {
 async function loadCatalogue($: EngineInterface, isForced: boolean): Promise<Loaded> {
   const now = await $.clock.now()
   const cached = readCache(await $.store.get(STORE_KEY))
-  if (cached !== undefined && !isForced && now - cached.fetchedAt < FRESH_FOR_MS) {
+  if (cached !== undefined && !isForced && isFresh(cached.fetchedAt, now)) {
     return { kind: 'ready', ...cached, refreshError: null }
   }
   let response: { status: number; text: string }
@@ -188,7 +188,7 @@ function detailView(
     await update($, browse, (b) => ({
       ...b,
       notice: filled.isFilled
-        ? 'The install prompt is in your prompt box. Read it there and send it when you are ready. Nothing runs until you do.'
+        ? 'The install prompt is in your prompt box, in place of anything you had typed. Read it there and send it when you are ready. Nothing runs until you do.'
         : 'The prompt box could not take the install prompt. Close any open dialog and press Install again.',
     }))
   }

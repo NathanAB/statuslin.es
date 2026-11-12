@@ -168,4 +168,24 @@ describe('searchResult', () => {
     expect(result.matches).toBe(3)
     expect(result.mods.map((m: { slug: string }) => m.slug)).toEqual(['token-weather', 'pets'])
   })
+
+  it('keeps one answer small however much text the catalogue holds', () => {
+    const fact = { label: 'Network access', value: 'x'.repeat(1_000) }
+    const huge: Catalogue = {
+      ...catalogue,
+      mods: Array.from({ length: 20 }, (_, i) =>
+        mod({ slug: `big-${i}`, summary: 'y'.repeat(400), facts: Array(20).fill(fact) }),
+      ),
+    }
+
+    const answer = searchResult(huge, { query: '', limit: 20 })
+
+    expect(answer.length).toBeLessThanOrEqual(9_000)
+    const result = JSON.parse(answer)
+    expect(result.matches).toBe(20)
+    expect(result.mods.length).toBeGreaterThanOrEqual(1)
+    expect(result.mods.length).toBeLessThan(20)
+    expect(result.mods[0].facts).toHaveLength(8)
+    expect(result.mods[0].facts[0].value).toBe('x'.repeat(200))
+  })
 })

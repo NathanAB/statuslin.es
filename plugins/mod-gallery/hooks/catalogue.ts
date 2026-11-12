@@ -17,6 +17,12 @@ export const MARKETPLACE = { name: 'statuslines', url: `${SITE}/marketplace.json
 /** How long a fetched catalogue is used before asking again: the site's own `max-age`. */
 export const FRESH_FOR_MS = 5 * 60_000
 
+/** Whether a catalogue fetched then is still used now. One stored with a time still to come never is. */
+export function isFresh(fetchedAt: number, now: number): boolean {
+  const age = now - fetchedAt
+  return age >= 0 && age < FRESH_FOR_MS
+}
+
 /** Generous bounds on what a terminal is asked to draw, well past what the site writes today. */
 const MAX = {
   bodyChars: 2_000_000,
