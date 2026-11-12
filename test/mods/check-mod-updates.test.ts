@@ -52,7 +52,7 @@ function run(
     async findRepo(repoUrl) {
       calls.push(`findRepo:${repoUrl}`)
       if (goneRepos.includes(repoUrl)) return null
-      return { fullName: 'octocat/meters', license: 'MIT', defaultBranch: 'trunk' }
+      return { fullName: 'octocat/meters', license: 'MIT', defaultBranch: 'trunk', stars: 0 }
     },
     async commitIsFetchable(_repoUrl, sha) {
       return !goneCommits.includes(sha)

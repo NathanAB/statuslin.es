@@ -14,6 +14,7 @@ export interface RepoInfo {
   /** SPDX id; null for no licence and for GitHub's NOASSERTION. */
   license: string | null
   defaultBranch: string
+  stars: number
 }
 
 export interface GitHubSource {
@@ -30,6 +31,8 @@ export interface GitHubSource {
   pluginDescription(repoUrl: string, path: string, sha: string): Promise<string | null>
   /** The raw README GitHub picks for `path` at `sha`, or null when the folder has none. */
   readme(repoUrl: string, path: string, sha: string): Promise<string | null>
+  /** When `sha` was committed. */
+  commitDate(repoUrl: string, sha: string): Promise<Date>
 }
 
 /** How GitHub's compare places a head commit against a base: 'ahead' when it builds on the base. */
@@ -85,6 +88,7 @@ export function createGitHub(
       default_branch: string
       license: { spdx_id: string | null } | null
       private: boolean
+      stargazers_count: number
     } | null
     // A token that can read private repositories must not let a submitter probe them.
     if (!repo || repo.private) return null
@@ -93,6 +97,7 @@ export function createGitHub(
       fullName: repo.full_name,
       license: spdx && spdx !== 'NOASSERTION' ? spdx : null,
       defaultBranch: repo.default_branch,
+      stars: repo.stargazers_count,
     }
     // biome-ignore-end lint/style/useNamingConvention: GitHub API response fields.
   }
@@ -184,6 +189,14 @@ export function createGitHub(
       if (res.status === 404) return null
       if (!res.ok) throw new Error(`GitHub ${res.status} for ${url}`)
       return new TextDecoder().decode((await readUpTo(res, README_MAX_BYTES)).bytes)
+    },
+
+    async commitDate(repoUrl, sha) {
+      // The git commit object, not /commits/{sha}, which carries every file's patch.
+      const commit = (await request(`${repoApiUrl(repoUrl)}/git/commits/${sha}`)) as {
+        committer: { date: string }
+      }
+      return new Date(commit.committer.date)
     },
 
     async commitIsFetchable(repoUrl, sha) {

@@ -71,7 +71,7 @@ function fakes({
   const github: ImportDeps['github'] = {
     async repoInfo(repoUrl): Promise<RepoInfo> {
       calls.push(`repoInfo:${repoUrl}`)
-      return { fullName, license, defaultBranch: 'main' }
+      return { fullName, license, defaultBranch: 'main', stars: 0 }
     },
   }
   const fetchPlugin: ImportDeps['fetchPlugin'] = async ({ repoUrl, commitSha }) => {

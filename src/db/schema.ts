@@ -3,6 +3,7 @@ export * from './auth-schema'
 export * from './config-desktop-preview-schema'
 export * from './mod-schema'
 export * from './submission-schema'
+export * from './unreviewed-mod-schema'
 
 import { sql } from 'drizzle-orm'
 import {

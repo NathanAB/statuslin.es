@@ -56,7 +56,8 @@ export const pluginPathSchema = z
     'must not have a segment starting with "-"',
   )
 
-const entrySchema = z.strictObject({
+/** The fields that pin a plugin folder, shared with the unreviewed mods file (src/mods/unreviewed.ts). */
+export const pinnedPluginFields = {
   repoUrl: z
     .string()
     .regex(REPO_URL, 'must be an https://github.com/<owner>/<repo> URL')
@@ -64,6 +65,10 @@ const entrySchema = z.strictObject({
   path: pluginPathSchema,
   commitSha: z.string().regex(COMMIT_SHA, 'must be a full 40-character lowercase hex commit SHA'),
   pluginName: z.string().regex(PLUGIN_NAME, PLUGIN_NAME_RULE),
+}
+
+const entrySchema = z.strictObject({
+  ...pinnedPluginFields,
   title: z.string().trim().min(1, 'must not be empty'),
   inputSteps: inputStepsSchema.default([]),
   /** Left out, the card shows the Claude Desktop shot first. */
@@ -76,13 +81,45 @@ export type InputStep = z.infer<typeof inputStepSchema>
 export type TextStep = z.infer<typeof textStepSchema>
 export type CurationEntry = z.infer<typeof entrySchema>
 
-export type CurationResult =
-  | { ok: true; entries: CurationEntry[] }
-  | { ok: false; errors: string[] }
+export type EntriesResult<T> = { ok: true; entries: T[] } | { ok: false; errors: string[] }
 
-function entryLabel(raw: unknown, index: number): string {
+export type CurationResult = EntriesResult<CurationEntry>
+
+export function entryLabel(raw: unknown, index: number): string {
   const name = (raw as { pluginName?: unknown } | null)?.pluginName
   return `entry ${index + 1}${typeof name === 'string' ? ` (${name})` : ''}`
+}
+
+/**
+ * Every problem in a file of entries at once, so one edit can fix them all before anything is
+ * written. `duplicates` runs only once each entry parses.
+ */
+export function parseEntries<T>(
+  raw: unknown,
+  {
+    file,
+    schema,
+    duplicates,
+  }: {
+    file: string
+    schema: z.ZodType<T>
+    duplicates: (entries: T[]) => string[]
+  },
+): EntriesResult<T> {
+  if (!Array.isArray(raw)) return { ok: false, errors: [`${file} must be a JSON array`] }
+  const entries: T[] = []
+  const errors: string[] = []
+  raw.forEach((item, index) => {
+    const parsed = schema.safeParse(item)
+    if (parsed.success) entries.push(parsed.data)
+    else {
+      for (const issue of parsed.error.issues) {
+        errors.push(`${entryLabel(item, index)} ${issue.path.join('.')}: ${issue.message}`)
+      }
+    }
+  })
+  if (errors.length === 0) errors.push(...duplicates(entries))
+  return errors.length === 0 ? { ok: true, entries } : { ok: false, errors }
 }
 
 function duplicateNames(entries: CurationEntry[]): string[] {
@@ -99,20 +136,10 @@ function duplicateNames(entries: CurationEntry[]): string[] {
   })
 }
 
-/** Every problem in the file at once, so one edit can fix them all before anything is written. */
 export function parseCuration(raw: unknown): CurationResult {
-  if (!Array.isArray(raw)) return { ok: false, errors: ['the curation file must be a JSON array'] }
-  const entries: CurationEntry[] = []
-  const errors: string[] = []
-  raw.forEach((item, index) => {
-    const parsed = entrySchema.safeParse(item)
-    if (parsed.success) entries.push(parsed.data)
-    else {
-      for (const issue of parsed.error.issues) {
-        errors.push(`${entryLabel(item, index)} ${issue.path.join('.')}: ${issue.message}`)
-      }
-    }
+  return parseEntries(raw, {
+    file: 'the curation file',
+    schema: entrySchema,
+    duplicates: duplicateNames,
   })
-  if (errors.length === 0) errors.push(...duplicateNames(entries))
-  return errors.length === 0 ? { ok: true, entries } : { ok: false, errors }
 }

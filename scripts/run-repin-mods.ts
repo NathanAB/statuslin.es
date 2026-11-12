@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -21,7 +20,8 @@ import { importMods } from './import-mods'
 import { runPublish } from './publish-mod'
 import { renderMods } from './render-mods'
 import { renderStatusLineDesktop } from './render-status-line-desktop'
-import { assertAppEnv, assertCurationReviewed, repinsToRun, runRepin } from './repin-mods'
+import { assertAppEnv, repinsToRun, runRepin } from './repin-mods'
+import { assertReviewedOnMain, fileOnMain } from './reviewed-on-main'
 
 /**
  * Re-pin curated mods on one env, every step of docs/deploy.md's "Re-pin a mod" in one process, so
@@ -52,12 +52,6 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 const log = (line: string) => console.log(terminalLine(line))
 
-/** The curation file as origin/main last fetched it; null when git can't show it. */
-function curationOnMain(): string | null {
-  const shown = spawnSync('git', ['show', `origin/main:${CURATION_FILE}`], { encoding: 'utf8' })
-  return shown.status === 0 ? shown.stdout : null
-}
-
 async function main(): Promise<number> {
   const [envArg, ...slugs] = process.argv.slice(2)
   const env = parseDeployEnv(envArg)
@@ -65,7 +59,7 @@ async function main(): Promise<number> {
   const url = requireEnv('DATABASE_URL')
   requireEnv('E2B_API_KEY')
   const onDisk = readFileSync(CURATION_FILE, 'utf8')
-  assertCurationReviewed(onDisk, curationOnMain())
+  assertReviewedOnMain(CURATION_FILE, onDisk, fileOnMain(CURATION_FILE))
   const curation = parseCuration(JSON.parse(onDisk))
   if (!curation.ok) throw new Error(`fix ${CURATION_FILE} first: ${curation.errors.join('; ')}`)
 
