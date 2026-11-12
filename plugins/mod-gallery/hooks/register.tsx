@@ -7,6 +7,7 @@ import { atom, read, update } from 'claude-code'
 import type { Browse, Load } from '../types'
 import {
   CATALOGUE_URL,
+  type Catalogue,
   FRESH_FOR_MS,
   type GalleryMod,
   readCache,
@@ -39,15 +40,19 @@ type Loaded = Exclude<Load, { kind: 'loading' }>
 type Ui = Pick<Elements['terminal'], 'Box' | 'Button' | 'Link' | 'Text'> &
   Partial<Pick<Elements['terminal'], 'Input'>>
 
-async function fetchCatalogue($: EngineInterface) {
+type Fetched =
+  | { kind: 'read'; catalogue: Catalogue; text: string }
+  | { kind: 'refused'; reason: string }
+
+async function fetchCatalogue($: EngineInterface): Promise<Fetched> {
+  let response: { status: number; text: string }
   try {
-    const response = await $.http.fetch(CATALOGUE_URL, {
-      headers: { accept: 'application/json' },
-    })
-    return { read: readCatalogueResponse(response), text: response.text }
+    response = await $.http.fetch(CATALOGUE_URL, { headers: { accept: 'application/json' } })
   } catch {
-    return { read: { kind: 'refused', reason: 'statuslin.es could not be reached.' } as const }
+    return { kind: 'refused', reason: 'statuslin.es could not be reached.' }
   }
+  const read = readCatalogueResponse(response)
+  return read.kind === 'read' ? { ...read, text: response.text } : read
 }
 
 /** The stored catalogue while it is fresh, else a new fetch, else the stored one with the reason. */
@@ -58,15 +63,14 @@ async function loadCatalogue($: EngineInterface, isForced: boolean): Promise<Loa
     return { kind: 'ready', ...cached, refreshError: null }
   }
   const fetched = await fetchCatalogue($)
-  if (fetched.read.kind === 'read' && fetched.text !== undefined) {
+  if (fetched.kind === 'read') {
     const stored: StoredCatalogue = { fetchedAt: now, text: fetched.text }
     await $.store.set(STORE_KEY, stored)
-    return { kind: 'ready', catalogue: fetched.read.catalogue, fetchedAt: now, refreshError: null }
+    return { kind: 'ready', catalogue: fetched.catalogue, fetchedAt: now, refreshError: null }
   }
-  const reason = fetched.read.kind === 'refused' ? fetched.read.reason : 'Unknown error.'
   return cached === undefined
-    ? { kind: 'failed', reason }
-    : { kind: 'ready', ...cached, refreshError: reason }
+    ? { kind: 'failed', reason: fetched.reason }
+    : { kind: 'ready', ...cached, refreshError: fetched.reason }
 }
 
 async function refresh($: EngineInterface, isForced: boolean): Promise<Loaded> {
