@@ -34,3 +34,9 @@ An **unreviewed mod** (GLOSSARY.md) is a mod statuslin.es has a page for and has
 - What a page says a mod can reach goes stale as the author ships. The page states the commit and date, and nothing refreshes it during the pilot.
 - Each mod costs two sandbox runs once, about 100 for the pilot.
 - Whether to find mods at scale, how authors claim a page, and whether pages link to reviewed mods are all undecided until the pilot's 28 days are read.
+
+## Pilot record
+
+- **Started 2026-11-12.** 45 unreviewed mods are live on production. 50 were picked and the staging import refused 5 (#271). 23 of the 45 had a page on another directory that day and 22 did not.
+- **Read it on 2026-12-10.** `docs/redesign/home-a/seo/search_console.py` reports these pages as the group `/mods/unreviewed/*`. The stop rules keep their numbers: 50 or more clicks to continue, under 15 to take the pages down.
+- **Baseline for the second stop rule.** Reviewed mod pages (`/mods/*`) had 179 clicks, 3,577 impressions and an average position of 6.2 in the 28 days to 2026-11-10.
