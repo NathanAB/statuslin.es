@@ -772,6 +772,20 @@ describe('mod page README badge', () => {
     expect(section.getByText(CARD_MARKDOWN)).toBeTruthy()
   })
 
+  it('shows the preview card its snippet embeds, after the badge and before the card snippet', () => {
+    renderPage()
+
+    const section = within(screen.getByRole('region', { name: 'Badge for your README' }))
+    const card = section.getByRole('img', { name: 'Preview on statuslin.es' })
+    expect(card.getAttribute('src')).toBe(`${ORIGIN}/og/mods/filetree.png`)
+    expect(card.getAttribute('width')).toBe('1200')
+    expect(card.getAttribute('height')).toBe('630')
+    const follows = (earlier: Node, later: Node) =>
+      earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING
+    expect(follows(section.getByText(BADGE_MARKDOWN), card)).toBeTruthy()
+    expect(follows(card, section.getByText(CARD_MARKDOWN))).toBeTruthy()
+  })
+
   it.each([
     ['badge', 'Copy badge Markdown', BADGE_MARKDOWN],
     ['card', 'Copy preview card Markdown', CARD_MARKDOWN],
