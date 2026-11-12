@@ -14,6 +14,7 @@ import {
   parseCatalogue,
   readCache,
   readCatalogueResponse,
+  SAMPLE_DOCUMENT,
   SITE,
   UNPRINTABLE,
 } from '../../../plugins/mod-gallery/hooks/catalogue'
@@ -241,5 +242,14 @@ describe('isFresh', () => {
   it('never trusts a catalogue stored with a time still to come', () => {
     expect(isFresh(fetchedAt + 60_000, fetchedAt)).toBe(false)
     expect(isFresh(Number.POSITIVE_INFINITY, fetchedAt)).toBe(false)
+  })
+})
+
+describe('SAMPLE_DOCUMENT', () => {
+  it('passes every check a fetched catalogue does, so the demo cannot drift from the format', () => {
+    expect(parseCatalogue(SAMPLE_DOCUMENT)).toMatchObject({
+      kind: 'read',
+      catalogue: { dropped: 0, mods: { length: 6 } },
+    })
   })
 })

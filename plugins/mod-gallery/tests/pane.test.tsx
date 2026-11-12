@@ -180,6 +180,20 @@ test('a fresh stored catalogue is used without a fetch', async ($, on) => {
   await ui.unmount()
 })
 
+test('/gallery demo shows labelled sample mods without asking the site', async ($, on) => {
+  const seen = engine(on, { status: 503, text: '' })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.command.run({ ...GALLERY, args: 'demo' })
+
+  expect(seen.fetches).toBe(0)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(
+    await ui.find({ type: 'Text', text: 'Sample data. Run /gallery for the live list.' }),
+  ).toBeDefined()
+  expect(await ui.find({ type: 'Button', key: 'token-weather-usage' })).toBeDefined()
+  await ui.unmount()
+})
+
 test('search_mods answers matching mods as data', async ($, on) => {
   engine(on, { status: 200, text: CATALOGUE })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })

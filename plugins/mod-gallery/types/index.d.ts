@@ -22,7 +22,14 @@ export type Catalogue = { generatedAt: number; mods: GalleryMod[]; dropped: numb
 /** The catalogue as the pane shows it. */
 export type Load =
   | { kind: 'loading' }
-  | { kind: 'ready'; catalogue: Catalogue; fetchedAt: number; refreshError: string | null }
+  | {
+      kind: 'ready'
+      catalogue: Catalogue
+      fetchedAt: number
+      refreshError: string | null
+      /** The built-in sample that `/gallery demo` shows, not the site's list. */
+      isSample: boolean
+    }
   | { kind: 'failed'; reason: string }
 
 /** Where the person is in the pane: the filter, the page, and the mod open in detail. */

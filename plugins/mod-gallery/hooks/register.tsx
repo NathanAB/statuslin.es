@@ -9,8 +9,10 @@ import {
   CATALOGUE_URL,
   type GalleryMod,
   isFresh,
+  parseCatalogue,
   readCache,
   readCatalogueResponse,
+  SAMPLE_DOCUMENT,
 } from './catalogue'
 import { installPrompt, modPageUrl } from './install'
 import { MAX_QUERY_CHARS, matchMods, readSearchInput, searchResult } from './search'
@@ -19,6 +21,8 @@ import { ageText, installsText, pageOf, pageSizeFor } from './view'
 const PANE = 'mod-gallery'
 const TITLE = 'Mod Gallery'
 const STORE_KEY = 'catalogue'
+/** `/gallery demo` shows the built-in sample: what a preview recorded offline can draw. */
+const DEMO = 'demo'
 /** Bodies at least this wide set each fact's label in a column beside its value. */
 const WIDE_COLUMNS = 60
 const FACT_LABEL_COLUMNS = 18
@@ -27,7 +31,7 @@ const LOADING: Load = { kind: 'loading' }
 const START: Browse = { query: '', page: 0, slug: null, notice: null }
 
 // Change a tag when its value's fields change: it declines what an earlier version stored.
-const load = atom({ plugin: 'mod-gallery', key: 'load' } as const, LOADING, { shape: 'load-1' })
+const load = atom({ plugin: 'mod-gallery', key: 'load' } as const, LOADING, { shape: 'load-2' })
 const browse = atom({ plugin: 'mod-gallery', key: 'browse' } as const, START, {
   shape: 'browse-1',
 })
@@ -48,7 +52,7 @@ interface StoredCatalogue {
 function stale(cached: ReturnType<typeof readCache>, reason: string): Loaded {
   return cached === undefined
     ? { kind: 'failed', reason }
-    : { kind: 'ready', ...cached, refreshError: reason }
+    : { kind: 'ready', ...cached, refreshError: reason, isSample: false }
 }
 
 /** The stored catalogue while it is fresh, else a new fetch, else the stored one with the reason. */
@@ -56,7 +60,7 @@ async function loadCatalogue($: EngineInterface, isForced: boolean): Promise<Loa
   const now = await $.clock.now()
   const cached = readCache(await $.store.get(STORE_KEY))
   if (cached !== undefined && !isForced && isFresh(cached.fetchedAt, now)) {
-    return { kind: 'ready', ...cached, refreshError: null }
+    return { kind: 'ready', ...cached, refreshError: null, isSample: false }
   }
   let response: { status: number; text: string }
   try {
@@ -68,7 +72,30 @@ async function loadCatalogue($: EngineInterface, isForced: boolean): Promise<Loa
   if (read.kind === 'refused') return stale(cached, read.reason)
   const stored: StoredCatalogue = { fetchedAt: now, text: response.text }
   await $.store.set(STORE_KEY, stored)
-  return { kind: 'ready', catalogue: read.catalogue, fetchedAt: now, refreshError: null }
+  return {
+    kind: 'ready',
+    catalogue: read.catalogue,
+    fetchedAt: now,
+    refreshError: null,
+    isSample: false,
+  }
+}
+
+/** Shows the built-in sample, asking the site nothing. */
+async function showSample($: EngineInterface): Promise<Loaded> {
+  const sample = parseCatalogue(SAMPLE_DOCUMENT)
+  const loaded: Loaded =
+    sample.kind === 'read'
+      ? {
+          kind: 'ready',
+          catalogue: sample.catalogue,
+          fetchedAt: await $.clock.now(),
+          refreshError: null,
+          isSample: true,
+        }
+      : { kind: 'failed', reason: sample.reason }
+  await update($, load, () => loaded)
+  return loaded
 }
 
 async function refresh($: EngineInterface, isForced: boolean): Promise<Loaded> {
@@ -123,9 +150,11 @@ function listView(
         />
       )}
       <Text dimColor wrap="truncate-end">
-        {at.query.trim() === ''
-          ? ageLine(loaded, now)
-          : `${matched.length} of ${loaded.catalogue.mods.length} match`}
+        {at.query.trim() !== ''
+          ? `${matched.length} of ${loaded.catalogue.mods.length} match`
+          : loaded.isSample
+            ? 'Sample data. Run /gallery for the live list.'
+            : ageLine(loaded, now)}
       </Text>
       {loaded.refreshError !== null && (
         <Text dimColor wrap="truncate-end">
@@ -260,7 +289,9 @@ export const register: Register = (on) => {
   })
 
   on('command.run', { command: 'gallery' }, async ($, e) => {
-    const query = e.args.trim().slice(0, MAX_QUERY_CHARS)
+    const words = e.args.trim().slice(0, MAX_QUERY_CHARS)
+    const isDemo = words === DEMO
+    const query = isDemo ? '' : words
     await update($, browse, () => ({ ...START, query }))
     const opened = await $.ui.open({
       id: PANE,
@@ -270,7 +301,7 @@ export const register: Register = (on) => {
       rows: 30,
       columns: 64,
     })
-    const loaded = await refresh($, false)
+    const loaded = isDemo ? await showSample($) : await refresh($, false)
     const named = loaded.kind === 'ready' && loaded.catalogue.mods.find((mod) => mod.slug === query)
     if (named) await update($, browse, (b) => ({ ...b, slug: named.slug }))
     return {
