@@ -55,6 +55,16 @@ export function modPath(slug: string): string {
   return MOD_ROUTE.replace('$slug', () => slug)
 }
 
+/** An unreviewed mod's page (ADR 0011): addressed by repository owner and plugin name, never a slug. */
+export const UNREVIEWED_MOD_ROUTE = '/mods/unreviewed/$owner/$pluginName'
+
+export function unreviewedModPath(owner: string, pluginName: string): string {
+  return UNREVIEWED_MOD_ROUTE.replace('$owner', () => owner).replace(
+    '$pluginName',
+    () => pluginName,
+  )
+}
+
 /** A mod version's Claude Desktop preview image. */
 export const MOD_DESKTOP_PREVIEW_ROUTE = '/mod-previews/$versionId/desktop.png'
 

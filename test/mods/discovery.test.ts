@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { PAGE_SIZE } from '@/gallery/queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
-import { openTestDb, seedMod, type TestDb } from './seed-mods'
+import { openTestDb, REPO_URL, seedMod, sha, type TestDb } from './seed-mods'
 
 const testState = vi.hoisted(() => ({ db: null as unknown }))
 
@@ -69,6 +69,26 @@ beforeAll(async () => {
     .where(eq(schema.configs.id, removedLine))
   await seedMod(db, 'draft-mod', 'draft', 'b')
   await seedMod(db, 'removed-mod', 'removed', 'c')
+  const unreviewed = {
+    description: 'A token meter.',
+    path: '',
+    commitSha: sha('d'),
+    committedAt: new Date('2026-11-01T00:00:00Z'),
+    stars: 3,
+    footprint: { events: [], calls: [] },
+    validatedWith: '2.1.296',
+    checkedAt: new Date('2026-11-12T08:00:00Z'),
+  }
+  await db.insert(schema.unreviewedMods).values([
+    {
+      ...unreviewed,
+      owner: 'OctoCat',
+      pluginName: 'token-meter',
+      repoUrl: 'https://github.com/OctoCat/token-meter',
+    },
+    // The folder context-meter's live version pins: its address redirects to the listing.
+    { ...unreviewed, owner: 'octocat', pluginName: 'meter', repoUrl: REPO_URL },
+  ])
   discovery = await import('@/mods/discovery')
 })
 afterAll(async () => {
@@ -124,6 +144,15 @@ describe('sitemap with mods', () => {
     expect(xml).not.toContain('/mods/removed-mod')
   })
 
+  it("lists each unreviewed mod's page with the day it was checked, unless it redirects", async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).toContain(
+      `<url>\n    <loc>${BASE}/mods/unreviewed/OctoCat/token-meter</loc>\n    <lastmod>2026-11-12</lastmod>\n  </url>`,
+    )
+    expect(xml).not.toContain('/mods/unreviewed/octocat/meter')
+  })
+
   it('keeps the sitemap content type and cache header', async () => {
     const response = await discovery.sitemapWithModsForRoute()
 
@@ -141,6 +170,7 @@ describe('llms.txt with mods', () => {
     )
     expect(txt).not.toContain('draft-mod')
     expect(txt).not.toContain('removed-mod')
+    expect(txt).not.toContain('unreviewed')
   })
 
   it('links a facet that mods make indexable, by its page heading', async () => {
@@ -213,6 +243,7 @@ describe('llms-full.txt with mods', () => {
     expect(txt).not.toContain('removed-line')
     expect(txt).not.toContain('draft-mod')
     expect(txt).not.toContain('removed-mod')
+    expect(txt).not.toContain('token-meter')
   })
 
   it('links a facet that mods make indexable', async () => {

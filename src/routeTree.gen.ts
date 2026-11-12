@@ -44,6 +44,7 @@ import { Route as ModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
 import { Route as AdminModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/admin/mod-previews.$versionId.desktop[.]png'
+import { Route as ModsUnreviewedOwnerPluginNameRouteImport } from './routes/mods.unreviewed.$owner.$pluginName'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -228,6 +229,12 @@ const AdminModPreviewsVersionIdDesktopDotpngRoute =
     path: '/admin/mod-previews/$versionId/desktop.png',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ModsUnreviewedOwnerPluginNameRoute =
+  ModsUnreviewedOwnerPluginNameRouteImport.update({
+    id: '/mods/unreviewed/$owner/$pluginName',
+    path: '/mods/unreviewed/$owner/$pluginName',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  '/mods/unreviewed/$owner/$pluginName': typeof ModsUnreviewedOwnerPluginNameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -302,6 +310,7 @@ export interface FileRoutesByTo {
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  '/mods/unreviewed/$owner/$pluginName': typeof ModsUnreviewedOwnerPluginNameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -340,6 +349,7 @@ export interface FileRoutesById {
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  '/mods/unreviewed/$owner/$pluginName': typeof ModsUnreviewedOwnerPluginNameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
     | '/admin/mod-previews/$versionId/desktop.png'
+    | '/mods/unreviewed/$owner/$pluginName'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
     | '/admin/mod-previews/$versionId/desktop.png'
+    | '/mods/unreviewed/$owner/$pluginName'
   id:
     | '__root__'
     | '/'
@@ -453,6 +465,7 @@ export interface FileRouteTypes {
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
     | '/admin/mod-previews/$versionId/desktop.png'
+    | '/mods/unreviewed/$owner/$pluginName'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -491,6 +504,7 @@ export interface RootRouteChildren {
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
   OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
   AdminModPreviewsVersionIdDesktopDotpngRoute: typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  ModsUnreviewedOwnerPluginNameRoute: typeof ModsUnreviewedOwnerPluginNameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -740,6 +754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminModPreviewsVersionIdDesktopDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mods/unreviewed/$owner/$pluginName': {
+      id: '/mods/unreviewed/$owner/$pluginName'
+      path: '/mods/unreviewed/$owner/$pluginName'
+      fullPath: '/mods/unreviewed/$owner/$pluginName'
+      preLoaderRoute: typeof ModsUnreviewedOwnerPluginNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -782,6 +803,7 @@ const rootRouteChildren: RootRouteChildren = {
   OgModsChar123slugChar125DotpngRoute: OgModsChar123slugChar125DotpngRoute,
   AdminModPreviewsVersionIdDesktopDotpngRoute:
     AdminModPreviewsVersionIdDesktopDotpngRoute,
+  ModsUnreviewedOwnerPluginNameRoute: ModsUnreviewedOwnerPluginNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
