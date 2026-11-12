@@ -1,5 +1,6 @@
 import { PERSONLESS } from '@/lib/posthog-person'
 import type { ServerEvent } from '@/lib/posthog-server'
+import { truncateAtWordBoundary } from '@/lib/search-text'
 import { listingBadgePath, listingCardPath, MARKETPLACE_PATH, modPath } from '@/lib/site'
 import { shownInstallCount } from '@/ui/install-count'
 import { catalogClient, MARKETPLACE_NAME } from './marketplace'
@@ -59,21 +60,16 @@ function plain(text: string): string {
   return text.replace(/\s+/g, ' ').replace(UNPRINTABLE, '').trim()
 }
 
-function capped(text: string): string {
-  if (text.length <= MAX_SUMMARY_CHARS) return text
-  const room = text.slice(0, MAX_SUMMARY_CHARS - 1)
-  const lastSpace = room.lastIndexOf(' ')
-  const endsOnWord = text.charAt(room.length) === ' ' || lastSpace <= 0
-  return `${(endsOnWord ? room : room.slice(0, lastSpace)).trimEnd()}…`
-}
-
 function catalogueEntry(origin: string, mod: GalleryCatalogueMod): GalleryCatalogueEntry {
   return {
     slug: mod.slug,
     title: plain(mod.title),
     author: plain(mod.authorGithub),
     // The mod page leads with the reviewed summary, else the author's description.
-    summary: capped(plain(mod.generatedContent?.summary ?? mod.description)),
+    summary: truncateAtWordBoundary(
+      plain(mod.generatedContent?.summary ?? mod.description),
+      MAX_SUMMARY_CHARS,
+    ),
     installs: shownInstallCount(mod.copyCount),
     tags: mod.tags.map(plain),
     facts: modPageReachTiles(mod).map(({ label, value }) => ({ label, value: plain(value) })),

@@ -153,15 +153,7 @@ export async function getGalleryCatalogueMods(db: Db): Promise<GalleryCatalogueM
     .where(ranking.where)
     .orderBy(...ranking.orderBy)
   return rows.map((row) => ({
-    slug: row.slug,
-    title: row.title,
-    description: row.description,
-    authorGithub: row.authorGithub,
-    copyCount: row.copyCount,
-    tags: row.tags,
-    license: row.license,
-    footprint: row.footprint,
-    preview: row.preview,
+    ...row,
     desktop: desktopPreview(row.desktop),
     generatedContent: readPageCopy(modPageCopySchema, row.generatedContent),
   }))

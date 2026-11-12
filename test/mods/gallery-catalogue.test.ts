@@ -130,7 +130,7 @@ describe('buildGalleryCatalogue', () => {
   it('caps the summary at 300 characters, cut at a word boundary', () => {
     const description = `${'word '.repeat(70)}end`
     const summary = entry({ description }).summary
-    expect(summary).toBe(`${'word '.repeat(59)}word…`)
+    expect(summary).toBe(`${'word '.repeat(58)}word…`)
     expect(summary.length).toBeLessThanOrEqual(300)
   })
 
