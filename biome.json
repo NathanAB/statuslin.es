@@ -82,6 +82,16 @@
   },
   "overrides": [
     {
+      "includes": ["plugins/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useJsxKeyInIterable": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["test/**"],
       "linter": {
         "rules": {

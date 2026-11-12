@@ -1,0 +1,12 @@
+{
+  "name": "mod-gallery",
+  "displayName": "Mod Gallery",
+  "version": "0.1.0",
+  "description": "Browse the reviewed mods on statuslin.es in a pane, with their install counts and what each can reach, and put one's install prompt in your prompt box. /gallery opens it. It runs nothing: you read the prompt and send it.",
+  "author": { "name": "statuslin.es", "url": "https://statuslin.es" },
+  "homepage": "https://statuslin.es",
+  "repository": "https://github.com/NathanAB/statuslin.es",
+  "keywords": ["mods", "gallery", "marketplace", "mod"],
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
