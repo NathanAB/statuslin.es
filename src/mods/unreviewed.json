@@ -1,21 +1,9 @@
 [
   {
-    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
-    "path": "mods/agent-radar",
-    "commitSha": "e6e19b7a90ec3c51089f46eecca36d7d0517fb30",
-    "pluginName": "agent-radar"
-  },
-  {
     "repoUrl": "https://github.com/AgentWorkforce/relay",
     "path": "crates/relay-node/src/relay/claude_mobile_plugin",
     "commitSha": "e1b7d136db1d486b4e049162b4115e85d865ce45",
     "pluginName": "agent-relay-mobile"
-  },
-  {
-    "repoUrl": "https://github.com/Szotasz/marveen",
-    "path": "plugins/agent-state-observer",
-    "commitSha": "b8d99269af762f957a69da6bf9fa45567348ff41",
-    "pluginName": "agent-state-observer"
   },
   {
     "repoUrl": "https://github.com/rbartoli/agent-usage-guard",
@@ -52,12 +40,6 @@
     "path": "plugins/antiburn",
     "commitSha": "11bc2ad2c42afb3217dac4f194761a8878ad9a52",
     "pluginName": "antiburn"
-  },
-  {
-    "repoUrl": "https://github.com/antiburn/antiburn",
-    "path": "plugins/antiburn-live",
-    "commitSha": "11bc2ad2c42afb3217dac4f194761a8878ad9a52",
-    "pluginName": "antiburn-live"
   },
   {
     "repoUrl": "https://github.com/alexknowshtml/claude-auto-handoff",
@@ -210,12 +192,6 @@
     "pluginName": "optimaizr"
   },
   {
-    "repoUrl": "https://github.com/markneonin/paneline",
-    "path": "",
-    "commitSha": "62d7511a1dc47582dcea9fb14367f9c7cb389bc7",
-    "pluginName": "paneline"
-  },
-  {
     "repoUrl": "https://github.com/Boom-Vitt/boombignose-mods",
     "path": "pdpa-thai",
     "commitSha": "ac3f4e81bfd1573feccf6c3754510ece66a3fda8",
@@ -268,12 +244,6 @@
     "path": "",
     "commitSha": "435b6e456bb3e2d11d731160ba81db7a3346b2ee",
     "pluginName": "super-sidebar"
-  },
-  {
-    "repoUrl": "https://github.com/zenbu-labs/terminal-browser",
-    "path": "claude-code-plugin",
-    "commitSha": "637ad706656325d363f48cae9c4f7371745d591f",
-    "pluginName": "terminal-browser"
   },
   {
     "repoUrl": "https://github.com/chenxiachan/textfold",
