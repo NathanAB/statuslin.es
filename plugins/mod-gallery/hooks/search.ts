@@ -22,7 +22,7 @@ export function matchMods(mods: readonly GalleryMod[], query: string): GalleryMo
   })
 }
 
-export interface SearchInput {
+interface SearchInput {
   query: string
   limit: number
 }

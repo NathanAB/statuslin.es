@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { GALLERY_JSON_PATH, MARKETPLACE_PATH } from '@/lib/site'
+import { PLUGIN_NAME as SITE_PLUGIN_NAME } from '@/mods/curation'
 import { buildGalleryCatalogue, type GalleryCatalogueMod } from '@/mods/gallery-catalogue'
 import { MARKETPLACE_NAME } from '@/mods/marketplace'
+import { CONTROL_OR_FORMAT } from '@/mods/terminal-line'
 import {
   CATALOGUE_URL,
   CATALOGUE_VERSION,
   MARKETPLACE,
+  PLUGIN_NAME,
   parseCatalogue,
   readCache,
   readCatalogueResponse,
   SITE,
+  UNPRINTABLE,
 } from '../../../plugins/mod-gallery/hooks/catalogue'
 
 const NOW = new Date('2026-11-12T20:00:00.000Z')
@@ -28,26 +32,17 @@ const SITE_MOD: GalleryCatalogueMod = {
   generatedContent: null,
 }
 
+/** The site's own document for SITE_MOD, as JSON carries it. */
+const SITE_DOCUMENT = JSON.parse(JSON.stringify(buildGalleryCatalogue(SITE, [SITE_MOD], NOW)))
+
 const entry = (fields: Record<string, unknown> = {}) => ({
+  ...SITE_DOCUMENT.mods[0],
   slug: 'sub-meter',
-  title: 'Sub Meter',
-  author: 'midudev',
-  summary: 'A meter of your subscription windows.',
-  installs: 48,
-  tags: ['quota'],
-  facts: [{ label: 'Network access', value: 'None' }],
-  license: 'MIT',
-  url: 'https://statuslin.es/mods/sub-meter',
-  badgeUrl: 'https://statuslin.es/badge/mods/sub-meter.svg',
-  cardUrl: 'https://statuslin.es/og/mods/sub-meter.png',
   ...fields,
 })
 
 const document = (fields: Record<string, unknown> = {}) => ({
-  version: 1,
-  generatedAt: '2026-11-12T20:00:00.000Z',
-  marketplace: 'statuslines',
-  marketplaceUrl: 'https://statuslin.es/marketplace.json',
+  ...SITE_DOCUMENT,
   mods: [entry()],
   ...fields,
 })
@@ -65,14 +60,16 @@ describe('the constants the mod keeps in step with the site', () => {
     expect(MARKETPLACE).toEqual({ name: MARKETPLACE_NAME, url: `${SITE}${MARKETPLACE_PATH}` })
     expect(CATALOGUE_VERSION).toBe(buildGalleryCatalogue(SITE, [], NOW).version)
   })
+
+  it("checks slugs and strips characters by the site's own rules", () => {
+    expect(PLUGIN_NAME.source).toBe(SITE_PLUGIN_NAME.source)
+    expect(UNPRINTABLE.source).toBe(CONTROL_OR_FORMAT.source)
+  })
 })
 
 describe('parseCatalogue', () => {
   it("reads the document the site's own builder makes", () => {
-    const read = parseCatalogue(
-      JSON.parse(JSON.stringify(buildGalleryCatalogue(SITE, [SITE_MOD], NOW))),
-    )
-    expect(read).toEqual({
+    expect(parseCatalogue(SITE_DOCUMENT)).toEqual({
       kind: 'read',
       catalogue: {
         generatedAt: Date.parse('2026-11-12T20:00:00.000Z'),
@@ -122,7 +119,7 @@ describe('parseCatalogue', () => {
       mods: [
         entry({ slug: 'x; rm -rf ~' }),
         entry({ slug: '-flag' }),
-        entry({ slug: 'a'.repeat(65) }),
+        entry({ slug: 'a'.repeat(101) }),
         entry({ slug: 'ok.name_2' }),
       ],
     })
@@ -134,7 +131,7 @@ describe('parseCatalogue', () => {
       mods: [
         entry({ slug: 'long-summary', summary: 'word '.repeat(81) }),
         entry({ slug: 'no-title', title: '' }),
-        entry({ slug: 'many-tags', tags: Array.from({ length: 21 }, () => 'tag') }),
+        entry({ slug: 'many-tags', tags: Array.from({ length: 51 }, () => 'tag') }),
         entry({ slug: 'bad-fact', facts: [{ label: 'Network access' }] }),
         entry({ slug: 'fits', summary: 'word '.repeat(80) }),
       ],

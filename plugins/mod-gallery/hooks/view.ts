@@ -5,7 +5,7 @@ const CHROME_ROWS = 6
 /** Digits 1 to 9 open the mods on a page, so a page holds nine at most. */
 const MAX_PAGE_SIZE = 9
 
-export interface Page<T> {
+interface Page<T> {
   items: T[]
   /** The page shown, from 0, held inside the pages there are. */
   index: number
@@ -38,9 +38,7 @@ export function ageText(ms: number): string {
   return 'just now'
 }
 
-/** The install count as a mod's page shows it; nothing while the site hides it. */
+/** The install count in the site's words; nothing while the site hides it. */
 export function installsText(installs: number | null): string {
-  if (installs === null) return ''
-  const grouped = String(installs).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  return `${grouped} ${installs === 1 ? 'install' : 'installs'}`
+  return installs === null ? '' : `${installs} installs`
 }

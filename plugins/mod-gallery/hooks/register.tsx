@@ -7,12 +7,10 @@ import { atom, read, update } from 'claude-code'
 import type { Browse, Load } from '../types'
 import {
   CATALOGUE_URL,
-  type Catalogue,
   FRESH_FOR_MS,
   type GalleryMod,
   readCache,
   readCatalogueResponse,
-  type StoredCatalogue,
 } from './catalogue'
 import { installPrompt, modPageUrl } from './install'
 import { MAX_QUERY_CHARS, matchMods, readSearchInput, searchResult } from './search'
@@ -40,19 +38,17 @@ type Loaded = Exclude<Load, { kind: 'loading' }>
 type Ui = Pick<Elements['terminal'], 'Box' | 'Button' | 'Link' | 'Text'> &
   Partial<Pick<Elements['terminal'], 'Input'>>
 
-type Fetched =
-  | { kind: 'read'; catalogue: Catalogue; text: string }
-  | { kind: 'refused'; reason: string }
+/** What the mod keeps in `$.store`: the body as fetched, checked again when read back. */
+interface StoredCatalogue {
+  fetchedAt: number
+  text: string
+}
 
-async function fetchCatalogue($: EngineInterface): Promise<Fetched> {
-  let response: { status: number; text: string }
-  try {
-    response = await $.http.fetch(CATALOGUE_URL, { headers: { accept: 'application/json' } })
-  } catch {
-    return { kind: 'refused', reason: 'statuslin.es could not be reached.' }
-  }
-  const read = readCatalogueResponse(response)
-  return read.kind === 'read' ? { ...read, text: response.text } : read
+/** What a failed fetch shows: the stored copy with the reason, or the reason alone. */
+function stale(cached: ReturnType<typeof readCache>, reason: string): Loaded {
+  return cached === undefined
+    ? { kind: 'failed', reason }
+    : { kind: 'ready', ...cached, refreshError: reason }
 }
 
 /** The stored catalogue while it is fresh, else a new fetch, else the stored one with the reason. */
@@ -62,15 +58,17 @@ async function loadCatalogue($: EngineInterface, isForced: boolean): Promise<Loa
   if (cached !== undefined && !isForced && now - cached.fetchedAt < FRESH_FOR_MS) {
     return { kind: 'ready', ...cached, refreshError: null }
   }
-  const fetched = await fetchCatalogue($)
-  if (fetched.kind === 'read') {
-    const stored: StoredCatalogue = { fetchedAt: now, text: fetched.text }
-    await $.store.set(STORE_KEY, stored)
-    return { kind: 'ready', catalogue: fetched.catalogue, fetchedAt: now, refreshError: null }
+  let response: { status: number; text: string }
+  try {
+    response = await $.http.fetch(CATALOGUE_URL, { headers: { accept: 'application/json' } })
+  } catch {
+    return stale(cached, 'statuslin.es could not be reached.')
   }
-  return cached === undefined
-    ? { kind: 'failed', reason: fetched.reason }
-    : { kind: 'ready', ...cached, refreshError: fetched.reason }
+  const read = readCatalogueResponse(response)
+  if (read.kind === 'refused') return stale(cached, read.reason)
+  const stored: StoredCatalogue = { fetchedAt: now, text: response.text }
+  await $.store.set(STORE_KEY, stored)
+  return { kind: 'ready', catalogue: read.catalogue, fetchedAt: now, refreshError: null }
 }
 
 async function refresh($: EngineInterface, isForced: boolean): Promise<Loaded> {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { modPath } from '@/lib/site'
 import { modInstallPrompt } from '@/mods/install'
+import { installsLabel } from '@/ui/install-count'
 import {
   type Catalogue,
   type GalleryMod,
@@ -113,10 +114,10 @@ describe('ageText', () => {
 })
 
 describe('installsText', () => {
-  it('counts installs, and says nothing while the site hides a small count', () => {
+  it('words the count as the site does, and says nothing while the site hides it', () => {
     expect(installsText(null)).toBe('')
-    expect(installsText(1)).toBe('1 install')
-    expect(installsText(1234)).toBe('1,234 installs')
+    expect(installsText(1234)).toBe(installsLabel(1234))
+    expect(installsText(1234)).toBe('1234 installs')
   })
 })
 

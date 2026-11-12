@@ -17,27 +17,29 @@ export const MARKETPLACE = { name: 'statuslines', url: `${SITE}/marketplace.json
 /** How long a fetched catalogue is used before asking again: the site's own `max-age`. */
 export const FRESH_FOR_MS = 5 * 60_000
 
+/** Generous bounds on what a terminal is asked to draw, well past what the site writes today. */
 const MAX = {
   bodyChars: 2_000_000,
   mods: 500,
-  slug: 64,
-  title: 100,
+  // The site's own limit on a plugin name.
+  slug: 100,
+  title: 200,
   author: 100,
   summary: 400,
-  tags: 20,
-  tag: 60,
-  facts: 12,
-  factLabel: 40,
-  factValue: 200,
-  license: 100,
+  tags: 50,
+  tag: 100,
+  facts: 20,
+  factLabel: 60,
+  factValue: 1_000,
+  license: 200,
   date: 40,
 } as const
 
 /** Claude Code's plugin name rule. */
-const PLUGIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
+export const PLUGIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
 /** Control and format characters, and line and paragraph separators: none may reach a terminal. */
-const UNPRINTABLE = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
+export const UNPRINTABLE = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
 
 /** A mod's marketplace entry name, checked against the plugin name rule. */
 export type Slug = string & { readonly __brand: 'Slug' }
@@ -46,7 +48,7 @@ export function isSlug(text: string): text is Slug {
   return text.length <= MAX.slug && PLUGIN_NAME.test(text)
 }
 
-export interface Fact {
+interface Fact {
   label: string
   value: string
 }
@@ -74,12 +76,6 @@ export interface Catalogue {
 export type CatalogueRead =
   | { kind: 'read'; catalogue: Catalogue }
   | { kind: 'refused'; reason: string }
-
-/** What the mod keeps in `$.store`: the body as fetched, checked again when read back. */
-export interface StoredCatalogue {
-  fetchedAt: number
-  text: string
-}
 
 const refused = (reason: string): CatalogueRead => ({ kind: 'refused', reason })
 
@@ -172,19 +168,24 @@ export function parseCatalogue(document: unknown): CatalogueRead {
   }
 }
 
+/** Checks a catalogue body, as text, and reads the entries that pass. */
+function readCatalogueText(text: string): CatalogueRead {
+  if (text.length > MAX.bodyChars) return refused('The catalogue is too large to read.')
+  let document: unknown
+  try {
+    document = JSON.parse(text)
+  } catch {
+    return refused('The catalogue is not JSON.')
+  }
+  return parseCatalogue(document)
+}
+
 /** Reads the site's answer to a fetch of `CATALOGUE_URL`. */
 export function readCatalogueResponse(response: { status: number; text: string }): CatalogueRead {
   if (response.status < 200 || response.status > 299) {
     return refused(`statuslin.es answered ${response.status}.`)
   }
-  if (response.text.length > MAX.bodyChars) return refused('The catalogue is too large to read.')
-  let document: unknown
-  try {
-    document = JSON.parse(response.text)
-  } catch {
-    return refused('The catalogue is not JSON.')
-  }
-  return parseCatalogue(document)
+  return readCatalogueText(response.text)
 }
 
 /** Reads back what the store holds, through the same checks; undefined when it holds nothing usable. */
@@ -198,7 +199,7 @@ export function readCache(
   ) {
     return undefined
   }
-  const read = readCatalogueResponse({ status: 200, text: stored.text })
+  const read = readCatalogueText(stored.text)
   return read.kind === 'read'
     ? { catalogue: read.catalogue, fetchedAt: stored.fetchedAt }
     : undefined
