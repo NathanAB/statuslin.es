@@ -60,6 +60,10 @@ _Avoid_: store, registry
 A config or a mod as published in the gallery, with its own page.
 _Avoid_: entry, item
 
+**Unreviewed mod**:
+A mod statuslin.es has a page for and hasn't read. It is not a listing: it has no version, no place in the marketplace or the gallery's ranking, and can't be installed from the site. Visitors see it labelled "Not reviewed".
+_Avoid_: listing, listed mod, indexed mod
+
 **Page copy**:
 The reviewed text on a listing's page that explains it, written by statuslin.es rather than the author. A mod's page copy also has a headline and common questions.
 _Avoid_: generated content, description
