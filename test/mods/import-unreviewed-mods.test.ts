@@ -43,18 +43,24 @@ interface Fakes {
   repo?: RepoInfo | null
   manifestName?: string
   sandboxError?: Error
+  onDefaultBranch?: boolean
 }
 
 function fakes({
   repo = { fullName: 'OctoCat/meter', license: 'MIT', defaultBranch: 'main', stars: 12 },
   manifestName = 'meter',
   sandboxError,
+  onDefaultBranch = true,
 }: Fakes = {}) {
   const calls: string[] = []
   const github: UnreviewedImportDeps['github'] = {
     async findRepo(repoUrl) {
       calls.push(`findRepo:${repoUrl}`)
       return repo
+    },
+    async commitIsOnDefaultBranch(_repoUrl, commit, defaultBranch) {
+      calls.push(`onDefaultBranch:${commit}:${defaultBranch}`)
+      return onDefaultBranch
     },
     async commitDate(_repoUrl, commit) {
       calls.push(`commitDate:${commit}`)
@@ -188,6 +194,17 @@ describe('importUnreviewedMods', () => {
       `refused meter: GitHub does not serve ${REPO}; a private repository gets no page`,
     ])
     expect(calls).toEqual([`findRepo:${REPO}`])
+    expect(await rows()).toEqual([])
+  })
+
+  it('refuses a commit off the default branch before fetching it, as a fork could serve it', async () => {
+    const { exitCode, lines, calls } = await run([entry()], fakes({ onDefaultBranch: false }))
+
+    expect(exitCode).toBe(1)
+    expect(lines).toEqual([
+      `refused meter: commit ${SHA} is not on the repository's default branch (main)`,
+    ])
+    expect(calls).toEqual([`findRepo:${REPO}`, `onDefaultBranch:${SHA}:main`])
     expect(await rows()).toEqual([])
   })
 

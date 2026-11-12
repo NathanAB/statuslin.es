@@ -2,7 +2,7 @@ import { and, eq, notInArray, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
-import type { GitHubSource } from './github'
+import type { GitHub, GitHubSource } from './github'
 import { type FetchPlugin, inspectSource } from './import'
 import { terminalLine } from './terminal-line'
 import { parseUnreviewed, UNREVIEWED_FILE, type UnreviewedEntry } from './unreviewed'
@@ -12,7 +12,7 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export interface UnreviewedImportDeps {
   db: Db
-  github: Pick<GitHubSource, 'findRepo' | 'commitDate'>
+  github: Pick<GitHubSource, 'findRepo' | 'commitDate'> & Pick<GitHub, 'commitIsOnDefaultBranch'>
   fetchPlugin: FetchPlugin
   withSandbox: typeof withModSandbox
   log: (line: string) => void
@@ -74,6 +74,12 @@ async function importEntry(
   }
   const canonical = `https://github.com/${repo.fullName}`
   if (canonical !== entry.repoUrl) throw new Error(`write the repository URL as ${canonical}`)
+  // GitHub serves a fork's commits through the parent's address too (ADR 0005).
+  if (!(await github.commitIsOnDefaultBranch(entry.repoUrl, entry.commitSha, repo.defaultBranch))) {
+    throw new Error(
+      `commit ${entry.commitSha} is not on the repository's default branch (${repo.defaultBranch})`,
+    )
+  }
   const owner = repo.fullName.slice(0, repo.fullName.indexOf('/'))
   const facts = await inspectSource(entry, { fetchPlugin, withSandbox })
   if (facts.manifest.name !== entry.pluginName) {
@@ -130,9 +136,10 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 /**
  * Makes the unreviewed_mods table match the file (ADR 0011). Each entry is checked like a submitted
  * mod (its repository read from GitHub, its plugin inspected in an offline sandbox) and refused if
- * it fails, if its plugin.json names another plugin, if its repository is private, or if
- * statuslin.es removed or rejected that folder. A refused entry keeps no row. Idempotent: an
- * unchanged entry is skipped without a request. Returns 0 when every entry is in the table.
+ * it fails, if its plugin.json names another plugin, if its repository is private, if its commit
+ * is not on the default branch, or if statuslin.es removed or rejected that folder. A refused entry
+ * keeps no row. Idempotent: an unchanged entry is skipped without a request. Returns 0 when every
+ * entry is in the table.
  */
 export async function importUnreviewedMods(
   raw: unknown,
