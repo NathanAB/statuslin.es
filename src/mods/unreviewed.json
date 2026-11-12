@@ -1,1 +1,302 @@
-[]
+[
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/agent-radar",
+    "commitSha": "e6e19b7a90ec3c51089f46eecca36d7d0517fb30",
+    "pluginName": "agent-radar"
+  },
+  {
+    "repoUrl": "https://github.com/AgentWorkforce/relay",
+    "path": "crates/relay-node/src/relay/claude_mobile_plugin",
+    "commitSha": "e1b7d136db1d486b4e049162b4115e85d865ce45",
+    "pluginName": "agent-relay-mobile"
+  },
+  {
+    "repoUrl": "https://github.com/Szotasz/marveen",
+    "path": "plugins/agent-state-observer",
+    "commitSha": "b8d99269af762f957a69da6bf9fa45567348ff41",
+    "pluginName": "agent-state-observer"
+  },
+  {
+    "repoUrl": "https://github.com/rbartoli/agent-usage-guard",
+    "path": "",
+    "commitSha": "7305b6b91b547c17679219a7ff26c45b6b69fac8",
+    "pluginName": "agent-usage-guard"
+  },
+  {
+    "repoUrl": "https://github.com/23blocks-OS/ai-maestro",
+    "path": "mods/ai-maestro-board",
+    "commitSha": "e7ebd0c9516f8e9cbe14b40473cea688c5248747",
+    "pluginName": "ai-maestro-board"
+  },
+  {
+    "repoUrl": "https://github.com/23blocks-OS/ai-maestro",
+    "path": "mods/ai-maestro-sql-approval",
+    "commitSha": "e7ebd0c9516f8e9cbe14b40473cea688c5248747",
+    "pluginName": "ai-maestro-sql-approval"
+  },
+  {
+    "repoUrl": "https://github.com/ice-lfernandes/claude-code-mods",
+    "path": "allowlist-coach",
+    "commitSha": "82c3ab9c7fa0e92828cc51205b906a9a9b08b6b0",
+    "pluginName": "allowlist-coach"
+  },
+  {
+    "repoUrl": "https://github.com/23blocks-OS/ai-maestro",
+    "path": "mods/amp-inbox-band",
+    "commitSha": "e7ebd0c9516f8e9cbe14b40473cea688c5248747",
+    "pluginName": "amp-inbox-band"
+  },
+  {
+    "repoUrl": "https://github.com/antiburn/antiburn",
+    "path": "plugins/antiburn",
+    "commitSha": "11bc2ad2c42afb3217dac4f194761a8878ad9a52",
+    "pluginName": "antiburn"
+  },
+  {
+    "repoUrl": "https://github.com/antiburn/antiburn",
+    "path": "plugins/antiburn-live",
+    "commitSha": "11bc2ad2c42afb3217dac4f194761a8878ad9a52",
+    "pluginName": "antiburn-live"
+  },
+  {
+    "repoUrl": "https://github.com/alexknowshtml/claude-auto-handoff",
+    "path": "",
+    "commitSha": "8d762ce726c962268e2dbe24c1c60f0889a2fcde",
+    "pluginName": "auto-handoff"
+  },
+  {
+    "repoUrl": "https://github.com/AftabIbrahimKazi/ai-dev-kit",
+    "path": "mods/budget-ledger",
+    "commitSha": "656fc75fb23392421b937b7608671cfc203f97bd",
+    "pluginName": "budget-ledger"
+  },
+  {
+    "repoUrl": "https://github.com/olddonkey/cache-refresher",
+    "path": "",
+    "commitSha": "20ea93ad3f477f9db360207a4ea2a06b084c27b8",
+    "pluginName": "cache-refresher"
+  },
+  {
+    "repoUrl": "https://github.com/errhythm/ccswap",
+    "path": "mod",
+    "commitSha": "00e9babd85ab30d24a33ecfd265141bc9f67c8a2",
+    "pluginName": "ccswap"
+  },
+  {
+    "repoUrl": "https://github.com/coderabbitai/skills",
+    "path": "mods/coderabbit",
+    "commitSha": "45bd1ae2c471cd861b8b6903f7dcab7c57aa0e59",
+    "pluginName": "coderabbit-mod"
+  },
+  {
+    "repoUrl": "https://github.com/escapeboy/claude-code-kit",
+    "path": "17-mods/marketplace/mods/company-hq",
+    "commitSha": "09e25f6e2b9d47ea8a52e1a3ba6d83c77b96530c",
+    "pluginName": "company-hq"
+  },
+  {
+    "repoUrl": "https://github.com/Andriiklymiuk/corgi",
+    "path": "plugins/corgi-band",
+    "commitSha": "0574de72f23f882f06d8a5d7a65c8d01bbeb3b5a",
+    "pluginName": "corgi-band"
+  },
+  {
+    "repoUrl": "https://github.com/tomasz-tomczyk/crit",
+    "path": "integrations/claude-code-tui",
+    "commitSha": "09be615ba8c52ea46c4d032acda688fe2447f3d1",
+    "pluginName": "crit-tui"
+  },
+  {
+    "repoUrl": "https://github.com/danielwh2/cuelume",
+    "path": "claude-code",
+    "commitSha": "2a1ba4fc1b67e8371c9f37e37a51e61353166335",
+    "pluginName": "cuelume"
+  },
+  {
+    "repoUrl": "https://github.com/ray-amjad/claude-code-mods",
+    "path": "plugins/diagram-pane",
+    "commitSha": "36069ce5fa60a5d0672b2f9398e1cfcb1ff82fc6",
+    "pluginName": "diagram-pane"
+  },
+  {
+    "repoUrl": "https://github.com/edgee-ai/edgee",
+    "path": "mods/edgee",
+    "commitSha": "82ee127ec18867cc84d791f0d038d30c2dee123a",
+    "pluginName": "edgee"
+  },
+  {
+    "repoUrl": "https://github.com/ostiums/fixkit",
+    "path": "mod",
+    "commitSha": "1906523e9c7d4ea438e7df3a23182c3e10267879",
+    "pluginName": "fixkit"
+  },
+  {
+    "repoUrl": "https://github.com/Antreas-Strb/glanceflow",
+    "path": "glanceflow",
+    "commitSha": "eaebe6c4486fd70efe2b0a61a81ca9f268a3361c",
+    "pluginName": "glanceflow"
+  },
+  {
+    "repoUrl": "https://github.com/nateherkai/claude-code-mods",
+    "path": "goal-meter",
+    "commitSha": "33a936f2ec6bbfea5a30a1a4d71d992487a5c769",
+    "pluginName": "goal-meter"
+  },
+  {
+    "repoUrl": "https://github.com/marmottajr/habblaud",
+    "path": "mod/habblaud",
+    "commitSha": "faa1a012b5fbf632c66dc6801c5383e53a542406",
+    "pluginName": "habblaud"
+  },
+  {
+    "repoUrl": "https://github.com/vinta/hal-9000",
+    "path": "plugins/hal-grammar-check",
+    "commitSha": "774943cd0481c143102f74af201a733be2889113",
+    "pluginName": "hal-grammar-check"
+  },
+  {
+    "repoUrl": "https://github.com/vinta/hal-9000",
+    "path": "plugins/hal-session-auto-rename",
+    "commitSha": "774943cd0481c143102f74af201a733be2889113",
+    "pluginName": "hal-session-auto-rename"
+  },
+  {
+    "repoUrl": "https://github.com/madisonrickert/jev-permission-gate",
+    "path": "",
+    "commitSha": "9958bff3318c3e1520c3ec977f9a7901252ba780",
+    "pluginName": "jev-permission-gate"
+  },
+  {
+    "repoUrl": "https://github.com/Avinash-jetwani/jevmem",
+    "path": "pane",
+    "commitSha": "1af1bd0dc8194fb3d135b5dd0b27bc4dead439ca",
+    "pluginName": "jevmem-pane"
+  },
+  {
+    "repoUrl": "https://github.com/T0mSIlver/localvoxtral",
+    "path": "integrations/claude-code/plugins/localvoxtral-mod",
+    "commitSha": "8c36acaee0cf263ad3775bf9d3ed4684296bcb22",
+    "pluginName": "localvoxtral-mod"
+  },
+  {
+    "repoUrl": "https://github.com/alexeyw/lot-map",
+    "path": "",
+    "commitSha": "ee1ce53dbd59dd2c6049cfd62c983318599a2966",
+    "pluginName": "lot-map"
+  },
+  {
+    "repoUrl": "https://github.com/modu-ai/moai-adk",
+    "path": "mods/moai-board",
+    "commitSha": "95c7ad1bcf6edcacbfecf2354510af3af36b33be",
+    "pluginName": "moai-board"
+  },
+  {
+    "repoUrl": "https://github.com/modu-ai/moai-adk",
+    "path": "mods/moai-status",
+    "commitSha": "95c7ad1bcf6edcacbfecf2354510af3af36b33be",
+    "pluginName": "moai-status"
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/openrouter-balance",
+    "commitSha": "e6e19b7a90ec3c51089f46eecca36d7d0517fb30",
+    "pluginName": "openrouter-balance"
+  },
+  {
+    "repoUrl": "https://github.com/blendbunjaku/optimaizr",
+    "path": "mods/optimaizr",
+    "commitSha": "9edd53b5d9d4292ed9cbbff1db610974f37df7af",
+    "pluginName": "optimaizr"
+  },
+  {
+    "repoUrl": "https://github.com/markneonin/paneline",
+    "path": "",
+    "commitSha": "62d7511a1dc47582dcea9fb14367f9c7cb389bc7",
+    "pluginName": "paneline"
+  },
+  {
+    "repoUrl": "https://github.com/Boom-Vitt/boombignose-mods",
+    "path": "pdpa-thai",
+    "commitSha": "ac3f4e81bfd1573feccf6c3754510ece66a3fda8",
+    "pluginName": "pdpa-thai"
+  },
+  {
+    "repoUrl": "https://github.com/Arjun0014/project-sentinel",
+    "path": "plugins/project-sentinel",
+    "commitSha": "9b4d6505261792b091cd98c98eab1a9732ae0206",
+    "pluginName": "project-sentinel"
+  },
+  {
+    "repoUrl": "https://github.com/frankbria/codeframe",
+    "path": "proof9",
+    "commitSha": "1490a41d0820e340c3be6b64baece67c42f6b379",
+    "pluginName": "proof9"
+  },
+  {
+    "repoUrl": "https://github.com/fatwang2/Pulse",
+    "path": "plugins/claude-code",
+    "commitSha": "1611b1706f94dce1dffc9f589d2cd045642a2f4e",
+    "pluginName": "pulse-cc"
+  },
+  {
+    "repoUrl": "https://github.com/hellosverre/redgreen",
+    "path": "",
+    "commitSha": "cdc4fa37ec707f3d9c7fa88810128ed96b8d73e5",
+    "pluginName": "redgreen"
+  },
+  {
+    "repoUrl": "https://github.com/JetBrains/roer",
+    "path": "claude-plugin/roer-ui",
+    "commitSha": "c542284efacaa695293b9a2a12090e433d33e766",
+    "pluginName": "roer-ui"
+  },
+  {
+    "repoUrl": "https://github.com/iamumeransari/claude-show-your-work",
+    "path": "",
+    "commitSha": "71e546044e3ba61b98a6938a03270da791f9ca2e",
+    "pluginName": "show-your-work"
+  },
+  {
+    "repoUrl": "https://github.com/Kanevry/session-orchestrator",
+    "path": "mods/so-hud",
+    "commitSha": "c34cd2ab0ce1081485aaf4a45b421e42440626ca",
+    "pluginName": "so-hud"
+  },
+  {
+    "repoUrl": "https://github.com/Zafer-Liu/claude-super-sidebar",
+    "path": "",
+    "commitSha": "435b6e456bb3e2d11d731160ba81db7a3346b2ee",
+    "pluginName": "super-sidebar"
+  },
+  {
+    "repoUrl": "https://github.com/zenbu-labs/terminal-browser",
+    "path": "claude-code-plugin",
+    "commitSha": "637ad706656325d363f48cae9c4f7371745d591f",
+    "pluginName": "terminal-browser"
+  },
+  {
+    "repoUrl": "https://github.com/chenxiachan/textfold",
+    "path": "plugins/textfold",
+    "commitSha": "6b850437701c6761e942c97494871cbc3f1f86ea",
+    "pluginName": "textfold"
+  },
+  {
+    "repoUrl": "https://github.com/matthlh/claude-mods",
+    "path": "plugins/token-tycoon",
+    "commitSha": "49ef4ad620dd260f6eaa7c5b63458f069cd5eeb5",
+    "pluginName": "token-tycoon"
+  },
+  {
+    "repoUrl": "https://github.com/click6067-ship-it/token-tv",
+    "path": "claude-plugin",
+    "commitSha": "bb488dd84ec9e9ded8773b8ca5cb5f40bd841a8d",
+    "pluginName": "tokentv"
+  },
+  {
+    "repoUrl": "https://github.com/Yrzhe/claude-skills",
+    "path": "plugins/translate-view",
+    "commitSha": "79b0639392a99667f2866b32e9ed4a45464b1a33",
+    "pluginName": "translate-view"
+  }
+]
