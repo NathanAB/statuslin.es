@@ -20,6 +20,7 @@ function renderLayout(overrides: Partial<Parameters<typeof DetailPageLayout>[0]>
       preview={<p>preview</p>}
       whatItDoes={WHAT_IT_DOES}
       source={<p>source</p>}
+      badge={<p>badge</p>}
       related={<p>related</p>}
       {...overrides}
     />,

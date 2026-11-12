@@ -69,6 +69,14 @@ afterEach(() => {
 })
 
 describe('unreviewed mod page', () => {
+  // A badge says "reviewed": an unreviewed mod gets no badge and no snippet to copy.
+  it('offers no README badge', () => {
+    const { container } = renderPage()
+
+    expect(screen.queryByRole('region', { name: 'Badge for your README' })).toBeNull()
+    expect(container.innerHTML).not.toContain('/badge/')
+  })
+
   it('names the mod and credits its owner on GitHub', () => {
     renderPage()
 

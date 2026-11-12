@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { getConfigDetail } from '@/gallery/functions'
@@ -28,6 +28,8 @@ vi.mock('@tanstack/react-router', async () => {
   }
 })
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }))
+const recordCopyFn = vi.hoisted(() => vi.fn())
+vi.mock('@/adopt/functions', () => ({ recordCopyFn }))
 
 vi.mock('@posthog/react', () => ({
   usePostHog: () => ({
@@ -102,6 +104,7 @@ function renderPage(viewerIsAuthor = false, mods: GalleryModCard[] = [], detail:
     user: null,
     viewerIsAuthor,
     mods,
+    origin: 'https://site.example.test',
   })
   const Page = ConfigRoute.options.component
   return render(Page ? <Page /> : null)
@@ -299,5 +302,35 @@ describe('status line page in Claude Desktop', () => {
     expect(screen.getByText(/^In Claude Desktop\?/)).toBeTruthy()
     expect(preview().queryByText('In Claude Desktop')).toBeNull()
     expect(preview().queryByRole('link', { name: 'statusline-anywhere' })).toBeNull()
+  })
+})
+
+describe('status line page README badge', () => {
+  const ORIGIN = 'https://site.example.test'
+  const LINK = `${ORIGIN}/c/powerline-dracula-6936b97c?utm_source=readme-badge`
+
+  it('offers the badge snippet under the source, and copying it is an event, not an install', async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    renderPage()
+
+    expectInOrder([h2('Source'), h2('Badge for your README'), h2('More status lines')])
+    const section = within(screen.getByRole('region', { name: 'Badge for your README' }))
+    expect(section.getByRole('img', { name: 'Reviewed on statuslin.es' }).getAttribute('src')).toBe(
+      `${ORIGIN}/badge/c/powerline-dracula-6936b97c.svg`,
+    )
+    fireEvent.click(section.getByRole('button', { name: 'Copy preview card Markdown' }))
+
+    await waitFor(() =>
+      expect(capture).toHaveBeenCalledWith('badge_snippet_copied', {
+        kind: 'status_line',
+        slug: 'powerline-dracula-6936b97c',
+        snippet: 'card',
+      }),
+    )
+    expect(writeText).toHaveBeenCalledWith(
+      `[![Preview on statuslin.es](${ORIGIN}/og/c/powerline-dracula-6936b97c.png)](${LINK})`,
+    )
+    expect(recordCopyFn).not.toHaveBeenCalled()
   })
 })

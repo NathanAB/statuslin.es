@@ -30,6 +30,7 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
 - `submissions/` — review state shared by status lines and mods: rate limit, pending rows, supersede
 - `votes/` — retained legacy voting code · `adopt/` — copy/install a config
 - `og/` — Open Graph card images · `legal/` — terms page
+- `badge/` — a listing's README badge image (live install count) and the snippet section on its page
 - `db/` — Drizzle schema + migration client · `lib/` — shared utils (`env.ts`)
 - `home/` — the home page's sections (gallery, hero, mods row), composed from the features above
 - `how-it-works/` — /how-it-works and the home section on how listings are checked: the four checks, shown with the top status line and mod

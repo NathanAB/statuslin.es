@@ -39,6 +39,8 @@ import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as BadgeCChar123slugChar125DotsvgRouteImport } from './routes/badge.c.{$slug}[.]svg'
+import { Route as BadgeModsChar123slugChar125DotsvgRouteImport } from './routes/badge.mods.{$slug}[.]svg'
 import { Route as ConfigPreviewsVersionIdDesktopDotpngRouteImport } from './routes/config-previews.$versionId.desktop[.]png'
 import { Route as ModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/mod-previews.$versionId.desktop[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
@@ -199,6 +201,18 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BadgeCChar123slugChar125DotsvgRoute =
+  BadgeCChar123slugChar125DotsvgRouteImport.update({
+    id: '/badge/c/{$slug}.svg',
+    path: '/badge/c/{$slug}.svg',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const BadgeModsChar123slugChar125DotsvgRoute =
+  BadgeModsChar123slugChar125DotsvgRouteImport.update({
+    id: '/badge/mods/{$slug}.svg',
+    path: '/badge/mods/{$slug}.svg',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ConfigPreviewsVersionIdDesktopDotpngRoute =
   ConfigPreviewsVersionIdDesktopDotpngRouteImport.update({
     id: '/config-previews/$versionId/desktop.png',
@@ -267,6 +281,8 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/badge/c/{$slug}.svg': typeof BadgeCChar123slugChar125DotsvgRoute
+  '/badge/mods/{$slug}.svg': typeof BadgeModsChar123slugChar125DotsvgRoute
   '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -305,6 +321,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/mods': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/badge/c/{$slug}.svg': typeof BadgeCChar123slugChar125DotsvgRoute
+  '/badge/mods/{$slug}.svg': typeof BadgeModsChar123slugChar125DotsvgRoute
   '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -344,6 +362,8 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/badge/c/{$slug}.svg': typeof BadgeCChar123slugChar125DotsvgRoute
+  '/badge/mods/{$slug}.svg': typeof BadgeModsChar123slugChar125DotsvgRoute
   '/config-previews/$versionId/desktop.png': typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
@@ -384,6 +404,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/mods/'
     | '/api/auth/$'
+    | '/badge/c/{$slug}.svg'
+    | '/badge/mods/{$slug}.svg'
     | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
@@ -422,6 +444,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/mods'
     | '/api/auth/$'
+    | '/badge/c/{$slug}.svg'
+    | '/badge/mods/{$slug}.svg'
     | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
@@ -460,6 +484,8 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/mods/'
     | '/api/auth/$'
+    | '/badge/c/{$slug}.svg'
+    | '/badge/mods/{$slug}.svg'
     | '/config-previews/$versionId/desktop.png'
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
@@ -499,6 +525,8 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ModsIndexRoute: typeof ModsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  BadgeCChar123slugChar125DotsvgRoute: typeof BadgeCChar123slugChar125DotsvgRoute
+  BadgeModsChar123slugChar125DotsvgRoute: typeof BadgeModsChar123slugChar125DotsvgRoute
   ConfigPreviewsVersionIdDesktopDotpngRoute: typeof ConfigPreviewsVersionIdDesktopDotpngRoute
   ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
@@ -719,6 +747,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/badge/c/{$slug}.svg': {
+      id: '/badge/c/{$slug}.svg'
+      path: '/badge/c/{$slug}.svg'
+      fullPath: '/badge/c/{$slug}.svg'
+      preLoaderRoute: typeof BadgeCChar123slugChar125DotsvgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/badge/mods/{$slug}.svg': {
+      id: '/badge/mods/{$slug}.svg'
+      path: '/badge/mods/{$slug}.svg'
+      fullPath: '/badge/mods/{$slug}.svg'
+      preLoaderRoute: typeof BadgeModsChar123slugChar125DotsvgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/config-previews/$versionId/desktop.png': {
       id: '/config-previews/$versionId/desktop.png'
       path: '/config-previews/$versionId/desktop.png'
@@ -795,6 +837,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ModsIndexRoute: ModsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  BadgeCChar123slugChar125DotsvgRoute: BadgeCChar123slugChar125DotsvgRoute,
+  BadgeModsChar123slugChar125DotsvgRoute:
+    BadgeModsChar123slugChar125DotsvgRoute,
   ConfigPreviewsVersionIdDesktopDotpngRoute:
     ConfigPreviewsVersionIdDesktopDotpngRoute,
   ModPreviewsVersionIdDesktopDotpngRoute:

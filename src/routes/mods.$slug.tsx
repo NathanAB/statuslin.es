@@ -1,6 +1,7 @@
 import { usePostHog } from '@posthog/react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { ReadmeBadgeSection } from '@/badge/readme-badge-section'
 import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
@@ -99,6 +100,7 @@ function ModPage() {
           authorWords: mod.generatedContent ? mod.description : undefined,
         }}
         faq={faq.length > 0 ? <FaqSection entries={faq} /> : undefined}
+        badge={<ReadmeBadgeSection kind="mod" slug={mod.slug} origin={origin} />}
         related={<ModRelated items={mod.related} />}
       />
     </PageShell>

@@ -8,7 +8,7 @@ import {
   modMetaDescription,
   modPageTitle,
 } from '@/lib/page-title'
-import { modPath, SITE_NAME, siteUrl } from '@/lib/site'
+import { listingCardPath, modPath, SITE_NAME, siteUrl } from '@/lib/site'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 // Until October 2026 /og/home.png was served immutable for a year. Slack's and Discord's image
@@ -54,7 +54,7 @@ export function configSocialMeta(input: {
   description: string | null
 }): Array<Record<string, string>> {
   const base = siteUrl()
-  const image = `${base}/og/c/${input.slug}.png`
+  const image = `${base}${listingCardPath('status_line', input.slug)}`
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}/c/${input.slug}` },
@@ -77,7 +77,7 @@ export function modSocialMeta(
     generatedContent: { summary: string; headline?: string | undefined } | null
   },
 ): Array<Record<string, string>> {
-  const image = `${base}/og/mods/${mod.slug}.png`
+  const image = `${base}${listingCardPath('mod', mod.slug)}`
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}${modPath(mod.slug)}` },

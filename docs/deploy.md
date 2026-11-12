@@ -396,6 +396,8 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha>
    DATABASE_URL='<env pooled url>' bun run scripts/publish-mod.ts <slug> <sha> --apply --confirm=<slug>
    ```
+   The issue that tells the author their mod is listed should offer the README badge Markdown from
+   the "Badge for your README" section of the mod's page.
    To move a published mod to a newer commit, follow "Re-pin a mod" below.
 
 ### Change a mod's input steps

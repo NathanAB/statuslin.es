@@ -15,8 +15,8 @@ import { POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST } from './src/lib/posthog-host
 // every TanStack route sits behind Nitro's `/**` catch-all. So it guesses: a browser's <img> request
 // (Sec-Fetch-Dest: image, or a .png path without Accept: text/html) is taken for a static file and
 // 404s before the app sees it. DEV_IMAGE_ROUTE_PREFIXES names the app's image routes
-// (src/routes/*[.]png.ts, a test keeps it complete); dressing their requests as page loads makes
-// Nitro pass them on. The production server has no such guess: its static middleware falls through
+// (src/routes/*[.]png.ts and *[.]svg.ts, a test keeps it complete); dressing their requests as page
+// loads makes Nitro pass them on. The production server has no such guess: its static middleware falls through
 // on a miss.
 
 function devImageRoutes(): Plugin {
