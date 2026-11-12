@@ -76,10 +76,10 @@ const CLAUDE_CODE_USER_AGENT = 'Claude-Code-Plugin-Manager'
 /** Crawlers send `Mozilla/5.0 (compatible; Googlebot/2.1; …)`, so this is checked before browsers. */
 const CRAWLER = /bot|crawl|spider/i
 
-type MarketplaceClient = 'claude-code' | 'bot' | 'browser' | 'other'
+type CatalogClient = 'claude-code' | 'bot' | 'browser' | 'other'
 
 /** A coarse class, so the raw user agent never reaches PostHog. */
-function marketplaceClient(userAgent: string | null): MarketplaceClient {
+export function catalogClient(userAgent: string | null): CatalogClient {
   if (userAgent?.startsWith(CLAUDE_CODE_USER_AGENT)) return 'claude-code'
   if (userAgent && CRAWLER.test(userAgent)) return 'bot'
   if (userAgent?.startsWith('Mozilla/')) return 'browser'
@@ -94,6 +94,6 @@ export function marketplaceFetchedEvent(
   return {
     distinctId: 'marketplace',
     event: 'marketplace_fetched',
-    properties: { pluginCount, client: marketplaceClient(userAgent), ...PERSONLESS },
+    properties: { pluginCount, client: catalogClient(userAgent), ...PERSONLESS },
   }
 }

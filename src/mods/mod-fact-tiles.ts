@@ -126,9 +126,29 @@ export function modReachTiles(
 }
 
 /**
- * A mod's fact tiles. Each yes or no comes from the validator's footprint or the recorded
- * previews; the page copy only words a tile whose fact is yes. The last tiles name the reviewed
- * commit and the Claude Code version the preview was recorded with.
+ * The tiles of a published mod's page that say what it can reach, with where its previews show it
+ * working. Each yes or no comes from the validator's footprint or the recorded previews.
+ */
+export function modPageReachTiles(
+  mod: Pick<ModDetail, 'footprint' | 'preview' | 'desktop' | 'generatedContent'>,
+): FactTile[] {
+  const { surfaces } = describeModFootprint(mod)
+  const worksIn: FactTile[] =
+    surfaces.length > 0
+      ? [
+          {
+            icon: Monitor,
+            label: MOD_TILE_LABEL.worksIn,
+            value: listPhrase(surfaces.map((s) => SURFACE_LABEL[s])),
+          },
+        ]
+      : []
+  return modReachTiles(mod.footprint, { details: mod.generatedContent?.details, worksIn })
+}
+
+/**
+ * A mod's fact tiles: what it can reach, then the reviewed commit and the Claude Code version the
+ * preview was recorded with. The page copy only words a tile whose fact is yes.
  */
 export function modFactTiles(
   mod: Pick<
@@ -142,19 +162,8 @@ export function modFactTiles(
     | 'recordedWith'
   >,
 ): FactTile[] {
-  const { surfaces } = describeModFootprint(mod)
-  const worksIn: FactTile[] =
-    surfaces.length > 0
-      ? [
-          {
-            icon: Monitor,
-            label: MOD_TILE_LABEL.worksIn,
-            value: listPhrase(surfaces.map((s) => SURFACE_LABEL[s])),
-          },
-        ]
-      : []
   return [
-    ...modReachTiles(mod.footprint, { details: mod.generatedContent?.details, worksIn }),
+    ...modPageReachTiles(mod),
     {
       icon: GitCommitHorizontal,
       label: MOD_TILE_LABEL.reviewedCommit,
