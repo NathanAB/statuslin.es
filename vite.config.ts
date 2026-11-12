@@ -222,7 +222,9 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     // Git worktrees under .claude/worktrees and .worktrees are full repo copies — without this, a
     // test run from the main checkout collects their test files too (and fails on their stale state).
-    exclude: [...configDefaults.exclude, '.claude/worktrees/**', '.worktrees/**'],
+    // A mod's own tests (plugins/*/tests) import `claude-code/testing` and run under
+    // `claude plugin test`, not Vitest.
+    exclude: [...configDefaults.exclude, '.claude/worktrees/**', '.worktrees/**', 'plugins/**'],
     setupFiles: ['./test/setup.ts'],
     // Migrates one PGlite per run and saves it, so DB tests boot from that (migratedPGlite()).
     globalSetup: ['./test/helpers/migrated-snapshot.ts'],

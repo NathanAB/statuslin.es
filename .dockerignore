@@ -41,6 +41,7 @@ Dockerfile*
 .verify
 .agents
 .github
+plugins
 .vscode
 docs
 
