@@ -39,10 +39,8 @@ const PLUGIN_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 /** Control and format characters, and line and paragraph separators: none may reach a terminal. */
 const UNPRINTABLE = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu
 
-declare const slugBrand: unique symbol
-
 /** A mod's marketplace entry name, checked against the plugin name rule. */
-export type Slug = string & { readonly [slugBrand]: true }
+export type Slug = string & { readonly __brand: 'Slug' }
 
 export function isSlug(text: string): text is Slug {
   return text.length <= MAX.slug && PLUGIN_NAME.test(text)
@@ -77,10 +75,10 @@ export type CatalogueRead =
   | { kind: 'read'; catalogue: Catalogue }
   | { kind: 'refused'; reason: string }
 
-/** What the mod keeps in `$.store`: the document as fetched, checked again when read back. */
+/** What the mod keeps in `$.store`: the body as fetched, checked again when read back. */
 export interface StoredCatalogue {
   fetchedAt: number
-  document: unknown
+  text: string
 }
 
 const refused = (reason: string): CatalogueRead => ({ kind: 'refused', reason })
@@ -193,8 +191,14 @@ export function readCatalogueResponse(response: { status: number; text: string }
 export function readCache(
   stored: unknown,
 ): { catalogue: Catalogue; fetchedAt: number } | undefined {
-  if (!isRecord(stored) || typeof stored.fetchedAt !== 'number') return undefined
-  const read = parseCatalogue(stored.document)
+  if (
+    !isRecord(stored) ||
+    typeof stored.fetchedAt !== 'number' ||
+    typeof stored.text !== 'string'
+  ) {
+    return undefined
+  }
+  const read = readCatalogueResponse({ status: 200, text: stored.text })
   return read.kind === 'read'
     ? { catalogue: read.catalogue, fetchedAt: stored.fetchedAt }
     : undefined

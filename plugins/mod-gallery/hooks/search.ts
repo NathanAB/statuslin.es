@@ -2,7 +2,7 @@ import { type Catalogue, type GalleryMod, plain } from './catalogue'
 import { modPageUrl } from './install'
 
 const LIMIT = { fallback: 5, max: 20 } as const
-const MAX_QUERY_CHARS = 200
+export const MAX_QUERY_CHARS = 200
 
 /** The mods whose text holds every word of the query, in any case, in catalogue order. */
 export function matchMods(mods: readonly GalleryMod[], query: string): GalleryMod[] {

@@ -210,10 +210,10 @@ describe('readCatalogueResponse', () => {
 })
 
 describe('readCache', () => {
-  it('reads back a stored document through the same checks', () => {
+  it('reads back a stored body through the same checks', () => {
     const stored = {
       fetchedAt: 1000,
-      document: document({ mods: [entry(), entry({ slug: '!' })] }),
+      text: JSON.stringify(document({ mods: [entry(), entry({ slug: '!' })] })),
     }
     const cached = readCache(stored)
     expect(cached?.fetchedAt).toBe(1000)
@@ -222,7 +222,10 @@ describe('readCache', () => {
 
   it('reads nothing from a store an earlier version wrote in another shape', () => {
     expect(readCache(undefined)).toBeUndefined()
-    expect(readCache({ document: document() })).toBeUndefined()
-    expect(readCache({ fetchedAt: 1, document: document({ version: 2 }) })).toBeUndefined()
+    expect(readCache({ text: JSON.stringify(document()) })).toBeUndefined()
+    expect(readCache({ fetchedAt: 1, document: document() })).toBeUndefined()
+    expect(
+      readCache({ fetchedAt: 1, text: JSON.stringify(document({ version: 2 })) }),
+    ).toBeUndefined()
   })
 })
