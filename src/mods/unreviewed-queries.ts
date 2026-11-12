@@ -1,4 +1,4 @@
-import { and, asc, eq, exists, not, or, type SQL, type SQLWrapper, sql } from 'drizzle-orm'
+import { and, asc, eq, exists, not, or, type SQLWrapper, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, mods, modVersions, unreviewedMods } from '@/db/schema'
 
@@ -26,16 +26,6 @@ export interface UnreviewedMod {
 export type UnreviewedLookup =
   | { kind: 'page'; mod: UnreviewedMod }
   | { kind: 'reviewed'; slug: string }
-
-/** A published mod whose live version matches `where`. */
-async function publishedSlug(db: Db, where: SQL | undefined): Promise<string | undefined> {
-  const [row] = await db
-    .select({ slug: mods.slug })
-    .from(mods)
-    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
-    .where(and(eq(mods.status, 'published'), where))
-  return row?.slug
-}
 
 /** The mods that have taken a folder over from its unreviewed page: a published listing whose live
  * version pins it, which the page redirects to, or a delisted mod that ever pinned it, which hides
@@ -72,14 +62,18 @@ export async function findUnreviewedMod(
     )
   if (!row) {
     // The entry left the file once its listing was published: the address still leads there.
-    const slug = await publishedSlug(
-      db,
-      and(
-        eq(mods.pluginName, pluginName),
-        sql`lower(split_part(${modVersions.repoUrl}, '/', 4)) = lower(${owner})`,
-      ),
-    )
-    return slug ? { kind: 'reviewed', slug } : null
+    const [listing] = await db
+      .select({ slug: mods.slug })
+      .from(mods)
+      .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
+      .where(
+        and(
+          eq(mods.status, 'published'),
+          eq(mods.pluginName, pluginName),
+          sql`lower(split_part(${modVersions.repoUrl}, '/', 4)) = lower(${owner})`,
+        ),
+      )
+    return listing ? { kind: 'reviewed', slug: listing.slug } : null
   }
   const taken = await takeovers(db, row)
   const listing = taken.find((mod) => mod.status === 'published')

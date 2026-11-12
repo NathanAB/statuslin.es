@@ -5,7 +5,7 @@ import type { withModSandbox } from '@/render/mods/mod-sandbox'
 import type { GitHub, GitHubSource } from './github'
 import { type FetchPlugin, inspectSource } from './import'
 import { terminalLine } from './terminal-line'
-import { parseUnreviewed, UNREVIEWED_FILE, type UnreviewedEntry } from './unreviewed'
+import { parseUnreviewed, repoOwner, UNREVIEWED_FILE, type UnreviewedEntry } from './unreviewed'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -80,7 +80,7 @@ async function importEntry(
       `commit ${entry.commitSha} is not on the repository's default branch (${repo.defaultBranch})`,
     )
   }
-  const owner = repo.fullName.slice(0, repo.fullName.indexOf('/'))
+  const owner = repoOwner(entry.repoUrl)
   const facts = await inspectSource(entry, { fetchPlugin, withSandbox })
   if (facts.manifest.name !== entry.pluginName) {
     throw new Error(

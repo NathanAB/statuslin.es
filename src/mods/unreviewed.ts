@@ -25,8 +25,8 @@ function duplicates(entries: UnreviewedEntry[]): string[] {
     const folder = `${entry.repoUrl} at ${entry.path || 'its root'}`
     const sameName = byName.get(name)
     const sameFolder = byFolder.get(folder)
-    byName.set(name, byName.get(name) ?? index)
-    byFolder.set(folder, byFolder.get(folder) ?? index)
+    if (sameName === undefined) byName.set(name, index)
+    if (sameFolder === undefined) byFolder.set(folder, index)
     if (sameName !== undefined) {
       return [`${entryLabel(entry, index)}: ${name} is already entry ${sameName + 1}`]
     }
