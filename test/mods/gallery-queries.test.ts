@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigSource } from '@/gallery/config-items'
 import { type GalleryItem, mergeGalleryItems } from '@/gallery/gallery-items'
-import { getModSource, getPublishedModCard } from '@/mods/gallery-queries'
+import { getGalleryCatalogueMods, getModSource, getPublishedModCard } from '@/mods/gallery-queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import {
   addDesktopPreview,
@@ -172,6 +172,66 @@ describe('getPublishedModCard', () => {
 
     expect(await getPublishedModCard(db, 'drafted')).toBeNull()
     expect(await getPublishedModCard(db, 'missing')).toBeNull()
+  })
+})
+
+describe('getGalleryCatalogueMods', () => {
+  const setCopies = (modId: string, copyCount: number) =>
+    db.update(schema.mods).set({ copyCount }).where(eq(schema.mods.id, modId))
+
+  it('lists only published mods: never a draft, a removed mod or an unreviewed mod', async () => {
+    await publishedMod('live')
+    await publishedMod('drafted', { status: 'draft' })
+    await publishedMod('pulled', { status: 'removed' })
+    await db.insert(schema.unreviewedMods).values({
+      owner: 'octocat',
+      pluginName: 'unreviewed',
+      description: 'Not reviewed.',
+      repoUrl: 'https://github.com/octocat/unreviewed',
+      path: '',
+      commitSha: sha('c'),
+      committedAt: new Date('2026-11-01T09:30:00Z'),
+      footprint: { events: [], calls: [] },
+      stars: 12,
+      validatedWith: '2.1.296',
+      checkedAt: new Date('2026-11-12T08:00:00Z'),
+    })
+
+    expect((await getGalleryCatalogueMods(db)).map((mod) => mod.slug)).toEqual(['live'])
+  })
+
+  it('ranks the mods as /mods does: most installed first, then by slug', async () => {
+    await setCopies(await publishedMod('few'), 2)
+    await setCopies(await publishedMod('many'), 9)
+    await setCopies(await publishedMod('also-few'), 2)
+
+    const catalogue = (await getGalleryCatalogueMods(db)).map((mod) => mod.slug)
+    const page = (await getModSource(db, { sort: 'top' })).items.map(({ item }) => item.card.slug)
+
+    expect(catalogue).toEqual(['many', 'also-few', 'few'])
+    expect(catalogue).toEqual(page)
+  })
+
+  it('carries what the page facts are built from: footprint, previews and page copy', async () => {
+    const modId = await publishedMod('meter', { desktop: 'shot' })
+    await db
+      .update(schema.modVersions)
+      .set({
+        license: 'MIT',
+        footprint: { events: ['command.run{command=meter}'], calls: [] },
+        generatedContent: { summary: 'A meter.', howItWorks: [], goodToKnow: [], details: {} },
+      })
+      .where(eq(schema.modVersions.modId, modId))
+
+    const [mod] = await getGalleryCatalogueMods(db)
+
+    expect(mod).toMatchObject({
+      license: 'MIT',
+      footprint: { events: ['command.run{command=meter}'], calls: [] },
+      preview: [{ text: 'meter' }],
+      desktop: { kind: 'shot' },
+      generatedContent: { summary: 'A meter.' },
+    })
   })
 })
 

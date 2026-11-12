@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CONFIG_DESKTOP_PREVIEW_ROUTE,
   configDesktopPreviewPath,
+  GALLERY_JSON_PATH,
   MARKETPLACE_PATH,
   MOD_DESKTOP_PREVIEW_ROUTE,
   MOD_ROUTE,
@@ -10,6 +11,7 @@ import {
   modPath,
 } from '@/lib/site'
 import { Route as ConfigDesktopPreviewRoute } from '@/routes/config-previews.$versionId.desktop[.]png'
+import { Route as GalleryJsonRoute } from '@/routes/gallery[.]json'
 import { Route as MarketplaceRoute } from '@/routes/marketplace[.]json'
 import { Route as DesktopPreviewRoute } from '@/routes/mod-previews.$versionId.desktop[.]png'
 import { Route as ModRoute } from '@/routes/mods.$slug'
@@ -64,5 +66,9 @@ describe('site paths', () => {
 
   it('names the route that serves the marketplace', () => {
     expect(routesByPath[MARKETPLACE_PATH]).toBe(MarketplaceRoute)
+  })
+
+  it('names the route that serves the machine-readable catalogue', () => {
+    expect(routesByPath[GALLERY_JSON_PATH]).toBe(GalleryJsonRoute)
   })
 })

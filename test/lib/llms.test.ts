@@ -89,6 +89,9 @@ describe('buildLlmsTxt', () => {
     const browse = txt.slice(txt.indexOf('## Browse'), txt.indexOf('## Browse by feature'))
     expect(browse).toContain('(https://statuslin.es/mods)')
     expect(browse).toContain('(https://statuslin.es/marketplace.json)')
+    expect(browse).toContain(
+      '- [Mod catalogue](https://statuslin.es/gallery.json): the reviewed mods as machine-readable JSON, with install counts and what each can reach',
+    )
     expect(browse).toMatch(/\[Gallery\]\(https:\/\/statuslin\.es\/\): every published mod, sorted/)
   })
 

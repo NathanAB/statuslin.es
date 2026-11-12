@@ -5,13 +5,19 @@ import { Text } from '@/ui/text'
 /** Below this many installs every surface leaves the count out: a tiny number reads as a flop. */
 const MIN_SHOWN_INSTALLS = 3
 
+/** The count every surface shows, or null when it is too small to show. */
+export function shownInstallCount(count: number): number | null {
+  return count < MIN_SHOWN_INSTALLS ? null : count
+}
+
 /**
  * "223 installs": how every surface words the count, or null when it is too small to show. It
  * counts the visitors who copied the install prompt or the script (`copyCount` in the data), each
  * once.
  */
 export function installsLabel(count: number): string | null {
-  return count < MIN_SHOWN_INSTALLS ? null : `${count} installs`
+  const shown = shownInstallCount(count)
+  return shown === null ? null : `${shown} installs`
 }
 
 /** Compact, read-only popularity metric shared by gallery and detail surfaces. */
