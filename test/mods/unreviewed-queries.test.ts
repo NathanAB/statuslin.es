@@ -116,6 +116,34 @@ describe('findUnreviewedMod', () => {
     )
   })
 
+  it('hides the page once a delisted mod has pinned the same folder in any version', async () => {
+    await addRow()
+    await addListing('token-meter', 'removed', { path: 'plugins/renamed' })
+    const [removed] = await db
+      .select({ id: schema.mods.id })
+      .from(schema.mods)
+      .where(eq(schema.mods.slug, 'token-meter'))
+    await addVersion(db, removed?.id as string, {
+      commitSha: sha('d'),
+      versionNumber: 2,
+      repoUrl: ROW.repoUrl,
+      path: ROW.path,
+    })
+
+    expect(await findUnreviewedMod(db, { owner: 'OctoCat', pluginName: 'meter' })).toBeNull()
+  })
+
+  it('still points at a published listing for the folder when another was delisted', async () => {
+    await addRow()
+    await addListing('old-meter', 'removed')
+    await addListing('token-meter', 'published')
+
+    expect(await findUnreviewedMod(db, { owner: 'OctoCat', pluginName: 'meter' })).toEqual({
+      kind: 'reviewed',
+      slug: 'token-meter',
+    })
+  })
+
   it('keeps the page when a published mod pins another folder of the repository', async () => {
     await addRow()
     await addListing('other', 'published', { path: 'plugins/other' })
@@ -152,5 +180,13 @@ describe('listUnreviewedMods', () => {
         checkedAt: ROW.checkedAt,
       },
     ])
+  })
+
+  it('leaves out a page whose folder a delisted mod pinned', async () => {
+    await addRow()
+    await addRow({ pluginName: 'zebra', path: 'plugins/zebra' })
+    await addListing('old-meter', 'removed')
+
+    expect((await listUnreviewedMods(db)).map((link) => link.pluginName)).toEqual(['zebra'])
   })
 })

@@ -1,4 +1,4 @@
-import { and, asc, eq, exists, not, type SQL, sql } from 'drizzle-orm'
+import { and, asc, eq, exists, not, or, type SQL, type SQLWrapper, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModFootprint, mods, modVersions, unreviewedMods } from '@/db/schema'
 
@@ -37,21 +37,24 @@ async function publishedSlug(db: Db, where: SQL | undefined): Promise<string | u
   return row?.slug
 }
 
-/** A published mod's live version pins this row's repository and folder. */
-function heldByListing(db: Db): SQL {
-  return exists(
-    db
-      .select({ id: mods.id })
-      .from(mods)
-      .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
-      .where(
-        and(
-          eq(mods.status, 'published'),
-          eq(modVersions.repoUrl, unreviewedMods.repoUrl),
-          eq(modVersions.path, unreviewedMods.path),
+/** The mods that have taken a folder over from its unreviewed page: a published listing whose live
+ * version pins it, which the page redirects to, or a delisted mod that ever pinned it, which hides
+ * the page. */
+function takeovers(db: Db, folder: { repoUrl: string | SQLWrapper; path: string | SQLWrapper }) {
+  return db
+    .select({ slug: mods.slug, status: mods.status })
+    .from(mods)
+    .innerJoin(modVersions, eq(modVersions.modId, mods.id))
+    .where(
+      and(
+        eq(modVersions.repoUrl, folder.repoUrl),
+        eq(modVersions.path, folder.path),
+        or(
+          eq(mods.status, 'removed'),
+          and(eq(mods.status, 'published'), eq(modVersions.id, mods.currentVersionId)),
         ),
       ),
-  )
+    )
 }
 
 export async function findUnreviewedMod(
@@ -78,11 +81,10 @@ export async function findUnreviewedMod(
     )
     return slug ? { kind: 'reviewed', slug } : null
   }
-  const slug = await publishedSlug(
-    db,
-    and(eq(modVersions.repoUrl, row.repoUrl), eq(modVersions.path, row.path)),
-  )
-  if (slug) return { kind: 'reviewed', slug }
+  const taken = await takeovers(db, row)
+  const listing = taken.find((mod) => mod.status === 'published')
+  if (listing) return { kind: 'reviewed', slug: listing.slug }
+  if (taken.length > 0) return null
   return {
     kind: 'page',
     mod: {
@@ -119,6 +121,6 @@ export function listUnreviewedMods(db: Db): Promise<UnreviewedModLink[]> {
       checkedAt: unreviewedMods.checkedAt,
     })
     .from(unreviewedMods)
-    .where(not(heldByListing(db)))
+    .where(not(exists(takeovers(db, unreviewedMods))))
     .orderBy(asc(unreviewedMods.pluginName), asc(sql`lower(${unreviewedMods.owner})`))
 }
