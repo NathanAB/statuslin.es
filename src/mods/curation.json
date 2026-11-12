@@ -588,5 +588,18 @@
         "text": "/preview-busy"
       }
     ]
+  },
+  {
+    "repoUrl": "https://github.com/NathanAB/statuslin.es",
+    "path": "plugins/mod-gallery",
+    "commitSha": "265920fc6d038fd93033be7cb72cda2e23ed6571",
+    "pluginName": "mod-gallery",
+    "title": "Mod Gallery",
+    "inputSteps": [
+      {
+        "type": "text",
+        "text": "/gallery demo"
+      }
+    ]
   }
 ]
