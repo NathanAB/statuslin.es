@@ -35,7 +35,7 @@ export function DetailPageLayout({
   faq?: React.ReactNode
   /** A status line's script. A mod page has no Source section. */
   source?: React.ReactNode
-  /** The README badge section (ReadmeBadgeSection), for the listing's author. */
+  /** The README badge section (ReadmeBadgeSection): every visitor sees it, and it asks the owner. */
   badge: React.ReactNode
   related?: React.ReactNode
 }) {

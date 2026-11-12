@@ -1,13 +1,20 @@
 import { usePostHog } from '@posthog/react'
-import { type ListingKind, listingBadgePath, listingCardPath, listingPath } from '@/lib/site'
+import {
+  type ListingKind,
+  listingBadgePath,
+  listingCardPath,
+  listingPath,
+  SITE_NAME,
+} from '@/lib/site'
+import { BadgeImage } from '@/ui/badge-image'
 import { CodeBlock } from '@/ui/code-block'
 import { Stack } from '@/ui/layout'
 import { PageSection } from '@/ui/page-section'
 import { Text } from '@/ui/text'
 
 // Fixed alt text: the listing's title is the author's, and a `]` in it would break the Markdown.
-const BADGE_ALT = 'Reviewed on statuslin.es'
-const CARD_ALT = 'Preview on statuslin.es'
+const BADGE_ALT = `Reviewed on ${SITE_NAME}`
+const CARD_ALT = `Preview on ${SITE_NAME}`
 
 type Snippet = 'badge' | 'card'
 
@@ -34,9 +41,11 @@ export function ReadmeBadgeSection({
 
   return (
     <PageSection title="Badge for your README">
-      <Text muted>Link here from your README. The badge shows the install count as it grows.</Text>
+      <Text muted>
+        Own this listing? Add it to your README. The badge shows the install count as it grows.
+      </Text>
       <Stack gap={3}>
-        <img src={badgeUrl} alt={BADGE_ALT} />
+        <BadgeImage src={badgeUrl} alt={BADGE_ALT} />
         <CodeBlock
           wrap
           text={badgeMarkdown}
