@@ -14,8 +14,9 @@ import sys
 from datetime import date, timedelta
 
 SITE = 'sc-domain:statuslin.es'
+# First match wins: unreviewed mod pages (ADR 0011) are measured apart from the reviewed ones.
 GROUPS = [
-    ('/c/', '/c/*'), ('/mods/', '/mods/*'), ('/status-lines/', '/status-lines/*'),
+    ('/c/', '/c/*'), ('/mods/unreviewed/', '/mods/unreviewed/*'), ('/mods/', '/mods/*'), ('/status-lines/', '/status-lines/*'),
     ('/guide', 'guides'), ('/compare', 'compare'), ('/alternatives', 'alternatives'),
     ('/resources', '/resources'), ('/how-it-works', '/how-it-works'),
 ]

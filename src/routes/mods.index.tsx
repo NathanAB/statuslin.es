@@ -16,6 +16,8 @@ import { getGalleryModsFn } from '@/mods/gallery-functions'
 import { MarketplaceLine } from '@/mods/marketplace-line'
 import { ModCard } from '@/mods/mod-card'
 import { modsFaq } from '@/mods/mods-page-faq'
+import { listUnreviewedModsFn } from '@/mods/unreviewed-functions'
+import { UnreviewedModsSection } from '@/mods/unreviewed-mods-section'
 import { staticPageSocialMeta } from '@/og/meta'
 import { FaqSection } from '@/ui/faq-section'
 import { GalleryList } from '@/ui/gallery-row'
@@ -26,12 +28,14 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/mods/')({
   loader: async () => {
-    const [mods, user] = await Promise.all([
+    const [mods, unreviewed, user] = await Promise.all([
       getGalleryModsFn({ data: { sort: 'top' } }),
+      listUnreviewedModsFn(),
       getSession(),
     ])
     return {
       mods: mods.items.flatMap(({ item }) => (item.kind === 'mod' ? [item.card] : [])),
+      unreviewed,
       user,
       origin: siteUrl(),
     }
@@ -66,7 +70,7 @@ export const Route = createFileRoute('/mods/')({
 })
 
 function ModsPage() {
-  const { mods, user, origin } = Route.useLoaderData()
+  const { mods, unreviewed, user, origin } = Route.useLoaderData()
   return (
     <PageShell user={user}>
       <Stack gap={6}>
@@ -101,6 +105,7 @@ function ModsPage() {
         ) : (
           <Text muted>No mods yet.</Text>
         )}
+        <UnreviewedModsSection mods={unreviewed} />
         <FaqSection entries={modsFaq()} />
       </Stack>
     </PageShell>

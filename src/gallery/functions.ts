@@ -42,7 +42,11 @@ import { rankedCard } from './why-line'
 // `db` reference) from the client build. It also avoids the server-fn RPC boundary, so the
 // sitemap's `updatedAt` stays a real `Date` instead of being serialized to a string.
 export const sitemapResponseForRoute = createServerOnlyFn(
-  async (mods: Array<SitemapMod & FacetMod>): Promise<Response> => {
+  async (
+    mods: Array<SitemapMod & FacetMod>,
+    /** Pages outside the gallery's count, such as unreviewed mods' (ADR 0011). */
+    otherPages: SitemapPage[] = [],
+  ): Promise<Response> => {
     const stats = await getFacetStats(db, mods)
     const facets = liveFacetLinks(stats).map((facet) => ({
       slug: facet.slug,
@@ -50,7 +54,7 @@ export const sitemapResponseForRoute = createServerOnlyFn(
     }))
     const configs = await getPublishedSlugsForSitemap(db)
     const pageCount = Math.max(1, Math.ceil((configs.length + mods.length) / PAGE_SIZE))
-    const listingPages = await datedListingPages(configs)
+    const listingPages = [...(await datedListingPages(configs)), ...otherPages]
     return sitemapResponse(siteUrl(), configs, facets, pageCount, listingPages, mods)
   },
 )

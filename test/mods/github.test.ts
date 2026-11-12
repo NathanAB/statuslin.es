@@ -139,7 +139,12 @@ describe('repoInfo', () => {
     const { fetchFn } = fakeFetch({
       [api('')]: {
         status: 200,
-        body: { full_name: 'OctoCat/Meter', default_branch: 'trunk', license: { spdx_id: 'MIT' } },
+        body: {
+          full_name: 'OctoCat/Meter',
+          default_branch: 'trunk',
+          license: { spdx_id: 'MIT' },
+          stargazers_count: 42,
+        },
       },
     })
 
@@ -147,6 +152,7 @@ describe('repoInfo', () => {
       fullName: 'OctoCat/Meter',
       license: 'MIT',
       defaultBranch: 'trunk',
+      stars: 42,
     })
   })
 
@@ -258,7 +264,12 @@ describe('findRepo', () => {
     const { fetchFn } = fakeFetch({
       [api('')]: {
         status: 200,
-        body: { full_name: 'octocat/meter', default_branch: 'main', license: null },
+        body: {
+          full_name: 'octocat/meter',
+          default_branch: 'main',
+          license: null,
+          stargazers_count: 0,
+        },
       },
     })
 
@@ -266,6 +277,7 @@ describe('findRepo', () => {
       fullName: 'octocat/meter',
       license: null,
       defaultBranch: 'main',
+      stars: 0,
     })
   })
 
@@ -273,6 +285,28 @@ describe('findRepo', () => {
     const { fetchFn } = fakeFetch({})
 
     expect(await createGitHub(fetchFn).findRepo(REPO)).toBeNull()
+  })
+})
+
+describe('commitDate', () => {
+  it("reads the pinned commit's committer date from the git commit object", async () => {
+    const { fetchFn, requested } = fakeFetch({
+      [api(`/git/commits/${SHA}`)]: {
+        status: 200,
+        body: { committer: { date: '2026-11-01T09:30:00Z' } },
+      },
+    })
+
+    const date = await createGitHub(fetchFn).commitDate(REPO, SHA)
+
+    expect(date.toISOString()).toBe('2026-11-01T09:30:00.000Z')
+    expect(requested).toEqual([api(`/git/commits/${SHA}`)])
+  })
+
+  it('throws when GitHub has no such commit', async () => {
+    const { fetchFn } = fakeFetch({})
+
+    await expect(createGitHub(fetchFn).commitDate(REPO, SHA)).rejects.toThrow(/404/)
   })
 })
 

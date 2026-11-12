@@ -9,10 +9,12 @@ import {
   Terminal,
 } from 'lucide-react'
 import type { ModPageCopy } from '@/content/types'
+import type { ModFootprint } from '@/db/schema'
 import { listPhrase } from '@/gallery/why-line'
 import type { FactTile } from '@/ui/fact-tiles'
 import {
   DRAW_LOCATION_LABEL,
+  describeFootprint,
   describeModFootprint,
   footprintRecorded,
   SURFACE_LABEL,
@@ -75,41 +77,25 @@ function reachValue(
 const NOT_RECORDED = 'Not recorded yet'
 
 /**
- * A mod's fact tiles. Each yes or no comes from the validator's footprint or the recorded
- * previews; the page copy only words a tile whose fact is yes. The last tiles name the reviewed
- * commit and the Claude Code version the preview was recorded with.
+ * What a mod can reach, from the validator's footprint alone: what it shows, its commands, whether
+ * it uses your tokens, changes files or uses the network. Page copy only words a tile whose fact is
+ * yes. `worksIn` follows the first tile, for a mod whose previews were recorded.
  */
-export function modFactTiles(
-  mod: Pick<
-    ModDetail,
-    | 'footprint'
-    | 'preview'
-    | 'desktop'
-    | 'generatedContent'
-    | 'commitSha'
-    | 'reviewedAt'
-    | 'recordedWith'
-  >,
+export function modReachTiles(
+  footprint: ModFootprint,
+  {
+    details = {},
+    worksIn = [],
+  }: { details?: ModPageCopy['details'] | undefined; worksIn?: FactTile[] } = {},
 ): FactTile[] {
-  const { draws, surfaces } = describeModFootprint(mod)
-  const facts = footprintFacts(mod.footprint)
+  const { draws } = describeFootprint(footprint)
+  const facts = footprintFacts(footprint)
   // An empty footprint was never recorded: say so instead of a row of "Nothing" and "None".
-  const ifRecorded = (fact: string) => (footprintRecorded(mod.footprint) ? fact : NOT_RECORDED)
-  const details: ModPageCopy['details'] = mod.generatedContent?.details ?? {}
+  const ifRecorded = (fact: string) => (footprintRecorded(footprint) ? fact : NOT_RECORDED)
   const showsUp =
     draws.length > 0
       ? (details.showsUp ?? capitalized(listPhrase(draws.map((d) => DRAW_LOCATION_LABEL[d]))))
       : 'Nothing on screen'
-  const worksIn: FactTile[] =
-    surfaces.length > 0
-      ? [
-          {
-            icon: Monitor,
-            label: MOD_TILE_LABEL.worksIn,
-            value: listPhrase(surfaces.map((s) => SURFACE_LABEL[s])),
-          },
-        ]
-      : []
   return [
     { icon: PanelTop, label: MOD_TILE_LABEL.showsUp, value: ifRecorded(showsUp) },
     ...worksIn,
@@ -136,6 +122,39 @@ export function modFactTiles(
       label: MOD_TILE_LABEL.network,
       value: ifRecorded(reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None')),
     },
+  ]
+}
+
+/**
+ * A mod's fact tiles. Each yes or no comes from the validator's footprint or the recorded
+ * previews; the page copy only words a tile whose fact is yes. The last tiles name the reviewed
+ * commit and the Claude Code version the preview was recorded with.
+ */
+export function modFactTiles(
+  mod: Pick<
+    ModDetail,
+    | 'footprint'
+    | 'preview'
+    | 'desktop'
+    | 'generatedContent'
+    | 'commitSha'
+    | 'reviewedAt'
+    | 'recordedWith'
+  >,
+): FactTile[] {
+  const { surfaces } = describeModFootprint(mod)
+  const worksIn: FactTile[] =
+    surfaces.length > 0
+      ? [
+          {
+            icon: Monitor,
+            label: MOD_TILE_LABEL.worksIn,
+            value: listPhrase(surfaces.map((s) => SURFACE_LABEL[s])),
+          },
+        ]
+      : []
+  return [
+    ...modReachTiles(mod.footprint, { details: mod.generatedContent?.details, worksIn }),
     {
       icon: GitCommitHorizontal,
       label: MOD_TILE_LABEL.reviewedCommit,

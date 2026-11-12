@@ -73,7 +73,7 @@ interface FakeOptions {
 }
 
 function fakeGitHub({
-  repo = { fullName: 'octocat/mods', license: 'MIT', defaultBranch: 'main' },
+  repo = { fullName: 'octocat/mods', license: 'MIT', defaultBranch: 'main', stars: 0 },
   refs = { main: SHA },
   onDefaultBranch = true,
   manifests = ['plugins/meter'],

@@ -65,7 +65,7 @@ function deps({
     github: {
       async findRepo() {
         calls.push('repo')
-        return { fullName: 'octocat/mods', license: 'MIT', defaultBranch: 'main' }
+        return { fullName: 'octocat/mods', license: 'MIT', defaultBranch: 'main', stars: 0 }
       },
       async resolveCommit(_repo, ref) {
         calls.push(`ref:${ref}`)

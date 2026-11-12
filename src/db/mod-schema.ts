@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm'
+import { type AnyColumn, type SQL, sql } from 'drizzle-orm'
 import {
   check,
   customType,
@@ -27,6 +27,19 @@ export type ModInputSteps = unknown[]
 /** Claude Code's plugin id rule (src/mods/curation.ts): a slug lands in marketplace entries and shell commands. */
 const PLUGIN_ID = '^[A-Za-z0-9][A-Za-z0-9._-]*$'
 
+/** The column holds a Claude Code plugin id. */
+export const pluginIdCheck = (column: AnyColumn): SQL =>
+  sql`${column} ~ ${sql.raw(`'${PLUGIN_ID}'`)}`
+
+/** The rules src/mods/curation.ts checks a pinned plugin folder's fields by, kept by the database too. */
+export const commitShaCheck = (column: AnyColumn): SQL => sql`${column} ~ '^[0-9a-f]{40}$'`
+
+export const repoUrlCheck = (column: AnyColumn): SQL =>
+  sql`${column} ~ '^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+$' AND ${column} !~* '(\\.git|/\\.{1,2})$'`
+
+export const pluginPathCheck = (column: AnyColumn): SQL =>
+  sql`${column} ~ '^([A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*)?$' AND ${column} !~ '(^|/)\\.{1,2}(/|$)'`
+
 export const mods = pgTable(
   'mods',
   {
@@ -47,8 +60,8 @@ export const mods = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check('mods_slug_check', sql`${t.slug} ~ ${sql.raw(`'${PLUGIN_ID}'`)}`),
-    check('mods_plugin_name_check', sql`${t.pluginName} ~ ${sql.raw(`'${PLUGIN_ID}'`)}`),
+    check('mods_slug_check', pluginIdCheck(t.slug)),
+    check('mods_plugin_name_check', pluginIdCheck(t.pluginName)),
     check(
       'mods_status_check',
       sql`${t.status} IN (${sql.raw(MOD_STATUSES.map((status) => `'${status}'`).join(', '))})`,
@@ -84,19 +97,13 @@ export const modVersions = pgTable(
     uniqueIndex('mod_versions_mod_version_uq').on(t.modId, t.versionNumber),
     // Per mod: until one is approved, two users' submissions may pin the same commit of a folder.
     uniqueIndex('mod_versions_mod_source_uq').on(t.modId, t.repoUrl, t.path, t.commitSha),
-    check('mod_versions_commit_sha_check', sql`${t.commitSha} ~ '^[0-9a-f]{40}$'`),
-    check(
-      'mod_versions_repo_url_check',
-      sql`${t.repoUrl} ~ '^https://github\\.com/[A-Za-z0-9-]+/[A-Za-z0-9._-]+$' AND ${t.repoUrl} !~* '(\\.git|/\\.{1,2})$'`,
-    ),
+    check('mod_versions_commit_sha_check', commitShaCheck(t.commitSha)),
+    check('mod_versions_repo_url_check', repoUrlCheck(t.repoUrl)),
     check(
       'mod_versions_card_surface_check',
       sql`${t.cardSurface} = ${sql.raw(`'${TERMINAL_CARD_SURFACE}'`)}`,
     ),
-    check(
-      'mod_versions_path_check',
-      sql`${t.path} ~ '^([A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*)?$' AND ${t.path} !~ '(^|/)\\.{1,2}(/|$)'`,
-    ),
+    check('mod_versions_path_check', pluginPathCheck(t.path)),
   ],
 )
 

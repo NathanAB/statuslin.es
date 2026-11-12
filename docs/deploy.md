@@ -670,6 +670,48 @@ fly ssh console --app statuslines --command "bun run scripts/check-mods.ts"
 ```
 Re-pin a listed mod to a fetchable commit (see "Re-pin a mod"), or delist it.
 
+### Unreviewed mods
+
+An unreviewed mod (ADR 0011) has a facts-only page at `/mods/unreviewed/<owner>/<plugin name>` and
+nothing to install. `src/mods/unreviewed.json` lists them, one `{ repoUrl, path, commitSha,
+pluginName }` entry each, and `import:unreviewed-mods` makes the `unreviewed_mods` table match it. A
+page shows what was fetched at the merged commit, so a later change by the author appears only after
+a new merge and import.
+
+1. Edit `src/mods/unreviewed.json` in a pull request, and merge it. The import refuses a file that
+   isn't the one on `origin/main`, so `git pull` first.
+2. Import on staging, in your terminal (it needs `E2B_API_KEY`):
+   ```sh
+   bun run with-env staging scripts/import-unreviewed-mods.ts
+   ```
+   Each new or changed entry costs two sandbox runs (one that fetches the plugin from GitHub, one
+   offline that inspects it) and three GitHub API requests (the repository, a compare that checks
+   the commit is on the default branch, and the commit's date). An unchanged entry is skipped
+   without a request. A `refused` line names an entry that keeps no page: it failed the inspection
+   a submitted mod passes, its plugin.json names another plugin, its repository is private, its
+   commit isn't on the default branch, or statuslin.es removed or rejected that folder. Exit code 1
+   means at least one was refused.
+3. Go on only when staging exits 0. A `refused` line can be a passing GitHub or sandbox error, so
+   run the import once more. If the entry is refused again, remove it from the file in a new pull
+   request, merge, and import on staging again. Otherwise production would import a page that
+   failed on staging, and nobody would have looked at it before it went live (quality bar rule 8).
+4. Look at every new or changed page on staging before promoting: the name, the description and
+   what the tiles say it can reach.
+5. Import on production the same way, with `production` in place of `staging`.
+
+To remove a page, on the author's request or ours, delete its entry, merge, and import again on
+both environments: the import deletes rows whose entry left the file. Once a mod is reviewed and
+published, its unreviewed address redirects to the listing. While the entry's row exists, the
+listing must pin the same repository and folder. Once the entry has left the file, it must have
+the same repository owner and plugin name. Once any mod that pinned that repository and folder is
+delisted, the unreviewed page is hidden, with its `/mods` entry and its sitemap line, even while its
+entry is still in the file. The next import refuses that entry and deletes its row.
+
+The "Request a review" button sends `unreviewed_mod_review_requested` to PostHog with `owner` and
+`pluginName`. Nothing on the site counts it. Read the totals there to pick which mods to review next,
+and curate them as usual. Search Console clicks for these pages are their own group,
+`/mods/unreviewed/*`, in `docs/redesign/home-a/seo/search_console.py`.
+
 ## Community status line seeds
 
 `scripts/seed-data/community-configs.ts` lists MIT status lines vendored from GitHub, each credited to
