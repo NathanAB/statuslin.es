@@ -64,7 +64,7 @@ function listingSegment(kind: ListingKind): string {
 }
 
 export function listingPath(kind: ListingKind, slug: string): string {
-  return kind === 'mod' ? modPath(slug) : `/c/${slug}`
+  return `/${listingSegment(kind)}/${slug}`
 }
 
 /** A listing's Open Graph card image. */
