@@ -13,7 +13,9 @@ const seg = (text: string, fg: string | null = null): AnsiSegment => ({
   underline: false,
 })
 
-describe('og cards render to PNG', () => {
+// A PNG render loads the fonts and runs satori and resvg: the first one took 5.1 s under CI's
+// coverage run, past the default 5 s.
+describe('og cards render to PNG', { timeout: 20_000 }, () => {
   it('configCard renders checker-board fill as a real glyph instead of tofu', async () => {
     const renderGlyph = (glyph: string) =>
       toElementPng(
