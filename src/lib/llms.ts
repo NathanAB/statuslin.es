@@ -15,7 +15,7 @@ import {
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
-import { LLMS_FULL_PATH, MARKETPLACE_PATH, MODS_PATH, modPath } from '@/lib/site'
+import { GALLERY_JSON_PATH, LLMS_FULL_PATH, MARKETPLACE_PATH, MODS_PATH, modPath } from '@/lib/site'
 
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
@@ -114,6 +114,7 @@ function corePageLinks(base: string): string[] {
     `- [Gallery](${base}/): every published mod, sorted by trending, newest, or most installed`,
     `- [Mods](${base}${MODS_PATH}): the plugin mods, ranked by installs`,
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
+    `- [Mod catalogue](${base}${GALLERY_JSON_PATH}): the reviewed mods as machine-readable JSON, with install counts and what each can reach`,
     `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
     `- [${GUIDE_TITLE_BASE}](${base}${GUIDE_PATH}): the statusLine setting, the JSON a script receives, and a tested example`,
     `- [${NOT_SHOWING_GUIDE_TITLE}](${base}${NOT_SHOWING_GUIDE_PATH}): why a status line stays blank in the terminal, and the checks that fix it`,
