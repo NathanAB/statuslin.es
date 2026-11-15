@@ -23,7 +23,7 @@ function Textarea({ mono = false, tall = false, ...props }: TextareaProps) {
     <textarea
       data-slot="textarea"
       className={cn(
-        'field-sizing-content flex w-full rounded-lg border border-input bg-field px-2.5 py-2 text-base outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm',
+        'border-input bg-field placeholder:text-muted-foreground focus-visible:border-ring disabled:bg-input/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 flex field-sizing-content w-full rounded-lg border px-2.5 py-2 text-base transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3 md:text-sm',
         tall ? 'min-h-80' : 'min-h-16',
         mono && 'font-mono',
       )}

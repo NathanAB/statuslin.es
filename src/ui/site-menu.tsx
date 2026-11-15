@@ -71,7 +71,7 @@ export function SiteMenu({
     <GitHubLink key="github" look="menu" />,
     ...(user
       ? [
-          <p key="user" className="wrap-anywhere pt-6 text-body text-muted-foreground">
+          <p key="user" className="text-body text-muted-foreground pt-6 wrap-anywhere">
             Signed in as {userLabel(user)}
           </p>,
           <Dialog.Close key="me" asChild>
@@ -109,10 +109,10 @@ export function SiteMenu({
       </Dialog.Trigger>
       <Dialog.Portal>
         {/* The Overlay is what locks the page behind from scrolling. */}
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-background md:hidden" />
+        <Dialog.Overlay className="bg-background fixed inset-0 z-50 md:hidden" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="motion-safe:data-[state=open]:fade-in-0 fixed inset-0 z-50 overflow-y-auto px-6 pb-10 motion-safe:data-[state=open]:animate-in md:hidden"
+          className="motion-safe:data-[state=open]:fade-in-0 motion-safe:data-[state=open]:animate-in fixed inset-0 z-50 overflow-y-auto px-6 pb-10 md:hidden"
         >
           <Dialog.Title className="sr-only">Menu</Dialog.Title>
           <div className="flex items-center justify-between py-5.5">

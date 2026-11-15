@@ -10,10 +10,10 @@ const root = cva('', {
     look: {
       // A tall list on a tile; on phones one row of chips that scrolls sideways, so the picker
       // doesn't push the install button down.
-      list: 'flex flex-col rounded-tile bg-card p-1.5 max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:rounded-none max-md:bg-transparent max-md:p-0',
+      list: 'rounded-tile bg-card flex flex-col p-1.5 max-md:flex-row max-md:gap-1.5 max-md:overflow-x-auto max-md:rounded-none max-md:bg-transparent max-md:p-0',
       // A row of small rounded segments in a dark tray.
       // On phones one row that scrolls sideways, instead of wrapping into an uneven second row.
-      tray: 'flex flex-wrap gap-0.5 rounded-full bg-sunken p-1 max-md:max-w-full max-md:flex-nowrap max-md:overflow-x-auto',
+      tray: 'bg-sunken flex flex-wrap gap-0.5 rounded-full p-1 max-md:max-w-full max-md:flex-nowrap max-md:overflow-x-auto',
       // Big side-by-side cards, each kind described (the submit page's "What are you submitting?").
       cards: 'grid gap-2.5 sm:grid-cols-2',
     },
@@ -22,15 +22,15 @@ const root = cva('', {
 
 // A pick shows at once: the 150ms fade only softens it, where the prototype's half second lagged.
 const item = cva(
-  `${FOCUS_RING} cursor-pointer text-left text-muted-foreground transition-[background-color,color,scale] duration-150 ease-out hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground`,
+  `${FOCUS_RING} text-muted-foreground hover:text-foreground data-[state=checked]:bg-muted data-[state=checked]:text-foreground cursor-pointer text-left transition-[background-color,color,scale] duration-150 ease-out`,
   {
     variants: {
       look: {
-        list: 'flex items-baseline justify-between gap-3 rounded-[0.875rem] px-3.5 py-1.5 motion-safe:active:scale-[0.985] max-md:shrink-0 max-md:rounded-full max-md:bg-card max-md:px-3.5 max-md:py-2 max-md:data-[state=checked]:bg-muted max-md:focus-visible:ring-inset',
-        tray: 'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.75 text-small',
+        list: 'max-md:bg-card max-md:data-[state=checked]:bg-muted flex items-baseline justify-between gap-3 rounded-[0.875rem] px-3.5 py-1.5 motion-safe:active:scale-[0.985] max-md:shrink-0 max-md:rounded-full max-md:px-3.5 max-md:py-2 max-md:focus-visible:ring-inset',
+        tray: 'text-small inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.75 whitespace-nowrap',
         // The picked card takes a faint coral tint and a filled dot; the coral ring is focus only.
         cards:
-          'group flex flex-col gap-1.5 rounded-panel bg-card px-5 pt-4.5 pb-5 text-foreground hover:bg-muted data-[state=checked]:bg-primary/12 data-[state=checked]:hover:bg-primary/16',
+          'group rounded-panel bg-card text-foreground hover:bg-muted data-[state=checked]:bg-primary/12 data-[state=checked]:hover:bg-primary/16 flex flex-col gap-1.5 px-5 pt-4.5 pb-5',
       },
     },
   },
@@ -116,11 +116,11 @@ export function ChoiceGroup<T extends string>({
               <span className="flex items-center gap-2.5">
                 <span
                   aria-hidden="true"
-                  className="relative size-4.5 shrink-0 rounded-full border-2 border-dim group-data-[state=checked]:border-primary"
+                  className="border-dim group-data-[state=checked]:border-primary relative size-4.5 shrink-0 rounded-full border-2"
                 >
-                  <RadioGroup.Indicator className="absolute inset-0.5 rounded-full bg-primary-fill" />
+                  <RadioGroup.Indicator className="bg-primary-fill absolute inset-0.5 rounded-full" />
                 </span>
-                <span id={`${id}-${option.value}`} className="font-medium text-body">
+                <span id={`${id}-${option.value}`} className="text-body font-medium">
                   {option.label}
                 </span>
               </span>
@@ -133,7 +133,7 @@ export function ChoiceGroup<T extends string>({
             </>
           ) : look === 'list' ? (
             <>
-              <span className="whitespace-nowrap font-medium text-body tracking-[-0.01em] max-md:text-small">
+              <span className="text-body max-md:text-small font-medium tracking-[-0.01em] whitespace-nowrap">
                 {option.label}
               </span>
               {option.detail ? (

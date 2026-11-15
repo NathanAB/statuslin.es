@@ -20,13 +20,13 @@ function Switch({ id, checked, disabled, onCheckedChange, ...aria }: SwitchProps
       onCheckedChange={(v) => onCheckedChange?.(v === true)}
       data-slot="switch"
       className={cn(
-        'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-4xl border border-transparent shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary-fill data-[state=unchecked]:bg-muted',
+        'peer focus-visible:ring-ring data-[state=checked]:bg-primary-fill data-[state=unchecked]:bg-muted inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-4xl border border-transparent shadow-sm transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
       )}
       {...aria}
     >
       <SwitchPrimitive.Thumb
         className={cn(
-          'pointer-events-none block size-4 translate-x-0.5 rounded-4xl bg-foreground shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-4',
+          'bg-foreground pointer-events-none block size-4 translate-x-0.5 rounded-4xl shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-4',
         )}
       />
     </SwitchPrimitive.Root>

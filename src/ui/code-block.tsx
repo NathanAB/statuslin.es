@@ -25,9 +25,9 @@ export function CodeBlock({
 }) {
   const className = cn(
     compact
-      ? 'mt-2 overflow-x-auto rounded-md bg-sunken p-3 font-mono text-foreground text-sm'
-      : 'overflow-x-auto rounded-md bg-sunken p-4 font-mono text-foreground text-sm',
-    wrap && 'wrap-anywhere whitespace-pre-wrap pr-12',
+      ? 'bg-sunken text-foreground mt-2 overflow-x-auto rounded-md p-3 font-mono text-sm'
+      : 'bg-sunken text-foreground overflow-x-auto rounded-md p-4 font-mono text-sm',
+    wrap && 'pr-12 wrap-anywhere whitespace-pre-wrap',
   )
   return (
     <Copyable text={text} copyLabel={copyLabel} onCopied={onCopied}>

@@ -23,11 +23,11 @@ function Line({ line }: { line: DiffLine }) {
       )
     case 'context':
       return (
-        <span className={cn(LINE, 'border-transparent text-foreground')}>{` ${line.text}`}</span>
+        <span className={cn(LINE, 'text-foreground border-transparent')}>{` ${line.text}`}</span>
       )
     case 'meta':
       return (
-        <span className={cn(LINE, 'border-transparent text-muted-foreground')}>{line.text}</span>
+        <span className={cn(LINE, 'text-muted-foreground border-transparent')}>{line.text}</span>
       )
   }
 }
@@ -36,7 +36,7 @@ function Line({ line }: { line: DiffLine }) {
  *  its +/- marker so color is never the only signal. Lines run full width and scroll sideways. */
 export function LineDiff({ lines }: { lines: DiffLine[] }) {
   return (
-    <pre className="overflow-x-auto rounded-md bg-sunken py-3 font-mono text-foreground text-sm">
+    <pre className="bg-sunken text-foreground overflow-x-auto rounded-md py-3 font-mono text-sm">
       <span className="block w-max min-w-full">
         {lines.map((line, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: a diff is rendered once, never reordered.

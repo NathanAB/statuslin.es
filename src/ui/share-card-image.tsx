@@ -21,7 +21,7 @@ export function ShareCardImage({
       width={width}
       height={height}
       loading="lazy"
-      className="h-auto w-full max-w-sm self-start rounded-md border border-border"
+      className="border-border h-auto w-full max-w-sm self-start rounded-md border"
     />
   )
 }

@@ -11,12 +11,12 @@ export function FactSentence({ fact }: { fact: InstallFact }) {
   return (
     <p
       className={cn(
-        'flex items-start gap-1.5 text-small',
+        'text-small flex items-start gap-1.5',
         caution ? 'text-warning' : 'text-muted-foreground',
       )}
     >
       <Icon aria-hidden="true" className="mt-[0.2em] size-3.5 shrink-0" />
-      <span className="wrap-anywhere min-w-0">
+      <span className="min-w-0 wrap-anywhere">
         <InlineCodeText text={text} tinted={caution} />
       </span>
     </p>

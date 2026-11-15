@@ -50,7 +50,7 @@ export function SearchField({
       </label>
       <Search
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground"
+        className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2"
       />
       <input
         ref={input}

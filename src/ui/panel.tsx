@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
  */
 export function Panel({ foot, children }: { foot?: ReactNode; children: ReactNode }) {
   return (
-    <div data-slot="panel" className="flex flex-col gap-2 rounded-panel bg-card px-5 pt-4.5 pb-5">
+    <div data-slot="panel" className="rounded-panel bg-card flex flex-col gap-2 px-5 pt-4.5 pb-5">
       {children}
       {foot ? (
         <div data-slot="panel-foot" className="mt-auto flex flex-col items-start gap-1.5 pt-2">

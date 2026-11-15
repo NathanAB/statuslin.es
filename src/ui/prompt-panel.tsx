@@ -40,7 +40,7 @@ export function PromptPanel({
             onCopied={() => toast('Prompt copied', { description: pasteHint })}
           />
           <details open className="group w-full">
-            <summary className="cursor-pointer text-muted-foreground text-sm">
+            <summary className="text-muted-foreground cursor-pointer text-sm">
               <span className="group-open:hidden">Show the prompt</span>
               <span className="hidden group-open:inline">Hide the prompt</span>
             </summary>

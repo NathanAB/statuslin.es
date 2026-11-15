@@ -21,7 +21,7 @@ export function StepList({ label, steps }: { label: string; steps: Step[] }) {
           {/* A section with an id: the base styles stop a link's scroll a little above it. */}
           <section id={step.id} className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-foreground text-sm tabular-nums">
+              <span className="bg-muted text-foreground flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-medium tabular-nums">
                 {i + 1}
               </span>
               <Heading level={3}>{step.title}</Heading>

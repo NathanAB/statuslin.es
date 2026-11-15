@@ -19,7 +19,7 @@ export function ScenarioRow({
   return (
     <div className="group flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
       <span
-        className="w-24 shrink-0 text-muted-foreground text-xs transition-colors group-hover:text-foreground"
+        className="text-muted-foreground group-hover:text-foreground w-24 shrink-0 text-xs transition-colors"
         title={title}
       >
         {shortLabel}

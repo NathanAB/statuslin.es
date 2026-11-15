@@ -19,7 +19,7 @@ export function Hint({
 }) {
   const message = (
     <>
-      <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+      <Icon className="text-primary mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>{children}</span>
     </>
   )
@@ -27,7 +27,7 @@ export function Hint({
   return (
     <div className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-2 ${STRIP}`}>
       <div className="flex min-w-0 flex-1 basis-64 items-start gap-2">{message}</div>
-      <div className="shrink-0 text-foreground">{action}</div>
+      <div className="text-foreground shrink-0">{action}</div>
     </div>
   )
 }

@@ -17,7 +17,7 @@ function Checkbox({ id, checked, onCheckedChange }: CheckboxProps) {
       onCheckedChange={(v) => onCheckedChange?.(v === true)}
       data-slot="checkbox"
       className={cn(
-        'peer size-4 shrink-0 rounded-sm border border-input shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring data-[state=checked]:bg-primary-fill data-[state=checked]:text-primary-foreground',
+        'peer border-input focus-visible:ring-ring data-[state=checked]:bg-primary-fill data-[state=checked]:text-primary-foreground size-4 shrink-0 rounded-sm border shadow-sm focus-visible:ring-1 focus-visible:outline-none',
       )}
     >
       <CheckboxPrimitive.Indicator className={cn('flex items-center justify-center text-current')}>

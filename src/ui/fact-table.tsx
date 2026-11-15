@@ -13,7 +13,7 @@ export interface FactTableRow {
  */
 export function FactTable({ columns, rows }: { columns: React.ReactNode[]; rows: FactTableRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div className="border-border overflow-x-auto rounded-lg border">
       <table className="w-full border-collapse text-left text-sm">
         <thead className="bg-muted">
           <tr>
@@ -22,7 +22,7 @@ export function FactTable({ columns, rows }: { columns: React.ReactNode[]; rows:
             </th>
             {columns.map((column, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: columns are a fixed, never-reordered list of nodes.
-              <th key={i} scope="col" className="px-3 py-2 font-semibold text-foreground">
+              <th key={i} scope="col" className="text-foreground px-3 py-2 font-semibold">
                 {column}
               </th>
             ))}
@@ -33,13 +33,13 @@ export function FactTable({ columns, rows }: { columns: React.ReactNode[]; rows:
             <tr key={row.label} className="border-border border-t">
               <th
                 scope="row"
-                className="whitespace-nowrap px-3 py-2 font-normal text-muted-foreground"
+                className="text-muted-foreground px-3 py-2 font-normal whitespace-nowrap"
               >
                 {row.label}
               </th>
               {row.cells.map((cell, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: cells align with the fixed column order.
-                <td key={i} className="px-3 py-2 text-foreground">
+                <td key={i} className="text-foreground px-3 py-2">
                   {cell}
                 </td>
               ))}

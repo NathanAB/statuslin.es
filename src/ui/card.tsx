@@ -27,7 +27,7 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        'group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-panel bg-card py-(--card-spacing) text-card-foreground text-sm [--card-spacing:--spacing(4)] has-[>img:first-child]:pt-0 has-data-[slot=card-footer]:pb-0 data-[size=sm]:has-data-[slot=card-footer]:pb-0 data-[size=sm]:[--card-spacing:--spacing(3)] *:[img:first-child]:rounded-t-panel *:[img:last-child]:rounded-b-panel',
+        'group/card rounded-panel bg-card text-card-foreground *:[img:first-child]:rounded-t-panel *:[img:last-child]:rounded-b-panel flex flex-col gap-(--card-spacing) overflow-hidden py-(--card-spacing) text-sm [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0',
         interactive && INTERACTIVE_CARD,
       )}
     >
@@ -100,7 +100,7 @@ function CardFooter({ children }: { children?: React.ReactNode }) {
   return (
     <div
       data-slot="card-footer"
-      className="flex items-center rounded-b-xl border-t bg-muted/50 p-(--card-spacing)"
+      className="bg-muted/50 flex items-center rounded-b-xl border-t p-(--card-spacing)"
     >
       {children}
     </div>

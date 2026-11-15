@@ -30,7 +30,7 @@ function ContentsList({
             data-entry={entry.id}
             aria-current={entry.id === active ? 'location' : undefined}
             className={cn(
-              'text-sm underline-offset-4 transition-colors duration-300 ease-settle hover:text-foreground hover:underline',
+              'ease-settle hover:text-foreground text-sm underline-offset-4 transition-colors duration-300 hover:underline',
               entry.id === active ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
@@ -67,12 +67,12 @@ function Contents({ entries }: { entries: readonly ContentsEntry[] }) {
 
   return (
     <div ref={list} className="relative pl-4">
-      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-px bg-border" />
+      <span aria-hidden="true" className="bg-border absolute inset-y-0 left-0 w-px" />
       <span
         ref={marker}
         aria-hidden="true"
         data-shown="false"
-        className="absolute top-0 left-0 h-(--marker-h) w-0.5 -translate-x-[0.5px] translate-y-(--marker-y) rounded-full bg-primary-fill opacity-0 data-[shown=true]:opacity-100 motion-safe:transition-[translate,height,opacity] motion-safe:duration-400 motion-safe:ease-settle"
+        className="bg-primary-fill motion-safe:ease-settle absolute top-0 left-0 h-(--marker-h) w-0.5 -translate-x-[0.5px] translate-y-(--marker-y) rounded-full opacity-0 data-[shown=true]:opacity-100 motion-safe:transition-[translate,height,opacity] motion-safe:duration-400"
       />
       <ContentsList entries={entries} active={active} />
     </div>
@@ -104,7 +104,7 @@ export function DocLayout({
         className="xl:col-span-3 xl:col-start-1 xl:row-span-2 xl:row-start-1"
       >
         <div className="flex flex-col gap-3 xl:sticky xl:top-8">
-          <p id={labelId} className="font-medium text-foreground text-sm">
+          <p id={labelId} className="text-foreground text-sm font-medium">
             On this page
           </p>
           <Contents entries={contents} />

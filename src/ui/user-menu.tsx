@@ -48,7 +48,7 @@ export function UserMenu({ user }: { user: AppHeaderUser }) {
           ) : (
             <span
               aria-hidden="true"
-              className="flex size-5 shrink-0 items-center justify-center rounded-full bg-sunken font-medium text-muted-foreground text-xs"
+              className="bg-sunken text-muted-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium"
             >
               {user.name.charAt(0).toUpperCase()}
             </span>

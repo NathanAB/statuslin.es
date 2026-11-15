@@ -26,7 +26,7 @@ export function FactTiles({ tiles }: { tiles: FactTile[] }) {
           key={label}
           data-tone={caution ? 'caution' : 'plain'}
           className={cn(
-            'flex flex-col gap-1 rounded-tile px-4 py-3.5',
+            'rounded-tile flex flex-col gap-1 px-4 py-3.5',
             caution ? 'bg-warning/10' : 'bg-card',
           )}
         >
@@ -39,7 +39,7 @@ export function FactTiles({ tiles }: { tiles: FactTile[] }) {
               {label}
             </Text>
           </dt>
-          <dd className="min-w-0 break-words pl-6">
+          <dd className="min-w-0 pl-6 break-words">
             <Text size="sm" inline>
               <InlineCodeText text={value} />
             </Text>
