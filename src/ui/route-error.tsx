@@ -2,12 +2,12 @@ import type { ErrorComponentProps } from '@tanstack/react-router'
 
 export function RouteError(_props: ErrorComponentProps) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-6 py-8">
+    <main className="bg-background flex min-h-screen items-center justify-center px-6 py-8">
       <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="font-semibold text-2xl text-foreground">This page couldn’t load</h1>
+        <h1 className="text-foreground text-2xl font-semibold">This page couldn’t load</h1>
         <button
           type="button"
-          className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg bg-primary-fill px-2.5 font-medium text-primary-foreground text-sm hover:bg-primary-fill/80"
+          className="bg-primary-fill text-primary-foreground hover:bg-primary-fill/80 inline-flex h-8 cursor-pointer items-center justify-center rounded-lg px-2.5 text-sm font-medium"
           onClick={() => location.reload()}
         >
           Reload

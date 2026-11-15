@@ -26,7 +26,7 @@ export function InstallCount({ count }: { count: number }) {
   if (label === null) return null
   return (
     <Row gap={1}>
-      <Download className="size-3.5 text-muted-foreground" aria-hidden="true" />
+      <Download className="text-muted-foreground size-3.5" aria-hidden="true" />
       <Text muted size="sm">
         {label}
       </Text>

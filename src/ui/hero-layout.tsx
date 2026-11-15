@@ -42,7 +42,7 @@ export function HeroLayout({
           </Heading>
         </div>
         <p
-          className={cn('col-span-12 text-pretty text-foreground text-lead', RISE, 'delay-[240ms]')}
+          className={cn('text-foreground text-lead col-span-12 text-pretty', RISE, 'delay-[240ms]')}
         >
           {lead.map((line, i) => (
             <Fragment key={line}>
@@ -74,6 +74,6 @@ export function HeroLayout({
 /** The hero's actions under the picker: the install button, then the link to its page. */
 export function HeroActions({ children }: { children: ReactNode }) {
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-x-5.5 gap-y-3.5 text-body">{children}</div>
+    <div className="text-body mt-1 flex flex-wrap items-center gap-x-5.5 gap-y-3.5">{children}</div>
   )
 }

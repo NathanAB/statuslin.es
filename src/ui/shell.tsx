@@ -23,7 +23,7 @@ export function PageShell({
 }) {
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="bg-background flex min-h-screen flex-col">
         <AppHeader user={user} />
         <main className={fullBleed ? 'w-full flex-1' : cn(PAGE_COLUMN, 'flex-1 py-8')}>
           {children}
@@ -47,7 +47,7 @@ export function CenteredShell({
 }) {
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="bg-background flex min-h-screen flex-col">
         <AppHeader user={user} />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
           {children}

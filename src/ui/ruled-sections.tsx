@@ -9,7 +9,7 @@ export function RuledSections({ children }: { children: ReactNode }) {
   return (
     <div
       data-slot="ruled-sections"
-      className="flex flex-col gap-8 max-md:gap-6 [&>*+*]:border-border [&>*+*]:border-t [&>*+*]:pt-8 max-md:[&>*+*]:pt-6"
+      className="[&>*+*]:border-border flex flex-col gap-8 max-md:gap-6 [&>*+*]:border-t [&>*+*]:pt-8 max-md:[&>*+*]:pt-6"
     >
       {children}
     </div>

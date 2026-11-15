@@ -100,7 +100,7 @@ export function Text({
     size === 'xs' && 'text-xs',
     mono && 'font-mono',
     center && 'self-center text-center',
-    breakLong && 'wrap-anywhere min-w-0',
+    breakLong && 'min-w-0 wrap-anywhere',
   )
   return inline ? (
     <span className={className}>{children}</span>

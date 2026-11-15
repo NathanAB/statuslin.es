@@ -30,7 +30,7 @@ export function PageSection({
         heading
       ) : (
         <div className="flex items-center gap-3">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-foreground text-sm tabular-nums">
+          <span className="bg-muted text-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium tabular-nums">
             {step}
           </span>
           {heading}

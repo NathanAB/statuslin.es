@@ -5,9 +5,9 @@ import { FOCUS_RING } from '@/ui/focus-ring'
 const root = cva('', {
   variants: {
     look: {
-      boxed: 'inline-flex h-9 items-stretch overflow-hidden rounded-md border border-border',
+      boxed: 'border-border inline-flex h-9 items-stretch overflow-hidden rounded-md border',
       // Rounded segments in a tray: the gallery's sort.
-      tray: 'inline-flex rounded-full bg-card p-1.5',
+      tray: 'bg-card inline-flex rounded-full p-1.5',
     },
   },
 })
@@ -15,8 +15,8 @@ const root = cva('', {
 const item = cva('cursor-pointer data-[state=on]:cursor-default', {
   variants: {
     look: {
-      boxed: `border-border not-first:border-l px-3 font-medium text-muted-foreground text-sm outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-[state=on]:bg-primary-fill data-[state=on]:text-primary-foreground`,
-      tray: `${FOCUS_RING} rounded-full px-5 py-2.5 text-body text-muted-foreground leading-none transition-colors duration-500 ease-settle hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground`,
+      boxed: `border-border text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring data-[state=on]:bg-primary-fill data-[state=on]:text-primary-foreground px-3 text-sm font-medium transition-colors outline-none not-first:border-l focus-visible:ring-2 focus-visible:ring-inset`,
+      tray: `${FOCUS_RING} text-body text-muted-foreground ease-settle hover:text-foreground data-[state=on]:bg-muted data-[state=on]:text-foreground rounded-full px-5 py-2.5 leading-none transition-colors duration-500`,
     },
   },
 })

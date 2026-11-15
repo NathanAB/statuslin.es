@@ -14,7 +14,7 @@ export function RemovableChip({ label, onRemove }: RemovableChipProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-4xl border border-border bg-muted py-1 pr-1.5 pl-3',
+        'border-border bg-muted inline-flex items-center gap-1.5 rounded-4xl border py-1 pr-1.5 pl-3',
       )}
     >
       <Text inline mono size="sm">
@@ -25,7 +25,7 @@ export function RemovableChip({ label, onRemove }: RemovableChipProps) {
         onClick={onRemove}
         aria-label={`Remove ${label}`}
         className={cn(
-          'inline-flex size-5 cursor-pointer items-center justify-center rounded-4xl text-muted-foreground transition-colors hover:bg-background hover:text-foreground',
+          'text-muted-foreground hover:bg-background hover:text-foreground inline-flex size-5 cursor-pointer items-center justify-center rounded-4xl transition-colors',
         )}
       >
         <X className={cn('size-3.5')} />

@@ -6,7 +6,7 @@ import { InlineCodeText } from '@/ui/inline-code-text'
  */
 export function BulletList({ items }: { items: string[] }) {
   return (
-    <ul className="flex list-disc flex-col gap-1 pl-5 text-foreground text-sm">
+    <ul className="text-foreground flex list-disc flex-col gap-1 pl-5 text-sm">
       {items.map((item, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: list is static (never reordered), so index+content avoids collisions when items repeat verbatim.
         <li key={`${i}-${item}`}>

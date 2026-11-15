@@ -19,13 +19,13 @@ export function LinkCard({
   description: string
 }) {
   return (
-    <div className="relative flex flex-col gap-2 rounded-panel bg-card px-5 pt-4.5 pb-5 transition-colors duration-300 hover:bg-field has-[a:focus-visible]:bg-field">
+    <div className="rounded-panel bg-card hover:bg-field has-[a:focus-visible]:bg-field relative flex flex-col gap-2 px-5 pt-4.5 pb-5 transition-colors duration-300">
       <div className="flex flex-col gap-0.5">
         <Heading level={3} size="compact" id={id}>
           {title}
         </Heading>
         {meta ? (
-          <div className="w-fit text-muted-foreground text-small [&_a]:relative [&_a]:z-10">
+          <div className="text-muted-foreground text-small w-fit [&_a]:relative [&_a]:z-10">
             {meta}
           </div>
         ) : null}

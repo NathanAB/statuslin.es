@@ -37,15 +37,15 @@ export function StatuslinePreview({
   const scroller = useRef<HTMLDivElement>(null)
   const { overflows, more } = useMoreToTheRight(scroller, look !== 'terminal')
   return (
-    <div data-ui="" className="relative min-w-0 max-w-full">
+    <div data-ui="" className="relative max-w-full min-w-0">
       {/* Inside the terminal, which is one image to a screen reader, an overflowing line must not
           become a nameless tab stop (browsers make scrollers focusable). */}
       <div
         ref={scroller}
-        className={`min-w-0 max-w-full overflow-x-auto ${LOOK[look].scroller} ${more ? MORE_FADE : ''}`}
+        className={`max-w-full min-w-0 overflow-x-auto ${LOOK[look].scroller} ${more ? MORE_FADE : ''}`}
         tabIndex={look === 'terminal' ? -1 : undefined}
       >
-        <code className={`whitespace-pre font-mono ${LOOK[look].line}`}>
+        <code className={`font-mono whitespace-pre ${LOOK[look].line}`}>
           {segments.map((s, i) => (
             <span
               // biome-ignore lint/suspicious/noArrayIndexKey: fixed ordered render, no identity beyond position.
@@ -77,7 +77,7 @@ export function StatuslinePreview({
               behavior: prefersReducedMotion() ? 'auto' : 'smooth',
             })
           }}
-          className="absolute top-1/2 right-1.5 z-10 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-muted text-foreground outline-none hover:bg-border focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:opacity-40 aria-disabled:hover:bg-muted"
+          className="bg-muted text-foreground hover:bg-border focus-visible:ring-ring aria-disabled:hover:bg-muted absolute top-1/2 right-1.5 z-10 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 aria-disabled:cursor-default aria-disabled:opacity-40"
         >
           <ChevronRight aria-hidden="true" className="size-4" />
         </button>

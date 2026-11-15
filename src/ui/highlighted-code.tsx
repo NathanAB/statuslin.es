@@ -46,7 +46,7 @@ export function HighlightedCode({
         tabIndex={peek ? -1 : undefined}
         className={cn(
           peek &&
-            'relative overflow-hidden rounded-md text-sm outline-none [interpolate-size:allow-keywords] motion-safe:transition-[height] motion-safe:duration-500 motion-safe:ease-settle',
+            'motion-safe:ease-settle relative overflow-hidden rounded-md text-sm outline-none [interpolate-size:allow-keywords] motion-safe:transition-[height] motion-safe:duration-500',
           // 12 lines of the `.shiki` well's text-sm, plus its top padding.
           folded && 'h-[calc(12lh+1rem)]',
         )}
@@ -54,7 +54,7 @@ export function HighlightedCode({
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: server-generated, Shiki-escaped HTML. */}
         <div dangerouslySetInnerHTML={{ __html: html }} />
         {folded ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-b from-transparent to-sunken" />
+          <div className="to-sunken pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-linear-to-b from-transparent" />
         ) : null}
       </div>
     </Copyable>

@@ -12,7 +12,7 @@ export function PageHeader({ title, lead }: { title: string; lead: string }) {
           {title}
         </Heading>
       </div>
-      <p className="col-span-12 text-pretty text-foreground text-lead">{lead}</p>
+      <p className="text-foreground text-lead col-span-12 text-pretty">{lead}</p>
     </div>
   )
 }

@@ -13,7 +13,7 @@ export interface DesktopShotImage {
 // On phones a card is always narrower than its image, so the cut right edge fades out: it reads as
 // "continues" rather than as a broken crop.
 const cardFrame = cva(
-  'flex max-h-75 w-fit max-w-full flex-col overflow-hidden rounded-md border border-border max-md:[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]',
+  'border-border flex max-h-75 w-fit max-w-full flex-col overflow-hidden rounded-md border max-md:[mask-image:linear-gradient(to_right,black_calc(100%-3rem),transparent)]',
 )
 
 /**
@@ -37,7 +37,7 @@ export function DesktopShot({
         alt={alt}
         width={shot.width}
         height={shot.height}
-        className="h-auto max-w-full rounded-md border border-border"
+        className="border-border h-auto max-w-full rounded-md border"
       />
     )
   }

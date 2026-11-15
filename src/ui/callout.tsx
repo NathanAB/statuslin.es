@@ -16,7 +16,7 @@ export function Callout({ title, icon, description, children }: CalloutProps) {
   return (
     <div className={cn('rounded-panel bg-primary/8 px-5 py-4.5')}>
       <div className={cn('flex items-center gap-2')}>
-        {icon ? <span className={cn('flex text-primary')}>{icon}</span> : null}
+        {icon ? <span className={cn('text-primary flex')}>{icon}</span> : null}
         <Heading level={3}>{title}</Heading>
       </div>
       {description ? (

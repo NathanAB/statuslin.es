@@ -41,7 +41,7 @@ export function GalleryRow({
     <article data-slot="gallery-row" className={ROW_CLASS}>
       <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-3.5 gap-y-1">
-          <h3 className="font-medium text-body text-foreground tracking-[-0.01em]">
+          <h3 className="text-body text-foreground font-medium tracking-[-0.01em]">
             <Link
               to={to}
               {...(params !== undefined ? { params } : {})}
@@ -58,7 +58,7 @@ export function GalleryRow({
       </div>
       <div className="min-w-0">{children}</div>
       {description ? (
-        <p className="wrap-anywhere line-clamp-2 text-base text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground line-clamp-2 text-base wrap-anywhere">{description}</p>
       ) : null}
     </article>
   )
@@ -70,7 +70,7 @@ export function GalleryRow({
  */
 export function RowFacts({ children }: { children: ReactNode[] }) {
   return (
-    <ul className="flex flex-wrap items-baseline gap-x-1.5 text-muted-foreground text-small tabular-nums">
+    <ul className="text-muted-foreground text-small flex flex-wrap items-baseline gap-x-1.5 tabular-nums">
       {children.map((fact, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, ordered list with no other identity.
         <li key={i} className="flex items-baseline gap-x-1.5">

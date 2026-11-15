@@ -60,7 +60,7 @@ export function SessionStage({
             <Fragment key={group.titleId}>
               <span
                 id={group.titleId}
-                className="whitespace-nowrap font-medium text-foreground text-small"
+                className="text-foreground text-small font-medium whitespace-nowrap"
               >
                 {group.title}
               </span>

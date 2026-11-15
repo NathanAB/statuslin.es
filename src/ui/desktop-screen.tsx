@@ -12,7 +12,7 @@ function DesktopTranscript({ lines }: { lines: TranscriptLine[] }) {
     switch (line.kind) {
       case 'prompt':
         return (
-          <p key={key} className="max-w-[80%] self-end rounded-2xl bg-muted px-3.5 py-2">
+          <p key={key} className="bg-muted max-w-[80%] self-end rounded-2xl px-3.5 py-2">
             {line.text}
           </p>
         )
@@ -84,7 +84,7 @@ export function DesktopScreen({
         )}
       </div>
       {promptBox ? (
-        <div className="mt-2 shrink-0 rounded-xl border border-border bg-card px-4 py-3 text-muted-foreground">
+        <div className="border-border bg-card text-muted-foreground mt-2 shrink-0 rounded-xl border px-4 py-3">
           Type / for commands
         </div>
       ) : null}

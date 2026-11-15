@@ -34,7 +34,7 @@ function FactList({ facts, folded = false }: { facts: InstallFact[]; folded?: bo
             aria-hidden="true"
             className={cn('mt-0.5 size-4 shrink-0', !caution && 'text-muted-foreground')}
           />
-          <span className="wrap-anywhere min-w-0">
+          <span className="min-w-0 wrap-anywhere">
             <InlineCodeText text={text} tinted={caution} />
           </span>
         </li>
@@ -49,7 +49,7 @@ function FactList({ facts, folded = false }: { facts: InstallFact[]; folded?: bo
 const FOLD = cn(
   'group text-sm [interpolate-size:allow-keywords]',
   'details-content:h-0 details-content:overflow-clip details-content:opacity-0',
-  'details-content:transition-[height,opacity,content-visibility] details-content:duration-300 details-content:ease-settle details-content:[transition-behavior:allow-discrete]',
+  'details-content:ease-settle details-content:transition-[height,opacity,content-visibility] details-content:[transition-behavior:allow-discrete] details-content:duration-300',
   'open:details-content:h-auto open:details-content:opacity-100',
   'motion-reduce:details-content:transition-none',
 )
@@ -60,13 +60,13 @@ function Fold({ summary, facts }: FoldedFacts) {
     <details className={FOLD}>
       <summary
         className={cn(
-          'flex cursor-pointer gap-2.5 rounded-sm text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden',
+          'text-muted-foreground hover:text-foreground flex cursor-pointer gap-2.5 rounded-sm transition-colors [&::-webkit-details-marker]:hidden',
           FOCUS_RING,
         )}
       >
         <ChevronRight
           aria-hidden="true"
-          className="mt-0.5 size-4 shrink-0 transition-transform duration-300 ease-settle group-open:rotate-90 motion-reduce:transition-none"
+          className="ease-settle mt-0.5 size-4 shrink-0 transition-transform duration-300 group-open:rotate-90 motion-reduce:transition-none"
         />
         {summary}
       </summary>

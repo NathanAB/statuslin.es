@@ -127,11 +127,11 @@ export function TerminalScreen({
       data-ui=""
       className={cn(
         SCREEN,
-        'bg-sunken font-mono text-[0.875rem] text-terminal-foreground leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:text-[0.8125rem]',
+        'bg-sunken text-terminal-foreground font-mono text-[0.875rem] leading-[1.45] shadow-[inset_0_1px_0_color-mix(in_oklab,var(--foreground)_5%,transparent)] max-md:text-[0.8125rem]',
       )}
     >
       <BottomAnchored key={motion.conversationKey} look="terminal" settle={settle}>
-        <pre className="whitespace-pre font-mono">
+        <pre className="font-mono whitespace-pre">
           <Transcript lines={transcript} />
         </pre>
       </BottomAnchored>
@@ -144,11 +144,11 @@ export function TerminalScreen({
           <Drawn segments={segments} missing={missing} />
         </div>
       ) : null}
-      <div className="mt-3 shrink-0 border-terminal-rule border-y py-1.5 text-foreground">
+      <div className="border-terminal-rule text-foreground mt-3 shrink-0 border-y py-1.5">
         <span className="text-terminal-muted">❯</span>{' '}
         <span
           aria-hidden="true"
-          className="inline-block h-[1.1em] w-[0.6em] bg-foreground align-[-0.2em] motion-safe:animate-blink"
+          className="bg-foreground motion-safe:animate-blink inline-block h-[1.1em] w-[0.6em] align-[-0.2em]"
         />
       </div>
       {at === 'under-prompt' ? (

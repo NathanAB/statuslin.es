@@ -8,7 +8,7 @@ import type * as React from 'react'
 export function Details({ summary, children }: { summary: string; children: React.ReactNode }) {
   return (
     <details>
-      <summary className="cursor-pointer text-muted-foreground text-sm">{summary}</summary>
+      <summary className="text-muted-foreground cursor-pointer text-sm">{summary}</summary>
       {children}
     </details>
   )
