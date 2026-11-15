@@ -39,7 +39,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "2.6.7",
-        "@electric-sql/pglite": "0.5.13",
+        "@electric-sql/pglite": "0.5.16",
         "@posthog/rollup-plugin": "1.6.2",
         "@swc/core": "1.16.22",
         "@testing-library/react": "16.3.3",
@@ -171,7 +171,7 @@
 
     "@e2b/dockerfile-utils": ["@e2b/dockerfile-utils@0.1.1", "", {}, "sha512-eDmlWRMrJNzSUbBOf6Y/qTChd1Ys/o3YY8PK6tRQmwkV2u7z3ZS2cak/YJB07odHMT/Z6HJKoUElR/b0N6bHUw=="],
 
-    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.13", "", {}, "sha512-4rZuxK1k07w6sSpJzjMri0B9+HuXuC7V9pxVB51pR0T9KPqXg6TD0mdaEwBA9rkcL4jdht4tGDf/wYzAiGhT7g=="],
+    "@electric-sql/pglite": ["@electric-sql/pglite@0.5.16", "", {}, "sha512-Nj8KcIsJL748W408U2N8q4+9IlONdpRIU8MJypIAAINMJ5nqKyqpX7Mgg/5XKkXiAib3AoZGR6hnJFlrlLBrcg=="],
 
     "@emnapi/core": ["@emnapi/core@2.0.0-beta.2", "", { "dependencies": { "@emnapi/wasi-threads": "2.2.0", "tslib": "^2.4.0" } }, "sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A=="],
 
