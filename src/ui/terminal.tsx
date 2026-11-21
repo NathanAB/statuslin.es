@@ -81,7 +81,7 @@ const FIT_TO_WIDTH =
 
 // A pane runs the screen's height, so its text shrinks until its rows (`--rows`, 1.3em each, close
 // enough that row backgrounds touch) fit 100cqh. On a phone there is no room beside it: it takes
-// the screen's width instead, and what doesn't fit is cut off at the bottom.
+// the screen's width instead, and what doesn't fit fades out at the bottom.
 const FIT_TO_PANE =
   'text-[length:max(0.5625rem,min(1em,calc(100cqh/(var(--rows,1)*1.3))))] leading-[1.3] max-md:text-[length:max(0.5625rem,min(1em,calc(100cqw/(var(--cols,1)*0.6))))]'
 
@@ -176,7 +176,7 @@ export function TerminalScreen({
             key={drawnKey}
             data-slot="terminal-pane"
             className={cn(
-              'border-terminal-rule max-w-[60%] shrink-0 overflow-hidden border-l max-md:min-h-0 max-md:max-w-none max-md:flex-1 max-md:shrink max-md:border-l-0',
+              'border-terminal-rule max-w-[60%] shrink-0 overflow-hidden border-l max-md:min-h-0 max-md:max-w-none max-md:flex-1 max-md:shrink max-md:border-l-0 max-md:[mask-image:linear-gradient(to_top,transparent,black_2.5rem)]',
               glow,
             )}
           >
