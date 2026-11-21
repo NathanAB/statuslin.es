@@ -15,14 +15,14 @@ export interface StageToolbarGroup {
 
 /**
  * What the screen shows. `cli` is Claude Code in a terminal, drawing the pick `at` a band above the
- * input box or the status line row under it. `desktop` is Claude Desktop's Code tab, with the pick's
+ * input box, the status line row under it, or a pane beside the conversation. `desktop` is Claude Desktop's Code tab, with the pick's
  * recorded shot, with its prompt box drawn under it when `promptBox` (a shot that doesn't already
  * show one). `missing` is said in place of a render or shot there isn't.
  */
 export type StageView =
   | {
       kind: 'cli'
-      at: 'above-prompt' | 'under-prompt'
+      at: 'above-prompt' | 'under-prompt' | 'side-pane'
       segments: AnsiSegment[] | null
       missing: string
     }
