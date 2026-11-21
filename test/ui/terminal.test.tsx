@@ -11,7 +11,7 @@ const MOTION = {
   drawnChanged: false,
 }
 
-const renderAt = (at: 'above-prompt' | 'under-prompt', text: string) =>
+const renderAt = (at: 'above-prompt' | 'under-prompt' | 'side-pane', text: string) =>
   render(
     <TerminalScreen
       label="Claude Code"
@@ -46,6 +46,23 @@ describe('TerminalScreen', () => {
       />,
     )
     expect(html).toContain('--cols:120')
+  })
+
+  // A pane stacked above the prompt was taller than the screen. Beside the conversation, its row
+  // count sets how small its text goes to fit the screen's height.
+  it('draws a side pane beside the conversation, fitted by its rows and widest line', () => {
+    const { container } = renderAt('side-pane', `${'x'.repeat(49)}\nsrc\nlib`)
+    const pane = container.querySelector('[data-slot="terminal-pane"]') as HTMLElement
+    const fit = pane.querySelector('[data-fit]') as HTMLElement
+    expect(pane.textContent).toContain('src')
+    expect(fit.style.getPropertyValue('--rows')).toBe('3')
+    expect(fit.style.getPropertyValue('--cols')).toBe('49')
+    expect(container.querySelector('[data-slot="terminal-band"]')).toBeNull()
+    expect(container.querySelector('[data-slot="terminal-status"]')).toBeNull()
+    // The conversation and the prompt sit in the column before the pane, not inside it.
+    const before = pane.previousElementSibling as HTMLElement
+    expect(before.textContent).toContain('hi')
+    expect(pane.textContent).not.toContain('hi')
   })
 
   it('fits the status line row the same way', () => {

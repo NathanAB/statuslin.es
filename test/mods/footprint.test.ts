@@ -235,7 +235,23 @@ describe('describeModFootprint', () => {
 
 // Where the home hero's terminal draws a mod.
 describe('terminalPlacement', () => {
-  const at = (events: string[]) => terminalPlacement({ events, calls: [] })
+  const at = (events: string[]) => terminalPlacement({ events, calls: [] }, null)
+  const rows = (count: number) => [{ text: Array.from({ length: count }, () => 'row').join('\n') }]
+
+  // filetree's pane, 26 rows, was stacked above the prompt as a band: taller than the hero's
+  // screen, so its top was cut off and the conversation was gone.
+  it('draws a pane-tall render of a mod that opens a pane beside the conversation', () => {
+    expect(terminalPlacement(FILETREE, rows(26))).toBe('side-pane')
+    expect(terminalPlacement(FILETREE, rows(15))).toBe('side-pane')
+  })
+
+  it('keeps a short render, or a tall one from a mod with no pane, above the prompt', () => {
+    expect(terminalPlacement(FILETREE, rows(14))).toBe('above-prompt')
+    expect(terminalPlacement(FILETREE, null)).toBe('above-prompt')
+    expect(
+      terminalPlacement({ events: ['ui.render{component=AbovePrompt}'], calls: [] }, rows(26)),
+    ).toBe('above-prompt')
+  })
 
   it('draws a prompt hint under the prompt, and everything else above it', () => {
     expect(at(['ui.render{component=PromptHint}'])).toBe('under-prompt')

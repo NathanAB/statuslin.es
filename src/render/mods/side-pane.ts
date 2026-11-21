@@ -1,7 +1,7 @@
 import { TERMINAL } from './terminal'
 
 /** Shorter runs are boxes in the transcript, such as a tool's output frame. */
-const PANE_MIN_ROWS = TERMINAL.rows / 2
+export const PANE_MIN_ROWS = TERMINAL.rows / 2
 // Built with fromCharCode so the ESC doesn't trip Biome's noControlCharactersInRegex (as ansi.ts).
 const STYLED_BORDER = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m│`, 'g')
 

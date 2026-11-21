@@ -1,5 +1,5 @@
 import type { HeroItem } from '@/home/showcase'
-import { terminalPlacement, writesInToolbar } from '@/mods/draw-placement'
+import { type TerminalPlacement, terminalPlacement, writesInToolbar } from '@/mods/draw-placement'
 import type { StageView } from '@/ui/session-stage'
 
 /** Where the hero shows its pick: Claude Code in a terminal, or Claude Desktop's Code tab. */
@@ -15,9 +15,15 @@ export interface HeroScene {
   shown: string
 }
 
+const WHERE: Record<TerminalPlacement, string> = {
+  'above-prompt': 'above the prompt',
+  'under-prompt': 'under the prompt',
+  'side-pane': 'in a pane beside the conversation',
+}
+
 /**
  * What the hero's stage shows for a pick in an app, in the Everyday session. A status line runs
- * under the prompt; a mod draws where its footprint says; in Desktop each shows its recorded shot,
+ * under the prompt; a mod draws where its footprint says, a pane beside the conversation; in Desktop each shows its recorded shot,
  * a status line's through statusline-anywhere.
  */
 export function heroScene(item: HeroItem, app: HeroApp): HeroScene {
@@ -37,8 +43,9 @@ export function heroScene(item: HeroItem, app: HeroApp): HeroScene {
         item.kind === 'status-line' ? 'Status lines show here through statusline-anywhere.' : null,
       shown: `Showing ${title} in Claude Desktop.`,
     }
-  const at = item.kind === 'mod' ? terminalPlacement(item.mod.footprint) : 'under-prompt'
-  const where = at === 'above-prompt' ? 'above the prompt' : 'under the prompt'
+  const at =
+    item.kind === 'mod' ? terminalPlacement(item.mod.footprint, item.mod.render) : 'under-prompt'
+  const where = WHERE[at]
   return {
     view: {
       kind: 'cli',
