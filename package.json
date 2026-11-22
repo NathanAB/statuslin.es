@@ -71,7 +71,7 @@
     "drizzle-orm": "0.45.4",
     "e2b": "2.62.0",
     "lucide-react": "1.72.0",
-    "postgres": "3.4.9",
+    "postgres": "4.1.1",
     "posthog-js": "1.447.15",
     "posthog-node": "5.70.0",
     "radix-ui": "1.8.1",
