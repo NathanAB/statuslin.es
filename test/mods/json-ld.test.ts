@@ -17,6 +17,7 @@ const MOD = {
   tags: ['token-usage', 'quota'],
   updatedAt: '2026-09-30',
   generatedContent: null as ModDetail['generatedContent'],
+  themeOnly: false,
 }
 
 type Node = Record<string, unknown>
@@ -66,6 +67,28 @@ describe('modJsonLd', () => {
 
     expect(code).not.toHaveProperty('license')
     expect(code).not.toHaveProperty('keywords')
+  })
+
+  it('breadcrumbs a theme plugin from home through the themes page, never the mods page', () => {
+    expect(
+      nodeOfType(
+        modJsonLd(ORIGIN, { ...MOD, title: 'Theme Pack', slug: 'pack', themeOnly: true }),
+        'BreadcrumbList',
+      ),
+    ).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: 'https://statuslin.es' },
+        { '@type': 'ListItem', position: 2, name: 'Themes', item: 'https://statuslin.es/themes' },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: 'Theme Pack',
+          item: 'https://statuslin.es/mods/pack',
+        },
+      ],
+    })
   })
 
   it('breadcrumbs from home through the mods page to the mod', () => {

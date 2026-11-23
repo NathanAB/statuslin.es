@@ -5,10 +5,9 @@ import {
   HOME_TITLE_BASE,
   homeMetaDescription,
   homePageName,
-  modMetaDescription,
-  modPageTitle,
 } from '@/lib/page-title'
 import { listingCardPath, modPath, SITE_NAME, siteUrl } from '@/lib/site'
+import { modMetaDescription, modPageTitle } from '@/mods/page-meta'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 // Until October 2026 /og/home.png was served immutable for a year. Slack's and Discord's image
@@ -67,7 +66,7 @@ export function configSocialMeta(input: {
   ]
 }
 
-/** The mod page's share tags; `base` is the loader's origin. */
+/** A mod or theme plugin page's share tags; `base` is the loader's origin. */
 export function modSocialMeta(
   base: string,
   mod: {
@@ -75,19 +74,26 @@ export function modSocialMeta(
     title: string
     description: string
     generatedContent: { summary: string; headline?: string | undefined } | null
+    themeOnly: boolean
   },
 ): Array<Record<string, string>> {
   const image = `${base}${listingCardPath('mod', mod.slug)}`
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}${modPath(mod.slug)}` },
-    { property: 'og:title', content: modPageTitle(mod.title, mod.generatedContent?.headline) },
+    {
+      property: 'og:title',
+      content: modPageTitle(mod.title, mod.generatedContent?.headline, {
+        themeOnly: mod.themeOnly,
+      }),
+    },
     {
       property: 'og:description',
       content: modMetaDescription({
         title: mod.title,
         description: mod.description,
         copy: mod.generatedContent,
+        themeOnly: mod.themeOnly,
       }),
     },
     { property: 'og:image', content: image },

@@ -26,6 +26,17 @@ describe('modInstallPrompt', () => {
   })
 })
 
+describe('modInstallPrompt for a theme plugin', () => {
+  it('calls it a theme plugin, never a mod, and installs it with the same commands', () => {
+    expect(modInstallPrompt('https://staging.example.test', 'pack', { themeOnly: true })).toBe(
+      [
+        'Install the pack theme plugin from staging.example.test. Run this in your shell, then tell me to start a new session to load it:',
+        `"\${CLAUDE_CODE_EXECPATH:-claude}" plugin marketplace add https://staging.example.test/marketplace.json && "\${CLAUDE_CODE_EXECPATH:-claude}" plugin install pack@statuslines`,
+      ].join('\n'),
+    )
+  })
+})
+
 describe('modInstallCommands', () => {
   it('adds the site marketplace, then installs the mod from it, with plain claude', () => {
     expect(modInstallCommands('https://staging.example.test', 'filetree')).toEqual([

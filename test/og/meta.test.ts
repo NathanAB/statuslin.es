@@ -58,6 +58,7 @@ describe('social meta', () => {
       title: 'File Tree',
       description: '',
       generatedContent: null,
+      themeOnly: false,
     })
     for (const meta of [statusLinePage, modPage]) {
       expect(meta.some((m) => m.property === 'og:site_name')).toBe(false)
@@ -146,6 +147,7 @@ describe('social meta', () => {
         title: 'File Tree',
         description: 'A file tree pane.',
         generatedContent: null,
+        themeOnly: false,
       }),
     ).toEqual([
       { property: 'og:type', content: 'website' },
@@ -158,5 +160,22 @@ describe('social meta', () => {
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:image', content: image },
     ])
+  })
+
+  it('shares a theme plugin under a themes title and a themes description, never as a mod', () => {
+    const meta = modSocialMeta('https://statuslin.es', {
+      slug: 'pack',
+      title: 'Theme Pack',
+      description: '',
+      generatedContent: null,
+      themeOnly: true,
+    })
+    const og = (property: string) => meta.find((m) => m.property === property)?.content
+
+    expect(og('og:title')).toBe('Theme Pack — Claude Code Themes | statuslin.es')
+    expect(og('og:description')).toBe(
+      "Reviewed Claude Code terminal themes. See each theme's preview, then install them with one copied prompt.",
+    )
+    expect(og('og:image')).toBe('https://statuslin.es/og/mods/pack.png')
   })
 })
