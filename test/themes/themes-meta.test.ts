@@ -39,6 +39,18 @@ describe('/themes head', () => {
     expect(meta.find((tag) => tag.name === 'robots')).toBeUndefined()
   })
 
+  // People search "Claude Code themes": the title leads with it, and both fit what Google shows.
+  it('leads the title with the search and keeps the title and description inside what Google shows', () => {
+    const { meta } = head([THEME])
+    const title = meta.find((tag) => tag.title !== undefined)?.title ?? ''
+    const description = meta.find((tag) => tag.name === 'description')?.content ?? ''
+
+    expect(title.startsWith('Claude Code Themes')).toBe(true)
+    expect(title.length).toBeLessThanOrEqual(60)
+    expect(description.length).toBeGreaterThan(0)
+    expect(description.length).toBeLessThanOrEqual(160)
+  })
+
   it('keeps an empty page out of search results', () => {
     expect(head([]).meta).toContainEqual({ name: 'robots', content: 'noindex, follow' })
   })
