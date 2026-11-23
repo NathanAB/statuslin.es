@@ -26,7 +26,11 @@ import type { DesktopShot } from './types'
 
 const RERUN = `${SANDBOX_WORK_DIR}/rerun.png`
 const WHOLE: Rect = { x: 0, y: 0, ...WINDOW }
-const CARD = { width: 880, height: 720 }
+const CARD_SCALE = 0.4
+const CARD = {
+  width: WINDOW.width * SCALE * CARD_SCALE,
+  height: WINDOW.height * SCALE * CARD_SCALE,
+}
 const LIGHT_FILL = 0.5
 
 export class DesktopThemeRefused extends Error {

@@ -54,6 +54,7 @@ export const modThemes = pgTable(
   },
   (t) => [
     uniqueIndex('mod_themes_version_key_uq').on(t.modVersionId, t.kind, t.key),
+    // A visitor picks a theme in `/theme` by its name, so one plugin never shows two alike.
     uniqueIndex('mod_themes_version_name_uq').on(t.modVersionId, t.kind, sql`lower(${t.name})`),
     check('mod_themes_kind_check', inList(t.kind, THEME_KINDS)),
     check(
