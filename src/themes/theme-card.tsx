@@ -11,10 +11,10 @@ import { Hint } from '@/ui/hint'
 import { InlineCommand } from '@/ui/inline-command'
 import { Row, Stack } from '@/ui/layout'
 import { Heading, Text, TextLink } from '@/ui/text'
-import { ThemePreview } from '@/ui/theme-preview'
+import { DesktopThemePreview, ThemePreview } from '@/ui/theme-preview'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 import type { PublishedTheme } from './queries'
-import type { ThemeWindow } from './theme'
+import { THEME_KIND_LABEL, type ThemeWindow } from './theme'
 
 const WINDOW_LABEL: Record<ThemeWindow, string> = { light: 'Light', dark: 'Dark' }
 
@@ -63,6 +63,60 @@ function PluginInstall({ plugin, origin }: { plugin: ThemePlugin; origin: string
   )
 }
 
+/** The recorded look: a terminal theme's screen, or a Desktop theme's whole window. */
+function ThemeLook({ theme }: { theme: PublishedTheme }) {
+  const label = `${theme.name} preview`
+  if (theme.kind === 'terminal') {
+    return <ThemePreview segments={theme.preview} window={theme.window} label={label} />
+  }
+  return (
+    <DesktopThemePreview
+      card={theme.preview.card}
+      fullSize={theme.preview.shot.src}
+      label={label}
+    />
+  )
+}
+
+/** Each step in order, as commands in a sentence: "/a, then /b". */
+function Steps({ steps }: { steps: string[] }) {
+  return steps.map((step, i) => (
+    // biome-ignore lint/suspicious/noArrayIndexKey: a stored list that never reorders and may repeat a step.
+    <Text key={i} inline>
+      {i > 0 ? ', then ' : null}
+      <InlineCommand>{step}</InlineCommand>
+    </Text>
+  ))
+}
+
+/**
+ * How to switch to the theme once its plugin is installed. A Desktop theme's steps are the ones
+ * its preview's session sent, so they switch to the theme the card shows.
+ */
+function SwitchTo({ theme }: { theme: PublishedTheme }) {
+  if (theme.kind === 'terminal') {
+    return (
+      <Text size="sm" muted>
+        Start a new session, run <InlineCommand>/theme</InlineCommand> and pick{' '}
+        <Text inline>{theme.name}</Text>.
+      </Text>
+    )
+  }
+  if (theme.switchSteps.length === 0) {
+    return (
+      <Text size="sm" muted>
+        In Claude Desktop, start a new session: the plugin sets <Text inline>{theme.name}</Text> on
+        its own.
+      </Text>
+    )
+  }
+  return (
+    <Text size="sm" muted>
+      In Claude Desktop, start a new session and send <Steps steps={theme.switchSteps} />.
+    </Text>
+  )
+}
+
 /**
  * One theme: its preview in its window, its name, and how to switch to it. The name is the one its
  * preview was recorded in, and the author's text, so it is shown only as text. With `installFrom`
@@ -74,22 +128,18 @@ export function ThemeCard({ theme, installFrom }: { theme: PublishedTheme; insta
     <Card>
       <CardContent>
         <Stack gap={3}>
-          <ThemePreview
-            segments={theme.preview}
-            window={theme.window}
-            label={`${theme.name} preview`}
-          />
+          <ThemeLook theme={theme} />
           <Row gap={2} justify="between">
             <Heading level={3}>{theme.name}</Heading>
-            <Badge variant="outline">{WINDOW_LABEL[theme.window]}</Badge>
+            <Row gap={2}>
+              <Badge variant="outline">{THEME_KIND_LABEL[theme.kind]}</Badge>
+              <Badge variant="outline">{WINDOW_LABEL[theme.window]}</Badge>
+            </Row>
           </Row>
           {installFrom === undefined ? null : (
             <PluginInstall plugin={theme.plugin} origin={installFrom} />
           )}
-          <Text size="sm" muted>
-            Start a new session, run <InlineCommand>/theme</InlineCommand> and pick{' '}
-            <Text inline>{theme.name}</Text>.
-          </Text>
+          <SwitchTo theme={theme} />
         </Stack>
       </CardContent>
     </Card>

@@ -5,6 +5,11 @@
  */
 export const THEME_KINDS = ['terminal', 'desktop'] as const
 export type ThemeKind = (typeof THEME_KINDS)[number]
+/** Where a kind of theme applies, as its card says. */
+export const THEME_KIND_LABEL: Record<ThemeKind, string> = {
+  terminal: 'Terminal',
+  desktop: 'Claude Desktop',
+}
 
 /** The window a theme is made for, and the window its preview is drawn in. */
 export const THEME_WINDOWS = ['light', 'dark'] as const

@@ -55,6 +55,7 @@ const PACK: ModDetail = {
 
 const theme = (name: string): PublishedTheme => ({
   id: name,
+  kind: 'terminal',
   name,
   window: 'dark',
   preview: [{ text: `${name} screen` }],
@@ -105,6 +106,29 @@ describe('a plugin page with themes', () => {
 
     expect(within(section('Preview')).getByText('band row')).toBeTruthy()
     expect(within(section('Themes')).getByRole('heading', { level: 3, name: 'Night' })).toBeTruthy()
+  })
+
+  it("links each Desktop theme's image to its whole window at full size", () => {
+    const reef: PublishedTheme = {
+      id: 'reef',
+      kind: 'desktop',
+      name: 'Night Reef',
+      window: 'dark',
+      preview: {
+        shot: { src: '/theme-previews/reef/desktop.png?r=1', width: 1100, height: 900 },
+        card: { src: '/theme-previews/reef/desktop.png?r=1&image=card', width: 550, height: 450 },
+      },
+      switchSteps: ['/custom-theme night-reef'],
+      plugin: { slug: 'pack', title: 'Theme pack', authorGithub: 'octocat', code: null },
+    }
+    renderPage({ themeOnly: false, preview: [{ text: 'band row' }] }, [reef])
+
+    const themes = within(section('Themes'))
+    const link = themes.getByRole('link', { name: /Night Reef preview/ })
+    expect(link.getAttribute('href')).toBe('/theme-previews/reef/desktop.png?r=1')
+    expect(within(link).getByRole('img', { name: 'Night Reef preview' }).getAttribute('src')).toBe(
+      '/theme-previews/reef/desktop.png?r=1&image=card',
+    )
   })
 
   it('shows no themes section for a mod without themes', () => {

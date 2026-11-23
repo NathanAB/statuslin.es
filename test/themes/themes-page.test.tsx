@@ -29,13 +29,38 @@ const { Route: ThemesRoute } = await import('@/routes/themes')
 const ORIGIN = 'https://statuslin.es'
 const HOSTILE = '<img src=x onerror=alert(1)>'
 
-function theme(name: string, slug: string, over: Partial<PublishedTheme> = {}): PublishedTheme {
+type TerminalCard = Extract<PublishedTheme, { kind: 'terminal' }>
+type DesktopCard = Extract<PublishedTheme, { kind: 'desktop' }>
+
+function theme(name: string, slug: string, over: Partial<TerminalCard> = {}): TerminalCard {
   return {
     id: `${slug}-${name}`,
+    kind: 'terminal',
     name,
     window: 'dark',
     preview: [{ text: `${name} screen` }],
     plugin: { slug, title: `${slug} title`, authorGithub: 'octocat', code: null },
+    ...over,
+  }
+}
+
+function desktopTheme(name: string, over: Partial<DesktopCard> = {}): DesktopCard {
+  return {
+    id: `desktop-${name}`,
+    kind: 'desktop',
+    name,
+    window: 'dark',
+    preview: {
+      shot: { src: `/theme-previews/${name}/desktop.png?r=1`, width: 1100, height: 900 },
+      card: { src: `/theme-previews/${name}/desktop.png?r=1&image=card`, width: 550, height: 450 },
+    },
+    switchSteps: [`/custom-theme ${name.toLowerCase().replace(/ /g, '-')}`],
+    plugin: {
+      slug: 'theme-examples',
+      title: 'Theme examples',
+      authorGithub: 'anthropics',
+      code: null,
+    },
     ...over,
   }
 }
@@ -127,6 +152,49 @@ describe('/themes', () => {
       const step = within(cardOf(name)).getByText('/theme').closest('p') as HTMLElement
       expect(step.textContent).toBe(`Start a new session, run /theme and pick ${name}.`)
     }
+  })
+
+  it("shows a Desktop theme's whole window at the card's width, loaded only as it scrolls into view", () => {
+    renderPage([desktopTheme('Honu Lagoon', { window: 'light' })])
+
+    const card = within(cardOf('Honu Lagoon'))
+    const shot = card.getByRole('img', { name: 'Honu Lagoon preview' })
+    expect(shot.getAttribute('src')).toBe('/theme-previews/Honu Lagoon/desktop.png?r=1&image=card')
+    expect(shot.getAttribute('loading')).toBe('lazy')
+    expect([shot.getAttribute('width'), shot.getAttribute('height')]).toEqual(['550', '450'])
+    expect(card.getByText('Light')).toBeTruthy()
+  })
+
+  it('says on each card where its theme applies', () => {
+    renderPage([desktopTheme('Night Reef'), theme('Dawn', 'pack')])
+
+    expect(within(cardOf('Night Reef')).getByText('Claude Desktop')).toBeTruthy()
+    expect(within(cardOf('Dawn')).getByText('Terminal')).toBeTruthy()
+  })
+
+  // The steps are the ones the preview's session sent, so the card shows the theme it names.
+  it("tells a visitor to send the Desktop theme's own switch steps, in order", () => {
+    renderPage([
+      desktopTheme('Night Reef'),
+      desktopTheme('Koi Pond', { switchSteps: ['/custom-theme koi-pond', '/fireworks auto off'] }),
+    ])
+
+    const reef = within(cardOf('Night Reef')).getByText('/custom-theme night-reef').closest('p')
+    expect(reef?.textContent).toBe(
+      'In Claude Desktop, start a new session and send /custom-theme night-reef.',
+    )
+    const koi = within(cardOf('Koi Pond')).getByText('/custom-theme koi-pond').closest('p')
+    expect(koi?.textContent).toBe(
+      'In Claude Desktop, start a new session and send /custom-theme koi-pond, then /fireworks auto off.',
+    )
+  })
+
+  it('says a Desktop theme with no switch steps comes on by itself', () => {
+    renderPage([desktopTheme('Rainy Window', { switchSteps: [] })])
+
+    expect(within(cardOf('Rainy Window')).getByText(/on its own/).textContent).toBe(
+      'In Claude Desktop, start a new session: the plugin sets Rainy Window on its own.',
+    )
   })
 
   it("shows an author's theme name as text, never as markup", () => {

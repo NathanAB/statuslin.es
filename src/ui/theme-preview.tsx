@@ -1,6 +1,9 @@
 import type { AnsiSegment } from '@/render/types'
 import type { ThemeWindow } from '@/themes/theme'
+import type { DesktopShotImage } from '@/ui/desktop-shot'
+import { FOCUS_RING } from '@/ui/focus-ring'
 import { Fitted } from '@/ui/terminal'
+import { VisuallyHidden } from '@/ui/visually-hidden'
 
 // Text the theme leaves in the terminal's default colors takes the window's, so a light theme sits
 // in a light window (the site's colors swapped) and a dark one in the dark well, as each would in a
@@ -39,5 +42,34 @@ export function ThemePreview({
     >
       <Fitted segments={segments} fit={FIT_WHOLE_SCREEN} />
     </div>
+  )
+}
+
+/**
+ * A Desktop theme's whole Claude Desktop window, scaled to the card's width and fetched only as it
+ * nears the screen, so a page of many themes loads the ones in view. It links to `fullSize`, the
+ * window at its recorded size. The pixels are the recording's, named by `label`.
+ */
+export function DesktopThemePreview({
+  card,
+  fullSize,
+  label,
+}: {
+  card: DesktopShotImage
+  fullSize: string
+  label: string
+}) {
+  return (
+    <a data-ui="" href={fullSize} className={`block rounded-md ${FOCUS_RING}`}>
+      <img
+        src={card.src}
+        alt={label}
+        width={card.width}
+        height={card.height}
+        loading="lazy"
+        className="border-border h-auto w-full rounded-md border"
+      />
+      <VisuallyHidden>, full size</VisuallyHidden>
+    </a>
   )
 }
