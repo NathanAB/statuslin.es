@@ -4,19 +4,21 @@ import { HERO_LEAD } from '@/home/home-hero'
 import { HOME_HERO_HEADING } from '@/lib/page-title'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { fitFontSize, fitWithin, lineHeight } from '@/og/fit'
-import { SANS_FONT } from '@/og/font'
+import { MONO_FONT, SANS_FONT } from '@/og/font'
 import { OG_PALETTE } from '@/og/palette'
+import { splitSegmentsIntoLines } from '@/og/split-lines'
+import { drawThemeScreen, type ThemeScreen } from '@/og/theme-screen'
 import { OPUS } from '@/render/scenario-helpers'
 import { orderByScenario } from '@/render/scenarios'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import type { TranscriptLine } from '@/ui/terminal'
 
-const FONT = 'StatuslineNerd'
-
 // What a shared card shows, since the gallery holds both kinds.
 const STATUS_LINE_KIND = 'Claude Code status line'
 const MOD_KIND = 'Claude Code mod'
+// A theme plugin runs no code, so it is never called a mod (GLOSSARY.md).
+const themesKind = (count: number) => `${count} Claude Code theme${count === 1 ? '' : 's'}`
 
 // statuslin + coral dot + es, sized for the target.
 function drawWordmark(fontSize: number): ReactElement {
@@ -24,7 +26,7 @@ function drawWordmark(fontSize: number): ReactElement {
     <div
       style={{
         display: 'flex',
-        fontFamily: FONT,
+        fontFamily: MONO_FONT,
         fontWeight: 700,
         fontSize,
         color: OG_PALETTE.foreground,
@@ -35,29 +37,6 @@ function drawWordmark(fontSize: number): ReactElement {
       <span>es</span>
     </div>
   )
-}
-
-/** Split a segment list into visual lines on `\n` boundaries. A segment's text may contain newlines
- * anywhere (start, middle, end) — including `"\n\n"` for a deliberate blank line — because Anser
- * preserves them in the segment text. satori does NOT turn a `\n` inside a flex row into a line
- * break, so a multi-line status line would otherwise flatten onto one row and overflow the card.
- * Each `\n` ends the current line and starts the next; per-segment color/bold is preserved on both
- * sides of a split. Leading/trailing blank lines (the stray newlines terminals wrap output in) are
- * dropped so they don't open a gap at the top/bottom of the card; interior blank lines are kept as
- * intentional spacers. */
-export function splitSegmentsIntoLines(segments: AnsiSegment[]): AnsiSegment[][] {
-  const lines: AnsiSegment[][] = [[]]
-  for (const s of segments) {
-    const parts = s.text.split('\n')
-    parts.forEach((part, i) => {
-      if (i > 0) lines.push([])
-      const current = lines[lines.length - 1]
-      if (current && part !== '') current.push({ ...s, text: part })
-    })
-  }
-  while (lines.length > 0 && lines[0]?.length === 0) lines.shift()
-  while (lines.length > 0 && lines[lines.length - 1]?.length === 0) lines.pop()
-  return lines
 }
 
 /** A status line's first `maxLines` visual lines, and the largest font up to `maxFontSize` at which
@@ -84,7 +63,7 @@ function drawStatusLine(
 ): ReactElement {
   const { lines, fontSize } = fitStatusLine(segments, maxFontSize, maxLines, width)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', fontFamily: FONT, fontSize }}>
+    <div style={{ display: 'flex', flexDirection: 'column', fontFamily: MONO_FONT, fontSize }}>
       {lines.map((line, li) => (
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed ordered render, no identity beyond position.
@@ -193,7 +172,7 @@ function homeTerminal(): ReactElement {
           padding: '22px 26px',
           borderRadius: 19,
           background: OG_PALETTE.sunken,
-          fontFamily: FONT,
+          fontFamily: MONO_FONT,
           fontSize: HOME_TERMINAL_FONT_SIZE,
           lineHeight: 1.45,
           color: OG_PALETTE.terminalForeground,
@@ -468,16 +447,19 @@ const MOD_PREVIEW_MAX_LINES = 9
 // A Desktop shot fits in about the height of a preview of MOD_PREVIEW_MAX_LINES rows.
 const MOD_DESKTOP_SHOT_BOX = { width: DETAIL_BODY_WIDTH, height: 250 }
 
-/** What a mod's card draws below its header. */
+/** What a mod's card draws below its header; a theme plugin's draws its first theme's screen. */
 export type ModCardBody =
   | { kind: 'terminal'; segments: AnsiSegment[] }
   | { kind: 'desktop'; shot: DesktopShotImage }
+  | { kind: 'themes'; count: number; first: ThemeScreen }
   | { kind: 'none' }
 
 function drawModCardBody(title: string, body: ModCardBody): ReactElement {
   switch (body.kind) {
     case 'terminal':
       return previewWell(body.segments, MOD_PREVIEW_MAX_LINES)
+    case 'themes':
+      return drawThemeScreen(body.first, { width: DETAIL_BODY_WIDTH, height: DETAIL_BODY_HEIGHT })
     case 'desktop': {
       const { width, height } = fitWithin(body.shot, MOD_DESKTOP_SHOT_BOX)
       return (
@@ -495,7 +477,7 @@ function drawModCardBody(title: string, body: ModCardBody): ReactElement {
         <div
           style={{
             display: 'flex',
-            fontFamily: FONT,
+            fontFamily: MONO_FONT,
             fontSize: 24,
             color: OG_PALETTE.foreground,
           }}
@@ -512,8 +494,9 @@ export function modCard(input: {
   authorGithub: string
   body: ModCardBody
 }): ReactElement {
+  const kind = input.body.kind === 'themes' ? themesKind(input.body.count) : MOD_KIND
   return detailCard(
-    cardHeader(input.title, `${MOD_KIND} · by @${input.authorGithub}`),
+    cardHeader(input.title, `${kind} · by @${input.authorGithub}`),
     <div style={{ display: 'flex', alignItems: 'flex-start' }}>
       {drawModCardBody(input.title, input.body)}
     </div>,

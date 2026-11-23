@@ -14,7 +14,9 @@ import {
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
+import { themeScreenPreview } from '@/themes/theme-screen'
 import { SEEDED_DESKTOP_SHOT } from '../mods/seed-mods'
+import recordedScreen from '../themes/fixtures/probe-theme-run-1.json'
 
 type Box = { left: number; top: number; width: number; height: number }
 
@@ -169,6 +171,15 @@ describe('og card layout', () => {
     ['a terminal preview as wide as the terminal', { kind: 'terminal', segments: WIDE_PREVIEW }],
     ['no terminal preview', { kind: 'none' }],
     ['only a Desktop shot', { kind: 'desktop', shot: DESKTOP_SHOT }],
+    // A real recording: 30 rows of 100 columns, with a prompt row colored to the right edge.
+    [
+      "a theme plugin's whole recorded screen",
+      {
+        kind: 'themes',
+        count: 81,
+        first: { segments: themeScreenPreview(recordedScreen), window: 'light' },
+      },
+    ],
   ])('keeps a mod card with %s inside the card and centered vertically', async (_name, body) => {
     const { root, content } = await layout(
       modCard({ title: 'Usage meter', authorGithub: 'octocat', body }),

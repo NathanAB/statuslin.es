@@ -109,6 +109,22 @@ describe('og card text', () => {
     ).toContain('Claude Code mod · by @octocat')
   })
 
+  // A theme plugin runs no code, so its card never calls it a mod (GLOSSARY.md).
+  it('names a theme plugin card by how many themes it carries, with its author', () => {
+    const card = (count: number) =>
+      cardText(
+        modCard({
+          title: 'Pack',
+          authorGithub: 'octocat',
+          body: { kind: 'themes', count, first: { segments: [seg('x')], window: 'dark' } },
+        }),
+      )
+
+    expect(card(81)).toContain('81 Claude Code themes · by @octocat')
+    expect(card(1)).toContain('1 Claude Code theme · by @octocat')
+    expect(card(81)).not.toContain('mod')
+  })
+
   it('says where a mod with no terminal preview or Desktop shot draws', () => {
     expect(
       cardText(modCard({ title: 'Tree', authorGithub: 'octocat', body: { kind: 'none' } })),

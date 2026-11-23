@@ -5,6 +5,7 @@ import { getModDesktopShotPng } from '@/mods/desktop-shot'
 import { getModDetail, type ModDetail } from '@/mods/queries'
 import { configCard, homeCard, type ModCardBody, modCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
+import { getPublishedModThemes } from '@/themes/queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver; query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -56,8 +57,20 @@ export async function configCardResponseForRoute(slug: string): Promise<Response
 }
 
 /** What a mod's card draws: its terminal preview, else its Desktop shot, which satori only reads
- * inline, else neither. */
+ * inline, else neither. A theme plugin's own recording shows nothing of its themes, so its card
+ * draws its first theme by name instead. */
 async function modCardBody(db: Db, mod: ModDetail): Promise<ModCardBody> {
+  if (mod.themeOnly) {
+    const themes = await getPublishedModThemes(db, mod.slug)
+    const [first] = themes
+    if (first) {
+      return {
+        kind: 'themes',
+        count: themes.length,
+        first: { segments: first.preview, window: first.window },
+      }
+    }
+  }
   if (mod.preview?.length) return { kind: 'terminal', segments: mod.preview }
   const shot = await getModDesktopShotPng(db, mod.slug)
   if (!shot) return { kind: 'none' }
