@@ -8,6 +8,7 @@ import { withHttpStatus } from '@/lib/http.server'
 import { getPreviews } from '@/render/store'
 import type { RenderedPreview } from '@/render/types'
 import { assertAdmin } from './admin'
+import { getCuratedThemeRows } from './curated-theme-queue'
 import { getLiveVersions, type LiveVersion } from './live-version'
 import { getModReviewRows } from './mod-queue'
 
@@ -219,13 +220,17 @@ export interface DashboardUser {
 export const getAdminDashboard = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(async () => {
     const admin = await assertAdmin(getRequestHeaders())
-    const [rows, mods] = await Promise.all([getDashboardRows(db), getModReviewRows(db)])
+    const [rows, mods, curated] = await Promise.all([
+      getDashboardRows(db),
+      getModReviewRows(db),
+      getCuratedThemeRows(db),
+    ])
     const user: DashboardUser = {
       name: admin.name,
       username: admin.username,
       image: admin.image,
       role: admin.role,
     }
-    return { user, rows, mods }
+    return { user, rows, mods, curated }
   }),
 )

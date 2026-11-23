@@ -62,6 +62,7 @@ describe('DashboardView', () => {
         data={{
           rows: [],
           mods: [],
+          curated: [],
           user: { name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' },
         }}
       />,
@@ -88,6 +89,7 @@ describe('DashboardView', () => {
         data={{
           rows: [contactNeededRow()],
           mods: [],
+          curated: [],
           user: { name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' },
         }}
       />,
@@ -111,6 +113,7 @@ describe('DashboardView', () => {
         data={{
           rows: [approved],
           mods: [],
+          curated: [],
           user: { name: 'Ada Lovelace', username: 'ada', image: null, role: 'admin' },
         }}
       />,

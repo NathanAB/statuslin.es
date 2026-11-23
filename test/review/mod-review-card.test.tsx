@@ -111,6 +111,7 @@ describe('DashboardView with mods', () => {
         data={{
           rows: [],
           mods: [row()],
+          curated: [],
           user: { name: 'Admin', username: 'admin', image: null, role: 'admin' },
         }}
       />,

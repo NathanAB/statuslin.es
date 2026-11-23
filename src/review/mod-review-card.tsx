@@ -23,7 +23,7 @@ import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Text, TextLink } from '@/ui/text'
 
 /** The mod's folder on GitHub at the version's commit. */
-function folderUrl(v: Pick<ModReviewVersion, 'repoUrl' | 'path' | 'commitSha'>): string {
+export function folderUrl(v: Pick<ModReviewVersion, 'repoUrl' | 'path' | 'commitSha'>): string {
   const tree = `${v.repoUrl}/tree/${v.commitSha}`
   return v.path === '' ? tree : `${tree}/${v.path}`
 }
