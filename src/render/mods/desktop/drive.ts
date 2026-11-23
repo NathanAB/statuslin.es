@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises'
-import type { TextStep } from '@/mods/curation'
+import { MAX_STEP_CHARS, type TextStep } from '@/mods/curation'
 import type { ThemeWindow } from '@/themes/theme'
 import { COMMAND_TIMEOUT_MS, REQUEST_TIMEOUT_MS, type SandboxFile } from '../mod-sandbox'
 import { feedScenario, playsBusySession } from '../scenario-feed'
@@ -57,9 +57,6 @@ const REPLY_MAX_MS = 30_000
 const TYPED_PAUSE_MS = 800
 const STEP_SETTLE: QuietOptions = { quietMs: 2_000, maxMs: 15_000, pollMs: 500 }
 const FINAL_SETTLE: QuietOptions = { quietMs: 2_000, maxMs: 10_000, pollMs: 500 }
-
-/** Typed a character at a time, so a step's text is bounded to keep its typing bounded. */
-export const MAX_STEP_CHARS = 200
 
 /**
  * Uploads (tarball, session files) and commands (two versions, unpack, setup, then the root setup)

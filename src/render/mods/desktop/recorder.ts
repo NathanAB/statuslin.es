@@ -1,4 +1,4 @@
-import type { InputStep, TextStep } from '@/mods/curation'
+import { type InputStep, MAX_STEP_CHARS, type TextStep } from '@/mods/curation'
 import type { ThemeWindow } from '@/themes/theme'
 import type { ModSource } from '../mod-sandbox'
 import { analyseShot } from './analyse'
@@ -8,13 +8,7 @@ import {
   type withAnalysisSandbox,
   type withRecordingDesktop,
 } from './desktop-sandbox'
-import {
-  type DriveRequest,
-  driveSession,
-  MAX_INPUT_STEPS,
-  MAX_STEP_CHARS,
-  sessionUploads,
-} from './drive'
+import { type DriveRequest, driveSession, MAX_INPUT_STEPS, sessionUploads } from './drive'
 import { SCREEN_PNG_COMMAND } from './imagemagick'
 import { checkedPng } from './png'
 import { SCALE, WINDOW } from './screen'

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
+import { atMost } from '@/mods/plain-text'
 import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
 import { THEME_KEY, THEME_KEY_MAX, THEME_WINDOWS } from '@/themes/theme'
 import { themeNameSchema, themeNameShape } from '@/themes/theme-file'
@@ -16,6 +17,9 @@ export const PLUGIN_NAME_RULE =
 const PATH_SEGMENT = /^[A-Za-z0-9._-]+$/
 
 const segments = (path: string) => (path === '' ? [] : path.split('/'))
+
+/** Typed a character at a time, so a step's text is bounded to keep its typing bounded. */
+export const MAX_STEP_CHARS = 200
 
 /** Typed into the prompt after the scripted turn; `submit: false` leaves it unsent. */
 const textStepSchema = z.strictObject({
@@ -46,6 +50,17 @@ export const terminalSetupSchema = z.strictObject({
   fullscreen: z.boolean(),
 })
 
+/**
+ * A visitor sends each switch step in their own Claude Desktop, as its card tells them, so it is one
+ * slash command with its arguments on one line: never a prompt Claude would act on.
+ */
+const SLASH_COMMAND = /^\/[A-Za-z0-9][\w:.-]*(?: [^\n]+)?$/
+
+const switchStepSchema = atMost(MAX_STEP_CHARS).regex(
+  SLASH_COMMAND,
+  'must be one slash command with its arguments, such as /custom-theme night-reef',
+)
+
 const desktopThemeSchema = z.strictObject({
   key: z
     .string()
@@ -53,7 +68,7 @@ const desktopThemeSchema = z.strictObject({
     .regex(THEME_KEY, 'must start with a letter or digit, then letters, digits, ".", "_" or "-"'),
   name: themeNameSchema,
   window: z.enum(THEME_WINDOWS),
-  switchSteps: z.array(z.string().min(1, 'must not be empty')).default([]),
+  switchSteps: z.array(switchStepSchema).default([]),
 })
 
 type DesktopThemeEntry = z.infer<typeof desktopThemeSchema>

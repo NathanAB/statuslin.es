@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import type { RepoInfo } from '@/mods/github'
 import { getMarketplaceRows } from '@/mods/queries'
+import { MAX_INPUT_STEPS } from '@/render/mods/desktop/drive'
 import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
@@ -241,6 +242,23 @@ describe('importMods', () => {
 
     expect(exitCode).toBe(1)
     expect(output).toMatch(/refused skins: declares Desktop themes, but its code sets no theme/)
+    expect(await allMods()).toEqual([])
+  })
+
+  it('refuses a Desktop theme with more switch steps than a recording can send, and writes nothing', async () => {
+    const steps = Array.from({ length: MAX_INPUT_STEPS + 1 }, (_, i) => `/custom-theme t${i}`)
+
+    const { exitCode, output } = await run(
+      [entry({ desktopThemes: [{ ...NIGHT_REEF, switchSteps: steps }] })],
+      fakes({ validate: THEME_VALIDATE }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(
+      new RegExp(
+        `refused skins: Desktop theme "night-reef" has ${MAX_INPUT_STEPS + 1} switch steps; at most ${MAX_INPUT_STEPS} fit in a recording`,
+      ),
+    )
     expect(await allMods()).toEqual([])
   })
 
