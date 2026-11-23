@@ -1,22 +1,11 @@
-import { withoutInlineCode } from '@/lib/inline-code'
-import {
-  keywordPageTitle,
-  metaDescription,
-  normalizeWhitespace,
-  PAGE_TITLE_BRAND,
-  PAGE_TITLE_MAX_LENGTH,
-  truncateAtWordBoundary,
-} from '@/lib/search-text'
+import { keywordPageTitle, metaDescription } from '@/lib/search-text'
 import { SITE_NAME } from '@/lib/site'
 import { RESOURCE_SECTIONS, type ResourceSection } from '@/resources/data'
 
 const CONFIG_PAGE_TITLE_KEYWORD = ' — Claude Code Status Line'
-const MOD_PAGE_TITLE_KEYWORD = ' — Claude Code mod'
 
 export const CONFIG_META_DESCRIPTION_FALLBACK =
   'A reviewed Claude Code status line. See its preview and source, then copy it in one paste.'
-const MOD_META_DESCRIPTION_FALLBACK =
-  'A reviewed Claude Code mod. See its preview and what it can touch, then install it with one copied prompt.'
 
 /**
  * <title> templates for config pages. The template exists so every config page's
@@ -30,45 +19,6 @@ export function configPageTitle(title: string): string {
 /** Keep config search snippets concise without changing the description shown on the page. */
 export function configMetaDescription(description: string | null | undefined): string {
   return metaDescription(description, CONFIG_META_DESCRIPTION_FALLBACK)
-}
-
-/**
- * With a reviewed headline, the title names the problem the mod solves so the page ranks for it,
- * not only for the mod's name. "mod" follows the name because people search "<name> mod". The
- * headline gives way to fit, never the name.
- */
-export function modPageTitle(title: string, headline?: string): string {
-  if (!headline) return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
-  const lead = `${normalizeWhitespace(title)} mod: `
-  const branded = `${lead}${headline}${PAGE_TITLE_BRAND}`
-  if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
-  const budget = PAGE_TITLE_MAX_LENGTH - lead.length
-  const firstWord = headline.split(' ', 1)[0] ?? ''
-  // A headline cut inside its first word reads as noise; the plain title says more.
-  if (headline.length > budget && firstWord.length + 1 > budget) {
-    return keywordPageTitle(title, MOD_PAGE_TITLE_KEYWORD)
-  }
-  return `${lead}${truncateAtWordBoundary(headline, budget)}`
-}
-
-/**
- * With page copy, `<Name> for Claude Code: <summary>`: the name and "Claude Code" match how mods
- * are searched, and the summary is ours, unlike the author's sentence GitHub also shows. Without
- * page copy, the author's description. Snippets show plain text, so code marks are dropped.
- */
-export function modMetaDescription({
-  title,
-  description,
-  copy,
-}: {
-  title: string
-  description: string
-  copy: { summary: string } | null
-}): string {
-  const text = copy
-    ? `${normalizeWhitespace(title)} for Claude Code: ${withoutInlineCode(copy.summary)}`
-    : description
-  return metaDescription(text, MOD_META_DESCRIPTION_FALLBACK)
 }
 
 export const MOD_NOT_FOUND_TITLE = `Mod not found — ${SITE_NAME}`

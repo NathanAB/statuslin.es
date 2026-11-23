@@ -14,6 +14,13 @@ export type InstallCommandKind = 'prompt'
  */
 export const MOD_INSTALL_MIN_VERSION = '2.1.287'
 
+/**
+ * The Claude Code version theme plugins need: the first whose plugins can ship terminal themes, per
+ * its entry in https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md ("plugins can also
+ * ship themes via a `themes/` directory").
+ */
+export const THEME_PLUGIN_INSTALL_MIN_VERSION = '2.1.118'
+
 /** The Claude Code a session runs on, falling back to the one on PATH. */
 const SESSION_CLAUDE = `"\${CLAUDE_CODE_EXECPATH:-claude}"`
 
@@ -22,11 +29,16 @@ const SESSION_CLAUDE = `"\${CLAUDE_CODE_EXECPATH:-claude}"`
  * do it: Desktop has no `/plugin` command. So Claude adds the marketplace (safe to repeat) and
  * installs from it in the shell, with the Claude Code it runs on: Desktop puts no `claude` on
  * PATH, but every session sets `CLAUDE_CODE_EXECPATH`. `entryName` is the mod's marketplace entry
- * name: its slug.
+ * name: its slug. A theme plugin installs the same way, but runs no code, so it isn't called a mod.
  */
-export function modInstallPrompt(origin: string, entryName: string): string {
+export function modInstallPrompt(
+  origin: string,
+  entryName: string,
+  { themeOnly = false }: { themeOnly?: boolean } = {},
+): string {
+  const kind = themeOnly ? 'theme plugin' : 'mod'
   return [
-    `Install the ${entryName} mod from ${new URL(origin).host}. Run this in your shell, then tell me to start a new session to load it:`,
+    `Install the ${entryName} ${kind} from ${new URL(origin).host}. Run this in your shell, then tell me to start a new session to load it:`,
     modInstallCommands(origin, entryName, SESSION_CLAUDE).join(' && '),
   ].join('\n')
 }

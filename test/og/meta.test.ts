@@ -13,6 +13,7 @@ import {
   modSocialMeta,
   rootSocialMeta,
   staticPageSocialMeta,
+  themesSocialMeta,
 } from '@/og/meta'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
@@ -58,6 +59,7 @@ describe('social meta', () => {
       title: 'File Tree',
       description: '',
       generatedContent: null,
+      themeOnly: false,
     })
     for (const meta of [statusLinePage, modPage]) {
       expect(meta.some((m) => m.property === 'og:site_name')).toBe(false)
@@ -146,6 +148,7 @@ describe('social meta', () => {
         title: 'File Tree',
         description: 'A file tree pane.',
         generatedContent: null,
+        themeOnly: false,
       }),
     ).toEqual([
       { property: 'og:type', content: 'website' },
@@ -157,6 +160,45 @@ describe('social meta', () => {
       { property: 'og:image:height', content: String(CARD_HEIGHT) },
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:image', content: image },
+    ])
+  })
+
+  it('shares a theme plugin under a themes title and a themes description, never as a mod', () => {
+    const meta = modSocialMeta('https://statuslin.es', {
+      slug: 'pack',
+      title: 'Theme Pack',
+      description: '',
+      generatedContent: null,
+      themeOnly: true,
+    })
+    const og = (property: string) => meta.find((m) => m.property === property)?.content
+
+    expect(og('og:title')).toBe('Theme Pack — Claude Code Themes | statuslin.es')
+    expect(og('og:description')).toBe(
+      "Reviewed Claude Code terminal themes. See each theme's preview, then install them with one copied prompt.",
+    )
+    expect(og('og:image')).toBe('https://statuslin.es/og/mods/pack.png')
+  })
+
+  it('shares /themes under its own title and description with the themes card', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+
+    expect(
+      themesSocialMeta({
+        path: '/themes',
+        title: 'Claude Code Themes',
+        description: 'Every theme previewed.',
+      }),
+    ).toEqual([
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: 'https://statuslin.es/themes' },
+      { property: 'og:title', content: 'Claude Code Themes' },
+      { property: 'og:description', content: 'Every theme previewed.' },
+      { property: 'og:image', content: 'https://statuslin.es/og/themes.png' },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:image', content: 'https://statuslin.es/og/themes.png' },
     ])
   })
 })

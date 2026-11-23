@@ -5,15 +5,16 @@ import {
   HOME_TITLE_BASE,
   homeMetaDescription,
   homePageName,
-  modMetaDescription,
-  modPageTitle,
 } from '@/lib/page-title'
 import { listingCardPath, modPath, SITE_NAME, siteUrl } from '@/lib/site'
+import { modMetaDescription, modPageTitle } from '@/mods/page-meta'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 
 // Until October 2026 /og/home.png was served immutable for a year. Slack's and Discord's image
 // proxies keep that old card under the bare URL, so the share tags use a new one.
 const HOME_CARD_PATH = '/og/home.png?v=2'
+// /themes' own card (src/routes/og.themes[.]png.ts).
+const THEMES_CARD_PATH = '/og/themes.png'
 
 export function rootSocialMeta(): Array<Record<string, string>> {
   const base = siteUrl()
@@ -67,7 +68,7 @@ export function configSocialMeta(input: {
   ]
 }
 
-/** The mod page's share tags; `base` is the loader's origin. */
+/** A mod or theme plugin page's share tags; `base` is the loader's origin. */
 export function modSocialMeta(
   base: string,
   mod: {
@@ -75,19 +76,26 @@ export function modSocialMeta(
     title: string
     description: string
     generatedContent: { summary: string; headline?: string | undefined } | null
+    themeOnly: boolean
   },
 ): Array<Record<string, string>> {
   const image = `${base}${listingCardPath('mod', mod.slug)}`
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}${modPath(mod.slug)}` },
-    { property: 'og:title', content: modPageTitle(mod.title, mod.generatedContent?.headline) },
+    {
+      property: 'og:title',
+      content: modPageTitle(mod.title, mod.generatedContent?.headline, {
+        themeOnly: mod.themeOnly,
+      }),
+    },
     {
       property: 'og:description',
       content: modMetaDescription({
         title: mod.title,
         description: mod.description,
         copy: mod.generatedContent,
+        themeOnly: mod.themeOnly,
       }),
     },
     { property: 'og:image', content: image },
@@ -98,26 +106,33 @@ export function modSocialMeta(
   ]
 }
 
+type PageShare = { path: string; title: string; description: string }
+
 /**
  * Social meta for static editorial pages (/guide, /resources). Reuses the home OG
  * card — these pages have no per-page image, and an on-brand card beats none when
  * the page is shared (the resources page is the outreach link).
  */
-export function staticPageSocialMeta(input: {
-  path: string
-  title: string
-  description: string
-}): Array<Record<string, string>> {
+export function staticPageSocialMeta(input: PageShare): Array<Record<string, string>> {
+  return pageSocialMeta(input, HOME_CARD_PATH)
+}
+
+/** /themes' share tags: its own card, drawn from the live themes. */
+export function themesSocialMeta(input: PageShare): Array<Record<string, string>> {
+  return pageSocialMeta(input, THEMES_CARD_PATH)
+}
+
+function pageSocialMeta(input: PageShare, cardPath: string): Array<Record<string, string>> {
   const base = siteUrl()
   return [
     { property: 'og:type', content: 'website' },
     { property: 'og:url', content: `${base}${input.path}` },
     { property: 'og:title', content: input.title },
     { property: 'og:description', content: input.description },
-    { property: 'og:image', content: `${base}${HOME_CARD_PATH}` },
+    { property: 'og:image', content: `${base}${cardPath}` },
     { property: 'og:image:width', content: String(CARD_WIDTH) },
     { property: 'og:image:height', content: String(CARD_HEIGHT) },
     { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:image', content: `${base}${HOME_CARD_PATH}` },
+    { name: 'twitter:image', content: `${base}${cardPath}` },
   ]
 }

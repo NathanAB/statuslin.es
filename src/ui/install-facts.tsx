@@ -79,7 +79,8 @@ function Fold({ summary, facts }: FoldedFacts) {
  * The facts a visitor needs before installing, in one panel beside the install button: who
  * reviewed it, what it can reach, what it needs. `more` and `notes` (a mod's plain powers and its
  * good-to-know notes) fold under their summaries, closed, so the risks above them stand out. Ends
- * with a link to the page that helps next (the troubleshooting guide, the mod safety guide).
+ * with a link to the page that helps next (the troubleshooting guide, the mod safety guide), when
+ * there is one.
  */
 export function InstallFacts({
   heading,
@@ -95,7 +96,7 @@ export function InstallFacts({
   facts: InstallFact[]
   more?: FoldedFacts | null
   notes?: FoldedFacts | null
-  link: { label: string; to: NonNullable<LinkProps['to']> }
+  link?: { label: string; to: NonNullable<LinkProps['to']> } | undefined
 }) {
   const id = useId()
   return (
@@ -108,10 +109,12 @@ export function InstallFacts({
         {more ? <Fold {...more} /> : null}
         {notes ? <Fold {...notes} /> : null}
         {/* Full-strength and underlined: coral text this small on the panel misses 4.5:1. */}
-        <TextLink to={link.to} size="sm" tone="underlined">
-          {link.label}
-          <ArrowRight aria-hidden="true" className="ml-1 inline size-3.5" />
-        </TextLink>
+        {link ? (
+          <TextLink to={link.to} size="sm" tone="underlined">
+            {link.label}
+            <ArrowRight aria-hidden="true" className="ml-1 inline size-3.5" />
+          </TextLink>
+        ) : null}
       </Panel>
     </section>
   )
