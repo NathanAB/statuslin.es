@@ -3,9 +3,10 @@ import { db as defaultDb } from '@/db'
 import { getConfigBySlug } from '@/gallery/queries'
 import { getModDesktopShotPng } from '@/mods/desktop-shot'
 import { getModDetail, type ModDetail } from '@/mods/queries'
-import { configCard, homeCard, type ModCardBody, modCard } from '@/og/card'
+import { configCard, homeCard, type ModCardBody, modCard, themesCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
-import { getPublishedModThemes } from '@/themes/queries'
+import type { ThemeScreen } from '@/og/theme-screen'
+import { getPublishedModThemes, getThemeCards, type PublishedTheme } from '@/themes/queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver; query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -91,4 +92,28 @@ export async function modCardResponse(db: Db, slug: string): Promise<Response> {
 
 export async function modCardResponseForRoute(slug: string): Promise<Response> {
   return modCardResponse(defaultDb, slug)
+}
+
+/** The top theme, beside the top one made for the other window so the card shows a light and a
+ * dark look, else beside the next one. */
+function themesCardScreens(themes: PublishedTheme[]): ThemeScreen[] {
+  const [first] = themes
+  if (!first) return []
+  const second = themes.find((theme) => theme.window !== first.window) ?? themes[1]
+  return [first, second]
+    .filter((theme): theme is PublishedTheme => theme !== undefined)
+    .map((theme) => ({ segments: theme.preview, window: theme.window }))
+}
+
+/** /themes' card, from the live themes in /themes' order. With none published yet, the home card
+ * BYTES, as for an unknown status line: the hour's cache lets the real card replace it. */
+export async function themesCardResponse(db: Db): Promise<Response> {
+  const themes = await getThemeCards(db)
+  const screens = themesCardScreens(themes)
+  if (screens.length === 0) return pngResponse(await homePngBytes())
+  return pngResponse(await toElementPng(themesCard({ count: themes.length, screens })))
+}
+
+export async function themesCardResponseForRoute(): Promise<Response> {
+  return themesCardResponse(defaultDb)
 }

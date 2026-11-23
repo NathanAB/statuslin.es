@@ -13,6 +13,7 @@ import {
   modSocialMeta,
   rootSocialMeta,
   staticPageSocialMeta,
+  themesSocialMeta,
 } from '@/og/meta'
 
 const ORIGINAL = process.env.BETTER_AUTH_URL
@@ -177,5 +178,27 @@ describe('social meta', () => {
       "Reviewed Claude Code terminal themes. See each theme's preview, then install them with one copied prompt.",
     )
     expect(og('og:image')).toBe('https://statuslin.es/og/mods/pack.png')
+  })
+
+  it('shares /themes under its own title and description with the themes card', () => {
+    process.env.BETTER_AUTH_URL = 'https://statuslin.es'
+
+    expect(
+      themesSocialMeta({
+        path: '/themes',
+        title: 'Claude Code Themes',
+        description: 'Every theme previewed.',
+      }),
+    ).toEqual([
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: 'https://statuslin.es/themes' },
+      { property: 'og:title', content: 'Claude Code Themes' },
+      { property: 'og:description', content: 'Every theme previewed.' },
+      { property: 'og:image', content: 'https://statuslin.es/og/themes.png' },
+      { property: 'og:image:width', content: '1200' },
+      { property: 'og:image:height', content: '630' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:image', content: 'https://statuslin.es/og/themes.png' },
+    ])
   })
 })

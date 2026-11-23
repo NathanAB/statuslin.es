@@ -502,3 +502,30 @@ export function modCard(input: {
     </div>,
   )
 }
+
+// /themes' card: the page's subject, and how many themes it shows, each recorded in Claude Code.
+const THEMES_CARD_TITLE = 'Claude Code themes'
+const themesByline = (count: number) =>
+  count === 1
+    ? '1 theme, previewed in a real session'
+    : `${count} themes, each previewed in a real session`
+const THEMES_CARD_GAP = 24
+const THEMES_CARD_SCREEN_BOX = {
+  width: (DETAIL_BODY_WIDTH - THEMES_CARD_GAP) / 2,
+  height: DETAIL_BODY_HEIGHT,
+}
+
+/** /themes' card: up to two themes' whole screens side by side, under the count of live themes. */
+export function themesCard(input: { count: number; screens: ThemeScreen[] }): ReactElement {
+  return detailCard(
+    cardHeader(THEMES_CARD_TITLE, themesByline(input.count)),
+    <div style={{ display: 'flex', gap: THEMES_CARD_GAP, alignItems: 'flex-start' }}>
+      {input.screens.slice(0, 2).map((screen, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: at most two screens, in a fixed order.
+        <div key={i} style={{ display: 'flex' }}>
+          {drawThemeScreen(screen, THEMES_CARD_SCREEN_BOX)}
+        </div>
+      ))}
+    </div>,
+  )
+}

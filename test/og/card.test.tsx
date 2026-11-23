@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configCard, modCard } from '@/og/card'
+import { configCard, modCard, themesCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
 
@@ -123,6 +123,17 @@ describe('og card text', () => {
     expect(card(81)).toContain('81 Claude Code themes · by @octocat')
     expect(card(1)).toContain('1 Claude Code theme · by @octocat')
     expect(card(81)).not.toContain('mod')
+  })
+
+  it('titles the themes card and counts the live themes, each previewed in a real session', () => {
+    const screens = [{ segments: [seg('x')], window: 'dark' as const }]
+
+    expect(cardText(themesCard({ count: 81, screens }))).toBe(
+      'statuslin.esClaude Code themes81 themes, each previewed in a real sessionx',
+    )
+    expect(cardText(themesCard({ count: 1, screens }))).toContain(
+      '1 theme, previewed in a real session',
+    )
   })
 
   it('says where a mod with no terminal preview or Desktop shot draws', () => {
