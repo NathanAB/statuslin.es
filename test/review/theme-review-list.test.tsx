@@ -108,6 +108,19 @@ describe('themes on a mod review card', () => {
     expect(container.querySelector('img[src="x"]')).toBeNull()
   })
 
+  it("keeps a mod's hooks and calls above its themes, so a long pack can't push them out of sight", () => {
+    const themes = Array.from({ length: 81 }, (_, i) => theme({ key: `t${i}`, name: `T${i}` }))
+    const mixed = row(themes)
+    mixed.version.footprint = { events: ['tool.call'], calls: ['$.http.fetch'] }
+    render(<ModReviewCard row={mixed} />)
+
+    const themesLabel = screen.getByText('Themes (81)')
+    for (const label of ['Events it hooks', 'Calls it makes']) {
+      const position = screen.getByText(label).compareDocumentPosition(themesLabel)
+      expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    }
+  })
+
   it('shows no themes section for a mod without themes', () => {
     render(<ModReviewCard row={row([])} />)
 

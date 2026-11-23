@@ -180,9 +180,9 @@ export function ModReviewCard({ row }: { row: ModReviewRow }) {
           </Callout>
         ) : null}
         <Previews row={row} />
-        <ThemeReviewList themes={row.themes} />
         <Footprint label="Events it hooks" entries={version.footprint.events} />
         <Footprint label="Calls it makes" entries={version.footprint.calls} />
+        <ThemeReviewList themes={row.themes} />
         <RejectionDetails version={version} slug={mod.slug} showActions />
         <ApprovalDetails version={version} showActions />
         <MetaList items={meta(row)} />
