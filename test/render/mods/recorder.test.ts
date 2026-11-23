@@ -92,7 +92,7 @@ describe('recordInSandbox', () => {
 
       const capture = await recordInSandbox(
         fake.sandbox,
-        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
         FAST,
       )
 
@@ -130,6 +130,7 @@ describe('recordInSandbox', () => {
         fake.sandbox,
         {
           mod: null,
+          theme: null,
           inputSteps: [{ type: 'text', text }],
           terminal: DEFAULT_TERMINAL_SETUP,
         },
@@ -154,6 +155,7 @@ describe('recordInSandbox', () => {
         fake.sandbox,
         {
           mod: null,
+          theme: null,
           inputSteps: [{ type: 'text', text }],
           terminal: DEFAULT_TERMINAL_SETUP,
         },
@@ -173,10 +175,51 @@ describe('recordInSandbox', () => {
       const fake = fakeSandbox(claudeSession, () => {})
       const terminal = { cols: TERMINAL.cols, fullscreen: true }
 
-      await recordInSandbox(fake.sandbox, { mod: null, inputSteps: [], terminal }, FAST)
+      await recordInSandbox(
+        fake.sandbox,
+        { mod: null, theme: null, inputSteps: [], terminal },
+        FAST,
+      )
 
       const settings = fake.written.find((f) => f.path.endsWith('/settings.json'))
       expect(JSON.parse(String(settings?.data))).toEqual({ tui: 'fullscreen' })
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    "sets the theme to record in as the session's theme setting, beside the fullscreen layout",
+    async () => {
+      const fake = fakeSandbox(claudeSession, () => {})
+      const terminal = { cols: TERMINAL.cols, fullscreen: true }
+
+      await recordInSandbox(
+        fake.sandbox,
+        { mod: null, theme: 'custom:probe:dracula', inputSteps: [], terminal },
+        FAST,
+      )
+
+      const settings = fake.written.find((f) => f.path.endsWith('/settings.json'))
+      expect(JSON.parse(String(settings?.data))).toEqual({
+        tui: 'fullscreen',
+        theme: 'custom:probe:dracula',
+      })
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    'writes no settings for a request with no theme in the default terminal',
+    async () => {
+      const fake = fakeSandbox(claudeSession, () => {})
+
+      await recordInSandbox(
+        fake.sandbox,
+        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        FAST,
+      )
+
+      expect(fake.writtenPaths().some((path) => path.endsWith('/settings.json'))).toBe(false)
     },
     SESSION_TEST_TIMEOUT_MS,
   )
@@ -200,7 +243,7 @@ describe('recordInSandbox', () => {
 
       const recording = recordInSandbox(
         fake.sandbox,
-        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
         FAST,
       )
 
@@ -259,6 +302,7 @@ describe('modRecorder', () => {
 
       const recording = await recorder.record({
         mod: null,
+        theme: null,
         inputSteps: [],
         terminal: DEFAULT_TERMINAL_SETUP,
       })
@@ -283,7 +327,7 @@ describe('modRecorder', () => {
       const { recorder, replayCommands, session } = fakeSandboxes(['❯'])
       const terminal = { cols: 120, fullscreen: false }
 
-      await recorder.record({ mod: null, inputSteps: [], terminal })
+      await recorder.record({ mod: null, theme: null, inputSteps: [], terminal })
 
       expect(session.terminalSizes).toEqual([{ cols: 120, rows: TERMINAL.rows }])
       expect(replayCommands).toEqual([expect.stringMatching(` 120 ${TERMINAL.rows}$`)])
@@ -297,7 +341,7 @@ describe('modRecorder', () => {
       const { recorder, replayCommands, session } = fakeSandboxes(['❯'])
       const terminal = { cols: 144, rows: 50, fullscreen: true }
 
-      await recorder.record({ mod: null, inputSteps: [], terminal })
+      await recorder.record({ mod: null, theme: null, inputSteps: [], terminal })
 
       expect(session.terminalSizes).toEqual([{ cols: 144, rows: 50 }])
       expect(replayCommands).toEqual([expect.stringMatching(' 144 50$')])
@@ -311,7 +355,7 @@ describe('modRecorder', () => {
       const { recorder } = fakeSandboxes(Array(MAX_TERMINAL_ROWS).fill(''))
       const terminal = { cols: TERMINAL.cols, rows: MAX_TERMINAL_ROWS, fullscreen: true }
 
-      const { rows } = await recorder.record({ mod: null, inputSteps: [], terminal })
+      const { rows } = await recorder.record({ mod: null, theme: null, inputSteps: [], terminal })
 
       expect(rows).toHaveLength(MAX_TERMINAL_ROWS)
     },
@@ -324,7 +368,12 @@ describe('modRecorder', () => {
       const { recorder } = fakeSandboxes(Array(MAX_TERMINAL_ROWS + 1).fill(''))
 
       await expect(
-        recorder.record({ mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP }),
+        recorder.record({
+          mod: null,
+          theme: null,
+          inputSteps: [],
+          terminal: DEFAULT_TERMINAL_SETUP,
+        }),
       ).rejects.toThrow(
         `recording has ${MAX_TERMINAL_ROWS + 1} rows, over the ${MAX_TERMINAL_ROWS} limit`,
       )
@@ -347,7 +396,12 @@ describe('e2bModRecorder', () => {
     }))
 
     await expect(
-      e2bModRecorder.record({ mod: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP }),
+      e2bModRecorder.record({
+        mod: null,
+        theme: null,
+        inputSteps,
+        terminal: DEFAULT_TERMINAL_SETUP,
+      }),
     ).rejects.toThrow(
       `${MAX_INPUT_STEPS + 1} input steps cannot finish inside the sandbox lifetime`,
     )

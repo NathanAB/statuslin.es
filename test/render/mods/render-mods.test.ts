@@ -257,6 +257,7 @@ describe('renderMods', () => {
     expect(modRequests(recorder.requests)).toEqual([
       {
         mod: { source: { tarball: TARBALL, path: 'mods/radar' }, pluginName: 'radar' },
+        theme: null,
         inputSteps,
         terminal: DEFAULT_TERMINAL_SETUP,
       },
@@ -304,7 +305,7 @@ describe('renderMods', () => {
     expect(await run(recorder).exitCode).toBe(0)
 
     expect(baselineRequests(recorder.requests)).toEqual([
-      { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+      { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
     ])
     expect(modRequests(recorder.requests)).toHaveLength(2)
   })
@@ -325,8 +326,8 @@ describe('renderMods', () => {
     expect(baselines).toHaveLength(2)
     expect(baselines).toEqual(
       expect.arrayContaining([
-        { mod: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP },
-        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { mod: null, theme: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP },
+        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
       ]),
     )
   })
@@ -347,8 +348,8 @@ describe('renderMods', () => {
     expect(baselines).toHaveLength(2)
     expect(baselines).toEqual(
       expect.arrayContaining([
-        { mod: null, inputSteps: [], terminal: wide },
-        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { mod: null, theme: null, inputSteps: [], terminal: wide },
+        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
       ]),
     )
     const setups = Object.fromEntries(

@@ -178,7 +178,7 @@ function baselinesByVersion(
   terminal: TerminalSetup,
 ): (version: string) => Promise<Recording> {
   const record = async () =>
-    boundRecording(await recorder.record({ mod: null, inputSteps, terminal }))
+    boundRecording(await recorder.record({ mod: null, theme: null, inputSteps, terminal }))
   const byVersion = new Map<string, Promise<Recording>>()
   let first: Promise<Recording> | undefined
   return async (version) => {
@@ -263,7 +263,7 @@ async function renderTerminal(
   baselineFor: BaselineFor,
   results: Results,
 ): Promise<Outcome> {
-  const recording = boundRecording(await recorder.record({ ...request, terminal }))
+  const recording = boundRecording(await recorder.record({ ...request, theme: null, terminal }))
   const baseline = await baselineFor(recording.claudeCodeVersion, request.inputSteps, terminal)
   const crop = cropModPreview(baseline.rows, recording.rows)
   const segments = crop.kind === 'rendered' ? crop.segments : []
