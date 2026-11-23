@@ -84,6 +84,25 @@ describe('modInstallFacts', () => {
     })
   })
 
+  // A theme is plain words that fold, and never stands in for what else the mod can do.
+  it("folds a theme mod's theme and keeps its other risks in sight", () => {
+    const { facts, more } = modInstallFacts(
+      mod(
+        ['ui.render{component=Backdrop}', 'tool.call'],
+        ['$.theme.set', '$.http.fetch', '$.fs.write'],
+        null,
+      ),
+    )
+
+    expect(lines(facts)).toEqual([
+      ['Reviewed at commit `a5c8ead`', false],
+      ['Writes files', true],
+      ['Connects to the internet', true],
+      ['Sees each tool call before it runs and can block or change it', true],
+    ])
+    expect(lines(more?.facts)).toEqual([["Sets Claude Desktop's colors and background", false]])
+  })
+
   // An empty footprint means nothing was recorded, not that the mod does nothing.
   it('says nothing is recorded yet when the footprint is empty, never that it does nothing', () => {
     const { facts, more } = modInstallFacts(mod([], [], null))
@@ -121,6 +140,13 @@ describe('modReachSentence', () => {
       'Can write files and connect to the internet, +2 more',
       true,
     ])
+  })
+
+  // A theme is cosmetic, so a mod that only sets one has no risk line.
+  it('says nothing for a theme mod that takes no risk', () => {
+    expect(
+      line(['ui.render{component=Backdrop}', 'ui.pointer', '$.theme.set', '$.theme.clear']),
+    ).toBeNull()
   })
 
   // An entry the page can't describe is never named here, but it is never hidden either.

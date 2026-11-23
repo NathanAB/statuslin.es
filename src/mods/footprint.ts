@@ -8,8 +8,10 @@ export const DRAW_LOCATIONS = [
   'above-prompt',
   'under-prompt',
   'pane',
+  'conversation-row',
   'status-entry',
   'toast',
+  'window-background',
   'built-in-rows',
 ] as const
 export type DrawLocation = (typeof DRAW_LOCATIONS)[number]
@@ -18,8 +20,10 @@ export const DRAW_LOCATION_LABEL: Record<DrawLocation, string> = {
   'above-prompt': 'above the prompt',
   'under-prompt': 'under the prompt',
   pane: 'a pane',
+  'conversation-row': 'a row in the conversation',
   'status-entry': 'a status entry',
   toast: 'a toast',
+  'window-background': 'the window background',
   'built-in-rows': 'built-in rows',
 }
 

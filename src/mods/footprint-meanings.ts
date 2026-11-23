@@ -24,9 +24,14 @@ function literalMatcherValue(value: string | undefined): string | null {
 /** Plumbing every mod uses: known, so not shown verbatim, but not worth a line. */
 const SILENT: EntryMeaning = { phrase: null }
 
+/** A Desktop theme (colors, a background, message style, sound); the terminal draws none. */
+const THEME = "sets Claude Desktop's colors and background"
+
 /** Ordered by how much a reader should weigh the entry; phrases are listed in this order.
  *  Meanings checked on 2026-10-22 against code.claude.com/docs/en/plugins/mods/reference, /api,
- *  /events and /admin, and the mods types in anthropics/claude-code (mods/types/claude-code.d.ts). */
+ *  /events and /admin, and the mods types in anthropics/claude-code (mods/types/claude-code.d.ts).
+ *  The theme, pointer, Backdrop and Placed entries checked on 2026-11-23 against the reference and
+ *  the plugin-authoring skill's look.md and types, from Claude Code 2.1.330. */
 export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
   Object.entries({
     '$.process.run': { phrase: 'runs programs', risk: true, short: 'run programs' },
@@ -126,6 +131,13 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     '$.ui.copy': { phrase: 'copies to your clipboard' },
     '$.ui.ask': { phrase: 'asks you questions' },
     '$.audio.play': { phrase: 'plays sounds' },
+    '$.theme.set': { phrase: THEME, draws: 'window-background' },
+    '$.theme.clear': { phrase: THEME },
+    // How a mod set its background before $.theme; theme mods still try it on older builds.
+    '$.ui.backdrop': { phrase: THEME, draws: 'window-background' },
+    'theme.set': { phrase: 'can change or block the themes other mods set' },
+    'theme.clear': { phrase: 'can change or block the themes other mods set' },
+    'ui.pointer': { phrase: 'responds when you click the window background' },
     'ui.status': { phrase: 'can change or hide the status entries other mods show' },
     'ui.log': { phrase: 'can change or hide the transcript lines other mods add' },
     'command.run': {
@@ -174,8 +186,11 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     'ui.render{component=AbovePrompt}': { phrase: null, draws: 'above-prompt' },
     'ui.render{component=PromptHint}': { phrase: null, draws: 'under-prompt' },
     'ui.render{component=Pane}': { phrase: null, draws: 'pane' },
+    'ui.render{component=Placed}': { phrase: null, draws: 'conversation-row' },
+    'ui.render{component=Backdrop}': { phrase: null, draws: 'window-background' },
     'ui.render': { phrase: null, draws: 'built-in-rows' },
     '$.ui.open': { phrase: null, draws: 'pane' },
+    '$.ui.place': { phrase: null, draws: 'conversation-row' },
     '$.ui.status': { phrase: null, draws: 'status-entry' },
     '$.ui.toast': { phrase: null, draws: 'toast' },
     '$.command.register': SILENT,
@@ -186,6 +201,7 @@ export const FOOTPRINT_MEANINGS = new Map<string, EntryMeaning>(
     '$.session.cwd': SILENT,
     '$.session.id': SILENT,
     '$.session.root': SILENT,
+    '$.session.repo': SILENT,
     '$.session.usage': SILENT,
     '$.session.version': SILENT,
     '$.session.model': SILENT,
