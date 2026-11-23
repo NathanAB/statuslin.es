@@ -116,10 +116,21 @@ export function busySettings(scenario: Scenario) {
   }
 }
 
+/** One turn the canned model plays: its text, then one tool call. Empty text sends no text block. */
+export interface CannedStep {
+  text: string
+  tool: { name: string; input: Record<string, unknown> }
+}
+
 /** The `--canned-reply` file of the canned model server. */
 export interface CannedReply {
   text: string
   usage: FeedStdin['context_window']['current_usage']
+  /**
+   * Step n answers the request that carries n tool results, when that request offers the step's
+   * tool; every other request gets `text`.
+   */
+  steps?: CannedStep[]
 }
 
 export function feedScenario(): Scenario {
