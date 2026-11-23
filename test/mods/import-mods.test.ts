@@ -32,7 +32,6 @@ const VALIDATE_OUTPUT = readFileSync(
   new URL('./fixtures/validate-skins.json', import.meta.url),
   'utf8',
 )
-/** A mod whose code sets a Desktop theme: Anthropic's theme-examples pack. */
 const THEME_VALIDATE = readFileSync(
   new URL('./fixtures/validate-theme-examples.json', import.meta.url),
   'utf8',

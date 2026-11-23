@@ -24,23 +24,11 @@ import {
 import { BASELINE, SHOT } from './shot-reads'
 import type { DesktopShot } from './types'
 
-/**
- * Whole-window Desktop shots, for mods that set a theme. A theme recolors the whole window, so
- * nothing is framed against the baseline: the shot is the window, and the baseline only says
- * whether anything outside the session's own turns changed.
- */
-
 const RERUN = `${SANDBOX_WORK_DIR}/rerun.png`
 const WHOLE: Rect = { x: 0, y: 0, ...WINDOW }
-/**
- * The card: the window at 0.4 of the shot's width (880x720 device pixels, about 0.3 MB), sharp on a
- * card about 440 CSS pixels wide, where the full shot is about 1.6 MB.
- */
 const CARD = { width: 880, height: 720 }
-/** A prompt box fill lighter than this grey is Desktop's light window. */
 const LIGHT_FILL = 0.5
 
-/** A theme recording that cannot stand for the theme; the message says why. */
 export class DesktopThemeRefused extends Error {
   override name = 'DesktopThemeRefused'
 }
@@ -57,7 +45,6 @@ async function differs(
   return parseChangedBox(stdout) !== null
 }
 
-/** Whether the shot's window differs from the baseline's anywhere the session's turns don't show. */
 const changedOutsideTurns = (analysis: AnalysisSandbox) =>
   differs(
     analysis,
@@ -74,7 +61,6 @@ async function shownWindow(analysis: AnalysisSandbox): Promise<ThemeWindow> {
   return fill.mean > LIGHT_FILL ? 'light' : 'dark'
 }
 
-/** The whole window and its card, each re-encoded from its pixels alone and checked to be only that. */
 async function wholeWindow(analysis: AnalysisSandbox): Promise<WindowShot> {
   const png = checkedPixelPng(await analysis.readPng(croppedPngCommand(SHOT, WHOLE)), {
     width: WINDOW.width * SCALE,
@@ -115,8 +101,7 @@ export interface ThemeShots {
 /**
  * A Desktop theme's preview: the first run's whole window. Refused when the theme didn't apply
  * (nothing outside the turns changed), when the window shows the other light or dark than the theme
- * is made for, or when the two runs differ, as then the still the operator reviews could differ from
- * the one a later run publishes.
+ * is made for, or when the two runs differ.
  */
 export async function analyseTheme(
   analysis: AnalysisSandbox,

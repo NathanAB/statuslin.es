@@ -63,7 +63,6 @@ function PluginInstall({ plugin, origin }: { plugin: ThemePlugin; origin: string
   )
 }
 
-/** The recorded look: a terminal theme's screen, or a Desktop theme's whole window. */
 function ThemeLook({ theme }: { theme: PublishedTheme }) {
   const label = `${theme.name} preview`
   if (theme.kind === 'terminal') {
@@ -78,7 +77,6 @@ function ThemeLook({ theme }: { theme: PublishedTheme }) {
   )
 }
 
-/** Each step in order, as commands in a sentence: "/a, then /b". */
 function Steps({ steps }: { steps: string[] }) {
   return steps.map((step, i) => (
     // biome-ignore lint/suspicious/noArrayIndexKey: a stored list that never reorders and may repeat a step.
@@ -89,10 +87,6 @@ function Steps({ steps }: { steps: string[] }) {
   ))
 }
 
-/**
- * How to switch to the theme once its plugin is installed. A Desktop theme's steps are the ones
- * its preview's session sent, so they switch to the theme the card shows.
- */
 function SwitchTo({ theme }: { theme: PublishedTheme }) {
   if (theme.kind === 'terminal') {
     return (

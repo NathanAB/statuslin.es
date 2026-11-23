@@ -172,7 +172,6 @@ describe('/themes', () => {
     expect(within(cardOf('Dawn')).getByText('Terminal')).toBeTruthy()
   })
 
-  // The steps are the ones the preview's session sent, so the card shows the theme it names.
   it("tells a visitor to send the Desktop theme's own switch steps, in order", () => {
     renderPage([
       desktopTheme('Night Reef'),

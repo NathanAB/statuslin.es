@@ -297,7 +297,6 @@ describe('desktopRecorder themes', () => {
     steps: string[]
   }
 
-  /** Records sessions as each sandbox staged them: whether the mod ran, the window, the steps typed. */
   function recordingSandboxes(versions = () => VERSIONS) {
     const sessions: Session[] = []
     const sandboxes = {

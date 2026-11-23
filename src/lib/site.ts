@@ -103,7 +103,6 @@ export function modDesktopPreviewPath(
   return image === 'card' ? `${path}&image=card` : path
 }
 
-/** A Desktop theme's whole-window shot. */
 export const THEME_DESKTOP_PREVIEW_ROUTE = '/theme-previews/$themeId/desktop.png'
 
 /** A theme's whole-window shot, or with `image` 'card' its card image, under the render that made it. */

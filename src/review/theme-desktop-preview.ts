@@ -10,10 +10,8 @@ import { assertAdmin } from './admin'
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
-/** Where /admin shows a Desktop theme's whole-window shot before its plugin is published. */
 export const ADMIN_THEME_DESKTOP_PREVIEW_ROUTE = '/admin/theme-previews/$themeId/desktop.png'
 
-/** Nothing here may be cached: not the image, and not a refusal a later admin would get. */
 const UNCACHED = { 'Cache-Control': 'private, no-store' }
 
 export function adminThemeDesktopPreviewPath(themeId: string): string {

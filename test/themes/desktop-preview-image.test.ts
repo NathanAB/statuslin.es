@@ -40,7 +40,6 @@ afterAll(async () => {
   await close()
 })
 
-/** The `r` a card puts in a theme's image URL: when its shot was stored. */
 async function renderOf(themeId: string): Promise<string> {
   const [row] = await db
     .select({ createdAt: schema.modThemeDesktopPreviews.createdAt })

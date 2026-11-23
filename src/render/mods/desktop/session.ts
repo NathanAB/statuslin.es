@@ -84,7 +84,6 @@ export function deepLink(scenario: Scenario): string {
 export const deepLinkCommand = (scenario: Scenario) =>
   `timeout 15 claude-desktop ${DESKTOP_ARGS.join(' ')} ${shellQuote(deepLink(scenario))} >/dev/null 2>&1`
 
-/** Desktop's own light or dark theme, which a theme made for one window is recorded in. */
 const appearance = (window: ThemeWindow) => ({
   path: `${DESKTOP_DATA_DIR}/config.json`,
   data: JSON.stringify({ userThemeMode: window }),

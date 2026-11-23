@@ -509,7 +509,6 @@ describe('publish refusals', () => {
     const { versionId } = await draftMod('theme-examples')
     await addDesktopTheme(db, versionId, { key: 'night-reef' })
     const honu = await addDesktopTheme(db, versionId, { key: 'honu-lagoon', rendered: false })
-    // A terminal preview is not a Desktop theme's preview.
     await db.insert(schema.modThemePreviews).values({ themeId: honu, ...SEEDED_THEME_PREVIEW })
 
     const { exitCode, output } = await publish([

@@ -844,7 +844,6 @@ async function storedThemeShots(versionId: string) {
     .orderBy(schema.modThemes.key)
 }
 
-/** What FAKE_THEME_SHOT stores, as storedThemeShots reads it back. */
 const STORED_THEME_SHOT = {
   png: FAKE_THEME_SHOT.png,
   width: FAKE_THEME_SHOT.width,
@@ -857,7 +856,6 @@ const STORED_THEME_SHOT = {
 
 const SETS_THEME = { events: ['session.start'], calls: ['$.theme.set'] }
 
-/** A Desktop recorder whose theme recordings throw for the named switch step. */
 function throwingThemes(throws: Record<string, Error>): FakeDesktopRecorder {
   const recorder = new FakeDesktopRecorder()
   const record = recorder.recordTheme.bind(recorder)

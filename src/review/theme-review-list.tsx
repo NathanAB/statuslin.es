@@ -12,7 +12,6 @@ const WINDOW_LABEL: Record<ThemeWindow, string> = {
   dark: 'Dark window',
 }
 
-/** A terminal theme: its recorded screen above the exact file it was recorded from. */
 function TerminalThemeReview({ theme }: { theme: Extract<ReviewTheme, { kind: 'terminal' }> }) {
   return (
     <>
@@ -42,10 +41,6 @@ function TerminalThemeReview({ theme }: { theme: Extract<ReviewTheme, { kind: 't
   )
 }
 
-/**
- * A Desktop theme: its whole window above the steps its recording sent, which its card tells
- * visitors to send. Its look is the mod's code, which the card reviews above.
- */
 function DesktopThemeReview({ theme }: { theme: Extract<ReviewTheme, { kind: 'desktop' }> }) {
   const steps = theme.switchSteps.join('\n')
   return (
@@ -78,7 +73,6 @@ function DesktopThemeReview({ theme }: { theme: Extract<ReviewTheme, { kind: 'de
   )
 }
 
-/** One theme, folded under its name. */
 function ThemeReview({ theme }: { theme: ReviewTheme }) {
   return (
     <Details summary={theme.name}>

@@ -109,17 +109,13 @@ export interface NewVersion {
   desktopThemes?: DesktopTheme[] | undefined
 }
 
-/**
- * Refuses Desktop themes declared for a mod whose code sets none: recording one would show the
- * window with no theme, under the theme's name.
- */
+/** Refuses Desktop themes declared for a mod whose code sets none. */
 export function checkDesktopThemes(footprint: schema.ModFootprint, themes: DesktopTheme[]): void {
   if (themes.length > 0 && !setsTheme(footprint)) {
     throw new Error('declares Desktop themes, but its code sets no theme')
   }
 }
 
-/** Adds the Desktop themes a version carries, each with the steps that switch to it. */
 export async function insertDesktopThemes(
   db: Db,
   versionId: string,

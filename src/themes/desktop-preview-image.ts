@@ -39,13 +39,11 @@ export async function themeDesktopPreviewResponse(
     headers: {
       'Content-Type': 'image/png',
       'X-Content-Type-Options': 'nosniff',
-      // An hour, like a mod's Desktop shot: a delisted plugin's image must leave shared caches soon.
       'Cache-Control': 'public, max-age=3600',
     },
   })
 }
 
-// createServerOnlyFn keeps `db` out of the client bundle, as for the mod preview route.
 export const themeDesktopPreviewResponseForRoute = createServerOnlyFn(
   (themeId: string, render: string | null, image: string | null): Promise<Response> =>
     themeDesktopPreviewResponse(defaultDb, themeId, render, image),

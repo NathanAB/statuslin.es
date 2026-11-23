@@ -53,10 +53,6 @@ export type PublishedTheme =
       switchSteps: string[]
     })
 
-/**
- * Every theme of a published plugin's live version that has its preview, and meets `where` when
- * given. Never the PNGs, which only the image route sends.
- */
 function publishedThemes(db: Db, where?: SQL) {
   return db
     .select({

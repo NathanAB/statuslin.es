@@ -116,11 +116,9 @@ export interface DesktopThemeSeed {
   name?: string
   window?: 'light' | 'dark'
   switchSteps?: string[]
-  /** Seeds the theme's whole-window shot, so its version can render. */
   rendered?: boolean
 }
 
-/** The whole-window shot and card `addDesktopTheme` stores for a theme seeded as rendered. */
 export const SEEDED_THEME_SHOT = {
   png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7]),
   width: 1100,
@@ -132,7 +130,6 @@ export const SEEDED_THEME_SHOT = {
   engineVersion: '2.1.330',
 }
 
-/** A Desktop theme on a version, as the operator declares one in curation.json. */
 export async function addDesktopTheme(
   db: TestDb,
   versionId: string,

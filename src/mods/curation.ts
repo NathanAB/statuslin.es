@@ -46,11 +46,6 @@ export const terminalSetupSchema = z.strictObject({
   fullscreen: z.boolean(),
 })
 
-/**
- * A Desktop theme the operator declares for a mod that sets one (src/themes/theme.ts `DesktopTheme`).
- * Its switch steps are sent in Claude Desktop the way text input steps are, and the recorder
- * refuses them past the same limits.
- */
 const desktopThemeSchema = z.strictObject({
   key: z
     .string()
@@ -63,7 +58,6 @@ const desktopThemeSchema = z.strictObject({
 
 type DesktopThemeEntry = z.infer<typeof desktopThemeSchema>
 
-/** Two of an entry's Desktop themes with one key, or names a visitor would read as one. */
 function sameDesktopThemes(themes: DesktopThemeEntry[], ctx: z.RefinementCtx): void {
   const keys = new Set<string>()
   const names = new Map<string, string>()

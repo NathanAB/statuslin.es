@@ -88,7 +88,6 @@ export interface RenderModsDeps {
 const CONCURRENCY = 4
 /** How many of one version's themes record at once, so a pack of dozens takes minutes. */
 const THEME_CONCURRENCY = 4
-/** Each Desktop theme records in two Desktop sandboxes at once, so fewer of them run together. */
 const DESKTOP_THEME_CONCURRENCY = 2
 
 type Outcome = { kind: 'rendered' } | { kind: 'drew nothing' } | { kind: 'failed'; reason: string }
@@ -348,7 +347,6 @@ async function renderThemes(
     .sort((a, b) => a.key.localeCompare(b.key))
 }
 
-/** Each Desktop theme's failure is its own, as a terminal theme's is. */
 async function renderDesktopThemes(
   target: Target,
   mod: ModUnderRender,

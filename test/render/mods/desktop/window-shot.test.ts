@@ -24,13 +24,9 @@ const CHANGED = '1 400x300+11+101'
 const SAME = '0 0x0+2202+1802'
 
 interface FakeShots {
-  /** What comparing the shot with the no-mod baseline prints. */
   frame?: string
-  /** What comparing the two runs of the theme prints. */
   runs?: string
-  /** The prompt box fill's grey in the shot. */
   promptGrey?: number
-  /** The chunks each PNG the analysis prints is made of. */
   chunks?: string[]
 }
 
@@ -64,7 +60,6 @@ const RERUN = new Uint8Array([2])
 const BASELINE = new Uint8Array([3])
 const THEME = { shots: [SHOT, RERUN] as const, baseline: BASELINE }
 
-/** The rectangles a comparison command blanks before it compares, as CSS [left, top, right, bottom]. */
 const masks = (command: string | undefined) =>
   [...(command ?? '').matchAll(/rectangle (\d+),(\d+) (\d+),(\d+)/g)].map((m) => {
     const [x0 = 0, y0 = 0, x1 = 0, y1 = 0] = m.slice(1).map(Number)

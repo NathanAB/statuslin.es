@@ -165,11 +165,6 @@ async function updateCardSurface(db: Db, entry: CurationEntry): Promise<boolean>
 
 const byKey = (a: DesktopTheme, b: DesktopTheme) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
 
-/**
- * Replaces the Desktop themes on the curated version already built from the entry's commit, when
- * its declared ones changed; their previews go with the old rows, so they render again. A version's
- * terminal themes are its files and stay.
- */
 async function updateDesktopThemes(db: Db, entry: CurationEntry): Promise<boolean> {
   const declared = [...(entry.desktopThemes ?? [])].sort(byKey)
   const versions = await db
@@ -205,7 +200,6 @@ async function updateDesktopThemes(db: Db, entry: CurationEntry): Promise<boolea
   return changed
 }
 
-/** Stores what changed in an entry whose commit is already imported, and says what to do next. */
 async function updateImported(db: Db, entry: CurationEntry, imported: string): Promise<string> {
   const newThemes = await updateDesktopThemes(db, entry)
   const newSteps = await updateInputSteps(db, entry)

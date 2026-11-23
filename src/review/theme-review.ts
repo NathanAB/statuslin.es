@@ -37,7 +37,6 @@ export type ReviewTheme =
       preview: DesktopShotImage | null
     })
 
-/** Every theme of these versions with whichever preview its kind has, in name order. */
 function reviewThemeRows(database: Db, versionIds: string[]) {
   return database
     .select({
