@@ -118,6 +118,9 @@ export interface HardeningExtras {
   userChecks?: readonly string[]
 }
 
+/** Fails when `cmd` fails as well as when it prints anything, so a broken probe never passes. */
+const printsNothing = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$out"`
+
 const STATUSLINE_HARDENING: HardeningExtras = {
   protectedRoots: ['/opt/statuslines', '/usr/local'],
   readOnlyPaths: [
@@ -130,7 +133,11 @@ const STATUSLINE_HARDENING: HardeningExtras = {
     '/etc/ssl/certs/ca-certificates.crt',
     '/etc/hosts',
   ],
-  userChecks: [`test "$(jq --version)" = "jq-${JQ_VERSION}"`],
+  userChecks: [
+    `test "$(jq --version)" = "jq-${JQ_VERSION}"`,
+    // The trusted cert directory and every entry in it, whatever names E2B gives its own CA files.
+    printsNothing('find /etc/ssl/certs -maxdepth 1 -writable'),
+  ],
 }
 
 /**
@@ -156,9 +163,6 @@ const WORLD_WRITABLE_DEVICES = [
 const FILES_WITH_CAPABILITIES = `find ${FILE_MOUNTS} -xdev -type f -exec getcap {} +`
 
 const EXITS_UNLESS_LOCKED = `awk '{ exit $2 != "L" }'`
-
-/** Fails when `cmd` fails as well as when it prints anything, so a broken probe never passes. */
-const printsNothing = (cmd: string) => `out=$(set -o pipefail; ${cmd}) && test -z "$out"`
 
 const ROOT_LISTENERS_OTHER_THAN_ENVD = `ss -Hltunp | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u | xargs -r -n1 ps -o user=,comm= -p | awk '$1 == "root" && $2 != "envd"'`
 
@@ -187,6 +191,11 @@ const snapshotHardening = (
       'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
       // The base image ships these 0777; the world-writable checks below reject them.
       'chmod go-w /etc/inittab /code',
+      // E2B seeds its proxy CA into the trusted cert directory (a bind mount of /run/e2b/certs), and
+      // E2B's template build turns one of its symlinks into a 0777 copy, so `user` could swap in its
+      // own CA. `-type f` skips the symlinks: they point into /usr/local/share/ca-certificates, even
+      // when dangling, and the chmod of /usr/local above keeps that read-only.
+      "find /etc/ssl/certs -maxdepth 1 -name 'e2b-*.pem' -type f -exec chmod go-w {} +",
       // Unprivileged user namespaces are a kernel-exploit surface, and nothing here needs them.
       'sysctl -w user.max_user_namespaces=0',
       // As root, because `user` cannot list the root-only usage server directory.

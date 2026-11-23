@@ -119,6 +119,7 @@ const HARDENING_STEPS = [
   'passwd -l user',
   'systemctl mask --now ssh.service ssh.socket rpcbind.service rpcbind.socket',
   'chmod go-w /etc/inittab /code',
+  "find /etc/ssl/certs -maxdepth 1 -name 'e2b-*.pem' -type f -exec chmod go-w {} +",
   'sysctl -w user.max_user_namespaces=0',
 ]
 
@@ -158,6 +159,7 @@ const STATUSLINE_USER_ASSERTIONS = [
     '/etc/hosts',
   ].map(notWritable),
   'test "$(jq --version)" = "jq-1.7.1"',
+  noOutput('find /etc/ssl/certs -maxdepth 1 -writable'),
 ]
 
 const MOD_USER_ASSERTIONS = [
