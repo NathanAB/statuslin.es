@@ -58,7 +58,7 @@ const theme = (name: string): PublishedTheme => ({
   name,
   window: 'dark',
   preview: [{ text: `${name} screen` }],
-  plugin: { slug: 'pack', title: 'Theme pack', authorGithub: 'octocat' },
+  plugin: { slug: 'pack', title: 'Theme pack', authorGithub: 'octocat', code: null },
 })
 
 function renderPage(mod: Partial<ModDetail>, themes: PublishedTheme[]) {

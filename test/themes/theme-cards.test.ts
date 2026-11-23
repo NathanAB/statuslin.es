@@ -30,14 +30,24 @@ beforeEach(async () => {
 async function plugin(
   slug: string,
   names: string[],
-  opts: { status?: schema.ModStatus; copyCount?: number } = {},
+  opts: {
+    status?: schema.ModStatus
+    copyCount?: number
+    footprint?: schema.ModFootprint
+    hooksModules?: string[]
+  } = {},
 ) {
-  const modId = await addMod(db, slug, opts.status ?? 'published')
-  const versionId = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1 })
+  const { status, copyCount, ...version } = opts
+  const modId = await addMod(db, slug, status ?? 'published')
+  const versionId = await addVersion(db, modId, {
+    commitSha: sha('a'),
+    versionNumber: 1,
+    ...version,
+  })
   await setCurrentVersion(db, modId, versionId)
   await db
     .update(schema.mods)
-    .set({ title: `${slug} title`, copyCount: opts.copyCount ?? 0 })
+    .set({ title: `${slug} title`, copyCount: copyCount ?? 0 })
     .where(eq(schema.mods.id, modId))
   for (const name of names) {
     await addTheme(db, versionId, { key: name.toLowerCase().replace(/ /g, '-'), name })
@@ -61,8 +71,22 @@ describe('getThemeCards', () => {
       name: 'Theme 00',
       window: 'dark',
       preview: SEEDED_THEME_PREVIEW.segments,
-      plugin: { slug: 'pack', title: 'pack title', authorGithub: 'octocat' },
+      plugin: { slug: 'pack', title: 'pack title', authorGithub: 'octocat', code: null },
     })
+  })
+
+  it("carries what a plugin's hooks modules can reach on its theme cards, so they can say it runs code", async () => {
+    const footprint = { events: ['ui.render{component=AbovePrompt}'], calls: ['$.http.fetch'] }
+    await plugin('mixed', ['Night'], { footprint, hooksModules: ['./register.ts'] })
+    // A module validate records nothing for is still code.
+    await plugin('silent', ['Dawn'], { hooksModules: ['./register.ts'] })
+
+    const cards = await getThemeCards(db)
+
+    expect(cards.map((card) => [card.name, card.plugin.code])).toEqual([
+      ['Night', { footprint }],
+      ['Dawn', { footprint: { events: [], calls: [] } }],
+    ])
   })
 
   it("orders plugins by installs, then slug, and each plugin's themes by name", async () => {

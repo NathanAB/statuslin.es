@@ -13,7 +13,7 @@ const THEME: PublishedTheme = {
   name: 'Night',
   window: 'dark',
   preview: [{ text: 'Night screen' }],
-  plugin: { slug: 'pack', title: 'Pack', authorGithub: 'octocat' },
+  plugin: { slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },
 }
 
 describe('/themes head', () => {

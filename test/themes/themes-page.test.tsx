@@ -35,7 +35,7 @@ function theme(name: string, slug: string, over: Partial<PublishedTheme> = {}): 
     name,
     window: 'dark',
     preview: [{ text: `${name} screen` }],
-    plugin: { slug, title: `${slug} title`, authorGithub: 'octocat' },
+    plugin: { slug, title: `${slug} title`, authorGithub: 'octocat', code: null },
     ...over,
   }
 }
@@ -81,6 +81,42 @@ describe('/themes', () => {
         `claude plugin marketplace add ${ORIGIN}/marketplace.json && claude plugin install pack@statuslines`,
       ),
     ).toBeTruthy()
+  })
+
+  it("says on the card when a theme's plugin also runs code, with what it can reach and a link to its page", () => {
+    const footprint = { events: [], calls: ['$.http.fetch', '$.fs.write', '$.process.run'] }
+    renderPage([
+      theme('Night', 'mixed', {
+        plugin: { slug: 'mixed', title: 'Mixed', authorGithub: 'octocat', code: { footprint } },
+      }),
+      theme('Dawn', 'pack'),
+    ])
+
+    const night = within(cardOf('Night'))
+    const notice = night.getByText('Also runs code.').closest('div') as HTMLElement
+    expect(notice.textContent).toBe('Also runs code. Can run programs and write files, +1 more.')
+    expect(
+      night.getByRole('link', { name: 'See what it can do: Mixed' }).getAttribute('href'),
+    ).toBe('/mods/mixed')
+    // The install command stays on the card.
+    expect(night.getByText(/claude plugin install mixed@statuslines/)).toBeTruthy()
+
+    const dawn = within(cardOf('Dawn'))
+    expect(dawn.queryByText(/runs code/)).toBeNull()
+    expect(dawn.queryByText(/^Can /)).toBeNull()
+    expect(dawn.queryByRole('link', { name: /See what it can do/ })).toBeNull()
+  })
+
+  it('still says a plugin runs code when nothing it can reach is recorded', () => {
+    const footprint = { events: [], calls: [] }
+    renderPage([
+      theme('Night', 'silent', {
+        plugin: { slug: 'silent', title: 'Silent', authorGithub: 'octocat', code: { footprint } },
+      }),
+    ])
+
+    const notice = screen.getByText('Also runs code.').closest('div') as HTMLElement
+    expect(notice.textContent).toBe("Also runs code. What it can reach isn't recorded yet.")
   })
 
   // The name to pick is the one stored with the theme whose preview the card shows.
