@@ -118,6 +118,11 @@ describe('modFactTiles', () => {
     ).toBe('Nothing on screen')
   })
 
+  it('says a theme mod shows on the window background', () => {
+    const footprint = { events: ['ui.render{component=Backdrop}'], calls: ['$.theme.set'] }
+    expect(value({ footprint }, 'What you see')).toBe('The window background')
+  })
+
   it('lists only the surfaces where a preview recorded drawing', () => {
     expect(value({ desktop: SHOT }, 'Works in')).toBe('Terminal and Claude Desktop')
     expect(value({ preview: [], desktop: SHOT }, 'Works in')).toBe('Claude Desktop')

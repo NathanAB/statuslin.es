@@ -235,6 +235,21 @@ describe('inspectPlugin', () => {
     expect(facts.footprint).toEqual({ events: ['ui.render'], calls: [] })
   })
 
+  // Anthropic's theme-examples at 7b7a29e, validated by Claude Code 2.1.309 (the mod template's),
+  // which warns that its Backdrop and Placed hooks name components it doesn't know yet.
+  it('records the theme calls of a Desktop theme mod', async () => {
+    const facts = await inspectPlugin(
+      sandbox(
+        passing('validate-theme-examples.json'),
+        '{"name":"theme-examples","license":"Apache-2.0","types":"./types/index.d.ts"}',
+        modulesOnlyListing('./register.tsx', ['d 4096 types', 'f 900 types/index.d.ts']),
+      ),
+    )
+
+    expect(facts.footprint.calls).toEqual(expect.arrayContaining(['$.theme.set', '$.theme.clear']))
+    expect(facts.footprint.events).toContain('ui.render{component=Backdrop}')
+  })
+
   it.each([
     [
       'a shell hook, an MCP server and a command (the files validate says nothing about)',

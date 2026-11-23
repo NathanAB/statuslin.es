@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import type { ModFootprint } from '@/db/schema'
 import { terminalPlacement, writesInToolbar } from '@/mods/draw-placement'
 import {
   DRAW_LOCATION_LABEL,
@@ -6,6 +8,7 @@ import {
   describeModFootprint,
   footprintRecorded,
 } from '@/mods/footprint'
+import { parseFootprint } from '@/mods/plugin-facts'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -190,6 +193,60 @@ describe('describeFootprint on the calls and events published mods use', () => {
   it("keeps an event on another mod's own namespace unknown", () => {
     expect(describeFootprint({ events: ['prismantis.markdown'], calls: [] }).unknown).toEqual([
       'prismantis.markdown',
+    ])
+  })
+})
+
+// Theme entries checked against code.claude.com/docs/en/plugins/mods/reference and the
+// plugin-authoring skill's look.md and types. Desktop draws a theme and the terminal draws none.
+describe('describeFootprint on a Desktop theme mod', () => {
+  const THEME = "sets Claude Desktop's colors and background"
+  const OTHERS = 'can change or block the themes other mods set'
+  const drawn = (footprint: ModFootprint) =>
+    describeFootprint(footprint).draws.map((d) => DRAW_LOCATION_LABEL[d])
+
+  it.each([
+    ['$.theme.set', THEME],
+    ['$.theme.clear', THEME],
+    ['$.ui.backdrop', THEME],
+    ['theme.set', OTHERS],
+    ['theme.clear', OTHERS],
+    ['ui.pointer', 'responds when you click the window background'],
+  ] as const)('describes %s as %j, not a risk', (entry, phrase) => {
+    const result = describeFootprint({ events: [entry], calls: [] })
+    expect(result.unknown).toEqual([])
+    expect(result.phrases).toEqual([phrase])
+    expect(result.risks).toEqual([])
+  })
+
+  it('says a theme draws on the window background, not built-in rows', () => {
+    expect(drawn({ events: ['ui.render{component=Backdrop}'], calls: [] })).toEqual([
+      'the window background',
+    ])
+    expect(drawn({ events: [], calls: ['$.theme.set'] })).toEqual(['the window background'])
+  })
+
+  it('says a placed row draws in the conversation, not built-in rows', () => {
+    expect(drawn({ events: ['ui.render{component=Placed}'], calls: ['$.ui.place'] })).toEqual([
+      'a row in the conversation',
+    ])
+  })
+
+  // Anthropic's theme-examples at 7b7a29e, as Claude Code 2.1.309 (the mod template's) validates it.
+  it("reads theme-examples' real footprint as a theme, with nothing left undescribed", () => {
+    const footprint = parseFootprint(
+      JSON.parse(
+        readFileSync(new URL('./fixtures/validate-theme-examples.json', import.meta.url), 'utf8'),
+      ),
+    )
+    const result = describeFootprint(footprint)
+    expect(result.unknown).toEqual([])
+    expect(result.phrases).toContain(THEME)
+    expect(drawn(footprint)).toEqual([
+      'above the prompt',
+      'a row in the conversation',
+      'a toast',
+      'the window background',
     ])
   })
 })
