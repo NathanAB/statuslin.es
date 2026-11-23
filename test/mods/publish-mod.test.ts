@@ -6,6 +6,7 @@ import { runPublish } from '../../scripts/publish-mod'
 import {
   addDesktopPreview,
   addMod,
+  addTheme,
   addVersion,
   type FakeGitHub,
   fakeGitHub,
@@ -431,9 +432,29 @@ describe('publish refusals', () => {
 
     expect(exitCode).toBe(1)
     expect(output).toMatch(
-      /has not rendered on both surfaces \(it needs a clean-main result in the terminal and in Claude Desktop\)/,
+      /has not rendered on both surfaces \(it needs a clean-main result in the terminal and in Claude Desktop, and a preview of every theme it carries\)/,
     )
     expect(await modState(db, 'meter')).toEqual({ status: 'draft', currentVersionId: null })
+  })
+
+  it('refuses a version until every theme it carries has its own preview', async () => {
+    const { versionId } = await draftMod('dracula-pack')
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, versionId, { key: 'nord', name: 'Nord', rendered: false })
+
+    const { exitCode, output } = await publish([
+      'dracula-pack',
+      sha('a'),
+      '--apply',
+      '--confirm=dracula-pack',
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/and a preview of every theme it carries/)
+    expect(await modState(db, 'dracula-pack')).toEqual({
+      status: 'draft',
+      currentVersionId: null,
+    })
   })
 
   it('refuses a delisted mod, which only delist --restore brings back', async () => {

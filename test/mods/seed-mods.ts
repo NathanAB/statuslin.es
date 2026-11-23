@@ -72,6 +72,42 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
   return versionId
 }
 
+interface ThemeSeed {
+  key: string
+  name?: string
+  window?: 'light' | 'dark'
+  source?: string
+  /** Seeds the theme's preview, so its version can render. */
+  rendered?: boolean
+}
+
+/** The terminal preview `addTheme` stores for a theme seeded as rendered. */
+export const SEEDED_THEME_PREVIEW = {
+  segments: [{ text: 'themed screen' }],
+  claudeCodeVersion: '2.1.0',
+}
+
+/** A terminal theme on a version, as intake stores one read from `themes/<key>.json`. */
+export async function addTheme(db: TestDb, versionId: string, seed: ThemeSeed): Promise<string> {
+  const name = seed.name ?? seed.key
+  const [theme] = await db
+    .insert(schema.modThemes)
+    .values({
+      modVersionId: versionId,
+      kind: 'terminal',
+      key: seed.key,
+      name,
+      window: seed.window ?? 'dark',
+      source: seed.source ?? JSON.stringify({ name, base: 'dark', overrides: {} }),
+    })
+    .returning()
+  const themeId = theme?.id as string
+  if (seed.rendered ?? true) {
+    await db.insert(schema.modThemePreviews).values({ themeId, ...SEEDED_THEME_PREVIEW })
+  }
+  return themeId
+}
+
 /** The shot `addDesktopPreview` stores, with its card. The shot is a real 1x1 PNG, so a card can
  * draw it; the card's bytes only start with the PNG signature. */
 export const SEEDED_DESKTOP_SHOT = {
