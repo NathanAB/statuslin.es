@@ -1,9 +1,17 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { PAGE_SIZE } from '@/gallery/queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
-import { addTheme, openTestDb, REPO_URL, seedMod, sha, type TestDb } from './seed-mods'
+import {
+  addTheme,
+  openTestDb,
+  REPO_URL,
+  SEEDED_THEME_PREVIEW,
+  seedMod,
+  sha,
+  type TestDb,
+} from './seed-mods'
 
 const testState = vi.hoisted(() => ({ db: null as unknown }))
 
@@ -321,6 +329,32 @@ describe('llms-full.txt with mods', () => {
 
     expect(full.headers.get('content-type')).toBe(short.headers.get('content-type'))
     expect(full.headers.get('cache-control')).toBe(short.headers.get('cache-control'))
+  })
+})
+
+describe('with a published theme that has no preview', () => {
+  beforeAll(async () => {
+    await db
+      .delete(schema.modThemePreviews)
+      .where(
+        inArray(
+          schema.modThemePreviews.themeId,
+          db.select({ id: schema.modThemes.id }).from(schema.modThemes),
+        ),
+      )
+  })
+  afterAll(async () => {
+    const themes = await db.select({ id: schema.modThemes.id }).from(schema.modThemes)
+    await db
+      .insert(schema.modThemePreviews)
+      .values(themes.map((theme) => ({ themeId: theme.id, ...SEEDED_THEME_PREVIEW })))
+  })
+
+  // /themes shows no card for it and is noindex, so the sitemap leaves /themes out.
+  it('leaves /themes out of the sitemap', async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).not.toContain(`<loc>${BASE}/themes</loc>`)
   })
 })
 

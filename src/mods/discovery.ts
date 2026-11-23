@@ -10,8 +10,6 @@ import { newestDate, type SitemapPage } from '@/lib/sitemap'
 import { getPublishedModListings, type PublishedModListing } from './published-listings'
 import { listUnreviewedMods } from './unreviewed-queries'
 
-/** The published mods, which the gallery and /mods list, apart from the theme plugins, which only
- * /themes and their own pages list (ADR 0012). */
 async function publishedListings(): Promise<{
   all: PublishedModListing[]
   mods: PublishedModListing[]
@@ -25,10 +23,9 @@ async function publishedListings(): Promise<{
   }
 }
 
-/** /themes, dated by the newest plugin whose themes it shows; none while it has no cards, since
- * the page is noindex then. */
+// /themes is noindex while it has no cards.
 function themesPages(all: PublishedModListing[]): SitemapPage[] {
-  const updatedAt = newestDate(all.filter((l) => l.hasThemes).map((l) => l.updatedAt))
+  const updatedAt = newestDate(all.filter((l) => l.hasThemeCards).map((l) => l.updatedAt))
   return updatedAt === null ? [] : [{ path: THEMES_PATH, updatedAt }]
 }
 
