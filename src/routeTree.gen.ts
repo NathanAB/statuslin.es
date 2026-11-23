@@ -22,6 +22,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ThemesRouteImport } from './routes/themes'
 import { Route as DotwellKnownSecurityDottxtRouteImport } from './routes/[.]well-known.security[.]txt'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminReviewRouteImport } from './routes/admin/review'
@@ -112,6 +113,11 @@ const SubmitRoute = SubmitRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThemesRoute = ThemesRouteImport.update({
+  id: '/themes',
+  path: '/themes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DotwellKnownSecurityDottxtRoute =
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/terms': typeof TermsRoute
+  '/themes': typeof ThemesRoute
   '/.well-known/security.txt': typeof DotwellKnownSecurityDottxtRoute
   '/admin/review': typeof AdminReviewRoute
   '/alternatives/$tool': typeof AlternativesToolRoute
@@ -311,6 +318,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/terms': typeof TermsRoute
+  '/themes': typeof ThemesRoute
   '/.well-known/security.txt': typeof DotwellKnownSecurityDottxtRoute
   '/admin/review': typeof AdminReviewRoute
   '/alternatives/$tool': typeof AlternativesToolRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/terms': typeof TermsRoute
+  '/themes': typeof ThemesRoute
   '/.well-known/security.txt': typeof DotwellKnownSecurityDottxtRoute
   '/admin/review': typeof AdminReviewRoute
   '/alternatives/$tool': typeof AlternativesToolRoute
@@ -396,6 +405,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/submit'
     | '/terms'
+    | '/themes'
     | '/.well-known/security.txt'
     | '/admin/review'
     | '/alternatives/$tool'
@@ -437,6 +447,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/submit'
     | '/terms'
+    | '/themes'
     | '/.well-known/security.txt'
     | '/admin/review'
     | '/alternatives/$tool'
@@ -478,6 +489,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/submit'
     | '/terms'
+    | '/themes'
     | '/.well-known/security.txt'
     | '/admin/review'
     | '/alternatives/$tool'
@@ -520,6 +532,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubmitRoute: typeof SubmitRoute
   TermsRoute: typeof TermsRoute
+  ThemesRoute: typeof ThemesRoute
   DotwellKnownSecurityDottxtRoute: typeof DotwellKnownSecurityDottxtRoute
   AdminReviewRoute: typeof AdminReviewRoute
   AlternativesToolRoute: typeof AlternativesToolRoute
@@ -639,6 +652,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/themes': {
+      id: '/themes'
+      path: '/themes'
+      fullPath: '/themes'
+      preLoaderRoute: typeof ThemesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.well-known/security.txt': {
@@ -840,6 +860,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubmitRoute: SubmitRoute,
   TermsRoute: TermsRoute,
+  ThemesRoute: ThemesRoute,
   DotwellKnownSecurityDottxtRoute: DotwellKnownSecurityDottxtRoute,
   AdminReviewRoute: AdminReviewRoute,
   AlternativesToolRoute: AlternativesToolRoute,
