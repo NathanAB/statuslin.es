@@ -84,7 +84,7 @@ describe('analyseTheme', () => {
     ])
   })
 
-  it('returns the whole window and a card of it at one device pixel per CSS pixel, both re-encoded', async () => {
+  it('returns the whole window and a card of it at 880x720 device pixels, both re-encoded', async () => {
     const { analysis, ran } = fakeAnalysis({})
 
     const shot = await analyseTheme(analysis, { ...THEME, window: 'dark' })
@@ -92,7 +92,7 @@ describe('analyseTheme', () => {
     expect(shot).toMatchObject({
       width: 1100,
       height: 900,
-      card: { width: 550, height: 450 },
+      card: { width: 440, height: 360 },
     })
     const printed = ran.filter((command) => command.includes('png:-'))
     expect(printed).toHaveLength(2)
@@ -193,7 +193,7 @@ describe('analyseWindow', () => {
       kind: 'shot',
       width: 1100,
       height: 900,
-      card: { width: 550, height: 450 },
+      card: { width: 440, height: 360 },
     })
     expect(uploaded).toEqual([
       '/home/user/.statuslines/shot.png',

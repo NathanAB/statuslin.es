@@ -32,8 +32,11 @@ import type { DesktopShot } from './types'
 
 const RERUN = `${SANDBOX_WORK_DIR}/rerun.png`
 const WHOLE: Rect = { x: 0, y: 0, ...WINDOW }
-/** The card: the window at one device pixel per CSS pixel, a quarter of the shot's pixels. */
-const CARD = { width: WINDOW.width, height: WINDOW.height }
+/**
+ * The card: the window at 0.4 of the shot's width (880x720 device pixels, about 0.3 MB), sharp on a
+ * card about 440 CSS pixels wide, where the full shot is about 1.6 MB.
+ */
+const CARD = { width: 880, height: 720 }
 /** A prompt box fill lighter than this grey is Desktop's light window. */
 const LIGHT_FILL = 0.5
 

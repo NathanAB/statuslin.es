@@ -126,8 +126,8 @@ export const SEEDED_THEME_SHOT = {
   width: 1100,
   height: 900,
   cardPng: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 8]),
-  cardWidth: 550,
-  cardHeight: 450,
+  cardWidth: 440,
+  cardHeight: 360,
   desktopVersion: '6.28899.6',
   engineVersion: '2.1.330',
 }

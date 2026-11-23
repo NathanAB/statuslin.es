@@ -19,7 +19,7 @@ export const FAKE_THEME_SHOT: FakeShot = {
   png: new Uint8Array([...PNG_SIGNATURE, 1]),
   width: 1100,
   height: 900,
-  card: { png: new Uint8Array([...PNG_SIGNATURE, 2]), width: 550, height: 450 },
+  card: { png: new Uint8Array([...PNG_SIGNATURE, 2]), width: 440, height: 360 },
 }
 
 /** Deterministic in-memory Desktop recorder for tests and key-less runs. */
