@@ -13,6 +13,7 @@ import {
   feedFile,
   feedStdin,
 } from './scenario-feed'
+import type { TerminalSetup } from './terminal'
 import { waitingSessionFile } from './waiting-session'
 
 const HOME = '/home/user/session-home'
@@ -103,6 +104,14 @@ function settingsFiles(
   const settings = { ...(busy ? busySettings(scenario) : {}), ...own }
   if (Object.keys(settings).length === 0) return []
   return [{ path: `${CONFIG_DIR}/settings.json`, data: JSON.stringify(settings) }]
+}
+
+/**
+ * A terminal recording's own settings: Claude Code's fullscreen layout, which some mods need to draw
+ * at all, and the `theme` setting to record in.
+ */
+export function terminalSettings({ fullscreen }: TerminalSetup, theme: string | null) {
+  return { ...(fullscreen ? { tui: 'fullscreen' } : {}), ...(theme === null ? {} : { theme }) }
 }
 
 /** Uploaded before setup runs, whose seed commit then holds them. */

@@ -22,6 +22,7 @@ import {
   sessionEnv,
   sessionFiles,
   setupCommand,
+  terminalSettings,
 } from './session'
 import { TERMINAL, type TerminalSetup } from './terminal'
 import { playsWaitingSession } from './waiting-session'
@@ -35,6 +36,8 @@ export interface ModUnderRender {
 export interface RecordRequest {
   /** null records the baseline: the same session with no mod. */
   mod: ModUnderRender | null
+  /** The `theme` setting the session runs in; null leaves Claude Code's dark default. */
+  theme: string | null
   inputSteps: readonly InputStep[]
   terminal: TerminalSetup
 }
@@ -177,7 +180,7 @@ export interface SessionCapture {
 
 export async function recordInSandbox(
   sandbox: RecordingSandbox,
-  { mod, inputSteps, terminal }: RecordRequest,
+  { mod, theme, inputSteps, terminal }: RecordRequest,
   timing: SessionTiming = SESSION_TIMING,
 ): Promise<SessionCapture> {
   const scenario = feedScenario()
@@ -189,9 +192,7 @@ export async function recordInSandbox(
     busy: playsBusySession(inputSteps),
     waiting: playsWaitingSession(inputSteps),
   }
-  // Claude Code's fullscreen layout, which some mods need to draw at all.
-  const layout = terminal.fullscreen ? { tui: 'fullscreen' } : {}
-  await sandbox.writeFiles(sessionFiles(scenario, seed, layout))
+  await sandbox.writeFiles(sessionFiles(scenario, seed, terminalSettings(terminal, theme)))
   const setup = await sandbox.run(setupCommand(scenario))
   if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)
   const modPluginDir = mod ? sandbox.pluginDir : null

@@ -7,6 +7,8 @@ import {
   modDesktopPreviews,
   modPreviews,
   mods,
+  modThemePreviews,
+  modThemes,
   modVersions,
   submissions,
 } from '@/db/schema'
@@ -24,8 +26,16 @@ export const MOD_SCENARIO_KEY = 'clean-main'
 /**
  * A `mod_versions` row counts as rendered once both surfaces have a result for its scenario: a
  * terminal preview and a Desktop result, either of which may be that the mod drew nothing there.
+ * Every theme it carries needs its own preview too, since each is a card of its own.
  */
-export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}))`
+export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and not exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and not exists (select 1 from ${modThemePreviews} where ${modThemePreviews.themeId} = ${modThemes.id})))`
+
+/**
+ * A version that carries themes and declares no hooks modules, so installing it runs no code. It
+ * draws nothing as a mod, so it has no mod card; its themes are its cards on /themes (ADR 0012). A
+ * version read before intake recorded its modules (null) is not, since what it runs is unknown.
+ */
+export const versionIsThemeOnly = sql<boolean>`(exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id}) and coalesce(${modVersions.hooksModules} = '[]'::jsonb, false))`
 
 /** Joins a version's clean-main terminal preview. */
 export const terminalPreviewJoin = and(
@@ -135,6 +145,8 @@ export interface ModDetail {
   recordedWith: string | null
   /** ISO date the current version's submission was approved; null for a curated mod (no date). */
   reviewedAt: string | null
+  /** It only carries themes, so its page shows them in place of a mod preview. */
+  themeOnly: boolean
 }
 
 const isoDate = (date: Date) => date.toISOString().slice(0, 10)
@@ -162,6 +174,7 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       updatedAt: modVersions.createdAt,
       recordedWith: modPreviews.claudeCodeVersion,
       reviewedAt: submissions.reviewedAt,
+      themeOnly: versionIsThemeOnly,
     })
     .from(mods)
     .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))

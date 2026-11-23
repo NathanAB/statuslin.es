@@ -49,6 +49,8 @@ export function siteUrl(): string {
 
 export const MODS_PATH = '/mods'
 
+export const THEMES_PATH = '/themes'
+
 export const MOD_ROUTE = '/mods/$slug'
 
 export function modPath(slug: string): string {

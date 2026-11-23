@@ -85,6 +85,7 @@ const MOD: ModDetail = {
   updatedAt: '2026-09-30',
   recordedWith: '2.1.0',
   reviewedAt: null,
+  themeOnly: false,
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {
@@ -142,7 +143,7 @@ const RELATED: GalleryItem[] = [
 
 function renderPage(mod: Partial<ModDetail> & { related?: GalleryItem[] } = {}) {
   vi.spyOn(ModRoute, 'useLoaderData').mockReturnValue({
-    mod: { ...MOD, related: [], ...mod },
+    mod: { ...MOD, related: [], themes: [], ...mod },
     user: null,
     origin: ORIGIN,
   })

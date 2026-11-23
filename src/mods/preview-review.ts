@@ -1,9 +1,9 @@
 import { writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { modDesktopPreviews, modPreviews, modVersions } from '@/db/schema'
+import { modDesktopPreviews, modPreviews, modThemes, modVersions } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
 import { fenceUntrusted, type VersionPin } from './content-prompt'
 import { desktopPreviewJoin, terminalPreviewJoin } from './queries'
@@ -19,6 +19,11 @@ export interface PreviewReview {
   terminal: AnsiSegment[]
   /** Null when the mod draws nothing in Claude Desktop. */
   desktopPng: Uint8Array | null
+  /**
+   * The themes the version carries, each reviewed on /admin with its preview and file. /admin shows
+   * only a plugin's newest version, so an older one's themes are read at its commit instead.
+   */
+  themes: { count: number; versionNumber: number; newestVersionNumber: number }
 }
 
 /** Saves a PNG where the operator can open it, and returns its path. */
@@ -63,6 +68,19 @@ function desktopLine({ pin, desktopPng }: PreviewReview, writePng: PngWriter): s
   return `Claude Desktop shot: ${writePng(name, desktopPng)}`
 }
 
+function themesLines({ pin, themes }: PreviewReview): string[] {
+  const { count, versionNumber: v, newestVersionNumber: newest } = themes
+  if (count === 0) return []
+  return [
+    `themes: ${count} terminal themes in v${v} at ${pin.commitSha}. Read each theme's preview and exact file on /admin, under "Curated theme plugins", before --apply.`,
+    ...(v < newest
+      ? [
+          `WARN themes-not-newest: v${v} is not this plugin's newest version (v${newest}), and /admin shows only the newest version's themes. Read v${v}'s theme files at ${pin.commitSha} before --apply.`,
+        ]
+      : []),
+  ]
+}
+
 /** The lines carry author text unescaped; print each through `terminalLine`. */
 export function previewReviewLines(review: PreviewReview, writePng: PngWriter): string[] {
   return [
@@ -70,6 +88,7 @@ export function previewReviewLines(review: PreviewReview, writePng: PngWriter): 
     ...readmeLines(review.pin, review.readme),
     ...terminalLines(review.terminal),
     desktopLine(review, writePng),
+    ...themesLines(review),
   ]
 }
 
@@ -77,12 +96,26 @@ export function previewReviewLines(review: PreviewReview, writePng: PngWriter): 
 export async function storedPreviews(
   db: Db,
   versionId: string,
-): Promise<Pick<PreviewReview, 'terminal' | 'desktopPng'>> {
+): Promise<Pick<PreviewReview, 'terminal' | 'desktopPng' | 'themes'>> {
   const [row] = await db
-    .select({ segments: modPreviews.segments, png: modDesktopPreviews.png })
+    .select({
+      segments: modPreviews.segments,
+      png: modDesktopPreviews.png,
+      themeCount: sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id})::int`,
+      versionNumber: modVersions.versionNumber,
+      newestVersionNumber: sql<number>`(select max(newest.version_number) from ${modVersions} newest where newest.mod_id = ${modVersions.modId})::int`,
+    })
     .from(modVersions)
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(eq(modVersions.id, versionId))
-  return { terminal: row?.segments ?? [], desktopPng: row?.png ?? null }
+  return {
+    terminal: row?.segments ?? [],
+    desktopPng: row?.png ?? null,
+    themes: {
+      count: row?.themeCount ?? 0,
+      versionNumber: row?.versionNumber ?? 0,
+      newestVersionNumber: row?.newestVersionNumber ?? 0,
+    },
+  }
 }

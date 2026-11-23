@@ -6,6 +6,7 @@ import { runPublish } from '../../scripts/publish-mod'
 import {
   addDesktopPreview,
   addMod,
+  addTheme,
   addVersion,
   type FakeGitHub,
   fakeGitHub,
@@ -208,6 +209,39 @@ describe('the README beside the previews', () => {
     const verdict = lines.findIndex((line) => line.startsWith('dry run'))
     expect(begin).toBeGreaterThan(-1)
     expect(begin).toBeLessThan(verdict)
+  })
+
+  it('points the operator at each theme on /admin before a plugin with themes publishes', async () => {
+    const { versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, versionId, { key: 'nord', name: 'Nord' })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      `themes: 2 terminal themes in v1 at ${sha('a')}. Read each theme's preview and exact file on /admin, under "Curated theme plugins", before --apply.`,
+    )
+    expect(lines.some((line) => line.startsWith('WARN themes-not-newest'))).toBe(false)
+  })
+
+  it('warns when the themes being published are not the version /admin shows', async () => {
+    const { modId, versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      `WARN themes-not-newest: v1 is not this plugin's newest version (v2), and /admin shows only the newest version's themes. Read v1's theme files at ${sha('a')} before --apply.`,
+    )
+  })
+
+  it('says nothing of themes for a plugin that carries none', async () => {
+    await draftMod()
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines.some((line) => line.startsWith('themes:'))).toBe(false)
   })
 
   it('prints them again on --apply', async () => {
@@ -431,9 +465,29 @@ describe('publish refusals', () => {
 
     expect(exitCode).toBe(1)
     expect(output).toMatch(
-      /has not rendered on both surfaces \(it needs a clean-main result in the terminal and in Claude Desktop\)/,
+      /has not rendered on both surfaces \(it needs a clean-main result in the terminal and in Claude Desktop, and a preview of every theme it carries\)/,
     )
     expect(await modState(db, 'meter')).toEqual({ status: 'draft', currentVersionId: null })
+  })
+
+  it('refuses a version until every theme it carries has its own preview', async () => {
+    const { versionId } = await draftMod('dracula-pack')
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, versionId, { key: 'nord', name: 'Nord', rendered: false })
+
+    const { exitCode, output } = await publish([
+      'dracula-pack',
+      sha('a'),
+      '--apply',
+      '--confirm=dracula-pack',
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/and a preview of every theme it carries/)
+    expect(await modState(db, 'dracula-pack')).toEqual({
+      status: 'draft',
+      currentVersionId: null,
+    })
   })
 
   it('refuses a delisted mod, which only delist --restore brings back', async () => {

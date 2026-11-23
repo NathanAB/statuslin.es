@@ -86,6 +86,9 @@ commands, and observable proof.
 - [Mods](./mods.md): submit a mod by GitHub link, `/me`, review and approve on `/admin`, the mod
   page with `What this mod can do` and its install prompt, `/mods`' marketplace line, and
   `/marketplace.json`. Submit, render and approve need GitHub and E2B access; see its preconditions.
+- [Themes](./themes.md): a curated terminal theme plugin reviewed on `/admin` theme by theme,
+  published from the CLI, then `/themes` with one card per theme, its install copy, and the
+  plugin's page. Import and render need GitHub and E2B access.
 - [Status line setup guide](./status-line-guide.md): `/guide`'s numbered steps and their copy
   buttons, the sample stdin JSON with `Copy JSON`, the field list, and `On this page`.
 - [Status line not showing guide](./status-line-not-showing.md): `/guide/status-line-not-showing`'s

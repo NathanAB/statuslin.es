@@ -105,7 +105,10 @@ export interface NewVersion {
   terminal?: TerminalSetup | undefined
 }
 
-/** Adds the mod's next version; returns its number. */
+/**
+ * Adds the mod's next version with its terminal themes; returns its number. Callers pass a
+ * transaction, so a version never lands without the themes it was read with.
+ */
 export async function insertNextVersion(db: Db, version: NewVersion): Promise<number> {
   const [latest] = await db
     .select({ versionNumber: max(schema.modVersions.versionNumber) })
@@ -120,11 +123,21 @@ export async function insertNextVersion(db: Db, version: NewVersion): Promise<nu
     pluginVersion: version.facts.manifest.version,
     license: version.license,
     footprint: version.facts.footprint,
+    hooksModules: version.facts.hooksModules,
     validatedWith: version.facts.claudeCodeVersion,
     inputSteps: version.inputSteps,
     cardSurface: version.cardSurface,
     terminal: version.terminal,
   })
+  if (version.facts.themes.length > 0) {
+    await db.insert(schema.modThemes).values(
+      version.facts.themes.map((theme) => ({
+        modVersionId: version.versionId,
+        kind: 'terminal' as const,
+        ...theme,
+      })),
+    )
+  }
   return next
 }
 

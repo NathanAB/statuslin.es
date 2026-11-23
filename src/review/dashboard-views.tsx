@@ -1,3 +1,5 @@
+import { CuratedThemeCard } from '@/review/curated-theme-card'
+import type { CuratedThemeRow } from '@/review/curated-theme-queue'
 import { StatusSummary, SubmissionCard } from '@/review/dashboard-card'
 import type { ModReviewRow } from '@/review/mod-queue'
 import { ModReviewCard } from '@/review/mod-review-card'
@@ -10,7 +12,7 @@ import { SignInPrompt } from '@/ui/sign-in-prompt'
 import { Heading, Text } from '@/ui/text'
 
 export type DashboardData =
-  | { rows: DashboardRow[]; mods: ModReviewRow[]; user: DashboardUser }
+  | { rows: DashboardRow[]; mods: ModReviewRow[]; curated: CuratedThemeRow[]; user: DashboardUser }
   | { forbidden: true }
   | { signedOut: true }
 
@@ -29,7 +31,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
     )
   }
 
-  const { rows, mods, user } = data
+  const { rows, mods, curated, user } = data
   const reviewRows = rows.filter((row) => row.version.status === 'pending')
   const contactRows = rows.filter((row) => row.version.status !== 'pending')
   const reviewMods = mods.filter((row) => row.version.status === 'pending')
@@ -38,7 +40,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
     <PageShell user={user}>
       <Stack gap={6}>
         <Heading level={1}>Admin dashboard</Heading>
-        {rows.length === 0 && mods.length === 0 ? (
+        {rows.length === 0 && mods.length === 0 && curated.length === 0 ? (
           <Text muted size="sm">
             No submissions in flight.
           </Text>
@@ -59,6 +61,20 @@ export function DashboardView({ data }: { data: DashboardData }) {
                 <Heading level={2}>Mods</Heading>
                 {reviewMods.map((row) => (
                   <ModReviewCard key={row.version.id} row={row} />
+                ))}
+              </Stack>
+            ) : null}
+            {curated.length > 0 ? (
+              <Stack gap={4}>
+                <Stack gap={1}>
+                  <Heading level={2}>Curated theme plugins</Heading>
+                  <Text muted size="sm">
+                    Curated plugins whose next version carries themes. Read each theme before you
+                    publish it from the CLI.
+                  </Text>
+                </Stack>
+                {curated.map((row) => (
+                  <CuratedThemeCard key={row.version.id} row={row} />
                 ))}
               </Stack>
             ) : null}

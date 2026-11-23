@@ -606,5 +606,12 @@
       "rows": 36,
       "fullscreen": true
     }
+  },
+  {
+    "repoUrl": "https://github.com/nils44344/claude-code-themes",
+    "path": "plugin",
+    "commitSha": "aa5dd0ab28bc59cf13a97553172d598be5b85bb9",
+    "pluginName": "nk-claude-themes",
+    "title": "NK Claude Themes"
   }
 ]

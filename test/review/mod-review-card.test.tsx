@@ -47,6 +47,7 @@ function row(over: Partial<ModReviewRow> = {}): ModReviewRow {
     preview: [{ text: '▮▮▮▯ 62% context' }],
     desktop: { kind: 'shot', src: '/admin/mod-previews/v1/desktop.png', width: 790, height: 52 },
     warnings: [],
+    themes: [],
     ...over,
   }
 }
@@ -120,6 +121,7 @@ describe('DashboardView with mods', () => {
         data={{
           rows: [],
           mods: [row()],
+          curated: [],
           user: { name: 'Admin', username: 'admin', image: null, role: 'admin' },
         }}
       />,

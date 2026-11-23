@@ -16,10 +16,13 @@ import skins from '../render/mods/fixtures/skins.json'
 import {
   addMod,
   addVersion,
+  componentsListing,
   fakeGitHub,
   MODULES_ONLY_LISTING,
+  NO_MODULES_VALIDATE,
   openTestDb,
   type TestDb,
+  themesOnlyListing,
 } from './seed-mods'
 
 const SHA = 'c'.repeat(40)
@@ -57,6 +60,7 @@ interface Fakes {
   license?: string | null
   manifest?: Record<string, unknown>
   validate?: string
+  components?: string
   sandboxError?: Error
 }
 
@@ -65,6 +69,7 @@ function fakes({
   license = 'MIT',
   manifest = { name: 'skins', version: '1.4.0', description: 'Reskins Claude Code.' },
   validate = VALIDATE_OUTPUT,
+  components = MODULES_ONLY_LISTING,
   sandboxError,
 }: Fakes = {}) {
   const calls: string[] = []
@@ -83,7 +88,7 @@ function fakes({
     [(c) => c.endsWith('--version'), '2.1.296 (Claude Code)\n'],
     [(c) => c.includes(' plugin validate --json '), validate],
     [(c) => c.endsWith('/.claude-plugin/plugin.json'), JSON.stringify(manifest)],
-    [(c) => c.includes('hooks/hooks.json'), MODULES_ONLY_LISTING],
+    [(c) => c.includes('hooks/hooks.json'), components],
   ]
   const sandbox: ModSandbox = {
     pluginDir: '/home/user/plugins/mod',
@@ -105,6 +110,37 @@ async function run(curation: unknown, deps = fakes()) {
   const exitCode = await importMods(curation, { db, ...deps, log: (line) => lines.push(line) })
   return { exitCode, lines, output: lines.join('\n'), calls: deps.calls }
 }
+
+const OCEAN = '{\n  "name": "Ocean",\n  "base": "dark"\n}\n'
+const DAWN = '{ "name": "Dawn", "base": "light", "overrides": { "claude": "#d97757" } }'
+/** register.tsx (validate-skins.json's one module) beside two terminal theme files. */
+const THEMES_LISTING = componentsListing(
+  [
+    ...['d 4096 .claude-plugin', 'f 20 .claude-plugin/plugin.json', 'd 4096 hooks'],
+    ...['f 40 hooks/hooks.json', 'f 900 hooks/register.tsx', 'd 4096 themes'],
+    ...[`f ${OCEAN.length} themes/ocean.json`, `f ${DAWN.length} themes/dawn.json`],
+  ],
+  '{ "modules": ["./register.tsx"] }',
+  { 'themes/ocean.json': OCEAN, 'themes/dawn.json': DAWN },
+)
+
+const themesOf = (versionId: string | undefined) =>
+  db
+    .select({
+      kind: schema.modThemes.kind,
+      key: schema.modThemes.key,
+      name: schema.modThemes.name,
+      window: schema.modThemes.window,
+      source: schema.modThemes.source,
+    })
+    .from(schema.modThemes)
+    .where(eq(schema.modThemes.modVersionId, versionId ?? ''))
+    .orderBy(schema.modThemes.key)
+
+const STORED_THEMES = [
+  { kind: 'terminal', key: 'dawn', name: 'Dawn', window: 'light', source: DAWN },
+  { kind: 'terminal', key: 'ocean', name: 'Ocean', window: 'dark', source: OCEAN },
+]
 
 const allMods = () => db.select().from(schema.mods)
 const allVersions = () => db.select().from(schema.modVersions)
@@ -143,6 +179,35 @@ describe('importMods', () => {
     expect(version?.footprint.events).toContain('ui.render{component=AbovePrompt}')
     expect(version?.footprint.calls).toContain('$.ui.toast')
     expect(mod?.currentVersionId).toBe(version?.id)
+  })
+
+  it("stores each of a plugin's terminal themes on its version, with its exact file", async () => {
+    await run([entry()], fakes({ components: THEMES_LISTING }))
+
+    const [version] = await allVersions()
+    expect(await themesOf(version?.id)).toEqual(STORED_THEMES)
+  })
+
+  it('records the hooks modules a plugin declares', async () => {
+    await run([entry()], fakes({ components: THEMES_LISTING }))
+
+    const [version] = await allVersions()
+    expect(version?.hooksModules).toEqual(['./register.tsx'])
+  })
+
+  it('records no hooks modules for a plugin of theme files alone', async () => {
+    const components = themesOnlyListing({ 'themes/ocean.json': OCEAN })
+    await run([entry()], fakes({ validate: NO_MODULES_VALIDATE, components }))
+
+    const [version] = await allVersions()
+    expect(version?.hooksModules).toEqual([])
+  })
+
+  it('stores no themes for a plugin of hooks modules alone', async () => {
+    await run([entry()])
+
+    const [version] = await allVersions()
+    expect(await themesOf(version?.id)).toEqual([])
   })
 
   it('records a missing plugin version and licence as null', async () => {

@@ -27,6 +27,7 @@ review state lives in one `submissions` table (`src/submissions`, ADR 0007).
 - `review/` — admin review queue and publish/reject decisions
 - `gallery/` — gallery list queries
 - `mods/` — mods marketplace, pages, import, submit (GitHub link → pinned commit), publish and gallery source
+- `themes/` — the theme model (one look a plugin version carries), theme files read at intake, theme previews and /themes (ADR 0012)
 - `submissions/` — review state shared by status lines and mods: rate limit, pending rows, supersede
 - `votes/` — retained legacy voting code · `adopt/` — copy/install a config
 - `og/` — Open Graph card images · `legal/` — terms page

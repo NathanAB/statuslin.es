@@ -86,10 +86,10 @@ const FIT_TO_PANE =
   'text-[length:max(0.5625rem,min(1em,calc(100cqh/(var(--rows,1)*1.3))))] leading-[1.3] max-md:text-[length:max(0.5625rem,min(1em,calc(100cqw/(var(--cols,1)*0.6))))]'
 
 /**
- * The render in the pick's own size. `--rows` and `--cols` come from the render, so they're an
- * inline style, and the server's HTML is already the fitted size.
+ * The render in its own size, `fit` sizing its text from the render's `--rows` and `--cols`. They
+ * come from the render, so they're an inline style, and the server's HTML is already the fitted size.
  */
-function Fitted({ segments, fit }: { segments: AnsiSegment[]; fit: string }) {
+export function Fitted({ segments, fit }: { segments: AnsiSegment[]; fit: string }) {
   const { rows, cols } = renderSize(segments)
   return (
     <div data-fit="" className={fit} style={{ '--rows': rows, '--cols': cols } as CSSProperties}>

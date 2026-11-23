@@ -22,7 +22,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/ui' },
       to: {
-        path: '^src/(routes|gallery|submit|review|render|adopt|votes|mods|content|guide|resources|compare|home)',
+        path: '^src/(routes|gallery|submit|review|render|adopt|votes|mods|themes|content|guide|resources|compare|home)',
         dependencyTypesNot: ['type-only'],
       },
     },
@@ -32,24 +32,24 @@ module.exports = {
         'src/gallery may not import from other feature directories. src/mods builds on the gallery, never the reverse.',
       severity: 'error',
       from: { path: '^src/gallery/' },
-      to: { path: '^src/(submit|review|adopt|votes|mods|home)/' },
+      to: { path: '^src/(submit|review|adopt|votes|mods|themes|home)/' },
     },
     {
       name: 'submit-no-cross-feature',
       comment: 'src/submit may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/submit/' },
-      to: { path: '^src/(gallery|review|adopt|votes|mods|home)/' },
+      to: { path: '^src/(gallery|review|adopt|votes|mods|themes|home)/' },
     },
     {
       name: 'review-no-cross-feature',
       comment:
-        'src/review may not import from other feature directories, except the mod code that approving and showing a mod needs: its publish guards, the folder and name a listing takes, queries and GitHub client (ADR 0007).',
+        'src/review may not import from other feature directories, except the mod code that approving and showing a mod needs: its publish guards, the folder and name a listing takes, queries and GitHub client (ADR 0007), and the theme model (ADR 0012).',
       severity: 'error',
       from: { path: '^src/review/' },
       to: {
-        path: '^src/(gallery|submit|adopt|votes|mods|home)/',
-        pathNot: '^src/mods/(publish|listing|queries|github)\\.ts$',
+        path: '^src/(gallery|submit|adopt|votes|mods|themes|home)/',
+        pathNot: '^src/(mods/(publish|listing|queries|github)|themes/theme)\\.ts$',
       },
     },
     {
@@ -57,14 +57,14 @@ module.exports = {
       comment: 'src/adopt may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/adopt/' },
-      to: { path: '^src/(gallery|submit|review|votes|mods|home)/' },
+      to: { path: '^src/(gallery|submit|review|votes|mods|themes|home)/' },
     },
     {
       name: 'votes-no-cross-feature',
       comment: 'src/votes may not import from other feature directories.',
       severity: 'error',
       from: { path: '^src/votes/' },
-      to: { path: '^src/(gallery|submit|review|adopt|mods|home)/' },
+      to: { path: '^src/(gallery|submit|review|adopt|mods|themes|home)/' },
     },
     {
       name: 'submissions-no-feature-imports',
@@ -80,6 +80,14 @@ module.exports = {
         'src/mods may import the shared listing code in src/gallery, but no other feature directory.',
       severity: 'error',
       from: { path: '^src/mods/' },
+      to: { path: '^src/(submit|review|adopt|votes|home)/' },
+    },
+    {
+      name: 'themes-no-cross-feature',
+      comment:
+        'src/themes may import the listing code in src/gallery and the plugin code in src/mods (a theme belongs to a mod version, ADR 0012), but no other feature directory.',
+      severity: 'error',
+      from: { path: '^src/themes/' },
       to: { path: '^src/(submit|review|adopt|votes|home)/' },
     },
   ],

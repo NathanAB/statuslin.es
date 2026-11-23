@@ -194,7 +194,7 @@ function descriptionGuards({ target, description }: PublishFacts): Guard[] {
 
 export function listingGuards({ target, onDefaultBranch }: ListingFacts): Guard[] {
   const offDefault = `commit ${target.commitSha} is not on the repository's default branch`
-  const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop)`
+  const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop, and a preview of every theme it carries)`
   return [
     ...(onDefaultBranch ? [] : [refuse('not-on-default-branch', offDefault)]),
     ...(target.rendered ? [] : [refuse('not-rendered', unrendered)]),

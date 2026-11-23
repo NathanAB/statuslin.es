@@ -2,8 +2,17 @@ import { z } from 'zod'
 import type { ModFootprint } from '@/db/schema'
 import { SANDBOX_CLAUDE_CODE_BIN } from '@/render/e2b-template'
 import type { ModSandbox } from '@/render/mods/mod-sandbox'
+import type { TerminalThemeFile } from '@/themes/theme'
+import { parseTerminalThemeFiles } from '@/themes/theme-file'
 import { PLUGIN_NAME, PLUGIN_NAME_RULE } from './curation'
-import { componentsCommand, MODULE_PATH, otherComponents, parseJson } from './plugin-components'
+import { atMost, codePoint } from './plain-text'
+import {
+  componentsCommand,
+  MODULE_PATH,
+  otherComponents,
+  parseJson,
+  themeFiles,
+} from './plugin-components'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
 export interface PluginManifest {
@@ -16,6 +25,10 @@ export interface PluginManifest {
 export interface PluginFacts {
   manifest: PluginManifest
   footprint: ModFootprint
+  /** Its hooks modules, sorted: code it installs even when validate records no events or calls. */
+  hooksModules: string[]
+  /** The plugin's terminal themes, sorted by key; none for a plugin of hooks modules alone. */
+  themes: TerminalThemeFile[]
   /** The Claude Code that ran `plugin validate`. */
   claudeCodeVersion: string
 }
@@ -34,26 +47,6 @@ const VALIDATE_STDERR_MAX_BYTES = 4096
 
 /** A plugin.json past this is truncated, fails to parse, and the entry is refused. */
 const MANIFEST_MAX_BYTES = 64 * 1024
-
-const codePoint = (char: string) =>
-  `U+${(char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`
-
-/**
- * Stored and served to every Claude Code client, so a value past its limit, or one carrying a
- * character that can rewrite a terminal or reorder text, refuses the entry.
- */
-const atMost = (max: number) =>
-  z
-    .string()
-    .max(max, `must be at most ${max} characters`)
-    .superRefine((value, ctx) => {
-      const char = CONTROL_OR_FORMAT.exec(value)?.[0]
-      if (char === undefined) return
-      ctx.addIssue({
-        code: 'custom',
-        message: `must not contain control or format characters (${codePoint(char)})`,
-      })
-    })
 
 const manifestSchema = z.object({
   // It becomes the mod's slug and marketplace entry name.
@@ -216,31 +209,41 @@ export async function inspectPlugin(sandbox: ModSandbox): Promise<PluginFacts> {
     `head -c ${MANIFEST_MAX_BYTES} ${sandbox.pluginDir}/.claude-plugin/plugin.json`,
   )
   if (manifest.exitCode !== 0) throw new PluginRefusal('could not read .claude-plugin/plugin.json')
-  const facts = {
-    manifest: parseManifest(manifest.stdout),
-    footprint: parseFootprint(validateJson),
-    claudeCodeVersion,
-  }
-  await refuseOtherComponents(sandbox, parseJson(manifest.stdout), describedModules(validateJson))
-  return facts
+  const parsedManifest = parseManifest(manifest.stdout)
+  const footprint = parseFootprint(validateJson)
+  // readComponents refuses any module validate did not read, so these are all the plugin declares.
+  const modules = describedModules(validateJson)
+  const themes = await readComponents(sandbox, parseJson(manifest.stdout), modules)
+  const hooksModules = [...modules].sort()
+  return { manifest: parsedManifest, footprint, hooksModules, themes, claudeCodeVersion }
 }
 
 /**
- * A mod page states what a mod does from what validate reports of its hooks modules: nothing else a
- * plugin holds, and nothing of a module it skips. So anything else is refused, not left unlisted.
+ * A listing states what a plugin does from what validate reports of its hooks modules and from its
+ * terminal theme files: nothing else a plugin holds, and nothing of a module validate skips. So
+ * anything else is refused, not left unlisted. Returns the plugin's themes.
  */
-async function refuseOtherComponents(
+async function readComponents(
   sandbox: ModSandbox,
   manifest: unknown,
   described: Set<string>,
-) {
+): Promise<TerminalThemeFile[]> {
   const listing = await sandbox.run(componentsCommand(sandbox.pluginDir))
   const extras =
     listing.exitCode === 0 ? otherComponents(listing.stdout, manifest, described) : null
   if (extras === null) throw new Error("could not list the plugin's components")
   if (extras.length > 0) {
     throw new PluginRefusal(
-      `statuslin.es lists a mod by what its hooks modules do, so it takes hooks modules only. This plugin also has ${extras.join(', ')}.`,
+      `statuslin.es lists a plugin by what its hooks modules and terminal theme files do, so it takes only those. This plugin also has ${extras.join(', ')}.`,
     )
   }
+  const files = themeFiles(listing.stdout)
+  if (files === null) throw new Error("could not read the plugin's theme files")
+  const themes = parseTerminalThemeFiles(files)
+  if (!themes.ok) {
+    throw new PluginRefusal(
+      `statuslin.es cannot list this plugin's themes: ${themes.problems.join('; ')}`,
+    )
+  }
+  return themes.themes
 }
