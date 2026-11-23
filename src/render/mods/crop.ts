@@ -2,16 +2,27 @@ import { parseAnsi } from '@/render/ansi'
 import type { AnsiSegment } from '@/render/types'
 import { sidePaneRows } from './side-pane'
 
-/** A rewrite applied to every row of both screens before they are compared. Kept rows show the real text. */
+/**
+ * A rewrite applied to every row of both screens before they are compared. A crop's kept rows show
+ * the real text; a theme's whole screen (`themeScreenPreview`) stores the rewrite.
+ */
 export type RowMask = { name: string; pattern: RegExp; replacement: string }
 
 export type CropResult = { kind: 'rendered'; segments: AnsiSegment[] } | { kind: 'not-rendered' }
 
-/** Claude Code's turn-duration row has a random verb and the wall-clock time, so two recordings of one session differ there. */
-const TURN_DURATION_MASKS: readonly RowMask[] = [
-  { name: 'turn-duration verb', pattern: /\p{Lu}\p{Ll}+ for \d+s/gu, replacement: 'VERB for Ns' },
-  { name: 'clock', pattern: /\b\d{1,2}:\d{2}(?:\s?[AP]M)?\b/g, replacement: 'HH:MM' },
+/**
+ * Claude Code's turn-duration row has a random verb and the wall-clock time, so two recordings of
+ * one session differ there. Each becomes a stand-in Claude Code could print: `Worked` is its
+ * fallback verb.
+ */
+export const TURN_DURATION_MASKS: readonly RowMask[] = [
+  { name: 'turn-duration verb', pattern: /\p{Lu}\p{Ll}+ for \d+s/gu, replacement: 'Worked for 1s' },
+  { name: 'clock', pattern: /\b\d{1,2}:\d{2}(?:\s?[AP]M)?\b/g, replacement: '9:41 AM' },
 ]
+
+export function maskRow(row: string, masks: readonly RowMask[]): string {
+  return masks.reduce((r, m) => r.replace(m.pattern, m.replacement), row)
+}
 
 /** The prompt, and every message typed at it: Claude Code's, unless the mod restyled what was typed. */
 const PROMPT_ROW = /^❯(?:\s|$)/
@@ -20,7 +31,7 @@ const TYPED_PROMPT = /^❯\s*\S/
 /** Claude Code's permission-mode hint, on the footer row a mod can add its own entry to. */
 const MODE_HINT = /⏵⏵ .*?\(shift\+tab to cycle\)(?: · ← for agents)?/u
 /** Claude Code's effort hint, which shows in one of two recordings of the same session and not the other. */
-const EFFORT_HINT = /\S \p{L}+ · \/effort/u
+export const EFFORT_HINT = /\S \p{L}+ · \/effort/u
 // Built with fromCharCode so the ESC doesn't trip Biome's noControlCharactersInRegex (as ansi.ts).
 const SGR = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'y')
 
@@ -33,7 +44,7 @@ export function cropModPreview(
   const pane = sidePaneRows(baseline, modScreen)
   if (pane) return { kind: 'rendered', segments: parseAnsi(pane.join('\n')) }
   const masks = [...TURN_DURATION_MASKS, ...modMasks]
-  const masked = (row: string) => masks.reduce((r, m) => r.replace(m.pattern, m.replacement), row)
+  const masked = (row: string) => maskRow(row, masks)
   const common = modRowsOnCommonSubsequence(baseline.map(masked), modScreen.map(masked))
   const text = (row: string) => plainText(masked(row)).trim()
   // The baseline types the same input steps, so a prompt row with its text is one the mod restyled.
@@ -51,7 +62,7 @@ export function cropModPreview(
 }
 
 /** `row` with the text `pattern` matches turned to spaces, its styles left as they were. */
-function blankMatch(row: string, pattern: RegExp): string {
+export function blankMatch(row: string, pattern: RegExp): string {
   const match = pattern.exec(plainText(row))
   if (!match) return row
   const end = match.index + match[0].length
@@ -73,7 +84,7 @@ function blankMatch(row: string, pattern: RegExp): string {
 }
 
 /** A space with a background colour is a pixel, as pixel-art mods draw them. */
-function showsNothing(row: string): boolean {
+export function showsNothing(row: string): boolean {
   return parseAnsi(row).every((segment) => segment.text.trim() === '' && !segment.bg)
 }
 
