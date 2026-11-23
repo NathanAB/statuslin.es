@@ -10,6 +10,7 @@ import {
   addVersion,
   openTestDb,
   SEEDED_THEME_PREVIEW,
+  SEEDED_THEME_SHOT,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -165,8 +166,16 @@ describe('getThemeCards for Desktop themes', () => {
         name: 'Honu Lagoon',
         window: 'light',
         preview: {
-          shot: { src: themeDesktopPreviewPath(id, at), width: 1100, height: 900 },
-          card: { src: themeDesktopPreviewPath(id, at, 'card'), width: 550, height: 450 },
+          shot: {
+            src: themeDesktopPreviewPath(id, at),
+            width: SEEDED_THEME_SHOT.width,
+            height: SEEDED_THEME_SHOT.height,
+          },
+          card: {
+            src: themeDesktopPreviewPath(id, at, 'card'),
+            width: SEEDED_THEME_SHOT.cardWidth,
+            height: SEEDED_THEME_SHOT.cardHeight,
+          },
         },
         switchSteps: ['/custom-theme honu-lagoon'],
         plugin: {

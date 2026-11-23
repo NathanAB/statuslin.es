@@ -10,6 +10,7 @@ import {
   addVersion,
   openTestDb,
   SEEDED_THEME_PREVIEW,
+  SEEDED_THEME_SHOT,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -104,7 +105,11 @@ describe('getModReviewRows themes', () => {
         name: 'Night Reef',
         window: 'dark',
         switchSteps: ['/custom-theme night-reef'],
-        preview: { src: adminThemeDesktopPreviewPath(reef), width: 1100, height: 900 },
+        preview: {
+          src: adminThemeDesktopPreviewPath(reef),
+          width: SEEDED_THEME_SHOT.width,
+          height: SEEDED_THEME_SHOT.height,
+        },
       },
       {
         id: rainy,

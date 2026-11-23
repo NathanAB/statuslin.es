@@ -116,7 +116,7 @@ describe('a plugin page with themes', () => {
       window: 'dark',
       preview: {
         shot: { src: '/theme-previews/reef/desktop.png?r=1', width: 1100, height: 900 },
-        card: { src: '/theme-previews/reef/desktop.png?r=1&image=card', width: 550, height: 450 },
+        card: { src: '/theme-previews/reef/desktop.png?r=1&image=card', width: 440, height: 360 },
       },
       switchSteps: ['/custom-theme night-reef'],
       plugin: { slug: 'pack', title: 'Theme pack', authorGithub: 'octocat', code: null },

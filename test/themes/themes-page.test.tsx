@@ -52,7 +52,7 @@ function desktopTheme(name: string, over: Partial<DesktopCard> = {}): DesktopCar
     window: 'dark',
     preview: {
       shot: { src: `/theme-previews/${name}/desktop.png?r=1`, width: 1100, height: 900 },
-      card: { src: `/theme-previews/${name}/desktop.png?r=1&image=card`, width: 550, height: 450 },
+      card: { src: `/theme-previews/${name}/desktop.png?r=1&image=card`, width: 440, height: 360 },
     },
     switchSteps: [`/custom-theme ${name.toLowerCase().replace(/ /g, '-')}`],
     plugin: {
@@ -161,7 +161,7 @@ describe('/themes', () => {
     const shot = card.getByRole('img', { name: 'Honu Lagoon preview' })
     expect(shot.getAttribute('src')).toBe('/theme-previews/Honu Lagoon/desktop.png?r=1&image=card')
     expect(shot.getAttribute('loading')).toBe('lazy')
-    expect([shot.getAttribute('width'), shot.getAttribute('height')]).toEqual(['550', '450'])
+    expect([shot.getAttribute('width'), shot.getAttribute('height')]).toEqual(['440', '360'])
     expect(card.getByText('Light')).toBeTruthy()
   })
 
