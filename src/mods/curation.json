@@ -9,7 +9,7 @@
   {
     "repoUrl": "https://github.com/hamzafer/claude-code-mods",
     "path": "mods/context-bar",
-    "commitSha": "5cef0d32daad002b7936920e47a317fd2fd066f0",
+    "commitSha": "f88e0c35f714f14c5ebbc28b0fae13224ae565b4",
     "pluginName": "context-bar",
     "title": "Context Bar"
   },
@@ -104,14 +104,14 @@
   {
     "repoUrl": "https://github.com/augiefra/claude-mods",
     "path": "plugins/token-weather-usage",
-    "commitSha": "0fb381984b0c17c7b1a470daffae264988b6b02b",
+    "commitSha": "e14b5055be35309172448d1243c220c4cb0b89a9",
     "pluginName": "token-weather-usage",
     "title": "Token Weather Usage"
   },
   {
     "repoUrl": "https://github.com/nvr0x5/claude-deck",
     "path": "",
-    "commitSha": "207968c576e819a397212ebbb3e176bea946111d",
+    "commitSha": "45eeb8f0e60ae66e797875aeada5e760a720d8c8",
     "pluginName": "deck",
     "title": "Deck",
     "inputSteps": [
@@ -131,7 +131,7 @@
   {
     "repoUrl": "https://github.com/karanb192/cache-tax",
     "path": "",
-    "commitSha": "b05ec14e8d327021ade8c4969003547be8076812",
+    "commitSha": "535ff33225e666e605e731d78f5ac5efe243c7c3",
     "pluginName": "cache-tax",
     "title": "Cache Tax",
     "inputSteps": [
@@ -149,7 +149,7 @@
   {
     "repoUrl": "https://github.com/data-goblin/claude-code-filetree",
     "path": "",
-    "commitSha": "a3d36b1a56c0d982b307a58ef88fd3e857c977e6",
+    "commitSha": "1fdc3a963f2dc22a939f661ff0ff5a76646c9112",
     "pluginName": "filetree",
     "title": "Filetree",
     "inputSteps": [
@@ -170,7 +170,7 @@
   {
     "repoUrl": "https://github.com/scasella/claude-flightdeck",
     "path": "",
-    "commitSha": "bf433171558f63a2fef46e8b92560968b2033e4f",
+    "commitSha": "626cc0b46d417f81bbff9f5ba3b49abaf8912a85",
     "pluginName": "flightdeck",
     "title": "Flightdeck",
     "inputSteps": [
@@ -243,7 +243,7 @@
   {
     "repoUrl": "https://github.com/midudev/better-claude",
     "path": "plugins/sub-meter",
-    "commitSha": "249f0f60c054d9fc37543e203f7ba21ffde04fe6",
+    "commitSha": "860d3ea5498f69decd3726ca66c9ecbfccb2a00a",
     "pluginName": "sub-meter",
     "title": "Sub Meter",
     "cardSurface": "terminal"
@@ -456,7 +456,7 @@
   {
     "repoUrl": "https://github.com/hamzafer/claude-code-mods",
     "path": "mods/mission-control",
-    "commitSha": "5cef0d32daad002b7936920e47a317fd2fd066f0",
+    "commitSha": "f88e0c35f714f14c5ebbc28b0fae13224ae565b4",
     "pluginName": "mission-control",
     "title": "Mission Control",
     "inputSteps": [
@@ -529,7 +529,7 @@
   {
     "repoUrl": "https://github.com/dgokcin/claude-pokemon-mod",
     "path": "",
-    "commitSha": "a364389b66c5face709d3b559ff171a1654a6a19",
+    "commitSha": "811b5dbc083212100d31bbcd42a0f30ea531b07c",
     "pluginName": "pokemon",
     "title": "Claude Pokémon",
     "cardSurface": "terminal"
@@ -551,7 +551,7 @@
   {
     "repoUrl": "https://github.com/oikon48/prompt-rail",
     "path": "plugins/prompt-rail",
-    "commitSha": "b36e926cc419590ace89979edd9fcfab4ca6090e",
+    "commitSha": "0a978141165392f310f6ebd6afb401bffa492287",
     "pluginName": "prompt-rail",
     "title": "Prompt Rail",
     "inputSteps": [
