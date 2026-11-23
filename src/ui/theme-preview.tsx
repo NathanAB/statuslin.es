@@ -69,7 +69,7 @@ export function DesktopThemePreview({
         loading="lazy"
         className="border-border h-auto w-full rounded-md border"
       />
-      <VisuallyHidden>, full size</VisuallyHidden>
+      <VisuallyHidden>(full size)</VisuallyHidden>
     </a>
   )
 }
