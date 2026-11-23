@@ -12,9 +12,10 @@ const WINDOW: Record<ThemeWindow, string> = {
 
 // The whole screen fits the card's width: a monospace character is about 0.6em wide, so the text
 // shrinks until `--cols` characters span 100cqw, at most 14px. A preview is a picture of colors, so it
-// may go smaller than reading text, down to 5px. Rows at 1.3em touch, so row backgrounds don't seam.
+// has no floor: on a narrow phone the whole screen still fits, smaller than reading text. Rows at
+// 1.3em touch, so row backgrounds don't seam.
 const FIT_WHOLE_SCREEN =
-  'text-[length:max(0.3125rem,min(0.875rem,calc(100cqw/(var(--cols,1)*0.6))))] leading-[1.3]'
+  'text-[length:min(0.875rem,calc(100cqw/(var(--cols,1)*0.6)))] leading-[1.3]'
 
 /**
  * A terminal theme's recorded screen in the window it was made for. One image to a screen reader,

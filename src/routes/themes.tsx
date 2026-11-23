@@ -7,6 +7,7 @@ import { staticPageSocialMeta } from '@/og/meta'
 import { getThemeCardsFn } from '@/themes/functions'
 import { ThemeCard } from '@/themes/theme-card'
 import { THEMES_DESCRIPTION, THEMES_HEADING, THEMES_TITLE_BASE } from '@/themes/themes-page'
+import { InlineCommand } from '@/ui/inline-command'
 import { Stack, WideTileGrid } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
 import { Heading, Text, TextLink } from '@/ui/text'
@@ -45,13 +46,9 @@ function ThemesPage() {
           <Text muted>
             Color themes for Claude Code in the terminal, one card per theme. Each preview is a real
             session recorded in that theme's colors. A theme comes in a plugin: install the plugin,
-            then pick the theme in{' '}
-            <Text inline mono>
-              /theme
-            </Text>
-            . Every plugin is reviewed before it goes live, and the install is pinned to the
-            reviewed commit. For plugins that change how Claude Code works, see{' '}
-            <TextLink to={MODS_PATH}>mods</TextLink>.
+            then pick the theme in <InlineCommand>/theme</InlineCommand>. Every plugin is reviewed
+            before it goes live, and the install is pinned to the reviewed commit. For plugins that
+            change how Claude Code works, see <TextLink to={MODS_PATH}>mods</TextLink>.
           </Text>
         </Stack>
         {themes.length > 0 ? (
