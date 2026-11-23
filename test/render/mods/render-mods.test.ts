@@ -731,4 +731,90 @@ describe('renderMods for the themes a plugin carries', () => {
     )
     expect(lines).toContain('rendered pack theme nord in the terminal')
   })
+
+  it('refuses a theme that records the same as a session with no theme', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'ignored', rendered: false })
+    await addTheme(db, versionId, { key: 'nord', rendered: false })
+    // The baseline's screen with another turn time and clock, which the preview masks.
+    const unthemed = baseline.map((row) =>
+      row.replace('Churned for 0s · done 9:48', 'Baked for 7s · done 10:02'),
+    )
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: { 'custom:pack:ignored': unthemed, 'custom:pack:nord': NORD },
+    })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(await storedThemePreviews(versionId)).toEqual({ nord: NORD_PREVIEW })
+    expect(lines).toContain(
+      "failed pack theme ignored in the terminal: looks the same as a session with no theme, so the theme setting likely didn't apply",
+    )
+    expect(lines).toContain('rendered pack theme nord in the terminal')
+  })
+
+  it('removes the earlier preview of a theme that now records the same as no theme', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'ignored' })
+    const recorder = new FakeModRecorder({ baseline })
+
+    expect(await run(recorder, { slug: 'pack' }).exitCode).toBe(1)
+
+    expect(await storedThemePreviews(versionId)).toEqual({})
+  })
+
+  it('refuses every theme of a version that records the same as another, naming the others', async () => {
+    const versionId = await seedMod('pack')
+    for (const key of ['dracula', 'dracula-copy', 'dracula-again', 'nord']) {
+      await addTheme(db, versionId, { key, rendered: false })
+    }
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: {
+        'custom:pack:dracula': DRACULA,
+        'custom:pack:dracula-copy': DRACULA,
+        'custom:pack:dracula-again': DRACULA,
+        'custom:pack:nord': NORD,
+      },
+    })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(await storedThemePreviews(versionId)).toEqual({ nord: NORD_PREVIEW })
+    expect(lines).toContain(
+      'failed pack theme dracula in the terminal: looks the same as themes dracula-again, dracula-copy',
+    )
+    expect(lines).toContain(
+      'failed pack theme dracula-again in the terminal: looks the same as themes dracula, dracula-copy',
+    )
+    expect(lines).toContain(
+      'failed pack theme dracula-copy in the terminal: looks the same as themes dracula, dracula-again',
+    )
+    expect(lines).toContain('rendered pack theme nord in the terminal')
+  })
+
+  it('refuses a new theme that records the same as one stored by an earlier run', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'dracula', rendered: false })
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: { 'custom:pack:dracula': DRACULA, 'custom:pack:twin': DRACULA },
+    })
+    expect(await run(recorder).exitCode).toBe(0)
+    await addTheme(db, versionId, { key: 'twin', rendered: false })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(await storedThemePreviews(versionId)).toEqual({})
+    expect(lines).toContain(
+      'failed pack theme dracula in the terminal: looks the same as theme twin',
+    )
+    expect(lines).toContain(
+      'failed pack theme twin in the terminal: looks the same as theme dracula',
+    )
+  })
 })
