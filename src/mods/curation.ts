@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
+import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
+import { THEME_KEY, THEME_KEY_MAX, THEME_WINDOWS } from '@/themes/theme'
+import { themeNameSchema, themeNameShape } from '@/themes/theme-file'
 
 /** Relative to the repo root, where the import script and the tests both run. */
 export const CURATION_FILE = 'src/mods/curation.json'
@@ -44,6 +47,44 @@ export const terminalSetupSchema = z.strictObject({
   fullscreen: z.boolean(),
 })
 
+/**
+ * A Desktop theme the operator declares for a mod that sets one (src/themes/theme.ts `DesktopTheme`).
+ * Its switch steps are sent in Claude Desktop the way text input steps are, so they share their
+ * limits.
+ */
+const desktopThemeSchema = z.strictObject({
+  key: z
+    .string()
+    .max(THEME_KEY_MAX, `must be at most ${THEME_KEY_MAX} characters`)
+    .regex(THEME_KEY, 'must start with a letter or digit, then letters, digits, ".", "_" or "-"'),
+  name: themeNameSchema,
+  window: z.enum(THEME_WINDOWS),
+  switchSteps: z
+    .array(z.string().min(1, 'must not be empty').max(MAX_STEP_CHARS))
+    .max(MAX_INPUT_STEPS, `must be at most ${MAX_INPUT_STEPS} steps`)
+    .default([]),
+})
+
+type DesktopThemeEntry = z.infer<typeof desktopThemeSchema>
+
+/** Two of an entry's Desktop themes with one key, or names a visitor would read as one. */
+function sameDesktopThemes(themes: DesktopThemeEntry[], ctx: z.RefinementCtx): void {
+  const keys = new Set<string>()
+  const names = new Map<string, string>()
+  for (const theme of themes) {
+    if (keys.has(theme.key)) {
+      ctx.addIssue({ code: 'custom', message: `has two themes with the key "${theme.key}"` })
+    }
+    keys.add(theme.key)
+    const shape = themeNameShape(theme.name)
+    const named = names.get(shape)
+    if (named !== undefined) {
+      ctx.addIssue({ code: 'custom', message: `has two themes named "${named}", ignoring case` })
+    }
+    names.set(shape, theme.name)
+  }
+}
+
 /** The folder holding `.claude-plugin/plugin.json`; '' for the repository root. */
 export const pluginPathSchema = z
   .string()
@@ -75,6 +116,8 @@ const entrySchema = z.strictObject({
   cardSurface: z.literal(TERMINAL_CARD_SURFACE).optional(),
   /** Left out, the terminal preview is recorded in the default terminal. */
   terminal: terminalSetupSchema.optional(),
+  /** Left out, the mod lists no Desktop theme on /themes. */
+  desktopThemes: z.array(desktopThemeSchema).superRefine(sameDesktopThemes).optional(),
 })
 
 export type InputStep = z.infer<typeof inputStepSchema>

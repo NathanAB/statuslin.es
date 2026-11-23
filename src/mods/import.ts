@@ -5,7 +5,9 @@ import type { CardSurface } from '@/lib/card-surface'
 import { HttpError } from '@/lib/http'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
 import type { TerminalSetup } from '@/render/mods/terminal'
+import type { DesktopTheme } from '@/themes/theme'
 import type { InputStep } from './curation'
+import { setsTheme } from './footprint'
 import { inspectPlugin, type PluginFacts } from './plugin-facts'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -103,11 +105,40 @@ export interface NewVersion {
   cardSurface?: CardSurface | undefined
   /** Left out for a submitted mod, whose terminal preview is recorded in the default terminal. */
   terminal?: TerminalSetup | undefined
+  /** The Desktop themes the operator declared for it; a submitted mod declares none. */
+  desktopThemes?: DesktopTheme[] | undefined
 }
 
 /**
- * Adds the mod's next version with its terminal themes; returns its number. Callers pass a
- * transaction, so a version never lands without the themes it was read with.
+ * Refuses Desktop themes declared for a mod whose code sets none: recording one would show the
+ * window with no theme, under the theme's name.
+ */
+export function checkDesktopThemes(footprint: schema.ModFootprint, themes: DesktopTheme[]): void {
+  if (themes.length > 0 && !setsTheme(footprint)) {
+    throw new Error('declares Desktop themes, but its code sets no theme')
+  }
+}
+
+/** Adds the Desktop themes a version carries, each with the steps that switch to it. */
+export async function insertDesktopThemes(
+  db: Db,
+  versionId: string,
+  themes: DesktopTheme[],
+): Promise<void> {
+  if (themes.length === 0) return
+  await db.insert(schema.modThemes).values(
+    themes.map(({ switchSteps, ...theme }) => ({
+      modVersionId: versionId,
+      kind: 'desktop' as const,
+      ...theme,
+      switchSteps,
+    })),
+  )
+}
+
+/**
+ * Adds the mod's next version with its terminal themes and declared Desktop themes; returns its
+ * number. Callers pass a transaction, so a version never lands without its themes.
  */
 export async function insertNextVersion(db: Db, version: NewVersion): Promise<number> {
   const [latest] = await db
@@ -138,6 +169,7 @@ export async function insertNextVersion(db: Db, version: NewVersion): Promise<nu
       })),
     )
   }
+  await insertDesktopThemes(db, version.versionId, version.desktopThemes ?? [])
   return next
 }
 

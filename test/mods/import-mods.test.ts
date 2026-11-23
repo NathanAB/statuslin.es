@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import type { RepoInfo } from '@/mods/github'
@@ -21,6 +21,7 @@ import {
   MODULES_ONLY_LISTING,
   NO_MODULES_VALIDATE,
   openTestDb,
+  SEEDED_THEME_SHOT,
   type TestDb,
   themesOnlyListing,
 } from './seed-mods'
@@ -29,6 +30,11 @@ const SHA = 'c'.repeat(40)
 const TARBALL = new Uint8Array([31, 139, 8, 0])
 const VALIDATE_OUTPUT = readFileSync(
   new URL('./fixtures/validate-skins.json', import.meta.url),
+  'utf8',
+)
+/** A mod whose code sets a Desktop theme: Anthropic's theme-examples pack. */
+const THEME_VALIDATE = readFileSync(
+  new URL('./fixtures/validate-theme-examples.json', import.meta.url),
   'utf8',
 )
 
@@ -142,6 +148,35 @@ const STORED_THEMES = [
   { kind: 'terminal', key: 'ocean', name: 'Ocean', window: 'dark', source: OCEAN },
 ]
 
+const NIGHT_REEF = {
+  key: 'night-reef',
+  name: 'Night Reef',
+  window: 'dark',
+  switchSteps: ['/custom-theme night-reef'],
+}
+const HONU_LAGOON = {
+  key: 'honu-lagoon',
+  name: 'Honu Lagoon',
+  window: 'light',
+  switchSteps: ['/custom-theme honu-lagoon'],
+}
+
+const desktopThemesOf = (versionId: string | undefined) =>
+  db
+    .select({
+      kind: schema.modThemes.kind,
+      key: schema.modThemes.key,
+      name: schema.modThemes.name,
+      window: schema.modThemes.window,
+      source: schema.modThemes.source,
+      switchSteps: schema.modThemes.switchSteps,
+    })
+    .from(schema.modThemes)
+    .where(
+      and(eq(schema.modThemes.modVersionId, versionId ?? ''), eq(schema.modThemes.kind, 'desktop')),
+    )
+    .orderBy(schema.modThemes.key)
+
 const allMods = () => db.select().from(schema.mods)
 const allVersions = () => db.select().from(schema.modVersions)
 
@@ -186,6 +221,98 @@ describe('importMods', () => {
 
     const [version] = await allVersions()
     expect(await themesOf(version?.id)).toEqual(STORED_THEMES)
+  })
+
+  it("stores an entry's Desktop themes on its version, with their switch steps and no file", async () => {
+    await run(
+      [entry({ desktopThemes: [NIGHT_REEF, { ...HONU_LAGOON, switchSteps: undefined }] })],
+      fakes({ validate: THEME_VALIDATE }),
+    )
+
+    const [version] = await allVersions()
+    expect(await desktopThemesOf(version?.id)).toEqual([
+      { kind: 'desktop', ...HONU_LAGOON, switchSteps: [], source: null },
+      { kind: 'desktop', ...NIGHT_REEF, source: null },
+    ])
+  })
+
+  it('refuses Desktop themes for a mod whose code sets no theme, and writes nothing', async () => {
+    const { exitCode, output } = await run([entry({ desktopThemes: [NIGHT_REEF] })])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/refused skins: declares Desktop themes, but its code sets no theme/)
+    expect(await allMods()).toEqual([])
+  })
+
+  it('changes nothing on a second run with the same Desktop themes', async () => {
+    const theme = fakes({ validate: THEME_VALIDATE })
+    await run([entry({ desktopThemes: [NIGHT_REEF] })], theme)
+    const [version] = await allVersions()
+    const before = await db.select().from(schema.modThemes)
+
+    const second = await run([entry({ desktopThemes: [NIGHT_REEF] })], theme)
+
+    expect(second.output).toMatch(/unchanged skins/)
+    expect(await db.select().from(schema.modThemes)).toEqual(before)
+    expect(await desktopThemesOf(version?.id)).toHaveLength(1)
+  })
+
+  it('replaces the Desktop themes of an imported commit in place, and their shots go with them', async () => {
+    await run([entry({ desktopThemes: [NIGHT_REEF] })], fakes({ validate: THEME_VALIDATE }))
+    const [version] = await allVersions()
+    const [reef] = await db.select({ id: schema.modThemes.id }).from(schema.modThemes)
+    await db
+      .insert(schema.modThemeDesktopPreviews)
+      .values({ themeId: reef?.id as string, ...SEEDED_THEME_SHOT })
+    const fixed = { ...NIGHT_REEF, switchSteps: ['/custom-theme Night Reef'] }
+
+    const second = await run([entry({ desktopThemes: [fixed, HONU_LAGOON] })])
+
+    expect(second.exitCode).toBe(0)
+    expect(second.calls).toEqual([])
+    expect(second.output).toMatch(/^updated skins: new Desktop themes.*render it again/)
+    expect(await desktopThemesOf(version?.id)).toEqual([
+      { kind: 'desktop', ...HONU_LAGOON, source: null },
+      { kind: 'desktop', ...fixed, source: null },
+    ])
+    expect(await db.select().from(schema.modThemeDesktopPreviews)).toEqual([])
+  })
+
+  it('removes the Desktop themes an entry no longer declares', async () => {
+    await run([entry({ desktopThemes: [NIGHT_REEF] })], fakes({ validate: THEME_VALIDATE }))
+    const [version] = await allVersions()
+
+    const second = await run([entry()])
+
+    expect(second.output).toMatch(/^updated skins: new Desktop themes/)
+    expect(await desktopThemesOf(version?.id)).toEqual([])
+  })
+
+  it('refuses new Desktop themes on an imported commit whose code sets no theme', async () => {
+    await run([entry()])
+    const [version] = await allVersions()
+
+    const second = await run([entry({ desktopThemes: [NIGHT_REEF] })])
+
+    expect(second.exitCode).toBe(1)
+    expect(second.output).toMatch(
+      /refused skins: declares Desktop themes, but its code sets no theme/,
+    )
+    expect(await desktopThemesOf(version?.id)).toEqual([])
+  })
+
+  it('keeps the terminal themes of a version whose Desktop themes change', async () => {
+    const both = fakes({ validate: THEME_VALIDATE, components: THEMES_LISTING })
+    await run([entry({ desktopThemes: [NIGHT_REEF] })], both)
+    const [version] = await allVersions()
+
+    await run([entry({ desktopThemes: [HONU_LAGOON] })], both)
+
+    expect(await themesOf(version?.id)).toEqual([
+      expect.objectContaining({ key: 'dawn', kind: 'terminal' }),
+      expect.objectContaining({ key: 'honu-lagoon', kind: 'desktop' }),
+      expect.objectContaining({ key: 'ocean', kind: 'terminal' }),
+    ])
   })
 
   it('records the hooks modules a plugin declares', async () => {

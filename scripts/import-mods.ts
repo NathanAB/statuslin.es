@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
+import { isDeepStrictEqual } from 'node:util'
 import { and, eq, inArray, not, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -10,9 +11,11 @@ import { requireEnv } from '@/lib/env'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import {
+  checkDesktopThemes,
   type FetchPlugin,
   hasSubmission,
   importedSlug,
+  insertDesktopThemes,
   insertDraftMod,
   insertNextVersion,
   inspectSource,
@@ -21,6 +24,7 @@ import {
 import { terminalLine } from '@/mods/terminal-line'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
 import { createPluginFetcher } from '@/render/mods/plugin-checkout'
+import type { DesktopTheme } from '@/themes/theme'
 
 /**
  * Import the curated mods as drafts. For each entry in the curation file it downloads the
@@ -35,10 +39,14 @@ import { createPluginFetcher } from '@/render/mods/plugin-checkout'
  * marketplace entry name: the plugin's own name, or `<name>-<owner>` when another mod has that
  * (ADR 0005).
  *
+ * An entry's `desktopThemes` are stored with its version, one Desktop theme each, with the switch
+ * steps render:mods sends to record it and its card shows. They are refused for a mod whose
+ * footprint sets no theme.
+ *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
- * request, so rerunning the same file changes nothing. If only its `inputSteps` or `terminal`
- * changed, they are stored on that version in place, and its previews need rendering again
- * (render:mods --slug). A changed `cardSurface` is stored in place too, and needs no render. The
+ * request, so rerunning the same file changes nothing. If only its `desktopThemes`, `inputSteps` or
+ * `terminal` changed, they are stored on that version in place, and its previews need rendering
+ * again (render:mods --slug); a changed Desktop theme loses its old preview. A changed `cardSurface` is stored in place too, and needs no render. The
  * whole file's format is checked before anything is fetched or written; an entry refused later is
  * reported and the others still import.
  *
@@ -155,29 +163,76 @@ async function updateCardSurface(db: Db, entry: CurationEntry): Promise<boolean>
   return updated.length > 0
 }
 
+const byKey = (a: DesktopTheme, b: DesktopTheme) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
+
+/**
+ * Replaces the Desktop themes on the curated version already built from the entry's commit, when
+ * its declared ones changed; their previews go with the old rows, so they render again. A version's
+ * terminal themes are its files and stay.
+ */
+async function updateDesktopThemes(db: Db, entry: CurationEntry): Promise<boolean> {
+  const declared = [...(entry.desktopThemes ?? [])].sort(byKey)
+  const versions = await db
+    .select({ id: schema.modVersions.id, footprint: schema.modVersions.footprint })
+    .from(schema.modVersions)
+    .where(curatedVersionOf(db, entry))
+  let changed = false
+  for (const version of versions) {
+    const stored = await db
+      .select({
+        key: schema.modThemes.key,
+        name: schema.modThemes.name,
+        window: schema.modThemes.window,
+        switchSteps: schema.modThemes.switchSteps,
+      })
+      .from(schema.modThemes)
+      .where(
+        and(eq(schema.modThemes.modVersionId, version.id), eq(schema.modThemes.kind, 'desktop')),
+      )
+      .orderBy(schema.modThemes.key)
+    if (isDeepStrictEqual(stored, declared)) continue
+    checkDesktopThemes(version.footprint, declared)
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.modThemes)
+        .where(
+          and(eq(schema.modThemes.modVersionId, version.id), eq(schema.modThemes.kind, 'desktop')),
+        )
+      await insertDesktopThemes(tx, version.id, declared)
+    })
+    changed = true
+  }
+  return changed
+}
+
+/** Stores what changed in an entry whose commit is already imported, and says what to do next. */
+async function updateImported(db: Db, entry: CurationEntry, imported: string): Promise<string> {
+  const newThemes = await updateDesktopThemes(db, entry)
+  const newSteps = await updateInputSteps(db, entry)
+  const newTerminal = await updateTerminal(db, entry)
+  const newSurface = await updateCardSurface(db, entry)
+  if (newThemes || newSteps || newTerminal) {
+    const changed = [
+      newThemes && 'Desktop themes',
+      newSteps && 'input steps',
+      newTerminal && 'terminal',
+      newSurface && 'card surface',
+    ].filter(Boolean)
+    return `updated ${imported}: new ${changed.join(' and ')} at ${entry.commitSha}; render it again (render:mods --slug ${imported})`
+  }
+  if (newSurface) {
+    return `updated ${imported}: its card shows ${entry.cardSurface ?? 'the default'} first at ${entry.commitSha}; nothing to render`
+  }
+  return `unchanged ${imported}: already imported at ${entry.commitSha}`
+}
+
 async function importEntry(
   entry: CurationEntry,
   { db, github, fetchPlugin, withSandbox }: ImportDeps,
 ): Promise<string> {
   const name = entry.pluginName
   const imported = await importedSlug(db, entry)
-  if (imported) {
-    const newSteps = await updateInputSteps(db, entry)
-    const newTerminal = await updateTerminal(db, entry)
-    const newSurface = await updateCardSurface(db, entry)
-    if (newSteps || newTerminal) {
-      const changed = [
-        newSteps && 'input steps',
-        newTerminal && 'terminal',
-        newSurface && 'card surface',
-      ].filter(Boolean)
-      return `updated ${imported}: new ${changed.join(' and ')} at ${entry.commitSha}; render it again (render:mods --slug ${imported})`
-    }
-    if (newSurface) {
-      return `updated ${imported}: its card shows ${entry.cardSurface ?? 'the default'} first at ${entry.commitSha}; nothing to render`
-    }
-    return `unchanged ${imported}: already imported at ${entry.commitSha}`
-  }
+  if (imported) return updateImported(db, entry, imported)
   const existing = await modToRepin(db, entry)
 
   const repo = await github.repoInfo(entry.repoUrl)
@@ -189,6 +244,7 @@ async function importEntry(
   if (facts.manifest.name !== name) {
     throw new Error(`plugin.json names the plugin "${facts.manifest.name}", not "${name}"`)
   }
+  checkDesktopThemes(facts.footprint, entry.desktopThemes ?? [])
 
   const versionId = randomUUID()
   const versionNumber = await db.transaction(async (tx) => {
@@ -205,6 +261,7 @@ async function importEntry(
       inputSteps: entry.inputSteps,
       cardSurface: entry.cardSurface,
       terminal: entry.terminal,
+      desktopThemes: entry.desktopThemes,
     })
   })
   const { events, calls } = facts.footprint

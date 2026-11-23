@@ -33,11 +33,11 @@ const FILLER = /[\u115F\u1160\u3164\uFFA0]/gu
  * A name as a visitor reads it in `/theme`, to tell two apart: NFKC folds fullwidth and other
  * compatibility forms into their plain letters, and spacing and case don't count.
  */
-function nameShape(name: string): string {
+export function themeNameShape(name: string): string {
   return name.normalize('NFKC').replace(FILLER, '').replace(/\s+/gu, ' ').trim().toLowerCase()
 }
 
-const hasLetterOrDigit = (name: string) => /[\p{L}\p{N}]/u.test(nameShape(name))
+const hasLetterOrDigit = (name: string) => /[\p{L}\p{N}]/u.test(themeNameShape(name))
 
 /** Latin, Greek and Cyrillic share letter shapes, so a name mixing them can pose as another. */
 const LOOKALIKE_SCRIPTS = [/\p{Script=Latin}/u, /\p{Script=Greek}/u, /\p{Script=Cyrillic}/u]
@@ -45,18 +45,23 @@ const oneLookalikeScript = (name: string) =>
   LOOKALIKE_SCRIPTS.filter((script) => script.test(name)).length <= 1
 
 /**
+ * A theme's name, which a visitor reads on its card and picks it by: bounded, with a letter or digit,
+ * and refused when it holds a control or format character or could pose as another name.
+ */
+export const themeNameSchema = atMost(THEME_NAME_MAX)
+  .refine(hasLetterOrDigit, 'must have a letter or digit')
+  .refine(
+    oneLookalikeScript,
+    'mixes Latin, Greek or Cyrillic letters, which can pose as another name',
+  )
+
+/**
  * A terminal theme file as code.claude.com/docs/en/terminal-config describes it. Claude Code ignores
  * unknown tokens and colors it can't read, so neither is interpreted here; both are only bounded.
  */
 const themeFileSchema = z.object({
   $schema: z.string({ error: 'must be text' }).optional(),
-  name: atMost(THEME_NAME_MAX)
-    .refine(hasLetterOrDigit, 'must have a letter or digit')
-    .refine(
-      oneLookalikeScript,
-      'mixes Latin, Greek or Cyrillic letters, which can pose as another name',
-    )
-    .optional(),
+  name: themeNameSchema.optional(),
   base: z
     .enum(TERMINAL_THEME_BASES, { error: `must be one of ${TERMINAL_THEME_BASES.join(', ')}` })
     .optional(),
@@ -121,7 +126,7 @@ function parseFile({ key, bytes }: ThemeFileBytes): TerminalThemeFile | string[]
 function sameNames(themes: TerminalThemeFile[]): string[] {
   const first = new Map<string, TerminalThemeFile>()
   return themes.flatMap((theme) => {
-    const shape = nameShape(theme.name)
+    const shape = themeNameShape(theme.name)
     const seen = first.get(shape)
     if (seen === undefined) {
       first.set(shape, theme)

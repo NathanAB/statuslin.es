@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CURATION_FILE, parseCuration } from '@/mods/curation'
+import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
 
 const SHA = 'a'.repeat(40)
@@ -109,6 +110,80 @@ describe('parseCuration', () => {
 
     expect(errors).toHaveLength(1)
     expect(errors[0]).toMatch(message)
+  })
+
+  it("keeps an entry's Desktop themes, each with no switch steps unless it names some", () => {
+    const desktopThemes = [
+      {
+        key: 'night-reef',
+        name: 'Night Reef',
+        window: 'dark',
+        switchSteps: ['/custom-theme night-reef'],
+      },
+      { key: 'rainy-window', name: 'Rainy Window', window: 'light' },
+    ]
+
+    const result = parseCuration([entry({ desktopThemes })])
+
+    expect(result.ok && result.entries[0]?.desktopThemes).toEqual([
+      desktopThemes[0],
+      { ...desktopThemes[1], switchSteps: [] },
+    ])
+  })
+
+  const desktopTheme = (overrides: Record<string, unknown> = {}) => ({
+    key: 'night-reef',
+    name: 'Night Reef',
+    window: 'dark',
+    switchSteps: ['/custom-theme night-reef'],
+    ...overrides,
+  })
+
+  it.each([
+    ['a key with a space', { key: 'night reef' }, /desktopThemes\.0\.key/],
+    ['a key over 64 characters', { key: 'k'.repeat(65) }, /desktopThemes\.0\.key/],
+    ['an empty name', { name: '' }, /desktopThemes\.0\.name/],
+    ['a name over 64 characters', { name: 'N'.repeat(65) }, /desktopThemes\.0\.name/],
+    [
+      'a name with a format character',
+      { name: 'Night\u202eReef' },
+      /desktopThemes\.0\.name.*format/,
+    ],
+    [
+      'a name mixing Latin and Cyrillic',
+      { name: 'Night R\u0435\u0435f' },
+      /desktopThemes\.0\.name.*Cyrillic/,
+    ],
+    ['a window that is neither light nor dark', { window: 'dim' }, /desktopThemes\.0\.window/],
+    ['an empty switch step', { switchSteps: [''] }, /desktopThemes\.0\.switchSteps\.0/],
+    [
+      'a switch step too long to type',
+      { switchSteps: ['x'.repeat(MAX_STEP_CHARS + 1)] },
+      /desktopThemes\.0\.switchSteps\.0/,
+    ],
+    [
+      'more switch steps than a Desktop recording fits',
+      { switchSteps: Array.from({ length: MAX_INPUT_STEPS + 1 }, () => '/x') },
+      /desktopThemes\.0\.switchSteps/,
+    ],
+  ])('refuses a Desktop theme with %s', (_name, overrides, message) => {
+    const errors = errorsFor([entry({ desktopThemes: [desktopTheme(overrides)] })])
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toMatch(message)
+  })
+
+  it.each([
+    ['key', [desktopTheme(), desktopTheme({ name: 'Night Reef 2' })], /key "night-reef"/],
+    [
+      'name',
+      [desktopTheme(), desktopTheme({ key: 'reef-2', name: 'night reef' })],
+      /named "Night Reef"/,
+    ],
+  ])('refuses two Desktop themes with one %s', (_what, desktopThemes, message) => {
+    const errors = errorsFor([entry({ desktopThemes })])
+
+    expect(errors).toEqual([expect.stringMatching(message)])
   })
 
   it('names the entry an error belongs to', () => {
