@@ -114,41 +114,91 @@ NOT_FOUND = {"type": "error", "error": {"type": "not_found_error", "message": "n
 BAD_LENGTH = {"type": "error", "error": {"type": "invalid_request_error", "message": "bad content-length"}}
 
 
-def canned_message(model, reply):
-    """The fixed reply as one non-streaming Messages API response."""
+def tool_results(request):
+    """How many tool results the conversation carries: the steps already run."""
+    count = 0
+    for message in request.get("messages") or []:
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, list):
+            count += sum(1 for block in content if isinstance(block, dict) and block.get("type") == "tool_result")
+    return count
+
+
+def offered_tools(request):
+    tools = request.get("tools")
+    if not isinstance(tools, list):
+        return set()
+    return {tool.get("name") for tool in tools if isinstance(tool, dict)}
+
+
+def canned_turn(request, reply):
+    """The answer's message id, content blocks and stop reason.
+
+    A reply's steps play in order, one per turn: the step after the conversation's tool results,
+    when the request offers its tool. Claude Code merges assistant turns that share a message id, so
+    each step has its own. Any other request, such as a session title, gets the plain reply.
+    """
+    steps = reply.get("steps") or []
+    index = tool_results(request)
+    step = steps[index] if index < len(steps) else None
+    if step is None or step["tool"]["name"] not in offered_tools(request):
+        return CANNED_MESSAGE_ID, [{"type": "text", "text": reply["text"]}], "end_turn"
+    content = [{"type": "text", "text": step["text"]}] if step.get("text") else []
+    content.append(
+        {
+            "type": "tool_use",
+            "id": "toolu_statuslines_preview_%d" % index,
+            "name": step["tool"]["name"],
+            "input": step["tool"]["input"],
+        }
+    )
+    return "%s_%d" % (CANNED_MESSAGE_ID, index), content, "tool_use"
+
+
+def canned_message(model, reply, request):
+    """The answer as one non-streaming Messages API response."""
+    message_id, content, stop_reason = canned_turn(request, reply)
     return {
-        "id": CANNED_MESSAGE_ID,
+        "id": message_id,
         "type": "message",
         "role": "assistant",
         "model": model,
-        "content": [{"type": "text", "text": reply["text"]}],
-        "stop_reason": "end_turn",
+        "content": content,
+        "stop_reason": stop_reason,
         "stop_sequence": None,
         "usage": reply["usage"],
     }
 
 
-def canned_message_events(model, reply):
-    """The fixed reply as Messages API stream events, in order."""
+def block_events(index, block):
+    """One content block as its start, delta and stop events."""
+    if block["type"] == "text":
+        opened = {"type": "text", "text": ""}
+        delta = {"type": "text_delta", "text": block["text"]}
+    else:
+        opened = {**block, "input": {}}
+        delta = {"type": "input_json_delta", "partial_json": json.dumps(block["input"], separators=(",", ":"))}
+    return [
+        ("content_block_start", {"type": "content_block_start", "index": index, "content_block": opened}),
+        ("content_block_delta", {"type": "content_block_delta", "index": index, "delta": delta}),
+        ("content_block_stop", {"type": "content_block_stop", "index": index}),
+    ]
+
+
+def canned_message_events(model, reply, request):
+    """The answer as Messages API stream events, in order."""
     usage = reply["usage"]
-    start = {
-        **canned_message(model, reply),
-        "content": [],
-        "stop_reason": None,
-        "usage": {**usage, "output_tokens": 1},
-    }
-    text_block = {"type": "text", "text": ""}
-    text_delta = {"type": "text_delta", "text": reply["text"]}
+    message = canned_message(model, reply, request)
+    start = {**message, "content": [], "stop_reason": None, "usage": {**usage, "output_tokens": 1}}
+    blocks = [event for index, block in enumerate(message["content"]) for event in block_events(index, block)]
     return [
         ("message_start", {"type": "message_start", "message": start}),
-        ("content_block_start", {"type": "content_block_start", "index": 0, "content_block": text_block}),
-        ("content_block_delta", {"type": "content_block_delta", "index": 0, "delta": text_delta}),
-        ("content_block_stop", {"type": "content_block_stop", "index": 0}),
+        *blocks,
         (
             "message_delta",
             {
                 "type": "message_delta",
-                "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+                "delta": {"stop_reason": message["stop_reason"], "stop_sequence": None},
                 "usage": {"output_tokens": usage["output_tokens"]},
             },
         ),
@@ -164,7 +214,7 @@ def canned_model(request):
 
 
 class CannedMessagesHandler(BaseHTTPRequestHandler):
-    """Answers every model request with one fixed reply so a scripted turn completes."""
+    """Answers every model request from one fixed reply, so a scripted session plays out offline."""
 
     protocol_version = "HTTP/1.1"
     server_version = "statuslines-preview"
@@ -208,14 +258,14 @@ class CannedMessagesHandler(BaseHTTPRequestHandler):
             return
         model = canned_model(request)
         if not request.get("stream"):
-            self._send_json(200, canned_message(model, self.reply))
+            self._send_json(200, canned_message(model, self.reply, request))
             return
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "close")
         self.end_headers()
-        for event, data in canned_message_events(model, self.reply):
+        for event, data in canned_message_events(model, self.reply, request):
             chunk = "event: %s\ndata: %s\n\n" % (event, json.dumps(data, separators=(",", ":")))
             self.wfile.write(chunk.encode("utf-8"))
             self.wfile.flush()
