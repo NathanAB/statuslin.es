@@ -15,6 +15,7 @@ import {
   openTestDb,
   REPO_URL,
   SEEDED_DESKTOP_SHOT,
+  SEEDED_THEME_PREVIEW,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -502,6 +503,40 @@ describe('publish refusals', () => {
       status: 'draft',
       currentVersionId: null,
     })
+  })
+
+  it('refuses a version until every Desktop theme it carries has its whole-window shot', async () => {
+    const { versionId } = await draftMod('theme-examples')
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    const honu = await addDesktopTheme(db, versionId, { key: 'honu-lagoon', rendered: false })
+    // A terminal preview is not a Desktop theme's preview.
+    await db.insert(schema.modThemePreviews).values({ themeId: honu, ...SEEDED_THEME_PREVIEW })
+
+    const { exitCode, output } = await publish([
+      'theme-examples',
+      sha('a'),
+      '--apply',
+      '--confirm=theme-examples',
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/and a preview of every theme it carries/)
+  })
+
+  it('publishes a version whose Desktop themes all have their shots', async () => {
+    const { versionId } = await draftMod('theme-examples')
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'rainy-window', switchSteps: [] })
+
+    const { exitCode } = await publish([
+      'theme-examples',
+      sha('a'),
+      '--apply',
+      '--confirm=theme-examples',
+    ])
+
+    expect(exitCode).toBe(0)
+    expect((await modState(db, 'theme-examples'))?.status).toBe('published')
   })
 
   it('refuses a delisted mod, which only delist --restore brings back', async () => {
