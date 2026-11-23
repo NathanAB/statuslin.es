@@ -5,14 +5,13 @@ import type { AnalysisSandbox } from './desktop-sandbox'
 import {
   changedBoxCommand,
   croppedPngCommand,
-  maskedSignatureCommand,
   parseChangedBox,
   parseProbes,
-  parseSignature,
   probeCommand,
   scaledPngCommand,
 } from './imagemagick'
 import { expectOk } from './interact'
+import { maskedSignatureCommand, parseSignature } from './look-signature'
 import { checkedPixelPng } from './png'
 import {
   MESSAGE_AREA,
@@ -39,7 +38,7 @@ const LIGHT_FILL = 0.5
 const TURNS: Rect[] = [MESSAGE_AREA, PROMPT_TEXT, SCROLL_GUTTER]
 const MB = 1024 * 1024
 /**
- * The largest a theme's window and card may be. The 8 themes recorded for #303 came to 0.7-2.5 MB
+ * The largest a theme's window and card may be. The 8 themes first recorded came to 0.7-2.5 MB
  * a window and 0.22-0.50 MB a card; a pack of 38 themes with twins at the caps stays under 200 MB.
  */
 const THEME_SHOT_MAX_BYTES = 4 * MB

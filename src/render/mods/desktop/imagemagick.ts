@@ -12,7 +12,7 @@ import { PAGE_GREY, type Rect, SCALE, WINDOW } from './screen'
 const geometry = ({ x, y, width, height }: Rect) =>
   `${width * SCALE}x${height * SCALE}+${x * SCALE}+${y * SCALE}`
 
-const pngInput = (path: string) => shellQuote(`png:${path}[0]`)
+export const pngInput = (path: string) => shellQuote(`png:${path}[0]`)
 
 export function screenshotCommand(path: string): string {
   return `import -window root -strip ${path}`
@@ -70,7 +70,7 @@ export function parseProbes(stdout: string, count: number): RegionGrey[] {
 /** A pixel's grey difference under this is noise, like the fade Desktop lays over a scrolled chat. */
 const FAINT_CHANGE = '2%'
 
-const rectangle = ({ x, y, width, height }: Rect) =>
+export const rectangle = ({ x, y, width, height }: Rect) =>
   `-draw 'rectangle ${x * SCALE},${y * SCALE} ${(x + width) * SCALE - 1},${(y + height) * SCALE - 1}'`
 
 /**
@@ -185,26 +185,6 @@ export function scaledPngCommand(source: string, size: { width: number; height: 
     `convert ${pngInput(source)} -resize '${size.width}x${size.height}!'`,
     '-strip -define png:exclude-chunks=all png:-',
   ].join(' ')
-}
-
-/**
- * Prints a SHA-256 of the shot's pixels with `masks` painted black: the same for two shots that look
- * the same outside the masks.
- */
-export function maskedSignatureCommand(path: string, masks: readonly Rect[]): string {
-  return [
-    `convert ${pngInput(path)} -fill black`,
-    ...masks.map(rectangle),
-    `-format '%#' info:`,
-  ].join(' ')
-}
-
-const SIGNATURE = /^[0-9a-f]{64}$/
-
-export function parseSignature(stdout: string): string {
-  const signature = stdout.trim()
-  if (!SIGNATURE.test(signature)) throw new Error('unreadable shot signature')
-  return signature
 }
 
 /**
