@@ -303,7 +303,9 @@ bun run build:e2b-mod-template
 ```
 It prints an immutable snapshot ID. Commit that value as `E2B_MOD_TEMPLATE_ID` in
 `src/render/e2b-template.ts` before deploying. Rebuild only when the Claude Code or headless-terminal
-version in `scripts/build-e2b-mod-template.ts` changes. It leaves `E2B_TEMPLATE_ID` alone.
+version in `scripts/build-e2b-mod-template.ts` changes, or the canned model server
+(`src/render/sandbox-anthropic-usage-server.py`) does, since the template holds a copy of it. It
+leaves `E2B_TEMPLATE_ID` alone.
 
 ### The Desktop E2B template
 
