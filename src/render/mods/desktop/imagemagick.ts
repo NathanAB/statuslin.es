@@ -177,6 +177,17 @@ export function croppedPngCommand(
 }
 
 /**
+ * The whole shot scaled to exactly `size` (device pixels), re-encoded from its pixels alone to
+ * stdout, as croppedPngCommand's crops are.
+ */
+export function scaledPngCommand(source: string, size: { width: number; height: number }): string {
+  return [
+    `convert ${pngInput(source)} -resize '${size.width}x${size.height}!'`,
+    '-strip -define png:exclude-chunks=all png:-',
+  ].join(' ')
+}
+
+/**
  * Cells across a row signature: about 3 CSS pixels each across the chat column, and few enough
  * that a whole shot's signatures print under the sandbox's output cap.
  */

@@ -525,6 +525,7 @@ function failingDesktop(pluginName: string): DesktopRecorder {
       if (request.mod.pluginName === pluginName) throw new Error(`desktop for ${pluginName} died`)
       return inner.record(request)
     },
+    recordTheme: (request) => inner.recordTheme(request),
   }
 }
 
