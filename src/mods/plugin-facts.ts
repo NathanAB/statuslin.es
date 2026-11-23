@@ -3,6 +3,7 @@ import type { ModFootprint } from '@/db/schema'
 import { SANDBOX_CLAUDE_CODE_BIN } from '@/render/e2b-template'
 import type { ModSandbox } from '@/render/mods/mod-sandbox'
 import { PLUGIN_NAME, PLUGIN_NAME_RULE } from './curation'
+import { atMost, codePoint } from './plain-text'
 import { componentsCommand, MODULE_PATH, otherComponents, parseJson } from './plugin-components'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
@@ -34,26 +35,6 @@ const VALIDATE_STDERR_MAX_BYTES = 4096
 
 /** A plugin.json past this is truncated, fails to parse, and the entry is refused. */
 const MANIFEST_MAX_BYTES = 64 * 1024
-
-const codePoint = (char: string) =>
-  `U+${(char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`
-
-/**
- * Stored and served to every Claude Code client, so a value past its limit, or one carrying a
- * character that can rewrite a terminal or reorder text, refuses the entry.
- */
-const atMost = (max: number) =>
-  z
-    .string()
-    .max(max, `must be at most ${max} characters`)
-    .superRefine((value, ctx) => {
-      const char = CONTROL_OR_FORMAT.exec(value)?.[0]
-      if (char === undefined) return
-      ctx.addIssue({
-        code: 'custom',
-        message: `must not contain control or format characters (${codePoint(char)})`,
-      })
-    })
 
 const manifestSchema = z.object({
   // It becomes the mod's slug and marketplace entry name.
