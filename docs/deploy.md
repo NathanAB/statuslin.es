@@ -384,6 +384,9 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
    its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
    it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result.
+   The same run records each terminal theme a plugin carries, in that theme, as one outcome line
+   per theme. A full run skips themes that already have a preview, and `--slug` records all of that
+   plugin's themes again. A plugin publishes only once every theme has a preview.
    A published mod's live previews are replaced as soon as it renders:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
