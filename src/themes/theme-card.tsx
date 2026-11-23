@@ -14,9 +14,7 @@ import { Heading, Text, TextLink } from '@/ui/text'
 import { ThemePreview } from '@/ui/theme-preview'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 import type { PublishedTheme } from './queries'
-import type { ThemeWindow } from './theme'
-
-const WINDOW_LABEL: Record<ThemeWindow, string> = { light: 'Light', dark: 'Dark' }
+import { THEME_WINDOW_LABEL } from './theme'
 
 type ThemePlugin = PublishedTheme['plugin']
 
@@ -81,7 +79,7 @@ export function ThemeCard({ theme, installFrom }: { theme: PublishedTheme; insta
           />
           <Row gap={2} justify="between">
             <Heading level={3}>{theme.name}</Heading>
-            <Badge variant="outline">{WINDOW_LABEL[theme.window]}</Badge>
+            <Badge variant="outline">{THEME_WINDOW_LABEL[theme.window]}</Badge>
           </Row>
           {installFrom === undefined ? null : (
             <PluginInstall plugin={theme.plugin} origin={installFrom} />
