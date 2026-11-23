@@ -143,7 +143,7 @@ const RELATED: GalleryItem[] = [
 
 function renderPage(mod: Partial<ModDetail> & { related?: GalleryItem[] } = {}) {
   vi.spyOn(ModRoute, 'useLoaderData').mockReturnValue({
-    mod: { ...MOD, related: [], ...mod },
+    mod: { ...MOD, related: [], themes: [], ...mod },
     user: null,
     origin: ORIGIN,
   })

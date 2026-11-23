@@ -23,6 +23,7 @@ import { ModPreview } from '@/mods/mod-preview'
 import { ModRelated } from '@/mods/mod-related'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
+import { PluginThemes } from '@/themes/plugin-themes'
 import { FaqSection } from '@/ui/faq-section'
 import { InstallFacts } from '@/ui/install-facts'
 import { PageShell } from '@/ui/shell'
@@ -92,7 +93,8 @@ function ModPage() {
             controller={copyController}
           />
         }
-        preview={<ModPreview mod={mod} />}
+        preview={mod.themeOnly ? undefined : <ModPreview mod={mod} />}
+        themes={mod.themes.length > 0 ? <PluginThemes themes={mod.themes} /> : undefined}
         whatItDoes={{
           copy: mod.generatedContent,
           tiles: modFactTiles(mod),
