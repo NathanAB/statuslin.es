@@ -7,11 +7,11 @@ import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
 import { SAMPLE_PROJECT_FILES } from './sample-project'
 import {
-  BUSY_WORKSPACE_FILES,
   busySettings,
   cannedReply,
   feedFile,
   feedStdin,
+  SUM_BUG_WORKSPACE_FILES,
 } from './scenario-feed'
 import type { TerminalSetup } from './terminal'
 import { waitingSessionFile } from './waiting-session'
@@ -117,7 +117,7 @@ export function terminalSettings({ fullscreen }: TerminalSetup, theme: string | 
 /** Uploaded before setup runs, whose seed commit then holds them. */
 function workspaceFiles(scenario: Scenario, busy: boolean): SessionFile[] {
   const workspace = feedStdin(scenario).workspace.current_dir
-  const files = [...SAMPLE_PROJECT_FILES, ...(busy ? BUSY_WORKSPACE_FILES : [])]
+  const files = [...SAMPLE_PROJECT_FILES, ...(busy ? SUM_BUG_WORKSPACE_FILES : [])]
   return files.map(({ path, data }) => ({ path: `${workspace}/${path}`, data }))
 }
 

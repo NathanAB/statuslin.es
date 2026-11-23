@@ -9,11 +9,11 @@ import {
 } from '@/render/e2b-template'
 import { SAMPLE_PROJECT_FILES } from '@/render/mods/sample-project'
 import {
-  BUSY_WORKSPACE_FILES,
   busySettings,
   feedFile,
   feedScenario,
   feedStdin,
+  SUM_BUG_WORKSPACE_FILES,
 } from '@/render/mods/scenario-feed'
 import {
   FEED_FILE,
@@ -158,7 +158,7 @@ describe('sessionFiles', () => {
     it("puts the busy session's files in the workspace, before setup commits them", () => {
       const files = seedFiles('code-pet', true)
 
-      for (const { path, data } of BUSY_WORKSPACE_FILES) {
+      for (const { path, data } of SUM_BUG_WORKSPACE_FILES) {
         expect(files).toContainEqual({ path: `/home/user/app/${path}`, data })
       }
     })
@@ -169,7 +169,9 @@ describe('sessionFiles', () => {
         .filter((path) => path.startsWith('/home/user/app/'))
 
       expect(workspace).toEqual(
-        [...SAMPLE_PROJECT_FILES, ...BUSY_WORKSPACE_FILES].map((f) => `/home/user/app/${f.path}`),
+        [...SAMPLE_PROJECT_FILES, ...SUM_BUG_WORKSPACE_FILES].map(
+          (f) => `/home/user/app/${f.path}`,
+        ),
       )
       expect(new Set(workspace).size).toBe(workspace.length)
     })

@@ -32,6 +32,7 @@ type Emit = (text: string | Uint8Array) => void
 function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit: Emit) => void) {
   const commands: string[] = []
   const written: SandboxFile[] = []
+  const sent: string[] = []
   const terminalSizes: { cols: number; rows: number }[] = []
   const pty = { killed: false }
   const sandbox: RecordingSandbox = {
@@ -51,7 +52,10 @@ function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit
       }
       onOpen(emit)
       return {
-        send: async (input) => respond(input, emit),
+        send: async (input) => {
+          sent.push(input)
+          respond(input, emit)
+        },
         kill: async () => {
           pty.killed = true
         },
@@ -59,8 +63,26 @@ function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit
     },
   }
   const writtenPaths = () => written.map((f) => f.path)
-  return { sandbox, commands, written, writtenPaths, terminalSizes, pty }
+  const writtenJson = (path: string) => {
+    const file = written.find((f) => f.path === path)
+    if (!file) throw new Error(`nothing uploaded at ${path}`)
+    return JSON.parse(String(file.data))
+  }
+  /** What was typed into Claude Code, after the launch command. */
+  const typed = () => sent.filter((input) => !isLaunch(input))
+  return { sandbox, commands, written, writtenPaths, writtenJson, typed, terminalSizes, pty }
 }
+
+const CLAUDE_JSON = '/home/user/session-home/.claude/.claude.json'
+const REPLY_JSON = '/home/user/.statuslines/reply.json'
+const FEED_JSON = '/home/user/.statuslines/feed.json'
+const SCENARIO_USAGE = {
+  input_tokens: 37_000,
+  output_tokens: 1_400,
+  cache_creation_input_tokens: 5_000,
+  cache_read_input_tokens: 2_000,
+}
+const RADAR = { source: { tarball: new Uint8Array([31, 139]), path: '' }, pluginName: 'radar' }
 
 const isLaunch = (input: string) => input.startsWith('clear; ')
 
@@ -114,6 +136,64 @@ describe('recordInSandbox', () => {
       }
       expect(fake.writtenPaths()).toEqual(sessionFiles(feedScenario(), seed).map((f) => f.path))
       expect(fake.pty.killed).toBe(true)
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    "types the scripted prompt then the mod's steps, uploading the plain reply and no settings",
+    async () => {
+      const fake = fakeSandbox(claudeSession, () => {})
+
+      await recordInSandbox(
+        fake.sandbox,
+        {
+          mod: RADAR,
+          theme: null,
+          inputSteps: [{ type: 'text', text: '/radar' }],
+          terminal: DEFAULT_TERMINAL_SETUP,
+        },
+        FAST,
+      )
+
+      expect(fake.terminalSizes).toEqual([{ cols: 100, rows: 30 }])
+      expect(fake.typed()).toEqual(['hello', '\r', '/radar', '\r'])
+      expect(fake.writtenPaths()).toEqual([
+        CLAUDE_JSON,
+        '/home/user/app/src/components/site-header.tsx',
+        '/home/user/app/src/components/install-button.tsx',
+        '/home/user/app/src/components/plugin-card.tsx',
+        '/home/user/app/src/lib/slug.ts',
+        '/home/user/app/src/routes/api/plugins.ts',
+        '/home/user/app/src/jobs/sync-registry.ts',
+        FEED_JSON,
+        REPLY_JSON,
+        '/home/user/plugins/scenario-feed/.claude-plugin/plugin.json',
+        '/home/user/plugins/scenario-feed/hooks/hooks.json',
+        '/home/user/plugins/scenario-feed/hooks/register.ts',
+      ])
+      expect(fake.writtenJson(CLAUDE_JSON)).toEqual({
+        hasCompletedOnboarding: true,
+        lastOnboardingVersion: '2.1.296',
+        lastReleaseNotesSeen: '2.1.296',
+        numStartups: 5,
+        theme: 'dark',
+        autoUpdates: false,
+        customApiKeyResponses: { approved: ['00000000000000000-AA'], rejected: [] },
+        projects: {
+          '/home/user/app': {
+            hasTrustDialogAccepted: true,
+            hasCompletedProjectOnboarding: true,
+            projectOnboardingSeenCount: 5,
+            allowedTools: [],
+          },
+        },
+      })
+      expect(fake.writtenJson(REPLY_JSON)).toEqual({
+        text: 'The repo is clean and the tests pass.',
+        usage: SCENARIO_USAGE,
+      })
+      expect(fake.writtenJson(FEED_JSON)).toMatchObject({ target: 'radar', busy: [] })
     },
     SESSION_TEST_TIMEOUT_MS,
   )
