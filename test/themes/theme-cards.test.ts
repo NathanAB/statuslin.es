@@ -61,7 +61,7 @@ const named = (cards: { name: string; plugin: { slug: string } }[]) =>
 describe('getThemeCards', () => {
   it('gives one card per theme, with its preview, window and plugin, so a pack of 81 shows 81', async () => {
     const names = Array.from({ length: 81 }, (_, i) => `Theme ${String(i).padStart(2, '0')}`)
-    await plugin('pack', names)
+    const { modId } = await plugin('pack', names)
 
     const cards = await getThemeCards(db)
 
@@ -69,9 +69,10 @@ describe('getThemeCards', () => {
     expect(cards[0]).toEqual({
       id: expect.any(String),
       name: 'Theme 00',
+      kind: 'terminal',
       window: 'dark',
       preview: SEEDED_THEME_PREVIEW.segments,
-      plugin: { slug: 'pack', title: 'pack title', authorGithub: 'octocat', code: null },
+      plugin: { id: modId, slug: 'pack', title: 'pack title', authorGithub: 'octocat', code: null },
     })
   })
 

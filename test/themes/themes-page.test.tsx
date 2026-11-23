@@ -33,9 +33,10 @@ function theme(name: string, slug: string, over: Partial<PublishedTheme> = {}): 
   return {
     id: `${slug}-${name}`,
     name,
+    kind: 'terminal',
     window: 'dark',
     preview: [{ text: `${name} screen` }],
-    plugin: { slug, title: `${slug} title`, authorGithub: 'octocat', code: null },
+    plugin: { id: `${slug}-id`, slug, title: `${slug} title`, authorGithub: 'octocat', code: null },
     ...over,
   }
 }
@@ -87,7 +88,13 @@ describe('/themes', () => {
     const footprint = { events: [], calls: ['$.http.fetch', '$.fs.write', '$.process.run'] }
     renderPage([
       theme('Night', 'mixed', {
-        plugin: { slug: 'mixed', title: 'Mixed', authorGithub: 'octocat', code: { footprint } },
+        plugin: {
+          id: 'mixed-id',
+          slug: 'mixed',
+          title: 'Mixed',
+          authorGithub: 'octocat',
+          code: { footprint },
+        },
       }),
       theme('Dawn', 'pack'),
     ])
@@ -111,7 +118,13 @@ describe('/themes', () => {
     const footprint = { events: [], calls: [] }
     renderPage([
       theme('Night', 'silent', {
-        plugin: { slug: 'silent', title: 'Silent', authorGithub: 'octocat', code: { footprint } },
+        plugin: {
+          id: 'silent-id',
+          slug: 'silent',
+          title: 'Silent',
+          authorGithub: 'octocat',
+          code: { footprint },
+        },
       }),
     ])
 

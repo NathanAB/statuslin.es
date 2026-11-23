@@ -4,7 +4,7 @@ import { type ModFootprint, mods, modThemePreviews, modThemes, modVersions } fro
 import { versionIsThemeOnly } from '@/mods/queries'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
-import type { ThemeWindow } from './theme'
+import type { ThemeKind, ThemeWindow } from './theme'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -14,11 +14,15 @@ export interface PublishedTheme {
   id: string
   /** The author's name for it, the one `/theme` lists. Shown as text. */
   name: string
+  /** Where it applies: the terminal, or (next) Claude Desktop. */
+  kind: ThemeKind
   window: ThemeWindow
   /** The whole screen recorded with this theme selected. */
   preview: AnsiSegment[]
   /** The plugin a visitor installs to get it. */
   plugin: {
+    /** The plugin's mod id, which a copy of its install command counts against. */
+    id: string
     slug: string
     title: string
     authorGithub: string
@@ -33,9 +37,10 @@ function publishedThemes(db: Db) {
     .select({
       id: modThemes.id,
       name: modThemes.name,
+      kind: modThemes.kind,
       window: modThemes.window,
       preview: modThemePreviews.segments,
-      plugin: { slug: mods.slug, title: mods.title, authorGithub: mods.authorGithub },
+      plugin: { id: mods.id, slug: mods.slug, title: mods.title, authorGithub: mods.authorGithub },
       themeOnly: versionIsThemeOnly,
       footprint: modVersions.footprint,
     })
