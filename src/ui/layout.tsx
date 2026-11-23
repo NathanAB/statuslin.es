@@ -104,9 +104,20 @@ export function TileGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{children}</div>
 }
 
-/** Wide tiles, a picture each: one up, two up from `lg` (/themes' cards, each a whole terminal). */
-export function WideTileGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-4 lg:grid-cols-2">{children}</div>
+const WIDE_TILE_COLUMNS = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3' } as const
+
+/**
+ * Wide tiles, a picture each: one up, two up from `lg` (/themes' cards, each a whole terminal).
+ * `columns={3}`: three up from `lg`, for one row of three (the home page's themes).
+ */
+export function WideTileGrid({
+  columns = 2,
+  children,
+}: {
+  columns?: keyof typeof WIDE_TILE_COLUMNS
+  children: React.ReactNode
+}) {
+  return <div className={`grid gap-4 ${WIDE_TILE_COLUMNS[columns]}`}>{children}</div>
 }
 
 /** Small groups side by side: two up from `sm`, four up from `xl`, each group its own column. */
