@@ -1,6 +1,6 @@
 import { shellQuote } from '../session'
 import type { RowCut } from './rows'
-import { type Rect, SCALE, WINDOW } from './screen'
+import { PAGE_GREY, type Rect, SCALE, WINDOW } from './screen'
 
 /**
  * ImageMagick commands run inside the Desktop sandboxes, and parsers for what they print. Rects
@@ -101,9 +101,11 @@ export function changedInRegionCommand(baseline: string, shot: string, region: R
   ].join(' ')
 }
 
-/** Desktop's page background in dark theme, around the chat. */
-const PAGE_BACKGROUND = 'gray(21)'
-/** Off the page background by more than this, a pixel is content: the 20/21 grey jitter is not. */
+const PAGE_BACKGROUND = `gray(${Math.round(PAGE_GREY * 255)})`
+/**
+ * Off the page background by more than this, a pixel is content: the prompt box's grey 24 shadow
+ * is not.
+ */
 const NOT_BACKGROUND = '3%'
 
 /**

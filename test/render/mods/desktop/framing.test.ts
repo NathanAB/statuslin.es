@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { frameChat, framePane, readLayout } from '@/render/mods/desktop/framing'
+import { frameChat, framePane, readLayout, readScrolled } from '@/render/mods/desktop/framing'
 import { parseRowProfile } from '@/render/mods/desktop/imagemagick'
 import {
   CARD_MAX_HEIGHT,
-  CHAT_TOP,
   CONTENT,
-  PANE,
   PANE_BORDER_GREY,
   PROMPT_BORDER_GREY,
   PROMPT_BOX,
@@ -40,6 +38,7 @@ describe('frameChat', () => {
       rows: BAND_ROWS,
       plate: BAND_PLATE,
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({
@@ -53,6 +52,7 @@ describe('frameChat', () => {
       rows: BAND_ROWS,
       plate: BAND_PLATE,
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({
@@ -69,6 +69,7 @@ describe('frameChat', () => {
       rows: content,
       plate: rows([732, 812, 1]),
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({ card: { y: 732 - 6, height: PROMPT_BOX.y - (732 - 6) } })
@@ -83,6 +84,7 @@ describe('frameChat', () => {
       rows: profile,
       plate: plateOf(profile),
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({ rect: { y: 292 }, card: { y: 769 } })
@@ -97,6 +99,7 @@ describe('frameChat', () => {
       rows: profile,
       plate: plateOf(profile),
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({
@@ -113,6 +116,7 @@ describe('frameChat', () => {
       rows: profile,
       plate: plateOf(profile),
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({ card: { y: 769, height: CONTENT.bottom - 769 } })
@@ -124,6 +128,7 @@ describe('frameChat', () => {
       rows: BAND_ROWS,
       plate: BAND_PLATE,
       restylesPrompt: true,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({ card: { ...COLUMN, y: 769, height: PROMPT_BOTTOM + 6 - 769 } })
@@ -138,6 +143,7 @@ describe('frameChat', () => {
       rows: profile,
       plate: plateOf(profile),
       restylesPrompt: true,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({
@@ -154,6 +160,7 @@ describe('frameChat', () => {
       rows: profile,
       plate: plateOf(profile),
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({ card: { ...COLUMN, y: 292, height: 400 - 292 } })
@@ -168,23 +175,26 @@ describe('frameChat', () => {
       rows: profile,
       plate: plateOf(profile),
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({ card: { y: 292, height: CARD_MAX_HEIGHT } })
   })
 
   it('starts below the element a scrolled chat cuts at its top', () => {
-    const changed = { x: 166, y: CHAT_TOP + 1, width: 768, height: 700 }
-    const profile = rows([CHAT_TOP + 1, CHAT_TOP + 4, 0.05], [CHAT_TOP + 11, 700, 0.3], PROMPT)
+    // Desktop 6.28899.6 fades a scrolled chat's top, so the cut element shows from row 57.
+    const changed = { x: 166, y: 57, width: 768, height: 700 }
+    const profile = rows([57, 72, 0.05], [78, 90, 0.1], [164, 700, 0.3], PROMPT)
 
     const frame = frameChat({
       changed,
       rows: profile,
       plate: plateOf(profile),
       restylesPrompt: false,
+      scrolled: true,
     })
 
-    expect(frame).toMatchObject({ rect: { y: CHAT_TOP + 5 } })
+    expect(frame).toMatchObject({ rect: { y: 91 } })
   })
 
   it('widens the crop to a change outside the chat column, such as a toast', () => {
@@ -195,6 +205,7 @@ describe('frameChat', () => {
       rows: rows(),
       plate: NO_PLATE,
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({
@@ -210,6 +221,7 @@ describe('frameChat', () => {
       rows: BAND_ROWS,
       plate: BAND_PLATE,
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({ rect: COLUMN })
@@ -223,6 +235,7 @@ describe('frameChat', () => {
       rows: rows(),
       plate: NO_PLATE,
       restylesPrompt: false,
+      scrolled: false,
     })
 
     expect(frame).toMatchObject({
@@ -232,33 +245,33 @@ describe('frameChat', () => {
 })
 
 describe('framePane', () => {
-  const PANE_ONLY = { x: PANE.x - 4, y: PANE.y - 4, width: PANE.width + 8, height: PANE.height + 8 }
-  /** Inside the pane's border, which a card leaves out. */
-  const PANE_INSIDE = { x: PANE.x + 1, width: PANE.width - 2 }
+  /** The pane and the crop margin around it, inside the window: the pane runs to its edges. */
+  const PANE_ONLY = { x: 729, y: 33, width: 371, height: 867 }
+  const PANE_RIGHT_OF_BORDER = { x: 734, width: 366 }
   /**
-   * Published mods' panes, read across the pane's body from their production shots: the pane's
-   * border and title bar, what the mod draws, and the pane's rounded bottom corners.
+   * Curated mods' panes, read across the pane's body from Desktop 6.28899.6 shots in the recording
+   * sandbox: the session header, the pane's title bar, then what the mod draws.
    */
   const paneOf = (slug: keyof typeof paneRows) => parseRowProfile(paneRows[slug], WINDOW.height)
 
   it.each([
-    // [slug, the first and last rows the mod draws in its pane]
-    ['flightdeck', 89, 357],
-    ['pets', 85, 270],
-    ['code-pet', 94, 178],
-    ['filetree', 89, 199],
-  ] as const)('cards all that %s draws in its pane, leaving out the chat', (slug, first, last) => {
+    { slug: 'flightdeck', firstDrawn: 101, cardEndsAtBlankRow: 293 },
+    { slug: 'pets', firstDrawn: 97, lastDrawn: 283 },
+    { slug: 'code-pet', firstDrawn: 111, lastDrawn: 195 },
+    { slug: 'filetree', firstDrawn: 102, cardEndsAtBlankRow: 384 },
+  ] as const)('cards what $slug draws in its pane, leaving out the chat', (row) => {
+    const { slug, firstDrawn } = row
+    const top = firstDrawn - 8
+    const bottom = 'lastDrawn' in row ? row.lastDrawn + 1 + 8 : row.cardEndsAtBlankRow
     const frame = framePane(paneOf(slug))
 
-    expect(frame).toMatchObject({
-      card: { ...PANE_INSIDE, y: first - 8, height: last + 1 + 8 - (first - 8) },
-    })
+    expect(frame).toMatchObject({ card: { ...PANE_RIGHT_OF_BORDER, y: top, height: bottom - top } })
   })
 
   it('crops and cards the pane alone, leaving out the chat beside it', () => {
     const frame = framePane(paneOf('flightdeck'))
 
-    expect(frame).toMatchObject({ rect: PANE_ONLY, card: { ...PANE_INSIDE, y: 81 } })
+    expect(frame).toMatchObject({ rect: PANE_ONLY, card: { ...PANE_RIGHT_OF_BORDER, y: 93 } })
   })
 
   it('cuts a pane too tall for a card at a blank row', () => {
@@ -270,7 +283,7 @@ describe('framePane', () => {
   })
 
   it('cards the pane top when nothing shows in its body', () => {
-    expect(framePane(rows([40, 64, 0.2]))).toEqual({
+    expect(framePane(rows([37, 80, 0.2]))).toEqual({
       rect: PANE_ONLY,
       card: { ...PANE_ONLY, height: CARD_MAX_HEIGHT },
     })
@@ -278,7 +291,7 @@ describe('framePane', () => {
 })
 
 const grey = (mean: number, deviation = 0) => ({ mean, deviation })
-const BACKGROUND = 20 / 255
+const BACKGROUND = 25 / 255
 
 describe('readLayout', () => {
   it('sees the chat column alone when the prompt box border is where it is with no pane', () => {
@@ -315,5 +328,15 @@ describe('readLayout', () => {
     }
 
     expect(() => readLayout(shot)).toThrow(/screen\.ts/)
+  })
+})
+
+describe('readScrolled', () => {
+  it("sees a scrolled chat where Desktop draws its scrollbar's foot", () => {
+    expect(readScrolled(grey(50 / 255, 0.1))).toBe(true)
+  })
+
+  it('sees a chat that fits where that strip is page background', () => {
+    expect(readScrolled(grey(25 / 255))).toBe(false)
   })
 })

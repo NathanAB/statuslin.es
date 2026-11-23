@@ -12,18 +12,13 @@ const PLATE_MIN = 0.9
 /** Desktop leaves about 6px between a band's plate and the prompt box, more at its corners. */
 const BAND_GAP_MAX = 12
 const BAND_MIN_ROWS = 8
-/**
- * Unscrolled, the chat's first message starts about 50px under its top. Content this close to the
- * top means the chat has scrolled and the element there is cut.
- */
-const CUT_SLACK = 12
 /** A card is cut at a blank row only this far down at least, so it never comes out a sliver. */
 const CARD_MIN_HEIGHT = 60
 
 const isBlank = (share: number | undefined) => share === 0
 
 /** The prompt box's rounded top corners keep its first rows off the plate strips. */
-const PROMPT_CORNER_ROWS = 5
+const PROMPT_CORNER_ROWS = 6
 
 /**
  * The prompt box's top: it grows upward a line at a time as a draft wraps, from PROMPT_BOX, the
@@ -50,15 +45,21 @@ export function bandAbovePrompt(
 }
 
 /**
- * Where a crop meant to start at `top` should start so it cuts no element in half: below the
- * element a scrolled chat cuts at its top, or else up at the blank row above the element `top`
- * lands in.
+ * Desktop spaces chat elements 27 rows apart or more, and the lines inside one 8 or fewer, so a
+ * blank run this long ends an element.
  */
-export function uncutTop(rows: RowProfile, top: number): number {
+const ELEMENT_GAP = 16
+
+const elementEnd = (rows: RowProfile, from: number) =>
+  rows.findIndex(
+    (_, y) => y > from && rows.slice(y, y + ELEMENT_GAP).every((share) => isBlank(share)),
+  )
+
+export function uncutTop(rows: RowProfile, top: number, scrolled: boolean): number {
   const first = rows.findIndex((share, y) => y >= CHAT_TOP && !isBlank(share))
-  if (first !== -1 && first < CHAT_TOP + CUT_SLACK) {
-    const gap = rows.findIndex((share, y) => y > first && isBlank(share))
-    return Math.max(top, gap === -1 ? first : gap)
+  if (scrolled && first !== -1) {
+    const end = elementEnd(rows, first)
+    return Math.max(top, end === -1 ? first : end)
   }
   let y = top
   while (y > CHAT_TOP && !isBlank(rows[y])) y--

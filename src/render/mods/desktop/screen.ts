@@ -1,7 +1,7 @@
 /**
  * Every fixed screen position the Desktop recorder clicks, probes or crops, in CSS pixels of
- * Claude Desktop 2.42304.2 in dark theme with its sidebar collapsed. Measured on recorded
- * screenshots; a Desktop upgrade means re-measuring here and running
+ * Claude Desktop 6.28899.6 in dark theme with its sidebar and session details closed. Measured on
+ * recorded screenshots; a Desktop upgrade means re-measuring here and running
  * `bun run smoke:desktop <out-dir>`.
  */
 
@@ -57,6 +57,11 @@ export const AUTO_MODE_GOT_IT: DialogButton = {
   probe: rectFromCenter(181, 58, 20, 17),
 }
 
+/**
+ * The header button that shows and hides a session's details (its Environment and Context), which
+ * Desktop opens beside every new session. Desktop binds no key to it.
+ */
+export const SESSION_DETAILS_TOGGLE: Point = { x: 803, y: 18 }
 /** Inside the prompt box whether or not a pane is open, so a click focuses it. */
 export const PROMPT_FOCUS: Point = { x: 300, y: WINDOW.height - 60 }
 /** The left margin of the main area: clicking it takes focus off the prompt, so no caret blinks. */
@@ -68,7 +73,7 @@ export const MOUSE_REST: Point = { x: WINDOW.width - 1, y: CENTER.y }
 export const CONTENT = { left: 0, top: 0, right: WINDOW.width, bottom: WINDOW.height }
 
 /** The prompt box with no pane open, on the window's bottom; the chat column is its width. */
-export const PROMPT_BOX: Rect = { x: 166, y: WINDOW.height - 75, width: 768, height: 40 }
+export const PROMPT_BOX: Rect = { x: 166, y: WINDOW.height - 84, width: 768, height: 44 }
 /** What the input steps type into: left out of the comparison with the baseline. */
 export const PROMPT_TEXT: Rect = {
   x: PROMPT_BOX.x + 2,
@@ -76,21 +81,34 @@ export const PROMPT_TEXT: Rect = {
   width: PROMPT_BOX.width - 4,
   height: PROMPT_BOX.height - 4,
 }
-/** A docked pane, from its border, down to the window's bottom; the chat column narrows to its left. */
-export const PANE: Rect = { x: 733, y: 40, width: 359, height: WINDOW.height - 48 }
+/** The top of the chat's scrolling area, just under the session header. */
+export const CHAT_TOP = 37
 /**
- * A pane's body, where its mod draws: under its title bar, inside its one-pixel border, and clear
- * of its rounded bottom corners. Its background (grey 26) is close enough to the page's (grey 21)
- * that a row profile reads its empty rows as blank.
+ * The foot of the chat's scrollbar, where Desktop draws its down arrow, and the end of its thumb
+ * when the chat sits scrolled to its newest message. Desktop draws the scrollbar only while the
+ * chat overflows, so the chat has scrolled and cut the element at its top.
+ */
+export const SCROLLBAR_FOOT: Rect = { x: 1092, y: 876, width: 6, height: 14 }
+export const PANE: Rect = {
+  x: 733,
+  y: CHAT_TOP,
+  width: WINDOW.width - 733,
+  height: WINDOW.height - CHAT_TOP,
+}
+/** The pane's title bar, down to and including the line under it. */
+const PANE_TITLE_HEIGHT = 44
+/**
+ * A pane's body, where its mod draws: under its title bar and right of its one-pixel border. Its
+ * background is the page's, so a row profile reads its empty rows as blank.
  */
 export const PANE_BODY: Rect = {
   x: PANE.x + 1,
-  y: PANE.y + 32,
-  width: PANE.width - 2,
-  height: PANE.height - 32 - 12,
+  y: PANE.y + PANE_TITLE_HEIGHT,
+  width: PANE.width - 1,
+  height: PANE.height - PANE_TITLE_HEIGHT,
 }
 /** The chat column's left edge (its prompt box's border) while a pane is open. */
-export const PANE_CHAT_LEFT = 41
+export const PANE_CHAT_LEFT = 32
 
 export interface Column {
   x: number
@@ -99,6 +117,11 @@ export interface Column {
 
 /** The chat column with no pane open: its prompt box, which a band's plate spans. */
 export const CHAT_COLUMN: Column = { x: PROMPT_BOX.x, width: PROMPT_BOX.width }
+/**
+ * The chat's messages, inside the chat column: a reply's text starts at its left edge and a
+ * message the user sent ends, in its bubble, at its right edge.
+ */
+export const MESSAGE_COLUMN: Column = { x: 186, width: 732 }
 
 /**
  * A band's plate pads what a mod draws by 8px, so these strips just inside its left and right
@@ -119,9 +142,6 @@ export const SCROLL_GUTTER: Rect = {
   width: WINDOW.width - 1088,
   height: WINDOW.height,
 }
-/** The top of the chat's scrolling area, just under the session header. */
-export const CHAT_TOP = 40
-
 /** Space kept around a crop's content so a border is not flush with the edge. */
 export const CROP_MARGIN = 8
 export const PANE_MARGIN = 4
@@ -138,11 +158,13 @@ export const PANE_CARD_MAX_HEIGHT = 290
  * with no pane, the prompt box's left border beside a pane, and the pane's left border.
  */
 export const BORDER_PROBES = {
-  prompt: { x: PROMPT_BOX.x, y: PROMPT_BOX.y + 12, width: 1, height: 16 },
-  promptBesidePane: { x: PANE_CHAT_LEFT, y: PROMPT_BOX.y + 12, width: 1, height: 16 },
+  prompt: { x: PROMPT_BOX.x, y: PROMPT_BOX.y + 14, width: 1, height: 14 },
+  promptBesidePane: { x: PANE_CHAT_LEFT, y: PROMPT_BOX.y + 14, width: 1, height: 14 },
   pane: { x: PANE.x, y: 200, width: 1, height: 400 },
 } satisfies Record<string, Rect>
 
+/** Grey level (0..1) of Desktop's page background in dark theme, around the chat. */
+export const PAGE_GREY = 25 / 255
 /** Grey levels (0..1) of the borders above, measured: the prompt box's and the pane's. */
-export const PROMPT_BORDER_GREY = 54 / 255
-export const PANE_BORDER_GREY = 42 / 255
+export const PROMPT_BORDER_GREY = 64 / 255
+export const PANE_BORDER_GREY = 48 / 255

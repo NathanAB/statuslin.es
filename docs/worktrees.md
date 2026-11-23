@@ -17,6 +17,8 @@ A worktree is a separate working directory. It does **not** inherit the main che
    PGlite, but `src/db/index.ts` reads `DATABASE_URL` at import). `.env.local` is gitignored, so it
    is never copied automatically. Don't copy `.env.staging` or `.env.production`: `with-env`,
    `secrets:push` and `deploy:staging` read them from the main checkout when the worktree has none.
+   When a permission rule stops an agent copying `.env.local`, run the gate with the dummy values
+   in the `env:` block of `.github/workflows/ci.yml` set on the command line, as CI does.
 3. Baseline the suite from the worktree root: `bun --bun run test`. Expect it green before you start.
 
 ## Run the gate from the worktree root, not the main repo
