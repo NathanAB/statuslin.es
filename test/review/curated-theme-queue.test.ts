@@ -3,6 +3,7 @@ import * as schema from '@/db/schema'
 import { getCuratedThemeRows } from '@/review/curated-theme-queue'
 import { insertPendingSubmission } from '@/submissions/record'
 import {
+  addDesktopTheme,
   addMod,
   addTheme,
   addVersion,
@@ -74,6 +75,25 @@ describe('getCuratedThemeRows', () => {
         ],
       },
     ])
+  })
+
+  it('lists a curated draft that carries only Desktop themes, rendered once each has its shot', async () => {
+    const { versionIds } = await curated('theme-examples', 'draft', ['a'])
+    const versionId = versionIds[0] as string
+    await addDesktopTheme(db, versionId, { key: 'night-reef', name: 'Night Reef' })
+
+    const [row] = await getCuratedThemeRows(db)
+    expect(row?.themes).toEqual([
+      expect.objectContaining({
+        kind: 'desktop',
+        key: 'night-reef',
+        switchSteps: expect.any(Array),
+      }),
+    ])
+    expect(row?.rendered).toBe(true)
+
+    await addDesktopTheme(db, versionId, { key: 'honu', name: 'Honu', rendered: false })
+    expect((await getCuratedThemeRows(db))[0]?.rendered).toBe(false)
   })
 
   it('says a draft is rendered once every theme has its preview', async () => {

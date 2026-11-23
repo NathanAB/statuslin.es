@@ -1,8 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getModReviewRows } from '@/review/mod-queue'
+import { adminThemeDesktopPreviewPath } from '@/review/theme-desktop-preview'
 import { insertPendingSubmission } from '@/submissions/record'
 import {
+  addDesktopTheme,
   addMod,
   addTheme,
   addVersion,
@@ -57,6 +59,7 @@ describe('getModReviewRows themes', () => {
     expect(row?.themes).toEqual([
       {
         id: expect.any(String),
+        kind: 'terminal',
         key: 'night',
         name: 'Night',
         window: 'dark',
@@ -65,6 +68,7 @@ describe('getModReviewRows themes', () => {
       },
       {
         id: expect.any(String),
+        kind: 'terminal',
         key: 'paper',
         name: 'Paper',
         window: 'light',
@@ -73,6 +77,45 @@ describe('getModReviewRows themes', () => {
       },
     ])
     expect(row?.rendered).toBe(false)
+  })
+
+  it('lists each Desktop theme with its switch steps and its whole-window shot, or none before it renders', async () => {
+    const versionId = await submitPlugin('theme-examples', 'a')
+    const reef = await addDesktopTheme(db, versionId, {
+      key: 'night-reef',
+      name: 'Night Reef',
+      switchSteps: ['/custom-theme night-reef'],
+    })
+    const rainy = await addDesktopTheme(db, versionId, {
+      key: 'rainy',
+      name: 'Rainy Window',
+      window: 'light',
+      switchSteps: [],
+      rendered: false,
+    })
+
+    const [row] = await getModReviewRows(db)
+
+    expect(row?.themes).toEqual([
+      {
+        id: reef,
+        kind: 'desktop',
+        key: 'night-reef',
+        name: 'Night Reef',
+        window: 'dark',
+        switchSteps: ['/custom-theme night-reef'],
+        preview: { src: adminThemeDesktopPreviewPath(reef), width: 1100, height: 900 },
+      },
+      {
+        id: rainy,
+        kind: 'desktop',
+        key: 'rainy',
+        name: 'Rainy Window',
+        window: 'light',
+        switchSteps: [],
+        preview: null,
+      },
+    ])
   })
 
   it("keeps each version's themes on its own row", async () => {

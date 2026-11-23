@@ -30,6 +30,7 @@ function row(over: Partial<CuratedThemeRow> = {}): CuratedThemeRow {
     themes: [
       {
         id: 't1',
+        kind: 'terminal',
         key: 'paper',
         name: 'Paper',
         window: 'light',

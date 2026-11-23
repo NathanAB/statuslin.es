@@ -1,6 +1,7 @@
 import type { ReviewTheme } from '@/review/theme-review'
 import type { ThemeWindow } from '@/themes/theme'
 import { CodeBlock } from '@/ui/code-block'
+import { DesktopShot } from '@/ui/desktop-shot'
 import { Details } from '@/ui/details'
 import { Stack } from '@/ui/layout'
 import { Text } from '@/ui/text'
@@ -11,33 +12,82 @@ const WINDOW_LABEL: Record<ThemeWindow, string> = {
   dark: 'Dark window',
 }
 
-/** One theme: its preview above the exact file it was recorded from, folded under its name. */
+/** A terminal theme: its recorded screen above the exact file it was recorded from. */
+function TerminalThemeReview({ theme }: { theme: Extract<ReviewTheme, { kind: 'terminal' }> }) {
+  return (
+    <>
+      <Text muted size="xs">
+        {WINDOW_LABEL[theme.window]}
+      </Text>
+      {theme.preview === null ? (
+        <Text muted size="sm">
+          Not rendered yet.
+        </Text>
+      ) : (
+        <ThemePreview
+          segments={theme.preview}
+          window={theme.window}
+          label={`${theme.name} preview`}
+        />
+      )}
+      <Stack gap={1.5}>
+        <Text muted size="xs" mono>
+          {`themes/${theme.key}.json`}
+        </Text>
+        <CodeBlock compact text={theme.source} copyLabel="Copy theme file">
+          {theme.source}
+        </CodeBlock>
+      </Stack>
+    </>
+  )
+}
+
+/**
+ * A Desktop theme: its whole window above the steps its recording sent, which its card tells
+ * visitors to send. Its look is the mod's code, which the card reviews above.
+ */
+function DesktopThemeReview({ theme }: { theme: Extract<ReviewTheme, { kind: 'desktop' }> }) {
+  const steps = theme.switchSteps.join('\n')
+  return (
+    <>
+      <Text muted size="xs">
+        {`Claude Desktop, ${theme.window} window`}
+      </Text>
+      {theme.preview === null ? (
+        <Text muted size="sm">
+          Not rendered yet.
+        </Text>
+      ) : (
+        <DesktopShot shot={theme.preview} alt={`${theme.name} preview`} fit="whole" />
+      )}
+      {theme.switchSteps.length === 0 ? (
+        <Text muted size="sm">
+          No switch steps: the mod sets it when a session starts.
+        </Text>
+      ) : (
+        <Stack gap={1.5}>
+          <Text muted size="xs">
+            Switch steps
+          </Text>
+          <CodeBlock compact text={steps} copyLabel="Copy switch steps">
+            {steps}
+          </CodeBlock>
+        </Stack>
+      )}
+    </>
+  )
+}
+
+/** One theme, folded under its name. */
 function ThemeReview({ theme }: { theme: ReviewTheme }) {
   return (
     <Details summary={theme.name}>
       <Stack gap={3}>
-        <Text muted size="xs">
-          {WINDOW_LABEL[theme.window]}
-        </Text>
-        {theme.preview === null ? (
-          <Text muted size="sm">
-            Not rendered yet.
-          </Text>
+        {theme.kind === 'terminal' ? (
+          <TerminalThemeReview theme={theme} />
         ) : (
-          <ThemePreview
-            segments={theme.preview}
-            window={theme.window}
-            label={`${theme.name} preview`}
-          />
+          <DesktopThemeReview theme={theme} />
         )}
-        <Stack gap={1.5}>
-          <Text muted size="xs" mono>
-            {`themes/${theme.key}.json`}
-          </Text>
-          <CodeBlock compact text={theme.source} copyLabel="Copy theme file">
-            {theme.source}
-          </CodeBlock>
-        </Stack>
       </Stack>
     </Details>
   )
