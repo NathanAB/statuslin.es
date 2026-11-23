@@ -38,10 +38,10 @@ describe('buildLlmsTxt', () => {
     expect(txt).not.toMatch(/upvote/i)
   })
 
-  it('calls the site a gallery of mods, naming status lines once as one kind', () => {
+  it('calls the site a gallery of mods and themes, naming status lines once as one kind', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     expect(txt).toContain(
-      '> A gallery of Claude Code mods, status lines included, each with a real preview.',
+      '> A gallery of Claude Code mods, status lines included, and of Claude Code themes, each with a real preview.',
     )
     expect(txt).not.toMatch(/status lines? (and|&) mods/i)
   })

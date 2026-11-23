@@ -10,11 +10,15 @@ import {
   homeCard,
   type ModCardBody,
   modCard,
+  themesCard,
 } from '@/og/card'
 import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 import { cardSatoriOptions } from '@/og/render'
 import type { AnsiSegment } from '@/render/types'
+import { themeScreenPreview } from '@/themes/theme-screen'
 import { SEEDED_DESKTOP_SHOT } from '../mods/seed-mods'
+import recordedScreen from '../themes/fixtures/probe-theme-run-1.json'
+import otherRecording from '../themes/fixtures/probe-theme-run-2.json'
 
 type Box = { left: number; top: number; width: number; height: number }
 
@@ -169,6 +173,15 @@ describe('og card layout', () => {
     ['a terminal preview as wide as the terminal', { kind: 'terminal', segments: WIDE_PREVIEW }],
     ['no terminal preview', { kind: 'none' }],
     ['only a Desktop shot', { kind: 'desktop', shot: DESKTOP_SHOT }],
+    // A real recording: 30 rows of 100 columns, with a prompt row colored to the right edge.
+    [
+      "a theme plugin's whole recorded screen",
+      {
+        kind: 'themes',
+        count: 81,
+        first: { segments: themeScreenPreview(recordedScreen), window: 'light' },
+      },
+    ],
   ])('keeps a mod card with %s inside the card and centered vertically', async (_name, body) => {
     const { root, content } = await layout(
       modCard({ title: 'Usage meter', authorGithub: 'octocat', body }),
@@ -176,6 +189,22 @@ describe('og card layout', () => {
     expect(root).toMatchObject(FILLS_THE_CARD)
     const m = margins(content)
     expect(m.right).toBeGreaterThanOrEqual(m.left - 1)
+    expect(m.bottom).toBeGreaterThanOrEqual(0)
+    expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
+  })
+  it('keeps the themes card, two whole recorded screens side by side, inside the card and centered vertically', async () => {
+    const { root, content } = await layout(
+      themesCard({
+        count: 81,
+        screens: [
+          { segments: themeScreenPreview(recordedScreen), window: 'dark' },
+          { segments: themeScreenPreview(otherRecording), window: 'light' },
+        ],
+      }),
+    )
+    expect(root).toMatchObject(FILLS_THE_CARD)
+    const m = margins(content)
+    expect(m.right).toBeGreaterThanOrEqual(0)
     expect(m.bottom).toBeGreaterThanOrEqual(0)
     expect(Math.abs(m.top - m.bottom)).toBeLessThanOrEqual(1)
   })

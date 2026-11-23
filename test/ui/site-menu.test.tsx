@@ -79,6 +79,7 @@ describe('the phone menu', () => {
     const links = within(menu)
     expect(links.queryByRole('link', { name: 'Mods' })).toBeNull()
     expect(links.queryByRole('link', { name: 'Write a status line' })).toBeNull()
+    expect(links.getByRole('link', { name: 'Themes' }).getAttribute('href')).toBe('/themes')
     expect(links.getByRole('link', { name: 'Resources' }).getAttribute('href')).toBe('/resources')
     expect(links.getByRole('link', { name: 'Submit' }).getAttribute('href')).toBe('/submit')
     expect(links.getByRole('link', { name: 'GitHub' })).toBeTruthy()

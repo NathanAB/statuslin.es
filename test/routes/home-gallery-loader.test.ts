@@ -7,6 +7,7 @@ import { PAGE_SIZE } from '@/gallery/queries'
 import { addPublishedConfig, currentVersionOf } from '../gallery/seed-configs'
 import {
   addMod,
+  addTheme,
   addVersion,
   openTestDb,
   setCurrentVersion,
@@ -88,6 +89,8 @@ beforeAll(async () => {
     .set({ generatedContent: CONFIG_COPY })
     .where(eq(schema.configVersions.id, await currentVersionOf(db, configId)))
   await db.update(schema.user).set({ username: 'linewriter' })
+  // A plugin of theme files alone: on the themes row, never in the gallery (ADR 0012).
+  await addTheme(db, await addPublishedMod('theme-pack'), { key: 'night', name: 'Night' })
   HomeRoute = (await import('@/routes/index')).Route
 })
 afterAll(async () => {
@@ -97,6 +100,7 @@ afterAll(async () => {
 function loadHome(search: { kind?: 'mods' } = {}, page?: number) {
   const loader = HomeRoute.options.loader as (ctx: unknown) => Promise<{
     entries: Array<{ item: { kind: string; card: { slug: string } }; searchText: string }>
+    themeRow: { themes: Array<{ name: string; plugin: { slug: string } }>; total: number }
   }>
   return loader({ deps: search, location: { search: page === undefined ? {} : { page } } })
 }
@@ -124,6 +128,14 @@ describe('home gallery loader', () => {
     expect(textOf('mod', 'token-weather-usage')).toContain('draws a forecast')
     expect(textOf('status-line', 'commit-line')).toContain('linewriter')
     expect(textOf('status-line', 'commit-line')).toContain('counts your commits')
+  })
+
+  it('loads the themes row beside the gallery: its cards and how many themes there are', async () => {
+    const { themeRow } = await loadHome()
+    expect(themeRow.themes.map((theme) => `${theme.plugin.slug}:${theme.name}`)).toEqual([
+      'theme-pack:Night',
+    ])
+    expect(themeRow.total).toBe(1)
   })
 
   it('serves the last page and 404s a page past it', async () => {

@@ -1,9 +1,17 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { PAGE_SIZE } from '@/gallery/queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
-import { openTestDb, REPO_URL, seedMod, sha, type TestDb } from './seed-mods'
+import {
+  addTheme,
+  openTestDb,
+  REPO_URL,
+  SEEDED_THEME_PREVIEW,
+  seedMod,
+  sha,
+  type TestDb,
+} from './seed-mods'
 
 const testState = vi.hoisted(() => ({ db: null as unknown }))
 
@@ -67,6 +75,18 @@ beforeAll(async () => {
     .update(schema.configs)
     .set({ status: 'removed' })
     .where(eq(schema.configs.id, removedLine))
+  // A theme plugin, newer than every mod and status line: themes count toward /themes, never
+  // toward the gallery or /mods (ADR 0012).
+  const glow = await seedMod(db, 'glow-themes', 'published', 'e')
+  await db
+    .update(schema.mods)
+    .set({ title: 'Glow Themes', description: 'Warm colors for the terminal', copyCount: 2 })
+    .where(eq(schema.mods.id, glow.modId))
+  await db
+    .update(schema.modVersions)
+    .set({ createdAt: new Date('2026-10-05T12:00:00Z') })
+    .where(eq(schema.modVersions.id, glow.versionId))
+  await addTheme(db, glow.versionId, { key: 'glow', name: 'Glow' })
   await seedMod(db, 'draft-mod', 'draft', 'b')
   await seedMod(db, 'removed-mod', 'removed', 'c')
   const unreviewed = {
@@ -137,6 +157,19 @@ describe('sitemap with mods', () => {
     expect(xml).toContain(`<loc>${BASE}</loc>\n    <lastmod>2026-09-30</lastmod>`)
   })
 
+  it('lists /themes, dated by the newest plugin that carries themes', async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).toContain(`<loc>${BASE}/themes</loc>\n    <lastmod>2026-10-05</lastmod>`)
+  })
+
+  it("lists a theme plugin's page without dating /mods by it", async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).toContain(`<loc>${BASE}/mods/glow-themes</loc>\n    <lastmod>2026-10-05</lastmod>`)
+    expect(xml).toContain(`<loc>${BASE}/mods</loc>\n    <lastmod>2026-09-30</lastmod>`)
+  })
+
   it('omits draft and removed mods', async () => {
     const xml = await (await discovery.sitemapWithModsForRoute()).text()
 
@@ -162,15 +195,35 @@ describe('sitemap with mods', () => {
 })
 
 describe('llms.txt with mods', () => {
-  it('lists published mods under their own section', async () => {
+  it('lists published mods under their own section, then theme plugins under Themes', async () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
-    expect(txt).toMatch(
-      /\n## Mods\n\n- \[Context Meter\]\(https:\/\/staging\.statuslin\.es\/mods\/context-meter\): Shows how full the context is\. Installed 3 times\.\n\n## Optional\n/,
+    expect(txt).toContain(
+      [
+        '## Mods',
+        '',
+        `- [Context Meter](${BASE}/mods/context-meter): Shows how full the context is. Installed 3 times.`,
+        '',
+        '## Themes',
+        '',
+        `- [Glow Themes](${BASE}/mods/glow-themes): Warm colors for the terminal. Installed 2 times.`,
+        '',
+        '## Optional',
+      ].join('\n'),
     )
     expect(txt).not.toContain('draft-mod')
     expect(txt).not.toContain('removed-mod')
     expect(txt).not.toContain('unreviewed')
+  })
+
+  it('links /themes beside the mods page', async () => {
+    const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
+
+    expect(txt).toMatch(
+      new RegExp(
+        `\\n- \\[Mods\\]\\(${BASE}/mods\\): [^\\n]+\\n- \\[Themes\\]\\(${BASE}/themes\\): `,
+      ),
+    )
   })
 
   it('links a facet that mods make indexable, by its page heading', async () => {
@@ -230,6 +283,22 @@ describe('llms-full.txt with mods', () => {
     )
   })
 
+  it('lists theme plugins in their own Themes section, after the mods', async () => {
+    const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
+
+    expect(txt).toContain(
+      [
+        '## Themes',
+        '',
+        `### [Glow Themes](${BASE}/mods/glow-themes)`,
+        '',
+        '- Description: Warm colors for the terminal',
+        '- Installed 2 times.',
+      ].join('\n'),
+    )
+    expect(txt.indexOf('## Themes')).toBeGreaterThan(txt.indexOf('### [Context Meter]'))
+  })
+
   it('treats page copy stored in an older format as missing', async () => {
     const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
 
@@ -260,5 +329,59 @@ describe('llms-full.txt with mods', () => {
 
     expect(full.headers.get('content-type')).toBe(short.headers.get('content-type'))
     expect(full.headers.get('cache-control')).toBe(short.headers.get('cache-control'))
+  })
+})
+
+describe('with a published theme that has no preview', () => {
+  beforeAll(async () => {
+    await db
+      .delete(schema.modThemePreviews)
+      .where(
+        inArray(
+          schema.modThemePreviews.themeId,
+          db.select({ id: schema.modThemes.id }).from(schema.modThemes),
+        ),
+      )
+  })
+  afterAll(async () => {
+    const themes = await db.select({ id: schema.modThemes.id }).from(schema.modThemes)
+    await db
+      .insert(schema.modThemePreviews)
+      .values(themes.map((theme) => ({ themeId: theme.id, ...SEEDED_THEME_PREVIEW })))
+  })
+
+  // /themes shows no card for it and is noindex, so the sitemap leaves /themes out.
+  it('leaves /themes out of the sitemap', async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).not.toContain(`<loc>${BASE}/themes</loc>`)
+  })
+})
+
+describe('with no theme published', () => {
+  beforeAll(async () => {
+    await db
+      .update(schema.mods)
+      .set({ status: 'removed' })
+      .where(eq(schema.mods.slug, 'glow-themes'))
+  })
+  afterAll(async () => {
+    await db
+      .update(schema.mods)
+      .set({ status: 'published' })
+      .where(eq(schema.mods.slug, 'glow-themes'))
+  })
+
+  // /themes is noindex while it has no cards, so the sitemap leaves it out.
+  it('leaves /themes out of the sitemap', async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).not.toContain(`<loc>${BASE}/themes</loc>`)
+  })
+
+  it('has no Themes section in llms.txt', async () => {
+    const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
+
+    expect(txt).not.toContain('## Themes')
   })
 })

@@ -11,9 +11,10 @@ const ORIGIN = 'https://statuslin.es'
 const THEME: PublishedTheme = {
   id: 't1',
   name: 'Night',
+  kind: 'terminal',
   window: 'dark',
   preview: [{ text: 'Night screen' }],
-  plugin: { slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },
+  plugin: { id: 'pack-id', slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },
 }
 
 describe('/themes head', () => {
@@ -36,6 +37,26 @@ describe('/themes head', () => {
     expect(meta).toContainEqual({ name: 'description', content: THEMES_DESCRIPTION })
     expect(links).toContainEqual({ rel: 'canonical', href: `${ORIGIN}/themes` })
     expect(meta.find((tag) => tag.name === 'robots')).toBeUndefined()
+  })
+
+  // A shared /themes link unfurls with its own card of theme previews, not the home card.
+  it('shares the page with the themes card', () => {
+    const { meta } = head([THEME])
+
+    expect(meta).toContainEqual({ property: 'og:image', content: `${ORIGIN}/og/themes.png` })
+    expect(meta).toContainEqual({ name: 'twitter:image', content: `${ORIGIN}/og/themes.png` })
+  })
+
+  // People search "Claude Code themes": the title leads with it, and both fit what Google shows.
+  it('leads the title with the search and keeps the title and description inside what Google shows', () => {
+    const { meta } = head([THEME])
+    const title = meta.find((tag) => tag.title !== undefined)?.title ?? ''
+    const description = meta.find((tag) => tag.name === 'description')?.content ?? ''
+
+    expect(title.startsWith('Claude Code Themes')).toBe(true)
+    expect(title.length).toBeLessThanOrEqual(60)
+    expect(description.length).toBeGreaterThan(0)
+    expect(description.length).toBeLessThanOrEqual(160)
   })
 
   it('keeps an empty page out of search results', () => {

@@ -3,7 +3,7 @@ export interface CustomizationSurface {
   name: string
   text: string
   docsUrl: string
-  browse: Array<{ to: '/mods' | '/status-lines/best' | '/guide'; label: string }>
+  browse: Array<{ to: '/mods' | '/status-lines/best' | '/guide' | '/themes'; label: string }>
 }
 
 /** Every way to customize Claude Code, each checked against code.claude.com on 2026-10-21. */
@@ -27,7 +27,7 @@ export const CUSTOMIZATION_SURFACES: CustomizationSurface[] = [
     name: 'Themes',
     text: "Claude Code's colors, from a theme you make or install and pick with /theme.",
     docsUrl: 'https://code.claude.com/docs/en/terminal-config#create-a-custom-theme',
-    browse: [],
+    browse: [{ to: '/themes', label: 'Browse themes' }],
   },
   {
     name: 'Spinner verbs',
