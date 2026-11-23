@@ -6,6 +6,8 @@ type FakeScreens = {
   baseline: readonly string[]
   /** By plugin name. A mod without a screen records as the baseline, so it crops to nothing. */
   mods?: Record<string, readonly string[]>
+  /** By `theme` setting. A theme without a screen records as its mod would. */
+  themes?: Record<string, readonly string[]>
 }
 
 /** Deterministic in-memory recorder for tests and key-less runs. */
@@ -17,8 +19,9 @@ export class FakeModRecorder implements ModRecorder {
   async record(request: RecordRequest): Promise<Recording> {
     this.requests.push(request)
     const modScreen = request.mod && this.screens.mods?.[request.mod.pluginName]
+    const themeScreen = request.theme === null ? undefined : this.screens.themes?.[request.theme]
     return {
-      rows: [...(modScreen ?? this.screens.baseline)],
+      rows: [...(themeScreen ?? modScreen ?? this.screens.baseline)],
       claudeCodeVersion: FAKE_CLAUDE_CODE_VERSION,
     }
   }

@@ -25,6 +25,7 @@ import {
 } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import type { AnsiSegment } from '@/render/types'
+import { recordThemePreview, type ThemedRequest, themesToRecord } from '@/themes/record-previews'
 
 /**
  * Render the current version of each mod that is not removed against the `clean-main` scenario and
@@ -40,6 +41,10 @@ import type { AnsiSegment } from '@/render/types'
  * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames what the mod draws
  * there, and stores the PNG, or the fact that it drew nothing.
  *
+ * Themes: each terminal theme the version carries is recorded in that theme, with the version's
+ * plugin, input steps and terminal, and stored as its whole screen. A full run records only themes
+ * with no preview yet; `--slug` records every theme of that mod again.
+ *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
  * run fails keeps whatever result it had, and the other surface is still stored; nothing is ever
  * deleted. Refuses to run without E2B_API_KEY: a fake run would store "draws nothing" over every
@@ -50,8 +55,8 @@ import type { AnsiSegment } from '@/render/types'
  *   bun run render:mods                 # every mod's current and newest version
  *   bun run render:mods --slug <slug>   # one mod
  *
- * Prints one outcome per mod per surface. Exit code 0 when every surface rendered or drew nothing,
- * 1 when any surface failed.
+ * Prints one outcome per mod per surface and per theme recorded. Exit code 0 when every surface
+ * rendered or drew nothing and every theme rendered, 1 when any failed.
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -66,6 +71,8 @@ export interface RenderModsDeps {
 }
 
 const CONCURRENCY = 4
+/** How many of one version's themes record at once, so a pack of dozens takes minutes. */
+const THEME_CONCURRENCY = 4
 
 type Outcome = { kind: 'rendered' } | { kind: 'drew nothing' } | { kind: 'failed'; reason: string }
 
@@ -286,13 +293,40 @@ const failure = (error: unknown): Outcome => ({
   reason: error instanceof Error ? error.message : String(error),
 })
 
-/** Both surfaces need the mod's source; past that, neither surface's failure touches the other. */
+type ThemeOutcome = { key: string; outcome: Outcome }
+
+/** Each theme's failure is its own: the version's other themes are still recorded. */
+async function renderThemes(
+  target: Target,
+  request: ThemedRequest,
+  { db, recorder }: RenderModsDeps,
+  rerecord: boolean,
+): Promise<ThemeOutcome[]> {
+  const themes = await themesToRecord(db, target.versionId, { rerecord })
+  const outcomes: ThemeOutcome[] = []
+  await forEachConcurrently(themes, THEME_CONCURRENCY, async (theme) => {
+    const outcome = await recordThemePreview(db, recorder, request, theme).then(
+      (): Outcome => ({ kind: 'rendered' }),
+      failure,
+    )
+    outcomes.push({ key: theme.key, outcome })
+  })
+  return outcomes.sort((a, b) => a.key.localeCompare(b.key))
+}
+
+type TargetOutcomes = Record<Surface, Outcome> & { themes: ThemeOutcome[] }
+
+/**
+ * Both surfaces and the themes need the mod's source; past that, no surface's or theme's failure
+ * touches another.
+ */
 async function renderTarget(
   target: Target,
   deps: RenderModsDeps,
   baselineFor: BaselineFor,
   results: Results,
-): Promise<Record<Surface, Outcome>> {
+  rerecordThemes: boolean,
+): Promise<TargetOutcomes> {
   let request: ModRequest
   let setup: TerminalSetup
   try {
@@ -303,18 +337,20 @@ async function renderTarget(
     const source = { tarball, path: target.path }
     request = { mod: { source, pluginName: target.pluginName }, inputSteps }
   } catch (error) {
-    return { terminal: failure(error), desktop: failure(error) }
+    return { terminal: failure(error), desktop: failure(error), themes: [] }
   }
-  const [terminal, desktop] = await Promise.all([
+  const [terminal, desktop, themes] = await Promise.all([
     renderTerminal(request, setup, deps, baselineFor, results).catch(failure),
     renderDesktop(request, deps, results).catch(failure),
+    renderThemes(target, { ...request, terminal: setup }, deps, rerecordThemes),
   ])
-  return { terminal, desktop }
+  return { terminal, desktop, themes }
 }
 
-function outcomeLine(target: Target, surface: Surface, outcome: Outcome): string {
+/** `what` names the mod, or one of its themes. */
+function outcomeLine(what: string, surface: Surface, outcome: Outcome): string {
   const reason = 'reason' in outcome ? `: ${outcome.reason}` : ''
-  return `${outcome.kind} ${label(target)} ${IN_SURFACE[surface]}${reason}`
+  return `${outcome.kind} ${what} ${IN_SURFACE[surface]}${reason}`
 }
 
 export async function renderMods(
@@ -331,17 +367,23 @@ export async function renderMods(
   const baselineFor = sharedBaselines(deps.recorder)
 
   let failed = 0
+  const report = (what: string, surface: Surface, outcome: Outcome) => {
+    if (outcome.kind === 'failed') failed++
+    log(outcomeLine(what, surface, outcome))
+  }
   await forEachConcurrently(todo, CONCURRENCY, async (target) => {
     const outcomes = await renderTarget(
       target,
       deps,
       baselineFor,
       storeResults(deps.db, target.versionId),
+      options.slug !== undefined,
     )
     for (const surface of ['terminal', 'desktop'] as const) {
-      const outcome = outcomes[surface]
-      if (outcome.kind === 'failed') failed++
-      log(outcomeLine(target, surface, outcome))
+      report(label(target), surface, outcomes[surface])
+    }
+    for (const { key, outcome } of outcomes.themes) {
+      report(`${label(target)} theme ${key}`, 'terminal', outcome)
     }
   })
   return failed === 0 ? 0 : 1
