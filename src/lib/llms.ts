@@ -23,6 +23,7 @@ import {
   modPath,
   THEMES_PATH,
 } from '@/lib/site'
+import { escapeMarkdownLinks, flat, oneLine, untrusted } from './llms-text'
 
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
@@ -54,8 +55,6 @@ export interface LlmsCatalogEntry extends LlmsConfig {
 }
 
 type LlmsFacet = { slug: string; label: string }
-
-const MAX_SUMMARY_CHARS = 160
 
 /** `themePlugins` are plugins of theme files alone, listed under Themes, never as mods (ADR 0012). */
 export function buildLlmsTxt(
@@ -212,28 +211,6 @@ function pageCopyLines(copy: PageCopy): string[] {
 
 function labelledList(label: string, items: string[]): string[] {
   return items.length > 0 ? [`- ${label}:`, ...items.map((item) => `  ${item}`)] : []
-}
-
-/** Text an author wrote, or copy written from their script: one line, with no live link syntax. */
-function untrusted(text: string): string {
-  return escapeMarkdownLinks(flat(text))
-}
-
-/** Authors write titles and descriptions, so a `](` or `<url>` in them must not forge a link. */
-function escapeMarkdownLinks(text: string): string {
-  return text.replace(/[\\[\]<>]/g, (c) => `\\${c}`)
-}
-
-function flat(text: string): string {
-  return text.replace(/\s+/g, ' ').trim()
-}
-
-function oneLine(text: string): string {
-  const line = flat(text)
-  if (line.length <= MAX_SUMMARY_CHARS)
-    return line === '' || /[.!?]$/.test(line) ? line : `${line}.`
-  const cut = line.slice(0, MAX_SUMMARY_CHARS - 1)
-  return `${cut.slice(0, cut.lastIndexOf(' '))}…`
 }
 
 export function llmsResponse(
