@@ -95,6 +95,22 @@ export async function getHomeThemes(db: Db, limit: number): Promise<HomeThemeRow
   return { themes: toCards(rows), total: rows[0]?.total ?? 0 }
 }
 
+/**
+ * The themes row sits under the gallery, the page's content. If it fails to load, the failure is
+ * reported and the home page renders without the row instead of as an error page.
+ */
+export async function homeThemesOrEmpty(
+  load: () => Promise<HomeThemeRow>,
+  report: (error: unknown) => void,
+): Promise<HomeThemeRow> {
+  try {
+    return await load()
+  } catch (error) {
+    report(error)
+    return { themes: [], total: 0 }
+  }
+}
+
 /** The themes a published plugin's page lists, in name order. */
 export async function getPublishedModThemes(db: Db, slug: string): Promise<PublishedTheme[]> {
   return toCards(

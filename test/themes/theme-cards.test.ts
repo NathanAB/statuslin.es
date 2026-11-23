@@ -1,7 +1,12 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
-import { getHomeThemes, getPublishedModThemes, getThemeCards } from '@/themes/queries'
+import {
+  getHomeThemes,
+  getPublishedModThemes,
+  getThemeCards,
+  homeThemesOrEmpty,
+} from '@/themes/queries'
 import {
   addMod,
   addTheme,
@@ -180,5 +185,27 @@ describe('getHomeThemes', () => {
 
   it('shows none when no theme is listed', async () => {
     expect(await getHomeThemes(db, 3)).toEqual({ themes: [], total: 0 })
+  })
+})
+
+// The row sits under the gallery, the page's content; it must not turn the home page into an error.
+describe('homeThemesOrEmpty', () => {
+  it('reports a failure and leaves the row empty', async () => {
+    const report = vi.fn()
+    const failure = new Error('themes query failed')
+    expect(await homeThemesOrEmpty(() => Promise.reject(failure), report)).toEqual({
+      themes: [],
+      total: 0,
+    })
+    expect(report).toHaveBeenCalledWith(failure)
+  })
+
+  it('passes a loaded row through', async () => {
+    const report = vi.fn()
+    expect(await homeThemesOrEmpty(async () => ({ themes: [], total: 4 }), report)).toEqual({
+      themes: [],
+      total: 4,
+    })
+    expect(report).not.toHaveBeenCalled()
   })
 })
