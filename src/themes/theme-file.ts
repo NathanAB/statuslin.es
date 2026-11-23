@@ -26,13 +26,37 @@ const PRINTABLE_KEY = /^[\x20-\x7e]{1,64}$/
 const TOKEN_RULE = 'must be 1 to 64 printable ASCII characters'
 const FIELDS = ['$schema', 'name', 'base', 'overrides']
 
+/** Hangul fillers count as letters in Unicode but draw nothing, so a name of them looks blank. */
+const FILLER = /[\u115F\u1160\u3164\uFFA0]/gu
+
+/**
+ * A name as a visitor reads it in `/theme`, to tell two apart: NFKC folds fullwidth and other
+ * compatibility forms into their plain letters, and spacing and case don't count.
+ */
+function nameShape(name: string): string {
+  return name.normalize('NFKC').replace(FILLER, '').replace(/\s+/gu, ' ').trim().toLowerCase()
+}
+
+const hasLetterOrDigit = (name: string) => /[\p{L}\p{N}]/u.test(nameShape(name))
+
+/** Latin, Greek and Cyrillic share letter shapes, so a name mixing them can pose as another. */
+const LOOKALIKE_SCRIPTS = [/\p{Script=Latin}/u, /\p{Script=Greek}/u, /\p{Script=Cyrillic}/u]
+const oneLookalikeScript = (name: string) =>
+  LOOKALIKE_SCRIPTS.filter((script) => script.test(name)).length <= 1
+
 /**
  * A terminal theme file as code.claude.com/docs/en/terminal-config describes it. Claude Code ignores
  * unknown tokens and colors it can't read, so neither is interpreted here; both are only bounded.
  */
 const themeFileSchema = z.object({
   $schema: z.string({ error: 'must be text' }).optional(),
-  name: atMost(THEME_NAME_MAX).regex(/\S/, 'must not be empty or only spaces').optional(),
+  name: atMost(THEME_NAME_MAX)
+    .refine(hasLetterOrDigit, 'must have a letter or digit')
+    .refine(
+      oneLookalikeScript,
+      'mixes Latin, Greek or Cyrillic letters, which can pose as another name',
+    )
+    .optional(),
   base: z
     .enum(TERMINAL_THEME_BASES, { error: `must be one of ${TERMINAL_THEME_BASES.join(', ')}` })
     .optional(),
@@ -97,13 +121,14 @@ function parseFile({ key, bytes }: ThemeFileBytes): TerminalThemeFile | string[]
 function sameNames(themes: TerminalThemeFile[]): string[] {
   const first = new Map<string, TerminalThemeFile>()
   return themes.flatMap((theme) => {
-    const seen = first.get(theme.name.toLowerCase())
+    const shape = nameShape(theme.name)
+    const seen = first.get(shape)
     if (seen === undefined) {
-      first.set(theme.name.toLowerCase(), theme)
+      first.set(shape, theme)
       return []
     }
     return [
-      `themes/${seen.key}.json and themes/${theme.key}.json are both named "${seen.name}" (ignoring case), and /theme picks a theme by its name`,
+      `themes/${seen.key}.json and themes/${theme.key}.json are both named "${seen.name}" (ignoring case, spacing and letter width), and /theme picks a theme by its name`,
     ]
   })
 }

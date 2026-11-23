@@ -132,12 +132,46 @@ describe('parseTerminalThemeFiles', () => {
     const found = problems([json('a', { name: 'Ocean' }), json('b', { name: 'OCEAN' })])
 
     expect(found).toEqual([
-      'themes/a.json and themes/b.json are both named "Ocean" (ignoring case), and /theme picks a theme by its name',
+      'themes/a.json and themes/b.json are both named "Ocean" (ignoring case, spacing and letter width), and /theme picks a theme by its name',
     ])
   })
 
   it("counts a file's default name, its key, against the others", () => {
     expect(problems([json('ocean', {}), json('b', { name: 'Ocean' })])).toHaveLength(1)
+  })
+
+  it.each([
+    ['a fullwidth twin', '\uFF24\uFF52\uFF41\uFF43\uFF55\uFF4C\uFF41'],
+    ['a doubled space', 'Dracula  Night'],
+    ['padding spaces', '  Dracula Night '],
+  ])('refuses two names /theme would show alike: %s', (_what, twin) => {
+    const name = twin.includes('Night') ? 'Dracula Night' : 'Dracula'
+    const found = problems([json('a', { name }), json('b', { name: twin })]).join('\n')
+
+    expect(found).toContain('themes/a.json and themes/b.json are both named')
+  })
+
+  it.each([
+    ['a Hangul filler', '\u3164'],
+    ['punctuation alone', '-- ~ --'],
+  ])('refuses a name with no letter or digit: %s', (_what, name) => {
+    expect(problems([json('t', { name })]).join('\n')).toContain(
+      'themes/t.json: name must have a letter or digit',
+    )
+  })
+
+  it('refuses a name that mixes Latin and Cyrillic letters, which can pose as another name', () => {
+    expect(problems([json('t', { name: 'Dr\u0430cula' })]).join('\n')).toContain(
+      'themes/t.json: name mixes Latin, Greek or Cyrillic letters',
+    )
+  })
+
+  it('keeps a name written in one script, Cyrillic included', () => {
+    const result = parseTerminalThemeFiles([
+      json('t', { name: '\u0421\u0443\u043C\u0435\u0440\u043A\u0438 2' }),
+    ])
+
+    expect(result.ok && result.themes[0]?.name).toBe('\u0421\u0443\u043C\u0435\u0440\u043A\u0438 2')
   })
 
   it('reports every bad file at once', () => {
