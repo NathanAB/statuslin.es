@@ -1,0 +1,102 @@
+{
+  "success": true,
+  "strict": false,
+  "target": "/home/user/plugins/mod/.claude-plugin/plugin.json",
+  "manifest": {
+    "file": "/home/user/plugins/mod/.claude-plugin/plugin.json",
+    "type": "plugin",
+    "errors": [],
+    "warnings": [],
+    "notes": [
+      "types ./types/index.d.ts declares on $: nothing (no EngineInterface member)",
+      "types ./types/index.d.ts declares state: theme-examples.choice"
+    ],
+    "gatingHooks": []
+  },
+  "contents": [
+    {
+      "file": "/home/user/plugins/mod/hooks/hooks.json",
+      "type": "hooks",
+      "errors": [],
+      "warnings": [
+        {
+          "path": "modules../register.tsx",
+          "message": "on ui.render{component=Backdrop}: no component is named Backdrop, so it never runs",
+          "code": null
+        },
+        {
+          "path": "modules../register.tsx",
+          "message": "on ui.render{component=Placed}: no component is named Placed, so it never runs",
+          "code": null
+        }
+      ],
+      "notes": [
+        "./register.tsx hooks: session.start, prompt.submit, command.run{command=custom-theme}, command.run{command=fireworks}, session.append{door=response}, ui.render{component=Backdrop}, ui.render{component=Placed}, ui.render{component=AbovePrompt}",
+        "./register.tsx gating hook without .catch: prompt.submit",
+        "./register.tsx gating hook without .catch: command.run{command=custom-theme}",
+        "./register.tsx gating hook without .catch: command.run{command=fireworks}",
+        "./register.tsx gating hook without .catch: session.append{door=response}",
+        "./register.tsx calls: $.clock.after (via card, fireworks), $.command.register, $.env.get (via sessionKey), $.fs.stat (via keyEngineOf), $.session.cwd (via keyEngineOf), $.session.id (via sessionKey), $.session.repo (via keyEngineOf), $.session.root (via keyEngineOf, projectKeys), $.state.get, $.state.set, $.store.delete (via apply, fireworksCommand, keepForSession), $.store.get (via goesOffByItself, keepForSession, projectChoice, sessionChoice), $.store.keys (via keepForSession), $.store.set (via apply, fireworksCommand, keepForSession), $.theme.clear (via clearBackdrop), $.theme.set (via setBackdrop, setByAWay), $.ui.backdrop (via clearBackdrop, setByAWay), $.ui.log (via quietly, tellKeyStep, tellSoundFailure), $.ui.place, $.ui.resolve, $.ui.toast",
+        "./register.tsx env writes: nothing",
+        "./register.tsx env reads: CLAUDE_CODE_HOST_SESSION_ID",
+        "./register.tsx state writes: theme-examples.choice",
+        "./register.tsx state reads: theme-examples.choice"
+      ],
+      "gatingHooks": [
+        {
+          "module": "./register.tsx",
+          "pattern": "prompt.submit",
+          "hook": "prompt.submit",
+          "hasCatch": false
+        },
+        {
+          "module": "./register.tsx",
+          "pattern": "command.run",
+          "hook": "command.run{command=custom-theme}",
+          "hasCatch": false
+        },
+        {
+          "module": "./register.tsx",
+          "pattern": "command.run",
+          "hook": "command.run{command=fireworks}",
+          "hasCatch": false
+        },
+        {
+          "module": "./register.tsx",
+          "pattern": "session.append",
+          "hook": "session.append{door=response}",
+          "hasCatch": false
+        }
+      ]
+    }
+  ],
+  "advice": [
+    {
+      "file": "/home/user/plugins/mod/README.md",
+      "message": "This README has no line that installs \"theme-examples\" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.",
+      "installLine": "/plugin install theme-examples --marketplace <owner>/<repo>"
+    }
+  ],
+  "directory": {
+    "profile": null,
+    "findings": [
+      {
+        "code": "ICON_MISSING",
+        "title": "No icon",
+        "severity": "warning",
+        "blocking": false,
+        "hold": false,
+        "file": ".claude-plugin/plugin.json",
+        "field": "icon",
+        "message": "No icon found in the plugin. The validator looked for `icon` in plugin.json and for a file at .claude-plugin/icon.png or .svg, assets/icon.png or .svg, or a similar path.",
+        "fix": "Add a square PNG to the plugin folder at .claude-plugin/icon.png, or set `icon` in plugin.json to the path of a square PNG or JPEG in the plugin: 512 to 2048 px on each side, under 2 MB. SVG and WebP are not accepted. That file may become the listing icon only once: the first time the plugin is saved or submitted in the developer portal. Adding or changing it later does not change the icon."
+      }
+    ],
+    "undecided": [],
+    "incomplete": true,
+    "failure": null,
+    "notes": [
+      "hooks/hooks.json names a hooks module (a code file listed under `modules`). The plugin directory has rules of its own for such code, and these checks apply none of them, so passing here does not mean the directory accepts the plugin. The developer portal's own validation applies those rules."
+    ]
+  }
+}
