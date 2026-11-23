@@ -12,9 +12,8 @@ import { Row, Stack, WideTileGrid } from '@/ui/layout'
 import { Heading, Text } from '@/ui/text'
 
 /**
- * The home page's themes, after the gallery: a few theme cards, each with its install, and the way
- * to all of them on /themes. Theme plugins stay out of the gallery (ADR 0012), so this row is where
- * the home page shows them. Nothing when no theme is listed.
+ * Theme plugins stay out of the gallery (ADR 0012), so this row is where the home page shows themes.
+ * Nothing when no theme is listed.
  */
 export function HomeThemes({ row, origin }: { row: HomeThemeRow; origin: string }) {
   const headingId = useId()

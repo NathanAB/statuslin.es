@@ -29,7 +29,7 @@ const SESSION_CLAUDE = `"\${CLAUDE_CODE_EXECPATH:-claude}"`
  * do it: Desktop has no `/plugin` command. So Claude adds the marketplace (safe to repeat) and
  * installs from it in the shell, with the Claude Code it runs on: Desktop puts no `claude` on
  * PATH, but every session sets `CLAUDE_CODE_EXECPATH`. `entryName` is the mod's marketplace entry
- * name: its slug. A theme plugin installs the same way, but runs no code, so it isn't called a mod.
+ * name: its slug.
  */
 export function modInstallPrompt(
   origin: string,

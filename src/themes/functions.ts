@@ -4,7 +4,6 @@ import { withHttpStatus } from '@/lib/http.server'
 import { captureServerException } from '@/lib/posthog-server'
 import { getHomeThemes, getThemeCards, homeThemesOrEmpty } from './queries'
 
-/** How many theme cards the home page's themes row shows. */
 const HOME_THEME_CARDS = 3
 
 export const getThemeCardsFn = createServerFn({ method: 'GET' }).handler(() =>

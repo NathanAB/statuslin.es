@@ -35,8 +35,8 @@ const SUBMIT_LINK: HeaderLink = { to: '/submit', label: 'Submit' }
 const MENU_LINKS = [...HEADER_LINKS, SUBMIT_LINK]
 
 /**
- * Shared top header, a plain bar on the page column: the wordmark home-link, quiet links
- * (Themes, Resources, GitHub), Submit as the bar's one filled button, then GitHub sign-in or
+ * Shared top header, a plain bar on the page column: the wordmark home-link, quiet links,
+ * Submit as the bar's one filled button, then GitHub sign-in or
  * the signed-in user's menu. Phones keep the wordmark and Submit, and get a menu button for the
  * rest, which opens the links full-screen.
  */

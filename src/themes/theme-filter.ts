@@ -30,7 +30,6 @@ export function filterThemes(themes: PublishedTheme[], filter: ThemeFilter): Pub
   )
 }
 
-/** The values a control offers, in their list's order; null for fewer than two, which filter nothing. */
 function choices<T extends string>(values: readonly T[], present: T[]): T[] | null {
   const offered = values.filter((value) => present.includes(value))
   return offered.length > 1 ? offered : null
@@ -38,7 +37,7 @@ function choices<T extends string>(values: readonly T[], present: T[]): T[] | nu
 
 /**
  * The filters /themes offers for the themes it loaded: a window control once both windows are
- * listed, and a where control once themes apply in more than one place (when Desktop themes are).
+ * listed, and a where control once themes apply in more than one place.
  */
 export function themeFilterOptions(themes: PublishedTheme[]): {
   where: ThemeKind[] | null

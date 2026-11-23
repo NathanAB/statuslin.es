@@ -10,7 +10,6 @@ import {
 /** What a copied mod install prompt is for, said in the toast after the copy. */
 export const MOD_PASTE_HINT = `Paste it into Claude Code or Claude Desktop. Mods need Claude Code ${MOD_INSTALL_MIN_VERSION} or later.`
 
-/** The same for a theme plugin: its themes are picked in the terminal's `/theme`. */
 const THEME_PLUGIN_PASTE_HINT = `Paste it into Claude Code or Claude Desktop, then pick a theme with /theme in the terminal. Theme plugins need Claude Code ${THEME_PLUGIN_INSTALL_MIN_VERSION} or later.`
 
 /**

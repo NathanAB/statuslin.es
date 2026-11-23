@@ -108,7 +108,7 @@ const WIDE_TILE_COLUMNS = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3' } as const
 
 /**
  * Wide tiles, a picture each: one up, two up from `lg` (/themes' cards, each a whole terminal).
- * `columns={3}`: three up from `lg`, for one row of three (the home page's themes).
+ * `columns={3}`: three up from `lg`, for one row of three.
  */
 export function WideTileGrid({
   columns = 2,

@@ -82,8 +82,7 @@ function PluginInstall({ plugin, install }: { plugin: ThemePlugin; install: Them
 /**
  * One theme: its preview in its window, its name, and how to switch to it. The name is the one its
  * preview was recorded in, and the author's text, so it is shown only as text. With `install` it
- * also names its plugin and how to install it, as on /themes and the home page; its plugin's own
- * page leaves that to the page.
+ * also names its plugin and how to install it; its plugin's own page leaves that to the page.
  */
 export function ThemeCard({
   theme,

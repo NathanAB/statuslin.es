@@ -7,10 +7,9 @@ export const HOME_CRUMB_NAME = SITE_NAME
 /** The crumb between home and every mod page: the mods page. */
 export const MODS_CRUMB = { name: 'Mods', to: MODS_PATH } as const
 
-/** The crumb between home and every theme plugin's page: the themes page, never the mods page. */
+/** The crumb between home and every theme plugin's page: the themes page. */
 export const THEMES_CRUMB = { name: 'Themes', to: THEMES_PATH } as const
 
-/** The crumb a plugin page runs through: a theme plugin is not a mod (GLOSSARY.md). */
 export const pluginCrumb = (themeOnly: boolean) => (themeOnly ? THEMES_CRUMB : MODS_CRUMB)
 
 /** The crumb between home and every guide page, named as the header's nav link names it. */

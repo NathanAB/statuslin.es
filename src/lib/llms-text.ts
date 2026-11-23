@@ -1,5 +1,3 @@
-/** How llms.txt and llms-full.txt make author-written text safe to print as one line of Markdown. */
-
 const MAX_SUMMARY_CHARS = 160
 
 /** Text an author wrote, or copy written from their script: one line, with no live link syntax. */

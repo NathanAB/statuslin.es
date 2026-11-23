@@ -59,7 +59,7 @@ export async function configCardResponseForRoute(slug: string): Promise<Response
 
 /** What a mod's card draws: its terminal preview, else its Desktop shot, which satori only reads
  * inline, else neither. A theme plugin's own recording shows nothing of its themes, so its card
- * draws its first theme by name instead. */
+ * draws the first of them in name order instead. */
 async function modCardBody(db: Db, mod: ModDetail): Promise<ModCardBody> {
   if (mod.themeOnly) {
     const themes = await getPublishedModThemes(db, mod.slug)

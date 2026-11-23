@@ -10,7 +10,6 @@ import { filterThemes, type ThemeFilter, themeFilterOptions } from './theme-filt
 
 const ALL = 'all'
 
-/** One filter's control: All, then each value the listed themes span. */
 function FilterControl<T extends string>({
   label,
   values,
@@ -38,10 +37,7 @@ function FilterControl<T extends string>({
   )
 }
 
-/**
- * /themes' list under the URL's filter: a control per filter the themes span, how many show, and
- * a card each. Every control writes the URL; the list filters in the browser, loading nothing.
- */
+/** /themes' list under the URL's filter. Every control writes the URL. */
 export function FilteredThemes({
   themes,
   filter,

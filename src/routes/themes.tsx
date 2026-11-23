@@ -16,7 +16,7 @@ import { VisuallyHidden } from '@/ui/visually-hidden'
 
 export const Route = createFileRoute('/themes')({
   // The filter lives in the URL but not in loaderDeps: the loader returns every theme, and the
-  // list filters in the browser. The canonical link stays /themes.
+  // list filters in the browser.
   validateSearch: (search: Record<string, unknown>): ThemeFilter => coerceThemeFilter(search),
   loader: async () => {
     const [themes, user] = await Promise.all([getThemeCardsFn(), getSession()])

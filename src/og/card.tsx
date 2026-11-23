@@ -17,7 +17,6 @@ import type { TranscriptLine } from '@/ui/terminal'
 // What a shared card shows, since the gallery holds both kinds.
 const STATUS_LINE_KIND = 'Claude Code status line'
 const MOD_KIND = 'Claude Code mod'
-// A theme plugin runs no code, so it is never called a mod (GLOSSARY.md).
 const themesKind = (count: number) => `${count} Claude Code theme${count === 1 ? '' : 's'}`
 
 // statuslin + coral dot + es, sized for the target.
@@ -447,7 +446,7 @@ const MOD_PREVIEW_MAX_LINES = 9
 // A Desktop shot fits in about the height of a preview of MOD_PREVIEW_MAX_LINES rows.
 const MOD_DESKTOP_SHOT_BOX = { width: DETAIL_BODY_WIDTH, height: 250 }
 
-/** What a mod's card draws below its header; a theme plugin's draws its first theme's screen. */
+/** What a mod's card draws below its header. */
 export type ModCardBody =
   | { kind: 'terminal'; segments: AnsiSegment[] }
   | { kind: 'desktop'; shot: DesktopShotImage }
@@ -503,7 +502,6 @@ export function modCard(input: {
   )
 }
 
-// /themes' card: the page's subject, and how many themes it shows, each recorded in Claude Code.
 const THEMES_CARD_TITLE = 'Claude Code themes'
 const themesByline = (count: number) =>
   count === 1

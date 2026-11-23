@@ -80,7 +80,6 @@ function ModPage() {
       <DetailPageLayout
         header={<ModHeader mod={mod} />}
         beforeInstall={
-          // A theme plugin runs no code: never called a mod, nor sent to the mod safety guide.
           <InstallFacts
             heading={mod.themeOnly ? 'What this theme plugin can do' : 'What this mod can do'}
             {...modInstallFacts(mod)}

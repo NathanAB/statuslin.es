@@ -41,8 +41,7 @@ export function fitWithin(size: Size, box: Size): Size {
   return { width: Math.floor(size.width * scale), height: Math.floor(size.height * scale) }
 }
 
-/** The largest font size, up to `max`, at which `rows` lines stack within `height` pixels. Each row
- * is as tall as satori lays out a line (`lineHeight`), a whole number of pixels. */
+/** The largest font size, up to `max`, at which `rows` lines stack within `height` pixels. */
 export function fitRowsFontSize(rows: number, max: number, height: number): number {
   if (rows === 0) return max
   const rowHeight = Math.floor(height / rows)

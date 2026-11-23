@@ -34,7 +34,7 @@ function modSubtitle(tags: string[]): string | null {
 /**
  * A mod page's header. The breadcrumb runs through the mods page, or the themes page for a theme
  * plugin; the tag chips match the mod's gallery card; the subtitle is the reviewed headline, else
- * the job its tags name (never for a theme plugin, which is not a mod); the
+ * the job its tags name; the
  * byline links the source at the pinned commit and always names the licence, or says there is none.
  * It leads with the page summary, ours, rather than the author's description that GitHub and other
  * directories also show; the author's words move to "What it does".

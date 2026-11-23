@@ -14,14 +14,13 @@ export interface PublishedTheme {
   id: string
   /** The author's name for it, the one `/theme` lists. Shown as text. */
   name: string
-  /** Where it applies: the terminal, or (next) Claude Desktop. */
   kind: ThemeKind
   window: ThemeWindow
   /** The whole screen recorded with this theme selected. */
   preview: AnsiSegment[]
   /** The plugin a visitor installs to get it. */
   plugin: {
-    /** The plugin's mod id, which a copy of its install command counts against. */
+    /** The plugin's mod id. */
     id: string
     slug: string
     title: string
@@ -37,10 +36,7 @@ export interface HomeThemeRow {
   total: number
 }
 
-/**
- * Every theme of a published plugin's live version that has its preview, with any `extra` columns
- * a caller needs beside the card's.
- */
+/** Every theme of a published plugin's live version that has its preview. */
 function publishedThemes<Extra extends Record<string, SQL>>(db: Db, extra: Extra) {
   return db
     .select({
@@ -62,7 +58,6 @@ function publishedThemes<Extra extends Record<string, SQL>>(db: Db, extra: Extra
 }
 
 const byName = [asc(sql`lower(${modThemes.name})`), asc(modThemes.key)]
-/** /themes' plugin order: the most installed first, then by slug. */
 const byPlugin = [desc(mods.copyCount), asc(mods.slug)]
 
 type ThemeRow = Awaited<ReturnType<typeof publishedThemes<Record<never, SQL>>>>[number]
@@ -95,10 +90,8 @@ export async function getHomeThemes(db: Db, limit: number): Promise<HomeThemeRow
   return { themes: toCards(rows), total: rows[0]?.total ?? 0 }
 }
 
-/**
- * The themes row sits under the gallery, the page's content. If it fails to load, the failure is
- * reported and the home page renders without the row instead of as an error page.
- */
+/** If the themes row fails to load, the failure is reported and the home page renders without the
+ * row instead of as an error page. */
 export async function homeThemesOrEmpty(
   load: () => Promise<HomeThemeRow>,
   report: (error: unknown) => void,

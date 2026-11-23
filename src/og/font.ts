@@ -15,7 +15,6 @@ export type SatoriFont = Required<Pick<FontOptions, 'data' | 'weight' | 'style'>
   name: string
 }
 
-/** The terminal font every preview, wordmark and screen on a card is drawn in. */
 export const MONO_FONT = 'StatuslineNerd'
 
 export const SANS_FONT = 'Hanken Grotesk'

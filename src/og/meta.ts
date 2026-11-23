@@ -13,7 +13,6 @@ import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 // Until October 2026 /og/home.png was served immutable for a year. Slack's and Discord's image
 // proxies keep that old card under the bare URL, so the share tags use a new one.
 const HOME_CARD_PATH = '/og/home.png?v=2'
-// /themes' own card (src/routes/og.themes[.]png.ts).
 const THEMES_CARD_PATH = '/og/themes.png'
 
 export function rootSocialMeta(): Array<Record<string, string>> {
