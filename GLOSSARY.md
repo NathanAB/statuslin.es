@@ -37,19 +37,31 @@ Re-sending a rejected config or mod that was never published.
 _Avoid_: update
 
 **Mod**:
-A Claude Code plugin whose code runs inside Claude Code and can draw interface. A mod that shows session usage is still just a mod. Site copy that says "mods" for the whole gallery counts status lines among them; never call one status line a mod.
+A Claude Code plugin whose code runs inside Claude Code and can draw interface. A mod that shows session usage is still just a mod, and so is one that also carries themes. Site copy that says "mods" for the whole gallery counts status lines among them; never call one status line a mod, nor a theme plugin.
 _Avoid_: meter, usage mod, status line mod
+
+**Theme**:
+One look a plugin carries: a terminal theme, a color file Claude Code applies when it is picked in `/theme`, or a Desktop theme, a look a mod sets in Claude Desktop. Visitors browse themes one by one; the plugin that carries a theme is what statuslin.es reviews, pins and installs.
+_Avoid_: skin, color scheme, palette
+
+**Theme plugin**:
+A plugin whose only components are terminal themes. It runs no code, so it is listed beside mods, the same way, but never called a mod.
+_Avoid_: theme mod, theme pack
+
+**Window**:
+Whether a theme is made for a light or a dark window, and so which one its preview is drawn in.
+_Avoid_: mode, appearance
 
 **Scenario**:
 A named, fixed Claude Code session state (model, usage, folder, git and so on) that previews are rendered against. Status lines and mods draw from the same set.
 _Avoid_: fixture, test case, sample
 
 **Surface**:
-Where Claude Code draws a mod: the terminal or Claude Desktop.
+Where Claude Code draws a mod or applies a theme: the terminal or Claude Desktop.
 _Avoid_: client, app, platform
 
 **Preview**:
-What a status line or mod showed when statuslin.es rendered it against one scenario, on one surface.
+What a status line, mod or theme showed when statuslin.es rendered it against one scenario, on one surface.
 _Avoid_: screenshot, demo, render
 
 **Marketplace**:
@@ -57,7 +69,7 @@ statuslin.es's catalog of mods that Claude Code installs from, each entry fixed 
 _Avoid_: store, registry
 
 **Listing**:
-A config or a mod as published in the gallery, with its own page.
+A config, a mod or a theme plugin as published in the gallery, with its own page. A theme has a card but no page of its own; its card leads to its plugin's listing.
 _Avoid_: entry, item
 
 **Unreviewed mod**:
