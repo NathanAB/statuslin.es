@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { HomeGalleryEntry } from '@/gallery/gallery-items'
 import type { HeroLine } from '@/gallery/hero-lines'
 import { PAGE_SIZE } from '@/gallery/queries'
 import { HOME_HERO_HEADING } from '@/lib/page-title'
+import type { HomeThemeRow, PublishedTheme } from '@/themes/queries'
 
 const capture = vi.hoisted(() => vi.fn())
 vi.mock('@posthog/react', () => ({ usePostHog: () => ({ capture }) }))
@@ -93,11 +94,26 @@ const heroLine: HeroLine = {
   sortKey: 1,
 }
 
-function renderHome(pages = 1, search: Record<string, string | number> = {}) {
+const NIGHT: PublishedTheme = {
+  id: 'pack-night',
+  name: 'Night',
+  kind: 'terminal',
+  window: 'dark',
+  preview: [{ text: 'Night screen' }],
+  plugin: { id: 'pack-id', slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },
+}
+
+function renderHome(
+  pages = 1,
+  search: Record<string, string | number> = {},
+  themeRow: HomeThemeRow = { themes: [], total: 0 },
+) {
   vi.spyOn(HomeRoute, 'useLoaderData').mockReturnValue({
     user: null,
     entries: entries(pages),
     showcase: { hero: [{ kind: 'status-line', line: heroLine }] },
+    themeRow,
+    origin: 'https://statuslin.es',
   })
   vi.spyOn(HomeRoute, 'useSearch').mockReturnValue(search)
   const Home = HomeRoute.options.component
@@ -133,6 +149,22 @@ describe('home content', () => {
     const gallery = screen.getByRole('heading', { level: 2, name: 'Status lines and mods' })
     expect(hero.compareDocumentPosition(gallery) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(gallery.compareDocumentPosition(checks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  // Theme plugins stay out of the gallery (ADR 0012); their themes get a row of their own.
+  it('puts a row of themes between the gallery and the checks, and none when no theme is listed', () => {
+    renderHome(1, {}, { themes: [NIGHT], total: 81 })
+
+    const gallery = screen.getByRole('heading', { level: 2, name: 'Status lines and mods' })
+    const themes = screen.getByRole('region', { name: 'Claude Code themes' })
+    const checks = screen.getByRole('region', { name: 'How listings are checked' })
+    expect(within(themes).getByRole('heading', { level: 3, name: 'Night' })).toBeTruthy()
+    expect(gallery.compareDocumentPosition(themes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(themes.compareDocumentPosition(checks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    cleanup()
+    renderHome()
+    expect(screen.queryByRole('region', { name: 'Claude Code themes' })).toBeNull()
   })
 
   // The owner dropped the footer's inventory line ("N status lines and M mods, installed …").

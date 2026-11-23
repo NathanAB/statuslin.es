@@ -14,6 +14,9 @@ export const THEME_KIND_LABEL: Record<ThemeKind, string> = {
 /** The window a theme is made for, and the window its preview is drawn in. */
 export const THEME_WINDOWS = ['light', 'dark'] as const
 export type ThemeWindow = (typeof THEME_WINDOWS)[number]
+export const THEME_WINDOW_LABEL: Record<ThemeWindow, string> = { light: 'Light', dark: 'Dark' }
+
+export const themeCount = (count: number) => `${count} ${count === 1 ? 'theme' : 'themes'}`
 
 /** The `base` values a terminal theme file may name (code.claude.com/docs/en/terminal-config). */
 export const TERMINAL_THEME_BASES = [

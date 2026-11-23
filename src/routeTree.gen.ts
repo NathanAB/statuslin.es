@@ -38,6 +38,7 @@ import { Route as GuideStatusLinesVsModsRouteImport } from './routes/guide_.stat
 import { Route as ModsIndexRouteImport } from './routes/mods.index'
 import { Route as ModsSlugRouteImport } from './routes/mods.$slug'
 import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
+import { Route as OgThemesDotpngRouteImport } from './routes/og.themes[.]png'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -200,6 +201,11 @@ const OgHomeDotpngRoute = OgHomeDotpngRouteImport.update({
   path: '/og/home.png',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OgThemesDotpngRoute = OgThemesDotpngRouteImport.update({
+  id: '/og/themes.png',
+  path: '/og/themes.png',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StatusLinesFacetRoute = StatusLinesFacetRouteImport.update({
   id: '/status-lines/$facet',
   path: '/status-lines/$facet',
@@ -304,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
+  '/og/themes.png': typeof OgThemesDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
@@ -348,6 +355,7 @@ export interface FileRoutesByTo {
   '/guide/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
+  '/og/themes.png': typeof OgThemesDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin': typeof AdminIndexRoute
@@ -393,6 +401,7 @@ export interface FileRoutesById {
   '/guide_/status-lines-vs-mods': typeof GuideStatusLinesVsModsRoute
   '/mods/$slug': typeof ModsSlugRoute
   '/og/home.png': typeof OgHomeDotpngRoute
+  '/og/themes.png': typeof OgThemesDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
   '/admin/': typeof AdminIndexRoute
@@ -439,6 +448,7 @@ export interface FileRouteTypes {
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
+    | '/og/themes.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
@@ -483,6 +493,7 @@ export interface FileRouteTypes {
     | '/guide/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
+    | '/og/themes.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin'
@@ -527,6 +538,7 @@ export interface FileRouteTypes {
     | '/guide_/status-lines-vs-mods'
     | '/mods/$slug'
     | '/og/home.png'
+    | '/og/themes.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
     | '/admin/'
@@ -572,6 +584,7 @@ export interface RootRouteChildren {
   GuideStatusLinesVsModsRoute: typeof GuideStatusLinesVsModsRoute
   ModsSlugRoute: typeof ModsSlugRoute
   OgHomeDotpngRoute: typeof OgHomeDotpngRoute
+  OgThemesDotpngRoute: typeof OgThemesDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   StatusLinesBestRoute: typeof StatusLinesBestRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -794,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgHomeDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/og/themes.png': {
+      id: '/og/themes.png'
+      path: '/og/themes.png'
+      fullPath: '/og/themes.png'
+      preLoaderRoute: typeof OgThemesDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/status-lines/$facet': {
       id: '/status-lines/$facet'
       path: '/status-lines/$facet'
@@ -916,6 +936,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuideStatusLinesVsModsRoute: GuideStatusLinesVsModsRoute,
   ModsSlugRoute: ModsSlugRoute,
   OgHomeDotpngRoute: OgHomeDotpngRoute,
+  OgThemesDotpngRoute: OgThemesDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
   StatusLinesBestRoute: StatusLinesBestRoute,
   AdminIndexRoute: AdminIndexRoute,

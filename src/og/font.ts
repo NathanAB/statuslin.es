@@ -15,6 +15,8 @@ export type SatoriFont = Required<Pick<FontOptions, 'data' | 'weight' | 'style'>
   name: string
 }
 
+export const MONO_FONT = 'StatuslineNerd'
+
 export const SANS_FONT = 'Hanken Grotesk'
 
 let cached: SatoriFont[] | null = null
@@ -41,7 +43,7 @@ let cached: SatoriFont[] | null = null
 export function loadOgFonts(): SatoriFont[] {
   if (cached) return cached
   cached = [
-    { name: 'StatuslineNerd', data: fontData, weight: 400, style: 'normal' },
+    { name: MONO_FONT, data: fontData, weight: 400, style: 'normal' },
     {
       name: 'StatuslineLegacySymbols',
       data: legacySymbolsData,

@@ -13,7 +13,7 @@ import { versionIsThemeOnly } from '@/mods/queries'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
-import type { ThemeWindow } from './theme'
+import type { ThemeKind, ThemeWindow } from './theme'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -28,9 +28,12 @@ interface ThemeCardBase {
   id: string
   /** The author's name for it, the one its card and `/theme` show. Shown as text. */
   name: string
+  kind: ThemeKind
   window: ThemeWindow
   /** The plugin a visitor installs to get it. */
   plugin: {
+    /** The plugin's mod id. */
+    id: string
     slug: string
     title: string
     authorGithub: string
@@ -53,9 +56,16 @@ export type PublishedTheme =
       switchSteps: string[]
     })
 
-function publishedThemes(db: Db, where?: SQL) {
+/** The home page's themes row: a few themes' cards, and how many /themes lists in all. */
+export interface HomeThemeRow {
+  themes: PublishedTheme[]
+  total: number
+}
+
+function publishedThemes<Extra extends Record<string, SQL>>(db: Db, extra: Extra, where?: SQL) {
   return db
     .select({
+      ...extra,
       id: modThemes.id,
       kind: modThemes.kind,
       name: modThemes.name,
@@ -69,7 +79,7 @@ function publishedThemes(db: Db, where?: SQL) {
         cardHeight: modThemeDesktopPreviews.cardHeight,
         renderedAt: modThemeDesktopPreviews.createdAt,
       },
-      plugin: { slug: mods.slug, title: mods.title, authorGithub: mods.authorGithub },
+      plugin: { id: mods.id, slug: mods.slug, title: mods.title, authorGithub: mods.authorGithub },
       themeOnly: versionIsThemeOnly,
       footprint: modVersions.footprint,
     })
@@ -91,11 +101,14 @@ function publishedThemes(db: Db, where?: SQL) {
 }
 
 const byName = [asc(sql`lower(${modThemes.name})`), asc(modThemes.key)]
+/** /themes' plugin order: the most installed first, then by slug. */
+const byPlugin = [desc(mods.copyCount), asc(mods.slug)]
 
-type ThemeRow = Awaited<ReturnType<typeof publishedThemes>>[number]
+type ThemeRow = Awaited<ReturnType<typeof publishedThemes<Record<never, SQL>>>>[number]
 
 function toCard({ themeOnly, footprint, segments, shot, switchSteps, ...row }: ThemeRow) {
-  const base = { ...row, plugin: { ...row.plugin, code: themeOnly ? null : { footprint } } }
+  const { id, name, window, plugin } = row
+  const base = { id, name, window, plugin: { ...plugin, code: themeOnly ? null : { footprint } } }
   if (row.kind === 'terminal') {
     return { ...base, kind: row.kind, preview: compactSegments(segments ?? []) }
   }
@@ -120,10 +133,37 @@ const toCards = (rows: ThemeRow[]): PublishedTheme[] => rows.map(toCard)
 
 /** /themes: the most installed plugins' themes first, each plugin's in name order. */
 export async function getThemeCards(db: Db): Promise<PublishedTheme[]> {
-  return toCards(await publishedThemes(db).orderBy(desc(mods.copyCount), asc(mods.slug), ...byName))
+  return toCards(await publishedThemes(db, {}).orderBy(...byPlugin, ...byName))
+}
+
+/**
+ * The home page's themes row: the first `limit` themes with plugins taking turns in /themes'
+ * order, each giving its themes in name order, so the row shows several plugins' looks once there
+ * are several. With how many themes /themes lists, counted before the limit.
+ */
+export async function getHomeThemes(db: Db, limit: number): Promise<HomeThemeRow> {
+  const turn = sql`row_number() over (partition by ${mods.id} order by ${sql.join(byName, sql`, `)})`
+  const rows = await publishedThemes(db, { total: sql<number>`count(*) over ()`.mapWith(Number) })
+    .orderBy(turn, ...byPlugin)
+    .limit(limit)
+  return { themes: toCards(rows), total: rows[0]?.total ?? 0 }
+}
+
+/** If the themes row fails to load, the failure is reported and the home page renders without the
+ * row instead of as an error page. */
+export async function homeThemesOrEmpty(
+  load: () => Promise<HomeThemeRow>,
+  report: (error: unknown) => void,
+): Promise<HomeThemeRow> {
+  try {
+    return await load()
+  } catch (error) {
+    report(error)
+    return { themes: [], total: 0 }
+  }
 }
 
 /** The themes a published plugin's page lists, in name order. */
 export async function getPublishedModThemes(db: Db, slug: string): Promise<PublishedTheme[]> {
-  return toCards(await publishedThemes(db, eq(mods.slug, slug)).orderBy(...byName))
+  return toCards(await publishedThemes(db, {}, eq(mods.slug, slug)).orderBy(...byName))
 }
