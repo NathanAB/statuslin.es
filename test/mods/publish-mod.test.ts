@@ -5,6 +5,7 @@ import { insertPendingSubmission } from '@/submissions/record'
 import { runPublish } from '../../scripts/publish-mod'
 import {
   addDesktopPreview,
+  addDesktopTheme,
   addMod,
   addTheme,
   addVersion,
@@ -219,9 +220,22 @@ describe('the README beside the previews', () => {
     const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
 
     expect(lines).toContain(
-      `themes: 2 terminal themes in v1 at ${sha('a')}. Read each theme's preview and exact file on /admin, under "Curated theme plugins", before --apply.`,
+      `themes: 2 terminal themes in v1 at ${sha('a')}. Read each theme's preview beside its exact file or switch steps on /admin, under "Curated theme plugins", before --apply.`,
     )
     expect(lines.some((line) => line.startsWith('WARN themes-not-newest'))).toBe(false)
+  })
+
+  it('counts Desktop themes apart from terminal themes', async () => {
+    const { versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'honu-lagoon', window: 'light' })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      `themes: 1 terminal theme and 2 Desktop themes in v1 at ${sha('a')}. Read each theme's preview beside its exact file or switch steps on /admin, under "Curated theme plugins", before --apply.`,
+    )
   })
 
   it('warns when the themes being published are not the version /admin shows', async () => {
