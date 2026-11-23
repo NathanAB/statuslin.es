@@ -1,4 +1,5 @@
 import type { InputStep, TextStep } from '@/mods/curation'
+import type { ThemeWindow } from '@/themes/theme'
 import type { ModSource } from '../mod-sandbox'
 import { analyseShot } from './analyse'
 import {
@@ -18,7 +19,8 @@ import { SCREEN_PNG_COMMAND } from './imagemagick'
 import { checkedPng } from './png'
 import { SCALE, WINDOW } from './screen'
 import { desktopSessionNetwork, type SessionNetwork } from './session'
-import type { DesktopRecorder, DesktopRecording } from './types'
+import type { DesktopRecorder, DesktopRecording, DesktopThemeRequest } from './types'
+import { analyseTheme, analyseWindow } from './window-shot'
 
 const FULL_SHOT = { width: WINDOW.width * SCALE, height: WINDOW.height * SCALE }
 
@@ -83,29 +85,70 @@ const desktopSteps = (steps: readonly InputStep[]): TextStep[] =>
 const sameVersions = (a: DesktopVersions, b: DesktopVersions) =>
   a.desktopVersion === b.desktopVersion && a.engineVersion === b.engineVersion
 
+const versionsOf = ({ desktopVersion, engineVersion }: DesktopVersions): DesktopVersions => ({
+  desktopVersion,
+  engineVersion,
+})
+
+function checkSameVersions(base: DesktopVersions, ran: DesktopVersions, what: string): void {
+  if (!sameVersions(base, ran)) {
+    throw new Error(
+      `the baseline ran Desktop ${base.desktopVersion} (engine ${base.engineVersion}) but the ${what} ran ${ran.desktopVersion} (engine ${ran.engineVersion})`,
+    )
+  }
+}
+
+const switchInputSteps = (switchSteps: readonly string[]): TextStep[] =>
+  switchSteps.map((text) => ({ type: 'text', text }))
+
 /**
  * Records mods in the real Claude Desktop, each in its own cold-booted sandbox, and frames each
  * final shot against a no-mod baseline that types the same input steps, so the turns they start
- * frame away. One baseline per list of steps, shared by every record on this instance. The framing
- * and crop run in a second, fresh sandbox, as the terminal recorder's replay does.
+ * frame away. One baseline per window and list of steps, shared by every record on this instance.
+ * The framing and crop run in a second, fresh sandbox, as the terminal recorder's replay does.
+ *
+ * A mod that sets a theme recolors the whole window, so its own preview is the whole window. Each
+ * of its Desktop themes is recorded twice in the theme's own window, after the steps that switch to
+ * it, and checked against Desktop's own window with no mod and no steps.
  */
 export function desktopRecorder(
   sandboxes: Sandboxes,
 ): DesktopRecorder & { baseline(inputSteps: readonly InputStep[]): Promise<FullShot> } {
-  const bySteps = new Map<string, () => Promise<FullShot>>()
-  const textBaseline = (inputSteps: readonly TextStep[]) => {
-    const key = JSON.stringify(inputSteps)
+  const bySetup = new Map<string, () => Promise<FullShot>>()
+  const textBaseline = (inputSteps: readonly TextStep[], window: ThemeWindow = 'dark') => {
+    const key = JSON.stringify([window, inputSteps])
     const shared =
-      bySteps.get(key) ??
-      sharedOnce(() =>
-        recordFullShot(sandboxes, null, { target: null, inputSteps, window: 'dark' }),
-      )
-    bySteps.set(key, shared)
+      bySetup.get(key) ??
+      sharedOnce(() => recordFullShot(sandboxes, null, { target: null, inputSteps, window }))
+    bySetup.set(key, shared)
     return shared()
   }
   return {
     baseline: (inputSteps) => textBaseline(desktopSteps(inputSteps)),
-    record: async ({ mod, inputSteps: steps, statusLine }): Promise<DesktopRecording> => {
+    recordTheme: async ({ mod, window, switchSteps }: DesktopThemeRequest) => {
+      const inputSteps = switchInputSteps(switchSteps)
+      checkInputSteps(inputSteps)
+      const pendingBaseline = textBaseline([], window)
+      pendingBaseline.catch(() => {})
+      const request = { target: mod.pluginName, inputSteps, window }
+      const [shot, rerun] = await Promise.all([
+        recordFullShot(sandboxes, mod.source, request),
+        recordFullShot(sandboxes, mod.source, request),
+      ])
+      const base = await pendingBaseline
+      checkSameVersions(base, shot, 'theme')
+      checkSameVersions(base, rerun, 'theme')
+      const theme = await sandboxes.withAnalysisSandbox((sandbox) =>
+        analyseTheme(sandbox, { shots: [shot.png, rerun.png], baseline: base.png, window }),
+      )
+      return { ...theme, ...versionsOf(shot) }
+    },
+    record: async ({
+      mod,
+      inputSteps: steps,
+      statusLine,
+      wholeWindow,
+    }): Promise<DesktopRecording> => {
       const inputSteps = desktopSteps(steps)
       checkInputSteps(inputSteps)
       const network = desktopSessionNetwork(statusLine)
@@ -119,21 +162,18 @@ export function desktopRecorder(
         network,
       )
       const base = await pendingBaseline
-      const versions = { desktopVersion: shot.desktopVersion, engineVersion: shot.engineVersion }
-      if (!sameVersions(versions, base)) {
-        throw new Error(
-          `the baseline ran Desktop ${base.desktopVersion} (engine ${base.engineVersion}) but the mod ran ${versions.desktopVersion} (engine ${versions.engineVersion})`,
-        )
-      }
+      checkSameVersions(base, shot, 'mod')
       const analysis = await sandboxes.withAnalysisSandbox((sandbox) =>
-        analyseShot(sandbox, {
-          shot: shot.png,
-          baseline: base.png,
-          typedSteps: inputSteps.length > 0,
-          typedSlashCommand: inputSteps.some((step) => step.text.startsWith('/')),
-        }),
+        wholeWindow
+          ? analyseWindow(sandbox, { shot: shot.png, baseline: base.png })
+          : analyseShot(sandbox, {
+              shot: shot.png,
+              baseline: base.png,
+              typedSteps: inputSteps.length > 0,
+              typedSlashCommand: inputSteps.some((step) => step.text.startsWith('/')),
+            }),
       )
-      return { ...analysis, ...versions }
+      return { ...analysis, ...versionsOf(shot) }
     },
   }
 }

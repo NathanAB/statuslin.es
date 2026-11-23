@@ -5,14 +5,16 @@ import type { InputStep } from '@/mods/curation'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { RECORDING_MAX_ROW_BYTES } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
-import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
-import type { DesktopRecorder } from '@/render/mods/desktop/types'
+import { FAKE_THEME_SHOT, FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
+import type { DesktopRecorder, DesktopThemeRequest } from '@/render/mods/desktop/types'
+import { DesktopThemeRefused } from '@/render/mods/desktop/window-shot'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModRecorder, Recording, RecordRequest } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import { insertPendingSubmission } from '@/submissions/record'
 import { renderMods } from '../../../scripts/render-mods'
 import {
+  addDesktopTheme,
   addMod,
   addTheme,
   addVersion,
@@ -525,6 +527,7 @@ function failingDesktop(pluginName: string): DesktopRecorder {
       if (request.mod.pluginName === pluginName) throw new Error(`desktop for ${pluginName} died`)
       return inner.record(request)
     },
+    recordTheme: (request) => inner.recordTheme(request),
   }
 }
 
@@ -815,6 +818,173 @@ describe('renderMods for the themes a plugin carries', () => {
     )
     expect(lines).toContain(
       'failed pack theme twin in the terminal: looks the same as theme dracula',
+    )
+  })
+})
+
+async function storedThemeShots(versionId: string) {
+  return db
+    .select({
+      key: schema.modThemes.key,
+      png: schema.modThemeDesktopPreviews.png,
+      width: schema.modThemeDesktopPreviews.width,
+      height: schema.modThemeDesktopPreviews.height,
+      cardPng: schema.modThemeDesktopPreviews.cardPng,
+      cardWidth: schema.modThemeDesktopPreviews.cardWidth,
+      cardHeight: schema.modThemeDesktopPreviews.cardHeight,
+      desktopVersion: schema.modThemeDesktopPreviews.desktopVersion,
+      engineVersion: schema.modThemeDesktopPreviews.engineVersion,
+    })
+    .from(schema.modThemes)
+    .innerJoin(
+      schema.modThemeDesktopPreviews,
+      eq(schema.modThemeDesktopPreviews.themeId, schema.modThemes.id),
+    )
+    .where(eq(schema.modThemes.modVersionId, versionId))
+    .orderBy(schema.modThemes.key)
+}
+
+/** What FAKE_THEME_SHOT stores, as storedThemeShots reads it back. */
+const STORED_THEME_SHOT = {
+  png: FAKE_THEME_SHOT.png,
+  width: FAKE_THEME_SHOT.width,
+  height: FAKE_THEME_SHOT.height,
+  cardPng: FAKE_THEME_SHOT.card.png,
+  cardWidth: FAKE_THEME_SHOT.card.width,
+  cardHeight: FAKE_THEME_SHOT.card.height,
+  ...FAKE_DESKTOP,
+}
+
+const SETS_THEME = { events: ['session.start'], calls: ['$.theme.set'] }
+
+/** A Desktop recorder whose theme recordings throw for the named switch step. */
+function throwingThemes(throws: Record<string, Error>): FakeDesktopRecorder {
+  const recorder = new FakeDesktopRecorder()
+  const record = recorder.recordTheme.bind(recorder)
+  recorder.recordTheme = async (request: DesktopThemeRequest) => {
+    const error = throws[request.switchSteps[0] ?? '']
+    if (error) throw error
+    return record(request)
+  }
+  return recorder
+}
+
+describe('renderMods for the Desktop themes a mod sets', () => {
+  const terminal = () => new FakeModRecorder({ baseline })
+
+  async function seedThemeMod(slug = 'theme-examples') {
+    const versionId = await seedMod(slug, { path: 'plugins/theme-examples' })
+    await db
+      .update(schema.modVersions)
+      .set({ footprint: SETS_THEME })
+      .where(eq(schema.modVersions.id, versionId))
+    return versionId
+  }
+
+  it('records each Desktop theme in its own window after its switch steps, and stores its window and card', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef', rendered: false })
+    await addDesktopTheme(db, versionId, {
+      key: 'honu-lagoon',
+      window: 'light',
+      rendered: false,
+    })
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    const { exitCode, lines } = run(terminal(), {}, desktopRecorder)
+
+    expect(await exitCode).toBe(0)
+    const mod = {
+      source: { tarball: TARBALL, path: 'plugins/theme-examples' },
+      pluginName: 'theme-examples',
+    }
+    expect(
+      [...desktopRecorder.themeRequests].sort((a, b) => a.window.localeCompare(b.window)),
+    ).toEqual([
+      { mod, window: 'dark', switchSteps: ['/custom-theme night-reef'] },
+      { mod, window: 'light', switchSteps: ['/custom-theme honu-lagoon'] },
+    ])
+    expect(await storedThemeShots(versionId)).toEqual([
+      { key: 'honu-lagoon', ...STORED_THEME_SHOT },
+      { key: 'night-reef', ...STORED_THEME_SHOT },
+    ])
+    expect(lines).toContain('rendered theme-examples theme honu-lagoon in Claude Desktop')
+    expect(lines).toContain('rendered theme-examples theme night-reef in Claude Desktop')
+  })
+
+  it('records a theme its mod sets on its own with no steps', async () => {
+    const versionId = await seedThemeMod('rainy-window')
+    await addDesktopTheme(db, versionId, { key: 'rainy', switchSteps: [], rendered: false })
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    expect(await run(terminal(), {}, desktopRecorder).exitCode).toBe(0)
+
+    expect(desktopRecorder.themeRequests.map((r) => r.switchSteps)).toEqual([[]])
+  })
+
+  it("asks for a theme mod's own Desktop preview as the whole window, and other mods' as before", async () => {
+    await seedThemeMod()
+    await seedMod('token-weather')
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    expect(await run(terminal(), {}, desktopRecorder).exitCode).toBe(0)
+
+    const wholeWindow = Object.fromEntries(
+      desktopRecorder.requests.map((r) => [r.mod.pluginName, r.wholeWindow]),
+    )
+    expect(wholeWindow).toEqual({ 'theme-examples': true, 'token-weather': undefined })
+  })
+
+  it('skips a Desktop theme that already has its shot on a full run, and records it again for its slug', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'koi-pond', rendered: false })
+
+    const full = new FakeDesktopRecorder()
+    expect(await run(terminal(), {}, full).exitCode).toBe(0)
+    const one = new FakeDesktopRecorder()
+    expect(await run(terminal(), { slug: 'theme-examples' }, one).exitCode).toBe(0)
+
+    expect(full.themeRequests.map((r) => r.switchSteps)).toEqual([['/custom-theme koi-pond']])
+    expect(one.themeRequests).toHaveLength(2)
+  })
+
+  it('removes the shot of a refused theme, says why and fails the run, and still records the others', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'koi-pond', rendered: false })
+    const refused = new DesktopThemeRefused(
+      "the theme didn't apply: the window looks the same as Desktop's own dark window",
+    )
+
+    const { exitCode, lines } = run(
+      terminal(),
+      { slug: 'theme-examples' },
+      throwingThemes({ '/custom-theme night-reef': refused }),
+    )
+
+    expect(await exitCode).toBe(1)
+    expect((await storedThemeShots(versionId)).map((s) => s.key)).toEqual(['koi-pond'])
+    expect(lines).toContain(
+      "failed theme-examples theme night-reef in Claude Desktop: the theme didn't apply: the window looks the same as Desktop's own dark window",
+    )
+    expect(lines).toContain('rendered theme-examples theme koi-pond in Claude Desktop')
+  })
+
+  it('keeps the earlier shot when the recording itself fails', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+
+    const { exitCode, lines } = run(
+      terminal(),
+      { slug: 'theme-examples' },
+      throwingThemes({ '/custom-theme night-reef': new Error('sandbox died') }),
+    )
+
+    expect(await exitCode).toBe(1)
+    expect((await storedThemeShots(versionId)).map((s) => s.key)).toEqual(['night-reef'])
+    expect(lines).toContain(
+      'failed theme-examples theme night-reef in Claude Desktop: sandbox died',
     )
   })
 })

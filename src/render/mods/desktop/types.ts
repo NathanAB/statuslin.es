@@ -1,4 +1,5 @@
 import type { InputStep } from '@/mods/curation'
+import type { ThemeWindow } from '@/themes/theme'
 import type { Interpreter } from '../../types'
 import type { ModUnderRender } from '../recorder'
 
@@ -16,6 +17,16 @@ export interface DesktopRecordRequest {
   inputSteps: readonly InputStep[]
   /** The status line the session's settings run, in place of the committed sample. */
   statusLine?: StatusLineScript
+  /** A mod that sets a theme: its preview is the whole window, not what it draws in the chat. */
+  wholeWindow?: boolean
+}
+
+/** One Desktop theme of a mod, recorded in its own window after the steps that switch to it. */
+export interface DesktopThemeRequest {
+  mod: ModUnderRender
+  window: ThemeWindow
+  /** Sent in turn after the scripted reply; none when the mod sets the theme on its own. */
+  switchSteps: readonly string[]
 }
 
 interface DesktopVersions {
@@ -49,7 +60,14 @@ export interface DesktopNothing extends DesktopVersions {
 
 export type DesktopRecording = DesktopShot | DesktopNothing
 
-/** Records one mod in Claude Desktop. Throws when the recording fails. */
+/** A theme's whole Desktop window, for its plugin's page, and the same window smaller for its card. */
+export interface DesktopThemeShot extends DesktopVersions, DesktopImage {
+  card: DesktopImage
+}
+
+/** Records mods and their themes in Claude Desktop. Throws when a recording fails. */
 export interface DesktopRecorder {
   record(request: DesktopRecordRequest): Promise<DesktopRecording>
+  /** Throws a DesktopThemeRefused, saying why, when the shot can't stand for the theme. */
+  recordTheme(request: DesktopThemeRequest): Promise<DesktopThemeShot>
 }
