@@ -12,6 +12,7 @@ import {
   CARD_MAX_HEIGHT,
   CONTENT,
   CROP_MARGIN,
+  PAGE_GREY,
   PANE,
   PANE_BODY,
   PANE_BORDER_GREY,
@@ -46,6 +47,8 @@ export function readLayout(greys: Record<keyof typeof BORDER_PROBES, RegionGrey>
   )
 }
 
+export const readScrolled = ({ mean }: RegionGrey) => mean - PAGE_GREY > BORDER_TOLERANCE
+
 /** A final shot with no pane open, read where the mod may draw. */
 export interface ChatShot {
   /**
@@ -62,6 +65,7 @@ export interface ChatShot {
   rows: RowProfile
   /** The final shot, row by row, across the plate strips at the chat column's two edges. */
   plate: RowProfile
+  scrolled: boolean
 }
 
 /** Where to crop the shot for the mod page, and for its card. */
@@ -150,11 +154,15 @@ const topCard = (rect: Rect, bottom: number): Rect => ({ ...rect, height: bottom
  * box if lower, down through the toolbar, widened to a change outside it (a toast) but never into
  * the scrollbar gutter, and never starting halfway through an element.
  */
-export function frameChat({ changed, rows, plate, restylesPrompt }: ChatShot): Frame {
+export function frameChat({ changed, rows, plate, restylesPrompt, scrolled }: ChatShot): Frame {
   // A change inside the margin, such as an antialiased edge, is already in the crop.
   const left = Math.min(PROMPT_BOX.x, changed.x + CROP_MARGIN) - CROP_MARGIN
   const right = Math.max(PROMPT_RIGHT, changed.x + changed.width - CROP_MARGIN) + CROP_MARGIN
-  const top = uncutTop(rows, Math.max(CONTENT.top, Math.min(PROMPT_BOX.y, changed.y) - CROP_MARGIN))
+  const top = uncutTop(
+    rows,
+    Math.max(CONTENT.top, Math.min(PROMPT_BOX.y, changed.y) - CROP_MARGIN),
+    scrolled,
+  )
   const rect = clamp(left, top, right, CONTENT.bottom, SCROLL_GUTTER.x)
   const toolbar = changed.y + changed.height > PROMPT_BOX.y + PROMPT_BOX.height
   const reach: PromptReach = toolbar ? 'toolbar' : restylesPrompt ? 'box' : 'band'

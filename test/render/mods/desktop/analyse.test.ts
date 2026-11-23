@@ -36,8 +36,35 @@ function profile(...runs: [number, number][]): string {
   return ` ${bytes.join(' ')}\n`
 }
 
-const CHAT = `${PROMPT_BORDER_GREY} 0\n${20 / 255} 0\n0.3 0.2\n`
-const PANE = `0.1 0.05\n${PROMPT_BORDER_GREY} 0\n${PANE_BORDER_GREY} 0\n`
+type Grey = [mean: number, deviation: number]
+const PAGE: Grey = [25 / 255, 0]
+
+const layoutProbes = (probes: {
+  prompt: Grey
+  besidePane: Grey
+  pane: Grey
+  scrollbarFoot: Grey
+}) =>
+  `${[probes.prompt, probes.besidePane, probes.pane, probes.scrollbarFoot].map((g) => g.join(' ')).join('\n')}\n`
+
+const CHAT = layoutProbes({
+  prompt: [PROMPT_BORDER_GREY, 0],
+  besidePane: PAGE,
+  pane: [0.3, 0.2],
+  scrollbarFoot: PAGE,
+})
+const SCROLLED_CHAT = layoutProbes({
+  prompt: [PROMPT_BORDER_GREY, 0],
+  besidePane: PAGE,
+  pane: [0.3, 0.2],
+  scrollbarFoot: [50 / 255, 0.1],
+})
+const PANE = layoutProbes({
+  prompt: [0.1, 0.05],
+  besidePane: [PROMPT_BORDER_GREY, 0],
+  pane: [PANE_BORDER_GREY, 0],
+  scrollbarFoot: PAGE,
+})
 const BAND = '1 1536x80+333+1551'
 const SAME = '0 0x0+2202+1802'
 const BAND_ROWS: [number, number] = [775, 814]
@@ -88,12 +115,11 @@ function profileFor(command: string, opts: FakeShots): string {
   if (strips.length === 1) {
     const inBaseline = command.includes('baseline.png')
     const bubbles = (inBaseline && opts.baselineBubbles) || opts.bubbles || []
-    // A bubble fills the column's right plate strip and leaves its left one blank.
-    return strips[0]?.[1] === String((PROMPT_BOX.x + PROMPT_BOX.width - 5) * SCALE)
-      ? profile(...bubbles)
-      : profile()
+    // A bubble ends at x 918, inside the prompt box's edge: it fills the strip just inside that
+    // end and leaves the strip at the replies' left edge blank.
+    return strips[0]?.[1] === String((918 - 5) * SCALE) ? profile(...bubbles) : profile()
   }
-  if (command.includes('-crop 714x')) return opts.pane ?? profile()
+  if (command.includes('-crop 732x')) return opts.pane ?? profile()
   if (command.includes('-crop 1568x'))
     return opts.cropContent ?? opts.content ?? profile(PROMPT_ROWS)
   if (command.includes('-crop 6x')) return opts.plate ?? profile()
@@ -430,6 +456,28 @@ describe('analyseShot', () => {
     expect(result).toMatchObject({ kind: 'shot', height: BAND_HEIGHT })
   })
 
+  it('keeps what the mod writes in the toolbar after a slash command, though the toolbar ends where a message does', async () => {
+    const toolbar: [number, number] = [876, 892]
+    const chat = profile(PROMPT_ROWS, toolbar)
+    const { analysis } = fakeAnalysis({
+      changes: [{ x: 444, y: 876, width: 280, height: 16 }],
+      content: chat,
+      cropContent: chat,
+      shotRows: [[...toolbar, 1]],
+      baselineRows: [[...toolbar, 2]],
+      bubbles: [toolbar],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: true,
+      typedSlashCommand: true,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot', height: 900 - (876 - 8) })
+  })
+
   it("leaves out the whole message, though its rounded corners miss the column's edge", async () => {
     const bubble: [number, number] = [275, 310]
     const chat = profile(bubble, BAND_ROWS, PROMPT_ROWS)
@@ -518,6 +566,29 @@ describe('analyseShot', () => {
     expect((result as { height: number }).height).toBeGreaterThan(BAND_HEIGHT)
   })
 
+  it('starts the crop below the element a scrolled chat cuts at its top', async () => {
+    const chat = profile([57, 68], [100, 140], PROMPT_ROWS)
+    const { analysis } = fakeAnalysis({
+      shot: SCROLLED_CHAT,
+      changes: [{ x: 186, y: 57, width: 400, height: 84 }],
+      content: chat,
+      cropContent: chat,
+      shotRows: [
+        [57, 68, 1],
+        [100, 140, 2],
+      ],
+    })
+
+    const result = await analyseShot(analysis, {
+      shot: SHOT,
+      baseline: BASELINE,
+      typedSteps: false,
+      typedSlashCommand: false,
+    })
+
+    expect(result).toMatchObject({ kind: 'shot', height: 140 + 1 + 8 - (100 - 8) })
+  })
+
   it('counts a toast beside the chat after input steps', async () => {
     const { analysis } = fakeAnalysis({
       changes: [...STEP_TURNS, { x: 950, y: 90, width: 120, height: 40 }],
@@ -564,9 +635,9 @@ describe('analyseShot', () => {
 
     expect(result).toMatchObject({
       kind: 'shot',
-      width: 367,
-      height: 860,
-      card: { width: 367, height: 150 },
+      width: 371,
+      height: 867,
+      card: { width: 371, height: 150 },
     })
     expect(ran.some((c) => c.includes('-compose difference -composite -compose over'))).toBe(false)
   })
@@ -574,7 +645,7 @@ describe('analyseShot', () => {
   it("cards what the mod draws in its pane, from inside the pane's border", async () => {
     const { analysis, ran } = fakeAnalysis({
       shot: PANE,
-      pane: profile([40, 64], [93, 361], [883, 891]),
+      pane: profile([37, 80], [93, 361]),
     })
 
     const result = await analyseShot(analysis, {
@@ -584,8 +655,8 @@ describe('analyseShot', () => {
       typedSlashCommand: false,
     })
 
-    expect(result).toMatchObject({ kind: 'shot', card: { width: 357, height: 370 - 85 } })
-    expect(ran.some((c) => c.includes('-crop 714x570+1468+170'))).toBe(true)
+    expect(result).toMatchObject({ kind: 'shot', card: { width: 366, height: 370 - 85 } })
+    expect(ran.some((c) => c.includes('-crop 732x570+1468+170'))).toBe(true)
   })
 
   it('refuses a baseline that shows a pane', async () => {

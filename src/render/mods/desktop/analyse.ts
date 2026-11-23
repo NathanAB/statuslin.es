@@ -1,16 +1,11 @@
-import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import type { AnalysisSandbox } from './desktop-sandbox'
-import { type ChatShot, type Frame, frameChat, framePane, readLayout } from './framing'
+import { type ChatShot, type Frame, frameChat, framePane } from './framing'
 import {
   changedBoxCommand,
   changedInRegionCommand,
   croppedPngCommand,
   parseChangedBox,
-  parseProbes,
-  parseRowProfile,
   parseRowSignatures,
-  probeCommand,
-  rowProfileCommand,
   rowSignatureCommand,
 } from './imagemagick'
 import { expectOk } from './interact'
@@ -27,11 +22,10 @@ import {
   wholeElements,
 } from './rows'
 import {
-  BORDER_PROBES,
   CHAT_COLUMN,
   CONTENT,
-  type Column,
   CROP_MARGIN,
+  MESSAGE_COLUMN,
   PANE_BODY,
   PROMPT_BOX,
   PROMPT_TEXT,
@@ -41,10 +35,8 @@ import {
   SCROLL_GUTTER,
   WINDOW,
 } from './screen'
+import { BASELINE, layoutOf, rowProfile, SHOT } from './shot-reads'
 import type { DesktopImage, DesktopShot } from './types'
-
-const SHOT = `${SANDBOX_WORK_DIR}/shot.png`
-const BASELINE = `${SANDBOX_WORK_DIR}/baseline.png`
 
 export interface ShotsToAnalyse {
   /** The mod session's full final shot, as printed by its sandbox. Untrusted. */
@@ -67,27 +59,6 @@ export interface ShotsToAnalyse {
 export type Analysis =
   | { kind: 'nothing' }
   | ({ kind: 'shot' } & Pick<DesktopShot, 'png' | 'width' | 'height' | 'card'>)
-
-async function layoutOf(analysis: AnalysisSandbox, path: string): Promise<'chat' | 'pane'> {
-  const regions = [BORDER_PROBES.prompt, BORDER_PROBES.promptBesidePane, BORDER_PROBES.pane]
-  const command = probeCommand(path, regions, { capture: false })
-  const { stdout } = expectOk(await analysis.run(command), 'reading the layout')
-  const [prompt, promptBesidePane, pane] = parseProbes(stdout, regions.length)
-  if (!prompt || !promptBesidePane || !pane) throw new Error('missing layout probes')
-  return readLayout({ prompt, promptBesidePane, pane })
-}
-
-async function rowProfile(
-  analysis: AnalysisSandbox,
-  columns: Column[],
-  path = SHOT,
-): Promise<RowProfile> {
-  const { stdout } = expectOk(
-    await analysis.run(rowProfileCommand(path, columns)),
-    'reading the shot row by row',
-  )
-  return parseRowProfile(stdout, WINDOW.height)
-}
 
 async function changedBox(analysis: AnalysisSandbox, masks: Rect[] = []): Promise<Rect | null> {
   const compare = changedBoxCommand(BASELINE, SHOT, [PROMPT_TEXT, SCROLL_GUTTER, ...masks])
@@ -154,10 +125,9 @@ async function croppedShot(
   return { kind: 'shot', ...page, card: await cropped(analysis, card) }
 }
 
-/** Rows of a message the user sent, read across the chat column's plate strips. */
 async function userBubbles(analysis: AnalysisSandbox, path: string): Promise<boolean[]> {
-  const [left, right] = plateStrips(CHAT_COLUMN)
-  if (!left || !right) throw new Error('the chat column has two plate strips')
+  const [left, right] = plateStrips(MESSAGE_COLUMN)
+  if (!left || !right) throw new Error('the message column has two edge strips')
   return userBubbleRows(
     await rowProfile(analysis, [left], path),
     await rowProfile(analysis, [right], path),
@@ -190,16 +160,18 @@ async function chatCuts(
   { rows, plate, restylesPrompt }: ChatShot,
   typedSlashCommand: boolean,
 ): Promise<RowCut[] | null> {
+  const bottom = chatBottom(plate)
+  const inChat = (y: number) => y < bottom
   const notInBaseline = rowsNotInBaseline(
     await rowSignatures(analysis, SHOT, rect),
     await rowSignatures(analysis, BASELINE, rect),
-    chatBottom(plate),
+    bottom,
   )
   const noMessages = notInBaseline.map(() => false)
   const shotMessages = typedSlashCommand ? await userBubbles(analysis, SHOT) : noMessages
   const baselineMessages = typedSlashCommand ? await userBubbles(analysis, BASELINE) : noMessages
   const messages = wholeElements(
-    shotMessages.map((message, y) => message && Boolean(baselineMessages[y])),
+    shotMessages.map((message, y) => message && inChat(y) && Boolean(baselineMessages[y])),
     rows,
   )
   // Restyled text keeps its shape, so its rows match the baseline's and would be cut.
@@ -221,8 +193,11 @@ export async function analyseShot(
     { path: SHOT, data: shot },
     { path: BASELINE, data: baseline },
   ])
-  if ((await layoutOf(analysis, BASELINE)) !== 'chat') throw new Error('the baseline shows a pane')
-  if ((await layoutOf(analysis, SHOT)) === 'pane') {
+  if ((await layoutOf(analysis, BASELINE)).layout !== 'chat') {
+    throw new Error('the baseline shows a pane')
+  }
+  const { layout, scrolled } = await layoutOf(analysis, SHOT)
+  if (layout === 'pane') {
     // A pane's crop is fixed, and the pane's rows never match the baseline, which has no pane.
     return croppedShot(analysis, framePane(await rowProfile(analysis, [PANE_BODY])))
   }
@@ -236,7 +211,7 @@ export async function analyseShot(
   // The steps' turns are not the mod's drawing, so they cannot make a shot; a crop still shows them.
   if (typedSteps && !(await drawn([stepTurns(plate)]))) return { kind: 'nothing' }
   const rows = await rowProfile(analysis, [CHAT_COLUMN])
-  const chat: ChatShot = { changed, rows, plate, restylesPrompt }
+  const chat: ChatShot = { changed, rows, plate, restylesPrompt, scrolled }
   const frame = frameChat(chat)
   const cuts = await chatCuts(analysis, frame.rect, chat, typedSlashCommand)
   if (!cuts) return { kind: 'nothing' }

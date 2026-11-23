@@ -13,13 +13,7 @@ import {
   userBubbleRows,
   wholeElements,
 } from '@/render/mods/desktop/rows'
-import {
-  CARD_MAX_HEIGHT,
-  CHAT_TOP,
-  CROP_MARGIN,
-  PROMPT_BOX,
-  WINDOW,
-} from '@/render/mods/desktop/screen'
+import { CARD_MAX_HEIGHT, CROP_MARGIN, PROMPT_BOX, WINDOW } from '@/render/mods/desktop/screen'
 
 /** A shot's row profile: 0 (page background) everywhere except the given [from, to, share] runs. */
 function rows(...runs: [number, number, number][]): number[] {
@@ -60,15 +54,15 @@ describe('bandAbovePrompt', () => {
   })
 })
 
-// Plate rows measured on Desktop 2.42304.2: a one-line prompt box reads from 830, a box holding a
-// draft that wrapped to two lines from 810, both down to 859.
+// Plate rows measured on Desktop 6.28899.6: a one-line prompt box reads from 822, a box holding a
+// draft that wrapped to two lines from 801, both down to 853.
 describe('promptTop', () => {
   it('is the prompt box top when the draft fits on one line', () => {
-    expect(promptTop(rows([830, 859, 1]))).toBe(PROMPT_BOX.y)
+    expect(promptTop(rows([822, 853, 1]))).toBe(PROMPT_BOX.y)
   })
 
   it('moves up with the box when a draft wraps to more lines', () => {
-    expect(promptTop(rows([810, 859, 1]))).toBe(PROMPT_BOX.y - 20)
+    expect(promptTop(rows([801, 853, 1]))).toBe(PROMPT_BOX.y - 21)
   })
 
   it('stays at the prompt box top when no box reads in the plate', () => {
@@ -76,35 +70,38 @@ describe('promptTop', () => {
   })
 
   it('lets the band above a two-line draft be found', () => {
-    const profile = rows([763, 794, 1], [810, 859, 1])
+    const profile = rows([747, 786, 1], [801, 853, 1])
 
-    expect(bandAbovePrompt(profile, promptTop(profile))).toEqual({ top: 763, bottom: 794 })
+    expect(bandAbovePrompt(profile, promptTop(profile))).toEqual({ top: 747, bottom: 786 })
   })
 })
 
 describe('uncutTop', () => {
   it('leaves a top that sits in a blank row', () => {
-    expect(uncutTop(rows([300, 340, 0.4]), 292)).toBe(292)
+    expect(uncutTop(rows([300, 340, 0.4]), 292, false)).toBe(292)
   })
 
   it('moves a top that lands inside a row of content up to the blank row above it', () => {
-    expect(uncutTop(rows([300, 340, 0.4]), 320)).toBe(299)
+    expect(uncutTop(rows([300, 340, 0.4]), 320, false)).toBe(299)
   })
 
-  it('drops the element the scrolled chat cut at its top, starting at the gap after it', () => {
-    const profile = rows([CHAT_TOP + 1, CHAT_TOP + 4, 0.05], [CHAT_TOP + 11, CHAT_TOP + 24, 0.3])
+  // Measured on Desktop 6.28899.6: a scrolled chat fades its top, so the element it cuts shows from
+  // row 57, below where an unscrolled chat's first line starts, row 55. Lines inside one element
+  // are up to 8 rows apart; elements, 27 or more.
+  it('drops the element a scrolled chat cuts under its faded top, starting at the gap after it', () => {
+    const profile = rows([57, 72, 0.05], [78, 90, 0.1], [164, 208, 0.3])
 
-    expect(uncutTop(profile, CHAT_TOP - 7)).toBe(CHAT_TOP + 5)
+    expect(uncutTop(profile, 49, true)).toBe(91)
   })
 
   it('keeps a lower top when the cut element is above it anyway', () => {
-    const profile = rows([CHAT_TOP + 1, CHAT_TOP + 4, 0.05], [400, 420, 0.3])
+    const profile = rows([57, 68, 0.05], [400, 420, 0.3])
 
-    expect(uncutTop(profile, 392)).toBe(392)
+    expect(uncutTop(profile, 392, true)).toBe(392)
   })
 
-  it('does not treat a chat that starts well below its top as scrolled', () => {
-    expect(uncutTop(rows([125, 160, 0.2]), 117)).toBe(117)
+  it("keeps an unscrolled chat's first line, though it starts close under the chat's top", () => {
+    expect(uncutTop(rows([55, 70, 0.2]), 47, false)).toBe(47)
   })
 })
 

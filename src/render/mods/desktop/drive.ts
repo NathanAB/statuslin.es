@@ -27,6 +27,7 @@ import {
   BLUR,
   MOUSE_REST,
   PROMPT_FOCUS,
+  SESSION_DETAILS_TOGGLE,
   TRUST_WORKSPACE,
   WELCOME_CONTINUE,
 } from './screen'
@@ -158,6 +159,7 @@ export async function driveSession(
   expectOk(await desktop.run(keyCommand('End')), 'moving to the end of the prompt')
   await sendPrompt(desktop)
   await waitFor(desktop, 'the scripted reply', repliedCommand(feedScenario()), REPLY_MAX_MS)
+  expectOk(await desktop.run(clickCommand(SESSION_DETAILS_TOGGLE)), 'closing the session details')
   for (const [i, step] of inputSteps.entries()) await typeStep(desktop, step, i)
   expectOk(await desktop.run(clickCommand(BLUR)), 'clicking off the prompt')
   expectOk(await desktop.run(moveCommand(MOUSE_REST)), 'resting the mouse')
