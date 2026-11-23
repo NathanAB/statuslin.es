@@ -160,6 +160,9 @@ describe('ResourcesContent', () => {
     expect(within(map).getByRole('link', { name: 'Browse mods' }).getAttribute('href')).toBe(
       '/mods',
     )
+    expect(within(map).getByRole('link', { name: 'Browse themes' }).getAttribute('href')).toBe(
+      '/themes',
+    )
     expect(container.innerHTML).not.toMatch(/FAQPage/)
   })
 

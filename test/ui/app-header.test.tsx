@@ -72,11 +72,18 @@ describe('AppHeader', () => {
   // neither: the home page lists both, and the footer links Mods.
   it('links neither the guide nor a Mods page', () => {
     const { container } = render(<AppHeader user={null} />)
-    expect(within(screen.getByRole('navigation')).getAllByRole('link')[0]?.textContent).toBe(
-      'Resources',
-    )
     expect(container.querySelector('a[href="/guide"]')).toBeNull()
     expect(container.querySelector('a[href="/mods"]')).toBeNull()
+  })
+
+  // Themes have no home in the gallery's lists, so the bar is how a visitor finds /themes.
+  it('leads its links with Themes, then Resources', () => {
+    render(<AppHeader user={null} />)
+    const links = within(screen.getByRole('navigation')).getAllByRole('link')
+    expect(links.slice(0, 2).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
+      ['Themes', '/themes'],
+      ['Resources', '/resources'],
+    ])
   })
 
   // We want people to submit: Submit is the header's one filled button, beside sign-in, and stays

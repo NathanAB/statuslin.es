@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import satori from 'satori'
 import { describe, expect, it } from 'vitest'
-import { cellWidth, fitFontSize, fitWithin, lineHeight } from '@/og/fit'
+import { cellWidth, fitFontSize, fitRowsFontSize, fitWithin, lineHeight } from '@/og/fit'
 import { cardSatoriOptions } from '@/og/render'
 
 describe('cellWidth', () => {
@@ -46,6 +46,22 @@ describe('fitFontSize', () => {
 
   it('keeps the largest size for no lines at all', () => {
     expect(fitFontSize([], 19, 1016)).toBe(19)
+  })
+})
+
+describe('fitRowsFontSize', () => {
+  it('keeps the largest size when every row fits the height', () => {
+    expect(fitRowsFontSize(3, 19, 300)).toBe(19)
+  })
+
+  // 280px over 20 rows leaves 14px a row: 14 / 1.32 = 10.606…, which satori lays out 14px tall.
+  it('shrinks the size until the rows fit the height, each row a whole pixel tall', () => {
+    expect(fitRowsFontSize(20, 19, 280)).toBe(10.6)
+    expect(20 * lineHeight(10.6)).toBe(280)
+  })
+
+  it('keeps the largest size for no rows at all', () => {
+    expect(fitRowsFontSize(0, 19, 280)).toBe(19)
   })
 })
 

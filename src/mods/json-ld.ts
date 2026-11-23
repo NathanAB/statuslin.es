@@ -1,14 +1,14 @@
 import { tagKeywords } from '@/gallery/facets'
-import { breadcrumbJsonLd, HOME_CRUMB_NAME, MODS_CRUMB } from '@/lib/breadcrumb-json-ld'
+import { breadcrumbJsonLd, HOME_CRUMB_NAME, pluginCrumb } from '@/lib/breadcrumb-json-ld'
 import { faqPageJsonLd, RUNTIME_PLATFORM } from '@/lib/json-ld'
 import { searchDescription } from '@/lib/search-description'
-import { MODS_PATH, modPath } from '@/lib/site'
+import { modPath } from '@/lib/site'
 import { modSourceUrl } from './install'
 import type { ModDetail } from './queries'
 
 /**
  * A mod page as SoftwareSourceCode, described by its page summary as the page leads with it,
- * + its breadcrumb (home › Mods › the mod, as the page shows),
+ * + its breadcrumb (home › Mods › the mod, or home › Themes › a theme plugin, as the page shows),
  * then a FAQPage when its reviewed copy has the questions the page shows. The source is the folder
  * at the pinned commit, the one a person reviewed. A mod without a licence claims none.
  */
@@ -27,9 +27,11 @@ export function modJsonLd(
     | 'tags'
     | 'updatedAt'
     | 'generatedContent'
+    | 'themeOnly'
   >,
 ): object[] {
   const url = `${origin}${modPath(mod.slug)}`
+  const crumb = pluginCrumb(mod.themeOnly)
   const faqPage = faqPageJsonLd(mod.generatedContent?.faq ?? [])
   const nodes = [
     {
@@ -47,7 +49,7 @@ export function modJsonLd(
     },
     breadcrumbJsonLd([
       { name: HOME_CRUMB_NAME, item: origin },
-      { name: MODS_CRUMB.name, item: `${origin}${MODS_PATH}` },
+      { name: crumb.name, item: `${origin}${crumb.to}` },
       { name: mod.title, item: url },
     ]),
   ]
