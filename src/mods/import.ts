@@ -126,14 +126,11 @@ export async function insertDesktopThemes(
   themes: DesktopTheme[],
 ): Promise<void> {
   if (themes.length === 0) return
-  await db.insert(schema.modThemes).values(
-    themes.map(({ switchSteps, ...theme }) => ({
-      modVersionId: versionId,
-      kind: 'desktop' as const,
-      ...theme,
-      switchSteps,
-    })),
-  )
+  await db
+    .insert(schema.modThemes)
+    .values(
+      themes.map((theme) => ({ modVersionId: versionId, kind: 'desktop' as const, ...theme })),
+    )
 }
 
 /**
