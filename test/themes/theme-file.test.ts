@@ -46,6 +46,11 @@ describe('parseTerminalThemeFiles', () => {
     ['a base Claude Code has no such theme for', { base: 'solarized' }, 'themes/t.json: base'],
     ['a field a theme file does not have', { name: 'T', colors: {} }, 'themes/t.json: "colors"'],
     ['an empty name', { name: '' }, 'themes/t.json: name'],
+    [
+      'a name of only spaces, which /theme would list blank',
+      { name: '   ' },
+      'themes/t.json: name',
+    ],
     ['a name of 65 characters', { name: 'n'.repeat(65) }, 'themes/t.json: name'],
     ['a name that is not text', { name: 7 }, 'themes/t.json: name'],
     ['overrides that are not an object', { overrides: ['#fff'] }, 'themes/t.json: overrides'],

@@ -28,7 +28,7 @@ const FIELDS = ['$schema', 'name', 'base', 'overrides']
  */
 const themeFileSchema = z.object({
   $schema: z.string({ error: 'must be text' }).optional(),
-  name: atMost(THEME_NAME_MAX).min(1, 'must not be empty').optional(),
+  name: atMost(THEME_NAME_MAX).regex(/\S/, 'must not be empty or only spaces').optional(),
   base: z
     .enum(TERMINAL_THEME_BASES, { error: `must be one of ${TERMINAL_THEME_BASES.join(', ')}` })
     .optional(),
