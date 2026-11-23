@@ -219,7 +219,20 @@ describe('the README beside the previews', () => {
     const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
 
     expect(lines).toContain(
-      'themes: 2 terminal themes. Read each theme\'s preview and exact file on /admin, under "Curated theme plugins", before --apply.',
+      `themes: 2 terminal themes in v1 at ${sha('a')}. Read each theme's preview and exact file on /admin, under "Curated theme plugins", before --apply.`,
+    )
+    expect(lines.some((line) => line.startsWith('WARN themes-not-newest'))).toBe(false)
+  })
+
+  it('warns when the themes being published are not the version /admin shows', async () => {
+    const { modId, versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      `WARN themes-not-newest: v1 is not this plugin's newest version (v2), and /admin shows only the newest version's themes. Read v1's theme files at ${sha('a')} before --apply.`,
     )
   })
 
