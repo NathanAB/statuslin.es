@@ -1,4 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises'
+import type { ThemeWindow } from '@/themes/theme'
 import type { CommandOutput } from '../mod-sandbox'
 import { SANDBOX_WORK_DIR } from '../mod-sandbox'
 import { feedScenario } from '../scenario-feed'
@@ -14,8 +15,13 @@ import { transcriptLinesCommand } from './session'
 const PROBE_SHOT = `${SANDBOX_WORK_DIR}/probe.png`
 const QUIET_SHOT = `${SANDBOX_WORK_DIR}/quiet.png`
 
-/** A dialog button probe's grey mean above this is a white button on Desktop's dark theme. */
-const BRIGHT = 0.6
+/**
+ * Whether a dialog button probe's grey mean is the button: white on Desktop's dark theme, black on
+ * its light one.
+ */
+export function buttonShown(window: ThemeWindow, mean: number): boolean {
+  return window === 'dark' ? mean > 0.6 : mean < 0.4
+}
 const POLL_MS = 250
 const CONDITION_POLL_MS = 200
 /** On top of a command's own wait, for the request that starts it. */
@@ -49,11 +55,15 @@ export async function waitFor(
   if (exitCode !== 0) throw new Error(`timed out waiting for ${what}`)
 }
 
-async function isShown(sandbox: RecordingDesktop, button: DialogButton): Promise<boolean> {
+async function isShown(
+  sandbox: RecordingDesktop,
+  button: DialogButton,
+  window: ThemeWindow,
+): Promise<boolean> {
   const { exitCode, stdout } = await sandbox.run(probeCommand(PROBE_SHOT, [button.probe]))
   if (exitCode !== 0) return false
   const [probe] = parseProbes(stdout, 1)
-  return (probe?.mean ?? 0) > BRIGHT
+  return probe !== undefined && buttonShown(window, probe.mean)
 }
 
 /** Clicks `button` once it is steadily shown; true once it is gone after a click. */
@@ -61,12 +71,13 @@ export async function pressButton(
   sandbox: RecordingDesktop,
   button: DialogButton,
   { maxMs, ...options }: ButtonWait,
+  window: ThemeWindow,
 ): Promise<boolean> {
   let watch = startWatch()
   let shown = false
   const startedAt = performance.now()
   while (performance.now() - startedAt < maxMs) {
-    shown = await isShown(sandbox, button)
+    shown = await isShown(sandbox, button, window)
     const step = watchButton(watch, shown, performance.now(), options)
     watch = step.watch
     if (step.action === 'done') return true

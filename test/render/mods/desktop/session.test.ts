@@ -148,7 +148,17 @@ describe('desktopSessionFiles', () => {
     },
   )
 
-  it('puts Desktop in dark theme', () => {
+  it.each(['light', 'dark'] as const)('puts Desktop in its %s theme', (window) => {
+    const appearance = new Map(
+      desktopSessionFiles(scenario, SEED, undefined, window).map((f) => [f.path, f.data]),
+    )
+
+    expect(JSON.parse(String(appearance.get('/home/user/.config/Claude-3p/config.json')))).toEqual({
+      userThemeMode: window,
+    })
+  })
+
+  it('puts Desktop in dark theme by default', () => {
     expect(JSON.parse(String(files.get('/home/user/.config/Claude-3p/config.json')))).toEqual({
       userThemeMode: 'dark',
     })

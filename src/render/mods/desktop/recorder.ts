@@ -70,7 +70,7 @@ function recordFullShot(
     ...network,
   }
   return withRecordingDesktop(setup, async (desktop, versions) => {
-    await driveSession(desktop, request.inputSteps)
+    await driveSession(desktop, request.inputSteps, request.window)
     const png = checkedPng(await desktop.readPng(SCREEN_PNG_COMMAND), FULL_SHOT)
     return { ...versions, png }
   })
@@ -97,7 +97,9 @@ export function desktopRecorder(
     const key = JSON.stringify(inputSteps)
     const shared =
       bySteps.get(key) ??
-      sharedOnce(() => recordFullShot(sandboxes, null, { target: null, inputSteps }))
+      sharedOnce(() =>
+        recordFullShot(sandboxes, null, { target: null, inputSteps, window: 'dark' }),
+      )
     bySteps.set(key, shared)
     return shared()
   }
@@ -113,7 +115,7 @@ export function desktopRecorder(
       const shot = await recordFullShot(
         sandboxes,
         mod.source,
-        { target: mod.pluginName, inputSteps, statusLine },
+        { target: mod.pluginName, inputSteps, statusLine, window: 'dark' },
         network,
       )
       const base = await pendingBaseline

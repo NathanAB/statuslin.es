@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { TextStep } from '@/mods/curation'
+import type { ThemeWindow } from '@/themes/theme'
 import { externalNetworkHosts, shouldMockAnthropicUsage } from '../../anthropic-usage-mock'
 import {
   anthropicUsageMockFiles,
@@ -83,10 +84,11 @@ export function deepLink(scenario: Scenario): string {
 export const deepLinkCommand = (scenario: Scenario) =>
   `timeout 15 claude-desktop ${DESKTOP_ARGS.join(' ')} ${shellQuote(deepLink(scenario))} >/dev/null 2>&1`
 
-const DARK_THEME = {
+/** Desktop's own light or dark theme, which a theme made for one window is recorded in. */
+const appearance = (window: ThemeWindow) => ({
   path: `${DESKTOP_DATA_DIR}/config.json`,
-  data: JSON.stringify({ userThemeMode: 'dark' }),
-}
+  data: JSON.stringify({ userThemeMode: window }),
+})
 
 const sampleStatusLine = (): StatusLineScript => ({
   source: readFileSync(STATUS_LINE_SRC, 'utf8'),
@@ -144,13 +146,14 @@ const MOCK_ENV_PREFIX = `env -u CLAUDE_CONFIG_DIR ${Object.entries(withAnthropic
  * The terminal session's files (the canned reply among them, which Desktop's gateway check needs
  * while it boots), plus a status line, so a mod that shows the user's status line has one to draw:
  * the given one, else the committed sample, set in the terminal session's settings.json (beside a
- * busy session's permission rules). Then Desktop's dark theme. Uploaded before Desktop
+ * busy session's permission rules). Then Desktop's theme for `window`. Uploaded before Desktop
  * starts: once a mod's code may be running, nothing more is uploaded into its sandbox.
  */
 export function desktopSessionFiles(
   scenario: Scenario,
   seed: SessionSeed,
   statusLine: StatusLineScript = sampleStatusLine(),
+  window: ThemeWindow = 'dark',
 ): { path: string; data: string }[] {
   const { source, interpreter } = statusLine
   const script = `${configDir(scenario)}/statusline.${scriptExtension(interpreter, source)}`
@@ -162,7 +165,7 @@ export function desktopSessionFiles(
     ...sessionFiles(scenario, seed, { statusLine: { type: 'command', command } }),
     ...(mock ? anthropicUsageMockFiles(scenario, seed.nowMs) : []),
     { path: script, data: source },
-    DARK_THEME,
+    appearance(window),
   ]
 }
 
