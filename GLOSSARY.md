@@ -52,6 +52,14 @@ _Avoid_: theme mod, theme pack
 Whether a theme is made for a light or a dark window, and so which one its preview is drawn in.
 _Avoid_: mode, appearance
 
+**Twin**:
+A theme made for the other window from another theme it otherwise matches. Each twin is a theme of its own, with its own card and preview.
+_Avoid_: variant, light version, dark version
+
+**Switch steps**:
+What a visitor sends in a new Claude Desktop session to switch to a Desktop theme; none when its mod sets its one theme on its own. Its preview is recorded by sending exactly these, and its card shows them.
+_Avoid_: input steps, theme command
+
 **Scenario**:
 A named, fixed Claude Code session state (model, usage, folder, git and so on) that previews are rendered against. Status lines and mods draw from the same set.
 _Avoid_: fixture, test case, sample

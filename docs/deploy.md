@@ -390,6 +390,15 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    screen looks the same as the baseline (Claude Code ignored its `theme` setting), or as another
    theme of the same version, fails with that reason and loses its preview, whichever run stored it.
    Check the plugin name and the theme file, then rerun.
+   Desktop themes are recorded the same way, each as a whole-window still of Claude Desktop in the
+   theme's own window, after its switch steps. A mod has Desktop themes only once its curation entry
+   declares them (`desktopThemes`, one per theme: `key`, `name` as the mod titles it, `window`, and
+   `switchSteps`, the commands that switch to it, left out when the mod sets its one theme itself;
+   a twin is a theme of its own). Rerun `import:mods` after editing them; the changed version's
+   Desktop themes are replaced and need rendering again. Each theme is recorded twice, and fails
+   with the reason when its window looks like Desktop's own (check the switch steps), shows the
+   other window than its `window` says, or differs between the two runs (a background that moves
+   can't be listed as a still).
    A published mod's live previews are replaced as soon as it renders:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
