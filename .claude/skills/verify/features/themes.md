@@ -16,10 +16,16 @@ themes, and a plugin made only of themes has no card on `/mods`.
 - `theme-install-copy` copies a card's install command.
 - `theme-plugin-page` lists the plugin's themes on `/mods/<slug>`, without the empty mod preview.
 - `theme-plugin-not-a-mod` keeps a theme-only plugin off `/mods` while `/marketplace.json` serves it.
+- `themes-filter` filters `/themes` by window (`?window=light|dark`); a `Where it applies` control shows only once themes of more than one kind are listed.
+- `theme-install-count` counts a card's copied command as an install of its plugin, once per visitor, as a mod page's copy does.
+- `theme-plugin-wording` names a theme plugin's page by its themes: breadcrumb `Themes`, `What this theme plugin can do`, and a prompt and toast that say "theme plugin".
+- `themes-home-row` shows three theme cards and `Browse all <n> themes` on the home page, after the gallery.
+- `themes-share` unfurls `/themes` with `/og/themes.png` and a theme plugin's page with its first theme on `/og/mods/<slug>.png`.
+- `themes-discovery` lists `/themes` in `/sitemap.xml` and theme plugins under `## Themes` in `/llms.txt`.
 
 ## How to get to it (user POV)
 
-- Open `http://localhost:3110/themes` directly (no link points at it yet).
+- The header's `Themes` link, or the home page's `Browse all <n> themes`, opens `http://localhost:3110/themes`.
 - A card's plugin link opens `http://localhost:3110/mods/<slug>`.
 - The admin opens `http://localhost:3110/admin`.
 
@@ -36,16 +42,21 @@ Preconditions:
 - **Render.** `DATABASE_URL=<H db-url> bun run render:mods --slug nk-claude-themes` prints `rendered nk-claude-themes theme <key> in the terminal` once per theme, in about 5 to 6 minutes at four at a time. `H sql "select count(*), count(distinct segments::text) from mod_theme_previews"` prints `81|81`.
 - **Ready.** Reload `/admin`: the card reads `Rendered. Publish it from the CLI, reading the dry run first:` with `bun run scripts/publish-mod.ts nk-claude-themes <sha>`. `H ab admin find text "Dracula (port)" click` opens that theme: `Dark window`, the recorded screen, then `themes/dracula-port.json` and the file's exact text.
 - **Publish.** The dry run ends with `themes: 81 terminal themes. Read each theme's preview and exact file on /admin, under "Curated theme plugins", before --apply.` and `dry run: nothing changed.` Then `--apply --confirm=nk-claude-themes` prints `published "nk-claude-themes" at <sha>`.
-- **/themes.** `H errors anon`, `H ab anon open http://localhost:3110/themes`, wait. Title `Claude Code Terminal Themes, Previewed | statuslin.es`, heading `Claude Code terminal themes`. `snapshot -i` lists 81 `Copy install command for NK Claude Themes` buttons. A card reads `Dracula (port)`, `Dark`, `From NK Claude Themes`, `@nils44344`, the install command, and `Start a new session, run /theme and pick Dracula (port).`
+- **/themes.** `H errors anon`, `H ab anon open http://localhost:3110/themes`, wait. Title `Claude Code Themes: Light and Dark, Previewed | statuslin.es`, heading `Claude Code themes`, and `81 themes` beside the `Window` control. `snapshot -i` lists 81 `Copy install command for NK Claude Themes` buttons. A card reads `Dracula (port)`, `Dark`, `From NK Claude Themes`, `@nils44344`, the install command, and `Start a new session, run /theme and pick Dracula (port).`
 - **Copy.** `H copy-spy anon`, `H ab anon find role button click --name "Copy install command for NK Claude Themes"`, then `H copied anon` prints `claude plugin marketplace add http://localhost:3110/marketplace.json && claude plugin install nk-claude-themes@statuslines`.
-- **Plugin page.** `/mods/nk-claude-themes` has region headings `Themes` and `What it does`, 81 `pick` steps, and no `Preview` heading.
+- **Filter.** `H ab anon find role radio click --name Light --exact`: the URL gains `?window=light` and `get text main` shows `35 of 81 themes`; `Dark` shows `46 of 81 themes`; `All` drops the search. Opening `/themes?window=dim` redirects to `/themes`.
+- **Install count.** A copy from the plugin page counts the same visitor, so first `H sql "delete from mod_copy_events; update mods set copy_count=0 where slug='nk-claude-themes'"`. Copy a card's command on `/themes`: `H sql "select copy_count, (select count(*) from mod_copy_events) from mods where slug='nk-claude-themes'"` prints `1|1`.
+- **Plugin page.** `/mods/nk-claude-themes` has region headings `Themes` and `What it does`, 81 `pick` steps, and no `Preview` heading. Its title is `NK Claude Themes — Claude Code Themes | statuslin.es`, its breadcrumb runs `statuslin.es › Themes › NK Claude Themes`, the install panel is headed `What this theme plugin can do`, and `copied anon` after `Copy install prompt` starts `Install the nk-claude-themes theme plugin from localhost:3110.` with the toast `... pick a theme with /theme in the terminal. Theme plugins need Claude Code 2.1.118 or later.`
+- **Home row.** `/` shows heading `Claude Code themes`, three cards (`Amber 1982`, `Aurora Night Train`, `Badminton Hall`) and link `Browse all 81 themes` to `/themes`.
+- **Share.** `curl -s http://localhost:3110/themes | grep og:image` names `/og/themes.png`; that PNG (200, `image/png`) draws a dark and a light theme under `81 themes, each previewed in a real session`. `/og/mods/nk-claude-themes.png` draws `Amber 1982` under `81 Claude Code themes · by @nils44344`.
+- **Discovery.** `/sitemap.xml` lists `/themes` and `/mods/nk-claude-themes`; `/llms.txt` links `[Themes]` under `## Browse` and lists NK Claude Themes under `## Themes`, not `## Mods`.
 - **Not a mod.** `/mods` shows no `NK Claude Themes` row. `curl -s http://localhost:3110/marketplace.json` lists `nk-claude-themes` with a `git-subdir` source pinned by `sha`.
-- **Phone.** `H ab anon set viewport 375 548` on `/themes`: each preview fits its card with no sideways scroll.
+- **Phone.** `H ab anon set viewport 375 548` and `393 660` on `/themes`: each preview fits its card with no sideways scroll, and the filter fits beside the count. For Safari, the site sends `X-Frame-Options: DENY`, so a phone-size iframe page needs a local proxy that strips it.
 - **Proof.** In `H evidence themes`: the `/admin` text before and after render, the render log, the opened theme screenshot, the publish dry run and apply output, the `/themes` snapshot and screenshots (desktop and phone), the copied text, the plugin page snapshot, `/mods` text, the marketplace JSON, `H errors anon` output, and `NOTES.md`.
 
 ## Gotchas
 
-- Driven end to end on 2026-11-23 with `nk-claude-themes` on Claude Code 2.1.309 in the sandbox.
+- Driven end to end on 2026-11-23 with `nk-claude-themes` on Claude Code 2.1.309 in the sandbox, rendered at two at a time (about 12 minutes), then again for the filters, home row, share cards and install count.
 - Before publish, `/themes` answers 200 with no cards and `noindex`, and `/mods/nk-claude-themes` is a 404.
-- The page copy of a theme plugin's page still says "mod" in places (`What this mod can do`, the breadcrumb), and the install count doesn't move when a `/themes` card's command is copied.
+- A theme plugin's install panel still reads `What it can reach isn't recorded yet`, though it runs no code.
 - A theme preview's turn row always reads `Worked for 1s · done 9:41 AM`: the recorded verb and clock are replaced so every run stores the same preview.
