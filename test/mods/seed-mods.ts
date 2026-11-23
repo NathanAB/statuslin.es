@@ -234,10 +234,19 @@ export function fakeGitHub(opts: FakeGitHubOptions = {}): FakeGitHub {
 
 /**
  * What the inspect sandbox's components command prints (src/mods/plugin-components.ts): a NUL-ended
- * `<type> <size> <path>` record per file, then hooks/hooks.json.
+ * `<type> <size> <path>` record per file, each theme file's path and base64 bytes (`themes`, by
+ * path), then hooks/hooks.json.
  */
-export function componentsListing(records: string[], hooksJson: string): string {
-  return `${records.map((record) => `${record}\0`).join('')}\0--- hooks/hooks.json ---\0${hooksJson}`
+export function componentsListing(
+  records: string[],
+  hooksJson: string,
+  themes: Record<string, string> = {},
+): string {
+  const files = records.map((record) => `${record}\0`).join('')
+  const themeFiles = Object.entries(themes)
+    .map(([path, text]) => `${path}\0${Buffer.from(text).toString('base64')}\0`)
+    .join('')
+  return `${files}\0--- themes/ ---\0${themeFiles}\0--- hooks/hooks.json ---\0${hooksJson}`
 }
 
 /** A plugin made of one hooks module, with plugin.json and hooks/hooks.json, plus `records`. */

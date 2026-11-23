@@ -2,9 +2,17 @@ import { z } from 'zod'
 import type { ModFootprint } from '@/db/schema'
 import { SANDBOX_CLAUDE_CODE_BIN } from '@/render/e2b-template'
 import type { ModSandbox } from '@/render/mods/mod-sandbox'
+import type { TerminalThemeFile } from '@/themes/theme'
+import { parseTerminalThemeFiles } from '@/themes/theme-file'
 import { PLUGIN_NAME, PLUGIN_NAME_RULE } from './curation'
 import { atMost, codePoint } from './plain-text'
-import { componentsCommand, MODULE_PATH, otherComponents, parseJson } from './plugin-components'
+import {
+  componentsCommand,
+  MODULE_PATH,
+  otherComponents,
+  parseJson,
+  themeFiles,
+} from './plugin-components'
 import { CONTROL_OR_FORMAT } from './terminal-line'
 
 export interface PluginManifest {
@@ -17,6 +25,8 @@ export interface PluginManifest {
 export interface PluginFacts {
   manifest: PluginManifest
   footprint: ModFootprint
+  /** The plugin's terminal themes, sorted by key; none for a plugin of hooks modules alone. */
+  themes: TerminalThemeFile[]
   /** The Claude Code that ran `plugin validate`. */
   claudeCodeVersion: string
 }
@@ -197,31 +207,42 @@ export async function inspectPlugin(sandbox: ModSandbox): Promise<PluginFacts> {
     `head -c ${MANIFEST_MAX_BYTES} ${sandbox.pluginDir}/.claude-plugin/plugin.json`,
   )
   if (manifest.exitCode !== 0) throw new PluginRefusal('could not read .claude-plugin/plugin.json')
-  const facts = {
-    manifest: parseManifest(manifest.stdout),
-    footprint: parseFootprint(validateJson),
-    claudeCodeVersion,
-  }
-  await refuseOtherComponents(sandbox, parseJson(manifest.stdout), describedModules(validateJson))
-  return facts
+  const parsedManifest = parseManifest(manifest.stdout)
+  const footprint = parseFootprint(validateJson)
+  const themes = await readComponents(
+    sandbox,
+    parseJson(manifest.stdout),
+    describedModules(validateJson),
+  )
+  return { manifest: parsedManifest, footprint, themes, claudeCodeVersion }
 }
 
 /**
- * A mod page states what a mod does from what validate reports of its hooks modules: nothing else a
- * plugin holds, and nothing of a module it skips. So anything else is refused, not left unlisted.
+ * A listing states what a plugin does from what validate reports of its hooks modules and from its
+ * terminal theme files: nothing else a plugin holds, and nothing of a module validate skips. So
+ * anything else is refused, not left unlisted. Returns the plugin's themes.
  */
-async function refuseOtherComponents(
+async function readComponents(
   sandbox: ModSandbox,
   manifest: unknown,
   described: Set<string>,
-) {
+): Promise<TerminalThemeFile[]> {
   const listing = await sandbox.run(componentsCommand(sandbox.pluginDir))
   const extras =
     listing.exitCode === 0 ? otherComponents(listing.stdout, manifest, described) : null
   if (extras === null) throw new Error("could not list the plugin's components")
   if (extras.length > 0) {
     throw new PluginRefusal(
-      `statuslin.es lists a mod by what its hooks modules do, so it takes hooks modules only. This plugin also has ${extras.join(', ')}.`,
+      `statuslin.es lists a plugin by what its hooks modules and terminal theme files do, so it takes only those. This plugin also has ${extras.join(', ')}.`,
     )
   }
+  const files = themeFiles(listing.stdout)
+  if (files === null) throw new Error("could not read the plugin's theme files")
+  const themes = parseTerminalThemeFiles(files)
+  if (!themes.ok) {
+    throw new PluginRefusal(
+      `statuslin.es cannot list this plugin's themes: ${themes.problems.join('; ')}`,
+    )
+  }
+  return themes.themes
 }
