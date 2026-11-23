@@ -3,7 +3,6 @@ import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
 import type { CardSurface } from '@/lib/card-surface'
 import { HttpError } from '@/lib/http'
-import { MAX_INPUT_STEPS } from '@/render/mods/desktop/drive'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
 import type { TerminalSetup } from '@/render/mods/terminal'
 import type { DesktopTheme } from '@/themes/theme'
@@ -114,12 +113,6 @@ export interface NewVersion {
 export function checkDesktopThemes(footprint: schema.ModFootprint, themes: DesktopTheme[]): void {
   if (themes.length > 0 && !setsTheme(footprint)) {
     throw new Error('declares Desktop themes, but its code sets no theme')
-  }
-  const long = themes.find((theme) => theme.switchSteps.length > MAX_INPUT_STEPS)
-  if (long) {
-    throw new Error(
-      `Desktop theme "${long.key}" has ${long.switchSteps.length} switch steps; at most ${MAX_INPUT_STEPS} fit in a recording`,
-    )
   }
 }
 

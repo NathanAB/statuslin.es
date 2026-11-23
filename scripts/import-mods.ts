@@ -22,6 +22,7 @@ import {
   pickSlug,
 } from '@/mods/import'
 import { terminalLine } from '@/mods/terminal-line'
+import { MAX_INPUT_STEPS } from '@/render/mods/desktop/drive'
 import { withModSandbox } from '@/render/mods/mod-sandbox'
 import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 import type { DesktopTheme } from '@/themes/theme'
@@ -163,6 +164,17 @@ async function updateCardSurface(db: Db, entry: CurationEntry): Promise<boolean>
   return updated.length > 0
 }
 
+/** Refuses Desktop themes declared for a mod whose code sets none, or with more steps than fit. */
+function checkDeclaredThemes(footprint: schema.ModFootprint, themes: DesktopTheme[]): void {
+  checkDesktopThemes(footprint, themes)
+  const long = themes.find((theme) => theme.switchSteps.length > MAX_INPUT_STEPS)
+  if (long) {
+    throw new Error(
+      `Desktop theme "${long.key}" has ${long.switchSteps.length} switch steps; at most ${MAX_INPUT_STEPS} fit in a recording`,
+    )
+  }
+}
+
 const byKey = (a: DesktopTheme, b: DesktopTheme) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
 
 /** Compared in one order, whatever the database's collation sorted the stored themes by. */
@@ -200,7 +212,7 @@ async function updateDesktopThemes(db: Db, entry: CurationEntry): Promise<boolea
         "Desktop themes of a live version can't change in place; re-pin to a new version or unpublish first",
       )
     }
-    checkDesktopThemes(version.footprint, declared)
+    checkDeclaredThemes(version.footprint, declared)
     await db.transaction(async (tx) => {
       await tx
         .delete(schema.modThemes)
@@ -252,7 +264,7 @@ async function importEntry(
   if (facts.manifest.name !== name) {
     throw new Error(`plugin.json names the plugin "${facts.manifest.name}", not "${name}"`)
   }
-  checkDesktopThemes(facts.footprint, entry.desktopThemes ?? [])
+  checkDeclaredThemes(facts.footprint, entry.desktopThemes ?? [])
 
   const versionId = randomUUID()
   const versionNumber = await db.transaction(async (tx) => {
