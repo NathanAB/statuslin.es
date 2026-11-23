@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
@@ -126,6 +127,7 @@ export const SEEDED_THEME_SHOT = {
   cardPng: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 8]),
   cardWidth: 440,
   cardHeight: 360,
+  lookSignature: 'a'.repeat(64),
   desktopVersion: '6.28899.6',
   engineVersion: '2.1.330',
 }
@@ -148,7 +150,11 @@ export async function addDesktopTheme(
     .returning()
   const themeId = theme?.id as string
   if (seed.rendered ?? true) {
-    await db.insert(schema.modThemeDesktopPreviews).values({ themeId, ...SEEDED_THEME_SHOT })
+    // Each seeded theme a look of its own, as distinct themes have.
+    const lookSignature = createHash('sha256').update(seed.key).digest('hex')
+    await db
+      .insert(schema.modThemeDesktopPreviews)
+      .values({ themeId, ...SEEDED_THEME_SHOT, lookSignature })
   }
   return themeId
 }

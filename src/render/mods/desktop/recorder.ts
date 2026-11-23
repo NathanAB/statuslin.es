@@ -1,6 +1,7 @@
 import { type InputStep, MAX_STEP_CHARS, type TextStep } from '@/mods/curation'
 import type { ThemeWindow } from '@/themes/theme'
 import type { ModSource } from '../mod-sandbox'
+import type { ModUnderRender } from '../recorder'
 import { analyseShot } from './analyse'
 import {
   type DesktopVersions,
@@ -109,6 +110,19 @@ export function desktopRecorder(
   sandboxes: Sandboxes,
 ): DesktopRecorder & { baseline(inputSteps: readonly InputStep[]): Promise<FullShot> } {
   const bySetup = new Map<string, () => Promise<FullShot>>()
+  const byModDefault = new WeakMap<ModUnderRender, Map<ThemeWindow, () => Promise<FullShot>>>()
+  /** The mod with no steps in `window`: a theme's switch steps have to change it. One per mod. */
+  const modDefault = (mod: ModUnderRender, window: ThemeWindow) => {
+    const byWindow = byModDefault.get(mod) ?? new Map<ThemeWindow, () => Promise<FullShot>>()
+    byModDefault.set(mod, byWindow)
+    const shared =
+      byWindow.get(window) ??
+      sharedOnce(() =>
+        recordFullShot(sandboxes, mod.source, { target: mod.pluginName, inputSteps: [], window }),
+      )
+    byWindow.set(window, shared)
+    return shared()
+  }
   const textBaseline = (inputSteps: readonly TextStep[], window: ThemeWindow = 'dark') => {
     const key = JSON.stringify([window, inputSteps])
     const shared =
@@ -124,16 +138,25 @@ export function desktopRecorder(
       checkInputSteps(inputSteps)
       const pendingBaseline = textBaseline([], window)
       pendingBaseline.catch(() => {})
+      const pendingDefault = inputSteps.length > 0 ? modDefault(mod, window) : null
+      pendingDefault?.catch(() => {})
       const request = { target: mod.pluginName, inputSteps, window }
       const [shot, rerun] = await Promise.all([
         recordFullShot(sandboxes, mod.source, request),
         recordFullShot(sandboxes, mod.source, request),
       ])
       const base = await pendingBaseline
-      checkSameVersions(base, shot, 'theme')
-      checkSameVersions(base, rerun, 'theme')
+      const unswitched = await pendingDefault
+      for (const ran of [shot, rerun, ...(unswitched ? [unswitched] : [])]) {
+        checkSameVersions(base, ran, 'theme')
+      }
       const theme = await sandboxes.withAnalysisSandbox((sandbox) =>
-        analyseTheme(sandbox, { shots: [shot.png, rerun.png], baseline: base.png, window }),
+        analyseTheme(sandbox, {
+          shots: [shot.png, rerun.png],
+          baseline: base.png,
+          modDefault: unswitched?.png ?? null,
+          window,
+        }),
       )
       return { ...theme, ...versionsOf(shot) }
     },

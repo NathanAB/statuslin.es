@@ -188,6 +188,26 @@ export function scaledPngCommand(source: string, size: { width: number; height: 
 }
 
 /**
+ * Prints a SHA-256 of the shot's pixels with `masks` painted black: the same for two shots that look
+ * the same outside the masks.
+ */
+export function maskedSignatureCommand(path: string, masks: readonly Rect[]): string {
+  return [
+    `convert ${pngInput(path)} -fill black`,
+    ...masks.map(rectangle),
+    `-format '%#' info:`,
+  ].join(' ')
+}
+
+const SIGNATURE = /^[0-9a-f]{64}$/
+
+export function parseSignature(stdout: string): string {
+  const signature = stdout.trim()
+  if (!SIGNATURE.test(signature)) throw new Error('unreadable shot signature')
+  return signature
+}
+
+/**
  * Cells across a row signature: about 3 CSS pixels each across the chat column, and few enough
  * that a whole shot's signatures print under the sandbox's output cap.
  */

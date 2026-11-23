@@ -25,7 +25,11 @@ import {
 } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import type { AnsiSegment } from '@/render/types'
-import { desktopThemesToRecord, recordDesktopThemePreview } from '@/themes/record-desktop-previews'
+import {
+  desktopThemesToRecord,
+  recordDesktopThemePreview,
+  refuseDesktopLookalikes,
+} from '@/themes/record-desktop-previews'
 import {
   recordThemePreview,
   refuseLookalikePreviews,
@@ -362,7 +366,13 @@ async function renderDesktopThemes(
     )
     outcomes.push({ key: theme.key, surface: 'desktop', outcome })
   })
-  return outcomes.sort((a, b) => a.key.localeCompare(b.key))
+  const byKey = new Map(outcomes.map((theme) => [theme.key, theme]))
+  for (const { key, matches } of await refuseDesktopLookalikes(db, target.versionId)) {
+    const themesNamed = `${matches.length === 1 ? 'theme' : 'themes'} ${matches.join(', ')}`
+    const outcome: Outcome = { kind: 'failed', reason: `looks the same as ${themesNamed}` }
+    byKey.set(key, { key, surface: 'desktop', outcome })
+  }
+  return [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key))
 }
 
 type TargetOutcomes = Record<Surface, Outcome> & { themes: ThemeOutcome[] }

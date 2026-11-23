@@ -910,6 +910,26 @@ describe('renderMods for the Desktop themes a mod sets', () => {
     expect(lines).toContain('rendered theme-examples theme night-reef in Claude Desktop')
   })
 
+  it('refuses Desktop themes that came out as one look, and keeps the theme that differs', async () => {
+    const versionId = await seedThemeMod()
+    const unswitched = ['/custom-theme typo']
+    await addDesktopTheme(db, versionId, { key: 'reef', switchSteps: unswitched, rendered: false })
+    await addDesktopTheme(db, versionId, { key: 'koi', switchSteps: unswitched, rendered: false })
+    await addDesktopTheme(db, versionId, { key: 'honu', rendered: false })
+
+    const { exitCode, lines } = run(terminal(), {}, new FakeDesktopRecorder())
+
+    expect(await exitCode).toBe(1)
+    expect(lines).toContain(
+      'failed theme-examples theme koi in Claude Desktop: looks the same as theme reef',
+    )
+    expect(lines).toContain(
+      'failed theme-examples theme reef in Claude Desktop: looks the same as theme koi',
+    )
+    expect(lines).toContain('rendered theme-examples theme honu in Claude Desktop')
+    expect((await storedThemeShots(versionId)).map((shot) => shot.key)).toEqual(['honu'])
+  })
+
   it('records a theme its mod sets on its own with no steps', async () => {
     const versionId = await seedThemeMod('rainy-window')
     await addDesktopTheme(db, versionId, { key: 'rainy', switchSteps: [], rendered: false })

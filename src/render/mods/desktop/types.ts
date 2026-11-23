@@ -63,6 +63,8 @@ export type DesktopRecording = DesktopShot | DesktopNothing
 /** A theme's whole Desktop window, for its plugin's page, and the same window smaller for its card. */
 export interface DesktopThemeShot extends DesktopVersions, DesktopImage {
   card: DesktopImage
+  /** A hash of the window outside the session's turns: two themes with one are the same look. */
+  look: string
 }
 
 /** Records mods and their themes in Claude Desktop. Throws when a recording fails. */

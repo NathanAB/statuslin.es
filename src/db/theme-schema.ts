@@ -106,11 +106,17 @@ export const modThemeDesktopPreviews = pgTable(
     cardPng: bytea('card_png').notNull(),
     cardWidth: integer('card_width').notNull(),
     cardHeight: integer('card_height').notNull(),
+    /**
+     * A hash of the window outside the session's turns, the look itself: two themes of one version
+     * with the same one are the same look under two names.
+     */
+    lookSignature: text('look_signature').notNull(),
     desktopVersion: text('desktop_version').notNull(),
     engineVersion: text('engine_version').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    check('mod_theme_desktop_previews_look_check', sql`${t.lookSignature} ~ '^[0-9a-f]{64}$'`),
     check(
       'mod_theme_desktop_previews_size_check',
       sql`${t.width} > 0 AND ${t.height} > 0 AND ${t.cardWidth} > 0 AND ${t.cardHeight} > 0`,

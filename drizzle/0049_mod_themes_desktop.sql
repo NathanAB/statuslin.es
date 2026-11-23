@@ -7,10 +7,12 @@ CREATE TABLE "mod_theme_desktop_previews" (
 	"card_png" "bytea" NOT NULL,
 	"card_width" integer NOT NULL,
 	"card_height" integer NOT NULL,
+	"look_signature" text NOT NULL,
 	"desktop_version" text NOT NULL,
 	"engine_version" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "mod_theme_desktop_previews_theme_id_unique" UNIQUE("theme_id"),
+	CONSTRAINT "mod_theme_desktop_previews_look_check" CHECK ("mod_theme_desktop_previews"."look_signature" ~ '^[0-9a-f]{64}$'),
 	CONSTRAINT "mod_theme_desktop_previews_size_check" CHECK ("mod_theme_desktop_previews"."width" > 0 AND "mod_theme_desktop_previews"."height" > 0 AND "mod_theme_desktop_previews"."card_width" > 0 AND "mod_theme_desktop_previews"."card_height" > 0)
 );
 --> statement-breakpoint

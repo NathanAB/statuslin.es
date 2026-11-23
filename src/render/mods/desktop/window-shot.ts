@@ -5,8 +5,10 @@ import type { AnalysisSandbox } from './desktop-sandbox'
 import {
   changedBoxCommand,
   croppedPngCommand,
+  maskedSignatureCommand,
   parseChangedBox,
   parseProbes,
+  parseSignature,
   probeCommand,
   scaledPngCommand,
 } from './imagemagick'
@@ -22,9 +24,10 @@ import {
   WINDOW,
 } from './screen'
 import { BASELINE, SHOT } from './shot-reads'
-import type { DesktopShot } from './types'
+import type { DesktopShot, DesktopThemeShot } from './types'
 
 const RERUN = `${SANDBOX_WORK_DIR}/rerun.png`
+const MOD_DEFAULT = `${SANDBOX_WORK_DIR}/mod-default.png`
 const WHOLE: Rect = { x: 0, y: 0, ...WINDOW }
 const CARD_SCALE = 0.4
 const CARD = {
@@ -32,12 +35,23 @@ const CARD = {
   height: WINDOW.height * SCALE * CARD_SCALE,
 }
 const LIGHT_FILL = 0.5
+/** Where the session's turns show, which differ between themes of one look. */
+const TURNS: Rect[] = [MESSAGE_AREA, PROMPT_TEXT, SCROLL_GUTTER]
+const MB = 1024 * 1024
+/**
+ * The largest a theme's window and card may be. The 8 themes recorded for #303 came to 0.7-2.5 MB
+ * a window and 0.22-0.50 MB a card; a pack of 38 themes with twins at the caps stays under 200 MB.
+ */
+const THEME_SHOT_MAX_BYTES = 4 * MB
+const THEME_CARD_MAX_BYTES = 1 * MB
 
 export class DesktopThemeRefused extends Error {
   override name = 'DesktopThemeRefused'
 }
 
 export type WindowShot = Pick<DesktopShot, 'png' | 'width' | 'height' | 'card'>
+
+export type ThemeWindowShot = Pick<DesktopThemeShot, 'png' | 'width' | 'height' | 'card' | 'look'>
 
 async function differs(
   analysis: AnalysisSandbox,
@@ -49,13 +63,8 @@ async function differs(
   return parseChangedBox(stdout) !== null
 }
 
-const changedOutsideTurns = (analysis: AnalysisSandbox) =>
-  differs(
-    analysis,
-    [BASELINE, SHOT],
-    [MESSAGE_AREA, PROMPT_TEXT, SCROLL_GUTTER],
-    "comparing with Desktop's own window",
-  )
+const changedOutsideTurns = (analysis: AnalysisSandbox, from = BASELINE) =>
+  differs(analysis, [from, SHOT], TURNS, `comparing with ${from}`)
 
 async function shownWindow(analysis: AnalysisSandbox): Promise<ThemeWindow> {
   const probe = probeCommand(SHOT, [PROMPT_FILL], { capture: false })
@@ -99,7 +108,20 @@ export interface ThemeShots {
   shots: readonly [Uint8Array, Uint8Array]
   /** Desktop with no mod and no steps, in the theme's window. */
   baseline: Uint8Array
+  /**
+   * For a theme with switch steps, the mod's own window with no steps, in the theme's window; null
+   * for a theme the mod sets on its own. Untrusted.
+   */
+  modDefault: Uint8Array | null
   window: ThemeWindow
+}
+
+function underCap(png: Uint8Array, max: number, what: string): Uint8Array {
+  if (png.length <= max) return png
+  const mb = (bytes: number) => (bytes / MB).toFixed(1)
+  throw new DesktopThemeRefused(
+    `the ${what} is ${mb(png.length)} MB, over the ${mb(max)} MB a theme's preview may take`,
+  )
 }
 
 /**
@@ -109,16 +131,22 @@ export interface ThemeShots {
  */
 export async function analyseTheme(
   analysis: AnalysisSandbox,
-  { shots: [shot, rerun], baseline, window }: ThemeShots,
-): Promise<WindowShot> {
+  { shots: [shot, rerun], baseline, modDefault, window }: ThemeShots,
+): Promise<ThemeWindowShot> {
   await analysis.writeFiles([
     { path: SHOT, data: shot },
     { path: RERUN, data: rerun },
     { path: BASELINE, data: baseline },
+    ...(modDefault ? [{ path: MOD_DEFAULT, data: modDefault }] : []),
   ])
   if (!(await changedOutsideTurns(analysis))) {
     throw new DesktopThemeRefused(
       `the theme didn't apply: the window looks the same as Desktop's own ${window} window`,
+    )
+  }
+  if (modDefault && !(await changedOutsideTurns(analysis, MOD_DEFAULT))) {
+    throw new DesktopThemeRefused(
+      "the switch steps didn't change the window: it looks the same as the mod's own window with no switch steps (a theme the mod sets on its own takes no switch steps)",
     )
   }
   const shown = await shownWindow(analysis)
@@ -132,5 +160,15 @@ export async function analyseTheme(
       'two recordings of the same commit differ, as a moving or random background would, so the still reviewed could differ from the one published',
     )
   }
-  return wholeWindow(analysis)
+  const { png, card, ...size } = await wholeWindow(analysis)
+  const { stdout } = expectOk(
+    await analysis.run(maskedSignatureCommand(SHOT, TURNS)),
+    'reading the look',
+  )
+  return {
+    png: underCap(png, THEME_SHOT_MAX_BYTES, 'window shot'),
+    card: { ...card, png: underCap(card.png, THEME_CARD_MAX_BYTES, 'card image') },
+    ...size,
+    look: parseSignature(stdout),
+  }
 }

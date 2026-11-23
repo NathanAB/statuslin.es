@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import * as schema from '@/db/schema'
@@ -73,6 +73,7 @@ export async function recordDesktopThemePreview(
       cardPng: shot.card.png,
       cardWidth: shot.card.width,
       cardHeight: shot.card.height,
+      lookSignature: shot.look,
       desktopVersion: shot.desktopVersion,
       engineVersion: shot.engineVersion,
     }
@@ -91,4 +92,52 @@ export async function recordDesktopThemePreview(
     }
     throw error
   }
+}
+
+/** A Desktop theme whose stored shot looked the same as other themes' of its version, by key. */
+export interface DesktopLookalike {
+  key: string
+  matches: string[]
+}
+
+/**
+ * Removes every stored Desktop theme shot of the version that has the same look as another one of
+ * its shots, whichever run stored it, so no two cards show one look under different names: switch
+ * steps that never switch would record the mod's default under every name. Returns each refused
+ * theme with the themes it matched, in key order.
+ */
+export async function refuseDesktopLookalikes(
+  db: Db,
+  versionId: string,
+): Promise<DesktopLookalike[]> {
+  const stored = await db
+    .select({
+      id: schema.modThemes.id,
+      key: schema.modThemes.key,
+      look: schema.modThemeDesktopPreviews.lookSignature,
+    })
+    .from(schema.modThemes)
+    .innerJoin(
+      schema.modThemeDesktopPreviews,
+      eq(schema.modThemeDesktopPreviews.themeId, schema.modThemes.id),
+    )
+    .where(and(eq(schema.modThemes.modVersionId, versionId), eq(schema.modThemes.kind, 'desktop')))
+  const byLook = new Map<string, typeof stored>()
+  for (const theme of stored) byLook.set(theme.look, [...(byLook.get(theme.look) ?? []), theme])
+  const alike = [...byLook.values()].filter((group) => group.length > 1)
+  if (alike.length === 0) return []
+  await db.delete(schema.modThemeDesktopPreviews).where(
+    inArray(
+      schema.modThemeDesktopPreviews.themeId,
+      alike.flat().map(({ id }) => id),
+    ),
+  )
+  return alike
+    .flatMap((group) =>
+      group.map(({ key }) => ({
+        key,
+        matches: group.flatMap((t) => (t.key === key ? [] : [t.key])).sort(),
+      })),
+    )
+    .sort((a, b) => a.key.localeCompare(b.key))
 }

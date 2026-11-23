@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { DesktopVersions } from './desktop-sandbox'
 import type {
   DesktopRecorder,
@@ -48,8 +49,12 @@ export class FakeDesktopRecorder implements DesktopRecorder {
       : { kind: 'nothing', ...this.versions }
   }
 
+  /** A look of its own for each window and list of switch steps, as distinct themes have. */
   async recordTheme(request: DesktopThemeRequest): Promise<DesktopThemeShot> {
     this.themeRequests.push(request)
-    return { ...FAKE_THEME_SHOT, ...this.versions }
+    const look = createHash('sha256')
+      .update(JSON.stringify([request.window, request.switchSteps]))
+      .digest('hex')
+    return { ...FAKE_THEME_SHOT, look, ...this.versions }
   }
 }

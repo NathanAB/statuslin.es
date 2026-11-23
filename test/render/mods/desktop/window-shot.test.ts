@@ -5,12 +5,17 @@ import { analyseTheme, analyseWindow, DesktopThemeRefused } from '@/render/mods/
 
 const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
-function pngOf(width: number, height: number, types = ['IHDR', 'IDAT', 'IEND']): Uint8Array {
+function pngOf(
+  width: number,
+  height: number,
+  types = ['IHDR', 'IDAT', 'IEND'],
+  pixelBytes = 3,
+): Uint8Array {
   const ihdr = new Uint8Array(13)
   new DataView(ihdr.buffer).setUint32(0, width)
   new DataView(ihdr.buffer).setUint32(4, height)
   const chunks = types.map((type) => {
-    const data = type === 'IHDR' ? ihdr : new Uint8Array(type === 'IEND' ? 0 : 3)
+    const data = type === 'IHDR' ? ihdr : new Uint8Array(type === 'IEND' ? 0 : pixelBytes)
     const chunk = new Uint8Array(12 + data.length)
     new DataView(chunk.buffer).setUint32(0, data.length)
     chunk.set(new TextEncoder().encode(type), 4)
@@ -23,14 +28,32 @@ function pngOf(width: number, height: number, types = ['IHDR', 'IDAT', 'IEND']):
 const CHANGED = '1 400x300+11+101'
 const SAME = '0 0x0+2202+1802'
 
+const LOOK = 'f'.repeat(64)
+const MB = 1024 * 1024
+
 interface FakeShots {
-  frame?: string
-  runs?: string
+  /** What comparing the shot with Desktop's own window prints. */
+  vsBaseline?: string
+  /** What comparing the shot with the mod's own window with no switch steps prints. */
+  vsModDefault?: string
+  /** What comparing the two runs prints. */
+  vsRerun?: string
   promptGrey?: number
   chunks?: string[]
+  /** Bytes of pixel data in the printed window and card. */
+  windowBytes?: number
+  cardBytes?: number
 }
 
-function fakeAnalysis({ frame = CHANGED, runs = SAME, promptGrey = 0.1, chunks }: FakeShots) {
+function fakeAnalysis({
+  vsBaseline = CHANGED,
+  vsModDefault = CHANGED,
+  vsRerun = SAME,
+  promptGrey = 0.1,
+  chunks,
+  windowBytes = 3,
+  cardBytes = 3,
+}: FakeShots) {
   const uploaded: string[] = []
   const ran: string[] = []
   const analysis: AnalysisSandbox = {
@@ -41,15 +64,19 @@ function fakeAnalysis({ frame = CHANGED, runs = SAME, promptGrey = 0.1, chunks }
       ran.push(command)
       const answer = (stdout: string) => ({ exitCode: 0, stdout, stderr: '' })
       if (command.includes('-compose difference')) {
-        return answer(command.includes('baseline.png') ? frame : runs)
+        if (command.includes('baseline.png')) return answer(vsBaseline)
+        if (command.includes('mod-default.png')) return answer(vsModDefault)
+        return answer(vsRerun)
       }
       if (command.includes('%[fx:mean]')) return answer(`${promptGrey} 0\n`)
+      if (command.includes("'%#'")) return answer(`${LOOK}\n`)
       return { exitCode: 1, stdout: '', stderr: `unexpected command: ${command}` }
     },
     readPng: async (command) => {
       ran.push(command)
       const [, w, h] = /-(?:crop|resize) '?(\d+)x(\d+)/.exec(command) ?? []
-      return pngOf(Number(w), Number(h), chunks)
+      const bytes = command.includes('-resize') ? cardBytes : windowBytes
+      return pngOf(Number(w), Number(h), chunks, bytes)
     },
   }
   return { analysis, uploaded, ran }
@@ -58,7 +85,9 @@ function fakeAnalysis({ frame = CHANGED, runs = SAME, promptGrey = 0.1, chunks }
 const SHOT = new Uint8Array([1])
 const RERUN = new Uint8Array([2])
 const BASELINE = new Uint8Array([3])
-const THEME = { shots: [SHOT, RERUN] as const, baseline: BASELINE }
+const MOD_DEFAULT = new Uint8Array([4])
+const THEME = { shots: [SHOT, RERUN] as const, baseline: BASELINE, modDefault: null }
+const SWITCHED = { ...THEME, modDefault: MOD_DEFAULT }
 
 const masks = (command: string | undefined) =>
   [...(command ?? '').matchAll(/rectangle (\d+),(\d+) (\d+),(\d+)/g)].map((m) => {
@@ -114,7 +143,7 @@ describe('analyseTheme', () => {
     'refuses a %s theme whose window looks the same as Desktop with no theme',
     async (window) => {
       const { analysis } = fakeAnalysis({
-        frame: SAME,
+        vsBaseline: SAME,
         promptGrey: window === 'light' ? 0.97 : 0.1,
       })
 
@@ -152,7 +181,7 @@ describe('analyseTheme', () => {
   })
 
   it('refuses a theme whose two runs differ, leaving out only the prompt text', async () => {
-    const { analysis, ran } = fakeAnalysis({ runs: CHANGED })
+    const { analysis, ran } = fakeAnalysis({ vsRerun: CHANGED })
 
     await expect(analyseTheme(analysis, { ...THEME, window: 'dark' })).rejects.toThrow(
       new DesktopThemeRefused(
@@ -161,6 +190,58 @@ describe('analyseTheme', () => {
     )
     const runs = ran.find((c) => c.includes('rerun.png') && c.includes('-compose difference'))
     expect(masks(runs)).toEqual([[168, 818, 932, 858]])
+  })
+
+  it("refuses a theme whose switch steps leave the mod's own window as it was", async () => {
+    const { analysis, uploaded, ran } = fakeAnalysis({ vsModDefault: SAME })
+
+    await expect(analyseTheme(analysis, { ...SWITCHED, window: 'dark' })).rejects.toThrow(
+      new DesktopThemeRefused(
+        "the switch steps didn't change the window: it looks the same as the mod's own window with no switch steps (a theme the mod sets on its own takes no switch steps)",
+      ),
+    )
+    expect(uploaded).toContain('/home/user/.statuslines/mod-default.png')
+    const compared = ran.find((c) => c.includes('mod-default.png'))
+    expect(masks(compared)).toEqual([
+      [178, 37, 926, 816],
+      [168, 818, 932, 858],
+      [1088, 0, 1100, 900],
+    ])
+  })
+
+  it('compares with no mod default for a theme the mod sets on its own', async () => {
+    const { analysis, uploaded, ran } = fakeAnalysis({ vsModDefault: SAME })
+
+    await analyseTheme(analysis, { ...THEME, window: 'dark' })
+
+    expect(uploaded).not.toContain('/home/user/.statuslines/mod-default.png')
+    expect(ran.some((c) => c.includes('mod-default.png'))).toBe(false)
+  })
+
+  it('names the look by a hash of the window outside the turns', async () => {
+    const { analysis, ran } = fakeAnalysis({})
+
+    const shot = await analyseTheme(analysis, { ...SWITCHED, window: 'dark' })
+
+    expect(shot.look).toBe(LOOK)
+    const look = ran.find((c) => c.includes("'%#'"))
+    expect(look).toContain("'png:/home/user/.statuslines/shot.png[0]'")
+    expect(masks(look)).toEqual([
+      [178, 37, 926, 816],
+      [168, 818, 932, 858],
+      [1088, 0, 1100, 900],
+    ])
+  })
+
+  it.each([
+    { what: 'window shot', windowBytes: 4 * MB + 1, cardBytes: 3, size: '4.0 MB, over the 4.0' },
+    { what: 'card image', windowBytes: 3, cardBytes: MB + 1, size: '1.0 MB, over the 1.0' },
+  ])('refuses a $what over its size cap', async ({ what, windowBytes, cardBytes, size }) => {
+    const { analysis } = fakeAnalysis({ windowBytes, cardBytes })
+
+    await expect(analyseTheme(analysis, { ...THEME, window: 'dark' })).rejects.toThrow(
+      new DesktopThemeRefused(`the ${what} is ${size} MB a theme's preview may take`),
+    )
   })
 
   it('refuses a printed window that carries more than pixels', async () => {
@@ -174,7 +255,7 @@ describe('analyseTheme', () => {
 
 describe('analyseWindow', () => {
   it('finds nothing when the window outside the turns matches the baseline', async () => {
-    const { analysis } = fakeAnalysis({ frame: SAME })
+    const { analysis } = fakeAnalysis({ vsBaseline: SAME })
 
     expect(await analyseWindow(analysis, { shot: SHOT, baseline: BASELINE })).toEqual({
       kind: 'nothing',
