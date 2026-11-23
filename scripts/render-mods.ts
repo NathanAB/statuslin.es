@@ -22,13 +22,14 @@ import {
   type ModRecorder,
   type ModUnderRender,
   type Recording,
+  type RecordRequest,
 } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import type { AnsiSegment } from '@/render/types'
 import {
+  type NoThemeScreen,
   recordThemePreview,
   refuseLookalikePreviews,
-  type ThemedRequest,
   themesToRecord,
 } from '@/themes/record-previews'
 
@@ -46,11 +47,13 @@ import {
  * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames what the mod draws
  * there, and stores the PNG, or the fact that it drew nothing.
  *
- * Themes: each terminal theme the version carries is recorded in that theme, with the version's
- * plugin, input steps and terminal, and stored as its whole screen. A full run records only themes
- * with no preview yet; `--slug` records every theme of that mod again. A theme's preview is refused,
- * and any earlier one removed, when it looks the same as the baseline (the setting didn't apply) or
- * as another of the version's themes, so the version can't publish until that is fixed.
+ * Themes: each terminal theme the version carries is recorded in that theme in the theme scene
+ * (src/render/mods/theme-scene.ts), one session the same for every theme whatever the mod's input
+ * steps and terminal, with the version's plugin loaded, and stored as its whole screen. A full run
+ * records only themes with no preview yet; `--slug` records every theme of that mod again. A theme's
+ * preview is refused, and any earlier one removed, when it looks the same as the theme scene's
+ * baseline (no plugin, no theme: the setting didn't apply) or as another of the version's themes, so
+ * the version can't publish until that is fixed.
  *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
  * run fails keeps whatever result it had, and the other surface is still stored; nothing but a
@@ -179,20 +182,20 @@ function sharedBaselines(recorder: ModRecorder): BaselineFor {
   const bySetup = new Map<string, (version: string) => Promise<Recording>>()
   return (version, inputSteps, terminal) => {
     const key = JSON.stringify([terminal, inputSteps])
-    const forSetup = bySetup.get(key) ?? baselinesByVersion(recorder, inputSteps, terminal)
+    const forSetup =
+      bySetup.get(key) ??
+      baselinesByVersion(recorder, { scene: 'mod', mod: null, inputSteps, terminal })
     bySetup.set(key, forSetup)
     return forSetup(version)
   }
 }
 
-/** One baseline per Claude Code version, recorded the first time a mod's recording asks for it. */
+/** One baseline per Claude Code version, recorded the first time a recording asks for it. */
 function baselinesByVersion(
   recorder: ModRecorder,
-  inputSteps: readonly InputStep[],
-  terminal: TerminalSetup,
+  baseline: RecordRequest,
 ): (version: string) => Promise<Recording> {
-  const record = async () =>
-    boundRecording(await recorder.record({ mod: null, theme: null, inputSteps, terminal }))
+  const record = async () => boundRecording(await recorder.record(baseline))
   const byVersion = new Map<string, Promise<Recording>>()
   let first: Promise<Recording> | undefined
   return async (version) => {
@@ -209,6 +212,12 @@ function baselinesByVersion(
     }
     return baseline
   }
+}
+
+/** A mod's baseline for its steps and terminal, and the theme scene's, which every theme shares. */
+interface Baselines {
+  mod: BaselineFor
+  noTheme: NoThemeScreen
 }
 
 async function storePreview(
@@ -277,7 +286,7 @@ async function renderTerminal(
   baselineFor: BaselineFor,
   results: Results,
 ): Promise<Outcome> {
-  const recording = boundRecording(await recorder.record({ ...request, theme: null, terminal }))
+  const recording = boundRecording(await recorder.record({ scene: 'mod', ...request, terminal }))
   const baseline = await baselineFor(recording.claudeCodeVersion, request.inputSteps, terminal)
   const crop = cropModPreview(baseline.rows, recording.rows)
   const segments = crop.kind === 'rendered' ? crop.segments : []
@@ -309,16 +318,15 @@ type ThemeOutcome = { key: string; outcome: Outcome }
  */
 async function renderThemes(
   target: Target,
-  request: ThemedRequest,
+  mod: ModUnderRender,
   { db, recorder }: RenderModsDeps,
-  baselineFor: BaselineFor,
+  noTheme: NoThemeScreen,
   rerecord: boolean,
 ): Promise<ThemeOutcome[]> {
   const themes = await themesToRecord(db, target.versionId, { rerecord })
-  const noTheme = (version: string) => baselineFor(version, request.inputSteps, request.terminal)
   const outcomes = new Map<string, Outcome>()
   await forEachConcurrently(themes, THEME_CONCURRENCY, async (theme) => {
-    const outcome = await recordThemePreview(db, recorder, request, theme, noTheme).then(
+    const outcome = await recordThemePreview(db, recorder, mod, theme, noTheme).then(
       (): Outcome => ({ kind: 'rendered' }),
       failure,
     )
@@ -342,7 +350,7 @@ type TargetOutcomes = Record<Surface, Outcome> & { themes: ThemeOutcome[] }
 async function renderTarget(
   target: Target,
   deps: RenderModsDeps,
-  baselineFor: BaselineFor,
+  baselines: Baselines,
   results: Results,
   rerecordThemes: boolean,
 ): Promise<TargetOutcomes> {
@@ -359,9 +367,9 @@ async function renderTarget(
     return { terminal: failure(error), desktop: failure(error), themes: [] }
   }
   const [terminal, desktop, themes] = await Promise.all([
-    renderTerminal(request, setup, deps, baselineFor, results).catch(failure),
+    renderTerminal(request, setup, deps, baselines.mod, results).catch(failure),
     renderDesktop(request, deps, results).catch(failure),
-    renderThemes(target, { ...request, terminal: setup }, deps, baselineFor, rerecordThemes),
+    renderThemes(target, request.mod, deps, baselines.noTheme, rerecordThemes),
   ])
   return { terminal, desktop, themes }
 }
@@ -383,7 +391,10 @@ export async function renderMods(
     return 1
   }
 
-  const baselineFor = sharedBaselines(deps.recorder)
+  const baselines: Baselines = {
+    mod: sharedBaselines(deps.recorder),
+    noTheme: baselinesByVersion(deps.recorder, { scene: 'theme', mod: null, theme: null }),
+  }
 
   let failed = 0
   const report = (what: string, surface: Surface, outcome: Outcome) => {
@@ -394,7 +405,7 @@ export async function renderMods(
     const outcomes = await renderTarget(
       target,
       deps,
-      baselineFor,
+      baselines,
       storeResults(deps.db, target.versionId),
       options.slug !== undefined,
     )

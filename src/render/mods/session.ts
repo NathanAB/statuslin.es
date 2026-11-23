@@ -118,11 +118,11 @@ function settingsFiles(
 }
 
 /**
- * A terminal recording's own settings: Claude Code's fullscreen layout, which some mods need to draw
- * at all, and the `theme` setting to record in.
+ * A mod's terminal recording's own settings: Claude Code's fullscreen layout, which some mods need
+ * to draw at all.
  */
-export function terminalSettings({ fullscreen }: TerminalSetup, theme: string | null) {
-  return { ...(fullscreen ? { tui: 'fullscreen' } : {}), ...(theme === null ? {} : { theme }) }
+export function terminalSettings({ fullscreen }: TerminalSetup) {
+  return fullscreen ? { tui: 'fullscreen' } : {}
 }
 
 /** Uploaded before setup runs, whose seed commit then holds them. */
