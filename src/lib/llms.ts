@@ -15,7 +15,14 @@ import {
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
-import { GALLERY_JSON_PATH, LLMS_FULL_PATH, MARKETPLACE_PATH, MODS_PATH, modPath } from '@/lib/site'
+import {
+  GALLERY_JSON_PATH,
+  LLMS_FULL_PATH,
+  MARKETPLACE_PATH,
+  MODS_PATH,
+  modPath,
+  THEMES_PATH,
+} from '@/lib/site'
 
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
@@ -50,20 +57,31 @@ type LlmsFacet = { slug: string; label: string }
 
 const MAX_SUMMARY_CHARS = 160
 
+/** `themePlugins` are plugins of theme files alone, listed under Themes, never as mods (ADR 0012). */
 export function buildLlmsTxt(
   base: string,
   facets: LlmsFacet[],
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
+  themePlugins: LlmsMod[] = [],
 ): string {
   const blocks = siteBlocks(base, facets)
   if (configs.length > 0) {
     blocks.push(['## Top status lines', '', ...configs.map((c) => configLink(base, c))].join('\n'))
   }
-  if (mods.length > 0) {
-    blocks.push(
-      ['## Mods', '', ...mods.map((m) => summaryLink(`${base}${modPath(m.slug)}`, m))].join('\n'),
-    )
+  for (const [heading, plugins] of [
+    ['Mods', mods],
+    ['Themes', themePlugins],
+  ] as const) {
+    if (plugins.length > 0) {
+      blocks.push(
+        [
+          `## ${heading}`,
+          '',
+          ...plugins.map((p) => summaryLink(`${base}${modPath(p.slug)}`, p)),
+        ].join('\n'),
+      )
+    }
   }
   blocks.push(
     [
@@ -84,6 +102,7 @@ export function buildLlmsFullTxt(
   facets: LlmsFacet[],
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
+  themePlugins: LlmsCatalogEntry[] = [],
 ): string {
   const blocks = siteBlocks(base, facets)
   if (configs.length > 0) {
@@ -92,6 +111,9 @@ export function buildLlmsFullTxt(
   if (mods.length > 0) {
     blocks.push(catalogSection('Mods', mods, (slug) => `${base}${modPath(slug)}`))
   }
+  if (themePlugins.length > 0) {
+    blocks.push(catalogSection('Themes', themePlugins, (slug) => `${base}${modPath(slug)}`))
+  }
   return `${blocks.join('\n\n')}\n`
 }
 
@@ -99,8 +121,8 @@ export function buildLlmsFullTxt(
 function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
   const blocks = [
     '# statuslin.es',
-    '> A gallery of Claude Code mods, status lines included, each with a real preview. Install any of them with one copied prompt.',
-    "Status lines are scripts whose output Claude Code shows under the prompt. The other mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead.",
+    '> A gallery of Claude Code mods, status lines included, and of Claude Code themes, each with a real preview. Install any of them with one copied prompt or command.',
+    "Status lines are scripts whose output Claude Code shows under the prompt. The other mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead. Themes recolor Claude Code: a terminal theme is a color file a plugin carries, picked with /theme in the terminal once the plugin is installed. Each theme is shown as a real session recorded in its colors.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -113,6 +135,7 @@ function corePageLinks(base: string): string[] {
   return [
     `- [Gallery](${base}/): every published mod, sorted by trending, newest, or most installed`,
     `- [Mods](${base}${MODS_PATH}): the plugin mods, ranked by installs`,
+    `- [Themes](${base}${THEMES_PATH}): Claude Code themes, one card per theme, each previewed in a real session in its colors, with the plugin that carries it`,
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
     `- [Mod catalogue](${base}${GALLERY_JSON_PATH}): the reviewed mods as machine-readable JSON, with install counts and what each can reach`,
     `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
@@ -218,8 +241,9 @@ export function llmsResponse(
   facets: LlmsFacet[],
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
+  themePlugins: LlmsMod[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods))
+  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods, themePlugins))
 }
 
 export function llmsFullResponse(
@@ -227,8 +251,9 @@ export function llmsFullResponse(
   facets: LlmsFacet[],
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
+  themePlugins: LlmsCatalogEntry[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods))
+  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods, themePlugins))
 }
 
 function plainTextResponse(body: string): Response {
