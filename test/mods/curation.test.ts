@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { CURATION_FILE, parseCuration } from '@/mods/curation'
-import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
 
 const SHA = 'a'.repeat(40)
@@ -156,16 +155,6 @@ describe('parseCuration', () => {
     ],
     ['a window that is neither light nor dark', { window: 'dim' }, /desktopThemes\.0\.window/],
     ['an empty switch step', { switchSteps: [''] }, /desktopThemes\.0\.switchSteps\.0/],
-    [
-      'a switch step too long to type',
-      { switchSteps: ['x'.repeat(MAX_STEP_CHARS + 1)] },
-      /desktopThemes\.0\.switchSteps\.0/,
-    ],
-    [
-      'more switch steps than a Desktop recording fits',
-      { switchSteps: Array.from({ length: MAX_INPUT_STEPS + 1 }, () => '/x') },
-      /desktopThemes\.0\.switchSteps/,
-    ],
   ])('refuses a Desktop theme with %s', (_name, overrides, message) => {
     const errors = errorsFor([entry({ desktopThemes: [desktopTheme(overrides)] })])
 

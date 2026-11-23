@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
-import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
 import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
 import { THEME_KEY, THEME_KEY_MAX, THEME_WINDOWS } from '@/themes/theme'
 import { themeNameSchema, themeNameShape } from '@/themes/theme-file'
@@ -49,8 +48,8 @@ export const terminalSetupSchema = z.strictObject({
 
 /**
  * A Desktop theme the operator declares for a mod that sets one (src/themes/theme.ts `DesktopTheme`).
- * Its switch steps are sent in Claude Desktop the way text input steps are, so they share their
- * limits.
+ * Its switch steps are sent in Claude Desktop the way text input steps are, and the recorder
+ * refuses them past the same limits.
  */
 const desktopThemeSchema = z.strictObject({
   key: z
@@ -59,10 +58,7 @@ const desktopThemeSchema = z.strictObject({
     .regex(THEME_KEY, 'must start with a letter or digit, then letters, digits, ".", "_" or "-"'),
   name: themeNameSchema,
   window: z.enum(THEME_WINDOWS),
-  switchSteps: z
-    .array(z.string().min(1, 'must not be empty').max(MAX_STEP_CHARS))
-    .max(MAX_INPUT_STEPS, `must be at most ${MAX_INPUT_STEPS} steps`)
-    .default([]),
+  switchSteps: z.array(z.string().min(1, 'must not be empty')).default([]),
 })
 
 type DesktopThemeEntry = z.infer<typeof desktopThemeSchema>
