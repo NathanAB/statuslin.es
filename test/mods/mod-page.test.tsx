@@ -85,6 +85,7 @@ const MOD: ModDetail = {
   updatedAt: '2026-09-30',
   recordedWith: '2.1.0',
   reviewedAt: null,
+  themeOnly: false,
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne } from 'drizzle-orm'
+import { and, asc, desc, eq, ne, not } from 'drizzle-orm'
 import type { PgDatabase, SelectedFields } from 'drizzle-orm/pg-core'
 import { modPageCopySchema, readPageCopy } from '@/content/types'
 import { type ModFootprint, modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
@@ -22,6 +22,7 @@ import {
   desktopPreviewColumns,
   desktopPreviewJoin,
   terminalPreviewJoin,
+  versionIsThemeOnly,
 } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -38,7 +39,10 @@ const MOD_RANKING: RankedColumns = {
   copyEvents: MOD_COPY_EVENTS,
 }
 
-/** Every mod with its current version's previews, as card rows plus `extra`; callers filter. */
+/**
+ * Every mod with its current version's previews, as card rows plus `extra`; callers filter. A
+ * theme-only plugin has no card: its themes are listed on /themes.
+ */
 function selectModCards<Extra extends SelectedFields>(db: Db, extra: Extra) {
   return db
     .select({
@@ -55,7 +59,7 @@ function selectModCards<Extra extends SelectedFields>(db: Db, extra: Extra) {
       ...extra,
     })
     .from(mods)
-    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
+    .innerJoin(modVersions, and(eq(modVersions.id, mods.currentVersionId), not(versionIsThemeOnly)))
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .$dynamic()

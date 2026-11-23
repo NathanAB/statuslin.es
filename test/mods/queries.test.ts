@@ -226,6 +226,7 @@ describe('getModDetail', () => {
       updatedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       recordedWith: '2.1.0',
       reviewedAt: null,
+      themeOnly: false,
     })
   })
 

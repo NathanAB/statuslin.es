@@ -30,6 +30,12 @@ export const MOD_SCENARIO_KEY = 'clean-main'
  */
 export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and not exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and not exists (select 1 from ${modThemePreviews} where ${modThemePreviews.themeId} = ${modThemes.id})))`
 
+/**
+ * A version that carries themes and runs no code: no events hooked, no calls made. It draws nothing
+ * as a mod, so it has no mod card; its themes are its cards on /themes (ADR 0012).
+ */
+export const versionIsThemeOnly = sql<boolean>`(exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id}) and jsonb_array_length(${modVersions.footprint}->'events') = 0 and jsonb_array_length(${modVersions.footprint}->'calls') = 0)`
+
 /** Joins a version's clean-main terminal preview. */
 export const terminalPreviewJoin = and(
   eq(modPreviews.modVersionId, modVersions.id),
@@ -138,6 +144,8 @@ export interface ModDetail {
   recordedWith: string | null
   /** ISO date the current version's submission was approved; null for a curated mod (no date). */
   reviewedAt: string | null
+  /** It only carries themes, so its page shows them in place of a mod preview. */
+  themeOnly: boolean
 }
 
 const isoDate = (date: Date) => date.toISOString().slice(0, 10)
@@ -165,6 +173,7 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       updatedAt: modVersions.createdAt,
       recordedWith: modPreviews.claudeCodeVersion,
       reviewedAt: submissions.reviewedAt,
+      themeOnly: versionIsThemeOnly,
     })
     .from(mods)
     .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
