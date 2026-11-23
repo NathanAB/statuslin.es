@@ -4,7 +4,7 @@ import { Row, Stack, WideTileGrid } from '@/ui/layout'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { Text, TextLink } from '@/ui/text'
 import type { PublishedTheme } from './queries'
-import { THEME_KIND_LABEL, THEME_WINDOW_LABEL } from './theme'
+import { THEME_KIND_LABEL, THEME_WINDOW_LABEL, themeCount } from './theme'
 import { ThemeCard } from './theme-card'
 import { filterThemes, type ThemeFilter, themeFilterOptions } from './theme-filter'
 
@@ -37,8 +37,6 @@ function FilterControl<T extends string>({
     />
   )
 }
-
-const themeCount = (count: number) => `${count} ${count === 1 ? 'theme' : 'themes'}`
 
 /**
  * /themes' list under the URL's filter: a control per filter the themes span, how many show, and

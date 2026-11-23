@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
-import { getPublishedModThemes, getThemeCards } from '@/themes/queries'
+import { getHomeThemes, getPublishedModThemes, getThemeCards } from '@/themes/queries'
 import {
   addMod,
   addTheme,
@@ -139,5 +139,46 @@ describe('getPublishedModThemes', () => {
 
     expect(named(await getPublishedModThemes(db, 'pack'))).toEqual(['pack:Dawn', 'pack:Night'])
     expect(await getPublishedModThemes(db, 'draft')).toEqual([])
+  })
+})
+
+describe('getHomeThemes', () => {
+  // Plugins take turns in /themes order (most installs, then slug), each giving its themes in name
+  // order, so a row of three shows three plugins' looks before a second from any one.
+  it('takes turns across plugins in /themes order, and counts every listed theme', async () => {
+    await plugin('quiet', ['Zed', 'alpha'])
+    await plugin('popular', ['Night', 'Dawn', 'Ash'], { copyCount: 9 })
+    await plugin('also-quiet', ['Mid'])
+
+    const { themes, total } = await getHomeThemes(db, 3)
+
+    expect(named(themes)).toEqual(['popular:Ash', 'also-quiet:Mid', 'quiet:alpha'])
+    expect(total).toBe(6)
+  })
+
+  it("goes round again when there are fewer plugins than cards, with each card's preview", async () => {
+    await plugin('popular', ['Night', 'Dawn'], { copyCount: 9 })
+    await plugin('quiet', ['Zed'])
+
+    const { themes, total } = await getHomeThemes(db, 3)
+
+    expect(named(themes)).toEqual(['popular:Dawn', 'quiet:Zed', 'popular:Night'])
+    expect(themes[0]?.preview).toEqual(SEEDED_THEME_PREVIEW.segments)
+    expect(total).toBe(3)
+  })
+
+  it('shows and counts only themes /themes lists', async () => {
+    const { versionId } = await plugin('live', ['Paper'])
+    await addTheme(db, versionId, { key: 'ink', name: 'Ink', rendered: false })
+    await plugin('draft', ['Ash'], { status: 'draft' })
+
+    expect(await getHomeThemes(db, 3)).toEqual({
+      themes: [expect.objectContaining({ name: 'Paper' })],
+      total: 1,
+    })
+  })
+
+  it('shows none when no theme is listed', async () => {
+    expect(await getHomeThemes(db, 3)).toEqual({ themes: [], total: 0 })
   })
 })
