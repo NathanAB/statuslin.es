@@ -211,6 +211,26 @@ describe('the README beside the previews', () => {
     expect(begin).toBeLessThan(verdict)
   })
 
+  it('points the operator at each theme on /admin before a plugin with themes publishes', async () => {
+    const { versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, versionId, { key: 'nord', name: 'Nord' })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      'themes: 2 terminal themes. Read each theme\'s preview and exact file on /admin, under "Curated theme plugins", before --apply.',
+    )
+  })
+
+  it('says nothing of themes for a plugin that carries none', async () => {
+    await draftMod()
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines.some((line) => line.startsWith('themes:'))).toBe(false)
+  })
+
   it('prints them again on --apply', async () => {
     await draftMod()
 

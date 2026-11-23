@@ -1,9 +1,9 @@
 import { writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { modDesktopPreviews, modPreviews, modVersions } from '@/db/schema'
+import { modDesktopPreviews, modPreviews, modThemes, modVersions } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
 import { fenceUntrusted, type VersionPin } from './content-prompt'
 import { desktopPreviewJoin, terminalPreviewJoin } from './queries'
@@ -19,6 +19,8 @@ export interface PreviewReview {
   terminal: AnsiSegment[]
   /** Null when the mod draws nothing in Claude Desktop. */
   desktopPng: Uint8Array | null
+  /** How many themes the version carries, each reviewed on /admin with its preview and file. */
+  themeCount: number
 }
 
 /** Saves a PNG where the operator can open it, and returns its path. */
@@ -63,6 +65,13 @@ function desktopLine({ pin, desktopPng }: PreviewReview, writePng: PngWriter): s
   return `Claude Desktop shot: ${writePng(name, desktopPng)}`
 }
 
+function themesLines({ themeCount }: PreviewReview): string[] {
+  if (themeCount === 0) return []
+  return [
+    `themes: ${themeCount} terminal themes. Read each theme's preview and exact file on /admin, under "Curated theme plugins", before --apply.`,
+  ]
+}
+
 /** The lines carry author text unescaped; print each through `terminalLine`. */
 export function previewReviewLines(review: PreviewReview, writePng: PngWriter): string[] {
   return [
@@ -70,6 +79,7 @@ export function previewReviewLines(review: PreviewReview, writePng: PngWriter): 
     ...readmeLines(review.pin, review.readme),
     ...terminalLines(review.terminal),
     desktopLine(review, writePng),
+    ...themesLines(review),
   ]
 }
 
@@ -77,12 +87,20 @@ export function previewReviewLines(review: PreviewReview, writePng: PngWriter): 
 export async function storedPreviews(
   db: Db,
   versionId: string,
-): Promise<Pick<PreviewReview, 'terminal' | 'desktopPng'>> {
+): Promise<Pick<PreviewReview, 'terminal' | 'desktopPng' | 'themeCount'>> {
   const [row] = await db
-    .select({ segments: modPreviews.segments, png: modDesktopPreviews.png })
+    .select({
+      segments: modPreviews.segments,
+      png: modDesktopPreviews.png,
+      themeCount: sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id})::int`,
+    })
     .from(modVersions)
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(eq(modVersions.id, versionId))
-  return { terminal: row?.segments ?? [], desktopPng: row?.png ?? null }
+  return {
+    terminal: row?.segments ?? [],
+    desktopPng: row?.png ?? null,
+    themeCount: row?.themeCount ?? 0,
+  }
 }
