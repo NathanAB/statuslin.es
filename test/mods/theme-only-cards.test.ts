@@ -32,14 +32,25 @@ beforeEach(async () => {
 
 const HOOKS = { events: ['ui.render{component=AbovePrompt}'], calls: [] }
 const CALLS = { events: [], calls: ['$.theme.set'] }
+const NOTHING = { events: [], calls: [] }
+const MODULE = ['./register.ts']
 
-/** A published plugin with this footprint, carrying `themes` themes on its current version. */
-async function plugin(slug: string, footprint: schema.ModFootprint, themes: number) {
+/**
+ * A published plugin with this footprint and these hooks modules, carrying `themes` themes on its
+ * current version.
+ */
+async function plugin(
+  slug: string,
+  footprint: schema.ModFootprint,
+  themes: number,
+  hooksModules: string[] | null = MODULE,
+) {
   const modId = await addMod(db, slug, 'published')
   const versionId = await addVersion(db, modId, {
     commitSha: sha('a'),
     versionNumber: 1,
     footprint,
+    hooksModules,
     repoUrl: `https://github.com/octocat/${slug}`,
   })
   await setCurrentVersion(db, modId, versionId)
@@ -56,7 +67,7 @@ import { eq } from 'drizzle-orm'
 // are listed on /themes instead.
 describe('theme-only plugins in the mod lists', () => {
   beforeEach(async () => {
-    await plugin('pack', { events: [], calls: [] }, 2)
+    await plugin('pack', NOTHING, 2, [])
     await plugin('meter', HOOKS, 0)
     await plugin('mixed', HOOKS, 1)
     await plugin('setter', CALLS, 1)
@@ -84,9 +95,23 @@ describe('theme-only plugins in the mod lists', () => {
   })
 
   it('counts a plugin with no themes and no code as a mod, not a theme pack', async () => {
-    await plugin('blank', { events: [], calls: [] }, 0)
+    await plugin('blank', NOTHING, 0, [])
     const source = await getModSource(db, { sort: 'top' })
     expect(source.items.map(({ item }) => item.card.slug)).toContain('blank')
     expect(await getModDetail(db, 'blank')).toMatchObject({ themeOnly: false })
+  })
+
+  it('counts a plugin whose hooks module the validator records nothing for as a mod, since it is still code', async () => {
+    await plugin('silent', NOTHING, 1, MODULE)
+    const source = await getModSource(db, { sort: 'top' })
+    expect(source.items.map(({ item }) => item.card.slug)).toContain('silent')
+    expect(await getModDetail(db, 'silent')).toMatchObject({ themeOnly: false })
+  })
+
+  it('counts a version read before intake recorded its hooks modules as a mod, not a theme pack', async () => {
+    await plugin('older', NOTHING, 1, null)
+    const source = await getModSource(db, { sort: 'top' })
+    expect(source.items.map(({ item }) => item.card.slug)).toContain('older')
+    expect(await getModDetail(db, 'older')).toMatchObject({ themeOnly: false })
   })
 })

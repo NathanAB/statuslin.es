@@ -41,6 +41,8 @@ interface VersionSeed {
   rendered?: boolean
   pluginVersion?: string | null
   footprint?: schema.ModFootprint
+  /** The hooks modules intake recorded; none by default, as for a plugin of theme files alone. */
+  hooksModules?: string[] | null
   repoUrl?: string
   path?: string
 }
@@ -56,6 +58,7 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
       commitSha: seed.commitSha,
       pluginVersion: seed.pluginVersion ?? null,
       footprint: seed.footprint ?? { events: [], calls: [] },
+      hooksModules: seed.hooksModules === undefined ? [] : seed.hooksModules,
       validatedWith: '2.1.0',
     })
     .returning()
@@ -263,3 +266,13 @@ export function modulesOnlyListing(
 
 /** The listing for the skins validate report's one module (test/mods/fixtures/validate-skins.json). */
 export const MODULES_ONLY_LISTING = modulesOnlyListing('./register.tsx')
+
+/** A plugin of plugin.json and theme files alone (`themes`, by path), with no hooks folder. */
+export function themesOnlyListing(themes: Record<string, string>): string {
+  const files = Object.entries(themes).map(([path, text]) => `f ${text.length} ${path}`)
+  const base = ['d 4096 .claude-plugin', 'f 20 .claude-plugin/plugin.json', 'd 4096 themes']
+  return componentsListing([...base, ...files], '', themes)
+}
+
+/** What `claude plugin validate --json` prints for a plugin with no hooks modules. */
+export const NO_MODULES_VALIDATE = JSON.stringify({ success: true, contents: [] })

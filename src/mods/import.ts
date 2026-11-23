@@ -123,6 +123,7 @@ export async function insertNextVersion(db: Db, version: NewVersion): Promise<nu
     pluginVersion: version.facts.manifest.version,
     license: version.license,
     footprint: version.facts.footprint,
+    hooksModules: version.facts.hooksModules,
     validatedWith: version.facts.claudeCodeVersion,
     inputSteps: version.inputSteps,
     cardSurface: version.cardSurface,

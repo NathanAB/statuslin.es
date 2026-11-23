@@ -7,7 +7,15 @@ import { PluginRefusal } from '@/mods/plugin-facts'
 import { type ModSubmitDeps, submitMod } from '@/mods/submit'
 import { createSubmitGuard } from '@/mods/submit-guard'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
-import { componentsListing, MODULES_ONLY_LISTING, openTestDb, sha, type TestDb } from './seed-mods'
+import {
+  componentsListing,
+  MODULES_ONLY_LISTING,
+  NO_MODULES_VALIDATE,
+  openTestDb,
+  sha,
+  type TestDb,
+  themesOnlyListing,
+} from './seed-mods'
 
 const REPO = 'https://github.com/octocat/mods'
 const LINK = `${REPO}/tree/main/plugins/meter`
@@ -37,6 +45,7 @@ interface FakeOptions {
   sandboxError?: Error
   comparedToLive?: CommitComparison
   components?: string
+  validate?: string
 }
 
 function deps({
@@ -46,6 +55,7 @@ function deps({
   sandboxError,
   comparedToLive = 'ahead',
   components = MODULES_ONLY_LISTING,
+  validate = VALIDATE,
 }: FakeOptions = {}): ModSubmitDeps & { calls: string[] } {
   const calls: string[] = []
   const sandbox: ModSandbox = {
@@ -54,7 +64,7 @@ function deps({
       const stdout = command.endsWith('--version')
         ? '2.1.296 (Claude Code)\n'
         : command.includes(' plugin validate --json ')
-          ? VALIDATE
+          ? validate
           : command.includes('hooks/hooks.json')
             ? components
             : JSON.stringify(manifest)
@@ -141,6 +151,14 @@ const themesOf = (versionId: string | undefined) =>
     .where(eq(schema.modThemes.modVersionId, versionId ?? ''))
     .orderBy(schema.modThemes.key)
 
+async function hooksModulesOf(versionId: string) {
+  const [version] = await db
+    .select({ hooksModules: schema.modVersions.hooksModules })
+    .from(schema.modVersions)
+    .where(eq(schema.modVersions.id, versionId))
+  return version?.hooksModules
+}
+
 const STORED_THEMES = [
   { kind: 'terminal', key: 'dawn', name: 'Dawn', window: 'light', source: DAWN },
   { kind: 'terminal', key: 'ocean', name: 'Ocean', window: 'dark', source: OCEAN },
@@ -204,6 +222,19 @@ describe('submitMod', () => {
     const { versionId } = await submit({}, deps({ components: THEMES_LISTING }))
 
     expect(await themesOf(versionId)).toEqual(STORED_THEMES)
+  })
+
+  it('records the hooks modules a submitted plugin declares', async () => {
+    const { versionId } = await submit({}, deps({ components: THEMES_LISTING }))
+
+    expect(await hooksModulesOf(versionId)).toEqual(['./register.tsx'])
+  })
+
+  it('records no hooks modules for a submitted plugin of theme files alone', async () => {
+    const components = themesOnlyListing({ 'themes/ocean.json': OCEAN })
+    const { versionId } = await submit({}, deps({ validate: NO_MODULES_VALIDATE, components }))
+
+    expect(await hooksModulesOf(versionId)).toEqual([])
   })
 
   it('takes the typed title', async () => {

@@ -92,6 +92,11 @@ export const modVersions = pgTable(
     pluginVersion: text('plugin_version'),
     license: text('license'),
     footprint: jsonb('footprint').$type<ModFootprint>().notNull(),
+    /**
+     * The hooks modules the plugin declares, each the code a visitor installs with it; empty for a
+     * plugin of theme files alone. null for a version read before intake recorded them.
+     */
+    hooksModules: jsonb('hooks_modules').$type<string[]>(),
     validatedWith: text('validated_with').notNull(),
     inputSteps: jsonb('input_steps').$type<ModInputSteps>().notNull().default(sql`'[]'::jsonb`),
     cardSurface: text('card_surface').$type<CardSurface>(),

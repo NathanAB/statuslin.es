@@ -25,6 +25,8 @@ export interface PluginManifest {
 export interface PluginFacts {
   manifest: PluginManifest
   footprint: ModFootprint
+  /** Its hooks modules, sorted: code it installs even when validate records no events or calls. */
+  hooksModules: string[]
   /** The plugin's terminal themes, sorted by key; none for a plugin of hooks modules alone. */
   themes: TerminalThemeFile[]
   /** The Claude Code that ran `plugin validate`. */
@@ -209,12 +211,11 @@ export async function inspectPlugin(sandbox: ModSandbox): Promise<PluginFacts> {
   if (manifest.exitCode !== 0) throw new PluginRefusal('could not read .claude-plugin/plugin.json')
   const parsedManifest = parseManifest(manifest.stdout)
   const footprint = parseFootprint(validateJson)
-  const themes = await readComponents(
-    sandbox,
-    parseJson(manifest.stdout),
-    describedModules(validateJson),
-  )
-  return { manifest: parsedManifest, footprint, themes, claudeCodeVersion }
+  // readComponents refuses any module validate did not read, so these are all the plugin declares.
+  const modules = describedModules(validateJson)
+  const themes = await readComponents(sandbox, parseJson(manifest.stdout), modules)
+  const hooksModules = [...modules].sort()
+  return { manifest: parsedManifest, footprint, hooksModules, themes, claudeCodeVersion }
 }
 
 /**

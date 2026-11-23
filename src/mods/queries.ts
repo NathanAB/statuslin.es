@@ -31,10 +31,11 @@ export const MOD_SCENARIO_KEY = 'clean-main'
 export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and not exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and not exists (select 1 from ${modThemePreviews} where ${modThemePreviews.themeId} = ${modThemes.id})))`
 
 /**
- * A version that carries themes and runs no code: no events hooked, no calls made. It draws nothing
- * as a mod, so it has no mod card; its themes are its cards on /themes (ADR 0012).
+ * A version that carries themes and declares no hooks modules, so installing it runs no code. It
+ * draws nothing as a mod, so it has no mod card; its themes are its cards on /themes (ADR 0012). A
+ * version read before intake recorded its modules (null) is not, since what it runs is unknown.
  */
-export const versionIsThemeOnly = sql<boolean>`(exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id}) and jsonb_array_length(${modVersions.footprint}->'events') = 0 and jsonb_array_length(${modVersions.footprint}->'calls') = 0)`
+export const versionIsThemeOnly = sql<boolean>`(exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id}) and coalesce(${modVersions.hooksModules} = '[]'::jsonb, false))`
 
 /** Joins a version's clean-main terminal preview. */
 export const terminalPreviewJoin = and(

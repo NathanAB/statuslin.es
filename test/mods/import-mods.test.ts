@@ -19,8 +19,10 @@ import {
   componentsListing,
   fakeGitHub,
   MODULES_ONLY_LISTING,
+  NO_MODULES_VALIDATE,
   openTestDb,
   type TestDb,
+  themesOnlyListing,
 } from './seed-mods'
 
 const SHA = 'c'.repeat(40)
@@ -184,6 +186,21 @@ describe('importMods', () => {
 
     const [version] = await allVersions()
     expect(await themesOf(version?.id)).toEqual(STORED_THEMES)
+  })
+
+  it('records the hooks modules a plugin declares', async () => {
+    await run([entry()], fakes({ components: THEMES_LISTING }))
+
+    const [version] = await allVersions()
+    expect(version?.hooksModules).toEqual(['./register.tsx'])
+  })
+
+  it('records no hooks modules for a plugin of theme files alone', async () => {
+    const components = themesOnlyListing({ 'themes/ocean.json': OCEAN })
+    await run([entry()], fakes({ validate: NO_MODULES_VALIDATE, components }))
+
+    const [version] = await allVersions()
+    expect(version?.hooksModules).toEqual([])
   })
 
   it('stores no themes for a plugin of hooks modules alone', async () => {
