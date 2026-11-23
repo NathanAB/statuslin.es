@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { atMost } from '@/mods/plain-text'
+import { parseJson } from '@/mods/plugin-components'
 import {
   TERMINAL_THEME_BASES,
   type TerminalThemeFile,
@@ -54,14 +55,6 @@ const utf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
 function decode(bytes: Uint8Array): string | undefined {
   try {
     return utf8.decode(bytes)
-  } catch {
-    return undefined
-  }
-}
-
-function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text)
   } catch {
     return undefined
   }

@@ -49,7 +49,6 @@ export function siteUrl(): string {
 
 export const MODS_PATH = '/mods'
 
-/** One card per published terminal theme (ADR 0012). */
 export const THEMES_PATH = '/themes'
 
 export const MOD_ROUTE = '/mods/$slug'

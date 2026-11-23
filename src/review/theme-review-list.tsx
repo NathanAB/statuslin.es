@@ -43,10 +43,7 @@ function ThemeReview({ theme }: { theme: ReviewTheme }) {
   )
 }
 
-/**
- * Every theme a version carries, each folded into its own disclosure so a pack of 81 stays a list
- * of names; opening one shows its preview beside its exact pinned file.
- */
+/** Every theme a version carries, each folded so a pack of 81 stays a list of names. */
 export function ThemeReviewList({ themes }: { themes: ReviewTheme[] }) {
   if (themes.length === 0) return null
   return (

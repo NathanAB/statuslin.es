@@ -1,4 +1,4 @@
-import { and, asc, eq, exists, isNull, max, ne, not, or } from 'drizzle-orm'
+import { and, asc, eq, exists, isNull, max, ne, not, or, sql } from 'drizzle-orm'
 import { alias, type PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModStatus, mods, modThemes, modVersions, submissions } from '@/db/schema'
 import { versionIsRendered } from '@/mods/queries'
@@ -46,7 +46,7 @@ export async function getCuratedThemeRows(database: Db): Promise<CuratedThemeRow
         path: modVersions.path,
         commitSha: modVersions.commitSha,
       },
-      rendered: versionIsRendered,
+      rendered: sql<boolean>`${versionIsRendered}`,
     })
     .from(mods)
     .innerJoin(modVersions, eq(modVersions.modId, mods.id))
@@ -82,9 +82,5 @@ export async function getCuratedThemeRows(database: Db): Promise<CuratedThemeRow
     database,
     rows.map(({ version }) => version.id),
   )
-  return rows.map((row) => ({
-    ...row,
-    rendered: Boolean(row.rendered),
-    themes: themes.get(row.version.id) ?? [],
-  }))
+  return rows.map((row) => ({ ...row, themes: themes.get(row.version.id) ?? [] }))
 }

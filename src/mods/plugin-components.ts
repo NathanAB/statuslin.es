@@ -97,7 +97,7 @@ function readThemeRecords(section: string): Map<string, string> | null {
   const fields = section.slice(0, -1).split('\0')
   if (fields.length % 2 !== 0) return null
   for (let i = 0; i < fields.length; i += 2) {
-    const [path = '', base64 = ''] = [fields[i], fields[i + 1]]
+    const [path, base64] = [fields[i] ?? '', fields[i + 1] ?? '']
     if (records.has(path) || !BASE64.test(base64)) return null
     records.set(path, base64)
   }
