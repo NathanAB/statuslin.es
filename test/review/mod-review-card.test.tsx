@@ -47,6 +47,7 @@ function row(over: Partial<ModReviewRow> = {}): ModReviewRow {
     preview: [{ text: '▮▮▮▯ 62% context' }],
     desktop: { kind: 'shot', src: '/admin/mod-previews/v1/desktop.png', width: 790, height: 52 },
     warnings: [],
+    themes: [],
     ...over,
   }
 }
