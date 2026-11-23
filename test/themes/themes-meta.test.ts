@@ -39,6 +39,14 @@ describe('/themes head', () => {
     expect(meta.find((tag) => tag.name === 'robots')).toBeUndefined()
   })
 
+  // A shared /themes link unfurls with its own card of theme previews, not the home card.
+  it('shares the page with the themes card', () => {
+    const { meta } = head([THEME])
+
+    expect(meta).toContainEqual({ property: 'og:image', content: `${ORIGIN}/og/themes.png` })
+    expect(meta).toContainEqual({ name: 'twitter:image', content: `${ORIGIN}/og/themes.png` })
+  })
+
   // People search "Claude Code themes": the title leads with it, and both fit what Google shows.
   it('leads the title with the search and keeps the title and description inside what Google shows', () => {
     const { meta } = head([THEME])

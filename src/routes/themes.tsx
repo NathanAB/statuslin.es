@@ -3,7 +3,7 @@ import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { PAGE_TITLE_BRAND } from '@/lib/search-text'
 import { MODS_PATH, siteUrl, THEMES_PATH } from '@/lib/site'
-import { staticPageSocialMeta } from '@/og/meta'
+import { themesSocialMeta } from '@/og/meta'
 import { FilteredThemes } from '@/themes/filtered-themes'
 import { getThemeCardsFn } from '@/themes/functions'
 import { coerceThemeFilter, type ThemeFilter } from '@/themes/theme-filter'
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/themes')({
       ...((loaderData?.themes ?? []).length === 0
         ? [{ name: 'robots', content: 'noindex, follow' } as const]
         : []),
-      ...staticPageSocialMeta({
+      ...themesSocialMeta({
         path: THEMES_PATH,
         title: THEMES_TITLE_BASE,
         description: THEMES_DESCRIPTION,
