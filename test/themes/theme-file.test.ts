@@ -69,9 +69,41 @@ describe('parseTerminalThemeFiles', () => {
     for (const value of [{ name: `a${char}b` }, { overrides: { claude: `#fff${char}` } }]) {
       const found = problems([json('t', value)]).join('\n')
 
-      expect(found).toContain('must not contain control or format characters')
+      expect(found).toContain('control or format character')
       expect(found).not.toContain(char)
     }
+  })
+
+  it.each([
+    ['in $schema', '{"$schema":"https://x.example/\u202Eevil","name":"T"}'],
+    ['between fields', '{"name":"T",\u200B"base":"dark"}'],
+  ])(
+    'refuses a file carrying a format character %s, which would disguise it on review',
+    (_where, text) => {
+      const found = problems([file('t', text)]).join('\n')
+
+      expect(found).toContain('themes/t.json')
+      expect(found).toContain('U+')
+      expect(found).not.toMatch(/[\u200B\u202E]/)
+    },
+  )
+
+  it('refuses a name that spells a right-to-left override as a JSON escape, and never echoes it', () => {
+    const found = problems([file('t', '{"name":"a\\u202Eb"}')]).join('\n')
+
+    expect(found).toContain(
+      'themes/t.json: name must not contain control or format characters (U+202E)',
+    )
+    expect(found).not.toContain('\u202E')
+  })
+
+  it('keeps tabs, newlines and carriage returns in a file', () => {
+    const text = '{\r\n\t"name": "T"\r\n}\n'
+
+    expect(parseTerminalThemeFiles([file('t', text)])).toMatchObject({
+      ok: true,
+      themes: [{ source: text }],
+    })
   })
 
   it('names an unknown field or token it cannot print safely without echoing it', () => {

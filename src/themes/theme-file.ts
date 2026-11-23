@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { atMost } from '@/mods/plain-text'
+import { atMost, codePoint } from '@/mods/plain-text'
 import { parseJson } from '@/mods/plugin-components'
+import { CONTROL_OR_FORMAT } from '@/mods/terminal-line'
 import {
   TERMINAL_THEME_BASES,
   type TerminalThemeFile,
@@ -17,6 +18,8 @@ export interface ThemeFileBytes {
 export type ThemeFilesResult =
   | { ok: true; themes: TerminalThemeFile[] }
   | { ok: false; problems: string[] }
+
+const LINE_SPACE = new Set(['\t', '\n', '\r'])
 
 /** A field name or token an error can print: what a theme file's own fields and tokens look like. */
 const PRINTABLE_KEY = /^[\x20-\x7e]{1,64}$/
@@ -64,6 +67,11 @@ function parseFile({ key, bytes }: ThemeFileBytes): TerminalThemeFile | string[]
   const where = `themes/${key}.json`
   const source = decode(bytes)
   if (source === undefined) return [`${where} is not UTF-8 text`]
+  // The operator reads the file as stored, so a character that hides or reorders text could disguise it.
+  const hidden = [...source].find((char) => !LINE_SPACE.has(char) && CONTROL_OR_FORMAT.test(char))
+  if (hidden !== undefined) {
+    return [`${where} holds a control or format character (${codePoint(hidden)})`]
+  }
   const json = parseJson(source)
   if (json === null || typeof json !== 'object' || Array.isArray(json)) {
     return [`${where} is not a JSON object`]
