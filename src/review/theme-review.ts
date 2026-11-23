@@ -1,4 +1,4 @@
-import { asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { modThemePreviews, modThemes } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
@@ -34,12 +34,12 @@ export async function getReviewThemes(
       key: modThemes.key,
       name: modThemes.name,
       window: modThemes.window,
-      source: modThemes.source,
+      source: sql<string>`${modThemes.source}`,
       preview: modThemePreviews.segments,
     })
     .from(modThemes)
     .leftJoin(modThemePreviews, eq(modThemePreviews.themeId, modThemes.id))
-    .where(inArray(modThemes.modVersionId, versionIds))
+    .where(and(inArray(modThemes.modVersionId, versionIds), eq(modThemes.kind, 'terminal')))
     .orderBy(asc(sql`lower(${modThemes.name})`), asc(modThemes.key))
   for (const { versionId, ...theme } of rows) {
     byVersion.set(versionId, [...(byVersion.get(versionId) ?? []), theme])

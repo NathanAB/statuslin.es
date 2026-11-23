@@ -344,6 +344,13 @@
       "when": 1795471371689,
       "tag": "0048_mod_versions_hooks_modules",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1795474215716,
+      "tag": "0049_mod_themes_desktop",
+      "breakpoints": true
     }
   ]
 }

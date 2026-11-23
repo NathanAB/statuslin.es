@@ -141,8 +141,10 @@ const inList = (column: AnyColumn, values: readonly string[]): SQL =>
   sql`${column} IN (${sql.raw(values.map((value) => `'${value}'`).join(', '))})`
 
 /**
- * The themes a mod version carries, one row per card on /themes (ADR 0012). Written with the
- * version from what the inspection sandbox read at its pinned commit, and never changed after.
+ * The themes a mod version carries, one row per card on /themes (ADR 0012). A terminal theme is
+ * written with the version from what the inspection sandbox read at its pinned commit, and never
+ * changed after. A Desktop theme is what the operator declared for the version (curation.json):
+ * its mod's code draws it, so it has no file of its own, only the steps that switch to it.
  */
 export const modThemes = pgTable(
   'mod_themes',
@@ -152,13 +154,18 @@ export const modThemes = pgTable(
       .notNull()
       .references(() => modVersions.id, { onDelete: 'cascade' }),
     kind: text('kind').$type<ThemeKind>().notNull(),
-    /** A terminal theme's file slug, which the `theme` setting names. */
+    /** A terminal theme's file slug, which the `theme` setting names; a Desktop theme's own key. */
     key: text('key').notNull(),
     /** The author's name for it, which `/theme` shows. Untrusted text. */
     name: text('name').notNull(),
     window: text('window').$type<ThemeWindow>().notNull(),
-    /** The theme file exactly as pinned. */
-    source: text('source').notNull(),
+    /** A terminal theme's file exactly as pinned; null for a Desktop theme, which is code. */
+    source: text('source'),
+    /**
+     * A Desktop theme's switch steps, each sent in a new Claude Desktop session: recorded, and shown
+     * on its card. Empty when the mod sets the theme on its own; null for a terminal theme.
+     */
+    switchSteps: jsonb('switch_steps').$type<string[]>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -166,6 +173,11 @@ export const modThemes = pgTable(
     // A visitor picks a theme in `/theme` by its name, so one plugin never shows two alike.
     uniqueIndex('mod_themes_version_name_uq').on(t.modVersionId, t.kind, sql`lower(${t.name})`),
     check('mod_themes_kind_check', inList(t.kind, THEME_KINDS)),
+    check(
+      'mod_themes_kind_shape_check',
+      // IS TRUE, so null switch steps fail the check instead of passing it as unknown.
+      sql`((${t.kind} = 'terminal' AND ${t.source} IS NOT NULL AND ${t.switchSteps} IS NULL) OR (${t.kind} = 'desktop' AND ${t.source} IS NULL AND jsonb_typeof(${t.switchSteps}) = 'array')) IS TRUE`,
+    ),
     check('mod_themes_window_check', inList(t.window, THEME_WINDOWS)),
     check(
       'mod_themes_key_check',
@@ -191,6 +203,38 @@ export const modThemePreviews = pgTable('mod_theme_previews', {
 })
 
 export const bytea = customType<{ data: Uint8Array }>({ dataType: () => 'bytea' })
+
+/**
+ * A Desktop theme's preview: the whole Claude Desktop window with the theme switched on, for its
+ * plugin's page, and the same window smaller for its card. Untrusted pixels, served only as
+ * image/png.
+ */
+export const modThemeDesktopPreviews = pgTable(
+  'mod_theme_desktop_previews',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    themeId: uuid('theme_id')
+      .notNull()
+      .unique()
+      .references(() => modThemes.id, { onDelete: 'cascade' }),
+    png: bytea('png').notNull(),
+    /** CSS pixels; the PNG is recorded at a higher device scale. */
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    cardPng: bytea('card_png').notNull(),
+    cardWidth: integer('card_width').notNull(),
+    cardHeight: integer('card_height').notNull(),
+    desktopVersion: text('desktop_version').notNull(),
+    engineVersion: text('engine_version').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'mod_theme_desktop_previews_size_check',
+      sql`${t.width} > 0 AND ${t.height} > 0 AND ${t.cardWidth} > 0 AND ${t.cardHeight} > 0`,
+    ),
+  ],
+)
 
 /**
  * A mod's Claude Desktop preview: a PNG shot for its page and a smaller one for its card, or the

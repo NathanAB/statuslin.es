@@ -111,6 +111,51 @@ export async function addTheme(db: TestDb, versionId: string, seed: ThemeSeed): 
   return themeId
 }
 
+export interface DesktopThemeSeed {
+  key: string
+  name?: string
+  window?: 'light' | 'dark'
+  switchSteps?: string[]
+  /** Seeds the theme's whole-window shot, so its version can render. */
+  rendered?: boolean
+}
+
+/** The whole-window shot and card `addDesktopTheme` stores for a theme seeded as rendered. */
+export const SEEDED_THEME_SHOT = {
+  png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7]),
+  width: 1100,
+  height: 900,
+  cardPng: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 8]),
+  cardWidth: 550,
+  cardHeight: 450,
+  desktopVersion: '6.28899.6',
+  engineVersion: '2.1.330',
+}
+
+/** A Desktop theme on a version, as the operator declares one in curation.json. */
+export async function addDesktopTheme(
+  db: TestDb,
+  versionId: string,
+  seed: DesktopThemeSeed,
+): Promise<string> {
+  const [theme] = await db
+    .insert(schema.modThemes)
+    .values({
+      modVersionId: versionId,
+      kind: 'desktop',
+      key: seed.key,
+      name: seed.name ?? seed.key,
+      window: seed.window ?? 'dark',
+      switchSteps: seed.switchSteps ?? [`/custom-theme ${seed.key}`],
+    })
+    .returning()
+  const themeId = theme?.id as string
+  if (seed.rendered ?? true) {
+    await db.insert(schema.modThemeDesktopPreviews).values({ themeId, ...SEEDED_THEME_SHOT })
+  }
+  return themeId
+}
+
 /** The shot `addDesktopPreview` stores, with its card. The shot is a real 1x1 PNG, so a card can
  * draw it; the card's bytes only start with the PNG signature. */
 export const SEEDED_DESKTOP_SHOT = {
