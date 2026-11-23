@@ -8,7 +8,8 @@ import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
 import { insertPendingSubmission } from '@/submissions/record'
-import { type ImportDeps, importMods } from '../../scripts/import-mods'
+import type { DesktopTheme } from '@/themes/theme'
+import { desktopThemesUnchanged, type ImportDeps, importMods } from '../../scripts/import-mods'
 import { runPublish } from '../../scripts/publish-mod'
 import { renderMods } from '../../scripts/render-mods'
 import baseline from '../render/mods/fixtures/baseline.json'
@@ -275,6 +276,34 @@ describe('importMods', () => {
       { kind: 'desktop', ...fixed, source: null },
     ])
     expect(await db.select().from(schema.modThemeDesktopPreviews)).toEqual([])
+  })
+
+  it("refuses to change a live version's Desktop themes in place, and keeps its shots", async () => {
+    await run([entry({ desktopThemes: [NIGHT_REEF] })], fakes({ validate: THEME_VALIDATE }))
+    const [version] = await allVersions()
+    await db.update(schema.mods).set({ status: 'published' })
+    const [reef] = await db.select({ id: schema.modThemes.id }).from(schema.modThemes)
+    await db
+      .insert(schema.modThemeDesktopPreviews)
+      .values({ themeId: reef?.id as string, ...SEEDED_THEME_SHOT })
+
+    const second = await run([entry({ desktopThemes: [NIGHT_REEF, HONU_LAGOON] })])
+
+    expect(second.exitCode).toBe(1)
+    expect(second.output).toMatch(
+      /refused skins: Desktop themes of a live version can't change in place; re-pin to a new version or unpublish first/,
+    )
+    expect(await desktopThemesOf(version?.id)).toEqual([
+      { kind: 'desktop', ...NIGHT_REEF, source: null },
+    ])
+    expect(await db.select().from(schema.modThemeDesktopPreviews)).toHaveLength(1)
+  })
+
+  it('reads stored Desktop themes as unchanged whatever order the database returns them in', () => {
+    const declared = [HONU_LAGOON, NIGHT_REEF] as DesktopTheme[]
+
+    expect(desktopThemesUnchanged([NIGHT_REEF, HONU_LAGOON] as DesktopTheme[], declared)).toBe(true)
+    expect(desktopThemesUnchanged([NIGHT_REEF] as DesktopTheme[], declared)).toBe(false)
   })
 
   it('removes the Desktop themes an entry no longer declares', async () => {

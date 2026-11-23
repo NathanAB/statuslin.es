@@ -165,15 +165,23 @@ async function updateCardSurface(db: Db, entry: CurationEntry): Promise<boolean>
 
 const byKey = (a: DesktopTheme, b: DesktopTheme) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
 
+/** Compared in one order, whatever the database's collation sorted the stored themes by. */
+export const desktopThemesUnchanged = (stored: DesktopTheme[], declared: DesktopTheme[]) =>
+  isDeepStrictEqual([...stored].sort(byKey), [...declared].sort(byKey))
+
 async function updateDesktopThemes(db: Db, entry: CurationEntry): Promise<boolean> {
   const declared = [...(entry.desktopThemes ?? [])].sort(byKey)
   const versions = await db
-    .select({ id: schema.modVersions.id, footprint: schema.modVersions.footprint })
+    .select({
+      id: schema.modVersions.id,
+      footprint: schema.modVersions.footprint,
+      live: sql<boolean>`exists (select 1 from ${schema.mods} live where live.current_version_id = ${schema.modVersions}.id and live.status <> 'draft')`,
+    })
     .from(schema.modVersions)
     .where(curatedVersionOf(db, entry))
   let changed = false
   for (const version of versions) {
-    const stored = await db
+    const rows = await db
       .select({
         key: schema.modThemes.key,
         name: schema.modThemes.name,
@@ -184,8 +192,14 @@ async function updateDesktopThemes(db: Db, entry: CurationEntry): Promise<boolea
       .where(
         and(eq(schema.modThemes.modVersionId, version.id), eq(schema.modThemes.kind, 'desktop')),
       )
-      .orderBy(schema.modThemes.key)
-    if (isDeepStrictEqual(stored, declared)) continue
+    const stored = rows.map((row) => ({ ...row, switchSteps: row.switchSteps ?? [] }))
+    if (desktopThemesUnchanged(stored, declared)) continue
+    // Its themes are live on /themes, and /admin reviews only a version that isn't live yet.
+    if (version.live) {
+      throw new Error(
+        "Desktop themes of a live version can't change in place; re-pin to a new version or unpublish first",
+      )
+    }
     checkDesktopThemes(version.footprint, declared)
     await db.transaction(async (tx) => {
       await tx
