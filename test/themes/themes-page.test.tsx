@@ -6,10 +6,16 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router'
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PublishedTheme } from '@/themes/queries'
+
+const recordModCopyFn = vi.hoisted(() => vi.fn())
+vi.mock('@/mods/functions', () => ({ recordModCopyFn }))
+vi.mock('@posthog/react', () => ({
+  usePostHog: () => ({ get_distinct_id: () => 'did-test', get_session_id: () => 'sid-test' }),
+}))
 
 vi.mock('@tanstack/react-router', async () => {
   const actual =
@@ -96,6 +102,7 @@ const cardOf = (name: string) =>
 
 afterEach(() => {
   vi.restoreAllMocks()
+  recordModCopyFn.mockReset()
 })
 
 describe('/themes', () => {
@@ -126,6 +133,32 @@ describe('/themes', () => {
         `claude plugin marketplace add ${ORIGIN}/marketplace.json && claude plugin install pack@statuslines`,
       ),
     ).toBeTruthy()
+  })
+
+  // /themes sorts plugins by installs, so a copy here counts like one on the plugin's own page.
+  it("counts a copy of a card's install command as an install of its plugin, from /themes", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    recordModCopyFn.mockResolvedValue(1)
+    await renderPage([theme('Night', 'pack'), theme('Ember', 'other')])
+
+    fireEvent.click(
+      within(cardOf('Ember')).getByRole('button', { name: 'Copy install command for other title' }),
+    )
+
+    await waitFor(() => expect(recordModCopyFn).toHaveBeenCalledTimes(1))
+    expect(writeText).toHaveBeenCalledWith(
+      `claude plugin marketplace add ${ORIGIN}/marketplace.json && claude plugin install other@statuslines`,
+    )
+    expect(recordModCopyFn).toHaveBeenCalledWith({
+      data: {
+        modId: 'other-id',
+        kind: 'prompt',
+        surface: 'themes',
+        distinctId: 'did-test',
+        sessionId: 'sid-test',
+      },
+    })
   })
 
   it("says on the card when a theme's plugin also runs code, with what it can reach and a link to its page", async () => {

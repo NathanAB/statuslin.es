@@ -90,7 +90,7 @@ export function FilteredThemes({
       {shown.length > 0 ? (
         <WideTileGrid>
           {shown.map((theme) => (
-            <ThemeCard key={theme.id} theme={theme} installFrom={origin} />
+            <ThemeCard key={theme.id} theme={theme} install={{ origin, surface: 'themes' }} />
           ))}
         </WideTileGrid>
       ) : (
