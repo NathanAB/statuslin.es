@@ -3,6 +3,8 @@ import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db as defaultDb } from '@/db'
 import { modDesktopPreviews, mods, modVersions } from '@/db/schema'
+import { IMMUTABLE_CACHE } from '@/lib/cache-control'
+import { isPreviewImageQuery, previewImageResponse } from '@/lib/preview-image'
 import { isUuid } from '@/lib/uuid'
 import { MOD_SCENARIO_KEY } from './queries'
 
@@ -12,17 +14,21 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 /**
  * The Desktop shot of a published mod's current version, or with `image` 'card' its card image, as
  * served at MOD_DESKTOP_PREVIEW_ROUTE. It is visible exactly when the mod page that shows it is,
- * and only under the `render` its page names (modDesktopPreviewPath), so a made-up URL can't skip
- * the cache: anything else is a 404. The bytes are untrusted pixels, so nosniff keeps a browser
- * from reading them as anything but a PNG.
+ * and only under the `r` (render) its page names (modDesktopPreviewPath), with no other query, so a
+ * made-up URL can't skip the cache: anything else is a 404. A new render gets a new URL, which lets
+ * a cache keep each one for good.
  */
 export async function modDesktopPreviewResponse(
   db: Db,
   versionId: string,
-  render: string | null,
-  image: string | null,
+  query: URLSearchParams,
 ): Promise<Response> {
-  if (!isUuid(versionId) || (image !== null && image !== 'card')) {
+  const image = query.get('image')
+  if (
+    !isUuid(versionId) ||
+    !isPreviewImageQuery(query, ['r', 'image']) ||
+    (image !== null && image !== 'card')
+  ) {
     return new Response('Not found', { status: 404 })
   }
   const [row] = await db
@@ -40,21 +46,14 @@ export async function modDesktopPreviewResponse(
         eq(mods.status, 'published'),
       ),
     )
-  if (!row?.png || render !== String(row.renderedAt.getTime())) {
+  if (!row?.png || query.get('r') !== String(row.renderedAt.getTime())) {
     return new Response('Not found', { status: 404 })
   }
-  return new Response(new Blob([row.png as BufferSource]), {
-    headers: {
-      'Content-Type': 'image/png',
-      'X-Content-Type-Options': 'nosniff',
-      // An hour, like the og cards: a delisted mod's image must leave shared caches soon after.
-      'Cache-Control': 'public, max-age=3600',
-    },
-  })
+  return previewImageResponse(row.png, IMMUTABLE_CACHE)
 }
 
 // createServerOnlyFn keeps `db` out of the client bundle, as for the marketplace route.
 export const modDesktopPreviewResponseForRoute = createServerOnlyFn(
-  (versionId: string, render: string | null, image: string | null): Promise<Response> =>
-    modDesktopPreviewResponse(defaultDb, versionId, render, image),
+  (versionId: string, query: URLSearchParams): Promise<Response> =>
+    modDesktopPreviewResponse(defaultDb, versionId, query),
 )

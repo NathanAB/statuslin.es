@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { modDesktopPreviewResponse } from '@/mods/desktop-preview-image'
+import { previewQuery } from '../helpers/preview-query'
 import {
   addDesktopPreview,
   addVersion,
@@ -51,15 +52,15 @@ async function renderOf(versionId: string): Promise<string> {
 }
 
 describe('modDesktopPreviewResponse', () => {
-  it("serves a published mod's current Desktop shot as a PNG cached for an hour", async () => {
+  it("serves a published mod's current Desktop shot as a PNG a cache keeps for good, since a new render changes its URL", async () => {
     const live = ids.live as string
-    const res = await modDesktopPreviewResponse(db, live, await renderOf(live), null)
+    const res = await modDesktopPreviewResponse(db, live, previewQuery(await renderOf(live), null))
 
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    // Short enough that a delisted mod's image leaves shared caches soon after its page does.
-    expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
+    expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
+    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
     expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(
       Array.from(SEEDED_DESKTOP_SHOT.png),
     )
@@ -67,12 +68,17 @@ describe('modDesktopPreviewResponse', () => {
 
   it("serves the shot's card image under the same render, cached the same way", async () => {
     const live = ids.live as string
-    const res = await modDesktopPreviewResponse(db, live, await renderOf(live), 'card')
+    const res = await modDesktopPreviewResponse(
+      db,
+      live,
+      previewQuery(await renderOf(live), 'card'),
+    )
 
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
+    expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
+    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
     expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(
       Array.from(SEEDED_DESKTOP_SHOT.cardPng),
     )
@@ -87,7 +93,11 @@ describe('modDesktopPreviewResponse', () => {
   ])('is a 404 for %s, shot or card', async (_name, key) => {
     const versionId = ids[key] as string
     for (const image of [null, 'card']) {
-      const res = await modDesktopPreviewResponse(db, versionId, await renderOf(versionId), image)
+      const res = await modDesktopPreviewResponse(
+        db,
+        versionId,
+        previewQuery(await renderOf(versionId), image),
+      )
 
       expect(res.status).toBe(404)
       expect(res.headers.get('content-type')).not.toBe('image/png')
@@ -97,16 +107,19 @@ describe('modDesktopPreviewResponse', () => {
   it('is a 404 for an image it does not have', async () => {
     const live = ids.live as string
 
-    expect((await modDesktopPreviewResponse(db, live, await renderOf(live), 'pane')).status).toBe(
-      404,
-    )
+    expect(
+      (await modDesktopPreviewResponse(db, live, previewQuery(await renderOf(live), 'pane')))
+        .status,
+    ).toBe(404)
   })
 
   it.each([
     ['an unknown id', '00000000-0000-4000-8000-000000000000'],
     ['an id that is not a UUID', 'not-a-uuid'],
   ])('is a 404 for %s', async (_name, versionId) => {
-    expect((await modDesktopPreviewResponse(db, versionId, '0', null)).status).toBe(404)
+    expect((await modDesktopPreviewResponse(db, versionId, previewQuery('0', null))).status).toBe(
+      404,
+    )
   })
 
   it.each([
@@ -118,9 +131,39 @@ describe('modDesktopPreviewResponse', () => {
     async (_name, render) => {
       for (const image of [null, 'card']) {
         expect(
-          (await modDesktopPreviewResponse(db, ids.live as string, render, image)).status,
+          (await modDesktopPreviewResponse(db, ids.live as string, previewQuery(render, image)))
+            .status,
         ).toBe(404)
       }
+    },
+  )
+
+  it.each([
+    ['a parameter it does not read', (r: string) => new URLSearchParams({ r, v: '1' })],
+    [
+      'its render named twice',
+      (r: string) =>
+        new URLSearchParams([
+          ['r', r],
+          ['r', r],
+        ]),
+    ],
+    [
+      'its image named twice',
+      (r: string) =>
+        new URLSearchParams([
+          ['r', r],
+          ['image', 'card'],
+          ['image', 'card'],
+        ]),
+    ],
+  ])(
+    'is a 404 for the current shot with %s, so no cache-busting variant of its URL serves the image',
+    async (_name, query) => {
+      const render = await renderOf(ids.live as string)
+      const res = await modDesktopPreviewResponse(db, ids.live as string, query(render))
+
+      expect(res.status).toBe(404)
     },
   )
 })
