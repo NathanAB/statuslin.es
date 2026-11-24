@@ -110,6 +110,35 @@ describe('getCuratedThemeRows', () => {
     expect(await slugs()).toEqual(['pack'])
   })
 
+  it("marks a re-pin's themes that are new or changed since the live version", async () => {
+    const { versionIds } = await curated('pack', 'published', ['a', 'b'])
+    const [live, repin] = versionIds as [string, string]
+    await addTheme(db, live, { key: 'paper', name: 'Paper' })
+    await addTheme(db, live, { key: 'night', name: 'Night' })
+    await addTheme(db, repin, { key: 'paper', name: 'Paper' })
+    await addTheme(db, repin, { key: 'night', name: 'Midnight' })
+    await addTheme(db, repin, { key: 'dawn', name: 'Dawn' })
+
+    const [row] = await getCuratedThemeRows(db)
+
+    expect(row?.themes.map((theme) => [theme.key, theme.change])).toEqual([
+      ['dawn', 'new'],
+      ['night', 'changed'],
+      ['paper', null],
+    ])
+  })
+
+  it("marks nothing on a draft's first publish, where every theme is read for the first time", async () => {
+    // A curated draft's current version is the one import gave it, not a live one.
+    const { versionIds } = await curated('pack', 'draft', ['a', 'b'])
+    await addTheme(db, versionIds[0] as string, { key: 'paper', name: 'Paper' })
+    await addTheme(db, versionIds[1] as string, { key: 'paper', name: 'Paper 2' })
+
+    const [row] = await getCuratedThemeRows(db)
+
+    expect(row?.themes.map((theme) => theme.change)).toEqual([null])
+  })
+
   it('leaves out a published plugin whose live version is its newest', async () => {
     const { versionIds } = await curated('pack', 'published', ['a'])
     await addTheme(db, versionIds[0] as string, { key: 'paper' })

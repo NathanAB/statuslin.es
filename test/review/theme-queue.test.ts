@@ -67,6 +67,7 @@ describe('getModReviewRows themes', () => {
         usesTerminalColors: false,
         source: JSON.stringify({ name: 'Night', base: 'dark', overrides: {} }),
         preview: null,
+        change: null,
       },
       {
         id: expect.any(String),
@@ -77,6 +78,7 @@ describe('getModReviewRows themes', () => {
         usesTerminalColors: false,
         source: SOURCE,
         preview: SEEDED_THEME_PREVIEW.segments,
+        change: null,
       },
     ])
     expect(row?.rendered).toBe(false)
@@ -130,6 +132,7 @@ describe('getModReviewRows themes', () => {
           width: SEEDED_THEME_SHOT.width,
           height: SEEDED_THEME_SHOT.height,
         },
+        change: null,
       },
       {
         id: rainy,
@@ -139,6 +142,7 @@ describe('getModReviewRows themes', () => {
         window: 'light',
         switchSteps: [],
         preview: null,
+        change: null,
       },
     ])
   })
@@ -155,6 +159,66 @@ describe('getModReviewRows themes', () => {
       rows.find((row) => row.mod.slug === slug)?.themes.map((theme) => theme.key)
     expect(keysOf('pack')).toEqual(['paper'])
     expect(keysOf('other')).toEqual(['night'])
+  })
+
+  it('marks the themes an update adds or changes since the live version, by key', async () => {
+    const modId = await addMod(db, 'pack', 'published')
+    const live = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1 })
+    await setCurrentVersion(db, modId, live)
+    await addTheme(db, live, { key: 'paper', name: 'Paper', source: SOURCE })
+    await addTheme(db, live, { key: 'night', name: 'Night' })
+    await addTheme(db, live, { key: 'dusk', name: 'Dusk' })
+    await addTheme(db, live, { key: 'gone', name: 'Gone' })
+    await addDesktopTheme(db, live, { key: 'reef', name: 'Reef' })
+    await addDesktopTheme(db, live, { key: 'lagoon', name: 'Lagoon' })
+    const update = await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    await insertPendingSubmission(db, { kind: 'mod', versionId: update, submittedBy: 'submitter' })
+    // Same file, but rendered again: unchanged.
+    await addTheme(db, update, { key: 'paper', name: 'Paper', source: SOURCE })
+    // Same name, new palette.
+    await addTheme(db, update, {
+      key: 'night',
+      name: 'Night',
+      source: '{ "name": "Night", "overrides": { "permission": "#5f5fff" } }',
+    })
+    // Renamed in the card and in /theme.
+    await addTheme(db, update, {
+      key: 'dusk',
+      name: 'Dawn',
+      source: JSON.stringify({ name: 'Dusk', base: 'dark', overrides: {} }),
+    })
+    await addTheme(db, update, { key: 'fresh', name: 'Fresh' })
+    await addDesktopTheme(db, update, { key: 'reef', name: 'Reef' })
+    await addDesktopTheme(db, update, {
+      key: 'lagoon',
+      name: 'Lagoon',
+      switchSteps: ['/custom-theme lagoon', '/sounds on'],
+    })
+
+    const [row] = await getModReviewRows(db)
+
+    expect(row?.themes.map((theme) => [theme.key, theme.change])).toEqual([
+      ['dusk', 'changed'],
+      ['fresh', 'new'],
+      ['lagoon', 'changed'],
+      ['night', 'changed'],
+      ['paper', null],
+      ['reef', null],
+    ])
+  })
+
+  it('marks a theme whose window changed', async () => {
+    const modId = await addMod(db, 'pack', 'published')
+    const live = await addVersion(db, modId, { commitSha: sha('a'), versionNumber: 1 })
+    await setCurrentVersion(db, modId, live)
+    await addDesktopTheme(db, live, { key: 'reef', name: 'Reef', window: 'dark' })
+    const update = await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    await insertPendingSubmission(db, { kind: 'mod', versionId: update, submittedBy: 'submitter' })
+    await addDesktopTheme(db, update, { key: 'reef', name: 'Reef', window: 'light' })
+
+    const [row] = await getModReviewRows(db)
+
+    expect(row?.themes.map((theme) => theme.change)).toEqual(['changed'])
   })
 
   it('gives a mod without themes an empty list', async () => {

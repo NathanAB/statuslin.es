@@ -39,6 +39,7 @@ export async function getCuratedThemeRows(database: Db): Promise<CuratedThemeRow
         authorGithub: mods.authorGithub,
         status: mods.status,
       },
+      currentVersionId: mods.currentVersionId,
       version: {
         id: modVersions.id,
         versionNumber: modVersions.versionNumber,
@@ -78,9 +79,15 @@ export async function getCuratedThemeRows(database: Db): Promise<CuratedThemeRow
       ),
     )
     .orderBy(asc(mods.slug))
+  // A draft's current version is the one import gave it; only a published plugin has a live one.
+  const liveId = ({ mod, currentVersionId }: (typeof rows)[number]) =>
+    mod.status === 'published' ? currentVersionId : null
   const themes = await getReviewThemes(
     database,
-    rows.map(({ version }) => version.id),
+    rows.map((row) => ({ id: row.version.id, liveId: liveId(row) })),
   )
-  return rows.map((row) => ({ ...row, themes: themes.get(row.version.id) ?? [] }))
+  return rows.map(({ currentVersionId, ...row }) => ({
+    ...row,
+    themes: themes.get(row.version.id) ?? [],
+  }))
 }
