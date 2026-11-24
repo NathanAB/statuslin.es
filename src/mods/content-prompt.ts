@@ -12,11 +12,27 @@ export interface VersionPin {
   commitSha: string
 }
 
-/** What statuslin.es itself read from the footprint and the recorded previews. */
+/** What statuslin.es itself read from the footprint, the recorded previews and the theme files. */
 export interface ModChecks {
   described: ModFootprintDescription
   facts: FootprintFacts
+  /** It carries themes and runs no hooks module: a theme pack, not a mod that draws (ADR 0012). */
+  themeOnly: boolean
 }
+
+/** How each prompt names the plugin, and what its steps describe. */
+export const PLUGIN_SUBJECT = {
+  mod: {
+    what: 'one Claude Code mod: a plugin that draws in Claude Code, installed from a marketplace',
+    steps: 'when it runs in a session, what it reads, and what it draws or changes.',
+  },
+  themes: {
+    what: 'one Claude Code theme pack: a plugin that adds only color themes, for Claude Code in the terminal or for Claude Desktop, installed from a marketplace',
+    steps: 'how to switch to its themes, and what each one changes about how Claude Code looks.',
+  },
+} as const
+
+const subjectOf = (themeOnly: boolean) => PLUGIN_SUBJECT[themeOnly ? 'themes' : 'mod']
 
 /**
  * Fences untrusted text for one prompt: the warning names the markers, the block holds the text
@@ -97,14 +113,15 @@ export function buildModContentPrompt(
   untrusted: string,
   checks: ModChecks,
 ): string {
+  const subject = subjectOf(checks.themeOnly)
   const task = pageCopyTask({
-    steps: 'when it runs in a session, what it reads, and what it draws or changes.',
+    steps: subject.steps,
     notes: `requirements such as an account or API key, or a setting to turn on (The page already says it needs Claude Code ${MOD_INSTALL_MIN_VERSION} or later; mention a minimum version only if the mod needs a higher one.); then limits and surprises.`,
     details: detailAsks(checks),
     headlineAndFaq: true,
   })
   const fenced = fenceUntrusted(pin, untrusted)
-  return `You are writing factual copy for a gallery page about one Claude Code mod: a plugin that draws in Claude Code, installed from a marketplace.
+  return `You are writing factual copy for a gallery page about ${subject.what}.
 
 ${fenced.warning}
 
@@ -123,11 +140,15 @@ Hard rules:
 ${COPY_STYLE_RULES}`
 }
 
-export function buildModTagsPrompt(pin: VersionPin, untrusted: string): string {
+export function buildModTagsPrompt(
+  pin: VersionPin,
+  untrusted: string,
+  { themeOnly }: Pick<ModChecks, 'themeOnly'>,
+): string {
   const criteria = TAG_VOCABULARY.map((t) => `- "${t}": ${TAG_CRITERIA[t] ?? ''}`).join('\n')
   const fenced = fenceUntrusted(pin, untrusted)
   return [
-    'You classify a Claude Code mod (a plugin that draws in Claude Code) into fixed tags.',
+    `You classify ${subjectOf(themeOnly).what} into fixed tags.`,
     '',
     fenced.warning,
     '',

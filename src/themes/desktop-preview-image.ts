@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db as defaultDb } from '@/db'
 import { mods, modThemeDesktopPreviews, modThemes, modVersions } from '@/db/schema'
+import { IMMUTABLE_CACHE } from '@/lib/cache-control'
 import { isUuid } from '@/lib/uuid'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -14,7 +15,8 @@ const notFound = () => new Response('Not found', { status: 404 })
  * The whole-window shot of a Desktop theme on a published plugin's live version, or with `image`
  * 'card' its card image, as served at THEME_DESKTOP_PREVIEW_ROUTE. It is visible exactly when the
  * theme's card is, and only under the `render` its card names (themeDesktopPreviewPath), so a
- * made-up URL can't skip the cache. The bytes are untrusted pixels, so nosniff keeps a browser from
+ * made-up URL can't skip the cache, and a new recording gets a new URL, which lets a cache keep
+ * each one for good. The bytes are untrusted pixels, so nosniff keeps a browser from
  * reading them as anything but a PNG.
  */
 export async function themeDesktopPreviewResponse(
@@ -39,7 +41,7 @@ export async function themeDesktopPreviewResponse(
     headers: {
       'Content-Type': 'image/png',
       'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': IMMUTABLE_CACHE,
     },
   })
 }
