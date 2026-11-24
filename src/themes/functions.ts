@@ -2,12 +2,23 @@ import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
 import { withHttpStatus } from '@/lib/http.server'
 import { captureServerException } from '@/lib/posthog-server'
-import { getHomeThemes, getPaletteThemes, getThemeCards, homeThemesOrEmpty } from './queries'
+import {
+  getHomeThemes,
+  getPaletteThemes,
+  getThemeCards,
+  getUnreviewedThemeCards,
+  homeThemesOrEmpty,
+} from './queries'
 
 const HOME_THEME_CARDS = 3
 
 export const getThemeCardsFn = createServerFn({ method: 'GET' }).handler(() =>
   withHttpStatus(() => getThemeCards(db)),
+)
+
+/** /themes' "Not reviewed" section: the themes of curated drafts shown as unreviewed mods. */
+export const getUnreviewedThemeCardsFn = createServerFn({ method: 'GET' }).handler(() =>
+  withHttpStatus(() => getUnreviewedThemeCards(db)),
 )
 
 /** The home page's themes row (see getHomeThemes), or none when it fails to load. */

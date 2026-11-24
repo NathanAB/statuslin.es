@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { Route as PaletteRoute } from '@/routes/themes_.$palette'
 import { routeTree } from '@/routeTree.gen'
 import { findPalette, type Palette } from '@/themes/palettes'
-import type { PublishedTheme } from '@/themes/queries'
+import type { PublishedTheme, UnreviewedTheme } from '@/themes/queries'
 
 const ORIGIN = 'https://statuslin.es'
 
@@ -36,13 +36,14 @@ describe('a palette page head', () => {
     process.env.BETTER_AUTH_URL = ORIGINAL
   })
 
-  function head(themes: PublishedTheme[]) {
+  function head(themes: PublishedTheme[], unreviewed: UnreviewedTheme[] = []) {
     process.env.BETTER_AUTH_URL = ORIGIN
     const catppuccin = palette('catppuccin')
     return PaletteRoute.options.head?.({
       loaderData: {
         palette: catppuccin,
         themes,
+        unreviewed,
         palettes: [catppuccin],
         user: null,
         origin: ORIGIN,
@@ -63,7 +64,7 @@ describe('a palette page head', () => {
     expect(meta).toContainEqual({
       name: 'description',
       content:
-        '1 Catppuccin theme for the Claude Code terminal, previewed in a real session. Each plugin is reviewed and its install pinned.',
+        '1 Catppuccin theme for the Claude Code terminal, previewed in a real session. Every install is reviewed and pinned.',
     })
     expect(links).toContainEqual({ rel: 'canonical', href: `${ORIGIN}/themes/catppuccin` })
     expect(meta).toContainEqual({ property: 'og:url', content: `${ORIGIN}/themes/catppuccin` })
@@ -71,6 +72,32 @@ describe('a palette page head', () => {
       property: 'og:image',
       content: `${ORIGIN}/og/themes/catppuccin.png`,
     })
+  })
+
+  // Unreviewed themes (ADR 0014) are on the page but in no count and no JSON-LD list.
+  it('counts and lists only the reviewed themes when unreviewed ones share the palette', () => {
+    const latte: UnreviewedTheme = {
+      id: 'u1',
+      key: 'latte',
+      kind: 'terminal',
+      name: 'Catppuccin Latte',
+      window: 'light',
+      preview: [{ text: 'Latte screen' }],
+      usesTerminalColors: false,
+      mod: { owner: 'ada', pluginName: 'looks' },
+    }
+
+    const { meta, scripts } = head([MOCHA], [latte])
+
+    expect(meta).toContainEqual({
+      name: 'description',
+      content:
+        '1 Catppuccin theme for the Claude Code terminal, previewed in a real session. Every install is reviewed and pinned.',
+    })
+    const [list] = scripts.map((script) => JSON.parse(script.children))
+    expect(list.mainEntity.itemListElement).toEqual([
+      { '@type': 'ListItem', position: 1, name: 'Catppuccin', url: `${ORIGIN}/mods/catppuccin` },
+    ])
   })
 
   it("lists each theme's plugin page and places the page under Themes", () => {

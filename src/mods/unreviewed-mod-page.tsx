@@ -4,10 +4,12 @@ import { utcDateLabel } from '@/lib/date-label'
 import { HOW_IT_WORKS_PATH } from '@/lib/page-title'
 import { truncateAtWordBoundary } from '@/lib/search-text'
 import { CONTACT_EMAIL } from '@/lib/site'
+import type { UnreviewedTheme } from '@/themes/queries'
+import { UnreviewedThemeCard } from '@/themes/unreviewed-theme-card'
 import { Badge } from '@/ui/badge'
 import { Callout } from '@/ui/callout'
 import { FactTiles } from '@/ui/fact-tiles'
-import { Stack } from '@/ui/layout'
+import { Stack, WideTileGrid } from '@/ui/layout'
 import { MetaList } from '@/ui/meta-list'
 import { PageSection } from '@/ui/page-section'
 import { Text, TextLink } from '@/ui/text'
@@ -23,10 +25,17 @@ export const UNREVIEWED_DESCRIPTION_MAX_CHARS = 300
 const day = (iso: string) => utcDateLabel(iso.slice(0, 10))
 
 /**
- * An unreviewed mod's page (ADR 0011): facts only, and nothing to install. Every text field but the
- * pins is the author's and renders only as React text.
+ * An unreviewed mod's page (ADR 0011): facts only, and nothing to install. A curated theme pack's
+ * page also shows each theme's recorded preview, with no switch steps (ADR 0014). Every text field
+ * but the pins is the author's and renders only as React text.
  */
-export function UnreviewedModPage({ mod }: { mod: UnreviewedMod }) {
+export function UnreviewedModPage({
+  mod,
+  themes,
+}: {
+  mod: UnreviewedMod
+  themes: UnreviewedTheme[]
+}) {
   const repository = new URL(mod.repoUrl).pathname.slice(1)
   return (
     <Stack gap={6}>
@@ -53,6 +62,15 @@ export function UnreviewedModPage({ mod }: { mod: UnreviewedMod }) {
       >
         <UnreviewedReviewRequest owner={mod.owner} pluginName={mod.pluginName} />
       </Callout>
+      {themes.length > 0 ? (
+        <PageSection title="Themes">
+          <WideTileGrid>
+            {themes.map((theme) => (
+              <UnreviewedThemeCard key={theme.id} theme={theme} onModPage />
+            ))}
+          </WideTileGrid>
+        </PageSection>
+      ) : null}
       <PageSection title="What it can reach">
         <FactTiles tiles={modReachTiles(mod.footprint)} />
         <Text muted size="sm">

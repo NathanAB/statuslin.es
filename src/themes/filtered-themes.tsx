@@ -3,10 +3,11 @@ import { THEMES_PATH } from '@/lib/site'
 import { Row, Stack, WideTileGrid } from '@/ui/layout'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { Text, TextLink } from '@/ui/text'
-import type { PublishedTheme } from './queries'
+import type { PublishedTheme, UnreviewedTheme } from './queries'
 import { THEME_KIND_LABEL, THEME_WINDOW_LABEL, themeCount } from './theme'
 import { ThemeCard } from './theme-card'
 import { filterThemes, type ThemeFilter, themeFilterOptions } from './theme-filter'
+import { UnreviewedThemes } from './unreviewed-themes'
 
 const ALL = 'all'
 
@@ -37,21 +38,27 @@ function FilterControl<T extends string>({
   )
 }
 
-/** /themes' list under the URL's filter. Every control writes the URL. */
+/**
+ * /themes' list under the URL's filter, then its unreviewed themes under the same filter (ADR
+ * 0014). Every control writes the URL. The count is of reviewed themes alone.
+ */
 export function FilteredThemes({
   themes,
+  unreviewed,
   filter,
   origin,
 }: {
   themes: PublishedTheme[]
+  unreviewed: UnreviewedTheme[]
   filter: ThemeFilter
   origin: string
 }) {
   const navigate = useNavigate({ from: THEMES_PATH })
   const setFilter = (next: ThemeFilter) =>
     navigate({ search: (prev) => ({ ...prev, ...next }), resetScroll: false })
-  const options = themeFilterOptions(themes)
+  const options = themeFilterOptions([...themes, ...unreviewed])
   const shown = filterThemes(themes, filter)
+  const shownUnreviewed = filterThemes(unreviewed, filter)
   const filtered = filter.where !== undefined || filter.window !== undefined
 
   return (
@@ -93,6 +100,7 @@ export function FilteredThemes({
           <TextLink to={THEMES_PATH}>Show all themes</TextLink>
         </Row>
       )}
+      <UnreviewedThemes themes={shownUnreviewed} />
     </Stack>
   )
 }

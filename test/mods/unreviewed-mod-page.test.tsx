@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UnreviewedLookup, UnreviewedMod } from '@/mods/unreviewed-queries'
+import type { UnreviewedTheme } from '@/themes/queries'
 
 const getUnreviewedModFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/unreviewed-functions', () => ({ getUnreviewedModFn }))
@@ -53,8 +54,21 @@ const MOD: UnreviewedMod = {
   checkedAt: '2026-11-12T08:00:00.000Z',
 }
 
-function renderPage(mod: Partial<UnreviewedMod> = {}) {
-  vi.spyOn(Route, 'useLoaderData').mockReturnValue({ mod: { ...MOD, ...mod }, user: null })
+const REEF: UnreviewedTheme = {
+  id: 'theme-1',
+  key: 'night-reef',
+  kind: 'desktop',
+  name: 'Night Reef',
+  window: 'dark',
+  preview: {
+    shot: { src: '/theme-previews/theme-1/desktop.png?r=1', width: 1100, height: 900 },
+    card: { src: '/theme-previews/theme-1/desktop.png?r=1&image=card', width: 440, height: 360 },
+  },
+  mod: { owner: 'OctoCat', pluginName: 'meter' },
+}
+
+function renderPage(mod: Partial<UnreviewedMod> = {}, themes: UnreviewedTheme[] = []) {
+  vi.spyOn(Route, 'useLoaderData').mockReturnValue({ mod: { ...MOD, ...mod }, themes, user: null })
   const Page = Route.options.component
   return render(Page ? <Page /> : null)
 }
@@ -130,6 +144,24 @@ describe('unreviewed mod page', () => {
     expect(screen.queryByText('GitHub stars')).toBeNull()
     expect(screen.queryByText('Commit date')).toBeNull()
     expect(screen.getByRole('link', { name: 'OctoCat/mods' })).toBeTruthy()
+  })
+
+  // A curated theme pack shown as an unreviewed mod (ADR 0014) shows what each theme looks like.
+  it("shows each theme's recorded preview under Themes, with nothing to install or send", () => {
+    const { container } = renderPage({}, [REEF])
+
+    const section = screen.getByRole('region', { name: 'Themes' })
+    expect(within(section).getByRole('heading', { level: 3, name: 'Night Reef' })).toBeTruthy()
+    expect(within(section).getByRole('img', { name: 'Night Reef preview' })).toBeTruthy()
+    expect(within(section).getByText('Not reviewed')).toBeTruthy()
+    expect(container.textContent).not.toMatch(/claude plugin install|marketplace add|custom-theme/i)
+    expect(screen.queryByRole('button', { name: /copy/i })).toBeNull()
+  })
+
+  it('has no Themes section for a mod without themes', () => {
+    renderPage()
+
+    expect(screen.queryByRole('region', { name: 'Themes' })).toBeNull()
   })
 
   it('says when a mod has no license', () => {
@@ -248,9 +280,9 @@ describe('unreviewed mod loader', () => {
   })
 
   it('loads the page by the address it was asked for', async () => {
-    getUnreviewedModFn.mockResolvedValue({ kind: 'page', mod: MOD } satisfies UnreviewedLookup)
+    getUnreviewedModFn.mockResolvedValue({ kind: 'page', mod: MOD, themes: [REEF] })
 
-    expect(await load('octocat', 'meter')).toEqual({ mod: MOD, user: null })
+    expect(await load('octocat', 'meter')).toEqual({ mod: MOD, themes: [REEF], user: null })
     expect(getUnreviewedModFn).toHaveBeenCalledWith({
       data: { owner: 'octocat', pluginName: 'meter' },
     })

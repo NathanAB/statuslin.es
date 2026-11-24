@@ -1,4 +1,4 @@
-import type { PublishedTheme } from './queries'
+import type { PublishedTheme, UnreviewedTheme } from './queries'
 import type { ThemeKind } from './theme'
 
 /**
@@ -90,7 +90,7 @@ export function palettePageCopy(
   return {
     title: `${palette.name} Themes for ${where.title}`,
     heading: `${palette.name} themes for ${where.heading}`,
-    description: `${counted} for ${where.prose}, ${one ? '' : 'each '}previewed in a real session. Each plugin is reviewed and its install pinned.`,
+    description: `${counted} for ${where.prose}, ${one ? '' : 'each '}previewed in a real session. Every install is reviewed and pinned.`,
   }
 }
 
@@ -99,3 +99,10 @@ export function palettePageCopy(
  * the theme's id.
  */
 export const themeAnchor = (theme: PublishedTheme) => `${theme.plugin.slug}-${theme.key}`
+
+/**
+ * An unreviewed theme card's anchor: its mod's address and its key, never the mod's slug (ADR
+ * 0014), and prefixed so it can't collide with a reviewed card's.
+ */
+export const unreviewedThemeAnchor = (theme: UnreviewedTheme) =>
+  `unreviewed-${theme.mod.owner}-${theme.mod.pluginName}-${theme.key}`.toLowerCase()
