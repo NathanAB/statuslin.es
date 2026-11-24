@@ -351,6 +351,13 @@
       "when": 1795477587931,
       "tag": "0049_mod_themes_desktop",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795544256657,
+      "tag": "0050_mod_themes_uses_terminal_colors",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import type { ReviewTheme } from '@/review/theme-review'
-import type { ThemeWindow } from '@/themes/theme'
+import { TERMINAL_COLORS_NOTICE, type ThemeWindow } from '@/themes/theme'
 import { CodeBlock } from '@/ui/code-block'
 import { DesktopShot } from '@/ui/desktop-shot'
 import { Details } from '@/ui/details'
@@ -18,6 +18,11 @@ function TerminalThemeReview({ theme }: { theme: Extract<ReviewTheme, { kind: 't
       <Text muted size="xs">
         {WINDOW_LABEL[theme.window]}
       </Text>
+      {theme.usesTerminalColors ? (
+        <Text muted size="xs">
+          {TERMINAL_COLORS_NOTICE}
+        </Text>
+      ) : null}
       {theme.preview === null ? (
         <Text muted size="sm">
           Not rendered yet.

@@ -17,8 +17,14 @@ describe('parseTerminalThemeFiles', () => {
     expect(parseTerminalThemeFiles([file('zinc', '{}'), file('amber-1982', amber)])).toEqual({
       ok: true,
       themes: [
-        { key: 'amber-1982', name: 'Amber 1982', window: 'light', source: amber },
-        { key: 'zinc', name: 'zinc', window: 'dark', source: '{}' },
+        {
+          key: 'amber-1982',
+          name: 'Amber 1982',
+          window: 'light',
+          usesTerminalColors: false,
+          source: amber,
+        },
+        { key: 'zinc', name: 'zinc', window: 'dark', usesTerminalColors: false, source: '{}' },
       ],
     })
   })
@@ -32,6 +38,44 @@ describe('parseTerminalThemeFiles', () => {
     const result = parseTerminalThemeFiles([json('t', { base })])
 
     expect(result.ok && result.themes[0]?.window).toBe(window)
+  })
+
+  it.each([
+    ['dark', false],
+    ['light-daltonized', false],
+    ['dark-ansi', true],
+    ['light-ansi', true],
+  ])('says whether a theme on base %s draws with the terminal palette: %s', (base, uses) => {
+    const result = parseTerminalThemeFiles([json('t', { base })])
+
+    expect(result.ok && result.themes[0]?.usesTerminalColors).toBe(uses)
+  })
+
+  it.each([
+    ['dark-ansi', 'ansi256(252)', 'light'],
+    ['dark-ansi', 'ansi:black', 'dark'],
+    ['light-ansi', 'ansi256(237)', 'dark'],
+    ['light-ansi', 'ansi:white', 'light'],
+  ])(
+    'draws a theme on base %s behind your messages in %s in a %s window',
+    (base, color, window) => {
+      const result = parseTerminalThemeFiles([
+        json('t', { base, overrides: { userMessageBackground: color } }),
+      ])
+
+      expect(result.ok && result.themes[0]).toMatchObject({ window, usesTerminalColors: true })
+    },
+  )
+
+  it('keeps a plain dark base dark whatever color is behind your messages', () => {
+    const result = parseTerminalThemeFiles([
+      json('t', { base: 'dark', overrides: { userMessageBackground: 'ansi256(252)' } }),
+    ])
+
+    expect(result.ok && result.themes[0]).toMatchObject({
+      window: 'dark',
+      usesTerminalColors: false,
+    })
   })
 
   it('keeps $schema, a name of 64 characters and printable unicode', () => {

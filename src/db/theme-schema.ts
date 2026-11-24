@@ -1,5 +1,6 @@
 import { type AnyColumn, type SQL, sql } from 'drizzle-orm'
 import {
+  boolean,
   check,
   integer,
   jsonb,
@@ -43,6 +44,7 @@ export const modThemes = pgTable(
     /** The author's name for it, which `/theme` shows. Untrusted text. */
     name: text('name').notNull(),
     window: text('window').$type<ThemeWindow>().notNull(),
+    usesTerminalColors: boolean('uses_terminal_colors').notNull().default(false),
     /** A terminal theme's file exactly as pinned; null for a Desktop theme, which is code. */
     source: text('source'),
     /**

@@ -1,0 +1,1 @@
+ALTER TABLE "mod_themes" ADD COLUMN "uses_terminal_colors" boolean DEFAULT false NOT NULL;

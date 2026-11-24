@@ -11,6 +11,7 @@ function theme(name: string, over: Partial<TerminalTheme> = {}): TerminalTheme {
     kind: 'terminal',
     window: 'dark',
     preview: [],
+    usesTerminalColors: false,
     plugin: { id: 'pack-id', slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },
     ...over,
   }

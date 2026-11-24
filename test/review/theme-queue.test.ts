@@ -64,6 +64,7 @@ describe('getModReviewRows themes', () => {
         key: 'night',
         name: 'Night',
         window: 'dark',
+        usesTerminalColors: false,
         source: JSON.stringify({ name: 'Night', base: 'dark', overrides: {} }),
         preview: null,
       },
@@ -73,11 +74,30 @@ describe('getModReviewRows themes', () => {
         key: 'paper',
         name: 'Paper',
         window: 'light',
+        usesTerminalColors: false,
         source: SOURCE,
         preview: SEEDED_THEME_PREVIEW.segments,
       },
     ])
     expect(row?.rendered).toBe(false)
+  })
+
+  it("tells the operator which terminal themes use the terminal's own palette", async () => {
+    const versionId = await submitPlugin('pack', 'a')
+    await addTheme(db, versionId, { key: 'dawn', name: 'Dawn (ANSI)', usesTerminalColors: true })
+    await addTheme(db, versionId, { key: 'paper', name: 'Paper' })
+
+    const [row] = await getModReviewRows(db)
+
+    expect(
+      row?.themes.map((theme) => [
+        theme.name,
+        theme.kind === 'terminal' && theme.usesTerminalColors,
+      ]),
+    ).toEqual([
+      ['Dawn (ANSI)', true],
+      ['Paper', false],
+    ])
   })
 
   it('lists each Desktop theme with its switch steps and its whole-window shot, or none before it renders', async () => {

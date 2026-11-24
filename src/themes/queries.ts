@@ -48,6 +48,7 @@ export type PublishedTheme =
       kind: 'terminal'
       /** The whole screen recorded with this theme selected. */
       preview: AnsiSegment[]
+      usesTerminalColors: boolean
     })
   | (ThemeCardBase & {
       kind: 'desktop'
@@ -70,6 +71,7 @@ function publishedThemes<Extra extends Record<string, SQL>>(db: Db, extra: Extra
       kind: modThemes.kind,
       name: modThemes.name,
       window: modThemes.window,
+      usesTerminalColors: modThemes.usesTerminalColors,
       switchSteps: modThemes.switchSteps,
       segments: modThemePreviews.segments,
       shot: {
@@ -110,7 +112,12 @@ function toCard({ themeOnly, footprint, segments, shot, switchSteps, ...row }: T
   const { id, name, window, plugin } = row
   const base = { id, name, window, plugin: { ...plugin, code: themeOnly ? null : { footprint } } }
   if (row.kind === 'terminal') {
-    return { ...base, kind: row.kind, preview: compactSegments(segments ?? []) }
+    return {
+      ...base,
+      kind: row.kind,
+      preview: compactSegments(segments ?? []),
+      usesTerminalColors: row.usesTerminalColors,
+    }
   }
   if (shot === null) throw new Error(`Desktop theme ${row.id} was listed without its shot`)
   const { width, height, cardWidth, cardHeight, renderedAt } = shot

@@ -1,4 +1,4 @@
-import { Puzzle } from 'lucide-react'
+import { Palette, Puzzle } from 'lucide-react'
 import type { ModFootprint } from '@/db/schema'
 import type { CopySurface } from '@/lib/copy-surface'
 import { modInstallCommands } from '@/mods/install'
@@ -16,7 +16,7 @@ import { Heading, Text, TextLink } from '@/ui/text'
 import { DesktopThemePreview, ThemePreview } from '@/ui/theme-preview'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 import type { PublishedTheme } from './queries'
-import { THEME_KIND_LABEL, THEME_WINDOW_LABEL } from './theme'
+import { TERMINAL_COLORS_NOTICE, THEME_KIND_LABEL, THEME_WINDOW_LABEL } from './theme'
 
 type ThemePlugin = PublishedTheme['plugin']
 
@@ -151,6 +151,9 @@ export function ThemeCard({
               <Badge variant="outline">{THEME_WINDOW_LABEL[theme.window]}</Badge>
             </Row>
           </Row>
+          {theme.kind === 'terminal' && theme.usesTerminalColors ? (
+            <Hint icon={Palette}>{TERMINAL_COLORS_NOTICE}</Hint>
+          ) : null}
           {install === undefined ? null : <PluginInstall plugin={theme.plugin} install={install} />}
           <SwitchTo theme={theme} />
         </Stack>

@@ -1,3 +1,5 @@
+import { fixedColorWindow } from './fixed-color'
+
 /**
  * One look a plugin carries (ADR 0012). The plugin is still the unit statuslin.es reviews, pins and
  * installs; a theme is the unit visitors browse, one card each on /themes. A terminal theme is a
@@ -29,8 +31,32 @@ export const TERMINAL_THEME_BASES = [
 ] as const
 export type TerminalThemeBase = (typeof TERMINAL_THEME_BASES)[number]
 
-export function terminalThemeWindow(base: TerminalThemeBase): ThemeWindow {
-  return base.startsWith('light') ? 'light' : 'dark'
+/**
+ * Claude Code 2.1.310's `/theme` labels these bases "(ANSI colors only)" and builds them from
+ * `ansi:<name>` colors alone: the 16 colors the user's terminal sets.
+ */
+export const TERMINAL_COLOR_BASES = [
+  'dark-ansi',
+  'light-ansi',
+] as const satisfies readonly TerminalThemeBase[]
+
+export function usesTerminalColors(base: TerminalThemeBase): boolean {
+  return TERMINAL_COLOR_BASES.some((ansi) => ansi === base)
+}
+
+export const TERMINAL_COLORS_NOTICE =
+  "Uses your terminal's own colors. This preview shows a default terminal's colors."
+
+export function terminalThemeWindow({
+  base,
+  overrides,
+}: {
+  base: TerminalThemeBase
+  overrides: Readonly<Record<string, string>>
+}): ThemeWindow {
+  const baseWindow: ThemeWindow = base.startsWith('light') ? 'light' : 'dark'
+  if (!usesTerminalColors(base)) return baseWindow
+  return fixedColorWindow(overrides.userMessageBackground) ?? baseWindow
 }
 
 /**
@@ -50,6 +76,7 @@ export interface TerminalThemeFile {
   key: string
   name: string
   window: ThemeWindow
+  usesTerminalColors: boolean
   /** The file exactly as pinned, which the operator reads in /admin before publishing. */
   source: string
 }

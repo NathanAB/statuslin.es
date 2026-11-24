@@ -79,9 +79,24 @@ describe('getThemeCards', () => {
       kind: 'terminal',
       name: 'Theme 00',
       window: 'dark',
+      usesTerminalColors: false,
       preview: SEEDED_THEME_PREVIEW.segments,
       plugin: { id: modId, slug: 'pack', title: 'pack title', authorGithub: 'octocat', code: null },
     })
+  })
+
+  it('says on each terminal card whether its theme uses the terminal palette, as intake stored it', async () => {
+    const { versionId } = await plugin('pack', ['Gruvbox Light'])
+    await addTheme(db, versionId, { key: 'dawn', name: 'Dawn (ANSI)', usesTerminalColors: true })
+
+    const cards = await getThemeCards(db)
+
+    expect(
+      cards.map((card) => [card.name, card.kind === 'terminal' && card.usesTerminalColors]),
+    ).toEqual([
+      ['Dawn (ANSI)', true],
+      ['Gruvbox Light', false],
+    ])
   })
 
   it("carries what a plugin's hooks modules can reach on its theme cards, so they can say it runs code", async () => {
