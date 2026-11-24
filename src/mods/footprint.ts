@@ -2,6 +2,7 @@ import type { ModFootprint } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
 import { type EntryMeaning, FOOTPRINT_MEANINGS, type MatcherArgs } from './footprint-meanings'
 import type { DesktopPreview } from './queries'
+import { terminalResult } from './terminal-result'
 
 /** Where a mod's output appears in Claude Code, in display order. */
 export const DRAW_LOCATIONS = [
@@ -125,7 +126,7 @@ interface RecordedSurfaces {
 /** The surfaces the recorded previews show it drawing on; one where it drew nothing is left out. */
 function modSurfaces(version: RecordedSurfaces): Surface[] {
   const surfaces: Surface[] = []
-  if (version.preview !== null && version.preview.length > 0) surfaces.push('terminal')
+  if (terminalResult(version.preview).kind === 'drew') surfaces.push('terminal')
   if (version.desktop?.kind === 'shot') surfaces.push('desktop')
   return surfaces
 }

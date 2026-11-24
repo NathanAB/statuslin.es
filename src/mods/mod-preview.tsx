@@ -7,6 +7,7 @@ import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Text } from '@/ui/text'
 import { SURFACE_LABEL, type Surface } from './footprint'
 import type { ModDetail } from './queries'
+import { type TerminalResult, terminalResult } from './terminal-result'
 
 const desktopAlt = (title: string) => `${title} in Claude Desktop`
 
@@ -35,19 +36,36 @@ const NoPreview = () => (
   </Text>
 )
 
+function TerminalBody({ result }: { result: Exclude<TerminalResult, { kind: 'unrecorded' }> }) {
+  switch (result.kind) {
+    case 'drew':
+      return <StatuslinePreview segments={result.segments} />
+    case 'nothing':
+      return <DrewNothing where="in the terminal" />
+    case 'hook-error':
+      return (
+        <Text muted size="sm">
+          Draws nothing in the terminal. Claude Code prints a one-line error there when a session
+          starts.
+        </Text>
+      )
+    default: {
+      const _exhaustive: never = result
+      return _exhaustive
+    }
+  }
+}
+
 /** The mod page's previews, the terminal then Claude Desktop. A surface with no result is left out. */
 export function ModPreview({ mod }: { mod: Pick<ModDetail, 'title' | 'preview' | 'desktop'> }) {
-  const { preview, desktop } = mod
-  if (preview === null && desktop === null) return <NoPreview />
+  const { desktop } = mod
+  const terminal = terminalResult(mod.preview)
+  if (terminal.kind === 'unrecorded' && desktop === null) return <NoPreview />
   return (
     <Stack gap={4}>
-      {preview !== null && (
+      {terminal.kind !== 'unrecorded' && (
         <Labelled surface="terminal">
-          {preview.length > 0 ? (
-            <StatuslinePreview segments={preview} />
-          ) : (
-            <DrewNothing where="in the terminal" />
-          )}
+          <TerminalBody result={terminal} />
         </Labelled>
       )}
       {desktop !== null && (

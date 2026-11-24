@@ -5,6 +5,7 @@ import { type ModCardBody, modCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
 import { modCardResponse } from '@/og/routes'
 import type { AnsiSegment } from '@/render/types'
+import { HOOK_ERROR_ONLY_PREVIEW } from '../mods/fixtures/hook-error-previews'
 import {
   addDesktopPreview,
   addMod,
@@ -32,6 +33,13 @@ beforeAll(async () => {
   await addDesktopPreview(db, anywhere.versionId)
   const blank = await seedMod(db, 'blank', 'published', 'f')
   await drawsNothingInTheTerminal(blank.versionId)
+  // A Desktop theme mod: its terminal recording is only Claude Code's error for its hook.
+  const crashed = await seedMod(db, 'crashed', 'published', '3')
+  await db
+    .update(schema.modPreviews)
+    .set({ segments: HOOK_ERROR_ONLY_PREVIEW })
+    .where(eq(schema.modPreviews.modVersionId, crashed.versionId))
+  await addDesktopPreview(db, crashed.versionId)
   await seedMod(db, 'draft-mod', 'draft', 'c')
   await seedMod(db, 'removed-mod', 'removed', 'd')
   // Themes alone: Night is added first, Dawn comes first by name.
@@ -90,6 +98,11 @@ describe('modCardResponse', () => {
       SEEDED_SHOT_BODY,
     ],
     ['the chip when it draws nothing in either', 'blank', { kind: 'none' }],
+    [
+      "its Desktop shot when its only terminal output is its hook's error",
+      'crashed',
+      SEEDED_SHOT_BODY,
+    ],
     [
       "a theme plugin's first theme by name, in its window, in place of its own recording",
       'pack',
