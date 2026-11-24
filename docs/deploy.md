@@ -410,6 +410,10 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    background that moves can't be listed as a still), when two themes come out as one look, or when
    its shot is over 4 MB (its card over 1 MB). These checks catch a wrong declaration, not code that
    behaves differently in the sandbox: read the pinned code before you publish.
+   Run one `render:mods` at a time. Our E2B key allows 20 sandboxes at once, and a Desktop theme
+   pack records each theme twice plus baselines, so runs side by side pass that and fail their
+   themes with "Rate limit exceeded". Don't stop a run partway: its Desktop sandboxes live on for
+   up to 25 minutes and keep holding their slots.
    A published mod's live previews are replaced as soon as it renders:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods

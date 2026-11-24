@@ -88,6 +88,14 @@
   },
   "overrides": [
     {
+      "includes": ["src/mods/curation.json"],
+      "json": {
+        "formatter": {
+          "expand": "always"
+        }
+      }
+    },
+    {
       "includes": ["plugins/**"],
       "linter": {
         "rules": {
