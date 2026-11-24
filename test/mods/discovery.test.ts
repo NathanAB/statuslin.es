@@ -4,11 +4,15 @@ import * as schema from '@/db/schema'
 import { PAGE_SIZE } from '@/gallery/queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import {
+  addDesktopTheme,
+  addMod,
   addTheme,
+  addVersion,
   openTestDb,
   REPO_URL,
   SEEDED_THEME_PREVIEW,
   seedMod,
+  setCurrentVersion,
   sha,
   type TestDb,
 } from './seed-mods'
@@ -329,6 +333,53 @@ describe('llms-full.txt with mods', () => {
 
     expect(full.headers.get('content-type')).toBe(short.headers.get('content-type'))
     expect(full.headers.get('cache-control')).toBe(short.headers.get('cache-control'))
+  })
+})
+
+// A Desktop theme is set by a mod, which /themes lists beside the theme plugins.
+describe('with a mod that sets a Desktop theme', () => {
+  let nightId: string
+  beforeAll(async () => {
+    nightId = await addMod(db, 'night-desktop', 'published')
+    const night = await addVersion(db, nightId, {
+      commitSha: sha('9'),
+      versionNumber: 1,
+      hooksModules: ['./register.ts'],
+    })
+    await setCurrentVersion(db, nightId, night)
+    await db
+      .update(schema.mods)
+      .set({ title: 'Night Desktop', description: 'A dark Desktop theme', copyCount: 1 })
+      .where(eq(schema.mods.id, nightId))
+    await addDesktopTheme(db, night, { key: 'night', name: 'Night' })
+  })
+  afterAll(async () => {
+    await db.update(schema.mods).set({ status: 'removed' }).where(eq(schema.mods.id, nightId))
+  })
+
+  it('lists it in llms.txt under Themes, after the theme plugin, and not under Mods', async () => {
+    const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
+
+    expect(txt).toContain(
+      [
+        '## Mods',
+        '',
+        `- [Context Meter](${BASE}/mods/context-meter): Shows how full the context is. Installed 3 times.`,
+        '',
+        '## Themes',
+        '',
+        `- [Glow Themes](${BASE}/mods/glow-themes): Warm colors for the terminal. Installed 2 times.`,
+        `- [Night Desktop](${BASE}/mods/night-desktop): A dark Desktop theme. Installed 1 time.`,
+        '',
+      ].join('\n'),
+    )
+  })
+
+  it('lists it in llms-full.txt under Themes, and not under Mods', async () => {
+    const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
+
+    expect(txt.indexOf('### [Night Desktop]')).toBeGreaterThan(txt.indexOf('## Themes'))
+    expect(txt.match(/### \[Night Desktop\]/g)).toHaveLength(1)
   })
 })
 

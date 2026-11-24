@@ -521,9 +521,9 @@ is listed and left alone, and so are a head that no longer builds on the pin (a 
 repository, pin or plugin.json GitHub no longer serves (`gone`; see "Pinned-commit check"), and a
 version that isn't a plain version string (`unreadable`: read it by hand). It reads only GitHub, so
 it needs a token (one run makes more requests than GitHub allows an hour without one), not a
-database:
+database. Bun reads `GITHUB_TOKEN` from `.env.local`:
 ```sh
-GITHUB_TOKEN=$(gh auth token) bun run updates:mods
+bun run updates:mods
 ```
 **The weekly pull request.** `updates:mods:pr` runs that check and opens one pull request,
 `chore(mods): re-pin curated mods to their new releases`, from the `mods/updates` branch. Its body
@@ -536,9 +536,9 @@ from this repository's own `mods/updates` counts, never a fork's. While that pul
 new releases to it instead of opening another, and rewrite its body whenever it doesn't match the
 branch. The body compares each mod from main's pin to the commit the branch holds. It edits `curation.json` through the GitHub API, so it leaves the checkout alone, and it
 never merges, publishes or re-pins. It needs `gh` and `claude` signed in on the operator's machine
-(the subscription, not an API key):
+(the subscription, not an API key), and `GITHUB_TOKEN`, which Bun reads from `.env.local`:
 ```sh
-GITHUB_TOKEN=$(gh auth token) bun run updates:mods:pr
+bun run updates:mods:pr
 ```
 To run it every Monday at 09:00, give it its own clone and a launchd agent. The clone must live
 outside `~/Documents`, `~/Desktop` and `~/Downloads`: macOS privacy protection stops a launchd job

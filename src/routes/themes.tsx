@@ -1,12 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
+import { jsonLdScript } from '@/lib/json-ld'
+import { configListPageJsonLd } from '@/lib/json-ld-lists'
 import { PAGE_TITLE_BRAND } from '@/lib/search-text'
-import { MODS_PATH, siteUrl, THEMES_PATH } from '@/lib/site'
+import { MODS_PATH, modPath, siteUrl, THEMES_PATH } from '@/lib/site'
 import { themesSocialMeta } from '@/og/meta'
 import { FilteredThemes } from '@/themes/filtered-themes'
 import { getThemeCardsFn } from '@/themes/functions'
 import { coerceThemeFilter, type ThemeFilter } from '@/themes/theme-filter'
+import { themePlugins } from '@/themes/theme-plugins'
 import { THEMES_DESCRIPTION, THEMES_HEADING, THEMES_TITLE_BASE } from '@/themes/themes-page'
 import { InlineCommand } from '@/ui/inline-command'
 import { Stack } from '@/ui/layout'
@@ -22,6 +25,7 @@ export const Route = createFileRoute('/themes')({
     const [themes, user] = await Promise.all([getThemeCardsFn(), getSession()])
     return { themes, user, origin: siteUrl() }
   },
+  // The JSON-LD lists each theme's plugin page, since a theme has no page of its own (ADR 0012).
   head: ({ loaderData }) => ({
     meta: [
       { title: `${THEMES_TITLE_BASE}${PAGE_TITLE_BRAND}` },
@@ -36,6 +40,12 @@ export const Route = createFileRoute('/themes')({
       }),
     ],
     links: [canonicalLink(THEMES_PATH)],
+    scripts: configListPageJsonLd(
+      siteUrl(),
+      { path: THEMES_PATH, name: THEMES_TITLE_BASE },
+      themePlugins(loaderData?.themes ?? []),
+      modPath,
+    ).map(jsonLdScript),
   }),
   component: ThemesPage,
 })

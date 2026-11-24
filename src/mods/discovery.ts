@@ -48,12 +48,16 @@ export const sitemapWithModsForRoute = createServerOnlyFn(async (): Promise<Resp
   ])
 })
 
+// llms.txt lists a plugin under Themes when /themes shows it: a theme plugin, or a mod with theme
+// cards. Facets still count every mod.
+const carriesThemes = (listing: PublishedModListing) => listing.themeOnly || listing.hasThemeCards
+
 export const llmsTxtWithModsForRoute = createServerOnlyFn(async (): Promise<Response> => {
-  const { mods, themePlugins } = await publishedListings()
-  return llmsTxtResponseForRoute(mods, themePlugins)
+  const { all, mods } = await publishedListings()
+  return llmsTxtResponseForRoute(mods, all.filter(carriesThemes))
 })
 
 export const llmsFullTxtWithModsForRoute = createServerOnlyFn(async (): Promise<Response> => {
-  const { mods, themePlugins } = await publishedListings()
-  return llmsFullTxtResponseForRoute(mods, themePlugins)
+  const { all, mods } = await publishedListings()
+  return llmsFullTxtResponseForRoute(mods, all.filter(carriesThemes))
 })

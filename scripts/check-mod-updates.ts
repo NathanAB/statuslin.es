@@ -16,9 +16,9 @@ import { terminalLine } from '@/mods/terminal-line'
  * aborts the run before anything is written.
  *
  * AGENT USAGE — needs only GitHub, no DATABASE_URL, but a token: one run makes more requests than
- * GitHub allows an hour without one:
+ * GitHub allows an hour without one. Bun reads GITHUB_TOKEN from .env.local:
  *
- *   GITHUB_TOKEN=$(gh auth token) bun run updates:mods [curation-file]   # default src/mods/curation.json
+ *   bun run updates:mods [curation-file]   # default src/mods/curation.json
  *
  * Exit code 0 when the check ran, re-pinned or not; 1 when the curation file is invalid or GitHub
  * failed.

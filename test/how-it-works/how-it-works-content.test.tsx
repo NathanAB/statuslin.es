@@ -35,6 +35,7 @@ const MOD: ModDetail = {
   recordedWith: '2.1.0',
   reviewedAt: '2026-10-15',
   themeOnly: false,
+  terminalHookError: false,
 }
 
 const ENTRY = `{\n  "name": "deck",\n  "source": {\n    "source": "url",\n    "url": "https://github.com/octocat/deck.git",\n    "sha": "${SHA}"\n  }\n}`

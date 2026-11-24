@@ -27,8 +27,62 @@ describe('/themes head', () => {
     process.env.BETTER_AUTH_URL = ORIGIN
     return ThemesRoute.options.head?.({
       loaderData: { themes, user: null, origin: ORIGIN },
-    } as never) as { meta: Array<Record<string, string>>; links: Array<Record<string, string>> }
+    } as never) as {
+      meta: Array<Record<string, string>>
+      links: Array<Record<string, string>>
+      scripts?: Array<{ type: string; children: string }>
+    }
   }
+
+  const jsonLd = (themes: PublishedTheme[]) =>
+    (head(themes).scripts ?? []).map((script) => JSON.parse(script.children))
+
+  // Most themes listed are Desktop themes, and people search "Claude Desktop themes" too.
+  it('names Claude Code themes and Claude Desktop themes in the title', () => {
+    expect(head([THEME]).meta).toContainEqual({
+      title: 'Claude Code Themes and Claude Desktop Themes | statuslin.es',
+    })
+  })
+
+  it('describes the page as a list of each theme plugin page, once, in card order', () => {
+    const glow: PublishedTheme = {
+      ...THEME,
+      id: 't3',
+      name: 'Glow',
+      plugin: { ...THEME.plugin, id: 'glow-id', slug: 'glow', title: 'Glow' },
+    }
+    const dawn: PublishedTheme = { ...THEME, id: 't2', name: 'Dawn', window: 'light' }
+
+    expect(jsonLd([THEME, glow, dawn])).toEqual([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: 'Claude Code Themes and Claude Desktop Themes',
+        url: `${ORIGIN}/themes`,
+        mainEntity: {
+          '@type': 'ItemList',
+          numberOfItems: 2,
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Pack', url: `${ORIGIN}/mods/pack` },
+            { '@type': 'ListItem', position: 2, name: 'Glow', url: `${ORIGIN}/mods/glow` },
+          ],
+        },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'statuslin.es', item: ORIGIN },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Claude Code Themes and Claude Desktop Themes',
+            item: `${ORIGIN}/themes`,
+          },
+        ],
+      },
+    ])
+  })
 
   it('titles and describes the page and points its canonical link at /themes', () => {
     const { meta, links } = head([THEME])

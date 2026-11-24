@@ -29,6 +29,12 @@ function DrewNothing({ where }: { where: string }) {
   )
 }
 
+const HookErrorNote = () => (
+  <Text muted size="sm">
+    Draws nothing in the terminal. Claude Code prints a one-line error there when a session starts.
+  </Text>
+)
+
 const NoPreview = () => (
   <Text muted size="sm">
     No preview.
@@ -36,7 +42,11 @@ const NoPreview = () => (
 )
 
 /** The mod page's previews, the terminal then Claude Desktop. A surface with no result is left out. */
-export function ModPreview({ mod }: { mod: Pick<ModDetail, 'title' | 'preview' | 'desktop'> }) {
+export function ModPreview({
+  mod,
+}: {
+  mod: Pick<ModDetail, 'title' | 'preview' | 'desktop' | 'terminalHookError'>
+}) {
   const { preview, desktop } = mod
   if (preview === null && desktop === null) return <NoPreview />
   return (
@@ -45,6 +55,8 @@ export function ModPreview({ mod }: { mod: Pick<ModDetail, 'title' | 'preview' |
         <Labelled surface="terminal">
           {preview.length > 0 ? (
             <StatuslinePreview segments={preview} />
+          ) : mod.terminalHookError ? (
+            <HookErrorNote />
           ) : (
             <DrewNothing where="in the terminal" />
           )}

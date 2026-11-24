@@ -10,6 +10,10 @@ import {
   setsTheme,
 } from '@/mods/footprint'
 import { parseFootprint } from '@/mods/plugin-facts'
+import {
+  HOOK_ERROR_ONLY_PREVIEW,
+  HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+} from './fixtures/hook-error-previews'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -279,6 +283,27 @@ describe('describeModFootprint', () => {
     expect(
       describeModFootprint({ footprint, preview: PREVIEW, desktop: { kind: 'nothing' } }).surfaces,
     ).toEqual(['terminal'])
+  })
+
+  // A Desktop theme mod's terminal recording is Claude Code's error for its hook: it drew nothing.
+  it("leaves out the terminal for a mod whose only output there is its hook's error", () => {
+    expect(
+      describeModFootprint({
+        footprint: PLAIN,
+        preview: HOOK_ERROR_ONLY_PREVIEW,
+        desktop: { kind: 'shot' },
+      }).surfaces,
+    ).toEqual(['desktop'])
+  })
+
+  it("keeps the terminal for a mod that draws there beside its hook's error", () => {
+    expect(
+      describeModFootprint({
+        footprint: PLAIN,
+        preview: HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+        desktop: { kind: 'shot' },
+      }).surfaces,
+    ).toEqual(['terminal', 'desktop'])
   })
 
   it('carries the plain-words footprint alongside the surfaces', () => {

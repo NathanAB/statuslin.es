@@ -5,7 +5,6 @@ import {
   normalizeWhitespace,
   PAGE_TITLE_BRAND,
   PAGE_TITLE_MAX_LENGTH,
-  truncateAtWordBoundary,
 } from '@/lib/search-text'
 
 /**
@@ -29,10 +28,25 @@ const PLUGIN_PAGE_WORDS = {
 
 const pluginPageWords = (themeOnly: boolean) => PLUGIN_PAGE_WORDS[themeOnly ? 'themes' : 'mod']
 
+// Where a headline's phrases meet: a comma, semicolon or colon, a spaced dash, or the space before
+// a word that opens a new phrase.
+const PHRASE_BREAK = /[,;:]|\s[—–-]\s|\s(?=(?:and|at|for|from|in|on|that|to|with)\s)/g
+
+/** The headline up to its last phrase break within `maxLength`, or null when none fits. */
+function leadingPhrases(headline: string, maxLength: number): string | null {
+  let end = 0
+  for (const { index } of headline.matchAll(PHRASE_BREAK)) {
+    if (index > maxLength) break
+    end = index
+  }
+  return end > 0 ? headline.slice(0, end).replace(/[\s,;:]+$/, '') : null
+}
+
 /**
  * With a reviewed headline, the title names the problem the mod solves so the page ranks for it,
  * not only for the mod's name. "mod" follows the name because people search "<name> mod"; a theme
- * plugin's name is followed by "themes" instead. The headline gives way to fit, never the name.
+ * plugin's name is followed by "themes" instead. The headline gives way to fit, never the name: it
+ * ends after its last whole phrase that fits.
  */
 export function modPageTitle(
   title: string,
@@ -45,12 +59,10 @@ export function modPageTitle(
   const branded = `${lead}${headline}${PAGE_TITLE_BRAND}`
   if (branded.length <= PAGE_TITLE_MAX_LENGTH) return branded
   const budget = PAGE_TITLE_MAX_LENGTH - lead.length
-  const firstWord = headline.split(' ', 1)[0] ?? ''
-  // A headline cut inside its first word reads as noise; the plain title says more.
-  if (headline.length > budget && firstWord.length + 1 > budget) {
-    return keywordPageTitle(title, words.keyword)
-  }
-  return `${lead}${truncateAtWordBoundary(headline, budget)}`
+  if (headline.length <= budget) return `${lead}${headline}`
+  const phrases = leadingPhrases(headline, budget)
+  // With no whole phrase that fits, the plain title says more than a cut one.
+  return phrases ? `${lead}${phrases}` : keywordPageTitle(title, words.keyword)
 }
 
 /**

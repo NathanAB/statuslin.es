@@ -51,6 +51,7 @@ const PACK: ModDetail = {
   recordedWith: '2.1.310',
   reviewedAt: null,
   themeOnly: true,
+  terminalHookError: false,
 }
 
 const theme = (name: string): PublishedTheme => ({
@@ -92,6 +93,16 @@ describe('a plugin page with themes', () => {
     expect(themes.getAllByText('/theme')).toHaveLength(2)
     expect(screen.queryByRole('heading', { level: 2, name: 'Preview' })).toBeNull()
     expect(screen.queryByText(/Draws nothing/)).toBeNull()
+  })
+
+  // A plugin page is where a theme card leads, so its themes section leads on to every other theme.
+  it('links its themes section to /themes', () => {
+    renderPage({}, [theme('Night')])
+
+    const link = within(section('Themes')).getByRole('link', {
+      name: 'every Claude Code and Claude Desktop theme',
+    })
+    expect(link.getAttribute('href')).toBe('/themes')
   })
 
   it('keeps the mod preview of a plugin with code beside its themes', () => {

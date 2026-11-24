@@ -82,6 +82,7 @@ const MOD: ModDetail = {
   recordedWith: '2.1.0',
   reviewedAt: null,
   themeOnly: false,
+  terminalHookError: false,
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {
@@ -448,6 +449,23 @@ describe('mod page', () => {
 
     expect(section('Preview').getByText('Draws nothing in the terminal.')).toBeTruthy()
     expect(screen.queryByText('No preview.')).toBeNull()
+  })
+
+  // A Desktop theme mod calls $.theme.set, which the terminal lacks, so Claude Code prints its
+  // hook's error there. The page states that fact instead of showing the error as a preview.
+  it("states that a mod whose only terminal output is its hook's error draws nothing there", () => {
+    renderPage({ preview: [], terminalHookError: true, desktop: SHOT })
+
+    const preview = section('Preview')
+    expect(preview.getByText('Terminal')).toBeTruthy()
+    expect(
+      preview.getByText(
+        'Draws nothing in the terminal. Claude Code prints a one-line error there when a session starts.',
+      ),
+    ).toBeTruthy()
+    const what = section('What it does')
+    const tile = (label: string) => what.getByText(label).closest('dt')?.nextElementSibling
+    expect(tile('Works in')?.textContent).toBe('Claude Desktop')
   })
 
   it('stacks the Desktop shot under the terminal, whole and at its CSS size', () => {
