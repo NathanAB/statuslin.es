@@ -14,6 +14,7 @@ const THEME: PublishedTheme = {
   name: 'Night',
   window: 'dark',
   preview: [{ text: 'Night screen' }],
+  usesTerminalColors: false,
   plugin: { id: 'pack-id', slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },
 }
 

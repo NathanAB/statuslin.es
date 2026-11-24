@@ -52,6 +52,7 @@ function theme(name: string, slug: string, over: Partial<TerminalCard> = {}): Te
     name,
     window: 'dark',
     preview: [{ text: `${name} screen` }],
+    usesTerminalColors: false,
     plugin: { id: `${slug}-id`, slug, title: `${slug} title`, authorGithub: 'octocat', code: null },
     ...over,
   }

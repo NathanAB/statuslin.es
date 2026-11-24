@@ -37,6 +37,7 @@ function theme(name: string, slug: string): PublishedTheme {
     kind: 'terminal',
     window: 'dark',
     preview: [{ text: `${name} screen` }],
+    usesTerminalColors: false,
     plugin: { id: `${slug}-id`, slug, title: `${slug} title`, authorGithub: 'octocat', code: null },
   }
 }

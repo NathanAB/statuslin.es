@@ -36,6 +36,7 @@ function row(over: Partial<CuratedThemeRow> = {}): CuratedThemeRow {
         window: 'light',
         source: SOURCE,
         preview: [{ text: 'paper screen' }],
+        usesTerminalColors: false,
       },
     ],
     ...over,

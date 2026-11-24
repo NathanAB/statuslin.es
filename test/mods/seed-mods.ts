@@ -80,6 +80,7 @@ interface ThemeSeed {
   key: string
   name?: string
   window?: 'light' | 'dark'
+  usesTerminalColors?: boolean
   source?: string
   /** Seeds the theme's preview, so its version can render. */
   rendered?: boolean
@@ -102,6 +103,7 @@ export async function addTheme(db: TestDb, versionId: string, seed: ThemeSeed): 
       key: seed.key,
       name,
       window: seed.window ?? 'dark',
+      usesTerminalColors: seed.usesTerminalColors ?? false,
       source: seed.source ?? JSON.stringify({ name, base: 'dark', overrides: {} }),
     })
     .returning()

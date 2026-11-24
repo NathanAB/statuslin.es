@@ -29,6 +29,8 @@ export type ReviewTheme =
       source: string
       /** The whole recorded screen; null before it renders. */
       preview: AnsiSegment[] | null
+      /** On an ANSI base: it draws with the user's own terminal palette, not its preview's. */
+      usesTerminalColors: boolean
     })
   | (ReviewThemeBase & {
       kind: 'desktop'
@@ -46,6 +48,7 @@ function reviewThemeRows(database: Db, versionIds: string[]) {
       key: modThemes.key,
       name: modThemes.name,
       window: modThemes.window,
+      usesTerminalColors: modThemes.usesTerminalColors,
       source: modThemes.source,
       switchSteps: modThemes.switchSteps,
       segments: modThemePreviews.segments,
@@ -60,9 +63,22 @@ function reviewThemeRows(database: Db, versionIds: string[]) {
 
 type ReviewRow = Omit<Awaited<ReturnType<typeof reviewThemeRows>>[number], 'versionId'>
 
-function toReviewTheme({ source, switchSteps, segments, shot, ...theme }: ReviewRow): ReviewTheme {
+function toReviewTheme({
+  source,
+  switchSteps,
+  segments,
+  shot,
+  usesTerminalColors,
+  ...theme
+}: ReviewRow): ReviewTheme {
   if (theme.kind === 'terminal') {
-    return { ...theme, kind: theme.kind, source: source ?? '', preview: segments }
+    return {
+      ...theme,
+      kind: theme.kind,
+      source: source ?? '',
+      preview: segments,
+      usesTerminalColors,
+    }
   }
   return {
     ...theme,

@@ -100,6 +100,7 @@ const NIGHT: PublishedTheme = {
   kind: 'terminal',
   window: 'dark',
   preview: [{ text: 'Night screen' }],
+  usesTerminalColors: false,
   plugin: { id: 'pack-id', slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },
 }
 

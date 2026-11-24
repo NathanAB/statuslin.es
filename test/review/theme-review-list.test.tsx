@@ -29,6 +29,7 @@ function theme(over: Partial<TerminalReview>): TerminalReview {
     window: 'light',
     source: PAPER_SOURCE,
     preview: [{ text: 'paper screen' }],
+    usesTerminalColors: false,
     ...over,
   }
 }
