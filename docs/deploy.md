@@ -382,6 +382,9 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```sh
    DATABASE_URL='<env pooled url>' bun run import:mods
    ```
+   No two entries may share a plugin name (ADR 0005: a user with both gets one working). Check a
+   candidate's plugin.json `name` against the file before reading it: palette plugins are often
+   named for the bare palette.
 3. Render each mod's previews. One run records every mod in the terminal and in Claude Desktop and
    prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
    its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
