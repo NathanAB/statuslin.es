@@ -1,7 +1,14 @@
 import { asc, desc, eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { type ModPageCopy, modPageCopySchema, readPageCopy } from '@/content/types'
-import { mods, modThemePreviews, modThemes, modVersions, submissions } from '@/db/schema'
+import {
+  mods,
+  modThemeDesktopPreviews,
+  modThemePreviews,
+  modThemes,
+  modVersions,
+  submissions,
+} from '@/db/schema'
 import { versionIsThemeOnly } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -24,7 +31,7 @@ export interface PublishedModListing {
   hasThemeCards: boolean
 }
 
-const versionHasThemeCards = sql<boolean>`exists (select 1 from ${modThemes} inner join ${modThemePreviews} on ${modThemePreviews.themeId} = ${modThemes.id} where ${modThemes.modVersionId} = ${modVersions.id})`
+const versionHasThemeCards = sql<boolean>`exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and (exists (select 1 from ${modThemePreviews} where ${modThemePreviews.themeId} = ${modThemes.id}) or exists (select 1 from ${modThemeDesktopPreviews} where ${modThemeDesktopPreviews.themeId} = ${modThemes.id})))`
 
 export async function getPublishedModListings(db: Db): Promise<PublishedModListing[]> {
   const rows = await db

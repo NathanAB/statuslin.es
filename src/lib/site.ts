@@ -103,6 +103,18 @@ export function modDesktopPreviewPath(
   return image === 'card' ? `${path}&image=card` : path
 }
 
+export const THEME_DESKTOP_PREVIEW_ROUTE = '/theme-previews/$themeId/desktop.png'
+
+/** A theme's whole-window shot, or with `image` 'card' its card image, under the render that made it. */
+export function themeDesktopPreviewPath(
+  themeId: string,
+  renderedAt: Date,
+  image: 'shot' | 'card' = 'shot',
+): string {
+  const path = `${THEME_DESKTOP_PREVIEW_ROUTE.replace('$themeId', () => themeId)}?r=${renderedAt.getTime()}`
+  return image === 'card' ? `${path}&image=card` : path
+}
+
 /** A status line version's Claude Desktop preview image. */
 export const CONFIG_DESKTOP_PREVIEW_ROUTE = '/config-previews/$versionId/desktop.png'
 

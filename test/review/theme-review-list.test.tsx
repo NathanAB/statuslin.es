@@ -17,14 +17,31 @@ const PAPER_SOURCE =
   '{\n  "name": "Paper",\n  "base": "light",\n  "overrides": { "claude": "#d97757" }\n}\n'
 const HOSTILE = '<img src=x onerror=alert(1)>'
 
-function theme(over: Partial<ReviewTheme>): ReviewTheme {
+type TerminalReview = Extract<ReviewTheme, { kind: 'terminal' }>
+type DesktopReview = Extract<ReviewTheme, { kind: 'desktop' }>
+
+function theme(over: Partial<TerminalReview>): TerminalReview {
   return {
     id: over.key ?? 'paper',
+    kind: 'terminal',
     key: 'paper',
     name: 'Paper',
     window: 'light',
     source: PAPER_SOURCE,
     preview: [{ text: 'paper screen' }],
+    ...over,
+  }
+}
+
+function desktopTheme(over: Partial<DesktopReview>): DesktopReview {
+  return {
+    id: over.key ?? 'night-reef',
+    kind: 'desktop',
+    key: 'night-reef',
+    name: 'Night Reef',
+    window: 'dark',
+    switchSteps: ['/custom-theme night-reef'],
+    preview: { src: '/admin/theme-previews/night-reef/desktop.png', width: 1100, height: 900 },
     ...over,
   }
 }
@@ -90,6 +107,30 @@ describe('themes on a mod review card', () => {
     expect(night.getByText('Not rendered yet.')).toBeTruthy()
     expect(night.queryByRole('img')).toBeNull()
     expect(night.getByText('Dark window')).toBeTruthy()
+  })
+
+  it("shows a Desktop theme's whole-window shot above the exact steps its recording sent", () => {
+    render(
+      <ModReviewCard
+        row={row([
+          desktopTheme({ switchSteps: ['/custom-theme night-reef', '/fireworks auto off'] }),
+          desktopTheme({ key: 'rainy', name: 'Rainy Window', switchSteps: [], preview: null }),
+        ])}
+      />,
+    )
+
+    const reef = within(themeNamed('Night Reef'))
+    expect(reef.getByText('Claude Desktop, dark window')).toBeTruthy()
+    expect(reef.getByRole('img', { name: 'Night Reef preview' }).getAttribute('src')).toBe(
+      '/admin/theme-previews/night-reef/desktop.png',
+    )
+    expect(themeNamed('Night Reef').querySelector('pre')?.textContent).toBe(
+      '/custom-theme night-reef\n/fireworks auto off',
+    )
+
+    const rainy = within(themeNamed('Rainy Window'))
+    expect(rainy.getByText('Not rendered yet.')).toBeTruthy()
+    expect(rainy.getByText('No switch steps: the mod sets it when a session starts.')).toBeTruthy()
   })
 
   it('keeps every theme of an 81-theme pack on the card, each folded into its own disclosure', () => {

@@ -57,12 +57,17 @@ export async function configCardResponseForRoute(slug: string): Promise<Response
   return configCardResponse(defaultDb, slug)
 }
 
+type TerminalTheme = Extract<PublishedTheme, { kind: 'terminal' }>
+
+const terminalThemes = (themes: PublishedTheme[]): TerminalTheme[] =>
+  themes.filter((theme): theme is TerminalTheme => theme.kind === 'terminal')
+
 /** What a mod's card draws: its terminal preview, else its Desktop shot, which satori only reads
  * inline, else neither. A theme plugin's own recording shows nothing of its themes, so its card
  * draws the first of them in name order instead. */
 async function modCardBody(db: Db, mod: ModDetail): Promise<ModCardBody> {
   if (mod.themeOnly) {
-    const themes = await getPublishedModThemes(db, mod.slug)
+    const themes = terminalThemes(await getPublishedModThemes(db, mod.slug))
     const [first] = themes
     if (first) {
       return {
@@ -94,14 +99,15 @@ export async function modCardResponseForRoute(slug: string): Promise<Response> {
   return modCardResponse(defaultDb, slug)
 }
 
-/** The top theme, beside the top one made for the other window so the card shows a light and a
- * dark look, else beside the next one. */
-function themesCardScreens(themes: PublishedTheme[]): ThemeScreen[] {
+/** The top terminal theme, beside the top one made for the other window so the card shows a light
+ * and a dark look, else beside the next one. A card draws a terminal screen, not a Desktop shot. */
+function themesCardScreens(published: PublishedTheme[]): ThemeScreen[] {
+  const themes = terminalThemes(published)
   const [first] = themes
   if (!first) return []
   const second = themes.find((theme) => theme.window !== first.window) ?? themes[1]
   return [first, second]
-    .filter((theme): theme is PublishedTheme => theme !== undefined)
+    .filter((theme): theme is TerminalTheme => theme !== undefined)
     .map((theme) => ({ segments: theme.preview, window: theme.window }))
 }
 

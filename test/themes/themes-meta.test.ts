@@ -10,8 +10,8 @@ const ORIGIN = 'https://statuslin.es'
 
 const THEME: PublishedTheme = {
   id: 't1',
-  name: 'Night',
   kind: 'terminal',
+  name: 'Night',
   window: 'dark',
   preview: [{ text: 'Night screen' }],
   plugin: { id: 'pack-id', slug: 'pack', title: 'Pack', authorGithub: 'octocat', code: null },

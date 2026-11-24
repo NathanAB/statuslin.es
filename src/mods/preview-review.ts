@@ -23,7 +23,7 @@ export interface PreviewReview {
    * The themes the version carries, each reviewed on /admin with its preview and file. /admin shows
    * only a plugin's newest version, so an older one's themes are read at its commit instead.
    */
-  themes: { count: number; versionNumber: number; newestVersionNumber: number }
+  themes: { terminal: number; desktop: number; versionNumber: number; newestVersionNumber: number }
 }
 
 /** Saves a PNG where the operator can open it, and returns its path. */
@@ -68,11 +68,15 @@ function desktopLine({ pin, desktopPng }: PreviewReview, writePng: PngWriter): s
   return `Claude Desktop shot: ${writePng(name, desktopPng)}`
 }
 
+const counted = (count: number, kind: string) =>
+  count === 0 ? [] : [`${count} ${kind} ${count === 1 ? 'theme' : 'themes'}`]
+
 function themesLines({ pin, themes }: PreviewReview): string[] {
-  const { count, versionNumber: v, newestVersionNumber: newest } = themes
-  if (count === 0) return []
+  const { versionNumber: v, newestVersionNumber: newest } = themes
+  const kinds = [...counted(themes.terminal, 'terminal'), ...counted(themes.desktop, 'Desktop')]
+  if (kinds.length === 0) return []
   return [
-    `themes: ${count} terminal themes in v${v} at ${pin.commitSha}. Read each theme's preview and exact file on /admin, under "Curated theme plugins", before --apply.`,
+    `themes: ${kinds.join(' and ')} in v${v} at ${pin.commitSha}. Read each theme's preview beside its exact file or switch steps on /admin, under "Curated theme plugins", before --apply.`,
     ...(v < newest
       ? [
           `WARN themes-not-newest: v${v} is not this plugin's newest version (v${newest}), and /admin shows only the newest version's themes. Read v${v}'s theme files at ${pin.commitSha} before --apply.`,
@@ -101,7 +105,8 @@ export async function storedPreviews(
     .select({
       segments: modPreviews.segments,
       png: modDesktopPreviews.png,
-      themeCount: sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id})::int`,
+      terminalThemes: sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.kind} = 'terminal')::int`,
+      desktopThemes: sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.kind} = 'desktop')::int`,
       versionNumber: modVersions.versionNumber,
       newestVersionNumber: sql<number>`(select max(newest.version_number) from ${modVersions} newest where newest.mod_id = ${modVersions.modId})::int`,
     })
@@ -113,7 +118,8 @@ export async function storedPreviews(
     terminal: row?.segments ?? [],
     desktopPng: row?.png ?? null,
     themes: {
-      count: row?.themeCount ?? 0,
+      terminal: row?.terminalThemes ?? 0,
+      desktop: row?.desktopThemes ?? 0,
       versionNumber: row?.versionNumber ?? 0,
       newestVersionNumber: row?.newestVersionNumber ?? 0,
     },

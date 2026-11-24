@@ -7,6 +7,7 @@ import {
   describeFootprint,
   describeModFootprint,
   footprintRecorded,
+  setsTheme,
 } from '@/mods/footprint'
 import { parseFootprint } from '@/mods/plugin-facts'
 
@@ -329,5 +330,26 @@ describe('writesInToolbar', () => {
     expect(writes(['ui.render{component=SessionMode}'])).toBe(true)
     expect(writes(['$.ui.status'])).toBe(true)
     expect(writes(['ui.render{component=AbovePrompt}', '$.ui.open'])).toBe(false)
+  })
+})
+
+describe('setsTheme', () => {
+  it.each([
+    { what: 'sets a theme', calls: ['$.theme.set'], events: ['session.start'], sets: true },
+    {
+      what: 'draws a backdrop scene',
+      calls: [],
+      events: ['ui.render{component=Backdrop}'],
+      sets: true,
+    },
+    {
+      what: 'draws above the prompt',
+      calls: [],
+      events: ['ui.render{component=AbovePrompt}'],
+      sets: false,
+    },
+    { what: 'was never recorded', calls: [], events: [], sets: false },
+  ])('is $sets for a mod that $what', ({ calls, events, sets }) => {
+    expect(setsTheme({ calls, events })).toBe(sets)
   })
 })

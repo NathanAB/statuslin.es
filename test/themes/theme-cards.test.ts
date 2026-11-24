@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
+import { themeDesktopPreviewPath } from '@/lib/site'
 import {
   getHomeThemes,
   getPublishedModThemes,
@@ -8,11 +9,13 @@ import {
   homeThemesOrEmpty,
 } from '@/themes/queries'
 import {
+  addDesktopTheme,
   addMod,
   addTheme,
   addVersion,
   openTestDb,
   SEEDED_THEME_PREVIEW,
+  SEEDED_THEME_SHOT,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -73,8 +76,8 @@ describe('getThemeCards', () => {
     expect(cards).toHaveLength(81)
     expect(cards[0]).toEqual({
       id: expect.any(String),
-      name: 'Theme 00',
       kind: 'terminal',
+      name: 'Theme 00',
       window: 'dark',
       preview: SEEDED_THEME_PREVIEW.segments,
       plugin: { id: modId, slug: 'pack', title: 'pack title', authorGithub: 'octocat', code: null },
@@ -133,6 +136,95 @@ describe('getThemeCards', () => {
     await addTheme(db, versionId, { key: 'ink', name: 'Ink', rendered: false })
 
     expect(named(await getThemeCards(db))).toEqual(['pack:Paper'])
+  })
+})
+
+describe('getThemeCards for Desktop themes', () => {
+  const THEME_FOOTPRINT = { events: ['session.start'], calls: ['$.theme.set'] }
+
+  async function themeMod(slug: string) {
+    return plugin(slug, [], { footprint: THEME_FOOTPRINT, hooksModules: ['./register.tsx'] })
+  }
+
+  const renderedAt = async (themeId: string) => {
+    const [row] = await db
+      .select({ createdAt: schema.modThemeDesktopPreviews.createdAt })
+      .from(schema.modThemeDesktopPreviews)
+      .where(eq(schema.modThemeDesktopPreviews.themeId, themeId))
+    return row?.createdAt as Date
+  }
+
+  it('gives a Desktop theme its shot and card image by URL, and the steps that switch to it', async () => {
+    const { modId, versionId } = await themeMod('theme-examples')
+    const id = await addDesktopTheme(db, versionId, {
+      key: 'honu-lagoon',
+      name: 'Honu Lagoon',
+      window: 'light',
+      switchSteps: ['/custom-theme honu-lagoon'],
+    })
+    const at = await renderedAt(id)
+
+    expect(await getThemeCards(db)).toEqual([
+      {
+        id,
+        kind: 'desktop',
+        name: 'Honu Lagoon',
+        window: 'light',
+        preview: {
+          shot: {
+            src: themeDesktopPreviewPath(id, at),
+            width: SEEDED_THEME_SHOT.width,
+            height: SEEDED_THEME_SHOT.height,
+          },
+          card: {
+            src: themeDesktopPreviewPath(id, at, 'card'),
+            width: SEEDED_THEME_SHOT.cardWidth,
+            height: SEEDED_THEME_SHOT.cardHeight,
+          },
+        },
+        switchSteps: ['/custom-theme honu-lagoon'],
+        plugin: {
+          id: modId,
+          slug: 'theme-examples',
+          title: 'theme-examples title',
+          authorGithub: 'octocat',
+          code: { footprint: THEME_FOOTPRINT },
+        },
+      },
+    ])
+  })
+
+  it("lists Desktop and terminal themes together, each plugin's by name", async () => {
+    const { versionId } = await themeMod('mixed')
+    await addDesktopTheme(db, versionId, { key: 'night-reef', name: 'Night Reef' })
+    await addTheme(db, versionId, { key: 'dawn', name: 'Dawn' })
+
+    const cards = await getThemeCards(db)
+    expect(cards.map((card) => [card.kind, card.name])).toEqual([
+      ['terminal', 'Dawn'],
+      ['desktop', 'Night Reef'],
+    ])
+  })
+
+  it('leaves out a Desktop theme with no shot, and a terminal preview does not count as one', async () => {
+    const { versionId } = await themeMod('pack')
+    await addDesktopTheme(db, versionId, { key: 'night-reef', name: 'Night Reef' })
+    const honu = await addDesktopTheme(db, versionId, {
+      key: 'honu',
+      name: 'Honu',
+      rendered: false,
+    })
+    await db.insert(schema.modThemePreviews).values({ themeId: honu, ...SEEDED_THEME_PREVIEW })
+
+    expect(named(await getThemeCards(db))).toEqual(['pack:Night Reef'])
+  })
+
+  it("lists a published plugin's Desktop themes on its page", async () => {
+    const { versionId } = await themeMod('pack')
+    await addDesktopTheme(db, versionId, { key: 'rainy', name: 'Rainy Window', switchSteps: [] })
+
+    const [theme] = await getPublishedModThemes(db, 'pack')
+    expect(theme?.kind === 'desktop' && theme.switchSteps).toEqual([])
   })
 })
 

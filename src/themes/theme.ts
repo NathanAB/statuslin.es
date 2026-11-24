@@ -1,11 +1,15 @@
 /**
  * One look a plugin carries (ADR 0012). The plugin is still the unit statuslin.es reviews, pins and
- * installs; a theme is the unit visitors browse, one card each on /themes. Desktop themes come next
- * as a second kind.
+ * installs; a theme is the unit visitors browse, one card each on /themes. A terminal theme is a
+ * file the plugin ships; a Desktop theme is a look a mod's code sets in Claude Desktop.
  */
-export const THEME_KINDS = ['terminal'] as const
+export const THEME_KINDS = ['terminal', 'desktop'] as const
 export type ThemeKind = (typeof THEME_KINDS)[number]
-export const THEME_KIND_LABEL: Record<ThemeKind, string> = { terminal: 'Terminal' }
+/** Where a kind of theme applies, as its card says. */
+export const THEME_KIND_LABEL: Record<ThemeKind, string> = {
+  terminal: 'Terminal',
+  desktop: 'Claude Desktop',
+}
 
 /** The window a theme is made for, and the window its preview is drawn in. */
 export const THEME_WINDOWS = ['light', 'dark'] as const
@@ -29,7 +33,10 @@ export function terminalThemeWindow(base: TerminalThemeBase): ThemeWindow {
   return base.startsWith('light') ? 'light' : 'dark'
 }
 
-/** A theme's key within its plugin: a terminal theme's file slug (`themes/<key>.json`). */
+/**
+ * A theme's key within its plugin: a terminal theme's file slug (`themes/<key>.json`), or the key
+ * the operator gives a Desktop theme, such as the id its mod's switch command takes.
+ */
 export const THEME_KEY = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 export const THEME_KEY_MAX = 64
 /** The longest name a theme may show in `/theme`, on its card and in /admin. */
@@ -54,4 +61,16 @@ export interface TerminalThemeFile {
  */
 export function terminalThemeSetting(pluginName: string, key: string): string {
   return `custom:${pluginName}:${key}`
+}
+
+/**
+ * A Desktop theme as the operator declares it for a mod: its name, the window it is made for, and
+ * what to send in a new Claude Desktop session to switch to it, none when the mod sets it on its own.
+ * The recorder sends exactly these steps, and the theme's card shows them. `name` is shown as text.
+ */
+export interface DesktopTheme {
+  key: string
+  name: string
+  window: ThemeWindow
+  switchSteps: string[]
 }

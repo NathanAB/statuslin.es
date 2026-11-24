@@ -48,7 +48,9 @@ import { Route as ConfigPreviewsVersionIdDesktopDotpngRouteImport } from './rout
 import { Route as ModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/mod-previews.$versionId.desktop[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
+import { Route as ThemePreviewsThemeIdDesktopDotpngRouteImport } from './routes/theme-previews.$themeId.desktop[.]png'
 import { Route as AdminModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/admin/mod-previews.$versionId.desktop[.]png'
+import { Route as AdminThemePreviewsThemeIdDesktopDotpngRouteImport } from './routes/admin/theme-previews.$themeId.desktop[.]png'
 import { Route as ModsUnreviewedOwnerPluginNameRouteImport } from './routes/mods.unreviewed.$owner.$pluginName'
 
 const IndexRoute = IndexRouteImport.update({
@@ -255,10 +257,22 @@ const OgModsChar123slugChar125DotpngRoute =
     path: '/og/mods/{$slug}.png',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ThemePreviewsThemeIdDesktopDotpngRoute =
+  ThemePreviewsThemeIdDesktopDotpngRouteImport.update({
+    id: '/theme-previews/$themeId/desktop.png',
+    path: '/theme-previews/$themeId/desktop.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminModPreviewsVersionIdDesktopDotpngRoute =
   AdminModPreviewsVersionIdDesktopDotpngRouteImport.update({
     id: '/admin/mod-previews/$versionId/desktop.png',
     path: '/admin/mod-previews/$versionId/desktop.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminThemePreviewsThemeIdDesktopDotpngRoute =
+  AdminThemePreviewsThemeIdDesktopDotpngRouteImport.update({
+    id: '/admin/theme-previews/$themeId/desktop.png',
+    path: '/admin/theme-previews/$themeId/desktop.png',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ModsUnreviewedOwnerPluginNameRoute =
@@ -308,7 +322,9 @@ export interface FileRoutesByFullPath {
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/theme-previews/$themeId/desktop.png': typeof ThemePreviewsThemeIdDesktopDotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  '/admin/theme-previews/$themeId/desktop.png': typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
   '/mods/unreviewed/$owner/$pluginName': typeof ModsUnreviewedOwnerPluginNameRoute
 }
 export interface FileRoutesByTo {
@@ -351,7 +367,9 @@ export interface FileRoutesByTo {
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/theme-previews/$themeId/desktop.png': typeof ThemePreviewsThemeIdDesktopDotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  '/admin/theme-previews/$themeId/desktop.png': typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
   '/mods/unreviewed/$owner/$pluginName': typeof ModsUnreviewedOwnerPluginNameRoute
 }
 export interface FileRoutesById {
@@ -395,7 +413,9 @@ export interface FileRoutesById {
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/theme-previews/$themeId/desktop.png': typeof ThemePreviewsThemeIdDesktopDotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  '/admin/theme-previews/$themeId/desktop.png': typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
   '/mods/unreviewed/$owner/$pluginName': typeof ModsUnreviewedOwnerPluginNameRoute
 }
 export interface FileRouteTypes {
@@ -440,7 +460,9 @@ export interface FileRouteTypes {
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
+    | '/theme-previews/$themeId/desktop.png'
     | '/admin/mod-previews/$versionId/desktop.png'
+    | '/admin/theme-previews/$themeId/desktop.png'
     | '/mods/unreviewed/$owner/$pluginName'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -483,7 +505,9 @@ export interface FileRouteTypes {
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
+    | '/theme-previews/$themeId/desktop.png'
     | '/admin/mod-previews/$versionId/desktop.png'
+    | '/admin/theme-previews/$themeId/desktop.png'
     | '/mods/unreviewed/$owner/$pluginName'
   id:
     | '__root__'
@@ -526,7 +550,9 @@ export interface FileRouteTypes {
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
+    | '/theme-previews/$themeId/desktop.png'
     | '/admin/mod-previews/$versionId/desktop.png'
+    | '/admin/theme-previews/$themeId/desktop.png'
     | '/mods/unreviewed/$owner/$pluginName'
   fileRoutesById: FileRoutesById
 }
@@ -570,7 +596,9 @@ export interface RootRouteChildren {
   ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
   OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
+  ThemePreviewsThemeIdDesktopDotpngRoute: typeof ThemePreviewsThemeIdDesktopDotpngRoute
   AdminModPreviewsVersionIdDesktopDotpngRoute: typeof AdminModPreviewsVersionIdDesktopDotpngRoute
+  AdminThemePreviewsThemeIdDesktopDotpngRoute: typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
   ModsUnreviewedOwnerPluginNameRoute: typeof ModsUnreviewedOwnerPluginNameRoute
 }
 
@@ -849,11 +877,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OgModsChar123slugChar125DotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/theme-previews/$themeId/desktop.png': {
+      id: '/theme-previews/$themeId/desktop.png'
+      path: '/theme-previews/$themeId/desktop.png'
+      fullPath: '/theme-previews/$themeId/desktop.png'
+      preLoaderRoute: typeof ThemePreviewsThemeIdDesktopDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/mod-previews/$versionId/desktop.png': {
       id: '/admin/mod-previews/$versionId/desktop.png'
       path: '/admin/mod-previews/$versionId/desktop.png'
       fullPath: '/admin/mod-previews/$versionId/desktop.png'
       preLoaderRoute: typeof AdminModPreviewsVersionIdDesktopDotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/theme-previews/$themeId/desktop.png': {
+      id: '/admin/theme-previews/$themeId/desktop.png'
+      path: '/admin/theme-previews/$themeId/desktop.png'
+      fullPath: '/admin/theme-previews/$themeId/desktop.png'
+      preLoaderRoute: typeof AdminThemePreviewsThemeIdDesktopDotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mods/unreviewed/$owner/$pluginName': {
@@ -909,8 +951,12 @@ const rootRouteChildren: RootRouteChildren = {
     ModPreviewsVersionIdDesktopDotpngRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
   OgModsChar123slugChar125DotpngRoute: OgModsChar123slugChar125DotpngRoute,
+  ThemePreviewsThemeIdDesktopDotpngRoute:
+    ThemePreviewsThemeIdDesktopDotpngRoute,
   AdminModPreviewsVersionIdDesktopDotpngRoute:
     AdminModPreviewsVersionIdDesktopDotpngRoute,
+  AdminThemePreviewsThemeIdDesktopDotpngRoute:
+    AdminThemePreviewsThemeIdDesktopDotpngRoute,
   ModsUnreviewedOwnerPluginNameRoute: ModsUnreviewedOwnerPluginNameRoute,
 }
 export const routeTree = rootRouteImport
