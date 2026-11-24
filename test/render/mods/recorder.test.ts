@@ -300,6 +300,30 @@ describe('recordInSandbox', () => {
   )
 
   it(
+    'ends a theme recording once the permission prompt shows, though its blinking bullet never lets the screen go quiet',
+    async () => {
+      const blinking = (input: string, emit: Emit) => {
+        if (input !== '\r') return claudeSession(input, emit)
+        emit('\r\n● Running 1 shell command…\r\n Bash command\r\n Do you want')
+        emit(' to proceed?\r\n ❯ 1. Yes')
+        const blink = setInterval(() => (fake.pty.killed ? clearInterval(blink) : emit('●')), 5)
+      }
+      const fake = fakeSandbox(blinking, () => {})
+      const startedAt = performance.now()
+
+      const { pty } = await recordInSandbox(
+        fake.sandbox,
+        { scene: 'theme', mod: PACK, theme: 'custom:pack:dracula' },
+        FAST,
+      )
+
+      expect(performance.now() - startedAt).toBeLessThan(2_000)
+      expect(new TextDecoder().decode(pty)).toContain('Do you want to proceed?\r\n ❯ 1. Yes')
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
     "records the theme scene's baseline with no plugin and Claude Code's default theme",
     async () => {
       const fake = fakeSandbox(claudeSession, () => {})

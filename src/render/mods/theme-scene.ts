@@ -28,6 +28,13 @@ export const THEME_SCENE_TERMINAL: TerminalSetup = {
 
 export const THEME_SCENE_PROMPT: TextStep = { type: 'text', text: 'fix the failing sum test' }
 
+/**
+ * The permission prompt the scene stops on. The bullet of the command it asks about blinks, so the
+ * screen never goes quiet: the recording ends the settle time after this shows, rather than at the
+ * step's time limit.
+ */
+export const THEME_SCENE_ENDS_ON = 'Do you want to proceed?'
+
 export const THEME_SCENE_WORKSPACE_FILES = [...SAMPLE_PROJECT_FILES, ...SUM_BUG_WORKSPACE_FILES]
 
 /** Claude Code's Edit refuses a file the session has not read, so the turn reads it first. */
