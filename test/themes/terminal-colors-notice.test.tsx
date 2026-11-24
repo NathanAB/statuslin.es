@@ -53,6 +53,7 @@ function review(name: string, usesTerminalColors: boolean): TerminalReview {
     source: '{ "base": "dark-ansi" }',
     preview: [{ text: `${name} screen` }],
     usesTerminalColors,
+    change: null,
   }
 }
 

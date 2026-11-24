@@ -9,12 +9,20 @@ import { adminThemeDesktopPreviewPath } from './theme-desktop-preview'
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
 
+/**
+ * How a theme differs from the live version's theme of the same key: `new` when the live version has
+ * none, `changed` when anything its card, file or switch steps show differs. Null when it is the
+ * same, or when no version is live, as on a first publish, where every theme is read anyway.
+ */
+export type ThemeChange = 'new' | 'changed'
+
 interface ReviewThemeBase {
   id: string
   key: string
   /** The author's text, shown as text. */
   name: string
   window: ThemeWindow
+  change: ThemeChange | null
 }
 
 /**
@@ -77,6 +85,7 @@ function toReviewTheme({
       source: source ?? '',
       preview: segments,
       usesTerminalColors,
+      change: null,
     }
   }
   return {
@@ -84,18 +93,51 @@ function toReviewTheme({
     kind: theme.kind,
     switchSteps: switchSteps ?? [],
     preview: shot && { src: adminThemeDesktopPreviewPath(theme.id), ...shot },
+    change: null,
   }
 }
 
-/** The themes each of these versions carries, by version id, in name order. */
+/**
+ * What a visitor would get from a theme: its name, window and file, or its switch steps. A Desktop
+ * theme's look is the mod's code, which its own diff reviews; its preview differs between renders.
+ */
+function themeContent(theme: ReviewTheme): string {
+  const { kind, name, window } = theme
+  const what = theme.kind === 'terminal' ? theme.source : theme.switchSteps
+  return JSON.stringify([kind, name, window, what])
+}
+
+function markChanges(themes: ReviewTheme[], live: ReviewTheme[] | undefined): ReviewTheme[] {
+  if (live === undefined) return themes
+  const liveContent = new Map(live.map((theme) => [theme.key, themeContent(theme)]))
+  return themes.map((theme) => {
+    const before = liveContent.get(theme.key)
+    const change = before === undefined ? 'new' : before === themeContent(theme) ? null : 'changed'
+    return { ...theme, change }
+  })
+}
+
+/**
+ * The themes each of these versions carries, by version id, in name order, each marked against the
+ * live version's themes when `liveId` names one.
+ */
 export async function getReviewThemes(
   database: Db,
-  versionIds: string[],
+  versions: { id: string; liveId: string | null }[],
 ): Promise<Map<string, ReviewTheme[]>> {
   const byVersion = new Map<string, ReviewTheme[]>()
-  if (versionIds.length === 0) return byVersion
-  for (const { versionId, ...theme } of await reviewThemeRows(database, versionIds)) {
+  if (versions.length === 0) return byVersion
+  const ids = versions.flatMap(({ id, liveId }) => (liveId === null ? [id] : [id, liveId]))
+  for (const { versionId, ...theme } of await reviewThemeRows(database, [...new Set(ids)])) {
     byVersion.set(versionId, [...(byVersion.get(versionId) ?? []), toReviewTheme(theme)])
   }
-  return byVersion
+  return new Map(
+    versions.map(({ id, liveId }) => [
+      id,
+      markChanges(
+        byVersion.get(id) ?? [],
+        liveId === null ? undefined : (byVersion.get(liveId) ?? []),
+      ),
+    ]),
+  )
 }

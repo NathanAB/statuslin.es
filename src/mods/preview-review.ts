@@ -3,8 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { modDesktopPreviews, modPreviews, modThemes, modVersions } from '@/db/schema'
+import { modDesktopPreviews, modPreviews, mods, modThemes, modVersions } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
+import { getReviewThemes, type ReviewTheme } from '@/review/theme-review'
 import { fenceUntrusted, type VersionPin } from './content-prompt'
 import { desktopPreviewJoin, terminalPreviewJoin } from './queries'
 
@@ -23,7 +24,16 @@ export interface PreviewReview {
    * The themes the version carries, each reviewed on /admin with its preview and file. /admin shows
    * only a plugin's newest version, so an older one's themes are read at its commit instead.
    */
-  themes: { terminal: number; desktop: number; versionNumber: number; newestVersionNumber: number }
+  themes: {
+    terminal: number
+    desktop: number
+    versionNumber: number
+    newestVersionNumber: number
+    /** The live version's number when one is live and differs from this one, else null. */
+    liveVersionNumber: number | null
+    /** The themes new or changed since the live version, in name order. */
+    changed: ReviewTheme[]
+  }
 }
 
 /** Saves a PNG where the operator can open it, and returns its path. */
@@ -71,6 +81,17 @@ function desktopLine({ pin, desktopPng }: PreviewReview, writePng: PngWriter): s
 const counted = (count: number, kind: string) =>
   count === 0 ? [] : [`${count} ${kind} ${count === 1 ? 'theme' : 'themes'}`]
 
+const themeWhere = (theme: ReviewTheme) =>
+  theme.kind === 'terminal' ? `themes/${theme.key}.json` : `Desktop theme ${theme.key}`
+
+/** One WARN line per theme new or changed since the live version, so none hides in a long pack. */
+function changedThemeLines({ changed, liveVersionNumber }: PreviewReview['themes']): string[] {
+  return changed.map(
+    (theme) =>
+      `WARN theme-${theme.change}: "${theme.name}" (${themeWhere(theme)}) ${theme.change === 'new' ? 'is new' : 'changed'} since the live version v${liveVersionNumber}. Read it on /admin before --apply.`,
+  )
+}
+
 function themesLines({ pin, themes }: PreviewReview): string[] {
   const { versionNumber: v, newestVersionNumber: newest } = themes
   const kinds = [...counted(themes.terminal, 'terminal'), ...counted(themes.desktop, 'Desktop')]
@@ -82,6 +103,7 @@ function themesLines({ pin, themes }: PreviewReview): string[] {
           `WARN themes-not-newest: v${v} is not this plugin's newest version (v${newest}), and /admin shows only the newest version's themes. Read v${v}'s theme files at ${pin.commitSha} before --apply.`,
         ]
       : []),
+    ...changedThemeLines(themes),
   ]
 }
 
@@ -109,11 +131,24 @@ export async function storedPreviews(
       desktopThemes: sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.kind} = 'desktop')::int`,
       versionNumber: modVersions.versionNumber,
       newestVersionNumber: sql<number>`(select max(newest.version_number) from ${modVersions} newest where newest.mod_id = ${modVersions.modId})::int`,
+      modStatus: mods.status,
+      currentVersionId: mods.currentVersionId,
     })
     .from(modVersions)
+    .innerJoin(mods, eq(mods.id, modVersions.modId))
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(eq(modVersions.id, versionId))
+  const live = row?.modStatus === 'published' ? (row.currentVersionId ?? null) : null
+  const liveId = live === versionId ? null : live
+  const themes = (await getReviewThemes(db, [{ id: versionId, liveId }])).get(versionId) ?? []
+  const [liveVersion] =
+    liveId === null
+      ? []
+      : await db
+          .select({ versionNumber: modVersions.versionNumber })
+          .from(modVersions)
+          .where(eq(modVersions.id, liveId))
   return {
     terminal: row?.segments ?? [],
     desktopPng: row?.png ?? null,
@@ -122,6 +157,8 @@ export async function storedPreviews(
       desktop: row?.desktopThemes ?? 0,
       versionNumber: row?.versionNumber ?? 0,
       newestVersionNumber: row?.newestVersionNumber ?? 0,
+      liveVersionNumber: liveVersion?.versionNumber ?? null,
+      changed: themes.filter((theme) => theme.change !== null),
     },
   }
 }

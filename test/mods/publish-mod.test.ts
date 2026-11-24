@@ -251,6 +251,35 @@ describe('the README beside the previews', () => {
     )
   })
 
+  it('warns of each theme new or changed since the live version, by name and file', async () => {
+    const { modId, currentId } = await publishedMod({})
+    await addTheme(db, currentId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, currentId, { key: 'nord', name: 'Nord' })
+    await addDesktopTheme(db, currentId, { key: 'reef', name: 'Reef' })
+    const update = await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    await addTheme(db, update, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, update, { key: 'nord', name: 'Nord Light', window: 'light' })
+    await addTheme(db, update, { key: 'zen', name: 'Zen' })
+    await addDesktopTheme(db, update, { key: 'reef', name: 'Reef', switchSteps: ['/reef on'] })
+
+    const { lines } = await publish(['meter', sha('b')], fakeGitHub({ readme: README }))
+
+    expect(lines.filter((line) => line.startsWith('WARN theme-'))).toEqual([
+      'WARN theme-changed: "Nord Light" (themes/nord.json) changed since the live version v1. Read it on /admin before --apply.',
+      'WARN theme-changed: "Reef" (Desktop theme reef) changed since the live version v1. Read it on /admin before --apply.',
+      'WARN theme-new: "Zen" (themes/zen.json) is new since the live version v1. Read it on /admin before --apply.',
+    ])
+  })
+
+  it('warns of no theme changes on a first publish', async () => {
+    const { versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines.some((line) => line.startsWith('WARN theme-'))).toBe(false)
+  })
+
   it('says nothing of themes for a plugin that carries none', async () => {
     await draftMod()
 
