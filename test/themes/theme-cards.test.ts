@@ -8,11 +8,13 @@ import {
   getPaletteThemes,
   getPublishedModThemes,
   getThemeCards,
+  getUnreviewedThemeCards,
   homeThemesOrEmpty,
 } from '@/themes/queries'
 import {
   addDesktopTheme,
   addMod,
+  addShownDraft,
   addTheme,
   addVersion,
   openTestDb,
@@ -375,5 +377,103 @@ describe('getPalettePages', () => {
     expect(pages.map(({ palette, updatedAt }) => [palette.slug, updatedAt.toISOString()])).toEqual([
       ['nord', '2026-11-02T00:00:00.000Z'],
     ])
+  })
+})
+
+// Curated Desktop theme packs shown as unreviewed mods (ADR 0014): cards with no install.
+describe('getUnreviewedThemeCards', () => {
+  async function pack(
+    pluginName: string,
+    owner: string,
+    themes: { key: string; name: string }[],
+    shown = true,
+  ) {
+    const seeded = await addShownDraft(db, {
+      slug: `${pluginName}-slug`,
+      pluginName,
+      repoUrl: `https://github.com/${owner}/${pluginName}`,
+      shown,
+    })
+    const ids: string[] = []
+    for (const theme of themes) ids.push(await addDesktopTheme(db, seeded.versionId, theme))
+    return { ...seeded, ids }
+  }
+
+  it("gives a shown draft's Desktop theme its preview and its mod's address, with no plugin or switch steps", async () => {
+    const {
+      ids: [id],
+    } = await pack('looks', 'Ada', [{ key: 'night-reef', name: 'Night Reef' }])
+    const [row] = await db
+      .select({ at: schema.modThemeDesktopPreviews.createdAt })
+      .from(schema.modThemeDesktopPreviews)
+      .where(eq(schema.modThemeDesktopPreviews.themeId, id as string))
+    const at = row?.at as Date
+
+    expect(await getUnreviewedThemeCards(db)).toEqual([
+      {
+        id,
+        key: 'night-reef',
+        kind: 'desktop',
+        name: 'Night Reef',
+        window: 'dark',
+        preview: {
+          shot: { src: themeDesktopPreviewPath(id as string, at), width: 1100, height: 900 },
+          card: {
+            src: themeDesktopPreviewPath(id as string, at, 'card'),
+            width: 440,
+            height: 360,
+          },
+        },
+        mod: { owner: 'Ada', pluginName: 'looks' },
+      },
+    ])
+  })
+
+  it('lists only shown drafts, by mod name then theme name, and never a published or unshown one', async () => {
+    await pack('zest', 'Bo', [{ key: 'b', name: 'Lime' }])
+    await pack('looks', 'Ada', [
+      { key: 'z', name: 'Zinc' },
+      { key: 'a', name: 'Amber' },
+    ])
+    await pack('hidden', 'Ada', [{ key: 'h', name: 'Hidden' }], false)
+    await plugin('live', ['Paper'])
+
+    expect(
+      (await getUnreviewedThemeCards(db)).map((card) => `${card.mod.pluginName}:${card.name}`),
+    ).toEqual(['looks:Amber', 'looks:Zinc', 'zest:Lime'])
+  })
+
+  it("gives one mod's themes by its address, whatever the owner's case", async () => {
+    await pack('looks', 'Ada', [{ key: 'a', name: 'Amber' }])
+    await pack('zest', 'Bo', [{ key: 'b', name: 'Lime' }])
+
+    expect(
+      (await getUnreviewedThemeCards(db, { owner: 'ada', pluginName: 'looks' })).map(
+        (card) => card.name,
+      ),
+    ).toEqual(['Amber'])
+  })
+
+  it('leaves the unreviewed themes out of /themes, the home row and the palette pages list', async () => {
+    await pack('looks', 'Ada', [{ key: 'n', name: 'Nord Night' }])
+
+    expect(await getThemeCards(db)).toEqual([])
+    expect(await getHomeThemes(db, 3)).toEqual({ themes: [], total: 0 })
+    expect(await getPalettePages(db)).toEqual([])
+  })
+
+  it("puts a palette's unreviewed themes on its page beside the reviewed ones, and makes no page of them alone", async () => {
+    await pack('looks', 'Ada', [
+      { key: 'n', name: 'Nord Night' },
+      { key: 'd', name: 'Dracula Dusk' },
+    ])
+    await plugin('nordic', ['Nord Snow'])
+
+    const page = await getPaletteThemes(db, 'nord')
+
+    expect(named(page?.themes ?? [])).toEqual(['nordic:Nord Snow'])
+    expect(page?.unreviewed.map((card) => card.name)).toEqual(['Nord Night'])
+    expect(page?.palettes.map((palette) => palette.slug)).toEqual(['nord'])
+    expect(await getPaletteThemes(db, 'dracula')).toBeNull()
   })
 })

@@ -1,10 +1,11 @@
 import { createServerOnlyFn } from '@tanstack/react-start'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, or } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db as defaultDb } from '@/db'
 import { mods, modThemeDesktopPreviews, modThemes, modVersions } from '@/db/schema'
 import { IMMUTABLE_CACHE } from '@/lib/cache-control'
 import { isUuid } from '@/lib/uuid'
+import { hasUnreviewedPage } from '@/mods/unreviewed-queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -35,7 +36,12 @@ export async function themeDesktopPreviewResponse(
     .innerJoin(modThemes, eq(modThemes.id, modThemeDesktopPreviews.themeId))
     .innerJoin(modVersions, eq(modVersions.id, modThemes.modVersionId))
     .innerJoin(mods, eq(mods.currentVersionId, modVersions.id))
-    .where(and(eq(modThemeDesktopPreviews.themeId, themeId), eq(mods.status, 'published')))
+    .where(
+      and(
+        eq(modThemeDesktopPreviews.themeId, themeId),
+        or(eq(mods.status, 'published'), hasUnreviewedPage(db)),
+      ),
+    )
   if (!row || render !== String(row.renderedAt.getTime())) return notFound()
   return new Response(new Blob([row.png as BufferSource]), {
     headers: {
