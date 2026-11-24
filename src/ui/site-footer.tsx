@@ -10,7 +10,7 @@ import {
   NOT_SHOWING_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_PATH,
 } from '@/lib/page-title'
-import { CONTACT_EMAIL, MODS_PATH, REPO_URL, SITE_NAME } from '@/lib/site'
+import { CONTACT_EMAIL, MODS_PATH, REPO_URL, SITE_NAME, THEMES_PATH } from '@/lib/site'
 import { PAGE_COLUMN } from '@/ui/page-column'
 import { TextLink } from '@/ui/text'
 
@@ -25,6 +25,7 @@ const GROUPS: readonly { title: string; links: readonly FooterLink[] }[] = [
       // The two ranked lists side by side, named alike.
       { to: MODS_PATH, label: 'Best mods' },
       { to: '/status-lines/best', label: 'Best status lines' },
+      { to: THEMES_PATH, label: 'Themes' },
       { to: '/resources', label: 'Resources' },
       { to: '/submit', label: 'Submit' },
     ],

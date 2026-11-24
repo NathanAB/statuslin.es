@@ -94,6 +94,16 @@ describe('a plugin page with themes', () => {
     expect(screen.queryByText(/Draws nothing/)).toBeNull()
   })
 
+  // A plugin page is where a theme card leads, so its themes section leads on to every other theme.
+  it('links its themes section to /themes', () => {
+    renderPage({}, [theme('Night')])
+
+    const link = within(section('Themes')).getByRole('link', {
+      name: 'every Claude Code and Claude Desktop theme',
+    })
+    expect(link.getAttribute('href')).toBe('/themes')
+  })
+
   it('keeps the mod preview of a plugin with code beside its themes', () => {
     renderPage(
       {
