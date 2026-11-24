@@ -676,7 +676,9 @@ out. Nothing renders until you do: mods render from your machine (ADR 0006). Run
    DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
    ```
    Check both previews on `/admin`. If a surface drew nothing and should, revise the steps (step 2)
-   and render again. `render:mods` skips versions whose submission was rejected or replaced.
+   and render again. `render:mods` skips versions whose submission was rejected or replaced. A run
+   without `--slug` records none of a pending submission's themes and prints the command that does,
+   since any signed-in user can submit a plugin of hundreds of themes.
 4. **Review it on `/admin`.** Read the footprint, the source at its commit and, for an update, the
    warnings and the compare link against the live commit. **Approve** checks again that both
    surfaces rendered, that the commit is on the default branch, that the mod isn't delisted and that

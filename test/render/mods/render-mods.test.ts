@@ -908,6 +908,77 @@ function throwingThemes(throws: Record<string, Error>): FakeDesktopRecorder {
   return recorder
 }
 
+describe('renderMods for the themes of a submitted plugin', () => {
+  const recorder = () =>
+    new FakeModRecorder({
+      baseline,
+      themes: {
+        'custom:pack:dracula': DRACULA,
+        'custom:pack:nord': NORD,
+        'custom:curated:dracula': DRACULA,
+      },
+    })
+
+  async function submitted(slug: string) {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    const versionId = await seedMod(slug)
+    await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'ada' })
+    return versionId
+  }
+
+  it("records none of a pending submitted plugin's themes on a full run, and says how to ask for them", async () => {
+    const pack = await submitted('pack')
+    await addTheme(db, pack, { key: 'dracula', rendered: false })
+    await addTheme(db, pack, { key: 'nord', rendered: false })
+    await addDesktopTheme(db, pack, { key: 'reef', rendered: false })
+    const curated = await seedMod('curated')
+    await addTheme(db, curated, { key: 'dracula', rendered: false })
+    const terminal = recorder()
+    const desktop = new FakeDesktopRecorder()
+
+    const { exitCode, lines } = run(terminal, {}, desktop)
+
+    expect(await exitCode).toBe(0)
+    expect(themeRequests(terminal.requests)).toEqual([
+      {
+        scene: 'theme',
+        mod: expect.objectContaining({ pluginName: 'curated' }),
+        theme: 'custom:curated:dracula',
+      },
+    ])
+    expect(desktop.themeRequests).toEqual([])
+    expect(await storedThemePreviews(pack)).toEqual({})
+    expect(lines).toContain(
+      'skipped pack themes: a full run records no theme of a submitted plugin, and this one has 3 to record. Record them with: bun run render:mods --slug pack',
+    )
+  })
+
+  it("records a submitted plugin's themes when --slug names it", async () => {
+    const pack = await submitted('pack')
+    await addTheme(db, pack, { key: 'dracula', rendered: false })
+    await addTheme(db, pack, { key: 'nord', rendered: false })
+
+    const { exitCode, lines } = run(recorder(), { slug: 'pack' })
+
+    expect(await exitCode).toBe(0)
+    expect(Object.keys(await storedThemePreviews(pack)).sort()).toEqual(['dracula', 'nord'])
+    expect(lines.some((line) => line.startsWith('skipped'))).toBe(false)
+  })
+
+  it('says nothing of a submitted plugin whose themes are all recorded', async () => {
+    const pack = await submitted('pack')
+    await addTheme(db, pack, { key: 'dracula' })
+
+    const { exitCode, lines } = run(recorder())
+
+    expect(await exitCode).toBe(0)
+    expect(lines.some((line) => line.startsWith('skipped'))).toBe(false)
+  })
+})
+
 describe('renderMods for the Desktop themes a mod sets', () => {
   const terminal = () => new FakeModRecorder({ baseline })
 
