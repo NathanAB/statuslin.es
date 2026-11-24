@@ -9,11 +9,11 @@ import {
 } from '@/render/e2b-template'
 import { SAMPLE_PROJECT_FILES } from '@/render/mods/sample-project'
 import {
-  BUSY_WORKSPACE_FILES,
   busySettings,
   feedFile,
   feedScenario,
   feedStdin,
+  SUM_BUG_WORKSPACE_FILES,
 } from '@/render/mods/scenario-feed'
 import {
   FEED_FILE,
@@ -25,6 +25,7 @@ import {
   sessionFiles,
   setupCommand,
   shellQuote,
+  themeSessionFiles,
 } from '@/render/mods/session'
 import { usage } from '@/render/scenario-helpers'
 import type { Scenario } from '@/render/types'
@@ -158,7 +159,7 @@ describe('sessionFiles', () => {
     it("puts the busy session's files in the workspace, before setup commits them", () => {
       const files = seedFiles('code-pet', true)
 
-      for (const { path, data } of BUSY_WORKSPACE_FILES) {
+      for (const { path, data } of SUM_BUG_WORKSPACE_FILES) {
         expect(files).toContainEqual({ path: `/home/user/app/${path}`, data })
       }
     })
@@ -169,7 +170,9 @@ describe('sessionFiles', () => {
         .filter((path) => path.startsWith('/home/user/app/'))
 
       expect(workspace).toEqual(
-        [...SAMPLE_PROJECT_FILES, ...BUSY_WORKSPACE_FILES].map((f) => `/home/user/app/${f.path}`),
+        [...SAMPLE_PROJECT_FILES, ...SUM_BUG_WORKSPACE_FILES].map(
+          (f) => `/home/user/app/${f.path}`,
+        ),
       )
       expect(new Set(workspace).size).toBe(workspace.length)
     })
@@ -243,6 +246,122 @@ describe('sessionFiles', () => {
 
     expect(manifest.name).toBe('scenario-feed')
     expect(fileAt(`${FEED_PLUGIN_DIR}/hooks/register.ts`)).toContain(FEED_FILE)
+  })
+})
+
+describe('themeSessionFiles', () => {
+  const CONFIG_DIR = '/home/user/session-home/.claude'
+  const SUM_JS = '/home/user/app/src/sum.js'
+  const themeFiles = (target: string | null, theme: string | null) =>
+    themeSessionFiles(
+      feedScenario(),
+      { target, nowMs: NOW_MS, claudeCodeVersion: '2.1.309' },
+      theme,
+    )
+  const json = (files: { path: string; data: string }[], path: string) => {
+    const file = files.find((f) => f.path === path)
+    if (!file) throw new Error(`no theme scene file at ${path}`)
+    return JSON.parse(file.data)
+  }
+
+  it('turns auto mode off and accepts edits, so the edit draws its diff and Bash asks', () => {
+    expect(json(themeFiles('pack', 'custom:pack:dracula'), `${CONFIG_DIR}/settings.json`)).toEqual({
+      permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+      disableAllHooks: true,
+      theme: 'custom:pack:dracula',
+    })
+  })
+
+  it.each([
+    { theme: 'custom:pack:dracula', target: 'pack' },
+    { theme: null, target: null },
+  ])(
+    "turns every hook off, so the plugin's own code can't draw on or cut short its theme's preview ($theme)",
+    ({ theme, target }) => {
+      expect(json(themeFiles(target, theme), `${CONFIG_DIR}/settings.json`).disableAllHooks).toBe(
+        true,
+      )
+    },
+  )
+
+  it("leaves Claude Code's default theme for the baseline", () => {
+    expect(json(themeFiles(null, null), `${CONFIG_DIR}/settings.json`)).toEqual({
+      permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+      disableAllHooks: true,
+    })
+  })
+
+  it("marks auto mode's launch nudge seen, so it can't eat the typed prompt", () => {
+    const seed = json(themeFiles('pack', null), `${CONFIG_DIR}/.claude.json`)
+
+    expect(seed.hasSeenAutoDefaultNudge).toBe(true)
+    expect(seed.hasCompletedOnboarding).toBe(true)
+    expect(seed.projects['/home/user/app'].hasTrustDialogAccepted).toBe(true)
+  })
+
+  it('has the canned model read src/sum.js, fix it, then ask to run the tests', () => {
+    expect(json(themeFiles('pack', null), REPLY_FILE)).toEqual({
+      text: 'The repo is clean and the tests pass.',
+      usage: {
+        input_tokens: 37_000,
+        output_tokens: 1_400,
+        cache_creation_input_tokens: 5_000,
+        cache_read_input_tokens: 2_000,
+      },
+      steps: [
+        {
+          text: "`sum` subtracts instead of adding. I'll fix it.",
+          tool: { name: 'Read', input: { file_path: SUM_JS } },
+        },
+        {
+          text: '',
+          tool: {
+            name: 'Edit',
+            input: { file_path: SUM_JS, old_string: 'return a - b', new_string: 'return a + b' },
+          },
+        },
+        {
+          text: "Now I'll run the tests.",
+          tool: { name: 'Bash', input: { command: 'npm test', description: 'Run the tests' } },
+        },
+      ],
+    })
+  })
+
+  it('seeds the sample project and the sum bug, which the scripted edit fixes', () => {
+    const files = themeFiles('pack', null)
+    const workspace = files.filter((f) => f.path.startsWith('/home/user/app/'))
+    const edit = json(files, REPLY_FILE).steps[1].tool.input
+    const sum = workspace.find((f) => f.path === edit.file_path)?.data
+
+    expect(workspace.map((f) => f.path)).toEqual([
+      '/home/user/app/src/components/site-header.tsx',
+      '/home/user/app/src/components/install-button.tsx',
+      '/home/user/app/src/components/plugin-card.tsx',
+      '/home/user/app/src/lib/slug.ts',
+      '/home/user/app/src/routes/api/plugins.ts',
+      '/home/user/app/src/jobs/sync-registry.ts',
+      '/home/user/app/package.json',
+      '/home/user/app/test.sh',
+      '/home/user/app/.npmrc',
+      '/home/user/app/src/sum.js',
+      '/home/user/app/build/sum.js',
+    ])
+    expect(sum?.replace(edit.old_string, edit.new_string)).toBe(
+      'export function sum(a, b) {\n  return a + b\n}\n',
+    )
+  })
+
+  it('answers the plugin that carries the theme, with no busy calls', () => {
+    expect(json(themeFiles('pack', null), FEED_FILE)).toMatchObject({ target: 'pack', busy: [] })
+    expect(json(themeFiles(null, null), FEED_FILE).target).toBeNull()
+  })
+
+  it('writes the scenario feed plugin', () => {
+    const paths = themeFiles('pack', null).map((f) => f.path)
+
+    expect(paths).toContain(`${FEED_PLUGIN_DIR}/.claude-plugin/plugin.json`)
+    expect(paths).toContain(`${FEED_PLUGIN_DIR}/hooks/register.ts`)
   })
 })
 

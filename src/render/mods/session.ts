@@ -7,13 +7,19 @@ import type { Scenario } from '../types'
 import { SANDBOX_PLUGINS_DIR, SANDBOX_WORK_DIR } from './mod-sandbox'
 import { SAMPLE_PROJECT_FILES } from './sample-project'
 import {
-  BUSY_WORKSPACE_FILES,
   busySettings,
   cannedReply,
   feedFile,
   feedStdin,
+  SUM_BUG_WORKSPACE_FILES,
 } from './scenario-feed'
 import type { TerminalSetup } from './terminal'
+import {
+  THEME_SCENE_CLAUDE_JSON,
+  THEME_SCENE_WORKSPACE_FILES,
+  themeSceneReply,
+  themeSceneSettings,
+} from './theme-scene'
 import { waitingSessionFile } from './waiting-session'
 
 const HOME = '/home/user/session-home'
@@ -58,7 +64,11 @@ export function sessionEnv(scenario: Scenario): Record<string, string> {
 }
 
 /** Onboarding done, the workspace trusted and the key approved, so the session opens at the prompt. */
-function claudeJson(scenario: Scenario, claudeCodeVersion: string): string {
+function claudeJson(
+  scenario: Scenario,
+  claudeCodeVersion: string,
+  own: Record<string, unknown> = {},
+): string {
   return JSON.stringify({
     hasCompletedOnboarding: true,
     lastOnboardingVersion: claudeCodeVersion,
@@ -75,6 +85,7 @@ function claudeJson(scenario: Scenario, claudeCodeVersion: string): string {
         allowedTools: [],
       },
     },
+    ...own,
   })
 }
 
@@ -107,18 +118,27 @@ function settingsFiles(
 }
 
 /**
- * A terminal recording's own settings: Claude Code's fullscreen layout, which some mods need to draw
- * at all, and the `theme` setting to record in.
+ * A mod's terminal recording's own settings: Claude Code's fullscreen layout, which some mods need
+ * to draw at all.
  */
-export function terminalSettings({ fullscreen }: TerminalSetup, theme: string | null) {
-  return { ...(fullscreen ? { tui: 'fullscreen' } : {}), ...(theme === null ? {} : { theme }) }
+export function terminalSettings({ fullscreen }: TerminalSetup) {
+  return fullscreen ? { tui: 'fullscreen' } : {}
 }
 
 /** Uploaded before setup runs, whose seed commit then holds them. */
-function workspaceFiles(scenario: Scenario, busy: boolean): SessionFile[] {
+function workspaceFiles(
+  scenario: Scenario,
+  files: readonly { path: string; data: string }[],
+): SessionFile[] {
   const workspace = feedStdin(scenario).workspace.current_dir
-  const files = [...SAMPLE_PROJECT_FILES, ...(busy ? BUSY_WORKSPACE_FILES : [])]
   return files.map(({ path, data }) => ({ path: `${workspace}/${path}`, data }))
+}
+
+function feedPluginFiles(): SessionFile[] {
+  return FEED_PLUGIN_ASSETS.map((asset) => ({
+    path: `${FEED_PLUGIN_DIR}/${asset}`,
+    data: readFileSync(join(FEED_PLUGIN_SRC, asset), 'utf8'),
+  }))
 }
 
 export function sessionFiles(
@@ -130,13 +150,32 @@ export function sessionFiles(
     { path: `${CONFIG_DIR}/.claude.json`, data: claudeJson(scenario, claudeCodeVersion) },
     ...settingsFiles(scenario, busy, ownSettings),
     ...(waiting ? [waitingSessionFile(scenario, CONFIG_DIR, nowMs)] : []),
-    ...workspaceFiles(scenario, busy),
+    ...workspaceFiles(scenario, [
+      ...SAMPLE_PROJECT_FILES,
+      ...(busy ? SUM_BUG_WORKSPACE_FILES : []),
+    ]),
     { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs, busy)) },
     { path: REPLY_FILE, data: JSON.stringify(cannedReply(scenario)) },
-    ...FEED_PLUGIN_ASSETS.map((asset) => ({
-      path: `${FEED_PLUGIN_DIR}/${asset}`,
-      data: readFileSync(join(FEED_PLUGIN_SRC, asset), 'utf8'),
-    })),
+    ...feedPluginFiles(),
+  ]
+}
+
+/** The theme scene (`theme-scene.ts`), in `theme` with the plugin that carries it, or in neither. */
+export function themeSessionFiles(
+  scenario: Scenario,
+  { target, nowMs, claudeCodeVersion }: Pick<SessionSeed, 'target' | 'nowMs' | 'claudeCodeVersion'>,
+  theme: string | null,
+): SessionFile[] {
+  return [
+    {
+      path: `${CONFIG_DIR}/.claude.json`,
+      data: claudeJson(scenario, claudeCodeVersion, THEME_SCENE_CLAUDE_JSON),
+    },
+    { path: `${CONFIG_DIR}/settings.json`, data: JSON.stringify(themeSceneSettings(theme)) },
+    ...workspaceFiles(scenario, THEME_SCENE_WORKSPACE_FILES),
+    { path: FEED_FILE, data: JSON.stringify(feedFile(scenario, target, nowMs, false)) },
+    { path: REPLY_FILE, data: JSON.stringify(themeSceneReply(scenario)) },
+    ...feedPluginFiles(),
   ]
 }
 

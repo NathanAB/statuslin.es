@@ -32,6 +32,7 @@ type Emit = (text: string | Uint8Array) => void
 function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit: Emit) => void) {
   const commands: string[] = []
   const written: SandboxFile[] = []
+  const sent: string[] = []
   const terminalSizes: { cols: number; rows: number }[] = []
   const pty = { killed: false }
   const sandbox: RecordingSandbox = {
@@ -51,7 +52,10 @@ function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit
       }
       onOpen(emit)
       return {
-        send: async (input) => respond(input, emit),
+        send: async (input) => {
+          sent.push(input)
+          respond(input, emit)
+        },
         kill: async () => {
           pty.killed = true
         },
@@ -59,8 +63,29 @@ function fakeSandbox(respond: (input: string, emit: Emit) => void, onOpen: (emit
     },
   }
   const writtenPaths = () => written.map((f) => f.path)
-  return { sandbox, commands, written, writtenPaths, terminalSizes, pty }
+  const writtenJson = (path: string) => {
+    const file = written.find((f) => f.path === path)
+    if (!file) throw new Error(`nothing uploaded at ${path}`)
+    return JSON.parse(String(file.data))
+  }
+  /** What was typed into Claude Code, after the launch command. */
+  const typed = () => sent.filter((input) => !isLaunch(input))
+  return { sandbox, commands, written, sent, writtenPaths, writtenJson, typed, terminalSizes, pty }
 }
+
+const CLAUDE_JSON = '/home/user/session-home/.claude/.claude.json'
+const SETTINGS_JSON = '/home/user/session-home/.claude/settings.json'
+const REPLY_JSON = '/home/user/.statuslines/reply.json'
+const FEED_JSON = '/home/user/.statuslines/feed.json'
+const SCENARIO_USAGE = {
+  input_tokens: 37_000,
+  output_tokens: 1_400,
+  cache_creation_input_tokens: 5_000,
+  cache_read_input_tokens: 2_000,
+}
+const TARBALL = { tarball: new Uint8Array([31, 139]), path: '' }
+const RADAR = { source: TARBALL, pluginName: 'radar' }
+const PACK = { source: TARBALL, pluginName: 'pack' }
 
 const isLaunch = (input: string) => input.startsWith('clear; ')
 
@@ -92,7 +117,7 @@ describe('recordInSandbox', () => {
 
       const capture = await recordInSandbox(
         fake.sandbox,
-        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
         FAST,
       )
 
@@ -118,6 +143,64 @@ describe('recordInSandbox', () => {
     SESSION_TEST_TIMEOUT_MS,
   )
 
+  it(
+    "types the scripted prompt then the mod's steps, uploading the plain reply and no settings",
+    async () => {
+      const fake = fakeSandbox(claudeSession, () => {})
+
+      await recordInSandbox(
+        fake.sandbox,
+        {
+          scene: 'mod',
+          mod: RADAR,
+          inputSteps: [{ type: 'text', text: '/radar' }],
+          terminal: DEFAULT_TERMINAL_SETUP,
+        },
+        FAST,
+      )
+
+      expect(fake.terminalSizes).toEqual([{ cols: 100, rows: 30 }])
+      expect(fake.typed()).toEqual(['hello', '\r', '/radar', '\r'])
+      expect(fake.writtenPaths()).toEqual([
+        CLAUDE_JSON,
+        '/home/user/app/src/components/site-header.tsx',
+        '/home/user/app/src/components/install-button.tsx',
+        '/home/user/app/src/components/plugin-card.tsx',
+        '/home/user/app/src/lib/slug.ts',
+        '/home/user/app/src/routes/api/plugins.ts',
+        '/home/user/app/src/jobs/sync-registry.ts',
+        FEED_JSON,
+        REPLY_JSON,
+        '/home/user/plugins/scenario-feed/.claude-plugin/plugin.json',
+        '/home/user/plugins/scenario-feed/hooks/hooks.json',
+        '/home/user/plugins/scenario-feed/hooks/register.ts',
+      ])
+      expect(fake.writtenJson(CLAUDE_JSON)).toEqual({
+        hasCompletedOnboarding: true,
+        lastOnboardingVersion: '2.1.296',
+        lastReleaseNotesSeen: '2.1.296',
+        numStartups: 5,
+        theme: 'dark',
+        autoUpdates: false,
+        customApiKeyResponses: { approved: ['00000000000000000-AA'], rejected: [] },
+        projects: {
+          '/home/user/app': {
+            hasTrustDialogAccepted: true,
+            hasCompletedProjectOnboarding: true,
+            projectOnboardingSeenCount: 5,
+            allowedTools: [],
+          },
+        },
+      })
+      expect(fake.writtenJson(REPLY_JSON)).toEqual({
+        text: 'The repo is clean and the tests pass.',
+        usage: SCENARIO_USAGE,
+      })
+      expect(fake.writtenJson(FEED_JSON)).toMatchObject({ target: 'radar', busy: [] })
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
   it.each([
     { text: '/preview-busy', busy: true },
     { text: '/pet', busy: false },
@@ -129,8 +212,8 @@ describe('recordInSandbox', () => {
       await recordInSandbox(
         fake.sandbox,
         {
+          scene: 'mod',
           mod: null,
-          theme: null,
           inputSteps: [{ type: 'text', text }],
           terminal: DEFAULT_TERMINAL_SETUP,
         },
@@ -154,8 +237,8 @@ describe('recordInSandbox', () => {
       await recordInSandbox(
         fake.sandbox,
         {
+          scene: 'mod',
           mod: null,
-          theme: null,
           inputSteps: [{ type: 'text', text }],
           terminal: DEFAULT_TERMINAL_SETUP,
         },
@@ -177,7 +260,7 @@ describe('recordInSandbox', () => {
 
       await recordInSandbox(
         fake.sandbox,
-        { mod: null, theme: null, inputSteps: [], terminal },
+        { scene: 'mod', mod: null, inputSteps: [], terminal },
         FAST,
       )
 
@@ -188,34 +271,84 @@ describe('recordInSandbox', () => {
   )
 
   it(
-    "sets the theme to record in as the session's theme setting, beside the fullscreen layout",
+    'records a theme request in the theme scene: its prompt alone, typed into a 100x34 terminal',
     async () => {
       const fake = fakeSandbox(claudeSession, () => {})
-      const terminal = { cols: TERMINAL.cols, fullscreen: true }
 
       await recordInSandbox(
         fake.sandbox,
-        { mod: null, theme: 'custom:probe:dracula', inputSteps: [], terminal },
+        { scene: 'theme', mod: PACK, theme: 'custom:pack:dracula' },
         FAST,
       )
 
-      const settings = fake.written.find((f) => f.path.endsWith('/settings.json'))
-      expect(JSON.parse(String(settings?.data))).toEqual({
-        tui: 'fullscreen',
-        theme: 'custom:probe:dracula',
+      expect(fake.terminalSizes).toEqual([{ cols: 100, rows: 34 }])
+      expect(fake.typed()).toEqual(['fix the failing sum test', '\r'])
+      expect(fake.sent[0]).toContain("--plugin-dir '/home/user/plugins/mod'")
+      expect(fake.writtenJson(SETTINGS_JSON)).toEqual({
+        permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+        disableAllHooks: true,
+        theme: 'custom:pack:dracula',
       })
+      expect(fake.writtenJson(CLAUDE_JSON).hasSeenAutoDefaultNudge).toBe(true)
+      expect(fake.writtenJson(FEED_JSON).target).toBe('pack')
+      expect(
+        fake
+          .writtenJson(REPLY_JSON)
+          .steps.map((step: { tool: { name: string } }) => step.tool.name),
+      ).toEqual(['Read', 'Edit', 'Bash'])
     },
     SESSION_TEST_TIMEOUT_MS,
   )
 
   it(
-    'writes no settings for a request with no theme in the default terminal',
+    'ends a theme recording once the permission prompt shows, though its blinking bullet never lets the screen go quiet',
+    async () => {
+      const blinking = (input: string, emit: Emit) => {
+        if (input !== '\r') return claudeSession(input, emit)
+        emit('\r\n● Running 1 shell command…\r\n Bash command\r\n Do you want')
+        emit(' to proceed?\r\n ❯ 1. Yes')
+        const blink = setInterval(() => (fake.pty.killed ? clearInterval(blink) : emit('●')), 5)
+      }
+      const fake = fakeSandbox(blinking, () => {})
+      const startedAt = performance.now()
+
+      const { pty } = await recordInSandbox(
+        fake.sandbox,
+        { scene: 'theme', mod: PACK, theme: 'custom:pack:dracula' },
+        FAST,
+      )
+
+      expect(performance.now() - startedAt).toBeLessThan(2_000)
+      expect(new TextDecoder().decode(pty)).toContain('Do you want to proceed?\r\n ❯ 1. Yes')
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    "records the theme scene's baseline with no plugin and Claude Code's default theme",
+    async () => {
+      const fake = fakeSandbox(claudeSession, () => {})
+
+      await recordInSandbox(fake.sandbox, { scene: 'theme', mod: null, theme: null }, FAST)
+
+      expect(fake.sent[0]).not.toContain("'/home/user/plugins/mod'")
+      expect(fake.writtenJson(SETTINGS_JSON)).toEqual({
+        permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+        disableAllHooks: true,
+      })
+      expect(fake.writtenJson(FEED_JSON).target).toBeNull()
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    'writes no settings for a mod in the default terminal',
     async () => {
       const fake = fakeSandbox(claudeSession, () => {})
 
       await recordInSandbox(
         fake.sandbox,
-        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
         FAST,
       )
 
@@ -243,7 +376,7 @@ describe('recordInSandbox', () => {
 
       const recording = recordInSandbox(
         fake.sandbox,
-        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
         FAST,
       )
 
@@ -301,8 +434,8 @@ describe('modRecorder', () => {
       const { recorder, events, uploads } = fakeSandboxes(printed)
 
       const recording = await recorder.record({
+        scene: 'mod',
         mod: null,
-        theme: null,
         inputSteps: [],
         terminal: DEFAULT_TERMINAL_SETUP,
       })
@@ -327,7 +460,7 @@ describe('modRecorder', () => {
       const { recorder, replayCommands, session } = fakeSandboxes(['❯'])
       const terminal = { cols: 120, fullscreen: false }
 
-      await recorder.record({ mod: null, theme: null, inputSteps: [], terminal })
+      await recorder.record({ scene: 'mod', mod: null, inputSteps: [], terminal })
 
       expect(session.terminalSizes).toEqual([{ cols: 120, rows: TERMINAL.rows }])
       expect(replayCommands).toEqual([expect.stringMatching(` 120 ${TERMINAL.rows}$`)])
@@ -341,10 +474,23 @@ describe('modRecorder', () => {
       const { recorder, replayCommands, session } = fakeSandboxes(['❯'])
       const terminal = { cols: 144, rows: 50, fullscreen: true }
 
-      await recorder.record({ mod: null, theme: null, inputSteps: [], terminal })
+      await recorder.record({ scene: 'mod', mod: null, inputSteps: [], terminal })
 
       expect(session.terminalSizes).toEqual([{ cols: 144, rows: 50 }])
       expect(replayCommands).toEqual([expect.stringMatching(' 144 50$')])
+    },
+    SESSION_TEST_TIMEOUT_MS,
+  )
+
+  it(
+    "records and replays a theme request in the theme scene's terminal",
+    async () => {
+      const { recorder, replayCommands, session } = fakeSandboxes(['❯'])
+
+      await recorder.record({ scene: 'theme', mod: null, theme: 'custom:pack:dracula' })
+
+      expect(session.terminalSizes).toEqual([{ cols: 100, rows: 34 }])
+      expect(replayCommands).toEqual([expect.stringMatching(' 100 34$')])
     },
     SESSION_TEST_TIMEOUT_MS,
   )
@@ -355,7 +501,7 @@ describe('modRecorder', () => {
       const { recorder } = fakeSandboxes(Array(MAX_TERMINAL_ROWS).fill(''))
       const terminal = { cols: TERMINAL.cols, rows: MAX_TERMINAL_ROWS, fullscreen: true }
 
-      const { rows } = await recorder.record({ mod: null, theme: null, inputSteps: [], terminal })
+      const { rows } = await recorder.record({ scene: 'mod', mod: null, inputSteps: [], terminal })
 
       expect(rows).toHaveLength(MAX_TERMINAL_ROWS)
     },
@@ -369,8 +515,8 @@ describe('modRecorder', () => {
 
       await expect(
         recorder.record({
+          scene: 'mod',
           mod: null,
-          theme: null,
           inputSteps: [],
           terminal: DEFAULT_TERMINAL_SETUP,
         }),
@@ -397,8 +543,8 @@ describe('e2bModRecorder', () => {
 
     await expect(
       e2bModRecorder.record({
+        scene: 'mod',
         mod: null,
-        theme: null,
         inputSteps,
         terminal: DEFAULT_TERMINAL_SETUP,
       }),

@@ -3,7 +3,7 @@ import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
 import { boundRecording } from '@/render/mods/bound-recording'
-import type { ModRecorder, ModUnderRender, Recording, RecordRequest } from '@/render/mods/recorder'
+import type { ModRecorder, ModUnderRender, Recording } from '@/render/mods/recorder'
 import { terminalThemeSetting } from './theme'
 import { themeScreenPreview } from './theme-screen'
 
@@ -35,27 +35,24 @@ export async function themesToRecord(
     .orderBy(schema.modThemes.key)
 }
 
-/** The version's own recording request, which each of its themes is recorded with. */
-export type ThemedRequest = Omit<RecordRequest, 'mod' | 'theme'> & { mod: ModUnderRender }
-
-/** The same session with no theme and no mod, in the Claude Code version the theme ran. */
+/** The theme scene with no theme and no plugin, in the Claude Code version the theme ran. */
 export type NoThemeScreen = (claudeCodeVersion: string) => Promise<Recording>
 
 /**
- * Records the session in the theme, selected the way a visitor picks it in `/theme`, and replaces
- * the theme's preview with the whole screen. A screen that looks the same as `noTheme`'s is refused
- * and the theme is left with no preview: Claude Code ignored the setting, and the card would show its
- * default look under the theme's name.
+ * Records the theme scene in the theme, selected the way a visitor picks it in `/theme`, with the
+ * plugin that carries it, and replaces the theme's preview with the whole screen. A screen that
+ * looks the same as `noTheme`'s is refused and the theme is left with no preview: Claude Code
+ * ignored the setting, and the card would show its default look under the theme's name.
  */
 export async function recordThemePreview(
   db: Db,
   recorder: ModRecorder,
-  request: ThemedRequest,
+  mod: ModUnderRender,
   theme: ThemeToRecord,
   noTheme: NoThemeScreen,
 ): Promise<void> {
-  const setting = terminalThemeSetting(request.mod.pluginName, theme.key)
-  const recording = boundRecording(await recorder.record({ ...request, theme: setting }))
+  const setting = terminalThemeSetting(mod.pluginName, theme.key)
+  const recording = boundRecording(await recorder.record({ scene: 'theme', mod, theme: setting }))
   const preview = {
     segments: themeScreenPreview(recording.rows),
     claudeCodeVersion: recording.claudeCodeVersion,

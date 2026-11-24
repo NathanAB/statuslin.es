@@ -61,35 +61,39 @@ export function playsBusySession(steps: readonly InputStep[]): boolean {
   return steps.some((step) => step.type === 'text' && step.text.trim() === BUSY_STEP)
 }
 
-/** The files `/preview-busy` works on, relative to the workspace, in its seed commit. */
-const BUSY_SOURCE = 'src/sum.js'
-const BUG = 'return a - b'
-const FIX = 'return a + b'
-const TEST_COMMAND = 'npm test'
+export const SUM_SOURCE = 'src/sum.js'
+export const SUM_BUG = 'return a - b'
+export const SUM_FIX = 'return a + b'
+/** The workspace's test run, as a Bash call's input. */
+export const RUN_SUM_TESTS = { command: 'npm test', description: 'Run the tests' } as const
 
-export const BUSY_WORKSPACE_FILES: readonly { path: string; data: string }[] = [
+/**
+ * A workspace whose `sum` subtracts and whose tests catch it, relative to the workspace, in its seed
+ * commit: what `/preview-busy` works on.
+ */
+export const SUM_BUG_WORKSPACE_FILES: readonly { path: string; data: string }[] = [
   {
     path: 'package.json',
     data: `${JSON.stringify({ name: 'app', version: '1.0.0', private: true, scripts: { test: 'sh test.sh' } }, null, 2)}\n`,
   },
   {
     path: 'test.sh',
-    data: `if grep -qF '${FIX}' ${BUSY_SOURCE}; then\n  echo 'Tests: 3 passed, 3 total'\nelse\n  echo 'Tests: 1 failed, 2 passed, 3 total'\n  exit 1\nfi\n`,
+    data: `if grep -qF '${SUM_FIX}' ${SUM_SOURCE}; then\n  echo 'Tests: 3 passed, 3 total'\nelse\n  echo 'Tests: 1 failed, 2 passed, 3 total'\n  exit 1\nfi\n`,
   },
   // npm 10 holds a passing run open on its update check, which never answers in an offline sandbox.
   { path: '.npmrc', data: 'update-notifier=false\n' },
-  { path: BUSY_SOURCE, data: `export function sum(a, b) {\n  ${BUG}\n}\n` },
-  { path: 'build/sum.js', data: `export function sum(a, b) {\n  ${BUG}\n}\n` },
+  { path: SUM_SOURCE, data: `export function sum(a, b) {\n  ${SUM_BUG}\n}\n` },
+  { path: 'build/sum.js', data: `export function sum(a, b) {\n  ${SUM_BUG}\n}\n` },
 ]
 
 /** A test run that fails, the fix, a run that passes, then a clean-up the settings deny. */
 function busyCalls(scenario: Scenario): BusyCall[] {
-  const source = `${feedStdin(scenario).workspace.current_dir}/${BUSY_SOURCE}`
-  const runTests: BusyCall = { tool: 'Bash', command: TEST_COMMAND, description: 'Run the tests' }
+  const source = `${feedStdin(scenario).workspace.current_dir}/${SUM_SOURCE}`
+  const runTests: BusyCall = { tool: 'Bash', ...RUN_SUM_TESTS }
   return [
     runTests,
     { tool: 'Read', file_path: source },
-    { tool: 'Edit', file_path: source, old_string: BUG, new_string: FIX },
+    { tool: 'Edit', file_path: source, old_string: SUM_BUG, new_string: SUM_FIX },
     runTests,
     { tool: 'Bash', command: 'rm -rf build', description: 'Remove the build output' },
   ]
@@ -102,20 +106,31 @@ function busyCalls(scenario: Scenario): BusyCall[] {
  * sandbox and fails every command, so the tests run outside it.
  */
 export function busySettings(scenario: Scenario) {
-  const source = `/${feedStdin(scenario).workspace.current_dir}/${BUSY_SOURCE}`
+  const source = `/${feedStdin(scenario).workspace.current_dir}/${SUM_SOURCE}`
   return {
     permissions: {
-      allow: [`Bash(${TEST_COMMAND})`, `Read(${source})`, `Edit(${source})`],
+      allow: [`Bash(${RUN_SUM_TESTS.command})`, `Read(${source})`, `Edit(${source})`],
       deny: ['Bash(rm -rf:*)'],
     },
-    sandbox: { enabled: false, excludedCommands: [TEST_COMMAND] },
+    sandbox: { enabled: false, excludedCommands: [RUN_SUM_TESTS.command] },
   }
+}
+
+/** One turn the canned model plays: its text, then one tool call. Empty text sends no text block. */
+export interface CannedStep {
+  text: string
+  tool: { name: string; input: Record<string, unknown> }
 }
 
 /** The `--canned-reply` file of the canned model server. */
 export interface CannedReply {
   text: string
   usage: FeedStdin['context_window']['current_usage']
+  /**
+   * Step n answers the request that carries n tool results, when that request offers the step's
+   * tool; every other request gets `text`.
+   */
+  steps?: CannedStep[]
 }
 
 export function feedScenario(): Scenario {

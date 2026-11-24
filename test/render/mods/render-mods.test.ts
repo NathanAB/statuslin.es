@@ -9,7 +9,7 @@ import { FAKE_THEME_SHOT, FakeDesktopRecorder } from '@/render/mods/desktop/fake
 import type { DesktopRecorder, DesktopThemeRequest } from '@/render/mods/desktop/types'
 import { DesktopThemeRefused } from '@/render/mods/desktop/window-shot'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
-import type { ModRecorder, Recording, RecordRequest } from '@/render/mods/recorder'
+import type { ModRecorder, ModSceneRequest, Recording, RecordRequest } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import { insertPendingSubmission } from '@/submissions/record'
 import { renderMods } from '../../../scripts/render-mods'
@@ -132,8 +132,10 @@ function run(
   return { exitCode, lines, tarballs }
 }
 
-const modRequests = (requests: RecordRequest[]) => requests.filter((r) => r.mod !== null)
-const baselineRequests = (requests: RecordRequest[]) => requests.filter((r) => r.mod === null)
+const modRequests = (requests: RecordRequest[]) =>
+  requests.filter((r): r is ModSceneRequest => r.scene === 'mod' && r.mod !== null)
+const baselineRequests = (requests: RecordRequest[]) =>
+  requests.filter((r): r is ModSceneRequest => r.scene === 'mod' && r.mod === null)
 
 /** Wraps a recorder to fail for named plugins, or report a Claude Code version per plugin. */
 interface Script {
@@ -260,8 +262,8 @@ describe('renderMods', () => {
     expect(tarballs).toEqual([`${REPO_URL}@${sha('d')}`])
     expect(modRequests(recorder.requests)).toEqual([
       {
+        scene: 'mod',
         mod: { source: { tarball: TARBALL, path: 'mods/radar' }, pluginName: 'radar' },
-        theme: null,
         inputSteps,
         terminal: DEFAULT_TERMINAL_SETUP,
       },
@@ -309,7 +311,7 @@ describe('renderMods', () => {
     expect(await run(recorder).exitCode).toBe(0)
 
     expect(baselineRequests(recorder.requests)).toEqual([
-      { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+      { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
     ])
     expect(modRequests(recorder.requests)).toHaveLength(2)
   })
@@ -330,8 +332,8 @@ describe('renderMods', () => {
     expect(baselines).toHaveLength(2)
     expect(baselines).toEqual(
       expect.arrayContaining([
-        { mod: null, theme: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP },
-        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
       ]),
     )
   })
@@ -352,8 +354,8 @@ describe('renderMods', () => {
     expect(baselines).toHaveLength(2)
     expect(baselines).toEqual(
       expect.arrayContaining([
-        { mod: null, theme: null, inputSteps: [], terminal: wide },
-        { mod: null, theme: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: wide },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
       ]),
     )
     const setups = Object.fromEntries(
@@ -645,13 +647,17 @@ async function storedThemePreviews(versionId: string) {
 
 const themeRequests = (requests: RecordRequest[]) =>
   requests
-    .filter((r) => r.theme !== null)
-    .sort((a, b) => String(a.theme).localeCompare(String(b.theme)))
+    .filter((r) => r.scene === 'theme' && r.theme !== null)
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+const themeBaselineRequests = (requests: RecordRequest[]) =>
+  requests.filter((r) => r.scene === 'theme' && r.mod === null)
 
 function failingTheme(inner: ModRecorder, theme: string): ModRecorder {
   return {
     async record(request) {
-      if (request.theme === theme) throw new Error(`sandbox for ${theme} died`)
+      if (request.scene === 'theme' && request.theme === theme) {
+        throw new Error(`sandbox for ${theme} died`)
+      }
       return inner.record(request)
     },
   }
@@ -664,7 +670,7 @@ describe('renderMods for the themes a plugin carries', () => {
       themes: { 'custom:pack:dracula': DRACULA, 'custom:pack:nord': NORD },
     })
 
-  it("records each theme in its own theme setting, with the version's plugin, steps and terminal", async () => {
+  it("records each theme in the theme scene with the version's plugin, not the mod's steps or terminal", async () => {
     const inputSteps: InputStep[] = [{ type: 'text', text: '/pack' }]
     const wide = { cols: 120, fullscreen: true }
     const versionId = await seedMod('pack', { path: 'themes/pack', inputSteps, terminal: wide })
@@ -677,8 +683,8 @@ describe('renderMods for the themes a plugin carries', () => {
     expect(await exitCode).toBe(0)
     const mod = { source: { tarball: TARBALL, path: 'themes/pack' }, pluginName: 'pack' }
     expect(themeRequests(recorder.requests)).toEqual([
-      { mod, theme: 'custom:pack:dracula', inputSteps, terminal: wide },
-      { mod, theme: 'custom:pack:nord', inputSteps, terminal: wide },
+      { scene: 'theme', mod, theme: 'custom:pack:dracula' },
+      { scene: 'theme', mod, theme: 'custom:pack:nord' },
     ])
     expect(await storedThemePreviews(versionId)).toEqual({
       dracula: DRACULA_PREVIEW,
@@ -686,6 +692,35 @@ describe('renderMods for the themes a plugin carries', () => {
     })
     expect(lines).toContain('rendered pack theme dracula in the terminal')
     expect(lines).toContain('rendered pack theme nord in the terminal')
+  })
+
+  it('compares themes against one baseline of the theme scene with no plugin and no theme', async () => {
+    for (const [slug, key] of [
+      ['pack', 'dracula'],
+      ['other-pack', 'nord'],
+    ] as const) {
+      const versionId = await seedMod(slug, { inputSteps: [{ type: 'text', text: `/${slug}` }] })
+      await addTheme(db, versionId, { key, rendered: false })
+    }
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: { 'custom:pack:dracula': DRACULA, 'custom:other-pack:nord': NORD },
+    })
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    expect(themeBaselineRequests(recorder.requests)).toEqual([
+      { scene: 'theme', mod: null, theme: null },
+    ])
+  })
+
+  it('records no theme baseline in a run with no themes to record', async () => {
+    await seedMod('pack')
+    const recorder = themed()
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    expect(recorder.requests.filter((r) => r.scene === 'theme')).toEqual([])
   })
 
   it('skips a theme that already has a preview on a full run', async () => {
@@ -696,7 +731,13 @@ describe('renderMods for the themes a plugin carries', () => {
 
     expect(await run(recorder).exitCode).toBe(0)
 
-    expect(themeRequests(recorder.requests).map((r) => r.theme)).toEqual(['custom:pack:nord'])
+    expect(themeRequests(recorder.requests)).toEqual([
+      {
+        scene: 'theme',
+        mod: expect.objectContaining({ pluginName: 'pack' }),
+        theme: 'custom:pack:nord',
+      },
+    ])
     expect(await storedThemePreviews(versionId)).toEqual({
       dracula: SEEDED_THEME_PREVIEW,
       nord: NORD_PREVIEW,

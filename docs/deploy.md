@@ -303,7 +303,9 @@ bun run build:e2b-mod-template
 ```
 It prints an immutable snapshot ID. Commit that value as `E2B_MOD_TEMPLATE_ID` in
 `src/render/e2b-template.ts` before deploying. Rebuild only when the Claude Code or headless-terminal
-version in `scripts/build-e2b-mod-template.ts` changes. It leaves `E2B_TEMPLATE_ID` alone.
+version in `scripts/build-e2b-mod-template.ts` changes, or the canned model server
+(`src/render/sandbox-anthropic-usage-server.py`) does, since the template holds a copy of it. It
+leaves `E2B_TEMPLATE_ID` alone.
 
 ### The Desktop E2B template
 
@@ -385,12 +387,17 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
    it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result.
    The same run records each terminal theme a plugin carries, in that theme, as one outcome line
-   per theme. A full run skips themes that already have a preview, and `--slug` records all of that
-   plugin's themes again. A plugin publishes only once every theme has a preview. A theme whose
-   screen looks the same as the baseline (Claude Code ignored its `theme` setting), or as another
-   theme of the same version, fails with that reason and loses its preview, whichever run stored it.
-   Check the plugin name and the theme file, then rerun.
-   Desktop themes are recorded the same way, each as a whole-window still of Claude Desktop in the
+   per theme. Every terminal theme is recorded in the theme scene (`src/render/mods/theme-scene.ts`):
+   a reply, an edit with its diff, and a prompt asking to run a command, the same for every terminal
+   theme whatever the plugin's input steps and terminal. Every hook is off in it, so a terminal
+   theme's preview never runs the plugin's own code; its hooks show only in the mod's own previews.
+   A full run skips themes that already have a preview, and `--slug` records all of that plugin's
+   themes again, which is how published themes move to a changed theme scene. A plugin publishes
+   only once every theme has a preview. A terminal theme whose screen looks the same as the baseline
+   (Claude Code ignored its `theme` setting), or as another theme of the same version, fails with
+   that reason and loses its preview, whichever run stored it. Check the plugin name and the theme
+   file, then rerun.
+   Desktop themes are recorded in the same run, each as a whole-window still of Claude Desktop in the
    theme's own window, after its switch steps. A mod has Desktop themes only once its curation entry
    declares them (`desktopThemes`, one per theme: `key`, `name` as the mod titles it, `window`, and
    `switchSteps`, the commands that switch to it, left out when the mod sets its one theme itself;

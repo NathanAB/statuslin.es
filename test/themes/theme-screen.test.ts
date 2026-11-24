@@ -3,6 +3,8 @@ import type { AnsiSegment } from '@/render/types'
 import { themeScreenPreview } from '@/themes/theme-screen'
 import runOne from './fixtures/probe-theme-run-1.json'
 import runTwo from './fixtures/probe-theme-run-2.json'
+import bulletDark from './fixtures/theme-scene-bullet-dark.json'
+import bulletLit from './fixtures/theme-scene-bullet-lit.json'
 
 const RESET = '\u001b[0m'
 const fg = (rgb: string) => `\u001b[0;38;2;${rgb}m`
@@ -19,14 +21,12 @@ const turnRow = (verb: string, time: string) =>
 describe('themeScreenPreview', () => {
   it("keeps the whole screen in the theme's colours, Claude Code's branding rows included", () => {
     const screen = [
-      '',
       `${fg(PURPLE)} ▐▛███▜▌${RESET}   \u001b[0;1mClaude Code${RESET}`,
       `${fg('68;85;102')}────${RESET}`,
       '❯ hello',
     ]
 
     expect(themeScreenPreview(screen)).toEqual([
-      segment('\n'),
       segment(' ▐▛███▜▌', { fg: 'rgb(189, 147, 249)' }),
       segment('   '),
       segment('Claude Code', { bold: true }),
@@ -59,9 +59,18 @@ describe('themeScreenPreview', () => {
     expect(themeScreenPreview(runTwo)).toEqual(themeScreenPreview(runOne))
   })
 
-  it('trims the blank rows after the last row that shows something, keeping blank rows above it', () => {
-    const screen = ['', 'a', '', 'b', '', '   ', `${fg(SLATE)}  ${RESET}`]
+  it("stores one preview for two real recordings of the theme scene, whether or not the waiting command's bullet was lit", () => {
+    expect(bulletLit).not.toEqual(bulletDark)
 
-    expect(themeScreenPreview(screen)).toEqual([segment('\na\n\nb')])
+    const preview = themeScreenPreview(bulletLit)
+
+    expect(themeScreenPreview(bulletDark)).toEqual(preview)
+    expect(preview.map((s) => s.text).join('')).toContain('\n  Running 1 shell command…\n')
+  })
+
+  it('trims the blank rows before the first and after the last row that shows something, keeping blank rows between them', () => {
+    const screen = ['', `${fg(SLATE)}  ${RESET}`, 'a', '', 'b', '', '   ', `${fg(SLATE)}  ${RESET}`]
+
+    expect(themeScreenPreview(screen)).toEqual([segment('a\n\nb')])
   })
 })

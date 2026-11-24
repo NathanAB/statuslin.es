@@ -64,6 +64,10 @@ _Avoid_: input steps, theme command
 A named, fixed Claude Code session state (model, usage, folder, git and so on) that previews are rendered against. Status lines and mods draw from the same set.
 _Avoid_: fixture, test case, sample
 
+**Scene**:
+What a recorded terminal session plays on top of its scenario. A mod's scene is the scripted prompt, then the mod's input steps. Every terminal theme shares one scene, so its previews compare side by side: a prompt, a reply, a file edit with added and removed lines, and a prompt asking to run a command, which is never answered.
+_Avoid_: script, flow
+
 **Surface**:
 Where Claude Code draws a mod or applies a theme: the terminal or Claude Desktop.
 _Avoid_: client, app, platform
