@@ -131,6 +131,15 @@ afterEach(() => {
 })
 
 describe('/themes', () => {
+  // Most themes listed are Desktop themes, and people search "Claude Desktop themes" too.
+  it('heads the page with both Claude Code and Claude Desktop themes', async () => {
+    await renderPage([theme('Night', 'pack')])
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Claude Code and Claude Desktop themes',
+    )
+  })
+
   it('shows one card per theme, each with its own preview in its window', async () => {
     await renderPage([
       theme('Paper', 'pack', { window: 'light' }),
