@@ -1,4 +1,4 @@
-import { and, count, eq, isNull, ne, type SQLWrapper, sql } from 'drizzle-orm'
+import { and, count, eq, isNull, ne, or, type SQLWrapper, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
 import { unreviewedModPath } from '@/lib/site'
@@ -88,7 +88,8 @@ async function checkDraft(
         ne(mods.id, mod.id),
         eq(mods.pluginName, mod.pluginName),
         sameAddress(versionOwner),
-        hasUnreviewedPage(db),
+        // A published listing there would take the address over with a redirect.
+        or(hasUnreviewedPage(db), eq(mods.status, 'published')),
       ),
     )
   if (row || twin) return { refusal: `${address} already belongs to another mod` }

@@ -233,6 +233,24 @@ describe('show-unreviewed-mod', () => {
       [ENTRY],
       '/mods/unreviewed/Ada/looks already belongs to another mod',
     ],
+    [
+      'an address a published listing already has, which the address would redirect to',
+      async () => {
+        await pack()
+        const listing = await addShownDraft(db, {
+          slug: 'listed-looks',
+          pluginName: 'looks',
+          repoUrl: 'https://github.com/ada/more-looks',
+          shown: false,
+        })
+        await db
+          .update(schema.mods)
+          .set({ status: 'published' })
+          .where(eq(schema.mods.id, listing.modId))
+      },
+      [ENTRY],
+      '/mods/unreviewed/Ada/looks already belongs to another mod',
+    ],
   ])('refuses %s, saying why, and shows nothing', async (_name, seed, curation, reason) => {
     await seed()
 

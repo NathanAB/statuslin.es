@@ -89,7 +89,7 @@ export function hasUnreviewedPage(db: Db): SQL {
 }
 
 /** A shown draft's page, from the draft and its live version. */
-async function findShownDraft(
+export async function findShownDraft(
   db: Db,
   { owner, pluginName }: { owner: string; pluginName: string },
 ): Promise<UnreviewedMod | null> {

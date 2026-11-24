@@ -6,7 +6,15 @@ import type { RepoInfo } from '@/mods/github'
 import { PluginRefusal } from '@/mods/plugin-facts'
 import { importUnreviewedMods, type UnreviewedImportDeps } from '@/mods/unreviewed-import'
 import type { ModSandbox, ModSource } from '@/render/mods/mod-sandbox'
-import { addMod, addVersion, MODULES_ONLY_LISTING, openTestDb, sha, type TestDb } from './seed-mods'
+import {
+  addMod,
+  addShownDraft,
+  addVersion,
+  MODULES_ONLY_LISTING,
+  openTestDb,
+  sha,
+  type TestDb,
+} from './seed-mods'
 
 const SHA = sha('c')
 const NEW_SHA = sha('d')
@@ -256,6 +264,23 @@ describe('importUnreviewedMods', () => {
       'refused meter: statuslin.es rejected a submission of this mod',
       'deleted OctoCat/meter: its entry left the file',
     ])
+    expect(await rows()).toEqual([])
+  })
+
+  it('refuses an address a shown curated draft already has, whatever the case, without asking GitHub', async () => {
+    await addShownDraft(db, {
+      slug: 'meter-pack',
+      pluginName: 'meter',
+      repoUrl: 'https://github.com/octocat/meter-themes',
+    })
+
+    const { exitCode, lines, calls } = await run([entry()])
+
+    expect(exitCode).toBe(1)
+    expect(lines).toEqual([
+      "refused meter: /mods/unreviewed/OctoCat/meter is already a curated mod's unreviewed page",
+    ])
+    expect(calls).toEqual([])
     expect(await rows()).toEqual([])
   })
 
