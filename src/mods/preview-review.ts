@@ -3,14 +3,21 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { eq, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import { modDesktopPreviews, modPreviews, mods, modThemes, modVersions } from '@/db/schema'
+import { modDesktopPreviews, modPreviews, modThemes, modVersions } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
-import { getReviewThemes, type ReviewTheme } from '@/review/theme-review'
 import { fenceUntrusted, type VersionPin } from './content-prompt'
 import { desktopPreviewJoin, terminalPreviewJoin } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
+
+/** A theme new or changed since the live version, as /admin marks it. `name` is the author's text. */
+export interface ChangedTheme {
+  kind: 'terminal' | 'desktop'
+  key: string
+  name: string
+  change: 'new' | 'changed'
+}
 
 /** What a human compares before a mod's previews go live: the README beside both previews. */
 export interface PreviewReview {
@@ -32,7 +39,7 @@ export interface PreviewReview {
     /** The live version's number when one is live and differs from this one, else null. */
     liveVersionNumber: number | null
     /** The themes new or changed since the live version, in name order. */
-    changed: ReviewTheme[]
+    changed: ChangedTheme[]
   }
 }
 
@@ -81,7 +88,7 @@ function desktopLine({ pin, desktopPng }: PreviewReview, writePng: PngWriter): s
 const counted = (count: number, kind: string) =>
   count === 0 ? [] : [`${count} ${kind} ${count === 1 ? 'theme' : 'themes'}`]
 
-const themeWhere = (theme: ReviewTheme) =>
+const themeWhere = (theme: ChangedTheme) =>
   theme.kind === 'terminal' ? `themes/${theme.key}.json` : `Desktop theme ${theme.key}`
 
 /** One WARN line per theme new or changed since the live version, so none hides in a long pack. */
@@ -122,7 +129,11 @@ export function previewReviewLines(review: PreviewReview, writePng: PngWriter): 
 export async function storedPreviews(
   db: Db,
   versionId: string,
-): Promise<Pick<PreviewReview, 'terminal' | 'desktopPng' | 'themes'>> {
+): Promise<
+  Pick<PreviewReview, 'terminal' | 'desktopPng'> & {
+    themes: Omit<PreviewReview['themes'], 'liveVersionNumber' | 'changed'>
+  }
+> {
   const [row] = await db
     .select({
       segments: modPreviews.segments,
@@ -131,24 +142,11 @@ export async function storedPreviews(
       desktopThemes: sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.kind} = 'desktop')::int`,
       versionNumber: modVersions.versionNumber,
       newestVersionNumber: sql<number>`(select max(newest.version_number) from ${modVersions} newest where newest.mod_id = ${modVersions.modId})::int`,
-      modStatus: mods.status,
-      currentVersionId: mods.currentVersionId,
     })
     .from(modVersions)
-    .innerJoin(mods, eq(mods.id, modVersions.modId))
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(eq(modVersions.id, versionId))
-  const live = row?.modStatus === 'published' ? (row.currentVersionId ?? null) : null
-  const liveId = live === versionId ? null : live
-  const themes = (await getReviewThemes(db, [{ id: versionId, liveId }])).get(versionId) ?? []
-  const [liveVersion] =
-    liveId === null
-      ? []
-      : await db
-          .select({ versionNumber: modVersions.versionNumber })
-          .from(modVersions)
-          .where(eq(modVersions.id, liveId))
   return {
     terminal: row?.segments ?? [],
     desktopPng: row?.png ?? null,
@@ -157,8 +155,6 @@ export async function storedPreviews(
       desktop: row?.desktopThemes ?? 0,
       versionNumber: row?.versionNumber ?? 0,
       newestVersionNumber: row?.newestVersionNumber ?? 0,
-      liveVersionNumber: liveVersion?.versionNumber ?? null,
-      changed: themes.filter((theme) => theme.change !== null),
     },
   }
 }
