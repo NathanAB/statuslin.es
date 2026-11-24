@@ -613,5 +613,1470 @@
     "commitSha": "aa5dd0ab28bc59cf13a97553172d598be5b85bb9",
     "pluginName": "nk-claude-themes",
     "title": "NK Claude Themes"
+  },
+  {
+    "repoUrl": "https://github.com/anthropics/claude-plugins-official",
+    "path": "plugins/theme-examples",
+    "commitSha": "7b7a29e0458e3fd9417b0f46e403843b52958a83",
+    "pluginName": "theme-examples",
+    "title": "Theme Examples",
+    "desktopThemes": [
+      {
+        "key": "honu-lagoon",
+        "name": "Honu Lagoon",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme honu-lagoon"
+        ]
+      },
+      {
+        "key": "koi-mosaic",
+        "name": "Koi Mosaic",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme koi-mosaic"
+        ]
+      },
+      {
+        "key": "halftone-dawn",
+        "name": "Halftone Dawn",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme halftone-dawn"
+        ]
+      },
+      {
+        "key": "halftone-dusk",
+        "name": "Halftone Dusk",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme halftone-dusk"
+        ]
+      },
+      {
+        "key": "plotter-tide",
+        "name": "Plotter Tide",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme plotter-tide"
+        ]
+      },
+      {
+        "key": "plotter-tide-night",
+        "name": "Plotter Tide, Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme plotter-tide-night"
+        ]
+      },
+      {
+        "key": "dither-dunes",
+        "name": "Dither Dunes",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme dither-dunes"
+        ]
+      },
+      {
+        "key": "dither-dunes-night",
+        "name": "Dither Dunes Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme dither-dunes-night"
+        ]
+      },
+      {
+        "key": "paper-garden",
+        "name": "Paper Garden",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme paper-garden"
+        ]
+      },
+      {
+        "key": "paper-garden-kraft",
+        "name": "Paper Garden, Kraft",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme paper-garden-kraft"
+        ]
+      },
+      {
+        "key": "night-reef",
+        "name": "Night Reef",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme night-reef"
+        ]
+      },
+      {
+        "key": "snow-pines",
+        "name": "Snow Pines",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme snow-pines"
+        ]
+      },
+      {
+        "key": "braille-stars",
+        "name": "Braille Stars",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme braille-stars"
+        ]
+      },
+      {
+        "key": "teletext-clouds",
+        "name": "Block Clouds",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme teletext-clouds"
+        ]
+      },
+      {
+        "key": "vector-range",
+        "name": "Vector Range",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme vector-range"
+        ]
+      },
+      {
+        "key": "departure-board",
+        "name": "Departure Board",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme departure-board"
+        ]
+      },
+      {
+        "key": "blueprint",
+        "name": "Blueprint",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme blueprint"
+        ]
+      },
+      {
+        "key": "aurora",
+        "name": "Aurora",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme aurora"
+        ]
+      },
+      {
+        "key": "ember",
+        "name": "Ember",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme ember"
+        ]
+      },
+      {
+        "key": "duck-pond",
+        "name": "Duck Pond",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme duck-pond"
+        ]
+      },
+      {
+        "key": "falling-sand",
+        "name": "Falling Sand",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme falling-sand"
+        ]
+      },
+      {
+        "key": "falling-sand-night",
+        "name": "Falling Sand, Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme falling-sand-night"
+        ]
+      },
+      {
+        "key": "garden-beetles",
+        "name": "Garden Beetles",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme garden-beetles"
+        ]
+      },
+      {
+        "key": "garden-beetles-night",
+        "name": "Garden Beetles, Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme garden-beetles-night"
+        ]
+      },
+      {
+        "key": "koi-pond",
+        "name": "Koi Pond",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme koi-pond"
+        ]
+      },
+      {
+        "key": "koi-pond-night",
+        "name": "Koi Pond, Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme koi-pond-night"
+        ]
+      },
+      {
+        "key": "ripple-tank",
+        "name": "Ripple Tank",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme ripple-tank"
+        ]
+      },
+      {
+        "key": "sea-sparkle",
+        "name": "Sea Sparkle",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme sea-sparkle"
+        ]
+      },
+      {
+        "key": "sea-sparkle-night",
+        "name": "Sea Sparkle, Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme sea-sparkle-night"
+        ]
+      },
+      {
+        "key": "semicolony",
+        "name": "Semicolony",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme semicolony"
+        ]
+      },
+      {
+        "key": "semicolony-night",
+        "name": "Semicolony, Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme semicolony-night"
+        ]
+      },
+      {
+        "key": "star-chart",
+        "name": "Star Chart",
+        "window": "light",
+        "switchSteps": [
+          "/custom-theme star-chart"
+        ]
+      },
+      {
+        "key": "star-chart-night",
+        "name": "Star Chart, Night",
+        "window": "dark",
+        "switchSteps": [
+          "/custom-theme star-chart-night"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/akatsuki-night",
+    "commitSha": "f88e0c35f714f14c5ebbc28b0fae13224ae565b4",
+    "pluginName": "akatsuki-night",
+    "title": "Akatsuki Night",
+    "desktopThemes": [
+      {
+        "key": "akatsuki-night",
+        "name": "Akatsuki night",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/gotham-night",
+    "commitSha": "f88e0c35f714f14c5ebbc28b0fae13224ae565b4",
+    "pluginName": "gotham-night",
+    "title": "Gotham Night",
+    "desktopThemes": [
+      {
+        "key": "gotham-night",
+        "name": "Gotham night",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hamzafer/claude-code-mods",
+    "path": "mods/stark-lab",
+    "commitSha": "f88e0c35f714f14c5ebbc28b0fae13224ae565b4",
+    "pluginName": "stark-lab",
+    "title": "Stark Lab",
+    "desktopThemes": [
+      {
+        "key": "stark-lab",
+        "name": "Stark lab",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/Handsher/ascii-wallpapers",
+    "path": "",
+    "commitSha": "faa65c0bccf9b732790048ee035d5e67dc85727f",
+    "pluginName": "ascii-wallpapers",
+    "title": "ASCII Wallpapers",
+    "desktopThemes": [
+      {
+        "key": "clawd",
+        "name": "Clawd",
+        "window": "dark",
+        "switchSteps": [
+          "/wallpaper clawd",
+          "/wallpaper crab off"
+        ]
+      },
+      {
+        "key": "clouds",
+        "name": "Cloud Drift",
+        "window": "light",
+        "switchSteps": [
+          "/wallpaper clouds",
+          "/wallpaper crab off"
+        ]
+      },
+      {
+        "key": "koiPond",
+        "name": "Koi Pond",
+        "window": "dark",
+        "switchSteps": [
+          "/wallpaper koipond",
+          "/wallpaper crab off"
+        ]
+      },
+      {
+        "key": "jellyfish",
+        "name": "Jellyfish",
+        "window": "dark",
+        "switchSteps": [
+          "/wallpaper jellyfish",
+          "/wallpaper crab off"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/ishuagrawal/claude-code-themes",
+    "path": "themes/rainy-window",
+    "commitSha": "ae7d9d6d9fb98b2409d26d405dfbc230f2be864a",
+    "pluginName": "rainy-window",
+    "title": "Rainy Window",
+    "desktopThemes": [
+      {
+        "key": "rainy-window-light",
+        "name": "Rainy window (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "rainy-window-dark",
+        "name": "Rainy window (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/juliendesigncraft/carbon-theme-for-claude",
+    "path": "",
+    "commitSha": "ef7d5a6fcafbd27657e9295f08d9edc3285eab8f",
+    "pluginName": "spazio-tema",
+    "title": "Carbon",
+    "desktopThemes": [
+      {
+        "key": "spazio-carbone-light",
+        "name": "Spazio Carbone (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "spazio-carbone-dark",
+        "name": "Spazio Carbone (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/karanb192/horcrux",
+    "path": "",
+    "commitSha": "bcac596e6b32d25b982861e6eda60fb49901d484",
+    "pluginName": "horcrux",
+    "title": "Horcrux",
+    "desktopThemes": [
+      {
+        "key": "horcrux-dark",
+        "name": "Horcrux (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/nocashflow/claude-cyberpunk-themes",
+    "path": "plugins/cyberpunk-themes",
+    "commitSha": "97d567bc858780ebd926a5fd3553d86d57fff780",
+    "pluginName": "cyberpunk-themes",
+    "title": "Cyberpunk Themes",
+    "desktopThemes": [
+      {
+        "key": "rooftop",
+        "name": "Neon Rooftop",
+        "window": "dark",
+        "switchSteps": []
+      },
+      {
+        "key": "alley",
+        "name": "Phosphor Alley",
+        "window": "dark",
+        "switchSteps": [
+          "/neon alley"
+        ]
+      },
+      {
+        "key": "net",
+        "name": "Deep Net",
+        "window": "dark",
+        "switchSteps": [
+          "/neon net"
+        ]
+      },
+      {
+        "key": "clinic",
+        "name": "Ripperdoc",
+        "window": "dark",
+        "switchSteps": [
+          "/neon clinic"
+        ]
+      },
+      {
+        "key": "badlands",
+        "name": "Badlands",
+        "window": "dark",
+        "switchSteps": [
+          "/neon badlands"
+        ]
+      },
+      {
+        "key": "blackwall",
+        "name": "Blackwall",
+        "window": "dark",
+        "switchSteps": [
+          "/neon blackwall"
+        ]
+      },
+      {
+        "key": "corpo",
+        "name": "Corpo Plaza",
+        "window": "light",
+        "switchSteps": [
+          "/neon corpo"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/hank0521/cc-looks",
+    "path": "",
+    "commitSha": "c02e48477eb20cf6f29a2f4498a6fc2c8e2dff16",
+    "pluginName": "cc-looks",
+    "title": "cc-looks",
+    "desktopThemes": [
+      {
+        "key": "eclipse-light",
+        "name": "Total eclipse (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "eclipse-dark",
+        "name": "Total eclipse (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      },
+      {
+        "key": "deepsea-light",
+        "name": "Deep sea glow (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look deepsea"
+        ]
+      },
+      {
+        "key": "deepsea-dark",
+        "name": "Deep sea glow (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look deepsea"
+        ]
+      },
+      {
+        "key": "survey-light",
+        "name": "Contour survey (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look survey"
+        ]
+      },
+      {
+        "key": "survey-dark",
+        "name": "Contour survey (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look survey"
+        ]
+      },
+      {
+        "key": "paper-light",
+        "name": "Paper notebook (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look paper"
+        ]
+      },
+      {
+        "key": "paper-dark",
+        "name": "Paper notebook (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look paper"
+        ]
+      },
+      {
+        "key": "ocean-light",
+        "name": "Midnight ocean (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look ocean"
+        ]
+      },
+      {
+        "key": "ocean-dark",
+        "name": "Midnight ocean (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look ocean"
+        ]
+      },
+      {
+        "key": "jade-light",
+        "name": "Jade tea house (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look jade"
+        ]
+      },
+      {
+        "key": "jade-dark",
+        "name": "Jade tea house (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look jade"
+        ]
+      },
+      {
+        "key": "sakura-light",
+        "name": "Sakura (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look sakura"
+        ]
+      },
+      {
+        "key": "sakura-dark",
+        "name": "Sakura (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look sakura"
+        ]
+      },
+      {
+        "key": "phosphor",
+        "name": "Phosphor terminal",
+        "window": "dark",
+        "switchSteps": [
+          "/look phosphor"
+        ]
+      },
+      {
+        "key": "dusk-light",
+        "name": "Dusk gradient (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look dusk"
+        ]
+      },
+      {
+        "key": "dusk-dark",
+        "name": "Dusk gradient (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look dusk"
+        ]
+      },
+      {
+        "key": "dots-light",
+        "name": "Dotted notebook (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look dots"
+        ]
+      },
+      {
+        "key": "dots-dark",
+        "name": "Dotted notebook (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look dots"
+        ]
+      },
+      {
+        "key": "grid-light",
+        "name": "Graph paper (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look grid"
+        ]
+      },
+      {
+        "key": "grid-dark",
+        "name": "Graph paper (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look grid"
+        ]
+      },
+      {
+        "key": "blush-light",
+        "name": "Plain blush (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/look blush"
+        ]
+      },
+      {
+        "key": "blush-dark",
+        "name": "Plain blush (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/look blush"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/mightymauls/sakura-petals",
+    "path": "",
+    "commitSha": "288f7eec46ebf33da768b2ca77bdaba324a4cc9e",
+    "pluginName": "sakura-petals",
+    "title": "Sakura Petals",
+    "desktopThemes": [
+      {
+        "key": "sakura-light",
+        "name": "Sakura (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "sakura-dark",
+        "name": "Sakura (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/priyathamkat/claudemaxxing-backdrop",
+    "path": "",
+    "commitSha": "e398dab6023773b8f51ae6fca04ca30cab9a8a67",
+    "pluginName": "claudemaxxing-backdrop",
+    "title": "Claudemaxxing Backdrop",
+    "desktopThemes": [
+      {
+        "key": "claudemaxxing",
+        "name": "Claudemaxxing",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/Nam0101/claude-multiverse",
+    "path": "",
+    "commitSha": "017de21d46454a8e22a231c8e3905927a9ee8a40",
+    "pluginName": "multiverse",
+    "title": "Multiverse",
+    "desktopThemes": [
+      {
+        "key": "deep",
+        "name": "The Deep",
+        "window": "dark",
+        "switchSteps": [
+          "/multiverse deep"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/pursurer/claude-koi-backdrop",
+    "path": "",
+    "commitSha": "1e4acc38e250cbcb3bf699f0f2733efed1b2e70e",
+    "pluginName": "koi-backdrop",
+    "title": "Koi Backdrop",
+    "desktopThemes": [
+      {
+        "key": "koi-black",
+        "name": "Black water",
+        "window": "dark",
+        "switchSteps": []
+      },
+      {
+        "key": "koi-blue",
+        "name": "Blue water",
+        "window": "dark",
+        "switchSteps": [
+          "/koi blue"
+        ]
+      },
+      {
+        "key": "koi-white",
+        "name": "White water",
+        "window": "light",
+        "switchSteps": [
+          "/koi white"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/stillgbx/synthwave-claude",
+    "path": "",
+    "commitSha": "f8178cb45876c1b9dd9ebb196072ffc6dbaee759",
+    "pluginName": "synthwave84",
+    "title": "SynthWave '84",
+    "desktopThemes": [
+      {
+        "key": "synthwave84",
+        "name": "SynthWave '84",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/stillgbx/voxel-drift-claude",
+    "path": "",
+    "commitSha": "7c79487a869499dd31ed7ebdbc5d8e2cb4579115",
+    "pluginName": "voxel-drift",
+    "title": "Voxel Drift",
+    "desktopThemes": [
+      {
+        "key": "voxel-drift-earth-light",
+        "name": "Voxel Drift Earth (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "voxel-drift-earth-dark",
+        "name": "Voxel Drift Earth (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      },
+      {
+        "key": "voxel-drift-solar-light",
+        "name": "Voxel Drift Solar (Light)",
+        "window": "light",
+        "switchSteps": [
+          "/drift solar"
+        ]
+      },
+      {
+        "key": "voxel-drift-solar-dark",
+        "name": "Voxel Drift Solar (Dark)",
+        "window": "dark",
+        "switchSteps": [
+          "/drift solar"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/DorDeorz/claude-neon-city-theme",
+    "path": "",
+    "commitSha": "9b0cb642ee3546bdb1022a0d7a3516b8d4e28961",
+    "pluginName": "neon-city",
+    "title": "Neon City",
+    "desktopThemes": [
+      {
+        "key": "neon-city",
+        "name": "Neon city",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/Geisson19/claude-vague",
+    "path": "",
+    "commitSha": "b3fa03e2604cb09cbb938a82128576d2db2f2e2d",
+    "pluginName": "vague",
+    "title": "Vague",
+    "desktopThemes": [
+      {
+        "key": "vague",
+        "name": "Vague",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/neverblinks/backdrops",
+    "path": "plugins/backdrops",
+    "commitSha": "e71b0ad139eb422bec3714cbd6cc149ed18febce",
+    "pluginName": "backdrops",
+    "title": "Backdrops",
+    "desktopThemes": [
+      {
+        "key": "reaching",
+        "name": "Reaching",
+        "window": "dark",
+        "switchSteps": []
+      },
+      {
+        "key": "magenta-hour",
+        "name": "Magenta Hour",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops magenta-hour"
+        ]
+      },
+      {
+        "key": "after-hours",
+        "name": "After Hours",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops after-hours"
+        ]
+      },
+      {
+        "key": "crossing-hour",
+        "name": "Crossing Hour",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops crossing-hour"
+        ]
+      },
+      {
+        "key": "promenade",
+        "name": "Promenade",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops promenade"
+        ]
+      },
+      {
+        "key": "coast-road",
+        "name": "Coast Road",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops coast-road"
+        ]
+      },
+      {
+        "key": "ocean-road",
+        "name": "Ocean Road",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops ocean-road"
+        ]
+      },
+      {
+        "key": "fractal-glass",
+        "name": "Fractal Glass",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops fractal-glass"
+        ]
+      },
+      {
+        "key": "night-hearth",
+        "name": "Night Hearth",
+        "window": "dark",
+        "switchSteps": [
+          "/backdrops night-hearth"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/lennystepn-hue/atmos",
+    "path": "mods/abyss",
+    "commitSha": "a7a92ade4e9c50cc683c3f9490c277ec1b5cf8da",
+    "pluginName": "abyss",
+    "title": "Abyss",
+    "desktopThemes": [
+      {
+        "key": "abyss-light",
+        "name": "Abyss (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "abyss-dark",
+        "name": "Abyss (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/lennystepn-hue/atmos",
+    "path": "mods/arcade",
+    "commitSha": "a7a92ade4e9c50cc683c3f9490c277ec1b5cf8da",
+    "pluginName": "arcade",
+    "title": "Arcade",
+    "desktopThemes": [
+      {
+        "key": "arcade-light",
+        "name": "Arcade (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "arcade-dark",
+        "name": "Arcade (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/lennystepn-hue/atmos",
+    "path": "mods/enso",
+    "commitSha": "a7a92ade4e9c50cc683c3f9490c277ec1b5cf8da",
+    "pluginName": "enso",
+    "title": "Enso",
+    "desktopThemes": [
+      {
+        "key": "enso-light",
+        "name": "Enso (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "enso-dark",
+        "name": "Enso (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/lennystepn-hue/atmos",
+    "path": "mods/forge",
+    "commitSha": "a7a92ade4e9c50cc683c3f9490c277ec1b5cf8da",
+    "pluginName": "forge",
+    "title": "Forge",
+    "desktopThemes": [
+      {
+        "key": "forge-light",
+        "name": "Forge (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "forge-dark",
+        "name": "Forge (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/zjlgdx/claude-theme-pinboard",
+    "path": "",
+    "commitSha": "e91ce6aa55b6881760f6bdf46f642aeef249f56b",
+    "pluginName": "pinboard",
+    "title": "Pinboard",
+    "desktopThemes": [
+      {
+        "key": "pinboard-light",
+        "name": "Pinboard (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "pinboard-dark",
+        "name": "Pinboard (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/DarineElKhatib/claude-code-pink-mods",
+    "path": "pink-and-cute",
+    "commitSha": "b572a4bd56cc75171243d2ba97b08b3de4bc5c9e",
+    "pluginName": "pink-and-cute",
+    "title": "Pink and Cute",
+    "desktopThemes": [
+      {
+        "key": "pink-and-cute-light",
+        "name": "Pink and cute (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "pink-and-cute-dark",
+        "name": "Pink and cute (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/bassonrichard/holo-damascus",
+    "path": "",
+    "commitSha": "4b6c08751aa3a4260155e1d85d416b07460bd97b",
+    "pluginName": "holo-damascus",
+    "title": "Holo Damascus",
+    "desktopThemes": [
+      {
+        "key": "holo-damascus-light",
+        "name": "Holo Damascus (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "holo-damascus-dark",
+        "name": "Holo Damascus (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/spacefarm-digital/claude-solarized",
+    "path": "",
+    "commitSha": "fb7cf731f72a4c08d8b69b18aa63772d053b2e0b",
+    "pluginName": "solarized",
+    "title": "Solarized",
+    "desktopThemes": [
+      {
+        "key": "solarized-light",
+        "name": "Solarized Light",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "solarized-dark",
+        "name": "Solarized Dark",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/JStanoeva/brie-mine",
+    "path": "",
+    "commitSha": "30aba6ca6e1956381e4dad90ae0bd45bb9f0a052",
+    "pluginName": "brie-mine",
+    "title": "Brie Mine",
+    "desktopThemes": [
+      {
+        "key": "brie-mine-light",
+        "name": "Brie Mine (Light)",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "brie-mine-dark",
+        "name": "Brie Mine (Dark)",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/ArtemKudriaC/kindling",
+    "path": "",
+    "commitSha": "cb7023f9c733b37a837c47efd0efead8cffdbe89",
+    "pluginName": "kindling",
+    "title": "Kindling",
+    "desktopThemes": [
+      {
+        "key": "koster",
+        "name": "Костёр",
+        "window": "dark",
+        "switchSteps": []
+      },
+      {
+        "key": "dark-side",
+        "name": "Тёмная сторона",
+        "window": "dark",
+        "switchSteps": [
+          "/look dark-side"
+        ]
+      },
+      {
+        "key": "terracotta-light",
+        "name": "Терракота (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look terracotta"
+        ]
+      },
+      {
+        "key": "terracotta-dark",
+        "name": "Терракота (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look terracotta"
+        ]
+      },
+      {
+        "key": "recovery",
+        "name": "Восстановление",
+        "window": "dark",
+        "switchSteps": [
+          "/look recovery"
+        ]
+      },
+      {
+        "key": "home",
+        "name": "Умный дом",
+        "window": "dark",
+        "switchSteps": [
+          "/look home"
+        ]
+      },
+      {
+        "key": "training",
+        "name": "Тренировка",
+        "window": "dark",
+        "switchSteps": [
+          "/look training"
+        ]
+      },
+      {
+        "key": "garden",
+        "name": "Сад привычек",
+        "window": "light",
+        "switchSteps": [
+          "/look garden"
+        ]
+      },
+      {
+        "key": "hacker",
+        "name": "Хакер",
+        "window": "dark",
+        "switchSteps": [
+          "/look hacker"
+        ]
+      },
+      {
+        "key": "clay-light",
+        "name": "Глина (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look clay"
+        ]
+      },
+      {
+        "key": "clay-dark",
+        "name": "Глина (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look clay"
+        ]
+      },
+      {
+        "key": "raster",
+        "name": "Растр",
+        "window": "dark",
+        "switchSteps": [
+          "/look raster"
+        ]
+      },
+      {
+        "key": "raster-code",
+        "name": "Растр: Код",
+        "window": "dark",
+        "switchSteps": [
+          "/look raster-code"
+        ]
+      },
+      {
+        "key": "glyph-lighthouse-light",
+        "name": "Маяк (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look glyph-lighthouse"
+        ]
+      },
+      {
+        "key": "glyph-lighthouse-dark",
+        "name": "Маяк (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look glyph-lighthouse"
+        ]
+      },
+      {
+        "key": "glyph-balloons-light",
+        "name": "Шары (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look glyph-balloons"
+        ]
+      },
+      {
+        "key": "glyph-balloons-dark",
+        "name": "Шары (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look glyph-balloons"
+        ]
+      },
+      {
+        "key": "glyph-dandelion-light",
+        "name": "Одуванчики (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look glyph-dandelion"
+        ]
+      },
+      {
+        "key": "glyph-dandelion-dark",
+        "name": "Одуванчики (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look glyph-dandelion"
+        ]
+      },
+      {
+        "key": "glyph-train-light",
+        "name": "Поезд (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look glyph-train"
+        ]
+      },
+      {
+        "key": "glyph-train-dark",
+        "name": "Поезд (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look glyph-train"
+        ]
+      },
+      {
+        "key": "stipple-lake-light",
+        "name": "Озеро (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look stipple-lake"
+        ]
+      },
+      {
+        "key": "stipple-lake-dark",
+        "name": "Озеро (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look stipple-lake"
+        ]
+      },
+      {
+        "key": "gouache-autumn-light",
+        "name": "Осень (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look gouache-autumn"
+        ]
+      },
+      {
+        "key": "gouache-autumn-dark",
+        "name": "Осень (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look gouache-autumn"
+        ]
+      },
+      {
+        "key": "ember-core",
+        "name": "Тлеющее ядро",
+        "window": "dark",
+        "switchSteps": [
+          "/look ember-core"
+        ]
+      },
+      {
+        "key": "ivory",
+        "name": "Слоновая кость",
+        "window": "light",
+        "switchSteps": [
+          "/look ivory"
+        ]
+      },
+      {
+        "key": "sakura-light",
+        "name": "Сакура (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look sakura"
+        ]
+      },
+      {
+        "key": "sakura-dark",
+        "name": "Сакура (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look sakura"
+        ]
+      },
+      {
+        "key": "ukiyo-e-light",
+        "name": "Укиё-э (светлая тема)",
+        "window": "light",
+        "switchSteps": [
+          "/look ukiyo-e"
+        ]
+      },
+      {
+        "key": "ukiyo-e-dark",
+        "name": "Укиё-э (тёмная тема)",
+        "window": "dark",
+        "switchSteps": [
+          "/look ukiyo-e"
+        ]
+      },
+      {
+        "key": "cyberpunk",
+        "name": "Киберпанк",
+        "window": "dark",
+        "switchSteps": [
+          "/look cyberpunk"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/cvdvs/claude-themes",
+    "path": "",
+    "commitSha": "a6d258917d36e098b69ba9a8facce24cf3208521",
+    "pluginName": "chat-looks",
+    "title": "Chat Looks",
+    "desktopThemes": [
+      {
+        "key": "halftone",
+        "name": "Halftone",
+        "window": "dark",
+        "switchSteps": [
+          "/look halftone"
+        ]
+      },
+      {
+        "key": "smoke",
+        "name": "Smoke",
+        "window": "dark",
+        "switchSteps": [
+          "/look smoke"
+        ]
+      },
+      {
+        "key": "clusters",
+        "name": "Clusters",
+        "window": "dark",
+        "switchSteps": [
+          "/look clusters"
+        ]
+      },
+      {
+        "key": "moths",
+        "name": "Night moths",
+        "window": "dark",
+        "switchSteps": [
+          "/look moths"
+        ]
+      },
+      {
+        "key": "sigil",
+        "name": "Sigil",
+        "window": "dark",
+        "switchSteps": [
+          "/look sigil"
+        ]
+      },
+      {
+        "key": "network",
+        "name": "Network",
+        "window": "dark",
+        "switchSteps": [
+          "/look network"
+        ]
+      },
+      {
+        "key": "glass",
+        "name": "Glass",
+        "window": "dark",
+        "switchSteps": [
+          "/look glass"
+        ]
+      },
+      {
+        "key": "pixel",
+        "name": "Pixel",
+        "window": "dark",
+        "switchSteps": [
+          "/look pixel"
+        ]
+      },
+      {
+        "key": "honeycomb",
+        "name": "Honeycomb",
+        "window": "dark",
+        "switchSteps": [
+          "/look honeycomb"
+        ]
+      },
+      {
+        "key": "grid",
+        "name": "Pixel grid",
+        "window": "light",
+        "switchSteps": [
+          "/look grid"
+        ]
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/GarvitNangru/claude-code-mods",
+    "path": "skins/ember",
+    "commitSha": "f58af1a43847aeadf2302023dad3adce1ab38bc2",
+    "pluginName": "ember",
+    "title": "Ember"
   }
 ]
