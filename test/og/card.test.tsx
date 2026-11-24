@@ -136,6 +136,12 @@ describe('og card text', () => {
     )
   })
 
+  it("titles a palette's card with the title it is given", () => {
+    expect(
+      cardText(themesCard({ title: 'Nord themes for Claude Desktop', count: 2, screens: [] })),
+    ).toBe('statuslin.esNord themes for Claude Desktop2 themes, each previewed in a real session')
+  })
+
   it('says where a mod with no terminal preview or Desktop shot draws', () => {
     expect(
       cardText(modCard({ title: 'Tree', authorGithub: 'octocat', body: { kind: 'none' } })),

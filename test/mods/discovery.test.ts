@@ -91,6 +91,7 @@ beforeAll(async () => {
     .set({ createdAt: new Date('2026-10-05T12:00:00Z') })
     .where(eq(schema.modVersions.id, glow.versionId))
   await addTheme(db, glow.versionId, { key: 'glow', name: 'Glow' })
+  await addTheme(db, glow.versionId, { key: 'nord-glow', name: 'Nord Glow' })
   await seedMod(db, 'draft-mod', 'draft', 'b')
   await seedMod(db, 'removed-mod', 'removed', 'c')
   const unreviewed = {
@@ -167,6 +168,13 @@ describe('sitemap with mods', () => {
     expect(xml).toContain(`<loc>${BASE}/themes</loc>\n    <lastmod>2026-10-05</lastmod>`)
   })
 
+  it('lists the page of each palette with a published theme, dated by its newest theme, and no other', async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).toContain(`<loc>${BASE}/themes/nord</loc>\n    <lastmod>2026-10-05</lastmod>`)
+    expect(xml).not.toContain(`${BASE}/themes/catppuccin`)
+  })
+
   it("lists a theme plugin's page without dating /mods by it", async () => {
     const xml = await (await discovery.sitemapWithModsForRoute()).text()
 
@@ -218,6 +226,15 @@ describe('llms.txt with mods', () => {
     expect(txt).not.toContain('draft-mod')
     expect(txt).not.toContain('removed-mod')
     expect(txt).not.toContain('unreviewed')
+  })
+
+  it('links the page of each palette with a published theme, and no other', async () => {
+    const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
+
+    expect(txt).toContain(
+      `## Themes by palette\n\n- [Nord themes](${BASE}/themes/nord): every published Nord theme, each previewed in a real session`,
+    )
+    expect(txt).not.toContain(`${BASE}/themes/catppuccin`)
   })
 
   it('links /themes beside the mods page', async () => {
@@ -300,7 +317,13 @@ describe('llms-full.txt with mods', () => {
         '- Installed 2 times.',
       ].join('\n'),
     )
-    expect(txt.indexOf('## Themes')).toBeGreaterThan(txt.indexOf('### [Context Meter]'))
+    expect(txt.indexOf('## Themes\n')).toBeGreaterThan(txt.indexOf('### [Context Meter]'))
+  })
+
+  it('links the page of each palette with a published theme', async () => {
+    const txt = await (await discovery.llmsFullTxtWithModsForRoute()).text()
+
+    expect(txt).toContain(`## Themes by palette\n\n- [Nord themes](${BASE}/themes/nord)`)
   })
 
   it('treats page copy stored in an older format as missing', async () => {

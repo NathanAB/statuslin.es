@@ -60,6 +60,7 @@ describe('social meta', () => {
       description: '',
       generatedContent: null,
       themeOnly: false,
+      themeCounts: { desktop: 0, terminal: 0 },
     })
     for (const meta of [statusLinePage, modPage]) {
       expect(meta.some((m) => m.property === 'og:site_name')).toBe(false)
@@ -149,6 +150,7 @@ describe('social meta', () => {
         description: 'A file tree pane.',
         generatedContent: null,
         themeOnly: false,
+        themeCounts: { desktop: 0, terminal: 0 },
       }),
     ).toEqual([
       { property: 'og:type', content: 'website' },
@@ -170,6 +172,7 @@ describe('social meta', () => {
       description: '',
       generatedContent: null,
       themeOnly: true,
+      themeCounts: { desktop: 0, terminal: 2 },
     })
     const og = (property: string) => meta.find((m) => m.property === property)?.content
 

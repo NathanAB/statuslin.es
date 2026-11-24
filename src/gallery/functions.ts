@@ -5,6 +5,7 @@ import { FACET_BY_SLUG, tagKeywords } from '@/gallery/facets'
 import { resolveSourceHtml } from '@/lib/highlight'
 import { withHttpStatus } from '@/lib/http.server'
 import { type LlmsCatalogEntry, type LlmsMod, llmsFullResponse, llmsResponse } from '@/lib/llms'
+import type { LlmsPalette } from '@/lib/llms-site'
 import { siteUrl } from '@/lib/site'
 import { newestDate, type SitemapMod, type SitemapPage, sitemapResponse } from '@/lib/sitemap'
 import { getConfigSource, getPublishedConfigCatalog, getPublishedConfigs } from './config-items'
@@ -114,7 +115,7 @@ async function llmsFacets(mods: FacetMod[]): Promise<Array<{ slug: string; label
  * counts from `db`, which route files can't import.
  */
 export const llmsTxtResponseForRoute = createServerOnlyFn(
-  async (mods: Array<LlmsMod & FacetMod>, themed: LlmsMod[]): Promise<Response> => {
+  async (mods: Array<LlmsMod & FacetMod>, themed: LlmsMod[], palettes: LlmsPalette[] = []) => {
     const facets = await llmsFacets(mods)
     const top = await getPublishedConfigs(db, 'top', 1)
     return llmsResponse(
@@ -128,6 +129,7 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(
       })),
       mods,
       themed,
+      palettes,
     )
   },
 )
@@ -146,7 +148,7 @@ function llmsCatalogEntry(row: LlmsCatalogRow): LlmsCatalogEntry {
  * reason as llms.txt.
  */
 export const llmsFullTxtResponseForRoute = createServerOnlyFn(
-  async (mods: LlmsCatalogRow[], themed: LlmsCatalogRow[]): Promise<Response> => {
+  async (mods: LlmsCatalogRow[], themed: LlmsCatalogRow[], palettes: LlmsPalette[] = []) => {
     const [facets, configs] = await Promise.all([llmsFacets(mods), getPublishedConfigCatalog(db)])
     return llmsFullResponse(
       siteUrl(),
@@ -154,6 +156,7 @@ export const llmsFullTxtResponseForRoute = createServerOnlyFn(
       configs.map(llmsCatalogEntry),
       mods.map(llmsCatalogEntry),
       themed.map(llmsCatalogEntry),
+      palettes,
     )
   },
 )

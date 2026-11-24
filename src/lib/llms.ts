@@ -1,6 +1,6 @@
 import type { PageCopy } from '@/content/types'
 import { LLMS_FULL_PATH, modPath } from '@/lib/site'
-import { type LlmsFacet, siteBlocks } from './llms-site'
+import { type LlmsFacet, type LlmsPalette, siteBlocks } from './llms-site'
 import { escapeMarkdownLinks, flat, oneLine, untrusted } from './llms-text'
 
 /**
@@ -42,8 +42,9 @@ export function buildLlmsTxt(
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
   themed: LlmsMod[] = [],
+  palettes: LlmsPalette[] = [],
 ): string {
-  const blocks = siteBlocks(base, facets)
+  const blocks = siteBlocks(base, facets, palettes)
   if (configs.length > 0) {
     blocks.push(['## Top status lines', '', ...configs.map((c) => configLink(base, c))].join('\n'))
   }
@@ -81,8 +82,9 @@ export function buildLlmsFullTxt(
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
   themed: LlmsCatalogEntry[] = [],
+  palettes: LlmsPalette[] = [],
 ): string {
-  const blocks = siteBlocks(base, facets)
+  const blocks = siteBlocks(base, facets, palettes)
   if (configs.length > 0) {
     blocks.push(catalogSection('Status lines', configs, (slug) => `${base}/c/${slug}`))
   }
@@ -167,8 +169,9 @@ export function llmsResponse(
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
   themed: LlmsMod[] = [],
+  palettes: LlmsPalette[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods, themed))
+  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods, themed, palettes))
 }
 
 export function llmsFullResponse(
@@ -177,8 +180,9 @@ export function llmsFullResponse(
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
   themed: LlmsCatalogEntry[] = [],
+  palettes: LlmsPalette[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods, themed))
+  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods, themed, palettes))
 }
 
 function plainTextResponse(body: string): Response {

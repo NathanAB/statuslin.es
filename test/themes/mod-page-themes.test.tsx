@@ -51,11 +51,13 @@ const PACK: ModDetail = {
   recordedWith: '2.1.310',
   reviewedAt: null,
   themeOnly: true,
+  themeCounts: { desktop: 0, terminal: 1 },
   terminalHookError: false,
 }
 
 const theme = (name: string): PublishedTheme => ({
   id: name,
+  key: name,
   kind: 'terminal',
   name,
   window: 'dark',
@@ -123,6 +125,7 @@ describe('a plugin page with themes', () => {
   it("links each Desktop theme's image to its whole window at full size", () => {
     const reef: PublishedTheme = {
       id: 'reef',
+      key: 'reef',
       kind: 'desktop',
       name: 'Night Reef',
       window: 'dark',

@@ -4,6 +4,8 @@ import * as schema from '@/db/schema'
 import { themeDesktopPreviewPath } from '@/lib/site'
 import {
   getHomeThemes,
+  getPalettePages,
+  getPaletteThemes,
   getPublishedModThemes,
   getThemeCards,
   homeThemesOrEmpty,
@@ -76,6 +78,7 @@ describe('getThemeCards', () => {
     expect(cards).toHaveLength(81)
     expect(cards[0]).toEqual({
       id: expect.any(String),
+      key: 'theme-00',
       kind: 'terminal',
       name: 'Theme 00',
       window: 'dark',
@@ -182,6 +185,7 @@ describe('getThemeCards for Desktop themes', () => {
     expect(await getThemeCards(db)).toEqual([
       {
         id,
+        key: 'honu-lagoon',
         kind: 'desktop',
         name: 'Honu Lagoon',
         window: 'light',
@@ -314,5 +318,62 @@ describe('homeThemesOrEmpty', () => {
       total: 4,
     })
     expect(report).not.toHaveBeenCalled()
+  })
+})
+
+describe('getPaletteThemes', () => {
+  it("gives a palette's published themes from every plugin, in /themes' order, with every palette that has a page", async () => {
+    await plugin('looks', ['Catppuccin Latte', 'Nord Snow'])
+    await plugin('catppuccin', ['Catppuccin Mocha', 'Catppuccin Macchiato', 'Ember'], {
+      copyCount: 5,
+    })
+
+    const page = await getPaletteThemes(db, 'catppuccin')
+
+    expect(page?.palette.name).toBe('Catppuccin')
+    expect(named(page?.themes ?? [])).toEqual([
+      'catppuccin:Catppuccin Macchiato',
+      'catppuccin:Catppuccin Mocha',
+      'looks:Catppuccin Latte',
+    ])
+    expect(page?.palettes.map((palette) => palette.slug)).toEqual(['catppuccin', 'nord'])
+  })
+
+  it('never lists a theme whose plugin is not published', async () => {
+    await plugin('live', ['Dracula'])
+    await plugin('draft', ['Dracula Pro'], { status: 'draft' })
+    await plugin('gone', ['Alucard'], { status: 'removed' })
+
+    expect(named((await getPaletteThemes(db, 'dracula'))?.themes ?? [])).toEqual(['live:Dracula'])
+  })
+
+  it('has no page for a palette with no published theme, or a slug that names no palette', async () => {
+    await plugin('draft', ['Solarized Dark'], { status: 'draft' })
+    await plugin('ember', ['Ember'])
+
+    expect(await getPaletteThemes(db, 'solarized')).toBeNull()
+    expect(await getPaletteThemes(db, 'ember')).toBeNull()
+  })
+})
+
+describe('getPalettePages', () => {
+  it('dates each palette page by its newest published theme going live, and lists no other palette', async () => {
+    const old = await plugin('old', ['Nord'])
+    const recent = await plugin('recent', ['Nord Snow'])
+    await plugin('draft', ['Gruvbox Dark'], { status: 'draft' })
+    await db
+      .update(schema.modVersions)
+      .set({ createdAt: new Date('2026-10-01T00:00:00Z') })
+      .where(eq(schema.modVersions.id, old.versionId))
+    await db
+      .update(schema.modVersions)
+      .set({ createdAt: new Date('2026-11-02T00:00:00Z') })
+      .where(eq(schema.modVersions.id, recent.versionId))
+
+    const pages = await getPalettePages(db)
+
+    expect(pages.map(({ palette, updatedAt }) => [palette.slug, updatedAt.toISOString()])).toEqual([
+      ['nord', '2026-11-02T00:00:00.000Z'],
+    ])
   })
 })

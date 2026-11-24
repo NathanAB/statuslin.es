@@ -40,6 +40,12 @@ export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where
  */
 export const versionIsThemeOnly = sql<boolean>`(exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id}) and coalesce(${modVersions.hooksModules} = '[]'::jsonb, false))`
 
+/** How many themes of one kind a version carries. */
+const versionThemeCount = (kind: 'desktop' | 'terminal') =>
+  sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.kind} = ${kind})`.mapWith(
+    Number,
+  )
+
 /** Joins a version's clean-main terminal preview. */
 export const terminalPreviewJoin = and(
   eq(modPreviews.modVersionId, modVersions.id),
@@ -150,6 +156,8 @@ export interface ModDetail {
   reviewedAt: string | null
   /** It only carries themes, so its page shows them in place of a mod preview. */
   themeOnly: boolean
+  /** How many Claude Desktop and terminal themes its current version carries. */
+  themeCounts: { desktop: number; terminal: number }
   /** Its terminal recording was only Claude Code's error for its session.start hook, so `preview`
    *  is empty: the page states the error and never shows it. */
   terminalHookError: boolean
@@ -181,6 +189,8 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       recordedWith: modPreviews.claudeCodeVersion,
       reviewedAt: submissions.reviewedAt,
       themeOnly: versionIsThemeOnly,
+      desktopThemes: versionThemeCount('desktop'),
+      terminalThemes: versionThemeCount('terminal'),
     })
     .from(mods)
     .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
@@ -192,9 +202,11 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
     )
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row) return null
+  const { desktopThemes, terminalThemes, ...detail } = row
   const terminalHookError = row.preview !== null && onlyHookError(row.preview)
   return {
-    ...row,
+    ...detail,
+    themeCounts: { desktop: desktopThemes, terminal: terminalThemes },
     preview: terminalHookError ? [] : row.preview,
     terminalHookError,
     desktop: desktopPreview(row.desktop),

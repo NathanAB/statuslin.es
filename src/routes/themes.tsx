@@ -8,6 +8,8 @@ import { MODS_PATH, modPath, siteUrl, THEMES_PATH } from '@/lib/site'
 import { themesSocialMeta } from '@/og/meta'
 import { FilteredThemes } from '@/themes/filtered-themes'
 import { getThemeCardsFn } from '@/themes/functions'
+import { PaletteLinks } from '@/themes/palette-links'
+import { palettesWithThemes } from '@/themes/palettes'
 import { coerceThemeFilter, type ThemeFilter } from '@/themes/theme-filter'
 import { themePlugins } from '@/themes/theme-plugins'
 import { THEMES_DESCRIPTION, THEMES_HEADING, THEMES_TITLE_BASE } from '@/themes/themes-page'
@@ -53,6 +55,7 @@ export const Route = createFileRoute('/themes')({
 function ThemesPage() {
   const { themes, user, origin } = Route.useLoaderData()
   const filter = Route.useSearch()
+  const palettes = palettesWithThemes(themes)
   return (
     <PageShell user={user}>
       <Stack gap={6}>
@@ -68,6 +71,7 @@ function ThemesPage() {
             pinned to the reviewed commit. A card says so when its plugin also runs code. For
             plugins that change how Claude Code works, see <TextLink to={MODS_PATH}>mods</TextLink>.
           </Text>
+          {palettes.length > 0 ? <PaletteLinks palettes={palettes} /> : null}
         </Stack>
         {themes.length > 0 ? (
           <Stack gap={4}>

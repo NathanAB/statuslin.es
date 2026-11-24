@@ -81,6 +81,32 @@ describe('modPageTitle', () => {
       'Catppuccin themes: Soothing pastel looks | statuslin.es',
     )
   })
+
+  // Every Desktop theme plugin has a hooks module, so it is never theme-only; it is still named
+  // for its Desktop themes, and never as terminal themes.
+  it('names a plugin carrying one Desktop theme a Claude Desktop theme', () => {
+    expect(modPageTitle('Nord Look', undefined, { themeCounts: { desktop: 1, terminal: 0 } })).toBe(
+      'Nord Look — Claude Desktop Theme | statuslin.es',
+    )
+  })
+
+  it('names a plugin carrying several Desktop themes Claude Desktop themes', () => {
+    expect(modPageTitle('Nord Pack', undefined, { themeCounts: { desktop: 3, terminal: 0 } })).toBe(
+      'Nord Pack — Claude Desktop Themes | statuslin.es',
+    )
+  })
+
+  it('leads a Desktop theme headline title with Claude Desktop theme', () => {
+    expect(
+      modPageTitle('Nord Look', 'Cold blue Claude', { themeCounts: { desktop: 1, terminal: 0 } }),
+    ).toBe('Nord Look Claude Desktop theme: Cold blue Claude')
+  })
+
+  it('names a plugin carrying both kinds for Claude Code and Desktop', () => {
+    expect(modPageTitle('Nord', undefined, { themeCounts: { desktop: 1, terminal: 2 } })).toBe(
+      'Nord — Claude Code & Desktop Themes | statuslin.es',
+    )
+  })
 })
 
 describe('modMetaDescription', () => {
@@ -131,6 +157,53 @@ describe('modMetaDescription', () => {
       modMetaDescription({ title: 'Theme Pack', description: '', copy: null, themeOnly: true }),
     ).toBe(
       "Reviewed Claude Code terminal themes. See each theme's preview, then install them with one copied prompt.",
+    )
+  })
+
+  it('falls back to a Desktop theme description, never terminal, for a Desktop theme plugin', () => {
+    expect(
+      modMetaDescription({
+        title: 'Nord Look',
+        description: '',
+        copy: null,
+        themeCounts: { desktop: 1, terminal: 0 },
+      }),
+    ).toBe(
+      'A reviewed Claude Desktop theme. See its preview, then install it with one copied prompt.',
+    )
+    expect(
+      modMetaDescription({
+        title: 'Nord Pack',
+        description: '',
+        copy: null,
+        themeCounts: { desktop: 2, terminal: 0 },
+      }),
+    ).toBe(
+      "Reviewed Claude Desktop themes. See each theme's preview, then install them with one copied prompt.",
+    )
+  })
+
+  it('names a Desktop theme before its page summary', () => {
+    expect(
+      modMetaDescription({
+        title: 'Nord Look',
+        description: '',
+        copy: { summary: 'Paints Claude Desktop in cold blues.' },
+        themeCounts: { desktop: 1, terminal: 0 },
+      }),
+    ).toBe('Nord Look Claude Desktop theme: Paints Claude Desktop in cold blues.')
+  })
+
+  it('falls back to naming both the terminal and Claude Desktop for a plugin with both kinds', () => {
+    expect(
+      modMetaDescription({
+        title: 'Nord',
+        description: '',
+        copy: null,
+        themeCounts: { desktop: 1, terminal: 1 },
+      }),
+    ).toBe(
+      "Reviewed themes for the Claude Code terminal and Claude Desktop. See each theme's preview, then install them with one copied prompt.",
     )
   })
 
