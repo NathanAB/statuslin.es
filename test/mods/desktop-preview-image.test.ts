@@ -52,7 +52,7 @@ async function renderOf(versionId: string): Promise<string> {
 }
 
 describe('modDesktopPreviewResponse', () => {
-  it("serves a published mod's current Desktop shot as a PNG a cache keeps for good, since a new render changes its URL", async () => {
+  it("serves a published mod's current Desktop shot as a PNG a browser keeps for good and a shared cache for an hour", async () => {
     const live = ids.live as string
     const res = await modDesktopPreviewResponse(db, live, previewQuery(await renderOf(live), null))
 
@@ -60,7 +60,9 @@ describe('modDesktopPreviewResponse', () => {
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
     expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
-    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(res.headers.get('cache-control')).toBe(
+      'public, max-age=31536000, immutable, s-maxage=3600',
+    )
     expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(
       Array.from(SEEDED_DESKTOP_SHOT.png),
     )
@@ -78,7 +80,9 @@ describe('modDesktopPreviewResponse', () => {
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
     expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
-    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(res.headers.get('cache-control')).toBe(
+      'public, max-age=31536000, immutable, s-maxage=3600',
+    )
     expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(
       Array.from(SEEDED_DESKTOP_SHOT.cardPng),
     )
@@ -139,24 +143,18 @@ describe('modDesktopPreviewResponse', () => {
   )
 
   it.each([
-    ['a parameter it does not read', (r: string) => new URLSearchParams({ r, v: '1' })],
+    ['a parameter it does not read', (r: string) => `?r=${r}&v=1`],
+    ['its render named twice', (r: string) => `?r=${r}&r=${r}`],
+    ['an empty pair after it', (r: string) => `?r=${r}&`],
+    ['an empty pair before it', (r: string) => `?&r=${r}`],
+    ['its key percent-encoded', (r: string) => `?%72=${r}`],
     [
-      'its render named twice',
-      (r: string) =>
-        new URLSearchParams([
-          ['r', r],
-          ['r', r],
-        ]),
+      'its render percent-encoded',
+      (r: string) => `?r=${encodeURIComponent(r).replace(/\d/g, (d) => `%3${d}`)}`,
     ],
-    [
-      'its image named twice',
-      (r: string) =>
-        new URLSearchParams([
-          ['r', r],
-          ['image', 'card'],
-          ['image', 'card'],
-        ]),
-    ],
+    ['its image named twice', (r: string) => `?r=${r}&image=card&image=card`],
+    ['its image percent-encoded', (r: string) => `?r=${r}&image=%63ard`],
+    ['image before render', (r: string) => `?image=card&r=${r}`],
   ])(
     'is a 404 for the current shot with %s, so no cache-busting variant of its URL serves the image',
     async (_name, query) => {

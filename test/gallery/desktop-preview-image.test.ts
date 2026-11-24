@@ -62,7 +62,7 @@ async function renderOf(versionId: string): Promise<string> {
 }
 
 describe('configDesktopPreviewResponse', () => {
-  it("serves a published status line's current Desktop shot as a PNG a cache keeps for good, since a new render changes its URL", async () => {
+  it("serves a published status line's current Desktop shot as a PNG a browser keeps for good and a shared cache for an hour", async () => {
     const live = ids.live as string
     const res = await configDesktopPreviewResponse(db, live, previewQuery(await renderOf(live)))
 
@@ -70,7 +70,9 @@ describe('configDesktopPreviewResponse', () => {
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
     expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
-    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
+    expect(res.headers.get('cache-control')).toBe(
+      'public, max-age=31536000, immutable, s-maxage=3600',
+    )
     expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(
       Array.from(CONFIG_DESKTOP_SHOT.png),
     )
@@ -115,18 +117,18 @@ describe('configDesktopPreviewResponse', () => {
   )
 
   it.each([
-    ['a parameter it does not read', (r: string) => new URLSearchParams({ r, v: '1' })],
+    ['a parameter it does not read', (r: string) => `?r=${r}&v=1`],
+    ['its render named twice', (r: string) => `?r=${r}&r=${r}`],
+    ['an empty pair after it', (r: string) => `?r=${r}&`],
+    ['an empty pair before it', (r: string) => `?&r=${r}`],
+    ['its key percent-encoded', (r: string) => `?%72=${r}`],
     [
-      'an image parameter, which only mod and theme shots read',
-      (r: string) => new URLSearchParams({ r, image: 'card' }),
+      'its render percent-encoded',
+      (r: string) => `?r=${encodeURIComponent(r).replace(/\d/g, (d) => `%3${d}`)}`,
     ],
     [
-      'its render named twice',
-      (r: string) =>
-        new URLSearchParams([
-          ['r', r],
-          ['r', r],
-        ]),
+      'an image parameter, which only mod and theme shots read',
+      (r: string) => `?r=${r}&image=card`,
     ],
   ])(
     'is a 404 for the current shot with %s, so no cache-busting variant of its URL serves the image',

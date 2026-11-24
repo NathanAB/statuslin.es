@@ -3,8 +3,8 @@ import { and, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db as defaultDb } from '@/db'
 import { modDesktopPreviews, mods, modVersions } from '@/db/schema'
-import { IMMUTABLE_CACHE } from '@/lib/cache-control'
-import { isPreviewImageQuery, previewImageResponse } from '@/lib/preview-image'
+import { PREVIEW_IMAGE_CACHE } from '@/lib/cache-control'
+import { pngIfRender, previewImageResponse, readPreviewImageQuery } from '@/lib/preview-image'
 import { isUuid } from '@/lib/uuid'
 import { MOD_SCENARIO_KEY } from './queries'
 
@@ -16,25 +16,24 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
  * served at MOD_DESKTOP_PREVIEW_ROUTE. It is visible exactly when the mod page that shows it is,
  * and only under the `r` (render) its page names (modDesktopPreviewPath), with no other query, so a
  * made-up URL can't skip the cache: anything else is a 404. A new render gets a new URL, which lets
- * a cache keep each one for good.
+ * a browser keep each one for good.
  */
 export async function modDesktopPreviewResponse(
   db: Db,
   versionId: string,
-  query: URLSearchParams,
+  search: string,
 ): Promise<Response> {
-  const image = query.get('image')
-  if (
-    !isUuid(versionId) ||
-    !isPreviewImageQuery(query, ['r', 'image']) ||
-    (image !== null && image !== 'card')
-  ) {
+  const query = readPreviewImageQuery(search, true)
+  if (!isUuid(versionId) || !query) {
     return new Response('Not found', { status: 404 })
   }
   const [row] = await db
     .select({
-      png: image === 'card' ? modDesktopPreviews.cardPng : modDesktopPreviews.png,
-      renderedAt: modDesktopPreviews.createdAt,
+      png: pngIfRender(
+        query.image === 'card' ? modDesktopPreviews.cardPng : modDesktopPreviews.png,
+        modDesktopPreviews.createdAt,
+        query.render,
+      ),
     })
     .from(modDesktopPreviews)
     .innerJoin(modVersions, eq(modVersions.id, modDesktopPreviews.modVersionId))
@@ -46,14 +45,14 @@ export async function modDesktopPreviewResponse(
         eq(mods.status, 'published'),
       ),
     )
-  if (!row?.png || query.get('r') !== String(row.renderedAt.getTime())) {
+  if (!row?.png) {
     return new Response('Not found', { status: 404 })
   }
-  return previewImageResponse(row.png, IMMUTABLE_CACHE)
+  return previewImageResponse(row.png, PREVIEW_IMAGE_CACHE)
 }
 
 // createServerOnlyFn keeps `db` out of the client bundle, as for the marketplace route.
 export const modDesktopPreviewResponseForRoute = createServerOnlyFn(
-  (versionId: string, query: URLSearchParams): Promise<Response> =>
-    modDesktopPreviewResponse(defaultDb, versionId, query),
+  (versionId: string, search: string): Promise<Response> =>
+    modDesktopPreviewResponse(defaultDb, versionId, search),
 )
