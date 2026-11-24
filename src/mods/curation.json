@@ -2078,5 +2078,239 @@
     "commitSha": "f58af1a43847aeadf2302023dad3adce1ab38bc2",
     "pluginName": "ember",
     "title": "Ember"
+  },
+  {
+    "repoUrl": "https://github.com/matcra587/claude-themes",
+    "path": "plugins/catppuccin",
+    "commitSha": "8c3b74f7ec1b3d55cdafc0b18c3d84c21f242745",
+    "pluginName": "catppuccin",
+    "title": "Catppuccin"
+  },
+  {
+    "repoUrl": "https://github.com/matcra587/claude-themes",
+    "path": "plugins/dracula",
+    "commitSha": "8c3b74f7ec1b3d55cdafc0b18c3d84c21f242745",
+    "pluginName": "dracula",
+    "title": "Dracula"
+  },
+  {
+    "repoUrl": "https://github.com/matcra587/claude-themes",
+    "path": "plugins/gruvbox",
+    "commitSha": "8c3b74f7ec1b3d55cdafc0b18c3d84c21f242745",
+    "pluginName": "gruvbox",
+    "title": "Gruvbox"
+  },
+  {
+    "repoUrl": "https://github.com/matcra587/claude-themes",
+    "path": "plugins/nord",
+    "commitSha": "8c3b74f7ec1b3d55cdafc0b18c3d84c21f242745",
+    "pluginName": "nord",
+    "title": "Nord"
+  },
+  {
+    "repoUrl": "https://github.com/matcra587/claude-themes",
+    "path": "plugins/one-dark",
+    "commitSha": "8c3b74f7ec1b3d55cdafc0b18c3d84c21f242745",
+    "pluginName": "one-dark",
+    "title": "One Dark"
+  },
+  {
+    "repoUrl": "https://github.com/matcra587/claude-themes",
+    "path": "plugins/rose-pine",
+    "commitSha": "8c3b74f7ec1b3d55cdafc0b18c3d84c21f242745",
+    "pluginName": "rose-pine",
+    "title": "Rosé Pine"
+  },
+  {
+    "repoUrl": "https://github.com/twistezo/claude-mods",
+    "path": "plugins/dracula-theme",
+    "commitSha": "23f7f2871dbd0079ccc3c4abbadaf21deb19b954",
+    "pluginName": "dracula-theme",
+    "title": "Dracula Theme",
+    "desktopThemes": [
+      {
+        "key": "alucard",
+        "name": "Alucard",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "dracula",
+        "name": "Dracula",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/MarkoJauregui/claude-code-tokyo-night",
+    "path": "",
+    "commitSha": "e8598509a6c203a6f85b1f55b97f23ce3cc61502",
+    "pluginName": "tokyo-night",
+    "title": "Tokyo Night",
+    "desktopThemes": [
+      {
+        "key": "tokyo-night-light",
+        "name": "Tokyo Night Light",
+        "window": "light",
+        "switchSteps": []
+      },
+      {
+        "key": "tokyo-night-dark",
+        "name": "Tokyo Night",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-mocha",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-mocha",
+    "title": "Catppuccin Mocha",
+    "desktopThemes": [
+      {
+        "key": "look-mocha",
+        "name": "Catppuccin Mocha",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-latte",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-latte",
+    "title": "Catppuccin Latte",
+    "desktopThemes": [
+      {
+        "key": "look-latte",
+        "name": "Catppuccin Latte",
+        "window": "light",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-rose-pine",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-rose-pine",
+    "title": "Rosé Pine",
+    "desktopThemes": [
+      {
+        "key": "look-rose-pine",
+        "name": "Rosé Pine",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-rose-pine-dawn",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-rose-pine-dawn",
+    "title": "Rosé Pine Dawn",
+    "desktopThemes": [
+      {
+        "key": "look-rose-pine-dawn",
+        "name": "Rosé Pine Dawn",
+        "window": "light",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-gruvbox",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-gruvbox",
+    "title": "Gruvbox Dark",
+    "desktopThemes": [
+      {
+        "key": "look-gruvbox",
+        "name": "Gruvbox Dark",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-gruvbox-light",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-gruvbox-light",
+    "title": "Gruvbox Light",
+    "desktopThemes": [
+      {
+        "key": "look-gruvbox-light",
+        "name": "Gruvbox Light",
+        "window": "light",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-nord",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-nord",
+    "title": "Nord",
+    "desktopThemes": [
+      {
+        "key": "look-nord",
+        "name": "Nord",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-nord-snow",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-nord-snow",
+    "title": "Nord Snow",
+    "desktopThemes": [
+      {
+        "key": "look-nord-snow",
+        "name": "Nord Snow",
+        "window": "light",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-one-dark",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-one-dark",
+    "title": "One Dark",
+    "desktopThemes": [
+      {
+        "key": "look-one-dark",
+        "name": "One Dark",
+        "window": "dark",
+        "switchSteps": []
+      }
+    ]
+  },
+  {
+    "repoUrl": "https://github.com/briannaworkman/looks",
+    "path": "plugins/look-atom-one-light",
+    "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
+    "pluginName": "look-atom-one-light",
+    "title": "Atom One Light",
+    "desktopThemes": [
+      {
+        "key": "look-atom-one-light",
+        "name": "Atom One Light",
+        "window": "light",
+        "switchSteps": []
+      }
+    ]
   }
 ]
