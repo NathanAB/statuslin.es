@@ -79,7 +79,7 @@ function ThemesPage() {
           </Text>
           {palettes.length > 0 ? <PaletteLinks palettes={palettes} /> : null}
         </Stack>
-        {themes.length > 0 ? (
+        {themes.length + unreviewed.length > 0 ? (
           <Stack gap={4}>
             <VisuallyHidden as="h2">Themes</VisuallyHidden>
             <FilteredThemes

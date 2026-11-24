@@ -480,6 +480,23 @@ describe('/themes unreviewed themes', () => {
     expect(cardNames()).toEqual(['Night Reef'])
   })
 
+  it('says no reviewed theme matches when only unreviewed ones do', async () => {
+    await renderPage([theme('Paper', 'pack', { window: 'light' })], '/themes?window=dark', [
+      unreviewedTheme('Night Reef'),
+    ])
+
+    expect(screen.getByText('No reviewed themes match this filter.')).toBeTruthy()
+    expect(screen.queryByText('No themes match this filter.')).toBeNull()
+    expect(cardNames()).toEqual(['Night Reef'])
+  })
+
+  it('shows them when no theme is reviewed yet', async () => {
+    await renderPage([], '/themes', [unreviewedTheme('Night Reef')])
+
+    expect(cardNames()).toEqual(['Night Reef'])
+    expect(screen.queryByText('No themes yet.')).toBeNull()
+  })
+
   it('has no Not reviewed section when there are none, or none match the filter', async () => {
     await renderPage([theme('Paper', 'pack', { window: 'light' })], '/themes?window=light', [
       unreviewedTheme('Night Reef'),

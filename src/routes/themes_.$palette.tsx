@@ -84,8 +84,8 @@ function PalettePage() {
         <Stack gap={3}>
           <Heading level={1}>{copy.heading}</Heading>
           <Text muted>
-            Every {palette.name} theme statuslin.es lists, each previewed in a real session. A theme
-            comes in a plugin: install the plugin, then switch to the theme.
+            Every reviewed {palette.name} theme statuslin.es lists, each previewed in a real
+            session. A theme comes in a plugin: install the plugin, then switch to the theme.
             {terminal ? (
               <>
                 {' '}

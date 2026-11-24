@@ -96,7 +96,11 @@ export function FilteredThemes({
         </WideTileGrid>
       ) : (
         <Row gap={4} wrap>
-          <Text muted>No themes match this filter.</Text>
+          <Text muted>
+            {shownUnreviewed.length > 0
+              ? 'No reviewed themes match this filter.'
+              : 'No themes match this filter.'}
+          </Text>
           <TextLink to={THEMES_PATH}>Show all themes</TextLink>
         </Row>
       )}
