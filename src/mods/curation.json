@@ -2168,7 +2168,7 @@
     "path": "plugins/look-mocha",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-mocha",
-    "title": "Catppuccin Mocha",
+    "title": "Catppuccin Mocha Look",
     "desktopThemes": [
       {
         "key": "look-mocha",
@@ -2183,7 +2183,7 @@
     "path": "plugins/look-latte",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-latte",
-    "title": "Catppuccin Latte",
+    "title": "Catppuccin Latte Look",
     "desktopThemes": [
       {
         "key": "look-latte",
@@ -2198,7 +2198,7 @@
     "path": "plugins/look-rose-pine",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-rose-pine",
-    "title": "Rosé Pine",
+    "title": "Rosé Pine Look",
     "desktopThemes": [
       {
         "key": "look-rose-pine",
@@ -2213,7 +2213,7 @@
     "path": "plugins/look-rose-pine-dawn",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-rose-pine-dawn",
-    "title": "Rosé Pine Dawn",
+    "title": "Rosé Pine Dawn Look",
     "desktopThemes": [
       {
         "key": "look-rose-pine-dawn",
@@ -2228,7 +2228,7 @@
     "path": "plugins/look-gruvbox",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-gruvbox",
-    "title": "Gruvbox Dark",
+    "title": "Gruvbox Dark Look",
     "desktopThemes": [
       {
         "key": "look-gruvbox",
@@ -2243,7 +2243,7 @@
     "path": "plugins/look-gruvbox-light",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-gruvbox-light",
-    "title": "Gruvbox Light",
+    "title": "Gruvbox Light Look",
     "desktopThemes": [
       {
         "key": "look-gruvbox-light",
@@ -2258,7 +2258,7 @@
     "path": "plugins/look-nord",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-nord",
-    "title": "Nord",
+    "title": "Nord Look",
     "desktopThemes": [
       {
         "key": "look-nord",
@@ -2273,7 +2273,7 @@
     "path": "plugins/look-nord-snow",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-nord-snow",
-    "title": "Nord Snow",
+    "title": "Nord Snow Look",
     "desktopThemes": [
       {
         "key": "look-nord-snow",
@@ -2288,7 +2288,7 @@
     "path": "plugins/look-one-dark",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-one-dark",
-    "title": "One Dark",
+    "title": "One Dark Look",
     "desktopThemes": [
       {
         "key": "look-one-dark",
@@ -2303,7 +2303,7 @@
     "path": "plugins/look-atom-one-light",
     "commitSha": "19059dff6c09f68082cfda37ba1930b51f876bb0",
     "pluginName": "look-atom-one-light",
-    "title": "Atom One Light",
+    "title": "Atom One Light Look",
     "desktopThemes": [
       {
         "key": "look-atom-one-light",
