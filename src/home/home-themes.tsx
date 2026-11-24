@@ -7,7 +7,6 @@ import { themeCount } from '@/themes/theme'
 import { ThemeCard } from '@/themes/theme-card'
 import { Button } from '@/ui/button'
 import { HomeSection } from '@/ui/home-section'
-import { InlineCommand } from '@/ui/inline-command'
 import { Row, Stack, WideTileGrid } from '@/ui/layout'
 import { Heading, Text } from '@/ui/text'
 
@@ -27,8 +26,8 @@ export function HomeThemes({ row, origin }: { row: HomeThemeRow; origin: string 
               Claude Code themes
             </Heading>
             <Text muted>
-              Color themes for Claude Code in the terminal, each previewed in a real session.
-              Install one, then pick it in <InlineCommand>/theme</InlineCommand>.
+              Color themes for the terminal, and Desktop themes that recolor Claude Desktop, each
+              previewed in a real session. Install one, then switch to it as its card shows.
             </Text>
           </Stack>
           <Button asChild variant="secondary" size="pill" trailingIcon={<ArrowRight />}>

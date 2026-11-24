@@ -13,6 +13,9 @@ import { parseFootprint } from '@/mods/plugin-facts'
 import {
   HOOK_ERROR_ONLY_PREVIEW,
   HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+  MODULE_BROKEN_PREVIEW,
+  MODULE_LOAD_ERROR_ONLY_PREVIEW,
+  MODULE_LOAD_ERROR_TIGHT_WRAP_PREVIEW,
 } from './fixtures/hook-error-previews'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
@@ -294,6 +297,29 @@ describe('describeModFootprint', () => {
         desktop: { kind: 'shot' },
       }).surfaces,
     ).toEqual(['desktop'])
+  })
+
+  // Claude Code refuses to load a hooks module that registers a Desktop-only API in the terminal.
+  it.each([
+    ['after a space', MODULE_LOAD_ERROR_ONLY_PREVIEW],
+    ['with no space', MODULE_LOAD_ERROR_TIGHT_WRAP_PREVIEW],
+  ])(
+    'leaves out the terminal for a module refused for want of a Desktop API, wrapped %s',
+    (_, preview) => {
+      expect(
+        describeModFootprint({ footprint: PLAIN, preview, desktop: { kind: 'shot' } }).surfaces,
+      ).toEqual(['desktop'])
+    },
+  )
+
+  it('keeps the terminal for a module that failed to load for a reason of its own', () => {
+    expect(
+      describeModFootprint({
+        footprint: PLAIN,
+        preview: MODULE_BROKEN_PREVIEW,
+        desktop: { kind: 'shot' },
+      }).surfaces,
+    ).toEqual(['terminal', 'desktop'])
   })
 
   it("keeps the terminal for a mod that draws there beside its hook's error", () => {

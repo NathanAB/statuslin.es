@@ -17,6 +17,7 @@ import { migratedPGlite } from '../helpers/test-db'
 import {
   HOOK_ERROR_ONLY_PREVIEW,
   HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+  MODULE_LOAD_ERROR_ONLY_PREVIEW,
 } from './fixtures/hook-error-previews'
 import { addDesktopPreview, SEEDED_DESKTOP_SHOT } from './seed-mods'
 
@@ -256,6 +257,15 @@ describe('getModDetail', () => {
     const detail = await getModDetail(db, 'crashed')
     expect(detail).toMatchObject({ preview: [], terminalHookError: true })
     expect(JSON.stringify(detail)).not.toContain('hook skipped')
+  })
+
+  it('sends no recording of a module the terminal refused for want of a Desktop API', async () => {
+    const { modId } = await addMod('abyss', 'published', 'scenario-preview')
+    await recordTerminal(modId, MODULE_LOAD_ERROR_ONLY_PREVIEW)
+
+    const detail = await getModDetail(db, 'abyss')
+    expect(detail).toMatchObject({ preview: [], terminalHookError: true })
+    expect(JSON.stringify(detail)).not.toContain('did not load')
   })
 
   it("keeps a recording with the mod's own output beside its hook's error", async () => {

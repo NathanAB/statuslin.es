@@ -32,3 +32,28 @@ export const HOOK_ERROR_WITH_OUTPUT_PREVIEW: AnsiSegment[] = [
   seg(' '.repeat(37), null),
   seg('Low Poly'),
 ]
+
+/** The line Claude Code prints when a hooks module registers `$.theme.set`, which the terminal
+ * lacks, so it refuses to load the module there. The wrap keeps the space before it, or not. */
+const moduleLoadError = (plugin: string, beforeWrap: string): AnsiSegment[] => [
+  seg('●'),
+  seg(' ', null),
+  seg(
+    `${plugin}: hooks module did not load: the $ build failed (registered theme.set, but no loaded${beforeWrap}`,
+  ),
+  seg('\n  ', null),
+  seg('plugin provides $.theme)'),
+]
+
+/** abyss's recorded terminal preview, a Desktop theme mod: its line wraps after a space. */
+export const MODULE_LOAD_ERROR_ONLY_PREVIEW: AnsiSegment[] = moduleLoadError('abyss', ' ')
+
+/** arcade's recorded terminal preview: the same line, wrapped with no space before the break. */
+export const MODULE_LOAD_ERROR_TIGHT_WRAP_PREVIEW: AnsiSegment[] = moduleLoadError('arcade', '')
+
+/** A hooks module that fails to load for a reason of its own, which says nothing about Desktop. */
+export const MODULE_BROKEN_PREVIEW: AnsiSegment[] = [
+  seg('●'),
+  seg(' ', null),
+  seg('broken: hooks module did not load: SyntaxError: Unexpected token'),
+]
