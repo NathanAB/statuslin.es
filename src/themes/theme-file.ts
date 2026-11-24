@@ -7,6 +7,7 @@ import {
   type TerminalThemeFile,
   THEME_NAME_MAX,
   terminalThemeWindow,
+  usesTerminalColors,
 } from './theme'
 
 /** A file from a plugin's `themes/` folder, as the inspection sandbox read it. */
@@ -118,8 +119,14 @@ function parseFile({ key, bytes }: ThemeFileBytes): TerminalThemeFile | string[]
       : parsed.error.issues.map((i) => `${where}: ${issueText(i)}`)
     return [...unknown, ...invalid]
   }
-  const { name = key, base = 'dark' } = parsed.data
-  return { key, name, window: terminalThemeWindow(base), source }
+  const { name = key, base = 'dark', overrides = {} } = parsed.data
+  return {
+    key,
+    name,
+    window: terminalThemeWindow({ base, overrides }),
+    usesTerminalColors: usesTerminalColors(base),
+    source,
+  }
 }
 
 /** Two themes one `/theme` list would show alike, as a visitor picks a theme there by its name. */

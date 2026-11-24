@@ -423,8 +423,8 @@ describe('inspectPlugin and terminal theme files', () => {
 
     expect(facts.footprint).toEqual({ events: [], calls: [] })
     expect(facts.themes).toEqual([
-      { key: 'dawn', name: 'Dawn', window: 'light', source: dawn },
-      { key: 'ocean', name: 'Ocean', window: 'dark', source: ocean },
+      { key: 'dawn', name: 'Dawn', window: 'light', usesTerminalColors: false, source: dawn },
+      { key: 'ocean', name: 'Ocean', window: 'dark', usesTerminalColors: false, source: ocean },
     ])
   })
 
