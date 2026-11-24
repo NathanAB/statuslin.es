@@ -9,6 +9,7 @@ import {
   terminalThemeWindow,
   usesTerminalColors,
 } from './theme'
+import { unreadableThemeColors } from './theme-readability'
 
 /** A file from a plugin's `themes/` folder, as the inspection sandbox read it. */
 export interface ThemeFileBytes {
@@ -120,10 +121,13 @@ function parseFile({ key, bytes }: ThemeFileBytes): TerminalThemeFile | string[]
     return [...unknown, ...invalid]
   }
   const { name = key, base = 'dark', overrides = {} } = parsed.data
+  const window = terminalThemeWindow({ base, overrides })
+  const unreadable = unreadableThemeColors({ base, window, overrides })
+  if (unreadable.length > 0) return unreadable.map((problem) => `${where}: ${problem}`)
   return {
     key,
     name,
-    window: terminalThemeWindow({ base, overrides }),
+    window,
     usesTerminalColors: usesTerminalColors(base),
     source,
   }
