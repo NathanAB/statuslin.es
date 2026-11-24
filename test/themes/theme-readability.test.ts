@@ -54,15 +54,6 @@ describe('a terminal theme that hides the permission prompt or diffs', () => {
     },
   )
 
-  it('flags nothing it cannot read: the terminal sets its own 16 colors', () => {
-    expect(
-      problems({
-        base: 'dark-ansi',
-        overrides: { permission: 'ansi:black', text: 'ansi256(0)', diffAdded: 'ansi:red' },
-      }),
-    ).toEqual([])
-  })
-
   it("flags added and removed lines drawn in each other's colors", () => {
     // Claude Code's own dark removed and added line colors, swapped.
     expect(
@@ -76,6 +67,56 @@ describe('a terminal theme that hides the permission prompt or diffs', () => {
   it('takes a gray or a blue added line as it is', () => {
     expect(
       problems({ base: 'dark', overrides: { diffAdded: '#3a3a3a', diffRemoved: '#00446a' } }),
+    ).toEqual([])
+  })
+
+  it.each([
+    // Black and white are black and white in every terminal palette worth the name.
+    ['dark', 'permission', 'ansi:black'],
+    ['dark', 'permission', 'ansi256(0)'],
+    ['light', 'text', 'ansi:whiteBright'],
+    ['light', 'text', 'ansi256(15)'],
+  ])("flags a %s theme whose %s is the terminal's own %s", (base, token, value) => {
+    expect(problems({ base, overrides: { [token]: value } }).join()).toContain(
+      `"${token}" ${value} on the terminal's background`,
+    )
+  })
+
+  it("flags added and removed lines in the terminal's own red and green, swapped", () => {
+    expect(
+      problems({
+        base: 'dark-ansi',
+        overrides: { diffAdded: 'ansi:redBright', diffRemoved: 'ansi256(2)' },
+      }),
+    ).toEqual([
+      'themes/t.json: added lines in a diff are red ("diffAdded" ansi:redBright), the color of removed lines, so a diff reads backwards',
+      'themes/t.json: removed lines in a diff are green ("diffRemoved" ansi256(2)), the color of added lines, so a diff reads backwards',
+    ])
+  })
+
+  it.each([['rgb(0 0 0)'], ['#000000ff'], ['black'], ['ansi:purple'], ['RGB(0,0,0)']])(
+    'refuses a permission or diff color it cannot check: %s',
+    (value) => {
+      expect(problems({ base: 'dark', overrides: { permission: value } })).toEqual([
+        `themes/t.json: "permission" ${value} is not a color statuslin.es can check; the permission prompt and diffs take #rrggbb, #rgb, rgb(r,g,b), ansi256(n) or ansi:<name>`,
+      ])
+    },
+  )
+
+  it("leaves an ANSI theme's black and white to the palette it is made for, as Gruvbox Light (ANSI) does", () => {
+    // A light palette maps white to a dark gray, so white text on a light terminal can read.
+    expect(problems({ base: 'light-ansi', overrides: { text: 'ansi:whiteBright' } })).toEqual([])
+    // Only red and green are judged among the rest, and by name.
+    expect(
+      problems({
+        base: 'dark-ansi',
+        overrides: {
+          permission: 'ansi:black',
+          text: 'ansi:white',
+          diffAdded: 'ansi256(4)',
+          diffRemoved: 'ansi:magenta',
+        },
+      }),
     ).toEqual([])
   })
 })

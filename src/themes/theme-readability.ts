@@ -1,5 +1,5 @@
 import { contrastRatio, fixedRgb, hueAndSaturation, type Rgb } from './fixed-color'
-import type { TerminalThemeBase, ThemeWindow } from './theme'
+import { type TerminalThemeBase, type ThemeWindow, usesTerminalColors } from './theme'
 
 /** The colors this check reads, as Claude Code names them in a theme file's `overrides`. */
 type CheckedToken = 'text' | 'permission' | 'diffAdded' | 'diffRemoved'
@@ -86,11 +86,55 @@ const LOOKS_SWAPPED = [
   { token: 'diffRemoved', lines: 'removed', reads: 'green', other: 'added', inBand: isGreen },
 ] as const
 
+/** The terminal's own 16 colors, by name and by number, as a theme file may give them. */
+const TERMINAL_NAMES = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white']
+const TERMINAL_COLOR = new RegExp(`^ansi:(${TERMINAL_NAMES.join('|')})(Bright)?$`)
+const ANSI_NUMBER = /^ansi256\((\d{1,3})\)$/
+
+/** Number n of the 16 as its `ansi:` name, so one table reads both spellings. */
+function terminalName(value: string): string | undefined {
+  if (TERMINAL_COLOR.test(value)) return value
+  const n = Number(ANSI_NUMBER.exec(value)?.[1])
+  if (!(n < 16)) return undefined
+  return `ansi:${TERMINAL_NAMES[n % 8]}${n >= 8 ? 'Bright' : ''}`
+}
+
+/**
+ * The terminal sets its own 16. A theme on a fixed-color base expects a default palette, where black
+ * and white are near black and white, so it can't hide the prompt behind them. An ANSI base is made
+ * for a palette of its own (a light one maps white to a dark gray), so there none is judged.
+ */
+const TERMINAL_EXTREMES: Record<string, Rgb> = {
+  'ansi:black': [0, 0, 0],
+  'ansi:white': [229, 229, 229],
+  'ansi:whiteBright': [255, 255, 255],
+}
+
+/** A terminal color whose hue its name gives, whatever the palette. */
+const TERMINAL_HUE: Record<string, 'red' | 'green'> = {
+  'ansi:red': 'red',
+  'ansi:redBright': 'red',
+  'ansi:green': 'green',
+  'ansi:greenBright': 'green',
+}
+
+const UNCHECKABLE =
+  'is not a color statuslin.es can check; the permission prompt and diffs take #rrggbb, #rgb, rgb(r,g,b), ansi256(n) or ansi:<name>'
+
 interface Color {
   token: CheckedToken
   value: string
   rgb: Rgb | undefined
+  /** One of the terminal's own 16, by its `ansi:` name. */
+  terminal: string | undefined
 }
+
+const CHECKED_TOKENS = [
+  'text',
+  'permission',
+  'diffAdded',
+  'diffRemoved',
+] as const satisfies CheckedToken[]
 
 /**
  * What would hide or mislead in a terminal theme's permission prompt and diffs: text under a 3:1
@@ -108,12 +152,26 @@ export function unreadableThemeColors({
 }): string[] {
   const color = (token: CheckedToken): Color => {
     const override = overrides[token]
-    if (override !== undefined) return { token, value: override, rgb: fixedRgb(override) }
+    if (override !== undefined) {
+      const name = terminalName(override)
+      const rgb =
+        name === undefined
+          ? fixedRgb(override)
+          : usesTerminalColors(base)
+            ? undefined
+            : TERMINAL_EXTREMES[name]
+      return { token, value: override, rgb, terminal: name }
+    }
     const own = BASE_COLORS[base][token]
-    if (typeof own === 'string') return { token, value: own, rgb: undefined }
-    return { token, value: `rgb(${own.join(',')})`, rgb: own }
+    if (typeof own === 'string') return { token, value: own, rgb: undefined, terminal: own }
+    return { token, value: `rgb(${own.join(',')})`, rgb: own, terminal: undefined }
   }
   const screen = SCREEN[window]
+  const unread = CHECKED_TOKENS.flatMap((token) => {
+    const { value, rgb, terminal } = color(token)
+    return rgb === undefined && terminal === undefined ? [`"${token}" ${value} ${UNCHECKABLE}`] : []
+  })
+  if (unread.length > 0) return unread
 
   const contrast = READ_ON.flatMap(({ what, fg, bg }) => {
     const front = color(fg)
@@ -131,13 +189,22 @@ export function unreadableThemeColors({
     ]
   })
 
-  const swapped = LOOKS_SWAPPED.flatMap(({ token, lines, reads, other, inBand }) => {
-    const { value, rgb } = color(token)
-    if (rgb === undefined) return []
+  const reads = (
+    { rgb, terminal }: Color,
+    band: 'red' | 'green',
+    inBand: (hue: number) => boolean,
+  ) => {
+    if (terminal !== undefined) return TERMINAL_HUE[terminal] === band
+    if (rgb === undefined) return false
     const { hue, saturation } = hueAndSaturation(rgb)
-    if (saturation < MIN_SATURATION || !inBand(hue)) return []
+    return saturation >= MIN_SATURATION && inBand(hue)
+  }
+  const swapped = LOOKS_SWAPPED.flatMap(({ token, lines, reads: band, other, inBand }) => {
+    const found = color(token)
+    if (!reads(found, band, inBand)) return []
+    const { value } = found
     return [
-      `${lines} lines in a diff are ${reads} ("${token}" ${value}), the color of ${other} lines, so a diff reads backwards`,
+      `${lines} lines in a diff are ${band} ("${token}" ${value}), the color of ${other} lines, so a diff reads backwards`,
     ]
   })
 
