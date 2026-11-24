@@ -26,9 +26,10 @@ import { modUpdatesPrBody } from './mod-updates-pr-body'
  * It reads and writes the curation file through the GitHub API, so the checkout it runs from is
  * left alone; run it from an up-to-date main, since that's the code it runs.
  *
- * AGENT USAGE — needs `gh` signed in, and `claude` signed in to the operator's subscription:
+ * AGENT USAGE — needs `gh` signed in, `claude` signed in to the operator's subscription, and
+ * GITHUB_TOKEN, which Bun reads from .env.local:
  *
- *   GITHUB_TOKEN=$(gh auth token) bun run updates:mods:pr
+ *   bun run updates:mods:pr
  *
  * Exit code 0 when it ran, whether or not it opened anything; 1 when the curation file is invalid
  * or GitHub, git or gh failed.
