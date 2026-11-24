@@ -85,7 +85,7 @@ A config, a mod or a theme plugin as published in the gallery, with its own page
 _Avoid_: entry, item
 
 **Unreviewed mod**:
-A mod statuslin.es has a page for and hasn't read. It is not a listing: it has no version, no place in the marketplace or the gallery's ranking, and can't be installed from the site. Visitors see it labelled "Not reviewed".
+A mod statuslin.es has a page for and hasn't read. It is not a listing: it has no place in the marketplace or the gallery's ranking, and can't be installed from the site. Visitors see it labelled "Not reviewed". Most come from the unreviewed list and show facts only. A curated mod that carries Desktop themes can be one too while it waits for its review: its page and its theme cards also show the themes' recorded previews.
 _Avoid_: listing, listed mod, indexed mod
 
 **Page copy**:
