@@ -30,13 +30,38 @@ describe('modPageTitle', () => {
     )
   })
 
-  it('keeps a long name whole and shortens the headline to fit 60 characters', () => {
+  it('keeps a long name whole and cuts the headline after its last whole phrase that fits', () => {
     const title = modPageTitle(
       'Status Line Anywhere',
       'Your status line drawn in Claude Desktop and in VS',
     )
-    expect(title).toBe('Status Line Anywhere mod: Your status line drawn in Claude…')
+    expect(title).toBe('Status Line Anywhere mod: Your status line drawn')
     expect(title.length).toBeLessThanOrEqual(60)
+  })
+
+  // Holo Damascus's title was cut to "…pearl theme for Claude…".
+  it('cuts a headline before a phrase it cannot fit whole, with no ellipsis', () => {
+    expect(modPageTitle('Holo Damascus', 'Holographic pearl theme for Claude Desktop')).toBe(
+      'Holo Damascus mod: Holographic pearl theme',
+    )
+    expect(modPageTitle('Horcrux', 'Old diary theme that writes back in Claude Desktop')).toBe(
+      'Horcrux mod: Old diary theme that writes back',
+    )
+  })
+
+  it('cuts a headline at a comma', () => {
+    expect(
+      modPageTitle('Token Weather', 'Live token forecasting, burn rates, cache hits at a glance'),
+    ).toBe('Token Weather mod: Live token forecasting, burn rates')
+  })
+
+  it('falls back to the plain mod title when no whole phrase of the headline fits', () => {
+    expect(
+      modPageTitle(
+        'Claudemaxxing Backdrop',
+        'Unbelievablyanimatedwordsbackgroundsforclaudedesktop',
+      ),
+    ).toBe(modPageTitle('Claudemaxxing Backdrop'))
   })
 
   it('falls back to the plain mod title when the name leaves no room for a headline word', () => {
