@@ -389,9 +389,10 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    The same run records each terminal theme a plugin carries, in that theme, as one outcome line
    per theme. Every theme is recorded in the theme scene (`src/render/mods/theme-scene.ts`): a
    reply, an edit with its diff, and a prompt asking to run a command, the same for every theme
-   whatever the plugin's input steps and terminal. A full run skips themes that already have a
-   preview, and `--slug` records all of that plugin's themes again, which is how published themes
-   move to a changed theme scene. A plugin publishes only once every theme has a preview. A theme whose
+   whatever the plugin's input steps and terminal. Every hook is off in it, so a theme preview never
+   runs the plugin's own code; its hooks show only in the mod's own previews. A full run skips
+   themes that already have a preview, and `--slug` records all of that plugin's themes again,
+   which is how published themes move to a changed theme scene. A plugin publishes only once every theme has a preview. A theme whose
    screen looks the same as the baseline (Claude Code ignored its `theme` setting), or as another
    theme of the same version, fails with that reason and loses its preview, whichever run stored it.
    Check the plugin name and the theme file, then rerun.

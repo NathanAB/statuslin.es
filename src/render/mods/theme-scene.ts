@@ -62,11 +62,14 @@ export function themeSceneReply(scenario: Scenario): CannedReply {
 /**
  * acceptEdits applies the edit without asking, so its diff draws, and still asks before Bash. Auto
  * mode, Claude Code's default, would send the Bash call to a classifier that queries the canned
- * model instead of asking, so it is turned off.
+ * model instead of asking, so it is turned off. Every hook is off too: a theme is only colors, and a
+ * plugin's own hooks could otherwise draw on its theme's preview or rewrite the command it asks to
+ * run, in a recording the operator never reviewed.
  */
 export function themeSceneSettings(theme: string | null) {
   return {
     permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+    disableAllHooks: true,
     ...(theme === null ? {} : { theme }),
   }
 }

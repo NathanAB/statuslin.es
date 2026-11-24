@@ -286,6 +286,7 @@ describe('recordInSandbox', () => {
       expect(fake.sent[0]).toContain("--plugin-dir '/home/user/plugins/mod'")
       expect(fake.writtenJson(SETTINGS_JSON)).toEqual({
         permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+        disableAllHooks: true,
         theme: 'custom:pack:dracula',
       })
       expect(fake.writtenJson(CLAUDE_JSON).hasSeenAutoDefaultNudge).toBe(true)
@@ -333,6 +334,7 @@ describe('recordInSandbox', () => {
       expect(fake.sent[0]).not.toContain("'/home/user/plugins/mod'")
       expect(fake.writtenJson(SETTINGS_JSON)).toEqual({
         permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+        disableAllHooks: true,
       })
       expect(fake.writtenJson(FEED_JSON).target).toBeNull()
     },

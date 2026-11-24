@@ -267,13 +267,27 @@ describe('themeSessionFiles', () => {
   it('turns auto mode off and accepts edits, so the edit draws its diff and Bash asks', () => {
     expect(json(themeFiles('pack', 'custom:pack:dracula'), `${CONFIG_DIR}/settings.json`)).toEqual({
       permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+      disableAllHooks: true,
       theme: 'custom:pack:dracula',
     })
   })
 
+  it.each([
+    { theme: 'custom:pack:dracula', target: 'pack' },
+    { theme: null, target: null },
+  ])(
+    "turns every hook off, so the plugin's own code can't draw on or cut short its theme's preview ($theme)",
+    ({ theme, target }) => {
+      expect(json(themeFiles(target, theme), `${CONFIG_DIR}/settings.json`).disableAllHooks).toBe(
+        true,
+      )
+    },
+  )
+
   it("leaves Claude Code's default theme for the baseline", () => {
     expect(json(themeFiles(null, null), `${CONFIG_DIR}/settings.json`)).toEqual({
       permissions: { defaultMode: 'acceptEdits', disableAutoMode: 'disable' },
+      disableAllHooks: true,
     })
   })
 
