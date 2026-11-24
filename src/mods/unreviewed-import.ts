@@ -20,8 +20,14 @@ export interface UnreviewedImportDeps {
 
 const { unreviewedMods } = schema
 
-/** Why statuslin.es said no to this plugin folder before; a refused mod never gets a page (ADR 0011). */
-async function refusedBefore(db: Db, entry: UnreviewedEntry): Promise<string | null> {
+/**
+ * Why statuslin.es said no to this plugin folder before; a refused mod never gets a page (ADR 0011,
+ * ADR 0014).
+ */
+export async function refusedBefore(
+  db: Db,
+  entry: Pick<UnreviewedEntry, 'repoUrl' | 'path'>,
+): Promise<string | null> {
   const rows = await db
     .select({ modStatus: schema.mods.status, submissionStatus: schema.submissions.status })
     .from(schema.modVersions)

@@ -767,6 +767,27 @@ The "Request a review" button sends `unreviewed_mod_review_requested` to PostHog
 and curate them as usual. Search Console clicks for these pages are their own group,
 `/mods/unreviewed/*`, in `docs/redesign/home-a/seo/search_console.py`.
 
+### Show a curated Desktop theme pack as an unreviewed mod
+
+A curated draft that carries Desktop themes can go live unreviewed (ADR 0014): a page at the same
+`/mods/unreviewed/<owner>/<plugin name>` address with each theme's recorded preview, and its theme
+cards in a "Not reviewed" section on /themes and its palette pages. Nothing installs it, and it stays
+a draft.
+
+1. Import and record the draft as usual (Launch runbook), at the commit in `src/mods/curation.json`.
+2. Dry run, then show it, on staging (`<slug>` is the mod's slug; several may follow):
+   ```sh
+   bun run with-env staging scripts/show-unreviewed-mod.ts <slug>...
+   bun run with-env staging scripts/show-unreviewed-mod.ts <slug>... --apply
+   ```
+   A `refused` line says why: not a draft, a user's submission, a live commit other than the
+   curation file's, no Desktop theme or one not yet recorded, a folder statuslin.es removed or
+   rejected, or an address another unreviewed mod has. Exit code 1 means at least one was refused.
+3. Look at each page and its cards on staging, then run the same on production.
+
+To take a page down, run it with `--hide --apply`. Publishing the mod with `publish-mod` clears the
+page, and its address then redirects to the listing.
+
 ## Community status line seeds
 
 `scripts/seed-data/community-configs.ts` lists MIT status lines vendored from GitHub, each credited to
