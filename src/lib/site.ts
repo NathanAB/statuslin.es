@@ -51,6 +51,9 @@ export const MODS_PATH = '/mods'
 
 export const THEMES_PATH = '/themes'
 
+/** A named palette's page, such as /themes/catppuccin. */
+export const palettePath = (slug: string) => `${THEMES_PATH}/${slug}`
+
 export const MOD_ROUTE = '/mods/$slug'
 
 export function modPath(slug: string): string {

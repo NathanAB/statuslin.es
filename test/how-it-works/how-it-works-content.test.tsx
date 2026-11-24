@@ -35,6 +35,7 @@ const MOD: ModDetail = {
   recordedWith: '2.1.0',
   reviewedAt: '2026-10-15',
   themeOnly: false,
+  themeCounts: { desktop: 0, terminal: 0 },
   terminalHookError: false,
 }
 

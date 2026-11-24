@@ -41,6 +41,7 @@ import { Route as OgHomeDotpngRouteImport } from './routes/og.home[.]png'
 import { Route as OgThemesDotpngRouteImport } from './routes/og.themes[.]png'
 import { Route as StatusLinesFacetRouteImport } from './routes/status-lines.$facet'
 import { Route as StatusLinesBestRouteImport } from './routes/status-lines.best'
+import { Route as ThemesPaletteRouteImport } from './routes/themes_.$palette'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as BadgeCChar123slugChar125DotsvgRouteImport } from './routes/badge.c.{$slug}[.]svg'
 import { Route as BadgeModsChar123slugChar125DotsvgRouteImport } from './routes/badge.mods.{$slug}[.]svg'
@@ -48,6 +49,7 @@ import { Route as ConfigPreviewsVersionIdDesktopDotpngRouteImport } from './rout
 import { Route as ModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/mod-previews.$versionId.desktop[.]png'
 import { Route as OgCChar123slugChar125DotpngRouteImport } from './routes/og.c.{$slug}[.]png'
 import { Route as OgModsChar123slugChar125DotpngRouteImport } from './routes/og.mods.{$slug}[.]png'
+import { Route as OgThemesChar123paletteChar125DotpngRouteImport } from './routes/og.themes.{$palette}[.]png'
 import { Route as ThemePreviewsThemeIdDesktopDotpngRouteImport } from './routes/theme-previews.$themeId.desktop[.]png'
 import { Route as AdminModPreviewsVersionIdDesktopDotpngRouteImport } from './routes/admin/mod-previews.$versionId.desktop[.]png'
 import { Route as AdminThemePreviewsThemeIdDesktopDotpngRouteImport } from './routes/admin/theme-previews.$themeId.desktop[.]png'
@@ -216,6 +218,11 @@ const StatusLinesBestRoute = StatusLinesBestRouteImport.update({
   path: '/status-lines/best',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ThemesPaletteRoute = ThemesPaletteRouteImport.update({
+  id: '/themes_/$palette',
+  path: '/themes/$palette',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -255,6 +262,12 @@ const OgModsChar123slugChar125DotpngRoute =
   OgModsChar123slugChar125DotpngRouteImport.update({
     id: '/og/mods/{$slug}.png',
     path: '/og/mods/{$slug}.png',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OgThemesChar123paletteChar125DotpngRoute =
+  OgThemesChar123paletteChar125DotpngRouteImport.update({
+    id: '/og/themes/{$palette}.png',
+    path: '/og/themes/{$palette}.png',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ThemePreviewsThemeIdDesktopDotpngRoute =
@@ -313,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/og/themes.png': typeof OgThemesDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
+  '/themes/$palette': typeof ThemesPaletteRoute
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -322,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/og/themes/{$palette}.png': typeof OgThemesChar123paletteChar125DotpngRoute
   '/theme-previews/$themeId/desktop.png': typeof ThemePreviewsThemeIdDesktopDotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
   '/admin/theme-previews/$themeId/desktop.png': typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
@@ -358,6 +373,7 @@ export interface FileRoutesByTo {
   '/og/themes.png': typeof OgThemesDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
+  '/themes/$palette': typeof ThemesPaletteRoute
   '/admin': typeof AdminIndexRoute
   '/mods': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -367,6 +383,7 @@ export interface FileRoutesByTo {
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/og/themes/{$palette}.png': typeof OgThemesChar123paletteChar125DotpngRoute
   '/theme-previews/$themeId/desktop.png': typeof ThemePreviewsThemeIdDesktopDotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
   '/admin/theme-previews/$themeId/desktop.png': typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
@@ -404,6 +421,7 @@ export interface FileRoutesById {
   '/og/themes.png': typeof OgThemesDotpngRoute
   '/status-lines/$facet': typeof StatusLinesFacetRoute
   '/status-lines/best': typeof StatusLinesBestRoute
+  '/themes_/$palette': typeof ThemesPaletteRoute
   '/admin/': typeof AdminIndexRoute
   '/mods/': typeof ModsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -413,6 +431,7 @@ export interface FileRoutesById {
   '/mod-previews/$versionId/desktop.png': typeof ModPreviewsVersionIdDesktopDotpngRoute
   '/og/c/{$slug}.png': typeof OgCChar123slugChar125DotpngRoute
   '/og/mods/{$slug}.png': typeof OgModsChar123slugChar125DotpngRoute
+  '/og/themes/{$palette}.png': typeof OgThemesChar123paletteChar125DotpngRoute
   '/theme-previews/$themeId/desktop.png': typeof ThemePreviewsThemeIdDesktopDotpngRoute
   '/admin/mod-previews/$versionId/desktop.png': typeof AdminModPreviewsVersionIdDesktopDotpngRoute
   '/admin/theme-previews/$themeId/desktop.png': typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
@@ -451,6 +470,7 @@ export interface FileRouteTypes {
     | '/og/themes.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
+    | '/themes/$palette'
     | '/admin/'
     | '/mods/'
     | '/api/auth/$'
@@ -460,6 +480,7 @@ export interface FileRouteTypes {
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
+    | '/og/themes/{$palette}.png'
     | '/theme-previews/$themeId/desktop.png'
     | '/admin/mod-previews/$versionId/desktop.png'
     | '/admin/theme-previews/$themeId/desktop.png'
@@ -496,6 +517,7 @@ export interface FileRouteTypes {
     | '/og/themes.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
+    | '/themes/$palette'
     | '/admin'
     | '/mods'
     | '/api/auth/$'
@@ -505,6 +527,7 @@ export interface FileRouteTypes {
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
+    | '/og/themes/{$palette}.png'
     | '/theme-previews/$themeId/desktop.png'
     | '/admin/mod-previews/$versionId/desktop.png'
     | '/admin/theme-previews/$themeId/desktop.png'
@@ -541,6 +564,7 @@ export interface FileRouteTypes {
     | '/og/themes.png'
     | '/status-lines/$facet'
     | '/status-lines/best'
+    | '/themes_/$palette'
     | '/admin/'
     | '/mods/'
     | '/api/auth/$'
@@ -550,6 +574,7 @@ export interface FileRouteTypes {
     | '/mod-previews/$versionId/desktop.png'
     | '/og/c/{$slug}.png'
     | '/og/mods/{$slug}.png'
+    | '/og/themes/{$palette}.png'
     | '/theme-previews/$themeId/desktop.png'
     | '/admin/mod-previews/$versionId/desktop.png'
     | '/admin/theme-previews/$themeId/desktop.png'
@@ -587,6 +612,7 @@ export interface RootRouteChildren {
   OgThemesDotpngRoute: typeof OgThemesDotpngRoute
   StatusLinesFacetRoute: typeof StatusLinesFacetRoute
   StatusLinesBestRoute: typeof StatusLinesBestRoute
+  ThemesPaletteRoute: typeof ThemesPaletteRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ModsIndexRoute: typeof ModsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -596,6 +622,7 @@ export interface RootRouteChildren {
   ModPreviewsVersionIdDesktopDotpngRoute: typeof ModPreviewsVersionIdDesktopDotpngRoute
   OgCChar123slugChar125DotpngRoute: typeof OgCChar123slugChar125DotpngRoute
   OgModsChar123slugChar125DotpngRoute: typeof OgModsChar123slugChar125DotpngRoute
+  OgThemesChar123paletteChar125DotpngRoute: typeof OgThemesChar123paletteChar125DotpngRoute
   ThemePreviewsThemeIdDesktopDotpngRoute: typeof ThemePreviewsThemeIdDesktopDotpngRoute
   AdminModPreviewsVersionIdDesktopDotpngRoute: typeof AdminModPreviewsVersionIdDesktopDotpngRoute
   AdminThemePreviewsThemeIdDesktopDotpngRoute: typeof AdminThemePreviewsThemeIdDesktopDotpngRoute
@@ -828,6 +855,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatusLinesBestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/themes_/$palette': {
+      id: '/themes_/$palette'
+      path: '/themes/$palette'
+      fullPath: '/themes/$palette'
+      preLoaderRoute: typeof ThemesPaletteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -875,6 +909,13 @@ declare module '@tanstack/react-router' {
       path: '/og/mods/{$slug}.png'
       fullPath: '/og/mods/{$slug}.png'
       preLoaderRoute: typeof OgModsChar123slugChar125DotpngRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/og/themes/{$palette}.png': {
+      id: '/og/themes/{$palette}.png'
+      path: '/og/themes/{$palette}.png'
+      fullPath: '/og/themes/{$palette}.png'
+      preLoaderRoute: typeof OgThemesChar123paletteChar125DotpngRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/theme-previews/$themeId/desktop.png': {
@@ -939,6 +980,7 @@ const rootRouteChildren: RootRouteChildren = {
   OgThemesDotpngRoute: OgThemesDotpngRoute,
   StatusLinesFacetRoute: StatusLinesFacetRoute,
   StatusLinesBestRoute: StatusLinesBestRoute,
+  ThemesPaletteRoute: ThemesPaletteRoute,
   AdminIndexRoute: AdminIndexRoute,
   ModsIndexRoute: ModsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
@@ -951,6 +993,8 @@ const rootRouteChildren: RootRouteChildren = {
     ModPreviewsVersionIdDesktopDotpngRoute,
   OgCChar123slugChar125DotpngRoute: OgCChar123slugChar125DotpngRoute,
   OgModsChar123slugChar125DotpngRoute: OgModsChar123slugChar125DotpngRoute,
+  OgThemesChar123paletteChar125DotpngRoute:
+    OgThemesChar123paletteChar125DotpngRoute,
   ThemePreviewsThemeIdDesktopDotpngRoute:
     ThemePreviewsThemeIdDesktopDotpngRoute,
   AdminModPreviewsVersionIdDesktopDotpngRoute:

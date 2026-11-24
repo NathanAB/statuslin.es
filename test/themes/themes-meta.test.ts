@@ -10,6 +10,7 @@ const ORIGIN = 'https://statuslin.es'
 
 const THEME: PublishedTheme = {
   id: 't1',
+  key: 't1',
   kind: 'terminal',
   name: 'Night',
   window: 'dark',

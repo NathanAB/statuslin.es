@@ -82,6 +82,7 @@ const MOD: ModDetail = {
   recordedWith: '2.1.0',
   reviewedAt: null,
   themeOnly: false,
+  themeCounts: { desktop: 0, terminal: 0 },
   terminalHookError: false,
 }
 
@@ -226,6 +227,23 @@ describe('mod page head', () => {
         }),
       },
     ])
+  })
+
+  it('titles, describes and shares a Desktop theme plugin as a Claude Desktop theme', () => {
+    const meta = head({
+      ...MOD,
+      title: 'Nord Look',
+      description: '',
+      themeCounts: { desktop: 1, terminal: 0 },
+    }).meta
+    const og = (property: string) => meta.find((m) => m.property === property)?.content
+    const title = 'Nord Look — Claude Desktop Theme | statuslin.es'
+    const description =
+      'A reviewed Claude Desktop theme. See its preview, then install it with one copied prompt.'
+
+    expect(meta.slice(0, 2)).toEqual([{ title }, { name: 'description', content: description }])
+    expect(og('og:title')).toBe(title)
+    expect(og('og:description')).toBe(description)
   })
 
   it('shares the mod under its own url, title and description, not the home page', () => {

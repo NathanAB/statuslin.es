@@ -14,6 +14,7 @@ import { CARD_HEIGHT, CARD_WIDTH } from '@/og/dimensions'
 // proxies keep that old card under the bare URL, so the share tags use a new one.
 const HOME_CARD_PATH = '/og/home.png?v=2'
 const THEMES_CARD_PATH = '/og/themes.png'
+export const paletteCardPath = (slug: string) => `/og/themes/${slug}.png`
 
 export function rootSocialMeta(): Array<Record<string, string>> {
   const base = siteUrl()
@@ -76,6 +77,7 @@ export function modSocialMeta(
     description: string
     generatedContent: { summary: string; headline?: string | undefined } | null
     themeOnly: boolean
+    themeCounts: { desktop: number; terminal: number }
   },
 ): Array<Record<string, string>> {
   const image = `${base}${listingCardPath('mod', mod.slug)}`
@@ -86,6 +88,7 @@ export function modSocialMeta(
       property: 'og:title',
       content: modPageTitle(mod.title, mod.generatedContent?.headline, {
         themeOnly: mod.themeOnly,
+        themeCounts: mod.themeCounts,
       }),
     },
     {
@@ -95,6 +98,7 @@ export function modSocialMeta(
         description: mod.description,
         copy: mod.generatedContent,
         themeOnly: mod.themeOnly,
+        themeCounts: mod.themeCounts,
       }),
     },
     { property: 'og:image', content: image },
@@ -119,6 +123,13 @@ export function staticPageSocialMeta(input: PageShare): Array<Record<string, str
 /** /themes' share tags: its own card, drawn from the live themes. */
 export function themesSocialMeta(input: PageShare): Array<Record<string, string>> {
   return pageSocialMeta(input, THEMES_CARD_PATH)
+}
+
+/** A palette page's share tags: its own card, naming the palette and drawn from its themes. */
+export function paletteSocialMeta(
+  input: PageShare & { palette: string },
+): Array<Record<string, string>> {
+  return pageSocialMeta(input, paletteCardPath(input.palette))
 }
 
 function pageSocialMeta(input: PageShare, cardPath: string): Array<Record<string, string>> {

@@ -513,10 +513,17 @@ const THEMES_CARD_SCREEN_BOX = {
   height: DETAIL_BODY_HEIGHT,
 }
 
-/** /themes' card: up to two themes' whole screens side by side, under the count of live themes. */
-export function themesCard(input: { count: number; screens: ThemeScreen[] }): ReactElement {
+/**
+ * /themes' card: up to two themes' whole screens side by side, under the count of live themes. A
+ * palette page's card gives its own title.
+ */
+export function themesCard(input: {
+  title?: string
+  count: number
+  screens: ThemeScreen[]
+}): ReactElement {
   return detailCard(
-    cardHeader(THEMES_CARD_TITLE, themesByline(input.count)),
+    cardHeader(input.title ?? THEMES_CARD_TITLE, themesByline(input.count)),
     <div style={{ display: 'flex', gap: THEMES_CARD_GAP, alignItems: 'flex-start' }}>
       {input.screens.slice(0, 2).map((screen, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: at most two screens, in a fixed order.

@@ -39,6 +39,7 @@ export const Route = createFileRoute('/mods/$slug')({
         {
           title: modPageTitle(mod.title, mod.generatedContent?.headline, {
             themeOnly: mod.themeOnly,
+            themeCounts: mod.themeCounts,
           }),
         },
         {
@@ -48,6 +49,7 @@ export const Route = createFileRoute('/mods/$slug')({
             description: mod.description,
             copy: mod.generatedContent,
             themeOnly: mod.themeOnly,
+            themeCounts: mod.themeCounts,
           }),
         },
         ...modSocialMeta(loaderData.origin, mod),

@@ -13,6 +13,7 @@ import { versionIsThemeOnly } from '@/mods/queries'
 import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
+import { findPalette, type Palette, palettesWithThemes, themesInPalette } from './palettes'
 import type { ThemeKind, ThemeWindow } from './theme'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -26,6 +27,8 @@ export interface DesktopThemeShot {
 
 interface ThemeCardBase {
   id: string
+  /** Its key within its plugin (THEME_KEY), which a re-pin keeps. */
+  key: string
   /** The author's name for it, the one its card and `/theme` show. Shown as text. */
   name: string
   kind: ThemeKind
@@ -63,11 +66,16 @@ export interface HomeThemeRow {
   total: number
 }
 
-function publishedThemes<Extra extends Record<string, SQL>>(db: Db, extra: Extra, where?: SQL) {
+function publishedThemes<Extra extends Record<string, SQL | SQL.Aliased>>(
+  db: Db,
+  extra: Extra,
+  where?: SQL,
+) {
   return db
     .select({
       ...extra,
       id: modThemes.id,
+      key: modThemes.key,
       kind: modThemes.kind,
       name: modThemes.name,
       window: modThemes.window,
@@ -109,8 +117,14 @@ const byPlugin = [desc(mods.copyCount), asc(mods.slug)]
 type ThemeRow = Awaited<ReturnType<typeof publishedThemes<Record<never, SQL>>>>[number]
 
 function toCard({ themeOnly, footprint, segments, shot, switchSteps, ...row }: ThemeRow) {
-  const { id, name, window, plugin } = row
-  const base = { id, name, window, plugin: { ...plugin, code: themeOnly ? null : { footprint } } }
+  const { id, key, name, window, plugin } = row
+  const base = {
+    id,
+    key,
+    name,
+    window,
+    plugin: { ...plugin, code: themeOnly ? null : { footprint } },
+  }
   if (row.kind === 'terminal') {
     return {
       ...base,
@@ -173,4 +187,44 @@ export async function homeThemesOrEmpty(
 /** The themes a published plugin's page lists, in name order. */
 export async function getPublishedModThemes(db: Db, slug: string): Promise<PublishedTheme[]> {
   return toCards(await publishedThemes(db, {}, eq(mods.slug, slug)).orderBy(...byName))
+}
+
+/** A palette's page: its published themes in /themes' order, and every palette with a page. */
+export interface PaletteThemes {
+  palette: Palette
+  themes: PublishedTheme[]
+  palettes: Palette[]
+}
+
+/** The palette page at `slug`, or null when no palette has that slug or none of its themes is published. */
+export async function getPaletteThemes(db: Db, slug: string): Promise<PaletteThemes | null> {
+  const palette = findPalette(slug)
+  if (!palette) return null
+  const all = await getThemeCards(db)
+  const themes = themesInPalette(all, palette)
+  return themes.length === 0 ? null : { palette, themes, palettes: palettesWithThemes(all) }
+}
+
+/** A palette page as the sitemap lists it: dated by its newest theme's version going live. */
+export interface PalettePage {
+  palette: Palette
+  updatedAt: Date
+}
+
+/** Every palette with a page, in /themes' order, without loading any theme's preview. */
+export async function getPalettePages(db: Db): Promise<PalettePage[]> {
+  // Only the names and dates leave the database: the subquery's previews are never read.
+  const published = publishedThemes(db, {
+    updatedAt: sql<string>`${modVersions.createdAt}`.as('updated_at'),
+  }).as('published')
+  const rows = await db
+    .select({ name: published.name, updatedAt: published.updatedAt })
+    .from(published)
+  const themes = rows.map((row) => ({ name: row.name, updatedAt: new Date(row.updatedAt) }))
+  return palettesWithThemes(themes).map((palette) => ({
+    palette,
+    updatedAt: new Date(
+      Math.max(...themesInPalette(themes, palette).map((theme) => theme.updatedAt.getTime())),
+    ),
+  }))
 }

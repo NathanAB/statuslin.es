@@ -14,12 +14,24 @@ import {
   STATUS_LINES_VS_MODS_GUIDE_PATH,
   STATUS_LINES_VS_MODS_GUIDE_TITLE,
 } from '@/lib/page-title'
-import { GALLERY_JSON_PATH, MARKETPLACE_PATH, MODS_PATH, THEMES_PATH } from '@/lib/site'
+import {
+  GALLERY_JSON_PATH,
+  MARKETPLACE_PATH,
+  MODS_PATH,
+  palettePath,
+  THEMES_PATH,
+} from '@/lib/site'
 
 export type LlmsFacet = { slug: string; label: string }
+/** A palette with its own themes page. */
+export type LlmsPalette = { slug: string; name: string }
 
 /** The title, summary and Browse links both files open with. */
-export function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
+export function siteBlocks(
+  base: string,
+  facets: LlmsFacet[],
+  palettes: LlmsPalette[] = [],
+): string[] {
   const blocks = [
     '# statuslin.es',
     '> A gallery of Claude Code mods, status lines included, and of Claude Code and Claude Desktop themes, each with a real preview. Install any of them with one copied prompt or command.',
@@ -28,6 +40,18 @@ export function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
   ]
   if (facets.length > 0) {
     blocks.push(['## Browse by feature', '', ...facets.map((f) => facetLink(base, f))].join('\n'))
+  }
+  if (palettes.length > 0) {
+    blocks.push(
+      [
+        '## Themes by palette',
+        '',
+        ...palettes.map(
+          (p) =>
+            `- [${p.name} themes](${base}${palettePath(p.slug)}): every published ${p.name} theme, each previewed in a real session`,
+        ),
+      ].join('\n'),
+    )
   }
   return blocks
 }
