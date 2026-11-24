@@ -182,11 +182,11 @@ describe('sitemap with mods', () => {
     expect(xml).toContain(`<loc>${BASE}/themes</loc>\n    <lastmod>2026-10-05</lastmod>`)
   })
 
-  it('lists the page of each palette with a published theme, dated by its newest theme, and no other', async () => {
+  it('lists the page of each palette with a shown theme, dated by its newest theme, and no other', async () => {
     const xml = await (await discovery.sitemapWithModsForRoute()).text()
 
     expect(xml).toContain(`<loc>${BASE}/themes/nord</loc>\n    <lastmod>2026-10-05</lastmod>`)
-    expect(xml).not.toContain(`${BASE}/themes/catppuccin`)
+    expect(xml).not.toContain(`${BASE}/themes/dracula`)
   })
 
   it("lists a theme plugin's page without dating /mods by it", async () => {
@@ -212,14 +212,16 @@ describe('sitemap with mods', () => {
     expect(xml).not.toContain('/mods/unreviewed/octocat/meter')
   })
 
-  it("lists a shown curated draft's unreviewed page, never its slug, and makes no palette page of its themes", async () => {
+  it("lists a shown curated draft's unreviewed page, never its slug, and the palette page its themes give", async () => {
     const xml = await (await discovery.sitemapWithModsForRoute()).text()
 
     expect(xml).toContain(
       `<url>\n    <loc>${BASE}/mods/unreviewed/Ada/looks</loc>\n    <lastmod>2026-11-20</lastmod>\n  </url>`,
     )
     expect(xml).not.toContain('looks-pack')
-    expect(xml).not.toContain(`${BASE}/themes/catppuccin`)
+    expect(xml).toContain(
+      `<url>\n    <loc>${BASE}/themes/catppuccin</loc>\n    <lastmod>2026-11-20</lastmod>\n  </url>`,
+    )
   })
 
   it('keeps the sitemap content type and cache header', async () => {

@@ -503,10 +503,13 @@ export function modCard(input: {
 }
 
 const THEMES_CARD_TITLE = 'Claude Code themes'
-const themesByline = (count: number) =>
-  count === 1
+const themesByline = (count: number, reviewed: boolean) => {
+  if (!reviewed)
+    return count === 1 ? '1 theme, not reviewed yet' : `${count} themes, not reviewed yet`
+  return count === 1
     ? '1 theme, previewed in a real session'
     : `${count} themes, each previewed in a real session`
+}
 const THEMES_CARD_GAP = 24
 const THEMES_CARD_SCREEN_BOX = {
   width: (DETAIL_BODY_WIDTH - THEMES_CARD_GAP) / 2,
@@ -521,9 +524,11 @@ export function themesCard(input: {
   title?: string
   count: number
   screens: ThemeScreen[]
+  /** false for a palette page of unreviewed themes alone (ADR 0014). */
+  reviewed?: boolean
 }): ReactElement {
   return detailCard(
-    cardHeader(input.title ?? THEMES_CARD_TITLE, themesByline(input.count)),
+    cardHeader(input.title ?? THEMES_CARD_TITLE, themesByline(input.count, input.reviewed ?? true)),
     <div style={{ display: 'flex', gap: THEMES_CARD_GAP, alignItems: 'flex-start' }}>
       {input.screens.slice(0, 2).map((screen, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: at most two screens, in a fixed order.

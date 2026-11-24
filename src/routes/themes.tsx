@@ -60,7 +60,7 @@ export const Route = createFileRoute('/themes')({
 function ThemesPage() {
   const { themes, unreviewed, user, origin } = Route.useLoaderData()
   const filter = Route.useSearch()
-  const palettes = palettesWithThemes(themes)
+  const palettes = palettesWithThemes([...themes, ...unreviewed])
   return (
     <PageShell user={user}>
       <Stack gap={6}>

@@ -497,6 +497,16 @@ describe('/themes unreviewed themes', () => {
     expect(screen.queryByText('No themes yet.')).toBeNull()
   })
 
+  it('links the palette page an unreviewed theme alone gives', async () => {
+    await renderPage([theme('Nord', 'nord')], '/themes', [unreviewedTheme('Tokyo Night')])
+
+    const palettes = within(screen.getByRole('navigation', { name: 'Themes by palette' }))
+    expect(palettes.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
+      '/themes/tokyo-night',
+      '/themes/nord',
+    ])
+  })
+
   it('has no Not reviewed section when there are none, or none match the filter', async () => {
     await renderPage([theme('Paper', 'pack', { window: 'light' })], '/themes?window=light', [
       unreviewedTheme('Night Reef'),

@@ -10,7 +10,8 @@ import { modPath, palettePath, siteUrl, THEMES_PATH } from '@/lib/site'
 import { paletteSocialMeta } from '@/og/meta'
 import { getPaletteThemesFn } from '@/themes/functions'
 import { PaletteLinks } from '@/themes/palette-links'
-import { palettePageCopy } from '@/themes/palettes'
+import { type Palette, palettePageCopy } from '@/themes/palettes'
+import type { PublishedTheme } from '@/themes/queries'
 import { ThemeCard } from '@/themes/theme-card'
 import { themePlugins } from '@/themes/theme-plugins'
 import { UnreviewedThemes } from '@/themes/unreviewed-themes'
@@ -32,16 +33,20 @@ export const Route = createFileRoute('/themes_/$palette')({
   },
   head: ({ loaderData }) => {
     if (!loaderData) return { meta: [{ title: NOT_FOUND_TITLE }] }
-    const { palette, themes, origin } = loaderData
-    const copy = palettePageCopy(palette, themes)
+    const { palette, themes, unreviewed, origin } = loaderData
+    const copy = palettePageCopy(palette, themes, unreviewed)
     const path = palettePath(palette.slug)
-    // The list's own BreadcrumbList stops at the page; this page's runs through Themes.
-    const collection = configListPageJsonLd(
-      origin,
-      { path, name: copy.title },
-      themePlugins(themes),
-      modPath,
-    ).slice(0, 1)
+    // The list's own BreadcrumbList stops at the page; this page's runs through Themes. A page of
+    // unreviewed themes alone lists no plugin (ADR 0014).
+    const collection =
+      themes.length === 0
+        ? []
+        : configListPageJsonLd(
+            origin,
+            { path, name: copy.title },
+            themePlugins(themes),
+            modPath,
+          ).slice(0, 1)
     return {
       meta: [
         { title: brandedPageTitle(copy.title) },
@@ -75,41 +80,57 @@ export const Route = createFileRoute('/themes_/$palette')({
 
 function PalettePage() {
   const { palette, themes, unreviewed, palettes, user, origin } = Route.useLoaderData()
-  const copy = palettePageCopy(palette, themes)
-  const terminal = themes.some((theme) => theme.kind === 'terminal')
-  const desktop = themes.some((theme) => theme.kind === 'desktop')
+  const copy = palettePageCopy(palette, themes, unreviewed)
   return (
     <PageShell user={user}>
       <Stack gap={6}>
         <Stack gap={3}>
           <Heading level={1}>{copy.heading}</Heading>
-          <Text muted>
-            Every reviewed {palette.name} theme statuslin.es lists, each previewed in a real
-            session. A theme comes in a plugin: install the plugin, then switch to the theme.
-            {terminal ? (
-              <>
-                {' '}
-                Pick a terminal theme in <InlineCommand>/theme</InlineCommand>.
-              </>
-            ) : null}
-            {desktop
-              ? ' For a Desktop theme, send the command its card shows, or nothing when its plugin sets the theme on its own.'
-              : null}{' '}
-            Every plugin with an install here is reviewed first, and the install is pinned to the
-            reviewed commit. <TextLink to={THEMES_PATH}>See every theme</TextLink>.
-          </Text>
+          {themes.length > 0 ? (
+            <ReviewedIntro palette={palette} themes={themes} />
+          ) : (
+            <Text muted>
+              {palette.name} themes, each previewed in a real session. Nobody at statuslin.es has
+              read these plugins' code yet, so none can be installed from here.{' '}
+              <TextLink to={THEMES_PATH}>See every theme</TextLink>.
+            </Text>
+          )}
           <PaletteLinks palettes={palettes} current={palette.slug} />
         </Stack>
-        <Stack gap={4}>
-          <VisuallyHidden as="h2">{palette.name} themes</VisuallyHidden>
-          <WideTileGrid>
-            {themes.map((theme) => (
-              <ThemeCard key={theme.id} theme={theme} install={{ origin, surface: 'themes' }} />
-            ))}
-          </WideTileGrid>
-        </Stack>
+        {themes.length > 0 ? (
+          <Stack gap={4}>
+            <VisuallyHidden as="h2">{palette.name} themes</VisuallyHidden>
+            <WideTileGrid>
+              {themes.map((theme) => (
+                <ThemeCard key={theme.id} theme={theme} install={{ origin, surface: 'themes' }} />
+              ))}
+            </WideTileGrid>
+          </Stack>
+        ) : null}
         <UnreviewedThemes themes={unreviewed} />
       </Stack>
     </PageShell>
+  )
+}
+
+function ReviewedIntro({ palette, themes }: { palette: Palette; themes: PublishedTheme[] }) {
+  const terminal = themes.some((theme) => theme.kind === 'terminal')
+  const desktop = themes.some((theme) => theme.kind === 'desktop')
+  return (
+    <Text muted>
+      Every reviewed {palette.name} theme statuslin.es lists, each previewed in a real session. A
+      theme comes in a plugin: install the plugin, then switch to the theme.
+      {terminal ? (
+        <>
+          {' '}
+          Pick a terminal theme in <InlineCommand>/theme</InlineCommand>.
+        </>
+      ) : null}
+      {desktop
+        ? ' For a Desktop theme, send the command its card shows, or nothing when its plugin sets the theme on its own.'
+        : null}{' '}
+      Every plugin with an install here is reviewed first, and the install is pinned to the reviewed
+      commit. <TextLink to={THEMES_PATH}>See every theme</TextLink>.
+    </Text>
   )
 }

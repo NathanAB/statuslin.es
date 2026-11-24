@@ -58,10 +58,10 @@ const NIGHT: UnreviewedTheme = {
   mod: { owner: 'Ada', pluginName: 'looks' },
 }
 
-function renderPage(unreviewed: UnreviewedTheme[]) {
+function renderPage(unreviewed: UnreviewedTheme[], themes: PublishedTheme[] = [SNOW]) {
   vi.spyOn(Route, 'useLoaderData').mockReturnValue({
     palette: NORD,
-    themes: [SNOW],
+    themes,
     unreviewed,
     palettes: [NORD],
     user: null,
@@ -90,6 +90,22 @@ describe('a palette page', () => {
       '/mods/unreviewed/Ada/looks',
     )
     expect(card.textContent).not.toMatch(/install|custom-theme/i)
+  })
+
+  it('says a page of unreviewed themes alone is not reviewed, and offers nothing to install', () => {
+    renderPage([NIGHT], [])
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Nord themes for Claude Desktop',
+    )
+    const intro = screen.getByText(/each previewed in a real session/)
+    expect(intro.textContent).toMatch(/Nobody at statuslin.es has read these plugins' code yet/)
+    expect(intro.textContent).not.toMatch(/install the plugin|reviewed first|lists/i)
+    expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'Nord Night',
+    ])
+    expect(screen.getByRole('heading', { level: 2, name: 'Not reviewed' })).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/claude plugin install|custom-theme/i)
   })
 
   it('has no Not reviewed section without unreviewed themes', () => {

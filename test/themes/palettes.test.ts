@@ -135,6 +135,25 @@ describe('palettePageCopy', () => {
     })
   })
 
+  // ADR 0014: a palette whose only themes are unreviewed still has a page, which never says reviewed.
+  it('describes a palette of unreviewed themes alone as not reviewed, counting them', () => {
+    expect(palettePageCopy(palette('tokyo-night'), [], [desktop('Tokyo Night')])).toEqual({
+      title: 'Tokyo Night Themes for Claude Desktop',
+      heading: 'Tokyo Night themes for Claude Desktop',
+      description:
+        "1 Tokyo Night theme for Claude Desktop, previewed in a real session. Not reviewed yet, so it can't be installed from here.",
+    })
+    expect(
+      palettePageCopy(
+        palette('tokyo-night'),
+        [],
+        [desktop('Tokyo Night'), desktop('Tokyo Night Storm')],
+      ).description,
+    ).toBe(
+      "2 Tokyo Night themes for Claude Desktop, each previewed in a real session. Not reviewed yet, so they can't be installed from here.",
+    )
+  })
+
   it('names only the terminal when every theme is a terminal theme', () => {
     const copy = palettePageCopy(palette('nord'), [terminal('Nord'), terminal('Nord (ANSI)')])
 

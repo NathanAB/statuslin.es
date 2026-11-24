@@ -100,6 +100,37 @@ describe('a palette page head', () => {
     ])
   })
 
+  it('describes a page of unreviewed themes alone as not reviewed, with no list of plugins', () => {
+    const latte: UnreviewedTheme = {
+      id: 'u1',
+      key: 'latte',
+      kind: 'terminal',
+      name: 'Catppuccin Latte',
+      window: 'light',
+      preview: [{ text: 'Latte screen' }],
+      usesTerminalColors: false,
+      mod: { owner: 'ada', pluginName: 'looks' },
+    }
+
+    const { meta, scripts } = head([], [latte])
+
+    expect(meta).toContainEqual({
+      title: 'Catppuccin Themes for the Claude Code Terminal',
+    })
+    expect(meta).toContainEqual({
+      name: 'description',
+      content:
+        "1 Catppuccin theme for the Claude Code terminal, previewed in a real session. Not reviewed yet, so it can't be installed from here.",
+    })
+    expect(meta).toContainEqual({
+      property: 'og:image',
+      content: `${ORIGIN}/og/themes/catppuccin.png`,
+    })
+    expect(scripts.map((script) => JSON.parse(script.children)['@type'])).toEqual([
+      'BreadcrumbList',
+    ])
+  })
+
   it("lists each theme's plugin page and places the page under Themes", () => {
     const [list, crumbs] = head([MOCHA]).scripts.map((script) => JSON.parse(script.children))
 

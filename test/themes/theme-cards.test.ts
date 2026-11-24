@@ -454,15 +454,17 @@ describe('getUnreviewedThemeCards', () => {
     ).toEqual(['Amber'])
   })
 
-  it('leaves the unreviewed themes out of /themes, the home row and the palette pages list', async () => {
+  it('leaves the unreviewed themes out of /themes and the home row, and gives their palette a page marked unreviewed', async () => {
     await pack('looks', 'Ada', [{ key: 'n', name: 'Nord Night' }])
 
     expect(await getThemeCards(db)).toEqual([])
     expect(await getHomeThemes(db, 3)).toEqual({ themes: [], total: 0 })
-    expect(await getPalettePages(db)).toEqual([])
+    expect(
+      (await getPalettePages(db)).map(({ palette, reviewed }) => [palette.slug, reviewed]),
+    ).toEqual([['nord', false]])
   })
 
-  it("puts a palette's unreviewed themes on its page beside the reviewed ones, and makes no page of them alone", async () => {
+  it("puts a palette's unreviewed themes on its page beside the reviewed ones, and makes a page of them alone", async () => {
     await pack('looks', 'Ada', [
       { key: 'n', name: 'Nord Night' },
       { key: 'd', name: 'Dracula Dusk' },
@@ -473,7 +475,10 @@ describe('getUnreviewedThemeCards', () => {
 
     expect(named(page?.themes ?? [])).toEqual(['nordic:Nord Snow'])
     expect(page?.unreviewed.map((card) => card.name)).toEqual(['Nord Night'])
-    expect(page?.palettes.map((palette) => palette.slug)).toEqual(['nord'])
-    expect(await getPaletteThemes(db, 'dracula')).toBeNull()
+    expect(page?.palettes.map((palette) => palette.slug)).toEqual(['dracula', 'nord'])
+    const dracula = await getPaletteThemes(db, 'dracula')
+    expect(dracula?.themes).toEqual([])
+    expect(dracula?.unreviewed.map((card) => card.name)).toEqual(['Dracula Dusk'])
+    expect(await getPaletteThemes(db, 'solarized')).toBeNull()
   })
 })

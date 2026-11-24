@@ -168,38 +168,47 @@ export interface PaletteThemes {
 
 /**
  * The palette page at `slug`, or null when no palette has that slug or none of its themes is
- * published: an unreviewed theme alone makes no page (ADR 0014).
+ * shown, reviewed or not: an unreviewed theme alone gives its palette a page too (ADR 0014).
  */
 export async function getPaletteThemes(db: Db, slug: string): Promise<PaletteThemes | null> {
   const palette = findPalette(slug)
   if (!palette) return null
-  const all = await getThemeCards(db)
+  const [all, allUnreviewed] = await Promise.all([getThemeCards(db), getUnreviewedThemeCards(db)])
   const themes = themesInPalette(all, palette)
-  if (themes.length === 0) return null
-  const unreviewed = themesInPalette(await getUnreviewedThemeCards(db), palette)
-  return { palette, themes, unreviewed, palettes: palettesWithThemes(all) }
+  const unreviewed = themesInPalette(allUnreviewed, palette)
+  if (themes.length + unreviewed.length === 0) return null
+  return { palette, themes, unreviewed, palettes: palettesWithThemes([...all, ...allUnreviewed]) }
 }
 
 /** A palette page as the sitemap lists it: dated by its newest theme's version going live. */
 export interface PalettePage {
   palette: Palette
   updatedAt: Date
+  /** Whether a reviewed theme is filed under it; llms.txt links only those (ADR 0014). */
+  reviewed: boolean
 }
 
 /** Every palette with a page, in /themes' order, without loading any theme's preview. */
 export async function getPalettePages(db: Db): Promise<PalettePage[]> {
   // Only the names and dates leave the database: the subquery's previews are never read.
-  const published = publishedThemes(db, {
-    updatedAt: sql<string>`${modVersions.createdAt}`.as('updated_at'),
-  }).as('published')
+  const shown = listedThemes(
+    db,
+    sql`(${eq(mods.status, 'published')} or ${hasUnreviewedPage(db)})`,
+    {
+      updatedAt: sql<string>`${modVersions.createdAt}`.as('updated_at'),
+      reviewed: sql<boolean>`${eq(mods.status, 'published')}`.as('reviewed'),
+    },
+  ).as('shown')
   const rows = await db
-    .select({ name: published.name, updatedAt: published.updatedAt })
-    .from(published)
-  const themes = rows.map((row) => ({ name: row.name, updatedAt: new Date(row.updatedAt) }))
-  return palettesWithThemes(themes).map((palette) => ({
-    palette,
-    updatedAt: new Date(
-      Math.max(...themesInPalette(themes, palette).map((theme) => theme.updatedAt.getTime())),
-    ),
-  }))
+    .select({ name: shown.name, updatedAt: shown.updatedAt, reviewed: shown.reviewed })
+    .from(shown)
+  const themes = rows.map((row) => ({ ...row, updatedAt: new Date(row.updatedAt) }))
+  return palettesWithThemes(themes).map((palette) => {
+    const filed = themesInPalette(themes, palette)
+    return {
+      palette,
+      updatedAt: new Date(Math.max(...filed.map((theme) => theme.updatedAt.getTime()))),
+      reviewed: filed.some((theme) => theme.reviewed),
+    }
+  })
 }

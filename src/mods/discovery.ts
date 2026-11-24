@@ -55,8 +55,10 @@ export const sitemapWithModsForRoute = createServerOnlyFn(async (): Promise<Resp
 // cards. Facets still count every mod.
 const carriesThemes = (listing: PublishedModListing) => listing.themeOnly || listing.hasThemeCards
 
-// Both files link each palette page, as the sitemap lists them.
-const palettesWithPages = async () => (await getPalettePages(db)).map(({ palette }) => palette)
+// Both files link each palette page with a reviewed theme: one of unreviewed themes alone is in
+// the sitemap only (ADR 0014).
+const palettesWithPages = async () =>
+  (await getPalettePages(db)).filter(({ reviewed }) => reviewed).map(({ palette }) => palette)
 
 export const llmsTxtWithModsForRoute = createServerOnlyFn(async (): Promise<Response> => {
   const [{ all, mods }, palettes] = await Promise.all([publishedListings(), palettesWithPages()])
