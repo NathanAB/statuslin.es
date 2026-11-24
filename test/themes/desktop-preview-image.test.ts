@@ -53,7 +53,7 @@ describe('themeDesktopPreviewResponse', () => {
     ['whole window', null, SEEDED_THEME_SHOT.png],
     ['card image', 'card', SEEDED_THEME_SHOT.cardPng],
   ])(
-    "serves a published plugin's live Desktop theme's %s as a PNG cached for an hour",
+    "serves a published plugin's live Desktop theme's %s as a PNG a cache keeps for good, since a new recording changes its URL",
     async (_name, image, png) => {
       const live = ids.live as string
       const res = await themeDesktopPreviewResponse(db, live, await renderOf(live), image)
@@ -61,7 +61,7 @@ describe('themeDesktopPreviewResponse', () => {
       expect(res.status).toBe(200)
       expect(res.headers.get('content-type')).toBe('image/png')
       expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-      expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
+      expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable')
       expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(Array.from(png))
     },
   )

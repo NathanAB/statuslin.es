@@ -8,7 +8,7 @@ import { buildModContentPrompt, buildModTagsPrompt } from './content-prompt'
 import { describeModFootprint } from './footprint'
 import { footprintFacts } from './footprint-facts'
 import { modAllTags } from './publish'
-import { desktopPreviewJoin, terminalPreviewJoin } from './queries'
+import { desktopPreviewJoin, terminalPreviewJoin, versionIsThemeOnly } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -83,6 +83,7 @@ export async function prepareModContentGenerationRequest(
       version: modVersions,
       preview: modPreviews.segments,
       desktop: modDesktopPreviews.kind,
+      themeOnly: versionIsThemeOnly,
     })
     .from(mods)
     .innerJoin(modVersions, currentVersion)
@@ -90,7 +91,7 @@ export async function prepareModContentGenerationRequest(
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .where(eq(mods.slug, slug))
   if (!row) throw new Error(`no mod found with slug "${slug}"`)
-  const { mod, version, preview, desktop } = row
+  const { mod, version, preview, desktop, themeOnly } = row
   const [waiting] = await db
     .select({ id: mods.id })
     .from(mods)
@@ -121,13 +122,13 @@ export async function prepareModContentGenerationRequest(
     'README at the pinned commit:',
     readme ?? 'This mod has no README.',
   ].join('\n')
-  const checks = { described, facts: footprintFacts(version.footprint) }
+  const checks = { described, facts: footprintFacts(version.footprint), themeOnly }
   return {
     schemaVersion: MOD_CONTENT_SCHEMA_VERSION,
     kind: 'mod',
     ...pin,
     contentPrompt: buildModContentPrompt(pin, untrusted, checks),
-    tagsPrompt: buildModTagsPrompt(pin, untrusted),
+    tagsPrompt: buildModTagsPrompt(pin, untrusted, checks),
   }
 }
 

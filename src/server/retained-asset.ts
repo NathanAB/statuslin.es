@@ -1,9 +1,9 @@
 import { lstat, readFile, realpath } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 import { defineEventHandler, getRequestURL } from 'h3'
+import { IMMUTABLE_CACHE } from '../lib/cache-control'
 
 const RETAINED_ASSETS_DIR = resolve(process.cwd(), '.output/public/assets')
-const IMMUTABLE_CACHE = 'public, max-age=31536000, immutable'
 
 const CONTENT_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
