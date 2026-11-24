@@ -32,9 +32,8 @@ export const TERMINAL_THEME_BASES = [
 export type TerminalThemeBase = (typeof TERMINAL_THEME_BASES)[number]
 
 /**
- * The bases that draw with the terminal's own palette. Claude Code 2.1.310's `/theme` labels them
- * "(ANSI colors only)" and builds them from `ansi:<name>` colors alone: the 16 colors the user's
- * terminal sets, so a theme on one looks as the user's terminal makes it, not as its preview shows.
+ * Claude Code 2.1.310's `/theme` labels these bases "(ANSI colors only)" and builds them from
+ * `ansi:<name>` colors alone: the 16 colors the user's terminal sets.
  */
 export const TERMINAL_COLOR_BASES = [
   'dark-ansi',
@@ -45,21 +44,9 @@ export function usesTerminalColors(base: TerminalThemeBase): boolean {
   return TERMINAL_COLOR_BASES.some((ansi) => ansi === base)
 }
 
-/**
- * What a theme card says of a theme that draws with the terminal's own palette, since its preview
- * shows the recorder's terminal palette, not the one the theme is named for.
- */
 export const TERMINAL_COLORS_NOTICE =
   "Uses your terminal's own colors. This preview shows a default terminal's colors."
 
-/**
- * The window a terminal theme file is made for. A base other than an ANSI one names it. An ANSI base
- * names which of the terminal's slots draw text, not the window (Gruvbox Light's terminal palette
- * puts dark colors in its "white" slots, so its author picked `dark-ansi`). So an ANSI theme's
- * window is that of the color behind your messages in the transcript (`userMessageBackground`, the
- * surface nearest the window) when that is a fixed color, which renders the same in every terminal,
- * and its base's word otherwise.
- */
 export function terminalThemeWindow({
   base,
   overrides,
@@ -67,9 +54,9 @@ export function terminalThemeWindow({
   base: TerminalThemeBase
   overrides: Readonly<Record<string, string>>
 }): ThemeWindow {
-  const named: ThemeWindow = base.startsWith('light') ? 'light' : 'dark'
-  if (!usesTerminalColors(base)) return named
-  return fixedColorWindow(overrides.userMessageBackground) ?? named
+  const baseWindow: ThemeWindow = base.startsWith('light') ? 'light' : 'dark'
+  if (!usesTerminalColors(base)) return baseWindow
+  return fixedColorWindow(overrides.userMessageBackground) ?? baseWindow
 }
 
 /**
@@ -89,7 +76,6 @@ export interface TerminalThemeFile {
   key: string
   name: string
   window: ThemeWindow
-  /** Whether it is on an ANSI base, which draws with the user's own terminal palette. */
   usesTerminalColors: boolean
   /** The file exactly as pinned, which the operator reads in /admin before publishing. */
   source: string

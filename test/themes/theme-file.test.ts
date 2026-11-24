@@ -51,8 +51,6 @@ describe('parseTerminalThemeFiles', () => {
     expect(result.ok && result.themes[0]?.usesTerminalColors).toBe(uses)
   })
 
-  // An ANSI base names which of the terminal's slots draw text, not the window: Gruvbox Light's
-  // terminal palette puts dark colors in its "white" slots, so its author picked dark-ansi.
   it.each([
     ['dark-ansi', 'ansi256(252)', 'light'],
     ['dark-ansi', 'ansi:black', 'dark'],

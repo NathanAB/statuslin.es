@@ -48,7 +48,6 @@ export type PublishedTheme =
       kind: 'terminal'
       /** The whole screen recorded with this theme selected. */
       preview: AnsiSegment[]
-      /** On an ANSI base: it draws with the visitor's own terminal palette, not its preview's. */
       usesTerminalColors: boolean
     })
   | (ThemeCardBase & {

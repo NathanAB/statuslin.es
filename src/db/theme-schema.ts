@@ -44,10 +44,6 @@ export const modThemes = pgTable(
     /** The author's name for it, which `/theme` shows. Untrusted text. */
     name: text('name').notNull(),
     window: text('window').$type<ThemeWindow>().notNull(),
-    /**
-     * A terminal theme on an ANSI base, which draws with the user's own terminal palette, so its
-     * preview shows the recorder's palette. Always false for a Desktop theme.
-     */
     usesTerminalColors: boolean('uses_terminal_colors').notNull().default(false),
     /** A terminal theme's file exactly as pinned; null for a Desktop theme, which is code. */
     source: text('source'),

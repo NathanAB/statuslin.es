@@ -118,7 +118,6 @@ async function run(curation: unknown, deps = fakes()) {
   return { exitCode, lines, output: lines.join('\n'), calls: deps.calls }
 }
 
-/** On an ANSI base, drawn in the window of the fixed color behind your messages. */
 const OCEAN =
   '{\n  "name": "Ocean",\n  "base": "dark-ansi",\n  "overrides": { "userMessageBackground": "ansi256(252)" }\n}\n'
 const DAWN = '{ "name": "Dawn", "base": "light", "overrides": { "claude": "#d97757" } }'

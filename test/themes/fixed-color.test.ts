@@ -29,7 +29,6 @@ describe('fixedColorWindow', () => {
     ['ansi256(15)'],
     ['ansi:white'],
     ['ansi:black'],
-    // Not a color Claude Code reads.
     ['white'],
     ['#ffff'],
     ['rgb(256,0,0)'],

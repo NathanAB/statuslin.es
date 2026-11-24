@@ -29,7 +29,6 @@ export type ReviewTheme =
       source: string
       /** The whole recorded screen; null before it renders. */
       preview: AnsiSegment[] | null
-      /** On an ANSI base: it draws with the user's own terminal palette, not its preview's. */
       usesTerminalColors: boolean
     })
   | (ReviewThemeBase & {

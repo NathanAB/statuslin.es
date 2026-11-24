@@ -25,7 +25,6 @@ const { Route: ThemesRoute } = await import('@/routes/themes')
 const { PluginThemes } = await import('@/themes/plugin-themes')
 const { ThemeReviewList } = await import('@/review/theme-review-list')
 
-/** The sentence as a visitor reads it, from server-rendered HTML. */
 const NOTICE = "Uses your terminal's own colors. This preview shows a default terminal's colors."
 const text = (html: string) => html.replaceAll('&#x27;', "'")
 
@@ -57,7 +56,6 @@ function review(name: string, usesTerminalColors: boolean): TerminalReview {
   }
 }
 
-/** /themes as the server renders it, showing only these themes. */
 function themesPageHtml(themes: PublishedTheme[]) {
   vi.spyOn(ThemesRoute, 'useLoaderData').mockReturnValue({
     themes,

@@ -22,7 +22,6 @@ function ansi256Rgb(n: number): Rgb | undefined {
   return [level(Math.floor(index / 36)), level(Math.floor(index / 6) % 6), level(index % 6)]
 }
 
-/** The three captured channels of a color match, each read with `read`. */
 function channels(match: RegExpExecArray, read: (text: string) => number): Rgb {
   const at = (i: number) => read(match[i] ?? '')
   return [at(1), at(2), at(3)]
@@ -52,10 +51,8 @@ const linear = (channel: number) => {
 const EVEN_CONTRAST_LUMINANCE = 0.179
 
 /**
- * The window a theme color draws, when it is a fixed color: one that renders the same in every
- * terminal (code.claude.com/docs/en/terminal-config lists `#rrggbb`, `#rgb`, `rgb(r,g,b)` and
- * `ansi256(n)`). Undefined for the terminal's own 16 colors (`ansi256(0)` to `ansi256(15)` and
- * `ansi:<name>`), whose look the user's terminal decides, and for anything Claude Code can't read.
+ * Fixed colors render the same in every terminal: code.claude.com/docs/en/terminal-config lists
+ * `#rrggbb`, `#rgb`, `rgb(r,g,b)` and `ansi256(n)`.
  */
 export function fixedColorWindow(value: string | undefined): ThemeWindow | undefined {
   const rgb = value === undefined ? undefined : fixedRgb(value)

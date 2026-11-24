@@ -85,7 +85,6 @@ describe('getThemeCards', () => {
     })
   })
 
-  // An ANSI theme's preview shows the recorder's palette, so its card has to say so.
   it('says on each terminal card whether its theme uses the terminal palette, as intake stored it', async () => {
     const { versionId } = await plugin('pack', ['Gruvbox Light'])
     await addTheme(db, versionId, { key: 'dawn', name: 'Dawn (ANSI)', usesTerminalColors: true })
