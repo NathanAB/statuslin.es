@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { configDesktopPreviewResponse } from '@/gallery/desktop-preview-image'
+import { previewQuery } from '../helpers/preview-query'
 import { openTestDb, type TestDb } from '../mods/seed-mods'
 import {
   addConfigDesktopPreview,
@@ -61,15 +62,17 @@ async function renderOf(versionId: string): Promise<string> {
 }
 
 describe('configDesktopPreviewResponse', () => {
-  it("serves a published status line's current Desktop shot as a PNG cached for an hour", async () => {
+  it("serves a published status line's current Desktop shot as a PNG a browser keeps for good and a shared cache for an hour", async () => {
     const live = ids.live as string
-    const res = await configDesktopPreviewResponse(db, live, await renderOf(live))
+    const res = await configDesktopPreviewResponse(db, live, previewQuery(await renderOf(live)))
 
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-    // Short enough that a removed status line's image leaves shared caches soon after its page does.
-    expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
+    expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
+    expect(res.headers.get('cache-control')).toBe(
+      'public, max-age=31536000, immutable, s-maxage=3600',
+    )
     expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(
       Array.from(CONFIG_DESKTOP_SHOT.png),
     )
@@ -83,7 +86,11 @@ describe('configDesktopPreviewResponse', () => {
     ['a version with no Desktop result', 'unrendered'],
   ])('is a 404 for %s', async (_name, key) => {
     const versionId = ids[key] as string
-    const res = await configDesktopPreviewResponse(db, versionId, await renderOf(versionId))
+    const res = await configDesktopPreviewResponse(
+      db,
+      versionId,
+      previewQuery(await renderOf(versionId)),
+    )
 
     expect(res.status).toBe(404)
     expect(res.headers.get('content-type')).not.toBe('image/png')
@@ -93,7 +100,7 @@ describe('configDesktopPreviewResponse', () => {
     ['an unknown id', '00000000-0000-4000-8000-000000000000'],
     ['an id that is not a UUID', 'not-a-uuid'],
   ])('is a 404 for %s', async (_name, versionId) => {
-    expect((await configDesktopPreviewResponse(db, versionId, '0')).status).toBe(404)
+    expect((await configDesktopPreviewResponse(db, versionId, previewQuery('0'))).status).toBe(404)
   })
 
   it.each([
@@ -103,7 +110,33 @@ describe('configDesktopPreviewResponse', () => {
   ])(
     'is a 404 for the current shot named with %s, so made-up URLs miss every cache',
     async (_name, render) => {
-      expect((await configDesktopPreviewResponse(db, ids.live as string, render)).status).toBe(404)
+      expect(
+        (await configDesktopPreviewResponse(db, ids.live as string, previewQuery(render))).status,
+      ).toBe(404)
+    },
+  )
+
+  it.each([
+    ['a parameter it does not read', (r: string) => `?r=${r}&v=1`],
+    ['its render named twice', (r: string) => `?r=${r}&r=${r}`],
+    ['an empty pair after it', (r: string) => `?r=${r}&`],
+    ['an empty pair before it', (r: string) => `?&r=${r}`],
+    ['its key percent-encoded', (r: string) => `?%72=${r}`],
+    [
+      'its render percent-encoded',
+      (r: string) => `?r=${encodeURIComponent(r).replace(/\d/g, (d) => `%3${d}`)}`,
+    ],
+    [
+      'an image parameter, which only mod and theme shots read',
+      (r: string) => `?r=${r}&image=card`,
+    ],
+  ])(
+    'is a 404 for the current shot with %s, so no cache-busting variant of its URL serves the image',
+    async (_name, query) => {
+      const render = await renderOf(ids.live as string)
+      const res = await configDesktopPreviewResponse(db, ids.live as string, query(render))
+
+      expect(res.status).toBe(404)
     },
   )
 })
