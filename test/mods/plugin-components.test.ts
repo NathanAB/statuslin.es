@@ -18,6 +18,20 @@ describe('otherComponents', () => {
     },
   )
 
+  // https://code.claude.com/docs/en/plugins-reference#metadata: "Claude Code doesn't read it".
+  it('finds nothing in a plugin.json "metadata" object', () => {
+    const listing = componentsListing(
+      ['d 4096 .claude-plugin', 'f 900 .claude-plugin/plugin.json'],
+      '',
+    )
+    const manifest = {
+      name: 'catppuccin',
+      metadata: { upstream: [{ repository: 'catppuccin/palette' }] },
+    }
+
+    expect(otherComponents(listing, manifest, new Set())).toEqual([])
+  })
+
   it('is null for a listing without its separator, a failure of ours', () => {
     expect(otherComponents('f 20 .claude-plugin/plugin.json\0', {}, new Set())).toBeNull()
   })
