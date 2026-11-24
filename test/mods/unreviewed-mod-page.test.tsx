@@ -123,6 +123,15 @@ describe('unreviewed mod page', () => {
     )
   })
 
+  // A curated draft shown as an unreviewed mod (ADR 0014) stores no star count or commit date.
+  it('leaves out the stars and commit date when the mod has none', () => {
+    renderPage({ stars: null, committedAt: null })
+
+    expect(screen.queryByText('GitHub stars')).toBeNull()
+    expect(screen.queryByText('Commit date')).toBeNull()
+    expect(screen.getByRole('link', { name: 'OctoCat/mods' })).toBeTruthy()
+  })
+
   it('says when a mod has no license', () => {
     renderPage({ license: null })
 

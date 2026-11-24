@@ -232,6 +232,36 @@ export async function seedMod(
   return { modId, versionId }
 }
 
+interface ShownDraftSeed {
+  slug: string
+  pluginName: string
+  repoUrl: string
+  path?: string
+  description?: string
+  /** Whether the operator showed it as an unreviewed mod (ADR 0014); true by default. */
+  shown?: boolean
+}
+
+/** A curated draft whose only version is rendered, shown as an unreviewed mod unless told not to. */
+export async function addShownDraft(
+  db: TestDb,
+  { slug, pluginName, repoUrl, path = '', description = '', shown = true }: ShownDraftSeed,
+): Promise<{ modId: string; versionId: string }> {
+  const modId = await addMod(db, slug, 'draft')
+  const versionId = await addVersion(db, modId, {
+    commitSha: sha('f'),
+    versionNumber: 1,
+    repoUrl,
+    path,
+  })
+  await setCurrentVersion(db, modId, versionId)
+  await db
+    .update(schema.mods)
+    .set({ pluginName, description, unreviewedPageAt: shown ? new Date() : null })
+    .where(eq(schema.mods.id, modId))
+  return { modId, versionId }
+}
+
 export async function modState(db: TestDb, slug: string) {
   const [row] = await db
     .select({ status: schema.mods.status, currentVersionId: schema.mods.currentVersionId })

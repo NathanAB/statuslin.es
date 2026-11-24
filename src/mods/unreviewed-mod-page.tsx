@@ -67,8 +67,12 @@ export function UnreviewedModPage({ mod }: { mod: UnreviewedMod }) {
               label: 'Source',
               value: <TextLink href={modSourceUrl(mod)}>{repository}</TextLink>,
             },
-            { label: 'GitHub stars', value: mod.stars.toLocaleString('en-US') },
-            { label: 'Commit date', value: day(mod.committedAt) },
+            ...(mod.stars === null
+              ? []
+              : [{ label: 'GitHub stars', value: mod.stars.toLocaleString('en-US') }]),
+            ...(mod.committedAt === null
+              ? []
+              : [{ label: 'Commit date', value: day(mod.committedAt) }]),
           ]}
         />
       </PageSection>
