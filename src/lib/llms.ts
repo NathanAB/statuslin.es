@@ -56,21 +56,24 @@ export interface LlmsCatalogEntry extends LlmsConfig {
 
 type LlmsFacet = { slug: string; label: string }
 
-/** `themePlugins` are plugins of theme files alone, listed under Themes, never as mods (ADR 0012). */
+/**
+ * `themed` are the plugins that carry themes: theme plugins, and mods that set a Desktop theme. They
+ * are listed under Themes, and a mod among them is not listed again under Mods.
+ */
 export function buildLlmsTxt(
   base: string,
   facets: LlmsFacet[],
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
-  themePlugins: LlmsMod[] = [],
+  themed: LlmsMod[] = [],
 ): string {
   const blocks = siteBlocks(base, facets)
   if (configs.length > 0) {
     blocks.push(['## Top status lines', '', ...configs.map((c) => configLink(base, c))].join('\n'))
   }
   for (const [heading, plugins] of [
-    ['Mods', mods],
-    ['Themes', themePlugins],
+    ['Mods', withoutThemed(mods, themed)],
+    ['Themes', themed],
   ] as const) {
     if (plugins.length > 0) {
       blocks.push(
@@ -101,27 +104,33 @@ export function buildLlmsFullTxt(
   facets: LlmsFacet[],
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
-  themePlugins: LlmsCatalogEntry[] = [],
+  themed: LlmsCatalogEntry[] = [],
 ): string {
   const blocks = siteBlocks(base, facets)
   if (configs.length > 0) {
     blocks.push(catalogSection('Status lines', configs, (slug) => `${base}/c/${slug}`))
   }
-  if (mods.length > 0) {
-    blocks.push(catalogSection('Mods', mods, (slug) => `${base}${modPath(slug)}`))
+  const plainMods = withoutThemed(mods, themed)
+  if (plainMods.length > 0) {
+    blocks.push(catalogSection('Mods', plainMods, (slug) => `${base}${modPath(slug)}`))
   }
-  if (themePlugins.length > 0) {
-    blocks.push(catalogSection('Themes', themePlugins, (slug) => `${base}${modPath(slug)}`))
+  if (themed.length > 0) {
+    blocks.push(catalogSection('Themes', themed, (slug) => `${base}${modPath(slug)}`))
   }
   return `${blocks.join('\n\n')}\n`
+}
+
+function withoutThemed<T extends { slug: string }>(mods: T[], themed: { slug: string }[]): T[] {
+  const themedSlugs = new Set(themed.map((plugin) => plugin.slug))
+  return mods.filter((mod) => !themedSlugs.has(mod.slug))
 }
 
 /** The title, summary and Browse links both files open with. */
 function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
   const blocks = [
     '# statuslin.es',
-    '> A gallery of Claude Code mods, status lines included, and of Claude Code themes, each with a real preview. Install any of them with one copied prompt or command.',
-    "Status lines are scripts whose output Claude Code shows under the prompt. The other mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead. Themes recolor Claude Code: a terminal theme is a color file a plugin carries, picked with /theme in the terminal once the plugin is installed. Each theme is shown as a real session recorded in its colors.",
+    '> A gallery of Claude Code mods, status lines included, and of Claude Code and Claude Desktop themes, each with a real preview. Install any of them with one copied prompt or command.',
+    "Status lines are scripts whose output Claude Code shows under the prompt. The other mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead. Themes come in two kinds. A terminal theme is a color file a plugin carries, picked with /theme in the terminal once the plugin is installed. A Desktop theme is a look a mod sets in Claude Desktop: it recolors the app and draws a background behind the chat, and draws nothing in the terminal. Each theme is shown as a real session recorded in it.",
     ['## Browse', '', ...corePageLinks(base)].join('\n'),
   ]
   if (facets.length > 0) {
@@ -134,7 +143,7 @@ function corePageLinks(base: string): string[] {
   return [
     `- [Gallery](${base}/): every published mod, sorted by trending, newest, or most installed`,
     `- [Mods](${base}${MODS_PATH}): the plugin mods, ranked by installs`,
-    `- [Themes](${base}${THEMES_PATH}): Claude Code themes, one card per theme, each previewed in a real session in its colors, with the plugin that carries it`,
+    `- [Themes](${base}${THEMES_PATH}): Claude Code and Claude Desktop themes, one card per theme, each previewed in a real session, with the plugin that carries it`,
     `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
     `- [Mod catalogue](${base}${GALLERY_JSON_PATH}): the reviewed mods as machine-readable JSON, with install counts and what each can reach`,
     `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
@@ -218,9 +227,9 @@ export function llmsResponse(
   facets: LlmsFacet[],
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
-  themePlugins: LlmsMod[] = [],
+  themed: LlmsMod[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods, themePlugins))
+  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods, themed))
 }
 
 export function llmsFullResponse(
@@ -228,9 +237,9 @@ export function llmsFullResponse(
   facets: LlmsFacet[],
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
-  themePlugins: LlmsCatalogEntry[] = [],
+  themed: LlmsCatalogEntry[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods, themePlugins))
+  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods, themed))
 }
 
 function plainTextResponse(body: string): Response {

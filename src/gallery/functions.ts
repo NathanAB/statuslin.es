@@ -114,7 +114,7 @@ async function llmsFacets(mods: FacetMod[]): Promise<Array<{ slug: string; label
  * counts from `db`, which route files can't import.
  */
 export const llmsTxtResponseForRoute = createServerOnlyFn(
-  async (mods: Array<LlmsMod & FacetMod>, themePlugins: LlmsMod[]): Promise<Response> => {
+  async (mods: Array<LlmsMod & FacetMod>, themed: LlmsMod[]): Promise<Response> => {
     const facets = await llmsFacets(mods)
     const top = await getPublishedConfigs(db, 'top', 1)
     return llmsResponse(
@@ -127,7 +127,7 @@ export const llmsTxtResponseForRoute = createServerOnlyFn(
         copyCount,
       })),
       mods,
-      themePlugins,
+      themed,
     )
   },
 )
@@ -141,18 +141,19 @@ function llmsCatalogEntry(row: LlmsCatalogRow): LlmsCatalogEntry {
 }
 
 /**
- * The `/llms-full.txt` response: every published status line and the published mods and theme
- * plugins passed in, with the same facets as llms.txt. Server-only for the same reason as llms.txt.
+ * The `/llms-full.txt` response: every published status line, and the published mods and the
+ * plugins that carry themes passed in, with the same facets as llms.txt. Server-only for the same
+ * reason as llms.txt.
  */
 export const llmsFullTxtResponseForRoute = createServerOnlyFn(
-  async (mods: LlmsCatalogRow[], themePlugins: LlmsCatalogRow[]): Promise<Response> => {
+  async (mods: LlmsCatalogRow[], themed: LlmsCatalogRow[]): Promise<Response> => {
     const [facets, configs] = await Promise.all([llmsFacets(mods), getPublishedConfigCatalog(db)])
     return llmsFullResponse(
       siteUrl(),
       facets,
       configs.map(llmsCatalogEntry),
       mods.map(llmsCatalogEntry),
-      themePlugins.map(llmsCatalogEntry),
+      themed.map(llmsCatalogEntry),
     )
   },
 )
