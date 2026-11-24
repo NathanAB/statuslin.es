@@ -8,7 +8,7 @@ import type { ThemeFileBytes } from '@/themes/theme-file'
  * servers, settings, dependencies…), so the facts a mod page states would leave it out.
  */
 const MANIFEST_KEYS = new Set([
-  ...['$schema', 'name', 'version', 'description', 'author', 'license', 'keywords'],
+  ...['$schema', 'name', 'version', 'description', 'author', 'license', 'keywords', 'metadata'],
   ...['homepage', 'repository', 'displayName', 'icon', 'documentationUrl', 'supportUrl'],
   ...['privacyPolicyUrl', 'termsOfServiceUrl', 'types', 'userConfig'],
 ])
