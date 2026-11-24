@@ -144,6 +144,22 @@ export const SCROLL_GUTTER: Rect = {
 }
 /** Space kept around a crop's content so a border is not flush with the edge. */
 export const CROP_MARGIN = 8
+/**
+ * Where a session's turns show with no pane open: the message column, widened by the crop margin
+ * as the session's header and a reply's first glyph reach past it, from the chat's top to the
+ * prompt box. A theme recolors the window around it.
+ */
+export const MESSAGE_AREA: Rect = {
+  x: MESSAGE_COLUMN.x - CROP_MARGIN,
+  y: CHAT_TOP,
+  width: MESSAGE_COLUMN.width + 2 * CROP_MARGIN,
+  height: PROMPT_BOX.y - CHAT_TOP,
+}
+/**
+ * Inside the prompt box, right of its placeholder. The box keeps Desktop's own fill under any
+ * theme, so its grey says whether the window shows light or dark.
+ */
+export const PROMPT_FILL: Rect = { x: 600, y: PROMPT_BOX.y + 12, width: 300, height: 20 }
 export const PANE_MARGIN = 4
 /** The tallest a card image is when there is no band to show: about two chat messages. */
 export const CARD_MAX_HEIGHT = 150

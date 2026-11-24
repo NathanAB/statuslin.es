@@ -1,13 +1,32 @@
+import { createHash } from 'node:crypto'
 import type { DesktopVersions } from './desktop-sandbox'
-import type { DesktopRecorder, DesktopRecording, DesktopRecordRequest, DesktopShot } from './types'
+import type {
+  DesktopRecorder,
+  DesktopRecording,
+  DesktopRecordRequest,
+  DesktopShot,
+  DesktopThemeRequest,
+  DesktopThemeShot,
+} from './types'
 
 const FAKE_VERSIONS = { desktopVersion: '0.0.0-fake', engineVersion: '0.0.0-fake' }
 
 type FakeShot = Pick<DesktopShot, 'png' | 'width' | 'height' | 'card'>
 
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+
+/** What every theme recording returns: a whole window and its card, told apart by their last byte. */
+export const FAKE_THEME_SHOT: FakeShot = {
+  png: new Uint8Array([...PNG_SIGNATURE, 1]),
+  width: 1100,
+  height: 900,
+  card: { png: new Uint8Array([...PNG_SIGNATURE, 2]), width: 440, height: 360 },
+}
+
 /** Deterministic in-memory Desktop recorder for tests and key-less runs. */
 export class FakeDesktopRecorder implements DesktopRecorder {
   readonly requests: DesktopRecordRequest[] = []
+  readonly themeRequests: DesktopThemeRequest[] = []
 
   /**
    * Shots by plugin name, or by status line source for a request that carries a status line.
@@ -28,5 +47,14 @@ export class FakeDesktopRecorder implements DesktopRecorder {
     return shot
       ? { kind: 'shot', ...shot, ...this.versions }
       : { kind: 'nothing', ...this.versions }
+  }
+
+  /** A look of its own for each window and list of switch steps, as distinct themes have. */
+  async recordTheme(request: DesktopThemeRequest): Promise<DesktopThemeShot> {
+    this.themeRequests.push(request)
+    const look = createHash('sha256')
+      .update(JSON.stringify([request.window, request.switchSteps]))
+      .digest('hex')
+    return { ...FAKE_THEME_SHOT, look, ...this.versions }
   }
 }

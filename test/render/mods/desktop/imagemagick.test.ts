@@ -14,6 +14,7 @@ import {
   rowSignatureCommand,
   SCREEN_PNG_COMMAND,
   SIGNATURE_CELLS,
+  scaledPngCommand,
 } from '@/render/mods/desktop/imagemagick'
 
 describe('probeCommand', () => {
@@ -153,6 +154,14 @@ describe('croppedPngCommand', () => {
 
     expect(command).toBe(
       "convert 'png:/tmp/final.png[0]' -crop 1568x1208+316+584 +repage -chop 0x40+0+936 -chop 0x698+0+148 +repage -strip -define png:exclude-chunks=all png:-",
+    )
+  })
+})
+
+describe('scaledPngCommand', () => {
+  it('re-encodes the first frame scaled to exactly the given device size, from its pixels alone', () => {
+    expect(scaledPngCommand('/tmp/final.png', { width: 1100, height: 900 })).toBe(
+      "convert 'png:/tmp/final.png[0]' -resize '1100x900!' -strip -define png:exclude-chunks=all png:-",
     )
   })
 })

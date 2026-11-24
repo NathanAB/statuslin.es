@@ -12,7 +12,7 @@ import { PAGE_GREY, type Rect, SCALE, WINDOW } from './screen'
 const geometry = ({ x, y, width, height }: Rect) =>
   `${width * SCALE}x${height * SCALE}+${x * SCALE}+${y * SCALE}`
 
-const pngInput = (path: string) => shellQuote(`png:${path}[0]`)
+export const pngInput = (path: string) => shellQuote(`png:${path}[0]`)
 
 export function screenshotCommand(path: string): string {
   return `import -window root -strip ${path}`
@@ -70,7 +70,7 @@ export function parseProbes(stdout: string, count: number): RegionGrey[] {
 /** A pixel's grey difference under this is noise, like the fade Desktop lays over a scrolled chat. */
 const FAINT_CHANGE = '2%'
 
-const rectangle = ({ x, y, width, height }: Rect) =>
+export const rectangle = ({ x, y, width, height }: Rect) =>
   `-draw 'rectangle ${x * SCALE},${y * SCALE} ${(x + width) * SCALE - 1},${(y + height) * SCALE - 1}'`
 
 /**
@@ -172,6 +172,17 @@ export function croppedPngCommand(
   return [
     `convert ${pngInput(source)} -crop ${geometry(rect)} +repage`,
     ...(chops.length > 0 ? [...chops, '+repage'] : []),
+    '-strip -define png:exclude-chunks=all png:-',
+  ].join(' ')
+}
+
+/**
+ * The whole shot scaled to exactly `size` (device pixels), re-encoded from its pixels alone to
+ * stdout, as croppedPngCommand's crops are.
+ */
+export function scaledPngCommand(source: string, size: { width: number; height: number }): string {
+  return [
+    `convert ${pngInput(source)} -resize '${size.width}x${size.height}!'`,
     '-strip -define png:exclude-chunks=all png:-',
   ].join(' ')
 }

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
@@ -107,6 +108,53 @@ export async function addTheme(db: TestDb, versionId: string, seed: ThemeSeed): 
   const themeId = theme?.id as string
   if (seed.rendered ?? true) {
     await db.insert(schema.modThemePreviews).values({ themeId, ...SEEDED_THEME_PREVIEW })
+  }
+  return themeId
+}
+
+export interface DesktopThemeSeed {
+  key: string
+  name?: string
+  window?: 'light' | 'dark'
+  switchSteps?: string[]
+  rendered?: boolean
+}
+
+export const SEEDED_THEME_SHOT = {
+  png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7]),
+  width: 1100,
+  height: 900,
+  cardPng: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 8]),
+  cardWidth: 440,
+  cardHeight: 360,
+  lookSignature: 'a'.repeat(64),
+  desktopVersion: '6.28899.6',
+  engineVersion: '2.1.330',
+}
+
+export async function addDesktopTheme(
+  db: TestDb,
+  versionId: string,
+  seed: DesktopThemeSeed,
+): Promise<string> {
+  const [theme] = await db
+    .insert(schema.modThemes)
+    .values({
+      modVersionId: versionId,
+      kind: 'desktop',
+      key: seed.key,
+      name: seed.name ?? seed.key,
+      window: seed.window ?? 'dark',
+      switchSteps: seed.switchSteps ?? [`/custom-theme ${seed.key}`],
+    })
+    .returning()
+  const themeId = theme?.id as string
+  if (seed.rendered ?? true) {
+    // Each seeded theme a look of its own, as distinct themes have.
+    const lookSignature = createHash('sha256').update(seed.key).digest('hex')
+    await db
+      .insert(schema.modThemeDesktopPreviews)
+      .values({ themeId, ...SEEDED_THEME_SHOT, lookSignature })
   }
   return themeId
 }

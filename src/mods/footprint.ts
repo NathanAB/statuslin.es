@@ -108,6 +108,14 @@ export function describeFootprint(footprint: ModFootprint): FootprintDescription
   }
 }
 
+/**
+ * Whether the mod sets a Desktop theme: it draws the window background. Its Desktop previews are the
+ * whole window, and only such a mod may carry Desktop themes.
+ */
+export function setsTheme(footprint: ModFootprint): boolean {
+  return describeFootprint(footprint).draws.includes('window-background')
+}
+
 /** What a version's previews recorded. Only a Desktop result's kind matters here. */
 interface RecordedSurfaces {
   preview: AnsiSegment[] | null

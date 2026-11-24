@@ -8,7 +8,7 @@ import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { type InputStep, inputStepsSchema, terminalSetupSchema } from '@/mods/curation'
-import type { Surface } from '@/mods/footprint'
+import { type Surface, setsTheme } from '@/mods/footprint'
 import type { FetchPlugin } from '@/mods/import'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { terminalLine } from '@/mods/terminal-line'
@@ -25,6 +25,11 @@ import {
 } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import type { AnsiSegment } from '@/render/types'
+import {
+  desktopThemesToRecord,
+  recordDesktopThemePreview,
+  refuseDesktopLookalikes,
+} from '@/themes/record-desktop-previews'
 import {
   recordThemePreview,
   refuseLookalikePreviews,
@@ -44,7 +49,8 @@ import {
  * input steps, with no mod), shared across the run by mods with the same terminal and input steps
  * while the Claude Code version matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
  * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames what the mod draws
- * there, and stores the PNG, or the fact that it drew nothing.
+ * there, and stores the PNG, or the fact that it drew nothing. A mod whose footprint sets a theme
+ * recolors the whole window, so its Desktop preview is the whole window instead.
  *
  * Themes: each terminal theme the version carries is recorded in that theme, with the version's
  * plugin, input steps and terminal, and stored as its whole screen. A full run records only themes
@@ -52,9 +58,15 @@ import {
  * and any earlier one removed, when it looks the same as the baseline (the setting didn't apply) or
  * as another of the version's themes, so the version can't publish until that is fixed.
  *
+ * Desktop themes: each Desktop theme the operator declared for the version is recorded twice in
+ * Claude Desktop, in the theme's own light or dark window after its switch steps, and stored as the
+ * whole window with a smaller card. As for terminal themes, a full run records only themes with no
+ * shot yet and `--slug` records them all again. A shot is refused, and any earlier one removed, when
+ * the theme didn't apply, showed the other window, or differed between the two runs.
+ *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
  * run fails keeps whatever result it had, and the other surface is still stored; nothing but a
- * refused theme preview is ever deleted. Refuses to run without E2B_API_KEY: a fake run would store
+ * refused theme preview or shot is ever deleted. Refuses to run without E2B_API_KEY: a fake run would store
  * "draws nothing" over every real preview, and those results would satisfy publish's rendered check.
  *
  * AGENT USAGE (needs DATABASE_URL and E2B_API_KEY):
@@ -80,6 +92,7 @@ export interface RenderModsDeps {
 const CONCURRENCY = 4
 /** How many of one version's themes record at once, so a pack of dozens takes minutes. */
 const THEME_CONCURRENCY = 4
+const DESKTOP_THEME_CONCURRENCY = 2
 
 type Outcome = { kind: 'rendered' } | { kind: 'drew nothing' } | { kind: 'failed'; reason: string }
 
@@ -102,6 +115,7 @@ interface Target {
   inputSteps: unknown
   /** Stored jsonb like inputSteps; null records in the default terminal. */
   terminal: unknown
+  footprint: schema.ModFootprint
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
@@ -119,6 +133,7 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       commitSha: schema.modVersions.commitSha,
       inputSteps: schema.modVersions.inputSteps,
       terminal: schema.modVersions.terminal,
+      footprint: schema.modVersions.footprint,
     })
     .from(schema.mods)
     .innerJoin(schema.modVersions, eq(schema.modVersions.modId, schema.mods.id))
@@ -287,10 +302,13 @@ async function renderTerminal(
 
 async function renderDesktop(
   request: ModRequest,
+  footprint: schema.ModFootprint,
   { desktopRecorder }: RenderModsDeps,
   results: Results,
 ): Promise<Outcome> {
-  const recording = await desktopRecorder.record(request)
+  const recording = await desktopRecorder.record(
+    setsTheme(footprint) ? { ...request, wholeWindow: true } : request,
+  )
   await results.desktop(recording)
   return { kind: recording.kind === 'shot' ? 'rendered' : 'drew nothing' }
 }
@@ -300,7 +318,7 @@ const failure = (error: unknown): Outcome => ({
   reason: error instanceof Error ? error.message : String(error),
 })
 
-type ThemeOutcome = { key: string; outcome: Outcome }
+type ThemeOutcome = { key: string; surface: Surface; outcome: Outcome }
 
 /**
  * Each theme's failure is its own: the version's other themes are still recorded. Once they all
@@ -329,8 +347,32 @@ async function renderThemes(
     outcomes.set(key, { kind: 'failed', reason: `looks the same as ${themesNamed}` })
   }
   return [...outcomes]
-    .map(([key, outcome]) => ({ key, outcome }))
+    .map(([key, outcome]) => ({ key, surface: 'terminal' as const, outcome }))
     .sort((a, b) => a.key.localeCompare(b.key))
+}
+
+async function renderDesktopThemes(
+  target: Target,
+  mod: ModUnderRender,
+  { db, desktopRecorder }: RenderModsDeps,
+  rerecord: boolean,
+): Promise<ThemeOutcome[]> {
+  const themes = await desktopThemesToRecord(db, target.versionId, { rerecord })
+  const outcomes: ThemeOutcome[] = []
+  await forEachConcurrently(themes, DESKTOP_THEME_CONCURRENCY, async (theme) => {
+    const outcome = await recordDesktopThemePreview(db, desktopRecorder, mod, theme).then(
+      (): Outcome => ({ kind: 'rendered' }),
+      failure,
+    )
+    outcomes.push({ key: theme.key, surface: 'desktop', outcome })
+  })
+  const byKey = new Map(outcomes.map((theme) => [theme.key, theme]))
+  for (const { key, matches } of await refuseDesktopLookalikes(db, target.versionId)) {
+    const themesNamed = `${matches.length === 1 ? 'theme' : 'themes'} ${matches.join(', ')}`
+    const outcome: Outcome = { kind: 'failed', reason: `looks the same as ${themesNamed}` }
+    byKey.set(key, { key, surface: 'desktop', outcome })
+  }
+  return [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key))
 }
 
 type TargetOutcomes = Record<Surface, Outcome> & { themes: ThemeOutcome[] }
@@ -358,12 +400,13 @@ async function renderTarget(
   } catch (error) {
     return { terminal: failure(error), desktop: failure(error), themes: [] }
   }
-  const [terminal, desktop, themes] = await Promise.all([
+  const [terminal, desktop, themes, desktopThemes] = await Promise.all([
     renderTerminal(request, setup, deps, baselineFor, results).catch(failure),
-    renderDesktop(request, deps, results).catch(failure),
+    renderDesktop(request, target.footprint, deps, results).catch(failure),
     renderThemes(target, { ...request, terminal: setup }, deps, baselineFor, rerecordThemes),
+    renderDesktopThemes(target, request.mod, deps, rerecordThemes),
   ])
-  return { terminal, desktop, themes }
+  return { terminal, desktop, themes: [...themes, ...desktopThemes] }
 }
 
 /** `what` names the mod, or one of its themes. */
@@ -401,8 +444,8 @@ export async function renderMods(
     for (const surface of ['terminal', 'desktop'] as const) {
       report(label(target), surface, outcomes[surface])
     }
-    for (const { key, outcome } of outcomes.themes) {
-      report(`${label(target)} theme ${key}`, 'terminal', outcome)
+    for (const { key, surface, outcome } of outcomes.themes) {
+      report(`${label(target)} theme ${key}`, surface, outcome)
     }
   })
   return failed === 0 ? 0 : 1

@@ -15,15 +15,6 @@ import { type CardSurface, TERMINAL_CARD_SURFACE } from '../lib/card-surface'
 import type { DesktopRecording } from '../render/mods/desktop/types'
 import type { TerminalSetup } from '../render/mods/terminal'
 import type { AnsiSegment } from '../render/types'
-import {
-  THEME_KEY,
-  THEME_KEY_MAX,
-  THEME_KINDS,
-  THEME_NAME_MAX,
-  THEME_WINDOWS,
-  type ThemeKind,
-  type ThemeWindow,
-} from '../themes/theme'
 
 const MOD_STATUSES = ['draft', 'published', 'removed'] as const
 export type ModStatus = (typeof MOD_STATUSES)[number]
@@ -136,59 +127,6 @@ export const modPreviews = pgTable(
   },
   (t) => [uniqueIndex('mod_previews_version_scenario_uq').on(t.modVersionId, t.scenarioKey)],
 )
-
-const inList = (column: AnyColumn, values: readonly string[]): SQL =>
-  sql`${column} IN (${sql.raw(values.map((value) => `'${value}'`).join(', '))})`
-
-/**
- * The themes a mod version carries, one row per card on /themes (ADR 0012). Written with the
- * version from what the inspection sandbox read at its pinned commit, and never changed after.
- */
-export const modThemes = pgTable(
-  'mod_themes',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    modVersionId: uuid('mod_version_id')
-      .notNull()
-      .references(() => modVersions.id, { onDelete: 'cascade' }),
-    kind: text('kind').$type<ThemeKind>().notNull(),
-    /** A terminal theme's file slug, which the `theme` setting names. */
-    key: text('key').notNull(),
-    /** The author's name for it, which `/theme` shows. Untrusted text. */
-    name: text('name').notNull(),
-    window: text('window').$type<ThemeWindow>().notNull(),
-    /** The theme file exactly as pinned. */
-    source: text('source').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    uniqueIndex('mod_themes_version_key_uq').on(t.modVersionId, t.kind, t.key),
-    // A visitor picks a theme in `/theme` by its name, so one plugin never shows two alike.
-    uniqueIndex('mod_themes_version_name_uq').on(t.modVersionId, t.kind, sql`lower(${t.name})`),
-    check('mod_themes_kind_check', inList(t.kind, THEME_KINDS)),
-    check('mod_themes_window_check', inList(t.window, THEME_WINDOWS)),
-    check(
-      'mod_themes_key_check',
-      sql`${t.key} ~ ${sql.raw(`'${THEME_KEY.source}'`)} AND length(${t.key}) <= ${sql.raw(String(THEME_KEY_MAX))}`,
-    ),
-    check(
-      'mod_themes_name_check',
-      sql`length(${t.name}) BETWEEN 1 AND ${sql.raw(String(THEME_NAME_MAX))}`,
-    ),
-  ],
-)
-
-/** A terminal theme's preview: the whole recorded screen with the theme selected. */
-export const modThemePreviews = pgTable('mod_theme_previews', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  themeId: uuid('theme_id')
-    .notNull()
-    .unique()
-    .references(() => modThemes.id, { onDelete: 'cascade' }),
-  segments: jsonb('segments').$type<AnsiSegment[]>().notNull(),
-  claudeCodeVersion: text('claude_code_version').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
 
 export const bytea = customType<{ data: Uint8Array }>({ dataType: () => 'bytea' })
 

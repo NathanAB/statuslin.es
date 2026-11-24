@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { TERMINAL_CARD_SURFACE } from '@/lib/card-surface'
+import { atMost } from '@/mods/plain-text'
 import { MAX_TERMINAL_COLS, MAX_TERMINAL_ROWS, TERMINAL } from '@/render/mods/terminal'
+import { THEME_KEY, THEME_KEY_MAX, THEME_WINDOWS } from '@/themes/theme'
+import { themeNameSchema, themeNameShape } from '@/themes/theme-file'
 
 /** Relative to the repo root, where the import script and the tests both run. */
 export const CURATION_FILE = 'src/mods/curation.json'
@@ -14,6 +17,9 @@ export const PLUGIN_NAME_RULE =
 const PATH_SEGMENT = /^[A-Za-z0-9._-]+$/
 
 const segments = (path: string) => (path === '' ? [] : path.split('/'))
+
+/** Typed a character at a time, so a step's text is bounded to keep its typing bounded. */
+export const MAX_STEP_CHARS = 200
 
 /** Typed into the prompt after the scripted turn; `submit: false` leaves it unsent. */
 const textStepSchema = z.strictObject({
@@ -43,6 +49,46 @@ export const terminalSetupSchema = z.strictObject({
   rows: z.int().min(TERMINAL.rows).max(MAX_TERMINAL_ROWS).optional(),
   fullscreen: z.boolean(),
 })
+
+/**
+ * A visitor sends each switch step in their own Claude Desktop, as its card tells them, so it is one
+ * slash command with its arguments on one line: never a prompt Claude would act on.
+ */
+const SLASH_COMMAND = /^\/[A-Za-z0-9][\w:.-]*(?: [^\n]+)?$/
+
+const switchStepSchema = atMost(MAX_STEP_CHARS).regex(
+  SLASH_COMMAND,
+  'must be one slash command with its arguments, such as /custom-theme night-reef',
+)
+
+const desktopThemeSchema = z.strictObject({
+  key: z
+    .string()
+    .max(THEME_KEY_MAX, `must be at most ${THEME_KEY_MAX} characters`)
+    .regex(THEME_KEY, 'must start with a letter or digit, then letters, digits, ".", "_" or "-"'),
+  name: themeNameSchema,
+  window: z.enum(THEME_WINDOWS),
+  switchSteps: z.array(switchStepSchema).default([]),
+})
+
+type DesktopThemeEntry = z.infer<typeof desktopThemeSchema>
+
+function sameDesktopThemes(themes: DesktopThemeEntry[], ctx: z.RefinementCtx): void {
+  const keys = new Set<string>()
+  const names = new Map<string, string>()
+  for (const theme of themes) {
+    if (keys.has(theme.key)) {
+      ctx.addIssue({ code: 'custom', message: `has two themes with the key "${theme.key}"` })
+    }
+    keys.add(theme.key)
+    const shape = themeNameShape(theme.name)
+    const named = names.get(shape)
+    if (named !== undefined) {
+      ctx.addIssue({ code: 'custom', message: `has two themes named "${named}", ignoring case` })
+    }
+    names.set(shape, theme.name)
+  }
+}
 
 /** The folder holding `.claude-plugin/plugin.json`; '' for the repository root. */
 export const pluginPathSchema = z
@@ -75,6 +121,8 @@ const entrySchema = z.strictObject({
   cardSurface: z.literal(TERMINAL_CARD_SURFACE).optional(),
   /** Left out, the terminal preview is recorded in the default terminal. */
   terminal: terminalSetupSchema.optional(),
+  /** Left out, the mod lists no Desktop theme on /themes. */
+  desktopThemes: z.array(desktopThemeSchema).superRefine(sameDesktopThemes).optional(),
 })
 
 export type InputStep = z.infer<typeof inputStepSchema>
