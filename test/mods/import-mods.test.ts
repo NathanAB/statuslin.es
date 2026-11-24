@@ -118,7 +118,9 @@ async function run(curation: unknown, deps = fakes()) {
   return { exitCode, lines, output: lines.join('\n'), calls: deps.calls }
 }
 
-const OCEAN = '{\n  "name": "Ocean",\n  "base": "dark"\n}\n'
+/** On an ANSI base, drawn in the window of the fixed color behind your messages. */
+const OCEAN =
+  '{\n  "name": "Ocean",\n  "base": "dark-ansi",\n  "overrides": { "userMessageBackground": "ansi256(252)" }\n}\n'
 const DAWN = '{ "name": "Dawn", "base": "light", "overrides": { "claude": "#d97757" } }'
 /** register.tsx (validate-skins.json's one module) beside two terminal theme files. */
 const THEMES_LISTING = componentsListing(
@@ -138,6 +140,7 @@ const themesOf = (versionId: string | undefined) =>
       key: schema.modThemes.key,
       name: schema.modThemes.name,
       window: schema.modThemes.window,
+      usesTerminalColors: schema.modThemes.usesTerminalColors,
       source: schema.modThemes.source,
     })
     .from(schema.modThemes)
@@ -145,8 +148,22 @@ const themesOf = (versionId: string | undefined) =>
     .orderBy(schema.modThemes.key)
 
 const STORED_THEMES = [
-  { kind: 'terminal', key: 'dawn', name: 'Dawn', window: 'light', source: DAWN },
-  { kind: 'terminal', key: 'ocean', name: 'Ocean', window: 'dark', source: OCEAN },
+  {
+    kind: 'terminal',
+    key: 'dawn',
+    name: 'Dawn',
+    window: 'light',
+    usesTerminalColors: false,
+    source: DAWN,
+  },
+  {
+    kind: 'terminal',
+    key: 'ocean',
+    name: 'Ocean',
+    window: 'light',
+    usesTerminalColors: true,
+    source: OCEAN,
+  },
 ]
 
 const NIGHT_REEF = {
