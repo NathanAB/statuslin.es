@@ -17,6 +17,7 @@ import { modDesktopPreviewPath } from '@/lib/site'
 import { isUuid } from '@/lib/uuid'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
+import { onlyHookError } from './hook-error'
 import type { MarketplaceModRow } from './marketplace'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -149,6 +150,9 @@ export interface ModDetail {
   reviewedAt: string | null
   /** It only carries themes, so its page shows them in place of a mod preview. */
   themeOnly: boolean
+  /** Its terminal recording was only Claude Code's error for its session.start hook, so `preview`
+   *  is empty: the page states the error and never shows it. */
+  terminalHookError: boolean
 }
 
 const isoDate = (date: Date) => date.toISOString().slice(0, 10)
@@ -188,8 +192,11 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
     )
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row) return null
+  const terminalHookError = row.preview !== null && onlyHookError(row.preview)
   return {
     ...row,
+    preview: terminalHookError ? [] : row.preview,
+    terminalHookError,
     desktop: desktopPreview(row.desktop),
     generatedContent: readPageCopy(modPageCopySchema, row.generatedContent),
     updatedAt: isoDate(row.updatedAt),

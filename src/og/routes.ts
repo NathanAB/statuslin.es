@@ -3,7 +3,6 @@ import { db as defaultDb } from '@/db'
 import { getConfigBySlug } from '@/gallery/queries'
 import { getModDesktopShotPng } from '@/mods/desktop-shot'
 import { getModDetail, type ModDetail } from '@/mods/queries'
-import { terminalResult } from '@/mods/terminal-result'
 import { configCard, homeCard, type ModCardBody, modCard, themesCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
 import type { ThemeScreen } from '@/og/theme-screen'
@@ -78,8 +77,7 @@ async function modCardBody(db: Db, mod: ModDetail): Promise<ModCardBody> {
       }
     }
   }
-  const terminal = terminalResult(mod.preview)
-  if (terminal.kind === 'drew') return { kind: 'terminal', segments: terminal.segments }
+  if (mod.preview?.length) return { kind: 'terminal', segments: mod.preview }
   const shot = await getModDesktopShotPng(db, mod.slug)
   if (!shot) return { kind: 'none' }
   const src = `data:image/png;base64,${Buffer.from(shot.png).toString('base64')}`

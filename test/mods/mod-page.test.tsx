@@ -8,10 +8,6 @@ import { HOME_TITLE_BASE, MOD_NOT_FOUND_TITLE } from '@/lib/page-title'
 import { MOD_INSTALL_MIN_VERSION, modInstallPrompt } from '@/mods/install'
 import { modMetaDescription, modPageTitle } from '@/mods/page-meta'
 import type { ModDetail } from '@/mods/queries'
-import {
-  HOOK_ERROR_ONLY_PREVIEW,
-  HOOK_ERROR_WITH_OUTPUT_PREVIEW,
-} from './fixtures/hook-error-previews'
 
 const recordModCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/functions', () => ({ recordModCopyFn, getModDetailFn: vi.fn() }))
@@ -86,6 +82,7 @@ const MOD: ModDetail = {
   recordedWith: '2.1.0',
   reviewedAt: null,
   themeOnly: false,
+  terminalHookError: false,
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {
@@ -457,7 +454,7 @@ describe('mod page', () => {
   // A Desktop theme mod calls $.theme.set, which the terminal lacks, so Claude Code prints its
   // hook's error there. The page states that fact instead of showing the error as a preview.
   it("states that a mod whose only terminal output is its hook's error draws nothing there", () => {
-    renderPage({ preview: HOOK_ERROR_ONLY_PREVIEW, desktop: SHOT })
+    renderPage({ preview: [], terminalHookError: true, desktop: SHOT })
 
     const preview = section('Preview')
     expect(preview.getByText('Terminal')).toBeTruthy()
@@ -466,16 +463,9 @@ describe('mod page', () => {
         'Draws nothing in the terminal. Claude Code prints a one-line error there when a session starts.',
       ),
     ).toBeTruthy()
-    expect(document.body.textContent).not.toContain('hook skipped')
     const what = section('What it does')
     const tile = (label: string) => what.getByText(label).closest('dt')?.nextElementSibling
     expect(tile('Works in')?.textContent).toBe('Claude Desktop')
-  })
-
-  it("still shows a terminal preview that has the mod's own output beside its hook's error", () => {
-    renderPage({ preview: HOOK_ERROR_WITH_OUTPUT_PREVIEW, desktop: SHOT })
-
-    expect(section('Preview').getByText(/Low Poly/)).toBeTruthy()
   })
 
   it('stacks the Desktop shot under the terminal, whole and at its CSS size', () => {

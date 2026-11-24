@@ -51,6 +51,7 @@ const PACK: ModDetail = {
   recordedWith: '2.1.310',
   reviewedAt: null,
   themeOnly: true,
+  terminalHookError: false,
 }
 
 const theme = (name: string): PublishedTheme => ({

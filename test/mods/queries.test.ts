@@ -12,7 +12,12 @@ import {
   recordModCopy,
   versionIsRendered,
 } from '@/mods/queries'
+import type { AnsiSegment } from '@/render/types'
 import { migratedPGlite } from '../helpers/test-db'
+import {
+  HOOK_ERROR_ONLY_PREVIEW,
+  HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+} from './fixtures/hook-error-previews'
 import { addDesktopPreview, SEEDED_DESKTOP_SHOT } from './seed-mods'
 
 let client: PGlite
@@ -227,6 +232,39 @@ describe('getModDetail', () => {
       recordedWith: '2.1.0',
       reviewedAt: null,
       themeOnly: false,
+      terminalHookError: false,
+    })
+  })
+
+  async function recordTerminal(modId: string, segments: AnsiSegment[]) {
+    const [version] = await db
+      .select({ id: schema.modVersions.id })
+      .from(schema.modVersions)
+      .where(eq(schema.modVersions.modId, modId))
+    await db
+      .update(schema.modPreviews)
+      .set({ segments })
+      .where(eq(schema.modPreviews.modVersionId, version?.id as string))
+  }
+
+  // A Desktop theme mod's terminal recording is only Claude Code's error for its hook. The page
+  // states that fact, so the recording itself never reaches it.
+  it('sends no hook-error recording, only that the terminal output was a hook error', async () => {
+    const { modId } = await addMod('crashed', 'published', 'scenario-preview')
+    await recordTerminal(modId, HOOK_ERROR_ONLY_PREVIEW)
+
+    const detail = await getModDetail(db, 'crashed')
+    expect(detail).toMatchObject({ preview: [], terminalHookError: true })
+    expect(JSON.stringify(detail)).not.toContain('hook skipped')
+  })
+
+  it("keeps a recording with the mod's own output beside its hook's error", async () => {
+    const { modId } = await addMod('multiverse', 'published', 'scenario-preview')
+    await recordTerminal(modId, HOOK_ERROR_WITH_OUTPUT_PREVIEW)
+
+    expect(await getModDetail(db, 'multiverse')).toMatchObject({
+      preview: HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+      terminalHookError: false,
     })
   })
 
