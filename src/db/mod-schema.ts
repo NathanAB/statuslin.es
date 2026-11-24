@@ -57,6 +57,11 @@ export const mods = pgTable(
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     allTags: jsonb('all_tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     copyCount: integer('copy_count').notNull().default(0),
+    /**
+     * When the operator showed this curated draft as an unreviewed mod (ADR 0014): its page and
+     * theme cards, with no install. Only a draft's counts; publishing clears it.
+     */
+    unreviewedPageAt: timestamp('unreviewed_page_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

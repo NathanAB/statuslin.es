@@ -1,20 +1,12 @@
-import { and, asc, desc, eq, isNotNull, or, type SQL, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, type SQL, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
-import {
-  type ModFootprint,
-  mods,
-  modThemeDesktopPreviews,
-  modThemePreviews,
-  modThemes,
-  modVersions,
-} from '@/db/schema'
-import { themeDesktopPreviewPath } from '@/lib/site'
-import { versionIsThemeOnly } from '@/mods/queries'
-import { compactSegments } from '@/render/compact-segments'
+import { type ModFootprint, mods, modVersions } from '@/db/schema'
+import { hasUnreviewedPage, versionOwner } from '@/mods/unreviewed-queries'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import { findPalette, type Palette, palettesWithThemes, themesInPalette } from './palettes'
 import type { ThemeKind, ThemeWindow } from './theme'
+import { byName, listedThemes, type ThemeRow, toLook } from './theme-rows'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -60,6 +52,22 @@ export type PublishedTheme =
       switchSteps: string[]
     })
 
+/** The unreviewed mod a theme comes from (ADR 0014), by its page's address. */
+export interface UnreviewedThemeMod {
+  owner: string
+  pluginName: string
+}
+
+/**
+ * A theme of a curated draft shown as an unreviewed mod (ADR 0014): its look, and the mod's page.
+ * Nothing to install, and no switch steps, which are for an installed plugin.
+ */
+export type UnreviewedTheme =
+  | (Omit<Extract<PublishedTheme, { kind: 'terminal' }>, 'plugin'> & { mod: UnreviewedThemeMod })
+  | (Omit<Extract<PublishedTheme, { kind: 'desktop' }>, 'plugin' | 'switchSteps'> & {
+      mod: UnreviewedThemeMod
+    })
+
 /** The home page's themes row: a few themes' cards, and how many /themes lists in all. */
 export interface HomeThemeRow {
   themes: PublishedTheme[]
@@ -71,86 +79,44 @@ function publishedThemes<Extra extends Record<string, SQL | SQL.Aliased>>(
   extra: Extra,
   where?: SQL,
 ) {
-  return db
-    .select({
-      ...extra,
-      id: modThemes.id,
-      key: modThemes.key,
-      kind: modThemes.kind,
-      name: modThemes.name,
-      window: modThemes.window,
-      usesTerminalColors: modThemes.usesTerminalColors,
-      switchSteps: modThemes.switchSteps,
-      segments: modThemePreviews.segments,
-      shot: {
-        width: modThemeDesktopPreviews.width,
-        height: modThemeDesktopPreviews.height,
-        cardWidth: modThemeDesktopPreviews.cardWidth,
-        cardHeight: modThemeDesktopPreviews.cardHeight,
-        renderedAt: modThemeDesktopPreviews.createdAt,
-      },
-      plugin: { id: mods.id, slug: mods.slug, title: mods.title, authorGithub: mods.authorGithub },
-      themeOnly: versionIsThemeOnly,
-      footprint: modVersions.footprint,
-    })
-    .from(modThemes)
-    .leftJoin(modThemePreviews, eq(modThemePreviews.themeId, modThemes.id))
-    .leftJoin(modThemeDesktopPreviews, eq(modThemeDesktopPreviews.themeId, modThemes.id))
-    .innerJoin(modVersions, eq(modVersions.id, modThemes.modVersionId))
-    .innerJoin(mods, and(eq(mods.currentVersionId, modVersions.id), eq(mods.status, 'published')))
-    .where(
-      and(
-        or(
-          and(eq(modThemes.kind, 'terminal'), isNotNull(modThemePreviews.id)),
-          and(eq(modThemes.kind, 'desktop'), isNotNull(modThemeDesktopPreviews.id)),
-        ),
-        where,
-      ),
-    )
-    .$dynamic()
+  return listedThemes(db, eq(mods.status, 'published'), extra, where)
 }
 
-const byName = [asc(sql`lower(${modThemes.name})`), asc(modThemes.key)]
 /** /themes' plugin order: the most installed first, then by slug. */
 const byPlugin = [desc(mods.copyCount), asc(mods.slug)]
 
-type ThemeRow = Awaited<ReturnType<typeof publishedThemes<Record<never, SQL>>>>[number]
-
-function toCard({ themeOnly, footprint, segments, shot, switchSteps, ...row }: ThemeRow) {
-  const { id, key, name, window, plugin } = row
-  const base = {
-    id,
-    key,
-    name,
-    window,
-    plugin: { ...plugin, code: themeOnly ? null : { footprint } },
-  }
-  if (row.kind === 'terminal') {
-    return {
-      ...base,
-      kind: row.kind,
-      preview: compactSegments(segments ?? []),
-      usesTerminalColors: row.usesTerminalColors,
-    }
-  }
-  if (shot === null) throw new Error(`Desktop theme ${row.id} was listed without its shot`)
-  const { width, height, cardWidth, cardHeight, renderedAt } = shot
-  return {
-    ...base,
-    kind: row.kind,
-    preview: {
-      shot: { src: themeDesktopPreviewPath(row.id, renderedAt), width, height },
-      card: {
-        src: themeDesktopPreviewPath(row.id, renderedAt, 'card'),
-        width: cardWidth,
-        height: cardHeight,
-      },
-    },
-    switchSteps: switchSteps ?? [],
-  }
+function toCard(row: ThemeRow): PublishedTheme {
+  const plugin = { ...row.plugin, code: row.themeOnly ? null : { footprint: row.footprint } }
+  const look = toLook(row)
+  return look.kind === 'terminal'
+    ? { ...look, plugin }
+    : { ...look, plugin, switchSteps: row.switchSteps ?? [] }
 }
 
 const toCards = (rows: ThemeRow[]): PublishedTheme[] => rows.map(toCard)
+
+const toUnreviewed = (row: ThemeRow): UnreviewedTheme => ({ ...toLook(row), mod: row.mod })
+
+/** The unreviewed themes' order: by their mod's address, then by name. */
+const byUnreviewedMod = [asc(mods.pluginName), asc(sql`lower(${versionOwner})`)]
+
+/**
+ * The themes of the curated drafts shown as unreviewed mods (ADR 0014), or of the one at `mod`'s
+ * address: for /themes' and the palette pages' "Not reviewed" sections, and that mod's own page.
+ */
+export async function getUnreviewedThemeCards(
+  db: Db,
+  mod?: UnreviewedThemeMod,
+): Promise<UnreviewedTheme[]> {
+  const at = mod
+    ? and(eq(mods.pluginName, mod.pluginName), sql`lower(${versionOwner}) = lower(${mod.owner})`)
+    : undefined
+  const rows = await listedThemes(db, hasUnreviewedPage(db), {}, at).orderBy(
+    ...byUnreviewedMod,
+    ...byName,
+  )
+  return rows.map(toUnreviewed)
+}
 
 /** /themes: the most installed plugins' themes first, each plugin's in name order. */
 export async function getThemeCards(db: Db): Promise<PublishedTheme[]> {
@@ -189,20 +155,29 @@ export async function getPublishedModThemes(db: Db, slug: string): Promise<Publi
   return toCards(await publishedThemes(db, {}, eq(mods.slug, slug)).orderBy(...byName))
 }
 
-/** A palette's page: its published themes in /themes' order, and every palette with a page. */
+/**
+ * A palette's page: its published themes in /themes' order, its unreviewed mods' themes below
+ * them, and every palette with a page.
+ */
 export interface PaletteThemes {
   palette: Palette
   themes: PublishedTheme[]
+  unreviewed: UnreviewedTheme[]
   palettes: Palette[]
 }
 
-/** The palette page at `slug`, or null when no palette has that slug or none of its themes is published. */
+/**
+ * The palette page at `slug`, or null when no palette has that slug or none of its themes is
+ * published: an unreviewed theme alone makes no page (ADR 0014).
+ */
 export async function getPaletteThemes(db: Db, slug: string): Promise<PaletteThemes | null> {
   const palette = findPalette(slug)
   if (!palette) return null
   const all = await getThemeCards(db)
   const themes = themesInPalette(all, palette)
-  return themes.length === 0 ? null : { palette, themes, palettes: palettesWithThemes(all) }
+  if (themes.length === 0) return null
+  const unreviewed = themesInPalette(await getUnreviewedThemeCards(db), palette)
+  return { palette, themes, unreviewed, palettes: palettesWithThemes(all) }
 }
 
 /** A palette page as the sitemap lists it: dated by its newest theme's version going live. */

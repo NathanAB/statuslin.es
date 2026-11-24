@@ -7,7 +7,7 @@ import { PAGE_TITLE_BRAND } from '@/lib/search-text'
 import { MODS_PATH, modPath, siteUrl, THEMES_PATH } from '@/lib/site'
 import { themesSocialMeta } from '@/og/meta'
 import { FilteredThemes } from '@/themes/filtered-themes'
-import { getThemeCardsFn } from '@/themes/functions'
+import { getThemeCardsFn, getUnreviewedThemeCardsFn } from '@/themes/functions'
 import { PaletteLinks } from '@/themes/palette-links'
 import { palettesWithThemes } from '@/themes/palettes'
 import { coerceThemeFilter, type ThemeFilter } from '@/themes/theme-filter'
@@ -24,10 +24,15 @@ export const Route = createFileRoute('/themes')({
   // list filters in the browser.
   validateSearch: (search: Record<string, unknown>): ThemeFilter => coerceThemeFilter(search),
   loader: async () => {
-    const [themes, user] = await Promise.all([getThemeCardsFn(), getSession()])
-    return { themes, user, origin: siteUrl() }
+    const [themes, unreviewed, user] = await Promise.all([
+      getThemeCardsFn(),
+      getUnreviewedThemeCardsFn(),
+      getSession(),
+    ])
+    return { themes, unreviewed, user, origin: siteUrl() }
   },
   // The JSON-LD lists each theme's plugin page, since a theme has no page of its own (ADR 0012).
+  // Only reviewed themes count: unreviewed ones are in no list (ADR 0014).
   head: ({ loaderData }) => ({
     meta: [
       { title: `${THEMES_TITLE_BASE}${PAGE_TITLE_BRAND}` },
@@ -53,7 +58,7 @@ export const Route = createFileRoute('/themes')({
 })
 
 function ThemesPage() {
-  const { themes, user, origin } = Route.useLoaderData()
+  const { themes, unreviewed, user, origin } = Route.useLoaderData()
   const filter = Route.useSearch()
   const palettes = palettesWithThemes(themes)
   return (
@@ -67,16 +72,22 @@ function ThemesPage() {
             is a real session recorded in that theme. A theme comes in a plugin: install the plugin,
             then switch to the theme. Pick a terminal theme in <InlineCommand>/theme</InlineCommand>
             . For a Desktop theme, send the command its card shows, or nothing when its plugin sets
-            the theme on its own. Every plugin is reviewed before it goes live, and the install is
-            pinned to the reviewed commit. A card says so when its plugin also runs code. For
-            plugins that change how Claude Code works, see <TextLink to={MODS_PATH}>mods</TextLink>.
+            the theme on its own. Every plugin with an install here is reviewed first, and the
+            install is pinned to the reviewed commit. A card says so when its plugin also runs code.
+            For plugins that change how Claude Code works, see{' '}
+            <TextLink to={MODS_PATH}>mods</TextLink>.
           </Text>
           {palettes.length > 0 ? <PaletteLinks palettes={palettes} /> : null}
         </Stack>
         {themes.length > 0 ? (
           <Stack gap={4}>
             <VisuallyHidden as="h2">Themes</VisuallyHidden>
-            <FilteredThemes themes={themes} filter={filter} origin={origin} />
+            <FilteredThemes
+              themes={themes}
+              unreviewed={unreviewed}
+              filter={filter}
+              origin={origin}
+            />
           </Stack>
         ) : (
           <Text muted>No themes yet.</Text>

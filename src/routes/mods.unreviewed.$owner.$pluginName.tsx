@@ -20,7 +20,7 @@ export const Route = createFileRoute('/mods/unreviewed/$owner/$pluginName')({
     if (found.kind === 'reviewed') {
       throw redirect({ to: MOD_ROUTE, params: { slug: found.slug }, statusCode: 301 })
     }
-    return { mod: found.mod, user: await getSession() }
+    return { mod: found.mod, themes: found.themes, user: await getSession() }
   },
   head: ({ loaderData }) => {
     const mod = loaderData?.mod
@@ -47,10 +47,10 @@ export const Route = createFileRoute('/mods/unreviewed/$owner/$pluginName')({
 })
 
 function UnreviewedModRoute() {
-  const { mod, user } = Route.useLoaderData()
+  const { mod, themes, user } = Route.useLoaderData()
   return (
     <PageShell user={user}>
-      <UnreviewedModPage mod={mod} />
+      <UnreviewedModPage mod={mod} themes={themes} />
     </PageShell>
   )
 }

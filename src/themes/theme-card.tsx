@@ -17,7 +17,7 @@ import { Heading, Text, TextLink } from '@/ui/text'
 import { DesktopThemePreview, ThemePreview } from '@/ui/theme-preview'
 import { VisuallyHidden } from '@/ui/visually-hidden'
 import { themeAnchor } from './palettes'
-import type { PublishedTheme } from './queries'
+import type { PublishedTheme, UnreviewedTheme } from './queries'
 import { TERMINAL_COLORS_NOTICE, THEME_KIND_LABEL, THEME_WINDOW_LABEL } from './theme'
 
 type ThemePlugin = PublishedTheme['plugin']
@@ -81,7 +81,8 @@ function PluginInstall({ plugin, install }: { plugin: ThemePlugin; install: Them
   )
 }
 
-function ThemeLook({ theme }: { theme: PublishedTheme }) {
+/** A theme's recorded preview in its window, on a reviewed or an unreviewed card. */
+export function ThemeLook({ theme }: { theme: PublishedTheme | UnreviewedTheme }) {
   const label = `${theme.name} preview`
   if (theme.kind === 'terminal') {
     return <ThemePreview segments={theme.preview} window={theme.window} label={label} />

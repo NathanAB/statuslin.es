@@ -13,6 +13,7 @@ import { PaletteLinks } from '@/themes/palette-links'
 import { palettePageCopy } from '@/themes/palettes'
 import { ThemeCard } from '@/themes/theme-card'
 import { themePlugins } from '@/themes/theme-plugins'
+import { UnreviewedThemes } from '@/themes/unreviewed-themes'
 import { InlineCommand } from '@/ui/inline-command'
 import { Stack, WideTileGrid } from '@/ui/layout'
 import { PageShell } from '@/ui/shell'
@@ -73,7 +74,7 @@ export const Route = createFileRoute('/themes_/$palette')({
 })
 
 function PalettePage() {
-  const { palette, themes, palettes, user, origin } = Route.useLoaderData()
+  const { palette, themes, unreviewed, palettes, user, origin } = Route.useLoaderData()
   const copy = palettePageCopy(palette, themes)
   const terminal = themes.some((theme) => theme.kind === 'terminal')
   const desktop = themes.some((theme) => theme.kind === 'desktop')
@@ -94,8 +95,8 @@ function PalettePage() {
             {desktop
               ? ' For a Desktop theme, send the command its card shows, or nothing when its plugin sets the theme on its own.'
               : null}{' '}
-            Every plugin is reviewed before it goes live, and the install is pinned to the reviewed
-            commit. <TextLink to={THEMES_PATH}>See every theme</TextLink>.
+            Every plugin with an install here is reviewed first, and the install is pinned to the
+            reviewed commit. <TextLink to={THEMES_PATH}>See every theme</TextLink>.
           </Text>
           <PaletteLinks palettes={palettes} current={palette.slug} />
         </Stack>
@@ -107,6 +108,7 @@ function PalettePage() {
             ))}
           </WideTileGrid>
         </Stack>
+        <UnreviewedThemes themes={unreviewed} />
       </Stack>
     </PageShell>
   )

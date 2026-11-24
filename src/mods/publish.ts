@@ -14,17 +14,17 @@ export function modAllTags(tags: string[], footprint: ModFootprint): string[] {
   return mergeTags(tags, footprint.calls.includes('$.http.fetch') ? ['network-access'] : [])
 }
 
-/** `description` is the target's plugin.json description, so the listing describes the live version. */
-export function publishedRow(
-  target: PublishVersion,
-  tags: string[],
-  description: string,
-): { currentVersionId: string; status: ModStatus; allTags: string[]; description: string } {
+/**
+ * `description` is the target's plugin.json description, so the listing describes the live version.
+ * Publishing is the review: it ends the draft's unreviewed page for good (ADR 0014).
+ */
+export function publishedRow(target: PublishVersion, tags: string[], description: string) {
   return {
     currentVersionId: target.id,
-    status: 'published',
+    status: 'published' as const satisfies ModStatus,
     allTags: modAllTags(tags, target.footprint),
     description,
+    unreviewedPageAt: null,
   }
 }
 

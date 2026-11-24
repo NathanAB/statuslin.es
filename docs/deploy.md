@@ -778,7 +778,8 @@ counts listings counts them. The mod stays a draft until it is published.
 1. Import and record it as in the launch runbook's steps 2 and 3. The command refuses a mod whose
    draft doesn't pin its curation entry's commit, a mod with no Desktop theme or a theme without
    its recording, a user's submission, a folder statuslin.es removed or rejected, and an address
-   another unreviewed mod already has.
+   another unreviewed mod already has. A `refused` line says why, and exit code 1 means at least
+   one was refused.
 2. Show it on staging, dry run first. Several slugs can go in one run:
    ```sh
    bun run with-env staging scripts/show-unreviewed-mod.ts <slug>...
@@ -788,7 +789,7 @@ counts listings counts them. The mod stays a draft until it is published.
    the "Not reviewed" label, and no install command.
 4. Run the same command on production, with `production` in place of `staging`.
 
-To take a page down, on the author's request or ours, run the command with `--hide` on both
+To take a page down, on the author's request or ours, run the command with `--hide --apply` on both
 environments. Re-recording the mod replaces its page's stills on that environment at once.
 
 **From not reviewed to a full listing.** Read the pinned code, write its page copy (launch runbook
