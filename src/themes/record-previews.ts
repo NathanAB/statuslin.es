@@ -15,7 +15,10 @@ export interface ThemeToRecord {
   key: string
 }
 
-/** A version's terminal themes in key order: all of them, or only those with no preview yet. */
+/**
+ * A version's listed terminal themes in key order: all of them, or only those with no preview yet.
+ * A theme the operator unlisted is never recorded.
+ */
 export async function themesToRecord(
   db: Db,
   versionId: string,
@@ -29,6 +32,7 @@ export async function themesToRecord(
       and(
         eq(schema.modThemes.modVersionId, versionId),
         eq(schema.modThemes.kind, 'terminal'),
+        isNull(schema.modThemes.unlistedReason),
         rerecord ? undefined : isNull(schema.modThemePreviews.id),
       ),
     )

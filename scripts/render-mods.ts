@@ -57,7 +57,7 @@ import {
  * (src/render/mods/theme-scene.ts), one session the same for every theme whatever the mod's input
  * steps and terminal, with the version's plugin loaded and every hook off, and stored as its whole
  * screen. A full run records only themes with no preview yet; `--slug` records every theme of that
- * mod again. A full run records no theme, of either kind, of a version waiting as a user's
+ * mod again. A theme the operator unlisted (scripts/unlist-theme.ts) is never recorded. A full run records no theme, of either kind, of a version waiting as a user's
  * submission: any signed-in user can submit hundreds, so they record only when `--slug` names it. A theme's preview is refused, and any earlier one removed, when it looks the same as the
  * theme scene's baseline (no plugin, no theme: the setting didn't apply) or as another of the
  * version's themes, so the version can't publish until that is fixed.

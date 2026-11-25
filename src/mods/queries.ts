@@ -29,9 +29,10 @@ export const MOD_SCENARIO_KEY = 'clean-main'
  * A `mod_versions` row counts as rendered once both surfaces have a result for its scenario: a
  * terminal preview and a Desktop result, either of which may be that the mod drew nothing there.
  * Every theme it carries needs its own preview too, since each is a card of its own: a terminal
- * theme its recorded screen, a Desktop theme its whole-window shot.
+ * theme its recorded screen, a Desktop theme its whole-window shot. A terminal theme the operator
+ * unlisted (scripts/unlist-theme.ts) has no card, so it needs none.
  */
-export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and not exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and not (case ${modThemes.kind} when 'terminal' then exists (select 1 from ${modThemePreviews} where ${modThemePreviews.themeId} = ${modThemes.id}) when 'desktop' then exists (select 1 from ${modThemeDesktopPreviews} where ${modThemeDesktopPreviews.themeId} = ${modThemes.id}) else false end)))`
+export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and not exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.unlistedReason} is null and not (case ${modThemes.kind} when 'terminal' then exists (select 1 from ${modThemePreviews} where ${modThemePreviews.themeId} = ${modThemes.id}) when 'desktop' then exists (select 1 from ${modThemeDesktopPreviews} where ${modThemeDesktopPreviews.themeId} = ${modThemes.id}) else false end)))`
 
 /**
  * A version that carries themes and declares no hooks modules, so installing it runs no code. It

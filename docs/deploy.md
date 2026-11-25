@@ -331,6 +331,8 @@ can move what it clicks. For each Desktop upgrade:
    ```sh
    bun run smoke:desktop <out-dir> [plugin-name...]
    ```
+   Until then, recording a Desktop theme fails and saves no shot when Desktop's own window has no
+   prompt box edge where `screen.ts` puts it, since the theme checks compare fixed regions of it.
 3. Re-render every mod (launch runbook step 3), then every status line's Desktop preview (below), on
    staging, then production, so each Desktop preview comes from the new Desktop.
 
@@ -400,6 +402,15 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    (Claude Code ignored its `theme` setting), or as another theme of the same version, fails with
    that reason and loses its preview, whichever run stored it. Check the plugin name and the theme
    file, then rerun.
+   When one terminal theme still can't be recorded, such as one that only changes colours the
+   theme scene never draws, leave it unlisted so the plugin's other themes publish:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/unlist-theme.ts <slug> <theme-key> --reason "<why>"
+   ```
+   It acts on the plugin's newest version and keeps the reason on the theme. The theme stays in the
+   plugin people install, so read its file as you would any other, but it shows no card, loses any
+   preview it had, `render:mods` no longer records it, and publish no longer waits for it. A re-pin
+   lists every theme of the new version again.
    Desktop themes are recorded in the same run, each as a whole-window still of Claude Desktop in the
    theme's own window, after its switch steps. A mod has Desktop themes only once its curation entry
    declares them (`desktopThemes`, one per theme: `key`, `name` as the mod titles it, `window`, and
@@ -413,10 +424,11 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    background that moves can't be listed as a still), when two themes come out as one look, or when
    its shot is over 4 MB (its card over 1 MB). These checks catch a wrong declaration, not code that
    behaves differently in the sandbox: read the pinned code before you publish.
-   Run one `render:mods` at a time. Our E2B key allows 20 sandboxes at once, and a Desktop theme
-   pack records each theme twice plus baselines, so runs side by side pass that and fail their
-   themes with "Rate limit exceeded". Don't stop a run partway: its Desktop sandboxes live on for
-   up to 25 minutes and keep holding their slots.
+   Run one `render:mods` at a time. Our E2B key allows 20 sandboxes at once. One run never starts
+   more than that (`E2B_SANDBOX_LIMIT` in `src/render/mods/mod-sandbox.ts`; the rest wait their
+   turn), but runs side by side, or alongside `smoke:desktop`, add up past it and fail their themes
+   with "Rate limit exceeded". Don't stop a run partway: its Desktop sandboxes live on for up to 25
+   minutes and keep holding their slots.
    A published mod's live previews are replaced as soon as it renders:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
