@@ -407,7 +407,8 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    a twin is a theme of its own; each switch step is one slash command with its arguments). Rerun
    `import:mods` after editing them: a version that isn't live yet has its Desktop themes replaced,
    and they need rendering again. A live version's are refused; re-pin the mod to a new commit, or
-   unpublish it first. Each theme is recorded twice, and fails with the reason when its window looks
+   unpublish it first. A re-pin of a mod that declares Desktop themes imports only once its
+   `desktopThemesCheckedAt` names the new commit (see "Re-pin a mod"). Each theme is recorded twice, and fails with the reason when its window looks
    like Desktop's own, or a theme with switch steps looks like the mod with none (check the steps),
    when it shows the other window than its `window` says, when it differs between the two runs (a
    background that moves can't be listed as a still), when two themes come out as one look, or when
@@ -580,12 +581,17 @@ Remove it with `launchctl bootout gui/$(id -u)/es.statuslin.mod-updates`.
 
 Read each compare link yourself for network, exec, filesystem, env, dependency and dynamic-code
 changes, in the mod's folder for a shared repository, add `inputSteps` to the pull request if a new
-version needs them, and merge it: that merge is the review. Then pull main and re-pin with the one
+version needs them, and merge it: that merge is the review. A mod that declares Desktop themes
+(`desktopThemes`) is listed under **Desktop themes to check**: a release can add, rename or drop a
+theme, and `import:mods` refuses the re-pin until you have read the new commit's themes, fixed the
+mod's `desktopThemes` (name, window, switch steps) to match, and set its `desktopThemesCheckedAt` to
+the new commit. Make those edits on the pull request before you merge it. Then pull main and re-pin with the one
 command below: it refuses a `curation.json` that isn't the one on `origin/main`, so nothing unmerged
 goes live.
 
 To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and
-`inputSteps` if the new version needs them) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another
+`inputSteps` if the new version needs them, and for a mod with `desktopThemes`, check them against
+the new commit and set `desktopThemesCheckedAt` to it) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another
 repository imports as a new mod, named `<name>-<owner>`. The mod's title stays as it was first
 imported. Its description is the published version's plugin.json `description`: publishing reads
 it at the pinned commit, prints it in the dry run, and refuses a commit whose plugin.json GitHub
@@ -628,7 +634,8 @@ published; rerun `render:status-line-desktop` for it.
 `bun run with-env <env>`:
 
 1. Edit `src/mods/curation.json` as above.
-2. Import it. The import adds the commit as the mod's next version and leaves the current one live:
+2. Import it. The import adds the commit as the mod's next version and leaves the current one live.
+   It refuses a mod with `desktopThemes` whose `desktopThemesCheckedAt` isn't the new commit:
    ```sh
    DATABASE_URL='<env pooled url>' bun run import:mods
    ```
