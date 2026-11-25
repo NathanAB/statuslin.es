@@ -5,6 +5,7 @@ import { type BrowserCopyTracking, requestCopyIdentity } from '@/lib/copy-identi
 import type { CopySurface } from '@/lib/copy-surface'
 import { withHttpStatus } from '@/lib/http.server'
 import { getPostHogClient } from '@/lib/posthog-server'
+import { getPublishedModThemes } from '@/themes/queries'
 import { getModDesktopShot } from './desktop-shot'
 import { type InstallCommandKind, modCopyEvent } from './install'
 import { getModDetail, recordModCopy } from './queries'
@@ -15,7 +16,12 @@ export const getModDetailFn = createServerFn({ method: 'GET' })
   .handler(({ data }) =>
     withHttpStatus(async () => {
       const mod = await getModDetail(db, data.slug)
-      return mod && { ...mod, related: await getModRelated(db, mod) }
+      if (!mod) return null
+      const [related, themes] = await Promise.all([
+        getModRelated(db, mod),
+        getPublishedModThemes(db, mod.slug),
+      ])
+      return { ...mod, related, themes }
     }),
   )
 

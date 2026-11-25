@@ -13,18 +13,12 @@ import {
   withRecordingSandbox,
   withReplaySandbox,
 } from './mod-sandbox'
+import { sceneSession, sceneTerminal } from './record-scene'
 import { replayInSandbox } from './replay'
-import { feedScenario, feedStdin, playsBusySession } from './scenario-feed'
-import {
-  keystrokes,
-  launchCommand,
-  SCRIPTED_PROMPT,
-  sessionEnv,
-  sessionFiles,
-  setupCommand,
-} from './session'
-import { TERMINAL, type TerminalSetup } from './terminal'
-import { playsWaitingSession } from './waiting-session'
+import { feedScenario, feedStdin } from './scenario-feed'
+import { keystrokes, launchCommand, sessionEnv, setupCommand } from './session'
+import type { TerminalSetup } from './terminal'
+import { textWatch } from './text-watch'
 
 export interface ModUnderRender {
   source: ModSource
@@ -32,12 +26,28 @@ export interface ModUnderRender {
   pluginName: string
 }
 
-export interface RecordRequest {
+/** A mod's session: the scripted prompt, then the mod's input steps, in the mod's terminal. */
+export interface ModSceneRequest {
+  scene: 'mod'
   /** null records the baseline: the same session with no mod. */
   mod: ModUnderRender | null
   inputSteps: readonly InputStep[]
   terminal: TerminalSetup
 }
+
+/**
+ * The theme scene (`theme-scene.ts`), which fixes the typed prompt and the terminal, so every
+ * theme's card shows the same session.
+ */
+export interface ThemeSceneRequest {
+  scene: 'theme'
+  /** The plugin that carries the theme; null records the scene with no plugin. */
+  mod: ModUnderRender | null
+  /** The `theme` setting the session runs in; null leaves Claude Code's dark default. */
+  theme: string | null
+}
+
+export type RecordRequest = ModSceneRequest | ThemeSceneRequest
 
 export interface Recording {
   /** The final screen, one SGR-styled string per row, as `cropModPreview` takes it. Untrusted. */
@@ -116,15 +126,17 @@ async function recordSession(
   sandbox: RecordingSandbox,
   scenario: Scenario,
   modPluginDir: string | null,
-  inputSteps: readonly InputStep[],
+  { typed, endsOn }: { typed: readonly InputStep[]; endsOn: string | null },
   { cols, rows }: { cols: number; rows: number },
   timing: SessionTiming,
 ): Promise<Uint8Array> {
   const output = new PtyOutput()
   let lastActivityAt = performance.now()
   let launchChunk: number | undefined
+  const sawPrompt = textWatch(PROMPT_GLYPH)
+  const sawEnd = endsOn === null ? null : textWatch(endsOn)
   let promptShown = false
-  const decoder = new TextDecoder()
+  let endShownAt: number | undefined
   const terminal = await sandbox.openTerminal({
     cols,
     rows,
@@ -133,18 +145,18 @@ async function recordSession(
     onData: (bytes) => {
       if (!output.push(bytes)) return
       lastActivityAt = performance.now()
-      if (launchChunk !== undefined && !promptShown) {
-        promptShown = decoder.decode(bytes, { stream: true }).includes(PROMPT_GLYPH)
-      }
+      if (launchChunk !== undefined && !promptShown) promptShown = sawPrompt(bytes)
+      if (endShownAt === undefined && sawEnd?.(bytes)) endShownAt = lastActivityAt
     },
   })
   const send = async (input: string) => {
     await terminal.send(input)
     lastActivityAt = performance.now()
   }
-  const settle = async (maxMs: number, ready = () => true) => {
+  /** Waits until `ready` and `quietMs` have passed since `quietSince`, or `maxMs` runs out. */
+  const settle = async (maxMs: number, ready = () => true, quietSince = () => lastActivityAt) => {
     const startedAt = performance.now()
-    const settled = () => ready() && performance.now() - lastActivityAt >= timing.quietMs
+    const settled = () => ready() && performance.now() - quietSince() >= timing.quietMs
     while (!output.overflowed && !settled() && performance.now() - startedAt < maxMs)
       await sleep(timing.pollMs)
     if (output.overflowed) throw new Error(`pty output passed ${PTY_MAX_BYTES} bytes`)
@@ -156,12 +168,16 @@ async function recordSession(
     // Quiet alone is not enough: Claude Code can be silent for 2 s while it starts, and a prompt
     // typed then stayed unsubmitted in a measured run.
     await settle(LAUNCH_MAX_MS, () => promptShown)
-    for (const step of [SCRIPTED_PROMPT, ...inputSteps]) {
+    for (const [n, step] of typed.entries()) {
       for (const [i, chunk] of keystrokes(step).entries()) {
         if (i > 0) await sleep(timing.keyPauseMs)
         await send(chunk)
       }
-      await settle(STEP_MAX_MS)
+      // Settled at quiet, or once the turn's end has shown: what redraws after it holds nothing new.
+      const endsHere = endsOn !== null && n === typed.length - 1
+      await settle(STEP_MAX_MS, undefined, () =>
+        endsHere ? (endShownAt ?? lastActivityAt) : lastActivityAt,
+      )
     }
     return Buffer.concat(output.chunks.slice(launchChunk))
   } finally {
@@ -177,32 +193,18 @@ export interface SessionCapture {
 
 export async function recordInSandbox(
   sandbox: RecordingSandbox,
-  { mod, inputSteps, terminal }: RecordRequest,
+  request: RecordRequest,
   timing: SessionTiming = SESSION_TIMING,
 ): Promise<SessionCapture> {
   const scenario = feedScenario()
   const version = await claudeCodeVersion(sandbox, scenario)
-  const seed = {
-    target: mod?.pluginName ?? null,
-    nowMs: Date.now(),
-    claudeCodeVersion: version,
-    busy: playsBusySession(inputSteps),
-    waiting: playsWaitingSession(inputSteps),
-  }
-  // Claude Code's fullscreen layout, which some mods need to draw at all.
-  const layout = terminal.fullscreen ? { tui: 'fullscreen' } : {}
-  await sandbox.writeFiles(sessionFiles(scenario, seed, layout))
+  const { files, typed, endsOn } = sceneSession(request, scenario, version)
+  await sandbox.writeFiles(files)
   const setup = await sandbox.run(setupCommand(scenario))
   if (setup.exitCode !== 0) throw new Error(`session setup failed: ${setup.stderr.trim()}`)
-  const modPluginDir = mod ? sandbox.pluginDir : null
-  const pty = await recordSession(
-    sandbox,
-    scenario,
-    modPluginDir,
-    inputSteps,
-    { cols: terminal.cols, rows: terminal.rows ?? TERMINAL.rows },
-    timing,
-  )
+  const modPluginDir = request.mod ? sandbox.pluginDir : null
+  const size = sceneTerminal(request)
+  const pty = await recordSession(sandbox, scenario, modPluginDir, { typed, endsOn }, size, timing)
   return { pty, claudeCodeVersion: version }
 }
 
@@ -221,7 +223,7 @@ export function modRecorder(
 ): ModRecorder {
   return {
     record: async (request) => {
-      const steps = request.inputSteps.length
+      const steps = request.scene === 'mod' ? request.inputSteps.length : 0
       if (steps > MAX_INPUT_STEPS) {
         throw new Error(
           `${steps} input steps cannot finish inside the sandbox lifetime; at most ${MAX_INPUT_STEPS} can`,
@@ -231,13 +233,9 @@ export function modRecorder(
         request.mod?.source ?? null,
         (sandbox) => recordInSandbox(sandbox, request, timing),
       )
+      const { cols, rows: height } = sceneTerminal(request)
       const rows = await sandboxes.withReplaySandbox((sandbox) =>
-        replayInSandbox(
-          sandbox,
-          pty,
-          request.terminal.cols,
-          request.terminal.rows ?? TERMINAL.rows,
-        ),
+        replayInSandbox(sandbox, pty, cols, height),
       )
       return boundRecording({ rows, claudeCodeVersion })
     },

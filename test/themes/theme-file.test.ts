@@ -1,0 +1,224 @@
+import { describe, expect, it } from 'vitest'
+import { parseTerminalThemeFiles } from '@/themes/theme-file'
+
+const file = (key: string, text: string) => ({ key, bytes: new TextEncoder().encode(text) })
+const json = (key: string, value: unknown) => file(key, JSON.stringify(value))
+
+const problems = (files: ReturnType<typeof file>[]) => {
+  const result = parseTerminalThemeFiles(files)
+  return result.ok ? [] : result.problems
+}
+
+describe('parseTerminalThemeFiles', () => {
+  it('reads each file into a theme, keeping its exact text, sorted by key', () => {
+    const amber =
+      '{\n  "name": "Amber 1982",\n  "base": "light",\n  "overrides": { "claude": "#ffb000" }\n}\n'
+
+    expect(parseTerminalThemeFiles([file('zinc', '{}'), file('amber-1982', amber)])).toEqual({
+      ok: true,
+      themes: [
+        {
+          key: 'amber-1982',
+          name: 'Amber 1982',
+          window: 'light',
+          usesTerminalColors: false,
+          source: amber,
+        },
+        { key: 'zinc', name: 'zinc', window: 'dark', usesTerminalColors: false, source: '{}' },
+      ],
+    })
+  })
+
+  it.each([
+    ['dark', 'dark'],
+    ['light-daltonized', 'light'],
+    ['dark-ansi', 'dark'],
+    ['light-ansi', 'light'],
+  ])('draws a theme on base %s in a %s window', (base, window) => {
+    const result = parseTerminalThemeFiles([json('t', { base })])
+
+    expect(result.ok && result.themes[0]?.window).toBe(window)
+  })
+
+  it.each([
+    ['dark', false],
+    ['light-daltonized', false],
+    ['dark-ansi', true],
+    ['light-ansi', true],
+  ])('says whether a theme on base %s draws with the terminal palette: %s', (base, uses) => {
+    const result = parseTerminalThemeFiles([json('t', { base })])
+
+    expect(result.ok && result.themes[0]?.usesTerminalColors).toBe(uses)
+  })
+
+  it.each([
+    ['dark-ansi', 'ansi256(252)', 'light'],
+    ['dark-ansi', 'ansi:black', 'dark'],
+    ['light-ansi', 'ansi256(237)', 'dark'],
+    ['light-ansi', 'ansi:white', 'light'],
+  ])(
+    'draws a theme on base %s behind your messages in %s in a %s window',
+    (base, color, window) => {
+      const result = parseTerminalThemeFiles([
+        json('t', { base, overrides: { userMessageBackground: color } }),
+      ])
+
+      expect(result.ok && result.themes[0]).toMatchObject({ window, usesTerminalColors: true })
+    },
+  )
+
+  it('keeps a plain dark base dark whatever color is behind your messages', () => {
+    const result = parseTerminalThemeFiles([
+      json('t', { base: 'dark', overrides: { userMessageBackground: 'ansi256(252)' } }),
+    ])
+
+    expect(result.ok && result.themes[0]).toMatchObject({
+      window: 'dark',
+      usesTerminalColors: false,
+    })
+  })
+
+  it('keeps $schema, a name of 64 characters and printable unicode', () => {
+    const name = `Ünïcödé 日本 ${'n'.repeat(53)}`
+    const result = parseTerminalThemeFiles([json('t', { $schema: 'https://x.example', name })])
+
+    expect(name).toHaveLength(64)
+    expect(result.ok && result.themes[0]?.name).toBe(name)
+  })
+
+  it.each([
+    ['a base Claude Code has no such theme for', { base: 'solarized' }, 'themes/t.json: base'],
+    ['a field a theme file does not have', { name: 'T', colors: {} }, 'themes/t.json: "colors"'],
+    ['an empty name', { name: '' }, 'themes/t.json: name'],
+    [
+      'a name of only spaces, which /theme would list blank',
+      { name: '   ' },
+      'themes/t.json: name',
+    ],
+    ['a name of 65 characters', { name: 'n'.repeat(65) }, 'themes/t.json: name'],
+    ['a name that is not text', { name: 7 }, 'themes/t.json: name'],
+    ['overrides that are not an object', { overrides: ['#fff'] }, 'themes/t.json: overrides'],
+    ['a color that is not text', { overrides: { claude: 0xffffff } }, 'overrides.claude'],
+    ['a color of 65 characters', { overrides: { claude: 'c'.repeat(65) } }, 'overrides.claude'],
+    ['a token of 65 characters', { overrides: { [`t${'o'.repeat(64)}`]: '#fff' } }, 'overrides'],
+  ])('refuses %s, naming the file', (_name, value, message) => {
+    expect(problems([json('t', value)]).join('\n')).toContain(message)
+  })
+
+  it.each([
+    ['a right-to-left override', '‮'],
+    ['a zero-width space', '​'],
+    ['an escape', '\u001b[2J'],
+  ])('refuses a name or color carrying %s, and never echoes it', (_what, char) => {
+    for (const value of [{ name: `a${char}b` }, { overrides: { claude: `#fff${char}` } }]) {
+      const found = problems([json('t', value)]).join('\n')
+
+      expect(found).toContain('control or format character')
+      expect(found).not.toContain(char)
+    }
+  })
+
+  it.each([
+    ['in $schema', '{"$schema":"https://x.example/\u202Eevil","name":"T"}'],
+    ['between fields', '{"name":"T",\u200B"base":"dark"}'],
+  ])(
+    'refuses a file carrying a format character %s, which would disguise it on review',
+    (_where, text) => {
+      const found = problems([file('t', text)]).join('\n')
+
+      expect(found).toContain('themes/t.json')
+      expect(found).toContain('U+')
+      expect(found).not.toMatch(/[\u200B\u202E]/)
+    },
+  )
+
+  it('refuses a name that spells a right-to-left override as a JSON escape, and never echoes it', () => {
+    const found = problems([file('t', '{"name":"a\\u202Eb"}')]).join('\n')
+
+    expect(found).toContain(
+      'themes/t.json: name must not contain control or format characters (U+202E)',
+    )
+    expect(found).not.toContain('\u202E')
+  })
+
+  it('keeps tabs, newlines and carriage returns in a file', () => {
+    const text = '{\r\n\t"name": "T"\r\n}\n'
+
+    expect(parseTerminalThemeFiles([file('t', text)])).toMatchObject({
+      ok: true,
+      themes: [{ source: text }],
+    })
+  })
+
+  it('names an unknown field or token it cannot print safely without echoing it', () => {
+    const found = problems([json('t', { 'x‮y': 1, overrides: { 'to​ken': '#fff' } })]).join('\n')
+
+    expect(found).toContain('themes/t.json')
+    expect(found).not.toContain('‮')
+    expect(found).not.toContain('​')
+  })
+
+  it.each([
+    ['not JSON', file('t', '{"name": ')],
+    ['a JSON array', file('t', '[]')],
+    [
+      'not UTF-8',
+      {
+        key: 't',
+        bytes: new Uint8Array([...new TextEncoder().encode('{"name":"a'), 0xff, 0x22, 0x7d]),
+      },
+    ],
+  ])('refuses a file that is %s', (_name, bad) => {
+    expect(problems([bad]).join('\n')).toMatch(/^themes\/t\.json /)
+  })
+
+  it('refuses two files whose names match ignoring case, as /theme picks a theme by name', () => {
+    const found = problems([json('a', { name: 'Ocean' }), json('b', { name: 'OCEAN' })])
+
+    expect(found).toEqual([
+      'themes/a.json and themes/b.json are both named "Ocean" (ignoring case, spacing and letter width), and /theme picks a theme by its name',
+    ])
+  })
+
+  it("counts a file's default name, its key, against the others", () => {
+    expect(problems([json('ocean', {}), json('b', { name: 'Ocean' })])).toHaveLength(1)
+  })
+
+  it.each([
+    ['a fullwidth twin', '\uFF24\uFF52\uFF41\uFF43\uFF55\uFF4C\uFF41'],
+    ['a doubled space', 'Dracula  Night'],
+    ['padding spaces', '  Dracula Night '],
+  ])('refuses two names /theme would show alike: %s', (_what, twin) => {
+    const name = twin.includes('Night') ? 'Dracula Night' : 'Dracula'
+    const found = problems([json('a', { name }), json('b', { name: twin })]).join('\n')
+
+    expect(found).toContain('themes/a.json and themes/b.json are both named')
+  })
+
+  it.each([
+    ['a Hangul filler', '\u3164'],
+    ['punctuation alone', '-- ~ --'],
+  ])('refuses a name with no letter or digit: %s', (_what, name) => {
+    expect(problems([json('t', { name })]).join('\n')).toContain(
+      'themes/t.json: name must have a letter or digit',
+    )
+  })
+
+  it('refuses a name that mixes Latin and Cyrillic letters, which can pose as another name', () => {
+    expect(problems([json('t', { name: 'Dr\u0430cula' })]).join('\n')).toContain(
+      'themes/t.json: name mixes Latin, Greek or Cyrillic letters',
+    )
+  })
+
+  it('keeps a name written in one script, Cyrillic included', () => {
+    const result = parseTerminalThemeFiles([
+      json('t', { name: '\u0421\u0443\u043C\u0435\u0440\u043A\u0438 2' }),
+    ])
+
+    expect(result.ok && result.themes[0]?.name).toBe('\u0421\u0443\u043C\u0435\u0440\u043A\u0438 2')
+  })
+
+  it('reports every bad file at once', () => {
+    expect(problems([json('a', { base: 'x' }), json('b', { extra: 1 })])).toHaveLength(2)
+  })
+})

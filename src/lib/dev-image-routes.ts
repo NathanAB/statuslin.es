@@ -3,6 +3,8 @@ export const DEV_IMAGE_ROUTE_PREFIXES = [
   '/og/',
   '/mod-previews/',
   '/admin/mod-previews/',
+  '/theme-previews/',
+  '/admin/theme-previews/',
   '/config-previews/',
   '/badge/',
 ]

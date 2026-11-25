@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { inspectPlugin, PluginRefusal, parseFootprint, parseManifest } from '@/mods/plugin-facts'
-import { modulesOnlyListing } from './seed-mods'
+import { componentsListing, modulesOnlyListing } from './seed-mods'
 
 /** `claude plugin validate --json` for hellosverre/claude-skins, captured in the #38 spike. */
 const skinsValidate = JSON.parse(
@@ -235,6 +235,21 @@ describe('inspectPlugin', () => {
     expect(facts.footprint).toEqual({ events: ['ui.render'], calls: [] })
   })
 
+  // Anthropic's theme-examples at 7b7a29e, validated by Claude Code 2.1.309 (the mod template's),
+  // which warns that its Backdrop and Placed hooks name components it doesn't know yet.
+  it('records the theme calls of a Desktop theme mod', async () => {
+    const facts = await inspectPlugin(
+      sandbox(
+        passing('validate-theme-examples.json'),
+        '{"name":"theme-examples","license":"Apache-2.0","types":"./types/index.d.ts"}',
+        modulesOnlyListing('./register.tsx', ['d 4096 types', 'f 900 types/index.d.ts']),
+      ),
+    )
+
+    expect(facts.footprint.calls).toEqual(expect.arrayContaining(['$.theme.set', '$.theme.clear']))
+    expect(facts.footprint.events).toContain('ui.render{component=Backdrop}')
+  })
+
   it.each([
     [
       'a shell hook, an MCP server and a command (the files validate says nothing about)',
@@ -369,5 +384,133 @@ describe('inspectPlugin', () => {
     expect((refused as Error).message).toBe(
       'claude plugin validate failed: failing: cannot import "node:fs" (from hooks/register.ts): a hooks module imports its own files by relative path and "claude-code", nothing else',
     )
+  })
+})
+
+describe('inspectPlugin and terminal theme files', () => {
+  const noModules = { exitCode: 0, stdout: JSON.stringify({ success: true, contents: [] }) }
+  const ocean = '{ "name": "Ocean", "base": "dark", "overrides": { "claude": "#3aa0ff" } }'
+  const dawn = '{ "name": "Dawn", "base": "light-daltonized" }'
+
+  /** A plugin of plugin.json and `themes` (key → file text), plus `records`. */
+  function themesListing(themes: Record<string, string>, records: string[] = []): string {
+    const files = Object.entries(themes).map(([key, text]) => `f ${text.length} themes/${key}.json`)
+    const paths = Object.fromEntries(
+      Object.entries(themes).map(([k, t]) => [`themes/${k}.json`, t]),
+    )
+    const base = ['d 4096 .claude-plugin', 'f 20 .claude-plugin/plugin.json', 'd 4096 themes']
+    return componentsListing([...base, ...files, ...records], '', paths)
+  }
+
+  function sandbox(components: string, validate = noModules) {
+    return {
+      pluginDir: '/home/user/plugins/pack',
+      async run(command: string) {
+        if (command.endsWith('--version')) {
+          return { exitCode: 0, stdout: '2.1.310 (Claude Code)\n', stderr: '' }
+        }
+        if (command.includes(' plugin validate --json ')) return { ...validate, stderr: '' }
+        if (command.includes('hooks/hooks.json'))
+          return { exitCode: 0, stdout: components, stderr: '' }
+        return { exitCode: 0, stdout: '{"name":"pack"}', stderr: '' }
+      },
+    }
+  }
+  const refusal = (promise: Promise<unknown>) => promise.catch((error: unknown) => error)
+
+  it('reads a plugin made of theme files alone, with no footprint', async () => {
+    const facts = await inspectPlugin(sandbox(themesListing({ ocean, dawn })))
+
+    expect(facts.footprint).toEqual({ events: [], calls: [] })
+    expect(facts.themes).toEqual([
+      { key: 'dawn', name: 'Dawn', window: 'light', usesTerminalColors: false, source: dawn },
+      { key: 'ocean', name: 'Ocean', window: 'dark', usesTerminalColors: false, source: ocean },
+    ])
+  })
+
+  it('reads both the hooks modules and the theme files of a plugin that has both', async () => {
+    const records = ['d 4096 themes', `f ${ocean.length} themes/ocean.json`]
+    const listing = componentsListing(
+      [
+        ...['d 4096 .claude-plugin', 'f 20 .claude-plugin/plugin.json', 'd 4096 hooks'],
+        ...['f 30 hooks/hooks.json', 'f 900 hooks/register.ts', ...records],
+      ],
+      '{ "modules": ["./register.ts"] }',
+      { 'themes/ocean.json': ocean },
+    )
+    const validate = {
+      exitCode: 0,
+      stdout: readFileSync(new URL('./fixtures/validate-mixed.json', import.meta.url), 'utf8'),
+    }
+
+    const facts = await inspectPlugin(sandbox(listing, validate))
+
+    expect(facts.footprint).toEqual({ events: ['ui.render'], calls: [] })
+    expect(facts.themes.map(({ key }) => key)).toEqual(['ocean'])
+  })
+
+  const many = Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`t${i}`, '{}']))
+  const big = `{ "$schema": "${'x'.repeat(16 * 1024)}" }`
+
+  it.each([
+    [
+      'a README inside themes/',
+      themesListing({ ocean }, ['f 90 themes/README.md']),
+      'themes/README.md.',
+    ],
+    [
+      'a folder inside themes/',
+      themesListing({ ocean }, ['d 4096 themes/more', 'f 2 themes/more/a.json']),
+      'themes/more/.',
+    ],
+    [
+      'a theme file whose name is no theme key',
+      themesListing({ ocean }, ['f 2 themes/-x.json']),
+      'themes/-x.json.',
+    ],
+    [
+      'a themes folder spelled in other case',
+      componentsListing(['d 4096 Themes', 'f 2 Themes/a.json'], ''),
+      'Themes/.',
+    ],
+    ['a theme file over 16 KB', themesListing({ big }), 'a themes/big.json over 16 KB.'],
+    ['201 theme files', themesListing(many), '201 theme files, past the 200 statuslin.es lists.'],
+  ])('refuses a plugin with %s, naming it', async (_name, listing, message) => {
+    const refused = await refusal(inspectPlugin(sandbox(listing)))
+
+    expect(refused).toBeInstanceOf(PluginRefusal)
+    expect((refused as Error).message).toBe(
+      `statuslin.es lists a plugin by what its hooks modules and terminal theme files do, so it takes only those. This plugin also has ${message}`,
+    )
+  })
+
+  it.each([
+    [
+      'a base Claude Code has no theme for',
+      { ocean: '{ "base": "neon" }' },
+      'themes/ocean.json: base',
+    ],
+    [
+      'a field a theme file has not',
+      { ocean: '{ "palette": {} }' },
+      'themes/ocean.json: "palette"',
+    ],
+    ['a name hiding a zero-width space', { ocean: '{ "name": "Oce\\u200ban" }' }, 'U+200B'],
+    ['two themes named alike', { ocean, sea: '{ "name": "OCEAN" }' }, 'both named "Ocean"'],
+  ])('refuses a theme file with %s', async (_name, themes, message) => {
+    const refused = await refusal(inspectPlugin(sandbox(themesListing(themes))))
+
+    expect(refused).toBeInstanceOf(PluginRefusal)
+    expect((refused as Error).message).toMatch(/^statuslin\.es cannot list this plugin's themes: /)
+    expect((refused as Error).message).toContain(message)
+  })
+
+  it('fails as our own error when the theme files read are not the ones listed', async () => {
+    const listing = themesListing({}, ['f 2 themes/ocean.json'])
+
+    const failed = await refusal(inspectPlugin(sandbox(listing)))
+
+    expect(failed).toBeInstanceOf(Error)
+    expect(failed).not.toBeInstanceOf(PluginRefusal)
   })
 })

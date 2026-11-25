@@ -8,7 +8,7 @@ import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
 import { forEachConcurrently } from '@/lib/for-each-concurrently'
 import { type InputStep, inputStepsSchema, terminalSetupSchema } from '@/mods/curation'
-import type { Surface } from '@/mods/footprint'
+import { type Surface, setsTheme } from '@/mods/footprint'
 import type { FetchPlugin } from '@/mods/import'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { terminalLine } from '@/mods/terminal-line'
@@ -22,9 +22,21 @@ import {
   type ModRecorder,
   type ModUnderRender,
   type Recording,
+  type RecordRequest,
 } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import type { AnsiSegment } from '@/render/types'
+import {
+  desktopThemesToRecord,
+  recordDesktopThemePreview,
+  refuseDesktopLookalikes,
+} from '@/themes/record-desktop-previews'
+import {
+  type NoThemeScreen,
+  recordThemePreview,
+  refuseLookalikePreviews,
+  themesToRecord,
+} from '@/themes/record-previews'
 
 /**
  * Render the current version of each mod that is not removed against the `clean-main` scenario and
@@ -38,20 +50,36 @@ import type { AnsiSegment } from '@/render/types'
  * input steps, with no mod), shared across the run by mods with the same terminal and input steps
  * while the Claude Code version matches. A crop with no rows of its own is stored as an empty preview, which records that the mod
  * draws nothing in the terminal. Claude Desktop: the Desktop recorder frames what the mod draws
- * there, and stores the PNG, or the fact that it drew nothing.
+ * there, and stores the PNG, or the fact that it drew nothing. A mod whose footprint sets a theme
+ * recolors the whole window, so its Desktop preview is the whole window instead.
+ *
+ * Themes: each terminal theme the version carries is recorded in that theme in the theme scene
+ * (src/render/mods/theme-scene.ts), one session the same for every theme whatever the mod's input
+ * steps and terminal, with the version's plugin loaded and every hook off, and stored as its whole
+ * screen. A full run records only themes with no preview yet; `--slug` records every theme of that
+ * mod again. A theme the operator unlisted (scripts/unlist-theme.ts) is never recorded. A full run records no theme, of either kind, of a version waiting as a user's
+ * submission: any signed-in user can submit hundreds, so they record only when `--slug` names it. A theme's preview is refused, and any earlier one removed, when it looks the same as the
+ * theme scene's baseline (no plugin, no theme: the setting didn't apply) or as another of the
+ * version's themes, so the version can't publish until that is fixed.
+ *
+ * Desktop themes: each Desktop theme the operator declared for the version is recorded twice in
+ * Claude Desktop, in the theme's own light or dark window after its switch steps, and stored as the
+ * whole window with a smaller card. As for terminal themes, a full run records only themes with no
+ * shot yet and `--slug` records them all again. A shot is refused, and any earlier one removed, when
+ * the theme didn't apply, showed the other window, or differed between the two runs.
  *
  * Each surface's result is replaced in one statement. The surfaces are independent: a surface whose
- * run fails keeps whatever result it had, and the other surface is still stored; nothing is ever
- * deleted. Refuses to run without E2B_API_KEY: a fake run would store "draws nothing" over every
- * real preview, and those results would satisfy publish's rendered check.
+ * run fails keeps whatever result it had, and the other surface is still stored; nothing but a
+ * refused theme preview or shot is ever deleted. Refuses to run without E2B_API_KEY: a fake run would store
+ * "draws nothing" over every real preview, and those results would satisfy publish's rendered check.
  *
  * AGENT USAGE (needs DATABASE_URL and E2B_API_KEY):
  *
  *   bun run render:mods                 # every mod's current and newest version
  *   bun run render:mods --slug <slug>   # one mod
  *
- * Prints one outcome per mod per surface. Exit code 0 when every surface rendered or drew nothing,
- * 1 when any surface failed.
+ * Prints one outcome per mod per surface and per theme recorded. Exit code 0 when every surface
+ * rendered or drew nothing and every theme rendered, 1 when any failed.
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -66,6 +94,9 @@ export interface RenderModsDeps {
 }
 
 const CONCURRENCY = 4
+/** How many of one version's themes record at once, so a pack of dozens takes minutes. */
+const THEME_CONCURRENCY = 4
+const DESKTOP_THEME_CONCURRENCY = 2
 
 type Outcome = { kind: 'rendered' } | { kind: 'drew nothing' } | { kind: 'failed'; reason: string }
 
@@ -88,6 +119,9 @@ interface Target {
   inputSteps: unknown
   /** Stored jsonb like inputSteps; null records in the default terminal. */
   terminal: unknown
+  footprint: schema.ModFootprint
+  /** Waiting on review as a user's submission, whose themes a full run leaves to `--slug`. */
+  submitted: boolean
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
@@ -105,6 +139,16 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       commitSha: schema.modVersions.commitSha,
       inputSteps: schema.modVersions.inputSteps,
       terminal: schema.modVersions.terminal,
+      footprint: schema.modVersions.footprint,
+      submitted: sql<boolean>`exists (${db
+        .select({ id: schema.submissions.id })
+        .from(schema.submissions)
+        .where(
+          and(
+            eq(schema.submissions.modVersionId, schema.modVersions.id),
+            eq(schema.submissions.status, 'pending'),
+          ),
+        )})`,
     })
     .from(schema.mods)
     .innerJoin(schema.modVersions, eq(schema.modVersions.modId, schema.mods.id))
@@ -152,7 +196,7 @@ function label(target: Target): string {
 
 type BaselineFor = (
   version: string,
-  inputSteps: InputStep[],
+  inputSteps: readonly InputStep[],
   terminal: TerminalSetup,
 ) => Promise<Recording>
 
@@ -165,20 +209,20 @@ function sharedBaselines(recorder: ModRecorder): BaselineFor {
   const bySetup = new Map<string, (version: string) => Promise<Recording>>()
   return (version, inputSteps, terminal) => {
     const key = JSON.stringify([terminal, inputSteps])
-    const forSetup = bySetup.get(key) ?? baselinesByVersion(recorder, inputSteps, terminal)
+    const forSetup =
+      bySetup.get(key) ??
+      baselinesByVersion(recorder, { scene: 'mod', mod: null, inputSteps, terminal })
     bySetup.set(key, forSetup)
     return forSetup(version)
   }
 }
 
-/** One baseline per Claude Code version, recorded the first time a mod's recording asks for it. */
+/** One baseline per Claude Code version, recorded the first time a recording asks for it. */
 function baselinesByVersion(
   recorder: ModRecorder,
-  inputSteps: InputStep[],
-  terminal: TerminalSetup,
+  baseline: RecordRequest,
 ): (version: string) => Promise<Recording> {
-  const record = async () =>
-    boundRecording(await recorder.record({ mod: null, inputSteps, terminal }))
+  const record = async () => boundRecording(await recorder.record(baseline))
   const byVersion = new Map<string, Promise<Recording>>()
   let first: Promise<Recording> | undefined
   return async (version) => {
@@ -195,6 +239,12 @@ function baselinesByVersion(
     }
     return baseline
   }
+}
+
+/** A mod's baseline for its steps and terminal, and the theme scene's, which every theme shares. */
+interface Baselines {
+  mod: BaselineFor
+  noTheme: NoThemeScreen
 }
 
 async function storePreview(
@@ -263,7 +313,7 @@ async function renderTerminal(
   baselineFor: BaselineFor,
   results: Results,
 ): Promise<Outcome> {
-  const recording = boundRecording(await recorder.record({ ...request, terminal }))
+  const recording = boundRecording(await recorder.record({ scene: 'mod', ...request, terminal }))
   const baseline = await baselineFor(recording.claudeCodeVersion, request.inputSteps, terminal)
   const crop = cropModPreview(baseline.rows, recording.rows)
   const segments = crop.kind === 'rendered' ? crop.segments : []
@@ -273,10 +323,13 @@ async function renderTerminal(
 
 async function renderDesktop(
   request: ModRequest,
+  footprint: schema.ModFootprint,
   { desktopRecorder }: RenderModsDeps,
   results: Results,
 ): Promise<Outcome> {
-  const recording = await desktopRecorder.record(request)
+  const recording = await desktopRecorder.record(
+    setsTheme(footprint) ? { ...request, wholeWindow: true } : request,
+  )
   await results.desktop(recording)
   return { kind: recording.kind === 'shot' ? 'rendered' : 'drew nothing' }
 }
@@ -286,13 +339,92 @@ const failure = (error: unknown): Outcome => ({
   reason: error instanceof Error ? error.message : String(error),
 })
 
-/** Both surfaces need the mod's source; past that, neither surface's failure touches the other. */
+type ThemeOutcome = { key: string; surface: Surface; outcome: Outcome }
+
+/**
+ * Each theme's failure is its own: the version's other themes are still recorded. Once they all
+ * have, any of the version's stored previews that look alike are refused, so the result is the same
+ * whatever order the themes recorded in, and a theme recorded by an earlier run is refused too.
+ */
+async function renderThemes(
+  target: Target,
+  mod: ModUnderRender,
+  { db, recorder }: RenderModsDeps,
+  noTheme: NoThemeScreen,
+  rerecord: boolean,
+): Promise<ThemeOutcome[]> {
+  const themes = await themesToRecord(db, target.versionId, { rerecord })
+  const outcomes = new Map<string, Outcome>()
+  await forEachConcurrently(themes, THEME_CONCURRENCY, async (theme) => {
+    const outcome = await recordThemePreview(db, recorder, mod, theme, noTheme).then(
+      (): Outcome => ({ kind: 'rendered' }),
+      failure,
+    )
+    outcomes.set(theme.key, outcome)
+  })
+  for (const { key, matches } of await refuseLookalikePreviews(db, target.versionId)) {
+    const themesNamed = `${matches.length === 1 ? 'theme' : 'themes'} ${matches.join(', ')}`
+    outcomes.set(key, { kind: 'failed', reason: `looks the same as ${themesNamed}` })
+  }
+  return [...outcomes]
+    .map(([key, outcome]) => ({ key, surface: 'terminal' as const, outcome }))
+    .sort((a, b) => a.key.localeCompare(b.key))
+}
+
+async function renderDesktopThemes(
+  target: Target,
+  mod: ModUnderRender,
+  { db, desktopRecorder }: RenderModsDeps,
+  rerecord: boolean,
+): Promise<ThemeOutcome[]> {
+  const themes = await desktopThemesToRecord(db, target.versionId, { rerecord })
+  const outcomes: ThemeOutcome[] = []
+  await forEachConcurrently(themes, DESKTOP_THEME_CONCURRENCY, async (theme) => {
+    const outcome = await recordDesktopThemePreview(db, desktopRecorder, mod, theme).then(
+      (): Outcome => ({ kind: 'rendered' }),
+      failure,
+    )
+    outcomes.push({ key: theme.key, surface: 'desktop', outcome })
+  })
+  const byKey = new Map(outcomes.map((theme) => [theme.key, theme]))
+  for (const { key, matches } of await refuseDesktopLookalikes(db, target.versionId)) {
+    const themesNamed = `${matches.length === 1 ? 'theme' : 'themes'} ${matches.join(', ')}`
+    const outcome: Outcome = { kind: 'failed', reason: `looks the same as ${themesNamed}` }
+    byKey.set(key, { key, surface: 'desktop', outcome })
+  }
+  return [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key))
+}
+
+type TargetOutcomes = Record<Surface, Outcome> & {
+  themes: ThemeOutcome[]
+  /** Themes a full run left unrecorded because the plugin is a pending submission. */
+  skippedThemes: number
+}
+
+/**
+ * Any signed-in user can submit a plugin of hundreds of themes, and each theme costs sandboxes, so a
+ * full run records a pending submission's themes only once the operator names it with `--slug`.
+ */
+async function submittedThemesLeft(db: Db, target: Target): Promise<number> {
+  const options = { rerecord: false }
+  const [terminal, desktop] = await Promise.all([
+    themesToRecord(db, target.versionId, options),
+    desktopThemesToRecord(db, target.versionId, options),
+  ])
+  return terminal.length + desktop.length
+}
+
+/**
+ * Both surfaces and the themes need the mod's source; past that, no surface's or theme's failure
+ * touches another.
+ */
 async function renderTarget(
   target: Target,
   deps: RenderModsDeps,
-  baselineFor: BaselineFor,
+  baselines: Baselines,
   results: Results,
-): Promise<Record<Surface, Outcome>> {
+  rerecordThemes: boolean,
+): Promise<TargetOutcomes> {
   let request: ModRequest
   let setup: TerminalSetup
   try {
@@ -303,18 +435,23 @@ async function renderTarget(
     const source = { tarball, path: target.path }
     request = { mod: { source, pluginName: target.pluginName }, inputSteps }
   } catch (error) {
-    return { terminal: failure(error), desktop: failure(error) }
+    return { terminal: failure(error), desktop: failure(error), themes: [], skippedThemes: 0 }
   }
-  const [terminal, desktop] = await Promise.all([
-    renderTerminal(request, setup, deps, baselineFor, results).catch(failure),
-    renderDesktop(request, deps, results).catch(failure),
+  const askedFor = rerecordThemes || !target.submitted
+  const [terminal, desktop, themes, desktopThemes, skippedThemes] = await Promise.all([
+    renderTerminal(request, setup, deps, baselines.mod, results).catch(failure),
+    renderDesktop(request, target.footprint, deps, results).catch(failure),
+    askedFor ? renderThemes(target, request.mod, deps, baselines.noTheme, rerecordThemes) : [],
+    askedFor ? renderDesktopThemes(target, request.mod, deps, rerecordThemes) : [],
+    askedFor ? 0 : submittedThemesLeft(deps.db, target),
   ])
-  return { terminal, desktop }
+  return { terminal, desktop, themes: [...themes, ...desktopThemes], skippedThemes }
 }
 
-function outcomeLine(target: Target, surface: Surface, outcome: Outcome): string {
+/** `what` names the mod, or one of its themes. */
+function outcomeLine(what: string, surface: Surface, outcome: Outcome): string {
   const reason = 'reason' in outcome ? `: ${outcome.reason}` : ''
-  return `${outcome.kind} ${label(target)} ${IN_SURFACE[surface]}${reason}`
+  return `${outcome.kind} ${what} ${IN_SURFACE[surface]}${reason}`
 }
 
 export async function renderMods(
@@ -328,20 +465,34 @@ export async function renderMods(
     return 1
   }
 
-  const baselineFor = sharedBaselines(deps.recorder)
+  const baselines: Baselines = {
+    mod: sharedBaselines(deps.recorder),
+    noTheme: baselinesByVersion(deps.recorder, { scene: 'theme', mod: null, theme: null }),
+  }
 
   let failed = 0
+  const report = (what: string, surface: Surface, outcome: Outcome) => {
+    if (outcome.kind === 'failed') failed++
+    log(outcomeLine(what, surface, outcome))
+  }
   await forEachConcurrently(todo, CONCURRENCY, async (target) => {
     const outcomes = await renderTarget(
       target,
       deps,
-      baselineFor,
+      baselines,
       storeResults(deps.db, target.versionId),
+      options.slug !== undefined,
     )
     for (const surface of ['terminal', 'desktop'] as const) {
-      const outcome = outcomes[surface]
-      if (outcome.kind === 'failed') failed++
-      log(outcomeLine(target, surface, outcome))
+      report(label(target), surface, outcomes[surface])
+    }
+    for (const { key, surface, outcome } of outcomes.themes) {
+      report(`${label(target)} theme ${key}`, surface, outcome)
+    }
+    if (outcomes.skippedThemes > 0) {
+      log(
+        `skipped ${label(target)} themes: a full run records no theme of a submitted plugin, and this one has ${outcomes.skippedThemes} to record. Record them with: bun run render:mods --slug ${target.slug}`,
+      )
     }
   })
   return failed === 0 ? 0 : 1

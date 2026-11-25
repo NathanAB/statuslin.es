@@ -57,6 +57,11 @@ export const mods = pgTable(
     tags: jsonb('tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     allTags: jsonb('all_tags').$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     copyCount: integer('copy_count').notNull().default(0),
+    /**
+     * When the operator showed this curated draft as an unreviewed mod (ADR 0014): its page and
+     * theme cards, with no install. Only a draft's counts; publishing clears it.
+     */
+    unreviewedPageAt: timestamp('unreviewed_page_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -83,6 +88,11 @@ export const modVersions = pgTable(
     pluginVersion: text('plugin_version'),
     license: text('license'),
     footprint: jsonb('footprint').$type<ModFootprint>().notNull(),
+    /**
+     * The hooks modules the plugin declares, each the code a visitor installs with it; empty for a
+     * plugin of theme files alone. null for a version read before intake recorded them.
+     */
+    hooksModules: jsonb('hooks_modules').$type<string[]>(),
     validatedWith: text('validated_with').notNull(),
     inputSteps: jsonb('input_steps').$type<ModInputSteps>().notNull().default(sql`'[]'::jsonb`),
     cardSurface: text('card_surface').$type<CardSurface>(),

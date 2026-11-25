@@ -34,6 +34,9 @@ const MOD: ModDetail = {
   updatedAt: '2026-10-15',
   recordedWith: '2.1.0',
   reviewedAt: '2026-10-15',
+  themeOnly: false,
+  themeCounts: { desktop: 0, terminal: 0 },
+  terminalHookError: false,
 }
 
 const ENTRY = `{\n  "name": "deck",\n  "source": {\n    "source": "url",\n    "url": "https://github.com/octocat/deck.git",\n    "sha": "${SHA}"\n  }\n}`

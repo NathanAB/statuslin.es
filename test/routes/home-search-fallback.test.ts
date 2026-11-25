@@ -24,6 +24,10 @@ vi.mock('@/mods/gallery-functions', async (importOriginal) => ({
 vi.mock('@/home/functions', () => ({
   getHomeShowcaseFn: vi.fn().mockResolvedValue({ hero: [] }),
 }))
+vi.mock('@/themes/functions', () => ({
+  getThemeCardsFn: vi.fn().mockResolvedValue([]),
+  getHomeThemesFn: vi.fn().mockResolvedValue({ themes: [], total: 0 }),
+}))
 
 const { getRouter } = await import('@/router')
 

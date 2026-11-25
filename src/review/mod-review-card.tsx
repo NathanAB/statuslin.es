@@ -8,6 +8,7 @@ import {
 import { ReviewDecisionControls } from '@/review/dashboard-rejection-controls'
 import { RejectionDetails } from '@/review/dashboard-rejection-details'
 import type { ModReviewRow, ModReviewVersion } from '@/review/mod-queue'
+import { ThemeReviewList } from '@/review/theme-review-list'
 import { AnalyticsPrivate } from '@/ui/analytics-private'
 import { AuthorChip } from '@/ui/author-chip'
 import { Badge } from '@/ui/badge'
@@ -22,7 +23,7 @@ import { StatuslinePreview } from '@/ui/statusline-preview'
 import { Text, TextLink } from '@/ui/text'
 
 /** The mod's folder on GitHub at the version's commit. */
-function folderUrl(v: Pick<ModReviewVersion, 'repoUrl' | 'path' | 'commitSha'>): string {
+export function folderUrl(v: Pick<ModReviewVersion, 'repoUrl' | 'path' | 'commitSha'>): string {
   const tree = `${v.repoUrl}/tree/${v.commitSha}`
   return v.path === '' ? tree : `${tree}/${v.path}`
 }
@@ -142,7 +143,10 @@ function meta(row: ModReviewRow) {
   ]
 }
 
-/** A submitted mod on /admin: what it touches, both previews, its source at the commit, and the decision. */
+/**
+ * A submitted mod on /admin: what it touches, both previews, each theme's preview and file, its
+ * source at the commit, and the decision.
+ */
 export function ModReviewCard({ row }: { row: ModReviewRow }) {
   const { mod, version } = row
   const view = headline(row)
@@ -178,6 +182,7 @@ export function ModReviewCard({ row }: { row: ModReviewRow }) {
         <Previews row={row} />
         <Footprint label="Events it hooks" entries={version.footprint.events} />
         <Footprint label="Calls it makes" entries={version.footprint.calls} />
+        <ThemeReviewList themes={row.themes} />
         <RejectionDetails version={version} slug={mod.slug} showActions />
         <ApprovalDetails version={version} showActions />
         <MetaList items={meta(row)} />

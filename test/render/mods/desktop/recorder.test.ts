@@ -1,16 +1,30 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { InputStep } from '@/mods/curation'
+import { MAX_STEP_CHARS } from '@/mods/curation'
 import { anthropicUsageSetupScript } from '@/render/anthropic-usage-sandbox'
 import { analyseShot } from '@/render/mods/desktop/analyse'
 import type { RecordingSetup } from '@/render/mods/desktop/desktop-sandbox'
-import { MAX_INPUT_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
+import { MAX_INPUT_STEPS } from '@/render/mods/desktop/drive'
 import { desktopRecorder, sharedOnce } from '@/render/mods/desktop/recorder'
 import { stepTextPath } from '@/render/mods/desktop/session'
 import type { StatusLineScript } from '@/render/mods/desktop/types'
+import { analyseTheme, analyseWindow } from '@/render/mods/desktop/window-shot'
 import type { SandboxFile } from '@/render/mods/mod-sandbox'
 
 vi.mock('@/render/mods/desktop/analyse', () => ({
   analyseShot: vi.fn(async () => ({ kind: 'nothing' })),
+}))
+
+const WINDOW_SHOT = {
+  png: new Uint8Array([7]),
+  width: 1100,
+  height: 900,
+  card: { png: new Uint8Array([8]), width: 440, height: 360 },
+  look: 'f'.repeat(64),
+}
+vi.mock('@/render/mods/desktop/window-shot', () => ({
+  analyseWindow: vi.fn(async () => ({ kind: 'shot', ...WINDOW_SHOT })),
+  analyseTheme: vi.fn(async () => WINDOW_SHOT),
 }))
 
 const CLICK = { type: 'click' as const, row: 21, col: 50 }
@@ -272,5 +286,152 @@ describe('desktopRecorder status line', () => {
     const [, session] = await stagedFiles()
 
     expect(statusLineFiles(session)).toEqual([SAMPLE])
+  })
+})
+
+describe('desktopRecorder themes', () => {
+  const VERSIONS = { desktopVersion: '6.28899.6', engineVersion: '2.1.330' }
+  const THEME = { mod: MOD, window: 'light' as const, switchSteps: ['/custom-theme honu-lagoon'] }
+
+  interface Session {
+    mod: boolean
+    window: unknown
+    steps: string[]
+  }
+
+  function recordingSandboxes(versions = () => VERSIONS) {
+    const sessions: Session[] = []
+    const sandboxes = {
+      withRecordingDesktop: vi.fn().mockImplementation(async (setup: RecordingSetup) => {
+        const files = setup.files(VERSIONS)
+        const config = files.find((f) => f.path.endsWith('/Claude-3p/config.json'))
+        sessions.push({
+          mod: setup.source !== null,
+          window: JSON.parse(String(config?.data)).userThemeMode,
+          steps: files.filter((f) => /\/step-\d+\.txt$/.test(f.path)).map((f) => String(f.data)),
+        })
+        return { ...versions(), png: new Uint8Array([sessions.length]) }
+      }),
+      withAnalysisSandbox: vi.fn().mockImplementation((use: (a: object) => unknown) => use({})),
+    }
+    return { sessions, sandboxes }
+  }
+
+  it("records the theme twice in its window with its switch steps, against Desktop's own window and the mod's", async () => {
+    const { sessions, sandboxes } = recordingSandboxes()
+
+    const shot = await desktopRecorder(sandboxes).recordTheme(THEME)
+
+    expect(shot).toEqual({ ...WINDOW_SHOT, ...VERSIONS })
+    const theme = { mod: true, window: 'light', steps: ['/custom-theme honu-lagoon'] }
+    expect(sessions).toHaveLength(4)
+    expect(sessions).toEqual(
+      expect.arrayContaining([
+        { mod: false, window: 'light', steps: [] },
+        { mod: true, window: 'light', steps: [] },
+        theme,
+      ]),
+    )
+    expect(sessions.filter((s) => s.mod && s.steps.length > 0)).toEqual([theme, theme])
+  })
+
+  it("hands the analysis the mod's own window with no steps, apart from the runs and the baseline", async () => {
+    const { sandboxes } = recordingSandboxes()
+
+    await desktopRecorder(sandboxes).recordTheme(THEME)
+
+    const [, input] = vi.mocked(analyseTheme).mock.lastCall ?? []
+    expect(input?.modDefault).toBeInstanceOf(Uint8Array)
+    expect([...(input?.shots ?? []), input?.baseline]).not.toContain(input?.modDefault)
+  })
+
+  it("records the mod's own window once per window, for the themes with switch steps alone", async () => {
+    const { sessions, sandboxes } = recordingSandboxes()
+    const recorder = desktopRecorder(sandboxes)
+
+    await recorder.recordTheme(THEME)
+    await recorder.recordTheme({ ...THEME, switchSteps: ['/custom-theme snow-pines'] })
+    await recorder.recordTheme({ ...THEME, window: 'dark', switchSteps: ['/custom-theme ember'] })
+    await recorder.recordTheme({ ...THEME, window: 'dark', switchSteps: [] })
+
+    expect(sessions.filter((s) => s.mod && s.steps.length === 0).map((s) => s.window)).toEqual([
+      'light',
+      'dark',
+      'dark',
+      'dark',
+    ])
+    expect(vi.mocked(analyseTheme).mock.lastCall?.[1].modDefault).toBeNull()
+  })
+
+  it('hands both runs and the baseline to the analysis, with the window the theme is made for', async () => {
+    const { sandboxes } = recordingSandboxes()
+
+    await desktopRecorder(sandboxes).recordTheme(THEME)
+
+    const [, input] = vi.mocked(analyseTheme).mock.lastCall ?? []
+    expect(input?.window).toBe('light')
+    expect(input?.shots).toHaveLength(2)
+    expect(input?.shots).not.toContain(input?.baseline)
+  })
+
+  it('records one baseline per window, shared by every theme made for it', async () => {
+    const { sessions, sandboxes } = recordingSandboxes()
+    const recorder = desktopRecorder(sandboxes)
+
+    await recorder.recordTheme(THEME)
+    await recorder.recordTheme({ ...THEME, switchSteps: ['/custom-theme snow-pines'] })
+    await recorder.recordTheme({ ...THEME, window: 'dark', switchSteps: [] })
+
+    expect(sessions.filter((s) => !s.mod).map((s) => s.window)).toEqual(['light', 'dark'])
+  })
+
+  it('records a theme its mod sets on its own with no steps', async () => {
+    const { sessions, sandboxes } = recordingSandboxes()
+
+    await desktopRecorder(sandboxes).recordTheme({ ...THEME, switchSteps: [] })
+
+    expect(sessions.filter((s) => s.mod).map((s) => s.steps)).toEqual([[], []])
+  })
+
+  it.each([
+    [
+      'more switch steps than the sandbox lifetime fits',
+      Array(MAX_INPUT_STEPS + 1).fill('/x'),
+      /input steps/,
+    ],
+    ['a switch step too long to type', ['x'.repeat(MAX_STEP_CHARS + 1)], /characters/],
+  ])('refuses %s, before opening a sandbox', async (_name, switchSteps, message) => {
+    const sandboxes = { withRecordingDesktop: vi.fn(), withAnalysisSandbox: vi.fn() }
+
+    await expect(desktopRecorder(sandboxes).recordTheme({ ...THEME, switchSteps })).rejects.toThrow(
+      message,
+    )
+    expect(sandboxes.withRecordingDesktop).not.toHaveBeenCalled()
+  })
+
+  it('refuses runs on a Desktop other than the baseline', async () => {
+    let call = 0
+    const { sandboxes } = recordingSandboxes(() =>
+      ++call === 1 ? VERSIONS : { ...VERSIONS, desktopVersion: '6.30000.0' },
+    )
+
+    await expect(desktopRecorder(sandboxes).recordTheme(THEME)).rejects.toThrow(/Desktop/)
+    expect(sandboxes.withAnalysisSandbox).not.toHaveBeenCalled()
+  })
+
+  it("analyses a theme mod's own recording as the whole window, against its dark baseline", async () => {
+    const { sessions, sandboxes } = recordingSandboxes()
+    vi.mocked(analyseShot).mockClear()
+
+    const recording = await desktopRecorder(sandboxes).record({
+      mod: MOD,
+      inputSteps: [],
+      wholeWindow: true,
+    })
+
+    expect(recording).toEqual({ kind: 'shot', ...WINDOW_SHOT, ...VERSIONS })
+    expect(vi.mocked(analyseWindow)).toHaveBeenCalled()
+    expect(vi.mocked(analyseShot)).not.toHaveBeenCalled()
+    expect(sessions.map((s) => s.window)).toEqual(['dark', 'dark'])
   })
 })

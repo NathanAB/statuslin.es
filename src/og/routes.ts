@@ -3,8 +3,17 @@ import { db as defaultDb } from '@/db'
 import { getConfigBySlug } from '@/gallery/queries'
 import { getModDesktopShotPng } from '@/mods/desktop-shot'
 import { getModDetail, type ModDetail } from '@/mods/queries'
-import { configCard, homeCard, type ModCardBody, modCard } from '@/og/card'
+import { configCard, homeCard, type ModCardBody, modCard, themesCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
+import type { ThemeScreen } from '@/og/theme-screen'
+import { palettePageCopy } from '@/themes/palettes'
+import {
+  getPaletteThemes,
+  getPublishedModThemes,
+  getThemeCards,
+  type PublishedTheme,
+  type UnreviewedTheme,
+} from '@/themes/queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver; query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -55,9 +64,28 @@ export async function configCardResponseForRoute(slug: string): Promise<Response
   return configCardResponse(defaultDb, slug)
 }
 
+type TerminalTheme = Extract<PublishedTheme | UnreviewedTheme, { kind: 'terminal' }>
+
+const terminalThemes = <T extends PublishedTheme | UnreviewedTheme>(
+  themes: T[],
+): Extract<T, { kind: 'terminal' }>[] =>
+  themes.filter((theme): theme is Extract<T, { kind: 'terminal' }> => theme.kind === 'terminal')
+
 /** What a mod's card draws: its terminal preview, else its Desktop shot, which satori only reads
- * inline, else neither. */
+ * inline, else neither. A theme plugin's own recording shows nothing of its themes, so its card
+ * draws the first of them in name order instead. */
 async function modCardBody(db: Db, mod: ModDetail): Promise<ModCardBody> {
+  if (mod.themeOnly) {
+    const themes = terminalThemes(await getPublishedModThemes(db, mod.slug))
+    const [first] = themes
+    if (first) {
+      return {
+        kind: 'themes',
+        count: themes.length,
+        first: { segments: first.preview, window: first.window },
+      }
+    }
+  }
   if (mod.preview?.length) return { kind: 'terminal', segments: mod.preview }
   const shot = await getModDesktopShotPng(db, mod.slug)
   if (!shot) return { kind: 'none' }
@@ -78,4 +106,51 @@ export async function modCardResponse(db: Db, slug: string): Promise<Response> {
 
 export async function modCardResponseForRoute(slug: string): Promise<Response> {
   return modCardResponse(defaultDb, slug)
+}
+
+/** The top terminal theme, beside the top one made for the other window so the card shows a light
+ * and a dark look, else beside the next one. A card draws a terminal screen, not a Desktop shot. */
+function themesCardScreens(published: Array<PublishedTheme | UnreviewedTheme>): ThemeScreen[] {
+  const themes = terminalThemes(published)
+  const [first] = themes
+  if (!first) return []
+  const second = themes.find((theme) => theme.window !== first.window) ?? themes[1]
+  return [first, second]
+    .filter((theme): theme is TerminalTheme => theme !== undefined)
+    .map((theme) => ({ segments: theme.preview, window: theme.window }))
+}
+
+/** /themes' card, from the live themes in /themes' order. With none published yet, the home card
+ * BYTES, as for an unknown status line: the hour's cache lets the real card replace it. */
+export async function themesCardResponse(db: Db): Promise<Response> {
+  const themes = await getThemeCards(db)
+  const screens = themesCardScreens(themes)
+  if (screens.length === 0) return pngResponse(await homePngBytes())
+  return pngResponse(await toElementPng(themesCard({ count: themes.length, screens })))
+}
+
+export async function themesCardResponseForRoute(): Promise<Response> {
+  return themesCardResponse(defaultDb)
+}
+
+/** A palette page's card: its heading and its own themes, drawn as /themes' card draws them. A
+ * palette with no page is a 404, as for a mod. */
+export async function paletteCardResponse(db: Db, slug: string): Promise<Response> {
+  const page = await getPaletteThemes(db, slug)
+  if (!page) return new Response('Not found', { status: 404 })
+  const title = palettePageCopy(page.palette, page.themes, page.unreviewed).heading
+  // With no reviewed theme, the card draws and counts the unreviewed ones, and says so (ADR 0014).
+  const reviewed = page.themes.length > 0
+  const themes = reviewed ? page.themes : page.unreviewed
+  const card = themesCard({
+    title,
+    count: themes.length,
+    screens: themesCardScreens(themes),
+    reviewed,
+  })
+  return pngResponse(await toElementPng(card))
+}
+
+export async function paletteCardResponseForRoute(slug: string): Promise<Response> {
+  return paletteCardResponse(defaultDb, slug)
 }

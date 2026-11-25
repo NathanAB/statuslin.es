@@ -6,12 +6,7 @@ import { DetailPageLayout } from '@/gallery/detail-page-layout'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink } from '@/lib/canonical'
 import { jsonLdScript } from '@/lib/json-ld'
-import {
-  MOD_NOT_FOUND_TITLE,
-  MOD_SAFETY_GUIDE_PATH,
-  modMetaDescription,
-  modPageTitle,
-} from '@/lib/page-title'
+import { MOD_NOT_FOUND_TITLE, MOD_SAFETY_GUIDE_PATH } from '@/lib/page-title'
 import { modPath, siteUrl } from '@/lib/site'
 import { getModDetailFn } from '@/mods/functions'
 import { ModInstallPrompt } from '@/mods/install-prompt'
@@ -21,8 +16,10 @@ import { ModHeader } from '@/mods/mod-header'
 import { modInstallFacts } from '@/mods/mod-install-facts'
 import { ModPreview } from '@/mods/mod-preview'
 import { ModRelated } from '@/mods/mod-related'
+import { modMetaDescription, modPageTitle } from '@/mods/page-meta'
 import { useRecordModCopy } from '@/mods/use-record-mod-copy'
 import { modSocialMeta } from '@/og/meta'
+import { PluginThemes } from '@/themes/plugin-themes'
 import { FaqSection } from '@/ui/faq-section'
 import { InstallFacts } from '@/ui/install-facts'
 import { PageShell } from '@/ui/shell'
@@ -39,13 +36,20 @@ export const Route = createFileRoute('/mods/$slug')({
     if (!mod) return { meta: [{ title: MOD_NOT_FOUND_TITLE }] }
     return {
       meta: [
-        { title: modPageTitle(mod.title, mod.generatedContent?.headline) },
+        {
+          title: modPageTitle(mod.title, mod.generatedContent?.headline, {
+            themeOnly: mod.themeOnly,
+            themeCounts: mod.themeCounts,
+          }),
+        },
         {
           name: 'description',
           content: modMetaDescription({
             title: mod.title,
             description: mod.description,
             copy: mod.generatedContent,
+            themeOnly: mod.themeOnly,
+            themeCounts: mod.themeCounts,
           }),
         },
         ...modSocialMeta(loaderData.origin, mod),
@@ -79,9 +83,11 @@ function ModPage() {
         header={<ModHeader mod={mod} />}
         beforeInstall={
           <InstallFacts
-            heading="What this mod can do"
+            heading={mod.themeOnly ? 'What this theme plugin can do' : 'What this mod can do'}
             {...modInstallFacts(mod)}
-            link={{ label: 'Are mods safe?', to: MOD_SAFETY_GUIDE_PATH }}
+            link={
+              mod.themeOnly ? undefined : { label: 'Are mods safe?', to: MOD_SAFETY_GUIDE_PATH }
+            }
           />
         }
         install={
@@ -89,10 +95,12 @@ function ModPage() {
             origin={origin}
             slug={mod.slug}
             title={mod.title}
+            themeOnly={mod.themeOnly}
             controller={copyController}
           />
         }
-        preview={<ModPreview mod={mod} />}
+        preview={mod.themeOnly ? undefined : <ModPreview mod={mod} />}
+        themes={mod.themes.length > 0 ? <PluginThemes themes={mod.themes} /> : undefined}
         whatItDoes={{
           copy: mod.generatedContent,
           tiles: modFactTiles(mod),

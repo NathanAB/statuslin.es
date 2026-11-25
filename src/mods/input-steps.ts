@@ -2,10 +2,11 @@ import { and, asc, eq } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { z } from 'zod'
 import { mods, modVersions, submissions } from '@/db/schema'
-import { MAX_INPUT_STEPS as DESKTOP_MAX_STEPS, MAX_STEP_CHARS } from '@/render/mods/desktop/drive'
+import { MAX_INPUT_STEPS as DESKTOP_MAX_STEPS } from '@/render/mods/desktop/drive'
 import { MAX_INPUT_STEPS as TERMINAL_MAX_STEPS } from '@/render/mods/recorder'
 import type { ModReadmeSource } from './content-generation'
 import { fenceUntrusted, type VersionPin } from './content-prompt'
+import { MAX_STEP_CHARS } from './curation'
 import { describeFootprint } from './footprint'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.

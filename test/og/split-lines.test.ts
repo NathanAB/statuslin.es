@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { splitSegmentsIntoLines } from '@/og/card'
+import { splitSegmentsIntoLines } from '@/og/split-lines'
 import type { AnsiSegment } from '@/render/types'
 
 const seg = (text: string, fg: string | null = null, bold = false): AnsiSegment => ({

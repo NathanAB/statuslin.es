@@ -7,6 +7,9 @@ import {
   modDesktopPreviews,
   modPreviews,
   mods,
+  modThemeDesktopPreviews,
+  modThemePreviews,
+  modThemes,
   modVersions,
   submissions,
 } from '@/db/schema'
@@ -14,6 +17,7 @@ import { modDesktopPreviewPath } from '@/lib/site'
 import { isUuid } from '@/lib/uuid'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
+import { onlyHookError } from './hook-error'
 import type { MarketplaceModRow } from './marketplace'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -24,8 +28,24 @@ export const MOD_SCENARIO_KEY = 'clean-main'
 /**
  * A `mod_versions` row counts as rendered once both surfaces have a result for its scenario: a
  * terminal preview and a Desktop result, either of which may be that the mod drew nothing there.
+ * Every theme it carries needs its own preview too, since each is a card of its own: a terminal
+ * theme its recorded screen, a Desktop theme its whole-window shot. A terminal theme the operator
+ * unlisted (scripts/unlist-theme.ts) has no card, so it needs none.
  */
-export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}))`
+export const versionIsRendered = sql`(exists (select 1 from ${modPreviews} where ${modPreviews.modVersionId} = ${modVersions.id} and ${modPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and exists (select 1 from ${modDesktopPreviews} where ${modDesktopPreviews.modVersionId} = ${modVersions.id} and ${modDesktopPreviews.scenarioKey} = ${MOD_SCENARIO_KEY}) and not exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.unlistedReason} is null and not (case ${modThemes.kind} when 'terminal' then exists (select 1 from ${modThemePreviews} where ${modThemePreviews.themeId} = ${modThemes.id}) when 'desktop' then exists (select 1 from ${modThemeDesktopPreviews} where ${modThemeDesktopPreviews.themeId} = ${modThemes.id}) else false end)))`
+
+/**
+ * A version that carries themes and declares no hooks modules, so installing it runs no code. It
+ * draws nothing as a mod, so it has no mod card; its themes are its cards on /themes (ADR 0012). A
+ * version read before intake recorded its modules (null) is not, since what it runs is unknown.
+ */
+export const versionIsThemeOnly = sql<boolean>`(exists (select 1 from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id}) and coalesce(${modVersions.hooksModules} = '[]'::jsonb, false))`
+
+/** How many themes of one kind a version carries. */
+const versionThemeCount = (kind: 'desktop' | 'terminal') =>
+  sql<number>`(select count(*) from ${modThemes} where ${modThemes.modVersionId} = ${modVersions.id} and ${modThemes.kind} = ${kind})`.mapWith(
+    Number,
+  )
 
 /** Joins a version's clean-main terminal preview. */
 export const terminalPreviewJoin = and(
@@ -135,6 +155,13 @@ export interface ModDetail {
   recordedWith: string | null
   /** ISO date the current version's submission was approved; null for a curated mod (no date). */
   reviewedAt: string | null
+  /** It only carries themes, so its page shows them in place of a mod preview. */
+  themeOnly: boolean
+  /** How many Claude Desktop and terminal themes its current version carries. */
+  themeCounts: { desktop: number; terminal: number }
+  /** Its terminal recording was only Claude Code's error for its session.start hook, so `preview`
+   *  is empty: the page states the error and never shows it. */
+  terminalHookError: boolean
 }
 
 const isoDate = (date: Date) => date.toISOString().slice(0, 10)
@@ -162,6 +189,9 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
       updatedAt: modVersions.createdAt,
       recordedWith: modPreviews.claudeCodeVersion,
       reviewedAt: submissions.reviewedAt,
+      themeOnly: versionIsThemeOnly,
+      desktopThemes: versionThemeCount('desktop'),
+      terminalThemes: versionThemeCount('terminal'),
     })
     .from(mods)
     .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
@@ -173,8 +203,13 @@ export async function getModDetail(db: Db, slug: string): Promise<ModDetail | nu
     )
     .where(and(eq(mods.slug, slug), eq(mods.status, 'published')))
   if (!row) return null
+  const { desktopThemes, terminalThemes, ...detail } = row
+  const terminalHookError = row.preview !== null && onlyHookError(row.preview)
   return {
-    ...row,
+    ...detail,
+    themeCounts: { desktop: desktopThemes, terminal: terminalThemes },
+    preview: terminalHookError ? [] : row.preview,
+    terminalHookError,
     desktop: desktopPreview(row.desktop),
     generatedContent: readPageCopy(modPageCopySchema, row.generatedContent),
     updatedAt: isoDate(row.updatedAt),

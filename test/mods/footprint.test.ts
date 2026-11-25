@@ -1,11 +1,22 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import type { ModFootprint } from '@/db/schema'
 import { terminalPlacement, writesInToolbar } from '@/mods/draw-placement'
 import {
   DRAW_LOCATION_LABEL,
   describeFootprint,
   describeModFootprint,
   footprintRecorded,
+  setsTheme,
 } from '@/mods/footprint'
+import { parseFootprint } from '@/mods/plugin-facts'
+import {
+  HOOK_ERROR_ONLY_PREVIEW,
+  HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+  MODULE_BROKEN_PREVIEW,
+  MODULE_LOAD_ERROR_ONLY_PREVIEW,
+  MODULE_LOAD_ERROR_TIGHT_WRAP_PREVIEW,
+} from './fixtures/hook-error-previews'
 
 // filetree's real footprint, from the render spike (spike/results/summary.md).
 const FILETREE = {
@@ -194,6 +205,60 @@ describe('describeFootprint on the calls and events published mods use', () => {
   })
 })
 
+// Theme entries checked against code.claude.com/docs/en/plugins/mods/reference and the
+// plugin-authoring skill's look.md and types. Desktop draws a theme and the terminal draws none.
+describe('describeFootprint on a Desktop theme mod', () => {
+  const THEME = "sets Claude Desktop's colors and background"
+  const OTHERS = 'can change or block the themes other mods set'
+  const drawn = (footprint: ModFootprint) =>
+    describeFootprint(footprint).draws.map((d) => DRAW_LOCATION_LABEL[d])
+
+  it.each([
+    ['$.theme.set', THEME],
+    ['$.theme.clear', THEME],
+    ['$.ui.backdrop', THEME],
+    ['theme.set', OTHERS],
+    ['theme.clear', OTHERS],
+    ['ui.pointer', 'responds when you click the window background'],
+  ] as const)('describes %s as %j, not a risk', (entry, phrase) => {
+    const result = describeFootprint({ events: [entry], calls: [] })
+    expect(result.unknown).toEqual([])
+    expect(result.phrases).toEqual([phrase])
+    expect(result.risks).toEqual([])
+  })
+
+  it('says a theme draws on the window background, not built-in rows', () => {
+    expect(drawn({ events: ['ui.render{component=Backdrop}'], calls: [] })).toEqual([
+      'the window background',
+    ])
+    expect(drawn({ events: [], calls: ['$.theme.set'] })).toEqual(['the window background'])
+  })
+
+  it('says a placed row draws in the conversation, not built-in rows', () => {
+    expect(drawn({ events: ['ui.render{component=Placed}'], calls: ['$.ui.place'] })).toEqual([
+      'a row in the conversation',
+    ])
+  })
+
+  // Anthropic's theme-examples at 7b7a29e, as Claude Code 2.1.309 (the mod template's) validates it.
+  it("reads theme-examples' real footprint as a theme, with nothing left undescribed", () => {
+    const footprint = parseFootprint(
+      JSON.parse(
+        readFileSync(new URL('./fixtures/validate-theme-examples.json', import.meta.url), 'utf8'),
+      ),
+    )
+    const result = describeFootprint(footprint)
+    expect(result.unknown).toEqual([])
+    expect(result.phrases).toContain(THEME)
+    expect(drawn(footprint)).toEqual([
+      'above the prompt',
+      'a row in the conversation',
+      'a toast',
+      'the window background',
+    ])
+  })
+})
+
 describe('describeModFootprint', () => {
   const PLAIN = { events: ['ui.render{component=AbovePrompt}'], calls: [] }
   const PREVIEW = [{ text: 'row' }]
@@ -221,6 +286,50 @@ describe('describeModFootprint', () => {
     expect(
       describeModFootprint({ footprint, preview: PREVIEW, desktop: { kind: 'nothing' } }).surfaces,
     ).toEqual(['terminal'])
+  })
+
+  // A Desktop theme mod's terminal recording is Claude Code's error for its hook: it drew nothing.
+  it("leaves out the terminal for a mod whose only output there is its hook's error", () => {
+    expect(
+      describeModFootprint({
+        footprint: PLAIN,
+        preview: HOOK_ERROR_ONLY_PREVIEW,
+        desktop: { kind: 'shot' },
+      }).surfaces,
+    ).toEqual(['desktop'])
+  })
+
+  // Claude Code refuses to load a hooks module that registers a Desktop-only API in the terminal.
+  it.each([
+    ['after a space', MODULE_LOAD_ERROR_ONLY_PREVIEW],
+    ['with no space', MODULE_LOAD_ERROR_TIGHT_WRAP_PREVIEW],
+  ])(
+    'leaves out the terminal for a module refused for want of a Desktop API, wrapped %s',
+    (_, preview) => {
+      expect(
+        describeModFootprint({ footprint: PLAIN, preview, desktop: { kind: 'shot' } }).surfaces,
+      ).toEqual(['desktop'])
+    },
+  )
+
+  it('keeps the terminal for a module that failed to load for a reason of its own', () => {
+    expect(
+      describeModFootprint({
+        footprint: PLAIN,
+        preview: MODULE_BROKEN_PREVIEW,
+        desktop: { kind: 'shot' },
+      }).surfaces,
+    ).toEqual(['terminal', 'desktop'])
+  })
+
+  it("keeps the terminal for a mod that draws there beside its hook's error", () => {
+    expect(
+      describeModFootprint({
+        footprint: PLAIN,
+        preview: HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+        desktop: { kind: 'shot' },
+      }).surfaces,
+    ).toEqual(['terminal', 'desktop'])
   })
 
   it('carries the plain-words footprint alongside the surfaces', () => {
@@ -272,5 +381,26 @@ describe('writesInToolbar', () => {
     expect(writes(['ui.render{component=SessionMode}'])).toBe(true)
     expect(writes(['$.ui.status'])).toBe(true)
     expect(writes(['ui.render{component=AbovePrompt}', '$.ui.open'])).toBe(false)
+  })
+})
+
+describe('setsTheme', () => {
+  it.each([
+    { what: 'sets a theme', calls: ['$.theme.set'], events: ['session.start'], sets: true },
+    {
+      what: 'draws a backdrop scene',
+      calls: [],
+      events: ['ui.render{component=Backdrop}'],
+      sets: true,
+    },
+    {
+      what: 'draws above the prompt',
+      calls: [],
+      events: ['ui.render{component=AbovePrompt}'],
+      sets: false,
+    },
+    { what: 'was never recorded', calls: [], events: [], sets: false },
+  ])('is $sets for a mod that $what', ({ calls, events, sets }) => {
+    expect(setsTheme({ calls, events })).toBe(sets)
   })
 })

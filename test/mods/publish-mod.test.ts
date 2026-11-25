@@ -5,7 +5,9 @@ import { insertPendingSubmission } from '@/submissions/record'
 import { runPublish } from '../../scripts/publish-mod'
 import {
   addDesktopPreview,
+  addDesktopTheme,
   addMod,
+  addTheme,
   addVersion,
   type FakeGitHub,
   fakeGitHub,
@@ -13,6 +15,7 @@ import {
   openTestDb,
   REPO_URL,
   SEEDED_DESKTOP_SHOT,
+  SEEDED_THEME_PREVIEW,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -210,6 +213,81 @@ describe('the README beside the previews', () => {
     expect(begin).toBeLessThan(verdict)
   })
 
+  it('points the operator at each theme on /admin before a plugin with themes publishes', async () => {
+    const { versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, versionId, { key: 'nord', name: 'Nord' })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      `themes: 2 terminal themes in v1 at ${sha('a')}. Read each theme's preview beside its exact file or switch steps on /admin, under "Curated theme plugins", before --apply.`,
+    )
+    expect(lines.some((line) => line.startsWith('WARN themes-not-newest'))).toBe(false)
+  })
+
+  it('counts Desktop themes apart from terminal themes', async () => {
+    const { versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'honu-lagoon', window: 'light' })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      `themes: 1 terminal theme and 2 Desktop themes in v1 at ${sha('a')}. Read each theme's preview beside its exact file or switch steps on /admin, under "Curated theme plugins", before --apply.`,
+    )
+  })
+
+  it('warns when the themes being published are not the version /admin shows', async () => {
+    const { modId, versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines).toContain(
+      `WARN themes-not-newest: v1 is not this plugin's newest version (v2), and /admin shows only the newest version's themes. Read v1's theme files at ${sha('a')} before --apply.`,
+    )
+  })
+
+  it('warns of each theme new or changed since the live version, by name and file', async () => {
+    const { modId, currentId } = await publishedMod({})
+    await addTheme(db, currentId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, currentId, { key: 'nord', name: 'Nord' })
+    await addDesktopTheme(db, currentId, { key: 'reef', name: 'Reef' })
+    const update = await addVersion(db, modId, { commitSha: sha('b'), versionNumber: 2 })
+    await addTheme(db, update, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, update, { key: 'nord', name: 'Nord Light', window: 'light' })
+    await addTheme(db, update, { key: 'zen', name: 'Zen' })
+    await addDesktopTheme(db, update, { key: 'reef', name: 'Reef', switchSteps: ['/reef on'] })
+
+    const { lines } = await publish(['meter', sha('b')], fakeGitHub({ readme: README }))
+
+    expect(lines.filter((line) => line.startsWith('WARN theme-'))).toEqual([
+      'WARN theme-changed: "Nord Light" (themes/nord.json) changed since the live version v1. Read it on /admin before --apply.',
+      'WARN theme-changed: "Reef" (Desktop theme reef) changed since the live version v1. Read it on /admin before --apply.',
+      'WARN theme-new: "Zen" (themes/zen.json) is new since the live version v1. Read it on /admin before --apply.',
+    ])
+  })
+
+  it('warns of no theme changes on a first publish', async () => {
+    const { versionId } = await draftMod()
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines.some((line) => line.startsWith('WARN theme-'))).toBe(false)
+  })
+
+  it('says nothing of themes for a plugin that carries none', async () => {
+    await draftMod()
+
+    const { lines } = await publish(['meter', sha('a')], fakeGitHub({ readme: README }))
+
+    expect(lines.some((line) => line.startsWith('themes:'))).toBe(false)
+  })
+
   it('prints them again on --apply', async () => {
     await draftMod()
 
@@ -276,6 +354,23 @@ describe('first publish of an imported draft', () => {
       status: 'published',
       currentVersionId: versionId,
     })
+  })
+
+  // Publishing is the review (ADR 0014): a later unpublish must not bring the unreviewed page back.
+  it('clears the unreviewed page the operator showed for the draft', async () => {
+    const { modId } = await importedDraft()
+    await db
+      .update(schema.mods)
+      .set({ unreviewedPageAt: new Date('2026-11-24T00:00:00Z') })
+      .where(eq(schema.mods.id, modId))
+
+    await publish(['meter', sha('a'), '--apply', '--confirm=meter'])
+
+    const [mod] = await db
+      .select({ unreviewedPageAt: schema.mods.unreviewedPageAt })
+      .from(schema.mods)
+      .where(eq(schema.mods.id, modId))
+    expect(mod).toEqual({ unreviewedPageAt: null })
   })
 
   it('treats a draft pointing at an older version as a first publish of the target', async () => {
@@ -431,9 +526,62 @@ describe('publish refusals', () => {
 
     expect(exitCode).toBe(1)
     expect(output).toMatch(
-      /has not rendered on both surfaces \(it needs a clean-main result in the terminal and in Claude Desktop\)/,
+      /has not rendered on both surfaces \(it needs a clean-main result in the terminal and in Claude Desktop, and a preview of every theme it carries\)/,
     )
     expect(await modState(db, 'meter')).toEqual({ status: 'draft', currentVersionId: null })
+  })
+
+  it('refuses a version until every theme it carries has its own preview', async () => {
+    const { versionId } = await draftMod('dracula-pack')
+    await addTheme(db, versionId, { key: 'dracula', name: 'Dracula' })
+    await addTheme(db, versionId, { key: 'nord', name: 'Nord', rendered: false })
+
+    const { exitCode, output } = await publish([
+      'dracula-pack',
+      sha('a'),
+      '--apply',
+      '--confirm=dracula-pack',
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/and a preview of every theme it carries/)
+    expect(await modState(db, 'dracula-pack')).toEqual({
+      status: 'draft',
+      currentVersionId: null,
+    })
+  })
+
+  it('refuses a version until every Desktop theme it carries has its whole-window shot', async () => {
+    const { versionId } = await draftMod('theme-examples')
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    const honu = await addDesktopTheme(db, versionId, { key: 'honu-lagoon', rendered: false })
+    await db.insert(schema.modThemePreviews).values({ themeId: honu, ...SEEDED_THEME_PREVIEW })
+
+    const { exitCode, output } = await publish([
+      'theme-examples',
+      sha('a'),
+      '--apply',
+      '--confirm=theme-examples',
+    ])
+
+    expect(exitCode).toBe(1)
+    expect(output).toMatch(/and a preview of every theme it carries/)
+  })
+
+  it('publishes a version whose Desktop themes all have their shots', async () => {
+    const { versionId } = await draftMod('theme-examples')
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'rainy-window', switchSteps: [] })
+
+    const { exitCode } = await publish([
+      'theme-examples',
+      sha('a'),
+      '--apply',
+      '--confirm=theme-examples',
+    ])
+
+    expect(exitCode).toBe(0)
+    expect((await modState(db, 'theme-examples'))?.status).toBe('published')
   })
 
   it('refuses a delisted mod, which only delist --restore brings back', async () => {

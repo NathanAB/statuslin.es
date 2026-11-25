@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { PGlite } from '@electric-sql/pglite'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/pglite'
@@ -41,6 +42,8 @@ interface VersionSeed {
   rendered?: boolean
   pluginVersion?: string | null
   footprint?: schema.ModFootprint
+  /** The hooks modules intake recorded; none by default, as for a plugin of theme files alone. */
+  hooksModules?: string[] | null
   repoUrl?: string
   path?: string
 }
@@ -56,6 +59,7 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
       commitSha: seed.commitSha,
       pluginVersion: seed.pluginVersion ?? null,
       footprint: seed.footprint ?? { events: [], calls: [] },
+      hooksModules: seed.hooksModules === undefined ? [] : seed.hooksModules,
       validatedWith: '2.1.0',
     })
     .returning()
@@ -70,6 +74,91 @@ export async function addVersion(db: TestDb, modId: string, seed: VersionSeed): 
     await addDesktopPreview(db, versionId, 'nothing')
   }
   return versionId
+}
+
+interface ThemeSeed {
+  key: string
+  name?: string
+  window?: 'light' | 'dark'
+  usesTerminalColors?: boolean
+  source?: string
+  /** Seeds the theme's preview, so its version can render. */
+  rendered?: boolean
+}
+
+/** The terminal preview `addTheme` stores for a theme seeded as rendered. */
+export const SEEDED_THEME_PREVIEW = {
+  segments: [{ text: 'themed screen' }],
+  claudeCodeVersion: '2.1.0',
+}
+
+/** A terminal theme on a version, as intake stores one read from `themes/<key>.json`. */
+export async function addTheme(db: TestDb, versionId: string, seed: ThemeSeed): Promise<string> {
+  const name = seed.name ?? seed.key
+  const [theme] = await db
+    .insert(schema.modThemes)
+    .values({
+      modVersionId: versionId,
+      kind: 'terminal',
+      key: seed.key,
+      name,
+      window: seed.window ?? 'dark',
+      usesTerminalColors: seed.usesTerminalColors ?? false,
+      source: seed.source ?? JSON.stringify({ name, base: 'dark', overrides: {} }),
+    })
+    .returning()
+  const themeId = theme?.id as string
+  if (seed.rendered ?? true) {
+    await db.insert(schema.modThemePreviews).values({ themeId, ...SEEDED_THEME_PREVIEW })
+  }
+  return themeId
+}
+
+export interface DesktopThemeSeed {
+  key: string
+  name?: string
+  window?: 'light' | 'dark'
+  switchSteps?: string[]
+  rendered?: boolean
+}
+
+export const SEEDED_THEME_SHOT = {
+  png: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7]),
+  width: 1100,
+  height: 900,
+  cardPng: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 8]),
+  cardWidth: 440,
+  cardHeight: 360,
+  lookSignature: 'a'.repeat(64),
+  desktopVersion: '6.28899.6',
+  engineVersion: '2.1.330',
+}
+
+export async function addDesktopTheme(
+  db: TestDb,
+  versionId: string,
+  seed: DesktopThemeSeed,
+): Promise<string> {
+  const [theme] = await db
+    .insert(schema.modThemes)
+    .values({
+      modVersionId: versionId,
+      kind: 'desktop',
+      key: seed.key,
+      name: seed.name ?? seed.key,
+      window: seed.window ?? 'dark',
+      switchSteps: seed.switchSteps ?? [`/custom-theme ${seed.key}`],
+    })
+    .returning()
+  const themeId = theme?.id as string
+  if (seed.rendered ?? true) {
+    // Each seeded theme a look of its own, as distinct themes have.
+    const lookSignature = createHash('sha256').update(seed.key).digest('hex')
+    await db
+      .insert(schema.modThemeDesktopPreviews)
+      .values({ themeId, ...SEEDED_THEME_SHOT, lookSignature })
+  }
+  return themeId
 }
 
 /** The shot `addDesktopPreview` stores, with its card. The shot is a real 1x1 PNG, so a card can
@@ -143,6 +232,36 @@ export async function seedMod(
   return { modId, versionId }
 }
 
+interface ShownDraftSeed {
+  slug: string
+  pluginName: string
+  repoUrl: string
+  path?: string
+  description?: string
+  /** Whether the operator showed it as an unreviewed mod (ADR 0014); true by default. */
+  shown?: boolean
+}
+
+/** A curated draft whose only version is rendered, shown as an unreviewed mod unless told not to. */
+export async function addShownDraft(
+  db: TestDb,
+  { slug, pluginName, repoUrl, path = '', description = '', shown = true }: ShownDraftSeed,
+): Promise<{ modId: string; versionId: string }> {
+  const modId = await addMod(db, slug, 'draft')
+  const versionId = await addVersion(db, modId, {
+    commitSha: sha('f'),
+    versionNumber: 1,
+    repoUrl,
+    path,
+  })
+  await setCurrentVersion(db, modId, versionId)
+  await db
+    .update(schema.mods)
+    .set({ pluginName, description, unreviewedPageAt: shown ? new Date() : null })
+    .where(eq(schema.mods.id, modId))
+  return { modId, versionId }
+}
+
 export async function modState(db: TestDb, slug: string) {
   const [row] = await db
     .select({ status: schema.mods.status, currentVersionId: schema.mods.currentVersionId })
@@ -198,10 +317,19 @@ export function fakeGitHub(opts: FakeGitHubOptions = {}): FakeGitHub {
 
 /**
  * What the inspect sandbox's components command prints (src/mods/plugin-components.ts): a NUL-ended
- * `<type> <size> <path>` record per file, then hooks/hooks.json.
+ * `<type> <size> <path>` record per file, each theme file's path and base64 bytes (`themes`, by
+ * path), then hooks/hooks.json.
  */
-export function componentsListing(records: string[], hooksJson: string): string {
-  return `${records.map((record) => `${record}\0`).join('')}\0--- hooks/hooks.json ---\0${hooksJson}`
+export function componentsListing(
+  records: string[],
+  hooksJson: string,
+  themes: Record<string, string> = {},
+): string {
+  const files = records.map((record) => `${record}\0`).join('')
+  const themeFiles = Object.entries(themes)
+    .map(([path, text]) => `${path}\0${Buffer.from(text).toString('base64')}\0`)
+    .join('')
+  return `${files}\0--- themes/ ---\0${themeFiles}\0--- hooks/hooks.json ---\0${hooksJson}`
 }
 
 /** A plugin made of one hooks module, with plugin.json and hooks/hooks.json, plus `records`. */
@@ -218,3 +346,13 @@ export function modulesOnlyListing(
 
 /** The listing for the skins validate report's one module (test/mods/fixtures/validate-skins.json). */
 export const MODULES_ONLY_LISTING = modulesOnlyListing('./register.tsx')
+
+/** A plugin of plugin.json and theme files alone (`themes`, by path), with no hooks folder. */
+export function themesOnlyListing(themes: Record<string, string>): string {
+  const files = Object.entries(themes).map(([path, text]) => `f ${text.length} ${path}`)
+  const base = ['d 4096 .claude-plugin', 'f 20 .claude-plugin/plugin.json', 'd 4096 themes']
+  return componentsListing([...base, ...files], '', themes)
+}
+
+/** What `claude plugin validate --json` prints for a plugin with no hooks modules. */
+export const NO_MODULES_VALIDATE = JSON.stringify({ success: true, contents: [] })

@@ -49,6 +49,11 @@ export function siteUrl(): string {
 
 export const MODS_PATH = '/mods'
 
+export const THEMES_PATH = '/themes'
+
+/** A named palette's page, such as /themes/catppuccin. */
+export const palettePath = (slug: string) => `${THEMES_PATH}/${slug}`
+
 export const MOD_ROUTE = '/mods/$slug'
 
 export function modPath(slug: string): string {
@@ -98,6 +103,18 @@ export function modDesktopPreviewPath(
   image: 'shot' | 'card' = 'shot',
 ): string {
   const path = `${MOD_DESKTOP_PREVIEW_ROUTE.replace('$versionId', () => versionId)}?r=${renderedAt.getTime()}`
+  return image === 'card' ? `${path}&image=card` : path
+}
+
+export const THEME_DESKTOP_PREVIEW_ROUTE = '/theme-previews/$themeId/desktop.png'
+
+/** A theme's whole-window shot, or with `image` 'card' its card image, under the render that made it. */
+export function themeDesktopPreviewPath(
+  themeId: string,
+  renderedAt: Date,
+  image: 'shot' | 'card' = 'shot',
+): string {
+  const path = `${THEME_DESKTOP_PREVIEW_ROUTE.replace('$themeId', () => themeId)}?r=${renderedAt.getTime()}`
   return image === 'card' ? `${path}&image=card` : path
 }
 

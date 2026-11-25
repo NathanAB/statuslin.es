@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne } from 'drizzle-orm'
+import { and, asc, desc, eq, ne, not } from 'drizzle-orm'
 import type { PgDatabase, SelectedFields } from 'drizzle-orm/pg-core'
 import { modPageCopySchema, readPageCopy } from '@/content/types'
 import { type ModFootprint, modDesktopPreviews, modPreviews, mods, modVersions } from '@/db/schema'
@@ -17,11 +17,13 @@ import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import type { GalleryCatalogueMod } from './gallery-catalogue'
+import { onlyHookError } from './hook-error'
 import {
   desktopPreview,
   desktopPreviewColumns,
   desktopPreviewJoin,
   terminalPreviewJoin,
+  versionIsThemeOnly,
 } from './queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -38,7 +40,10 @@ const MOD_RANKING: RankedColumns = {
   copyEvents: MOD_COPY_EVENTS,
 }
 
-/** Every mod with its current version's previews, as card rows plus `extra`; callers filter. */
+/**
+ * Every mod with its current version's previews, as card rows plus `extra`; callers filter. A
+ * theme-only plugin has no card: its themes are listed on /themes.
+ */
 function selectModCards<Extra extends SelectedFields>(db: Db, extra: Extra) {
   return db
     .select({
@@ -55,7 +60,7 @@ function selectModCards<Extra extends SelectedFields>(db: Db, extra: Extra) {
       ...extra,
     })
     .from(mods)
-    .innerJoin(modVersions, eq(modVersions.id, mods.currentVersionId))
+    .innerJoin(modVersions, and(eq(modVersions.id, mods.currentVersionId), not(versionIsThemeOnly)))
     .leftJoin(modPreviews, terminalPreviewJoin)
     .leftJoin(modDesktopPreviews, desktopPreviewJoin)
     .$dynamic()
@@ -66,6 +71,12 @@ type ModCardRow = Omit<GalleryModCard, 'preview' | 'desktopShot'> & {
   desktop: Parameters<typeof desktopPreview>[0]
 }
 
+/** What a mod drew in the terminal: nothing when the recording is empty or is only Claude Code's
+ * error for a mod built for Claude Desktop. */
+function terminalDrawing(preview: AnsiSegment[] | null): AnsiSegment[] | null {
+  return preview && preview.length > 0 && !onlyHookError(preview) ? compactSegments(preview) : null
+}
+
 /** A card has no slot for a surface the mod drew nothing on. */
 function modItem({ preview, desktop, ...card }: ModCardRow): GalleryItem {
   const shot = desktopPreview(desktop)
@@ -73,7 +84,7 @@ function modItem({ preview, desktop, ...card }: ModCardRow): GalleryItem {
     kind: 'mod',
     card: {
       ...card,
-      preview: preview && preview.length > 0 ? compactSegments(preview) : null,
+      preview: terminalDrawing(preview),
       desktopShot: shot?.kind === 'shot' ? shot.card : null,
     },
   }
@@ -134,7 +145,7 @@ export async function getHeroMods(db: Db): Promise<HeroMod[]> {
       title,
       authorGithub,
       copyCount,
-      render: preview && preview.length > 0 ? compactSegments(preview) : null,
+      render: terminalDrawing(preview),
       desktop: shot?.kind === 'shot' ? shot.card : null,
       footprint: row.footprint,
       sortKey: row.sortKey,

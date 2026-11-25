@@ -4,12 +4,12 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
-  BUSY_WORKSPACE_FILES,
   busySettings,
   cannedReply,
   feedFile,
   feedScenario,
   playsBusySession,
+  SUM_BUG_WORKSPACE_FILES,
 } from '@/render/mods/scenario-feed'
 import { hm, usage, win } from '@/render/scenario-helpers'
 import { SCENARIO_BY_KEY } from '@/render/scenarios'
@@ -131,7 +131,7 @@ describe('playsBusySession', () => {
 describe('busy session workspace', () => {
   function workspace(): string {
     const dir = mkdtempSync(join(tmpdir(), 'busy-'))
-    for (const { path, data } of BUSY_WORKSPACE_FILES) {
+    for (const { path, data } of SUM_BUG_WORKSPACE_FILES) {
       mkdirSync(dirname(join(dir, path)), { recursive: true })
       writeFileSync(join(dir, path), data)
     }
@@ -148,14 +148,14 @@ describe('busy session workspace', () => {
   }
 
   it('runs test.sh as its npm test script, and has a build folder to remove', () => {
-    const files = new Map(BUSY_WORKSPACE_FILES.map((f) => [f.path, f.data]))
+    const files = new Map(SUM_BUG_WORKSPACE_FILES.map((f) => [f.path, f.data]))
 
     expect(JSON.parse(String(files.get('package.json'))).scripts).toEqual({ test: 'sh test.sh' })
     expect([...files.keys()].filter((path) => path.startsWith('build/'))).toHaveLength(1)
   })
 
   it("turns off npm's update check, which holds a passing npm 10 run open while offline", () => {
-    const files = new Map(BUSY_WORKSPACE_FILES.map((f) => [f.path, f.data]))
+    const files = new Map(SUM_BUG_WORKSPACE_FILES.map((f) => [f.path, f.data]))
 
     expect(files.get('.npmrc')).toBe('update-notifier=false\n')
   })

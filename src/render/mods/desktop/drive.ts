@@ -1,5 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises'
-import type { TextStep } from '@/mods/curation'
+import { MAX_STEP_CHARS, type TextStep } from '@/mods/curation'
+import type { ThemeWindow } from '@/themes/theme'
 import { COMMAND_TIMEOUT_MS, REQUEST_TIMEOUT_MS, type SandboxFile } from '../mod-sandbox'
 import { feedScenario, playsBusySession } from '../scenario-feed'
 import { setupCommand } from '../session'
@@ -27,6 +28,7 @@ import {
   BLUR,
   MOUSE_REST,
   PROMPT_FOCUS,
+  SESSION_DETAILS_TOGGLE,
   TRUST_WORKSPACE,
   WELCOME_CONTINUE,
 } from './screen'
@@ -56,9 +58,6 @@ const TYPED_PAUSE_MS = 800
 const STEP_SETTLE: QuietOptions = { quietMs: 2_000, maxMs: 15_000, pollMs: 500 }
 const FINAL_SETTLE: QuietOptions = { quietMs: 2_000, maxMs: 10_000, pollMs: 500 }
 
-/** Typed a character at a time, so a step's text is bounded to keep its typing bounded. */
-export const MAX_STEP_CHARS = 200
-
 /**
  * Uploads (tarball, session files) and commands (two versions, unpack, setup, then the root setup)
  * at their timeouts.
@@ -87,11 +86,13 @@ export interface DriveRequest {
   target: string | null
   inputSteps: readonly TextStep[]
   statusLine?: StatusLineScript | undefined
+  /** Desktop's own theme for the session: a mod is recorded in dark, a theme in its own window. */
+  window: ThemeWindow
 }
 
 /** Every file a session needs, staged before Desktop starts: the session's, and the steps' text. */
 export function sessionUploads(
-  { target, inputSteps, statusLine }: DriveRequest,
+  { target, inputSteps, statusLine, window }: DriveRequest,
   { engineVersion }: DesktopVersions,
 ): SandboxFile[] {
   const seed = {
@@ -101,10 +102,13 @@ export function sessionUploads(
     busy: playsBusySession(inputSteps),
     waiting: playsWaitingSession(inputSteps),
   }
-  return [...desktopSessionFiles(feedScenario(), seed, statusLine), ...stepFiles(inputSteps)]
+  return [
+    ...desktopSessionFiles(feedScenario(), seed, statusLine, window),
+    ...stepFiles(inputSteps),
+  ]
 }
 
-async function bootDesktop(desktop: RecordingDesktop): Promise<void> {
+async function bootDesktop(desktop: RecordingDesktop, window: ThemeWindow): Promise<void> {
   const scenario = feedScenario()
   expectOk(await desktop.run(setupCommand(scenario)), 'session setup')
   await desktop.start(bootCommand(scenario, desktop.pluginDir))
@@ -114,18 +118,18 @@ async function bootDesktop(desktop: RecordingDesktop): Promise<void> {
     FIT_WINDOW_COMMAND,
     WINDOW_MAX_MS,
   )
-  if (!(await pressButton(desktop, WELCOME_CONTINUE, WELCOME))) {
+  if (!(await pressButton(desktop, WELCOME_CONTINUE, WELCOME, window))) {
     throw new Error('the gateway welcome screen never went away')
   }
   await waitFor(desktop, "Desktop's engine install", ENGINE_INSTALLED_COMMAND, ENGINE_MAX_MS)
 }
 
-async function openSession(desktop: RecordingDesktop): Promise<void> {
+async function openSession(desktop: RecordingDesktop, window: ThemeWindow): Promise<void> {
   for (let attempt = 0; attempt < DEEP_LINK_ATTEMPTS; attempt++) {
     await desktop.run(deepLinkCommand(feedScenario()), DEEP_LINK_MAX_MS + COMMAND_SLACK_MS)
-    if (await pressButton(desktop, TRUST_WORKSPACE, TRUST)) {
+    if (await pressButton(desktop, TRUST_WORKSPACE, TRUST, window)) {
       // Shown once on a fresh install, if this Desktop build has it: pressed when it is there.
-      await pressButton(desktop, AUTO_MODE_GOT_IT, AUTO_MODE)
+      await pressButton(desktop, AUTO_MODE_GOT_IT, AUTO_MODE, window)
       return
     }
   }
@@ -150,14 +154,16 @@ async function typeStep(desktop: RecordingDesktop, step: TextStep, index: number
 export async function driveSession(
   desktop: RecordingDesktop,
   inputSteps: readonly TextStep[],
+  window: ThemeWindow,
 ): Promise<void> {
-  await bootDesktop(desktop)
+  await bootDesktop(desktop, window)
   expectOk(await desktop.run(keyCommand('ctrl+b')), 'collapsing the sidebar')
-  await openSession(desktop)
+  await openSession(desktop, window)
   expectOk(await desktop.run(clickCommand(PROMPT_FOCUS)), 'focusing the prompt')
   expectOk(await desktop.run(keyCommand('End')), 'moving to the end of the prompt')
   await sendPrompt(desktop)
   await waitFor(desktop, 'the scripted reply', repliedCommand(feedScenario()), REPLY_MAX_MS)
+  expectOk(await desktop.run(clickCommand(SESSION_DETAILS_TOGGLE)), 'closing the session details')
   for (const [i, step] of inputSteps.entries()) await typeStep(desktop, step, i)
   expectOk(await desktop.run(clickCommand(BLUR)), 'clicking off the prompt')
   expectOk(await desktop.run(moveCommand(MOUSE_REST)), 'resting the mouse')

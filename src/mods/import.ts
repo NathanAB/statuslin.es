@@ -5,7 +5,9 @@ import type { CardSurface } from '@/lib/card-surface'
 import { HttpError } from '@/lib/http'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
 import type { TerminalSetup } from '@/render/mods/terminal'
+import type { DesktopTheme } from '@/themes/theme'
 import type { InputStep } from './curation'
+import { setsTheme } from './footprint'
 import { inspectPlugin, type PluginFacts } from './plugin-facts'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
@@ -103,9 +105,34 @@ export interface NewVersion {
   cardSurface?: CardSurface | undefined
   /** Left out for a submitted mod, whose terminal preview is recorded in the default terminal. */
   terminal?: TerminalSetup | undefined
+  /** The Desktop themes the operator declared for it; a submitted mod declares none. */
+  desktopThemes?: DesktopTheme[] | undefined
 }
 
-/** Adds the mod's next version; returns its number. */
+/** Refuses Desktop themes declared for a mod whose code sets none. */
+export function checkDesktopThemes(footprint: schema.ModFootprint, themes: DesktopTheme[]): void {
+  if (themes.length > 0 && !setsTheme(footprint)) {
+    throw new Error('declares Desktop themes, but its code sets no theme')
+  }
+}
+
+export async function insertDesktopThemes(
+  db: Db,
+  versionId: string,
+  themes: DesktopTheme[],
+): Promise<void> {
+  if (themes.length === 0) return
+  await db
+    .insert(schema.modThemes)
+    .values(
+      themes.map((theme) => ({ modVersionId: versionId, kind: 'desktop' as const, ...theme })),
+    )
+}
+
+/**
+ * Adds the mod's next version with its terminal themes and declared Desktop themes; returns its
+ * number. Callers pass a transaction, so a version never lands without its themes.
+ */
 export async function insertNextVersion(db: Db, version: NewVersion): Promise<number> {
   const [latest] = await db
     .select({ versionNumber: max(schema.modVersions.versionNumber) })
@@ -120,11 +147,22 @@ export async function insertNextVersion(db: Db, version: NewVersion): Promise<nu
     pluginVersion: version.facts.manifest.version,
     license: version.license,
     footprint: version.facts.footprint,
+    hooksModules: version.facts.hooksModules,
     validatedWith: version.facts.claudeCodeVersion,
     inputSteps: version.inputSteps,
     cardSurface: version.cardSurface,
     terminal: version.terminal,
   })
+  if (version.facts.themes.length > 0) {
+    await db.insert(schema.modThemes).values(
+      version.facts.themes.map((theme) => ({
+        modVersionId: version.versionId,
+        kind: 'terminal' as const,
+        ...theme,
+      })),
+    )
+  }
+  await insertDesktopThemes(db, version.versionId, version.desktopThemes ?? [])
   return next
 }
 

@@ -16,6 +16,15 @@ const REPLY = {
   },
 }
 const MODEL = 'claude-opus-4-8'
+const READ = { name: 'Read', input: { file_path: '/home/user/app/src/sum.js' } }
+const BASH = { name: 'Bash', input: { command: 'npm test', description: 'Run the tests' } }
+const SCRIPTED_REPLY = {
+  ...REPLY,
+  steps: [
+    { text: 'Reading it first.', tool: READ },
+    { text: '', tool: BASH },
+  ],
+}
 
 function freePort(): Promise<number> {
   return new Promise((done, fail) => {
@@ -28,39 +37,56 @@ function freePort(): Promise<number> {
   })
 }
 
-let server: ChildProcess
-let baseUrl: string
-let workDir: string
+interface RunningServer {
+  baseUrl: string
+  process: ChildProcess
+}
 
-beforeAll(async () => {
-  workDir = mkdtempSync(join(tmpdir(), 'canned-model-'))
-  const replyPath = join(workDir, 'reply.json')
-  writeFileSync(replyPath, JSON.stringify(REPLY))
+let workDir: string
+let plain: RunningServer
+let scripted: RunningServer
+let baseUrl: string
+
+async function startServer(reply: unknown, name: string): Promise<RunningServer> {
+  const replyPath = join(workDir, `${name}.json`)
+  writeFileSync(replyPath, JSON.stringify(reply))
   const port = await freePort()
-  baseUrl = `http://127.0.0.1:${port}`
-  server = spawn('python3', [SERVER_PATH, '--port', String(port), '--canned-reply', replyPath], {
-    stdio: 'ignore',
-  })
+  const url = `http://127.0.0.1:${port}`
+  const child = spawn(
+    'python3',
+    [SERVER_PATH, '--port', String(port), '--canned-reply', replyPath],
+    {
+      stdio: 'ignore',
+    },
+  )
   for (let attempt = 0; attempt < 100; attempt++) {
     if (
-      await fetch(`${baseUrl}/`).then(
+      await fetch(`${url}/`).then(
         () => true,
         () => false,
       )
     )
-      return
+      return { baseUrl: url, process: child }
     await new Promise((r) => setTimeout(r, 50))
   }
   throw new Error('canned model server did not start')
+}
+
+beforeAll(async () => {
+  workDir = mkdtempSync(join(tmpdir(), 'canned-model-'))
+  plain = await startServer(REPLY, 'reply')
+  scripted = await startServer(SCRIPTED_REPLY, 'scripted')
+  baseUrl = plain.baseUrl
 })
 
 afterAll(() => {
-  server?.kill()
+  plain?.process.kill()
+  scripted?.process.kill()
   rmSync(workDir, { recursive: true, force: true })
 })
 
-function postJson(path: string, body: unknown) {
-  return fetch(`${baseUrl}${path}`, {
+function postJson(path: string, body: unknown, url = baseUrl) {
+  return fetch(`${url}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -156,5 +182,114 @@ describe('sandbox canned model server', () => {
 
     expect(result.status).not.toBe(0)
     expect(result.stderr).toContain('refusing to run as root')
+  })
+})
+
+const TOOLS = [{ name: 'Read' }, { name: 'Edit' }, { name: 'Bash' }].map((tool) => ({
+  ...tool,
+  input_schema: { type: 'object' },
+}))
+
+const toolResult = (id: string) => ({
+  role: 'user',
+  content: [{ type: 'tool_result', tool_use_id: id, content: 'ok' }],
+})
+
+async function streamed(res: Response) {
+  return (await res.text())
+    .split('\n\n')
+    .filter(Boolean)
+    .map((block) => {
+      const [eventLine, dataLine] = block.split('\n')
+      return {
+        event: eventLine?.replace('event: ', ''),
+        data: JSON.parse(dataLine?.replace('data: ', '') ?? ''),
+      }
+    })
+}
+
+describe('sandbox canned model server with scripted tool calls', () => {
+  const ask = (body: object) => postJson('/v1/messages', body, scripted.baseUrl)
+
+  it('answers the first turn with its text and tool call', async () => {
+    const res = await ask({ ...request, tools: TOOLS })
+
+    expect(await res.json()).toMatchObject({
+      content: [
+        { type: 'text', text: 'Reading it first.' },
+        { type: 'tool_use', id: expect.any(String), ...READ },
+      ],
+      stop_reason: 'tool_use',
+    })
+  })
+
+  it('answers the turn after one tool result with the next step, without empty text', async () => {
+    const res = await ask({
+      ...request,
+      tools: TOOLS,
+      messages: [...request.messages, { role: 'assistant', content: [] }, toolResult('a')],
+    })
+
+    expect(await res.json()).toMatchObject({
+      content: [{ type: 'tool_use', ...BASH }],
+      stop_reason: 'tool_use',
+    })
+  })
+
+  it('gives each step its own message id, so Claude Code keeps the turns apart', async () => {
+    const first = await (await ask({ ...request, tools: TOOLS })).json()
+    const second = await (
+      await ask({ ...request, tools: TOOLS, messages: [...request.messages, toolResult('a')] })
+    ).json()
+    const reply = await (await ask(request)).json()
+
+    expect(new Set([first.id, second.id, reply.id]).size).toBe(3)
+  })
+
+  it('answers with the plain reply when the request does not offer the step tool', async () => {
+    const res = await ask({ ...request, tools: [TOOLS[1]] })
+
+    expect(await res.json()).toMatchObject({
+      content: [{ type: 'text', text: REPLY.text }],
+      stop_reason: 'end_turn',
+    })
+  })
+
+  it('answers with the plain reply once every step has run', async () => {
+    const res = await ask({
+      ...request,
+      tools: TOOLS,
+      messages: [...request.messages, toolResult('a'), toolResult('b')],
+    })
+
+    expect(await res.json()).toMatchObject({
+      content: [{ type: 'text', text: REPLY.text }],
+      stop_reason: 'end_turn',
+    })
+  })
+
+  it('streams a tool call as its input JSON', async () => {
+    const events = await streamed(await ask({ ...request, tools: TOOLS, stream: true }))
+
+    expect(events.map((e) => e.event)).toEqual([
+      'message_start',
+      'content_block_start',
+      'content_block_delta',
+      'content_block_stop',
+      'content_block_start',
+      'content_block_delta',
+      'content_block_stop',
+      'message_delta',
+      'message_stop',
+    ])
+    expect(events[4]?.data.content_block).toEqual({
+      type: 'tool_use',
+      id: expect.any(String),
+      name: READ.name,
+      input: {},
+    })
+    expect(events[5]?.data.delta.type).toBe('input_json_delta')
+    expect(JSON.parse(events[5]?.data.delta.partial_json)).toEqual(READ.input)
+    expect(events[7]?.data.delta.stop_reason).toBe('tool_use')
   })
 })

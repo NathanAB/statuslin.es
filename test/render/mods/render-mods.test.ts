@@ -5,19 +5,23 @@ import type { InputStep } from '@/mods/curation'
 import { MOD_SCENARIO_KEY } from '@/mods/queries'
 import { RECORDING_MAX_ROW_BYTES } from '@/render/mods/bound-recording'
 import { cropModPreview } from '@/render/mods/crop'
-import { FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
-import type { DesktopRecorder } from '@/render/mods/desktop/types'
+import { FAKE_THEME_SHOT, FakeDesktopRecorder } from '@/render/mods/desktop/fake-recorder'
+import type { DesktopRecorder, DesktopThemeRequest } from '@/render/mods/desktop/types'
+import { DesktopThemeRefused } from '@/render/mods/desktop/window-shot'
 import { FakeModRecorder } from '@/render/mods/fake-recorder'
-import type { ModRecorder, Recording, RecordRequest } from '@/render/mods/recorder'
+import type { ModRecorder, ModSceneRequest, Recording, RecordRequest } from '@/render/mods/recorder'
 import { DEFAULT_TERMINAL_SETUP, type TerminalSetup } from '@/render/mods/terminal'
 import { insertPendingSubmission } from '@/submissions/record'
 import { renderMods } from '../../../scripts/render-mods'
 import {
+  addDesktopTheme,
   addMod,
+  addTheme,
   addVersion,
   openTestDb,
   REPO_URL,
   SEEDED_PREVIEW,
+  SEEDED_THEME_PREVIEW,
   setCurrentVersion,
   sha,
   type TestDb,
@@ -128,8 +132,10 @@ function run(
   return { exitCode, lines, tarballs }
 }
 
-const modRequests = (requests: RecordRequest[]) => requests.filter((r) => r.mod !== null)
-const baselineRequests = (requests: RecordRequest[]) => requests.filter((r) => r.mod === null)
+const modRequests = (requests: RecordRequest[]) =>
+  requests.filter((r): r is ModSceneRequest => r.scene === 'mod' && r.mod !== null)
+const baselineRequests = (requests: RecordRequest[]) =>
+  requests.filter((r): r is ModSceneRequest => r.scene === 'mod' && r.mod === null)
 
 /** Wraps a recorder to fail for named plugins, or report a Claude Code version per plugin. */
 interface Script {
@@ -256,6 +262,7 @@ describe('renderMods', () => {
     expect(tarballs).toEqual([`${REPO_URL}@${sha('d')}`])
     expect(modRequests(recorder.requests)).toEqual([
       {
+        scene: 'mod',
         mod: { source: { tarball: TARBALL, path: 'mods/radar' }, pluginName: 'radar' },
         inputSteps,
         terminal: DEFAULT_TERMINAL_SETUP,
@@ -304,7 +311,7 @@ describe('renderMods', () => {
     expect(await run(recorder).exitCode).toBe(0)
 
     expect(baselineRequests(recorder.requests)).toEqual([
-      { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+      { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
     ])
     expect(modRequests(recorder.requests)).toHaveLength(2)
   })
@@ -325,8 +332,8 @@ describe('renderMods', () => {
     expect(baselines).toHaveLength(2)
     expect(baselines).toEqual(
       expect.arrayContaining([
-        { mod: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP },
-        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps, terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
       ]),
     )
   })
@@ -347,8 +354,8 @@ describe('renderMods', () => {
     expect(baselines).toHaveLength(2)
     expect(baselines).toEqual(
       expect.arrayContaining([
-        { mod: null, inputSteps: [], terminal: wide },
-        { mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: wide },
+        { scene: 'mod', mod: null, inputSteps: [], terminal: DEFAULT_TERMINAL_SETUP },
       ]),
     )
     const setups = Object.fromEntries(
@@ -522,6 +529,7 @@ function failingDesktop(pluginName: string): DesktopRecorder {
       if (request.mod.pluginName === pluginName) throw new Error(`desktop for ${pluginName} died`)
       return inner.record(request)
     },
+    recordTheme: (request) => inner.recordTheme(request),
   }
 }
 
@@ -604,5 +612,509 @@ describe('renderMods in Claude Desktop', () => {
       'failed skins in the terminal: sandbox for skins died',
       'rendered skins in Claude Desktop',
     ])
+  })
+})
+
+const RESET = '\u001b[0m'
+/** Each theme's screen opens with the logo in its own colour, so a stored preview names its theme. */
+const DRACULA = [`\u001b[0;38;2;189;147;249m▐▛███▜▌${RESET} Claude Code`, '❯']
+const NORD = [`\u001b[0;38;2;136;192;208m▐▛███▜▌${RESET} Claude Code`, '❯']
+const themeSegments = (fg: string) => [
+  { text: '▐▛███▜▌', fg, bg: null, bold: false, italic: false, underline: false },
+  { text: ' Claude Code\n❯', fg: null, bg: null, bold: false, italic: false, underline: false },
+]
+const DRACULA_PREVIEW = {
+  segments: themeSegments('rgb(189, 147, 249)'),
+  claudeCodeVersion: '0.0.0-fake',
+}
+const NORD_PREVIEW = {
+  segments: themeSegments('rgb(136, 192, 208)'),
+  claudeCodeVersion: '0.0.0-fake',
+}
+
+async function storedThemePreviews(versionId: string) {
+  const rows = await db
+    .select({
+      key: schema.modThemes.key,
+      segments: schema.modThemePreviews.segments,
+      claudeCodeVersion: schema.modThemePreviews.claudeCodeVersion,
+    })
+    .from(schema.modThemes)
+    .innerJoin(schema.modThemePreviews, eq(schema.modThemePreviews.themeId, schema.modThemes.id))
+    .where(eq(schema.modThemes.modVersionId, versionId))
+  return Object.fromEntries(rows.map(({ key, ...preview }) => [key, preview]))
+}
+
+const themeRequests = (requests: RecordRequest[]) =>
+  requests
+    .filter((r) => r.scene === 'theme' && r.theme !== null)
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))
+const themeBaselineRequests = (requests: RecordRequest[]) =>
+  requests.filter((r) => r.scene === 'theme' && r.mod === null)
+
+function failingTheme(inner: ModRecorder, theme: string): ModRecorder {
+  return {
+    async record(request) {
+      if (request.scene === 'theme' && request.theme === theme) {
+        throw new Error(`sandbox for ${theme} died`)
+      }
+      return inner.record(request)
+    },
+  }
+}
+
+describe('renderMods for the themes a plugin carries', () => {
+  const themed = () =>
+    new FakeModRecorder({
+      baseline,
+      themes: { 'custom:pack:dracula': DRACULA, 'custom:pack:nord': NORD },
+    })
+
+  it("records each theme in the theme scene with the version's plugin, not the mod's steps or terminal", async () => {
+    const inputSteps: InputStep[] = [{ type: 'text', text: '/pack' }]
+    const wide = { cols: 120, fullscreen: true }
+    const versionId = await seedMod('pack', { path: 'themes/pack', inputSteps, terminal: wide })
+    await addTheme(db, versionId, { key: 'dracula', rendered: false })
+    await addTheme(db, versionId, { key: 'nord', rendered: false })
+    const recorder = themed()
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(0)
+    const mod = { source: { tarball: TARBALL, path: 'themes/pack' }, pluginName: 'pack' }
+    expect(themeRequests(recorder.requests)).toEqual([
+      { scene: 'theme', mod, theme: 'custom:pack:dracula' },
+      { scene: 'theme', mod, theme: 'custom:pack:nord' },
+    ])
+    expect(await storedThemePreviews(versionId)).toEqual({
+      dracula: DRACULA_PREVIEW,
+      nord: NORD_PREVIEW,
+    })
+    expect(lines).toContain('rendered pack theme dracula in the terminal')
+    expect(lines).toContain('rendered pack theme nord in the terminal')
+  })
+
+  it('compares themes against one baseline of the theme scene with no plugin and no theme', async () => {
+    for (const [slug, key] of [
+      ['pack', 'dracula'],
+      ['other-pack', 'nord'],
+    ] as const) {
+      const versionId = await seedMod(slug, { inputSteps: [{ type: 'text', text: `/${slug}` }] })
+      await addTheme(db, versionId, { key, rendered: false })
+    }
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: { 'custom:pack:dracula': DRACULA, 'custom:other-pack:nord': NORD },
+    })
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    expect(themeBaselineRequests(recorder.requests)).toEqual([
+      { scene: 'theme', mod: null, theme: null },
+    ])
+  })
+
+  it('records no theme baseline in a run with no themes to record', async () => {
+    await seedMod('pack')
+    const recorder = themed()
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    expect(recorder.requests.filter((r) => r.scene === 'theme')).toEqual([])
+  })
+
+  it('skips a theme that already has a preview on a full run', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'dracula' })
+    await addTheme(db, versionId, { key: 'nord', rendered: false })
+    const recorder = themed()
+
+    expect(await run(recorder).exitCode).toBe(0)
+
+    expect(themeRequests(recorder.requests)).toEqual([
+      {
+        scene: 'theme',
+        mod: expect.objectContaining({ pluginName: 'pack' }),
+        theme: 'custom:pack:nord',
+      },
+    ])
+    expect(await storedThemePreviews(versionId)).toEqual({
+      dracula: SEEDED_THEME_PREVIEW,
+      nord: NORD_PREVIEW,
+    })
+  })
+
+  it('re-records every theme of the mod --slug names, replacing the earlier preview', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'dracula' })
+    await addTheme(db, versionId, { key: 'nord' })
+    const recorder = themed()
+
+    expect(await run(recorder, { slug: 'pack' }).exitCode).toBe(0)
+
+    expect(await storedThemePreviews(versionId)).toEqual({
+      dracula: DRACULA_PREVIEW,
+      nord: NORD_PREVIEW,
+    })
+  })
+
+  it("stores the other themes and the mod's own previews when one theme fails", async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'dracula', rendered: false })
+    await addTheme(db, versionId, { key: 'nord', rendered: false })
+    const recorder = failingTheme(themed(), 'custom:pack:dracula')
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(await storedThemePreviews(versionId)).toEqual({ nord: NORD_PREVIEW })
+    expect(await storedPreviews(versionId)).toHaveLength(1)
+    expect(await storedDesktopPreviews(versionId)).toHaveLength(1)
+    expect(lines).toContain(
+      'failed pack theme dracula in the terminal: sandbox for custom:pack:dracula died',
+    )
+    expect(lines).toContain('rendered pack theme nord in the terminal')
+  })
+
+  it('refuses a theme that records the same as a session with no theme', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'ignored', rendered: false })
+    await addTheme(db, versionId, { key: 'nord', rendered: false })
+    // The baseline's screen with another turn time and clock, which the preview masks.
+    const unthemed = baseline.map((row) =>
+      row.replace('Churned for 0s · done 9:48', 'Baked for 7s · done 10:02'),
+    )
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: { 'custom:pack:ignored': unthemed, 'custom:pack:nord': NORD },
+    })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(await storedThemePreviews(versionId)).toEqual({ nord: NORD_PREVIEW })
+    expect(lines).toContain(
+      "failed pack theme ignored in the terminal: looks the same as a session with no theme, so the theme setting likely didn't apply",
+    )
+    expect(lines).toContain('rendered pack theme nord in the terminal')
+  })
+
+  it('removes the earlier preview of a theme that now records the same as no theme', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'ignored' })
+    const recorder = new FakeModRecorder({ baseline })
+
+    expect(await run(recorder, { slug: 'pack' }).exitCode).toBe(1)
+
+    expect(await storedThemePreviews(versionId)).toEqual({})
+  })
+
+  it('refuses every theme of a version that records the same as another, naming the others', async () => {
+    const versionId = await seedMod('pack')
+    for (const key of ['dracula', 'dracula-copy', 'dracula-again', 'nord']) {
+      await addTheme(db, versionId, { key, rendered: false })
+    }
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: {
+        'custom:pack:dracula': DRACULA,
+        'custom:pack:dracula-copy': DRACULA,
+        'custom:pack:dracula-again': DRACULA,
+        'custom:pack:nord': NORD,
+      },
+    })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(await storedThemePreviews(versionId)).toEqual({ nord: NORD_PREVIEW })
+    expect(lines).toContain(
+      'failed pack theme dracula in the terminal: looks the same as themes dracula-again, dracula-copy',
+    )
+    expect(lines).toContain(
+      'failed pack theme dracula-again in the terminal: looks the same as themes dracula, dracula-copy',
+    )
+    expect(lines).toContain(
+      'failed pack theme dracula-copy in the terminal: looks the same as themes dracula, dracula-again',
+    )
+    expect(lines).toContain('rendered pack theme nord in the terminal')
+  })
+
+  it('refuses a new theme that records the same as one stored by an earlier run', async () => {
+    const versionId = await seedMod('pack')
+    await addTheme(db, versionId, { key: 'dracula', rendered: false })
+    const recorder = new FakeModRecorder({
+      baseline,
+      themes: { 'custom:pack:dracula': DRACULA, 'custom:pack:twin': DRACULA },
+    })
+    expect(await run(recorder).exitCode).toBe(0)
+    await addTheme(db, versionId, { key: 'twin', rendered: false })
+
+    const { exitCode, lines } = run(recorder)
+
+    expect(await exitCode).toBe(1)
+    expect(await storedThemePreviews(versionId)).toEqual({})
+    expect(lines).toContain(
+      'failed pack theme dracula in the terminal: looks the same as theme twin',
+    )
+    expect(lines).toContain(
+      'failed pack theme twin in the terminal: looks the same as theme dracula',
+    )
+  })
+})
+
+async function storedThemeShots(versionId: string) {
+  return db
+    .select({
+      key: schema.modThemes.key,
+      png: schema.modThemeDesktopPreviews.png,
+      width: schema.modThemeDesktopPreviews.width,
+      height: schema.modThemeDesktopPreviews.height,
+      cardPng: schema.modThemeDesktopPreviews.cardPng,
+      cardWidth: schema.modThemeDesktopPreviews.cardWidth,
+      cardHeight: schema.modThemeDesktopPreviews.cardHeight,
+      desktopVersion: schema.modThemeDesktopPreviews.desktopVersion,
+      engineVersion: schema.modThemeDesktopPreviews.engineVersion,
+    })
+    .from(schema.modThemes)
+    .innerJoin(
+      schema.modThemeDesktopPreviews,
+      eq(schema.modThemeDesktopPreviews.themeId, schema.modThemes.id),
+    )
+    .where(eq(schema.modThemes.modVersionId, versionId))
+    .orderBy(schema.modThemes.key)
+}
+
+const STORED_THEME_SHOT = {
+  png: FAKE_THEME_SHOT.png,
+  width: FAKE_THEME_SHOT.width,
+  height: FAKE_THEME_SHOT.height,
+  cardPng: FAKE_THEME_SHOT.card.png,
+  cardWidth: FAKE_THEME_SHOT.card.width,
+  cardHeight: FAKE_THEME_SHOT.card.height,
+  ...FAKE_DESKTOP,
+}
+
+const SETS_THEME = { events: ['session.start'], calls: ['$.theme.set'] }
+
+function throwingThemes(throws: Record<string, Error>): FakeDesktopRecorder {
+  const recorder = new FakeDesktopRecorder()
+  const record = recorder.recordTheme.bind(recorder)
+  recorder.recordTheme = async (request: DesktopThemeRequest) => {
+    const error = throws[request.switchSteps[0] ?? '']
+    if (error) throw error
+    return record(request)
+  }
+  return recorder
+}
+
+describe('renderMods for the themes of a submitted plugin', () => {
+  const recorder = () =>
+    new FakeModRecorder({
+      baseline,
+      themes: {
+        'custom:pack:dracula': DRACULA,
+        'custom:pack:nord': NORD,
+        'custom:curated:dracula': DRACULA,
+      },
+    })
+
+  async function submitted(slug: string) {
+    await db
+      .insert(schema.user)
+      .values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+      .onConflictDoNothing()
+    const versionId = await seedMod(slug)
+    await insertPendingSubmission(db, { kind: 'mod', versionId, submittedBy: 'ada' })
+    return versionId
+  }
+
+  it("records none of a pending submitted plugin's themes on a full run, and says how to ask for them", async () => {
+    const pack = await submitted('pack')
+    await addTheme(db, pack, { key: 'dracula', rendered: false })
+    await addTheme(db, pack, { key: 'nord', rendered: false })
+    await addDesktopTheme(db, pack, { key: 'reef', rendered: false })
+    const curated = await seedMod('curated')
+    await addTheme(db, curated, { key: 'dracula', rendered: false })
+    const terminal = recorder()
+    const desktop = new FakeDesktopRecorder()
+
+    const { exitCode, lines } = run(terminal, {}, desktop)
+
+    expect(await exitCode).toBe(0)
+    expect(themeRequests(terminal.requests)).toEqual([
+      {
+        scene: 'theme',
+        mod: expect.objectContaining({ pluginName: 'curated' }),
+        theme: 'custom:curated:dracula',
+      },
+    ])
+    expect(desktop.themeRequests).toEqual([])
+    expect(await storedThemePreviews(pack)).toEqual({})
+    expect(lines).toContain(
+      'skipped pack themes: a full run records no theme of a submitted plugin, and this one has 3 to record. Record them with: bun run render:mods --slug pack',
+    )
+  })
+
+  it("records a submitted plugin's themes when --slug names it", async () => {
+    const pack = await submitted('pack')
+    await addTheme(db, pack, { key: 'dracula', rendered: false })
+    await addTheme(db, pack, { key: 'nord', rendered: false })
+
+    const { exitCode, lines } = run(recorder(), { slug: 'pack' })
+
+    expect(await exitCode).toBe(0)
+    expect(Object.keys(await storedThemePreviews(pack)).sort()).toEqual(['dracula', 'nord'])
+    expect(lines.some((line) => line.startsWith('skipped'))).toBe(false)
+  })
+
+  it('says nothing of a submitted plugin whose themes are all recorded', async () => {
+    const pack = await submitted('pack')
+    await addTheme(db, pack, { key: 'dracula' })
+
+    const { exitCode, lines } = run(recorder())
+
+    expect(await exitCode).toBe(0)
+    expect(lines.some((line) => line.startsWith('skipped'))).toBe(false)
+  })
+})
+
+describe('renderMods for the Desktop themes a mod sets', () => {
+  const terminal = () => new FakeModRecorder({ baseline })
+
+  async function seedThemeMod(slug = 'theme-examples') {
+    const versionId = await seedMod(slug, { path: 'plugins/theme-examples' })
+    await db
+      .update(schema.modVersions)
+      .set({ footprint: SETS_THEME })
+      .where(eq(schema.modVersions.id, versionId))
+    return versionId
+  }
+
+  it('records each Desktop theme in its own window after its switch steps, and stores its window and card', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef', rendered: false })
+    await addDesktopTheme(db, versionId, {
+      key: 'honu-lagoon',
+      window: 'light',
+      rendered: false,
+    })
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    const { exitCode, lines } = run(terminal(), {}, desktopRecorder)
+
+    expect(await exitCode).toBe(0)
+    const mod = {
+      source: { tarball: TARBALL, path: 'plugins/theme-examples' },
+      pluginName: 'theme-examples',
+    }
+    expect(
+      [...desktopRecorder.themeRequests].sort((a, b) => a.window.localeCompare(b.window)),
+    ).toEqual([
+      { mod, window: 'dark', switchSteps: ['/custom-theme night-reef'] },
+      { mod, window: 'light', switchSteps: ['/custom-theme honu-lagoon'] },
+    ])
+    expect(await storedThemeShots(versionId)).toEqual([
+      { key: 'honu-lagoon', ...STORED_THEME_SHOT },
+      { key: 'night-reef', ...STORED_THEME_SHOT },
+    ])
+    expect(lines).toContain('rendered theme-examples theme honu-lagoon in Claude Desktop')
+    expect(lines).toContain('rendered theme-examples theme night-reef in Claude Desktop')
+  })
+
+  it('refuses Desktop themes that came out as one look, and keeps the theme that differs', async () => {
+    const versionId = await seedThemeMod()
+    const unswitched = ['/custom-theme typo']
+    await addDesktopTheme(db, versionId, { key: 'reef', switchSteps: unswitched, rendered: false })
+    await addDesktopTheme(db, versionId, { key: 'koi', switchSteps: unswitched, rendered: false })
+    await addDesktopTheme(db, versionId, { key: 'honu', rendered: false })
+
+    const { exitCode, lines } = run(terminal(), {}, new FakeDesktopRecorder())
+
+    expect(await exitCode).toBe(1)
+    expect(lines).toContain(
+      'failed theme-examples theme koi in Claude Desktop: looks the same as theme reef',
+    )
+    expect(lines).toContain(
+      'failed theme-examples theme reef in Claude Desktop: looks the same as theme koi',
+    )
+    expect(lines).toContain('rendered theme-examples theme honu in Claude Desktop')
+    expect((await storedThemeShots(versionId)).map((shot) => shot.key)).toEqual(['honu'])
+  })
+
+  it('records a theme its mod sets on its own with no steps', async () => {
+    const versionId = await seedThemeMod('rainy-window')
+    await addDesktopTheme(db, versionId, { key: 'rainy', switchSteps: [], rendered: false })
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    expect(await run(terminal(), {}, desktopRecorder).exitCode).toBe(0)
+
+    expect(desktopRecorder.themeRequests.map((r) => r.switchSteps)).toEqual([[]])
+  })
+
+  it("asks for a theme mod's own Desktop preview as the whole window, and other mods' as before", async () => {
+    await seedThemeMod()
+    await seedMod('token-weather')
+    const desktopRecorder = new FakeDesktopRecorder()
+
+    expect(await run(terminal(), {}, desktopRecorder).exitCode).toBe(0)
+
+    const wholeWindow = Object.fromEntries(
+      desktopRecorder.requests.map((r) => [r.mod.pluginName, r.wholeWindow]),
+    )
+    expect(wholeWindow).toEqual({ 'theme-examples': true, 'token-weather': undefined })
+  })
+
+  it('skips a Desktop theme that already has its shot on a full run, and records it again for its slug', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'koi-pond', rendered: false })
+
+    const full = new FakeDesktopRecorder()
+    expect(await run(terminal(), {}, full).exitCode).toBe(0)
+    const one = new FakeDesktopRecorder()
+    expect(await run(terminal(), { slug: 'theme-examples' }, one).exitCode).toBe(0)
+
+    expect(full.themeRequests.map((r) => r.switchSteps)).toEqual([['/custom-theme koi-pond']])
+    expect(one.themeRequests).toHaveLength(2)
+  })
+
+  it('removes the shot of a refused theme, says why and fails the run, and still records the others', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+    await addDesktopTheme(db, versionId, { key: 'koi-pond', rendered: false })
+    const refused = new DesktopThemeRefused(
+      "the theme didn't apply: the window looks the same as Desktop's own dark window",
+    )
+
+    const { exitCode, lines } = run(
+      terminal(),
+      { slug: 'theme-examples' },
+      throwingThemes({ '/custom-theme night-reef': refused }),
+    )
+
+    expect(await exitCode).toBe(1)
+    expect((await storedThemeShots(versionId)).map((s) => s.key)).toEqual(['koi-pond'])
+    expect(lines).toContain(
+      "failed theme-examples theme night-reef in Claude Desktop: the theme didn't apply: the window looks the same as Desktop's own dark window",
+    )
+    expect(lines).toContain('rendered theme-examples theme koi-pond in Claude Desktop')
+  })
+
+  it('keeps the earlier shot when the recording itself fails', async () => {
+    const versionId = await seedThemeMod()
+    await addDesktopTheme(db, versionId, { key: 'night-reef' })
+
+    const { exitCode, lines } = run(
+      terminal(),
+      { slug: 'theme-examples' },
+      throwingThemes({ '/custom-theme night-reef': new Error('sandbox died') }),
+    )
+
+    expect(await exitCode).toBe(1)
+    expect((await storedThemeShots(versionId)).map((s) => s.key)).toEqual(['night-reef'])
+    expect(lines).toContain(
+      'failed theme-examples theme night-reef in Claude Desktop: sandbox died',
+    )
   })
 })

@@ -14,17 +14,17 @@ export function modAllTags(tags: string[], footprint: ModFootprint): string[] {
   return mergeTags(tags, footprint.calls.includes('$.http.fetch') ? ['network-access'] : [])
 }
 
-/** `description` is the target's plugin.json description, so the listing describes the live version. */
-export function publishedRow(
-  target: PublishVersion,
-  tags: string[],
-  description: string,
-): { currentVersionId: string; status: ModStatus; allTags: string[]; description: string } {
+/**
+ * `description` is the target's plugin.json description, so the listing describes the live version.
+ * Publishing is the review: it ends the draft's unreviewed page for good (ADR 0014).
+ */
+export function publishedRow(target: PublishVersion, tags: string[], description: string) {
   return {
     currentVersionId: target.id,
-    status: 'published',
+    status: 'published' as const satisfies ModStatus,
     allTags: modAllTags(tags, target.footprint),
     description,
+    unreviewedPageAt: null,
   }
 }
 
@@ -194,7 +194,7 @@ function descriptionGuards({ target, description }: PublishFacts): Guard[] {
 
 export function listingGuards({ target, onDefaultBranch }: ListingFacts): Guard[] {
   const offDefault = `commit ${target.commitSha} is not on the repository's default branch`
-  const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop)`
+  const unrendered = `the version at ${target.commitSha} has not rendered on both surfaces (it needs a ${MOD_SCENARIO_KEY} result in the terminal and in Claude Desktop, and a preview of every theme it carries)`
   return [
     ...(onDefaultBranch ? [] : [refuse('not-on-default-branch', offDefault)]),
     ...(target.rendered ? [] : [refuse('not-rendered', unrendered)]),

@@ -1,0 +1,1 @@
+ALTER TABLE "mod_versions" ADD COLUMN "hooks_modules" jsonb;

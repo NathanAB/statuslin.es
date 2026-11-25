@@ -1,6 +1,6 @@
 import { shellQuote } from '../session'
 import type { RowCut } from './rows'
-import { type Rect, SCALE, WINDOW } from './screen'
+import { PAGE_GREY, type Rect, SCALE, WINDOW } from './screen'
 
 /**
  * ImageMagick commands run inside the Desktop sandboxes, and parsers for what they print. Rects
@@ -12,7 +12,7 @@ import { type Rect, SCALE, WINDOW } from './screen'
 const geometry = ({ x, y, width, height }: Rect) =>
   `${width * SCALE}x${height * SCALE}+${x * SCALE}+${y * SCALE}`
 
-const pngInput = (path: string) => shellQuote(`png:${path}[0]`)
+export const pngInput = (path: string) => shellQuote(`png:${path}[0]`)
 
 export function screenshotCommand(path: string): string {
   return `import -window root -strip ${path}`
@@ -70,7 +70,7 @@ export function parseProbes(stdout: string, count: number): RegionGrey[] {
 /** A pixel's grey difference under this is noise, like the fade Desktop lays over a scrolled chat. */
 const FAINT_CHANGE = '2%'
 
-const rectangle = ({ x, y, width, height }: Rect) =>
+export const rectangle = ({ x, y, width, height }: Rect) =>
   `-draw 'rectangle ${x * SCALE},${y * SCALE} ${(x + width) * SCALE - 1},${(y + height) * SCALE - 1}'`
 
 /**
@@ -101,9 +101,11 @@ export function changedInRegionCommand(baseline: string, shot: string, region: R
   ].join(' ')
 }
 
-/** Desktop's page background in dark theme, around the chat. */
-const PAGE_BACKGROUND = 'gray(21)'
-/** Off the page background by more than this, a pixel is content: the 20/21 grey jitter is not. */
+const PAGE_BACKGROUND = `gray(${Math.round(PAGE_GREY * 255)})`
+/**
+ * Off the page background by more than this, a pixel is content: the prompt box's grey 24 shadow
+ * is not.
+ */
 const NOT_BACKGROUND = '3%'
 
 /**
@@ -170,6 +172,17 @@ export function croppedPngCommand(
   return [
     `convert ${pngInput(source)} -crop ${geometry(rect)} +repage`,
     ...(chops.length > 0 ? [...chops, '+repage'] : []),
+    '-strip -define png:exclude-chunks=all png:-',
+  ].join(' ')
+}
+
+/**
+ * The whole shot scaled to exactly `size` (device pixels), re-encoded from its pixels alone to
+ * stdout, as croppedPngCommand's crops are.
+ */
+export function scaledPngCommand(source: string, size: { width: number; height: number }): string {
+  return [
+    `convert ${pngInput(source)} -resize '${size.width}x${size.height}!'`,
     '-strip -define png:exclude-chunks=all png:-',
   ].join(' ')
 }

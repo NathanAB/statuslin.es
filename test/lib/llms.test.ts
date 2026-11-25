@@ -38,12 +38,27 @@ describe('buildLlmsTxt', () => {
     expect(txt).not.toMatch(/upvote/i)
   })
 
-  it('calls the site a gallery of mods, naming status lines once as one kind', () => {
+  it('calls the site a gallery of mods and themes, naming status lines once as one kind', () => {
     const txt = buildLlmsTxt('https://statuslin.es', facets)
     expect(txt).toContain(
-      '> A gallery of Claude Code mods, status lines included, each with a real preview.',
+      '> A gallery of Claude Code mods, status lines included, and of Claude Code and Claude Desktop themes, each with a real preview.',
     )
     expect(txt).not.toMatch(/status lines? (and|&) mods/i)
+  })
+
+  // Most themes listed are Desktop themes, which a mod sets and the terminal never shows.
+  it('describes both kinds of theme, the terminal one and the Desktop one', () => {
+    const txt = buildLlmsTxt('https://statuslin.es', facets)
+    const intro = txt.slice(txt.indexOf('> '), txt.indexOf('## Browse'))
+    expect(intro).toContain(
+      'A terminal theme is a color file a plugin carries, picked with /theme in the terminal once the plugin is installed.',
+    )
+    expect(intro).toContain(
+      'A Desktop theme is a look a mod sets in Claude Desktop: it recolors the app and draws a background behind the chat, and draws nothing in the terminal.',
+    )
+    expect(txt).toContain(
+      '- [Themes](https://statuslin.es/themes): Claude Code and Claude Desktop themes, one card per theme',
+    )
   })
 
   it('describes both kinds of entry without assuming a status line', () => {
@@ -184,6 +199,24 @@ describe('buildLlmsTxt', () => {
 describe('buildLlmsTxt with mods', () => {
   it('adds no Mods section when no mod is published', () => {
     expect(buildLlmsTxt('https://statuslin.es', [], [], [])).not.toContain('## Mods')
+  })
+
+  it('lists a mod that carries themes under Themes, and not again under Mods', () => {
+    const meter = { slug: 'meter', title: 'Meter', description: 'Counts', copyCount: 0 }
+    const night = { slug: 'night', title: 'Night', description: 'Dark', copyCount: 0 }
+
+    expect(buildLlmsTxt('https://statuslin.es', [], [], [meter, night], [night])).toContain(
+      [
+        '## Mods',
+        '',
+        '- [Meter](https://statuslin.es/mods/meter): Counts.',
+        '',
+        '## Themes',
+        '',
+        '- [Night](https://statuslin.es/mods/night): Dark.',
+        '',
+      ].join('\n'),
+    )
   })
 
   it('leaves the copy count off a mod nobody has copied yet', () => {

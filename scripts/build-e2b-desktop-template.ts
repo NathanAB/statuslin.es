@@ -4,6 +4,7 @@ import {
   SANDBOX_DESKTOP_DIR,
   SANDBOX_DESKTOP_ENGINE_VERSION,
   SANDBOX_DESKTOP_MANAGED_SETTINGS,
+  SANDBOX_ENGINE_MANAGED_SETTINGS,
 } from '@/render/e2b-template'
 import { FAKE_API_KEY, MODEL_URL } from '@/render/mods/session'
 import { HAIKU, OPUS, SONNET } from '@/render/scenario-helpers'
@@ -30,13 +31,13 @@ import { buildSnapshot, hardenSnapshot } from './build-e2b-template'
  * Run:  bun run build:e2b-desktop-template
  */
 
-export const DESKTOP_VERSION = '2.42304.2'
-export const DESKTOP_DEB_SHA256 = '38a7d58b58a976c88ca652eaa2f7ac02c87c4a388ae30f468d72b790e6b57f90'
+export const DESKTOP_VERSION = '6.28899.6'
+export const DESKTOP_DEB_SHA256 = '7e381601d86570149643d52e9b89c26575ab12fa788aa41ffdd4cca5b0638cf8'
 const DESKTOP_DEB_URL = `https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_${DESKTOP_VERSION}_amd64.deb`
-/** The engine pin compiled into Desktop 2.42304.2; Desktop installs only this preseed. */
-export const DESKTOP_ENGINE_VERSION = '2.1.299'
+/** The engine pin compiled into Desktop 6.28899.6; Desktop installs only this preseed. */
+export const DESKTOP_ENGINE_VERSION = '2.1.330'
 export const DESKTOP_ENGINE_SHA256 =
-  '20ca25213130255bacdcae3ed5df3fc99e1d8e86cdf46e9188b7ff9c1b478fa4'
+  'd53a3f9aab93c87bba0813d1101677677b457100824f5c3604fea9915ac5237a'
 const DESKTOP_ENGINE_URL = `https://downloads.claude.ai/claude-code-releases/${DESKTOP_ENGINE_VERSION}/linux-x64/claude.zst`
 const DESKTOP_INSTALL_DIR = '/usr/lib/claude-desktop'
 const DESKTOP_BINARY = `${DESKTOP_INSTALL_DIR}/claude-desktop`
@@ -85,6 +86,21 @@ export function managedSettings() {
   }
 }
 
+/**
+ * Claude Code's managed settings. Desktop runs with managed settings, so its engine seats a bundled
+ * security plugin ahead of mods' hooks, which skips some of them (reflect-mod's prompt.compose,
+ * with a notice in the chat). An empty list leaves it out, as on a machine without managed
+ * settings. Without `merge`, this file replaces the policy Desktop passes its engine, and every
+ * session says the organization's policy isn't fully applied.
+ */
+const engineManagedSettings = () => ({ prependPlugins: [], parentSettingsBehavior: 'merge' })
+
+const writeRootFile = (path: string, data: unknown) =>
+  [
+    `echo ${Buffer.from(JSON.stringify(data)).toString('base64')} | base64 -d > ${path}`,
+    `chmod 0644 ${path}`,
+  ].join(' && ')
+
 export const desktopTemplate = () =>
   modRenderTemplate()
     .runCmd(
@@ -108,13 +124,11 @@ export const desktopTemplate = () =>
       { user: 'root' },
     )
     .makeDir('/etc/claude-desktop', { user: 'root', mode: 0o755 })
-    .runCmd(
-      [
-        `echo ${Buffer.from(JSON.stringify(managedSettings())).toString('base64')} | base64 -d > ${SANDBOX_DESKTOP_MANAGED_SETTINGS}`,
-        `chmod 0644 ${SANDBOX_DESKTOP_MANAGED_SETTINGS}`,
-      ].join(' && '),
-      { user: 'root' },
-    )
+    .runCmd(writeRootFile(SANDBOX_DESKTOP_MANAGED_SETTINGS, managedSettings()), { user: 'root' })
+    .makeDir('/etc/claude-code', { user: 'root', mode: 0o755 })
+    .runCmd(writeRootFile(SANDBOX_ENGINE_MANAGED_SETTINGS, engineManagedSettings()), {
+      user: 'root',
+    })
     .makeDir(SANDBOX_DESKTOP_DIR, { user: 'root', mode: 0o755 })
     .copy(`${ASSETS}/boot.sh`, SANDBOX_DESKTOP_BOOT, { user: 'root', mode: 0o755 })
     // Read by the recorder before any mod code runs; Desktop installs only the preseed checked above.
@@ -133,13 +147,17 @@ export const desktopTemplate = () =>
     })
 
 const DESKTOP_HARDENING = {
-  protectedRoots: [DESKTOP_INSTALL_DIR, '/etc/claude-desktop'],
+  protectedRoots: [DESKTOP_INSTALL_DIR, '/etc/claude-desktop', '/etc/claude-code'],
   readOnlyPaths: [
     DESKTOP_BINARY,
     PRESEED_FILE,
     SANDBOX_DESKTOP_BOOT,
     SANDBOX_DESKTOP_MANAGED_SETTINGS,
+    SANDBOX_ENGINE_MANAGED_SETTINGS,
     SANDBOX_DESKTOP_ENGINE_VERSION,
+    // A directory `user` could write would let it replace a file in it, or add a drop-in.
+    '/etc/claude-desktop',
+    '/etc/claude-code',
   ],
 }
 

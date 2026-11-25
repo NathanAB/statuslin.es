@@ -18,7 +18,8 @@ import { normalizeSearchQuery } from '@/gallery/search'
 import { HomeChecks } from '@/home/home-checks'
 import { HomeGallery } from '@/home/home-gallery'
 import { HomeHero } from '@/home/home-hero'
-import { loadShowcase } from '@/home/load-showcase'
+import { loadHomeThemes, loadShowcase } from '@/home/home-loads'
+import { HomeThemes } from '@/home/home-themes'
 import { getSession } from '@/lib/auth-functions'
 import { canonicalLink, homeCanonicalPath, isFilteredHomeSearch } from '@/lib/canonical'
 import { homeJsonLd, jsonLdScript } from '@/lib/json-ld'
@@ -69,8 +70,8 @@ export const Route = createFileRoute('/')({
   loader: async ({ deps, location }) => {
     const sort = deps.sort ?? 'trending'
     const tags = coerceTags(deps.tags)
-    // The showcase (the hero's list) is the same whatever the gallery shows.
-    const [entries, showcase] = await Promise.all([
+    // The showcase (the hero's list) and the themes row are the same whatever the gallery shows.
+    const [entries, showcase, themeRow] = await Promise.all([
       loadGalleryEntries(deps.kind ?? 'all', {
         'status-line': {
           items: () => getGalleryConfigs({ data: { sort, tags } }),
@@ -82,6 +83,7 @@ export const Route = createFileRoute('/')({
         },
       }),
       loadShowcase(),
+      loadHomeThemes(),
     ])
     const { page } = location.search as { page?: unknown }
     if (!galleryPageWindow(coercePage(page), entries.length)) throw notFound()
@@ -89,6 +91,8 @@ export const Route = createFileRoute('/')({
       user: await getSession(),
       entries,
       showcase,
+      themeRow,
+      origin: siteUrl(),
     }
   },
   head: ({ loaderData, match }) => {
@@ -135,7 +139,7 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
-  const { user, entries, showcase } = Route.useLoaderData()
+  const { user, entries, showcase, themeRow, origin } = Route.useLoaderData()
   const search = Route.useSearch()
   const { items, page, pageCount, total } = galleryView(entries, {
     page: search.page ?? 1,
@@ -167,6 +171,7 @@ function Home() {
         tags={search.tags}
         query={search.q}
       />
+      <HomeThemes row={themeRow} origin={origin} />
       <HomeChecks />
     </PageShell>
   )

@@ -2,6 +2,7 @@ import { CommandExitError, type CommandHandle, Sandbox, TimeoutError } from 'e2b
 import { requireEnv } from '@/lib/env'
 import { buildNetworkOption } from '../e2b-network'
 import { E2B_MOD_TEMPLATE_ID } from '../e2b-template'
+import { withLimitedSandbox } from './sandbox-places'
 
 const SANDBOX_USER = 'user'
 /** Harness files the recorder and importer write as `user`. */
@@ -189,24 +190,23 @@ async function openTerminal(sandbox: Sandbox, options: TerminalOptions): Promise
 }
 
 /** A sandbox from `templateId`, offline unless given hosts, killed once `use` settles. */
-export async function withTemplateSandbox<T>(
+export function withTemplateSandbox<T>(
   templateId: string,
   timeoutMs: number,
   use: (sandbox: Sandbox) => Promise<T>,
   networkHosts: readonly string[] = [],
 ): Promise<T> {
-  const sandbox = await Sandbox.create(templateId, {
-    apiKey: requireEnv('E2B_API_KEY'),
-    ...buildNetworkOption([...networkHosts]),
-    timeoutMs,
-    requestTimeoutMs: REQUEST_TIMEOUT_MS,
-    secure: true,
-  })
-  try {
-    return await use(sandbox)
-  } finally {
-    await sandbox.kill().catch(() => {})
-  }
+  return withLimitedSandbox(
+    () =>
+      Sandbox.create(templateId, {
+        apiKey: requireEnv('E2B_API_KEY'),
+        ...buildNetworkOption([...networkHosts]),
+        timeoutMs,
+        requestTimeoutMs: REQUEST_TIMEOUT_MS,
+        secure: true,
+      }),
+    use,
+  )
 }
 
 /** The tarball's bytes never touch the host's filesystem. */

@@ -12,8 +12,14 @@ import {
   recordModCopy,
   versionIsRendered,
 } from '@/mods/queries'
+import type { AnsiSegment } from '@/render/types'
 import { migratedPGlite } from '../helpers/test-db'
-import { addDesktopPreview, SEEDED_DESKTOP_SHOT } from './seed-mods'
+import {
+  HOOK_ERROR_ONLY_PREVIEW,
+  HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+  MODULE_LOAD_ERROR_ONLY_PREVIEW,
+} from './fixtures/hook-error-previews'
+import { addDesktopPreview, addDesktopTheme, addTheme, SEEDED_DESKTOP_SHOT } from './seed-mods'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -226,6 +232,63 @@ describe('getModDetail', () => {
       updatedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       recordedWith: '2.1.0',
       reviewedAt: null,
+      themeOnly: false,
+      themeCounts: { desktop: 0, terminal: 0 },
+      terminalHookError: false,
+    })
+  })
+
+  // A Desktop theme plugin has a hooks module, so it is not theme-only; its page is still named
+  // for its Desktop themes, from these counts.
+  it("counts the Desktop and terminal themes on the mod's own current version", async () => {
+    const { versionId } = await addMod('looks', 'published', 'scenario-preview')
+    await addDesktopTheme(db, versionId, { key: 'nord' })
+    await addDesktopTheme(db, versionId, { key: 'dawn' })
+    await addTheme(db, versionId, { key: 'ink' })
+    const other = await addMod('other-looks', 'published', 'scenario-preview')
+    await addTheme(db, other.versionId, { key: 'paper' })
+
+    expect((await getModDetail(db, 'looks'))?.themeCounts).toEqual({ desktop: 2, terminal: 1 })
+  })
+
+  async function recordTerminal(modId: string, segments: AnsiSegment[]) {
+    const [version] = await db
+      .select({ id: schema.modVersions.id })
+      .from(schema.modVersions)
+      .where(eq(schema.modVersions.modId, modId))
+    await db
+      .update(schema.modPreviews)
+      .set({ segments })
+      .where(eq(schema.modPreviews.modVersionId, version?.id as string))
+  }
+
+  // A Desktop theme mod's terminal recording is only Claude Code's error for its hook. The page
+  // states that fact, so the recording itself never reaches it.
+  it('sends no hook-error recording, only that the terminal output was a hook error', async () => {
+    const { modId } = await addMod('crashed', 'published', 'scenario-preview')
+    await recordTerminal(modId, HOOK_ERROR_ONLY_PREVIEW)
+
+    const detail = await getModDetail(db, 'crashed')
+    expect(detail).toMatchObject({ preview: [], terminalHookError: true })
+    expect(JSON.stringify(detail)).not.toContain('hook skipped')
+  })
+
+  it('sends no recording of a module the terminal refused for want of a Desktop API', async () => {
+    const { modId } = await addMod('abyss', 'published', 'scenario-preview')
+    await recordTerminal(modId, MODULE_LOAD_ERROR_ONLY_PREVIEW)
+
+    const detail = await getModDetail(db, 'abyss')
+    expect(detail).toMatchObject({ preview: [], terminalHookError: true })
+    expect(JSON.stringify(detail)).not.toContain('did not load')
+  })
+
+  it("keeps a recording with the mod's own output beside its hook's error", async () => {
+    const { modId } = await addMod('multiverse', 'published', 'scenario-preview')
+    await recordTerminal(modId, HOOK_ERROR_WITH_OUTPUT_PREVIEW)
+
+    expect(await getModDetail(db, 'multiverse')).toMatchObject({
+      preview: HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+      terminalHookError: false,
     })
   })
 

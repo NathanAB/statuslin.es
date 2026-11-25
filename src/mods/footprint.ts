@@ -1,6 +1,7 @@
 import type { ModFootprint } from '@/db/schema'
 import type { AnsiSegment } from '@/render/types'
 import { type EntryMeaning, FOOTPRINT_MEANINGS, type MatcherArgs } from './footprint-meanings'
+import { onlyHookError } from './hook-error'
 import type { DesktopPreview } from './queries'
 
 /** Where a mod's output appears in Claude Code, in display order. */
@@ -8,8 +9,10 @@ export const DRAW_LOCATIONS = [
   'above-prompt',
   'under-prompt',
   'pane',
+  'conversation-row',
   'status-entry',
   'toast',
+  'window-background',
   'built-in-rows',
 ] as const
 export type DrawLocation = (typeof DRAW_LOCATIONS)[number]
@@ -18,8 +21,10 @@ export const DRAW_LOCATION_LABEL: Record<DrawLocation, string> = {
   'above-prompt': 'above the prompt',
   'under-prompt': 'under the prompt',
   pane: 'a pane',
+  'conversation-row': 'a row in the conversation',
   'status-entry': 'a status entry',
   toast: 'a toast',
+  'window-background': 'the window background',
   'built-in-rows': 'built-in rows',
 }
 
@@ -104,6 +109,14 @@ export function describeFootprint(footprint: ModFootprint): FootprintDescription
   }
 }
 
+/**
+ * Whether the mod sets a Desktop theme: it draws the window background. Its Desktop previews are the
+ * whole window, and only such a mod may carry Desktop themes.
+ */
+export function setsTheme(footprint: ModFootprint): boolean {
+  return describeFootprint(footprint).draws.includes('window-background')
+}
+
 /** What a version's previews recorded. Only a Desktop result's kind matters here. */
 interface RecordedSurfaces {
   preview: AnsiSegment[] | null
@@ -113,7 +126,8 @@ interface RecordedSurfaces {
 /** The surfaces the recorded previews show it drawing on; one where it drew nothing is left out. */
 function modSurfaces(version: RecordedSurfaces): Surface[] {
   const surfaces: Surface[] = []
-  if (version.preview !== null && version.preview.length > 0) surfaces.push('terminal')
+  const { preview } = version
+  if (preview !== null && preview.length > 0 && !onlyHookError(preview)) surfaces.push('terminal')
   if (version.desktop?.kind === 'shot') surfaces.push('desktop')
   return surfaces
 }

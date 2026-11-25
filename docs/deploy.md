@@ -303,7 +303,9 @@ bun run build:e2b-mod-template
 ```
 It prints an immutable snapshot ID. Commit that value as `E2B_MOD_TEMPLATE_ID` in
 `src/render/e2b-template.ts` before deploying. Rebuild only when the Claude Code or headless-terminal
-version in `scripts/build-e2b-mod-template.ts` changes. It leaves `E2B_TEMPLATE_ID` alone.
+version in `scripts/build-e2b-mod-template.ts` changes, or the canned model server
+(`src/render/sandbox-anthropic-usage-server.py`) does, since the template holds a copy of it. It
+leaves `E2B_TEMPLATE_ID` alone.
 
 ### The Desktop E2B template
 
@@ -329,6 +331,8 @@ can move what it clicks. For each Desktop upgrade:
    ```sh
    bun run smoke:desktop <out-dir> [plugin-name...]
    ```
+   Until then, recording a Desktop theme fails and saves no shot when Desktop's own window has no
+   prompt box edge where `screen.ts` puts it, since the theme checks compare fixed regions of it.
 3. Re-render every mod (launch runbook step 3), then every status line's Desktop preview (below), on
    staging, then production, so each Desktop preview comes from the new Desktop.
 
@@ -380,10 +384,52 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    ```sh
    DATABASE_URL='<env pooled url>' bun run import:mods
    ```
+   No two entries may share a plugin name (ADR 0005: a user with both gets one working). Check a
+   candidate's plugin.json `name` against the file before reading it: palette plugins are often
+   named for the bare palette.
 3. Render each mod's previews. One run records every mod in the terminal and in Claude Desktop and
    prints one outcome per mod per surface: rendered, drew nothing, or failed. A failed surface keeps
    its earlier result and leaves the other surface alone. Exit code 1 means a surface failed; rerun
    it, or a single mod with `--slug <slug>`. A mod publishes only once both surfaces have a result.
+   The same run records each terminal theme a plugin carries, in that theme, as one outcome line
+   per theme. Every terminal theme is recorded in the theme scene (`src/render/mods/theme-scene.ts`):
+   a reply, an edit with its diff, and a prompt asking to run a command, the same for every terminal
+   theme whatever the plugin's input steps and terminal. Every hook is off in it, so a terminal
+   theme's preview never runs the plugin's own code; its hooks show only in the mod's own previews.
+   A full run skips themes that already have a preview, and `--slug` records all of that plugin's
+   themes again, which is how published themes move to a changed theme scene. A plugin publishes
+   only once every theme has a preview. A terminal theme whose screen looks the same as the baseline
+   (Claude Code ignored its `theme` setting), or as another theme of the same version, fails with
+   that reason and loses its preview, whichever run stored it. Check the plugin name and the theme
+   file, then rerun.
+   When one terminal theme still can't be recorded, such as one that only changes colours the
+   theme scene never draws, leave it unlisted so the plugin's other themes publish:
+   ```sh
+   DATABASE_URL='<env pooled url>' bun run scripts/unlist-theme.ts <slug> <theme-key> --reason "<why>"
+   ```
+   It acts on the plugin's newest version and keeps the reason on the theme. The theme stays in the
+   plugin people install, so read its file as you would any other, but it shows no card, loses any
+   preview it had, `render:mods` no longer records it, and publish no longer waits for it. A re-pin
+   lists every theme of the new version again.
+   Desktop themes are recorded in the same run, each as a whole-window still of Claude Desktop in the
+   theme's own window, after its switch steps. A mod has Desktop themes only once its curation entry
+   declares them (`desktopThemes`, one per theme: `key`, `name` as the mod titles it, `window`, and
+   `switchSteps`, the commands that switch to it, left out when the mod sets its one theme itself;
+   a twin is a theme of its own; each switch step is one slash command with its arguments). Rerun
+   `import:mods` after editing them: a version that isn't live yet has its Desktop themes replaced,
+   and they need rendering again. A live version's are refused; re-pin the mod to a new commit, or
+   unpublish it first. A re-pin of a mod that declares Desktop themes imports only once its
+   `desktopThemesCheckedAt` names the new commit (see "Re-pin a mod"). Each theme is recorded twice, and fails with the reason when its window looks
+   like Desktop's own, or a theme with switch steps looks like the mod with none (check the steps),
+   when it shows the other window than its `window` says, when it differs between the two runs (a
+   background that moves can't be listed as a still), when two themes come out as one look, or when
+   its shot is over 4 MB (its card over 1 MB). These checks catch a wrong declaration, not code that
+   behaves differently in the sandbox: read the pinned code before you publish.
+   Run one `render:mods` at a time. Our E2B key allows 20 sandboxes at once. One run never starts
+   more than that (`E2B_SANDBOX_LIMIT` in `src/render/mods/sandbox-places.ts`; the rest wait their
+   turn), but runs side by side, or alongside `smoke:desktop`, add up past it and fail their themes
+   with "Rate limit exceeded". Don't stop a run partway: its Desktop sandboxes live on for up to 25
+   minutes and keep holding their slots.
    A published mod's live previews are replaced as soon as it renders:
    ```sh
    DATABASE_URL='<env pooled url>' bun run render:mods
@@ -491,9 +537,9 @@ is listed and left alone, and so are a head that no longer builds on the pin (a 
 repository, pin or plugin.json GitHub no longer serves (`gone`; see "Pinned-commit check"), and a
 version that isn't a plain version string (`unreadable`: read it by hand). It reads only GitHub, so
 it needs a token (one run makes more requests than GitHub allows an hour without one), not a
-database:
+database. Bun reads `GITHUB_TOKEN` from `.env.local`:
 ```sh
-GITHUB_TOKEN=$(gh auth token) bun run updates:mods
+bun run updates:mods
 ```
 **The weekly pull request.** `updates:mods:pr` runs that check and opens one pull request,
 `chore(mods): re-pin curated mods to their new releases`, from the `mods/updates` branch. Its body
@@ -506,9 +552,9 @@ from this repository's own `mods/updates` counts, never a fork's. While that pul
 new releases to it instead of opening another, and rewrite its body whenever it doesn't match the
 branch. The body compares each mod from main's pin to the commit the branch holds. It edits `curation.json` through the GitHub API, so it leaves the checkout alone, and it
 never merges, publishes or re-pins. It needs `gh` and `claude` signed in on the operator's machine
-(the subscription, not an API key):
+(the subscription, not an API key), and `GITHUB_TOKEN`, which Bun reads from `.env.local`:
 ```sh
-GITHUB_TOKEN=$(gh auth token) bun run updates:mods:pr
+bun run updates:mods:pr
 ```
 To run it every Monday at 09:00, give it its own clone and a launchd agent. The clone must live
 outside `~/Documents`, `~/Desktop` and `~/Downloads`: macOS privacy protection stops a launchd job
@@ -547,12 +593,17 @@ Remove it with `launchctl bootout gui/$(id -u)/es.statuslin.mod-updates`.
 
 Read each compare link yourself for network, exec, filesystem, env, dependency and dynamic-code
 changes, in the mod's folder for a shared repository, add `inputSteps` to the pull request if a new
-version needs them, and merge it: that merge is the review. Then pull main and re-pin with the one
+version needs them, and merge it: that merge is the review. A mod that declares Desktop themes
+(`desktopThemes`) is listed under **Desktop themes to check**: a release can add, rename or drop a
+theme, and `import:mods` refuses the re-pin until you have read the new commit's themes, fixed the
+mod's `desktopThemes` (name, window, switch steps) to match, and set its `desktopThemesCheckedAt` to
+the new commit. Make those edits on the pull request before you merge it. Then pull main and re-pin with the one
 command below: it refuses a `curation.json` that isn't the one on `origin/main`, so nothing unmerged
 goes live.
 
 To re-pin by hand instead, change each entry's `commitSha` in `src/mods/curation.json` (and
-`inputSteps` if the new version needs them) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another
+`inputSteps` if the new version needs them, and for a mod with `desktopThemes`, check them against
+the new commit and set `desktopThemesCheckedAt` to it) and merge that as a pull request too. Keep `pluginName` and `repoUrl`: an entry from another
 repository imports as a new mod, named `<name>-<owner>`. The mod's title stays as it was first
 imported. Its description is the published version's plugin.json `description`: publishing reads
 it at the pinned commit, prints it in the dry run, and refuses a commit whose plugin.json GitHub
@@ -595,7 +646,8 @@ published; rerun `render:status-line-desktop` for it.
 `bun run with-env <env>`:
 
 1. Edit `src/mods/curation.json` as above.
-2. Import it. The import adds the commit as the mod's next version and leaves the current one live:
+2. Import it. The import adds the commit as the mod's next version and leaves the current one live.
+   It refuses a mod with `desktopThemes` whose `desktopThemesCheckedAt` isn't the new commit:
    ```sh
    DATABASE_URL='<env pooled url>' bun run import:mods
    ```
@@ -643,7 +695,9 @@ out. Nothing renders until you do: mods render from your machine (ADR 0006). Run
    DATABASE_URL='<env pooled url>' bun run render:mods --slug <slug>
    ```
    Check both previews on `/admin`. If a surface drew nothing and should, revise the steps (step 2)
-   and render again. `render:mods` skips versions whose submission was rejected or replaced.
+   and render again. `render:mods` skips versions whose submission was rejected or replaced. A run
+   without `--slug` records none of a pending submission's themes and prints the command that does,
+   since any signed-in user can submit a plugin of hundreds of themes.
 4. **Review it on `/admin`.** Read the footprint, the source at its commit and, for an update, the
    warnings and the compare link against the live commit. **Approve** checks again that both
    surfaces rendered, that the commit is on the default branch, that the mod isn't delisted and that
@@ -731,6 +785,36 @@ The "Request a review" button sends `unreviewed_mod_review_requested` to PostHog
 `pluginName`. Nothing on the site counts it. Read the totals there to pick which mods to review next,
 and curate them as usual. Search Console clicks for these pages are their own group,
 `/mods/unreviewed/*`, in `docs/redesign/home-a/seo/search_console.py`.
+
+### Unreviewed Desktop theme mods
+
+A curated mod that carries Desktop themes can go live before anyone reads its code, as an
+unreviewed mod with its recorded previews (ADR 0014). Its page is at
+`/mods/unreviewed/<owner>/<plugin name>`, and its theme cards are in the "Not reviewed" section of
+`/themes` and of palette pages. None of them shows an install or switch steps, and nothing that
+counts listings counts them. The mod stays a draft until it is published.
+
+1. Import and record it as in the launch runbook's steps 2 and 3. The command refuses a mod whose
+   draft doesn't pin its curation entry's commit, a mod with no Desktop theme or a theme without
+   its recording, a user's submission, a folder statuslin.es removed or rejected, and an address
+   another unreviewed mod already has. A `refused` line says why, and exit code 1 means at least
+   one was refused.
+2. Show it on staging, dry run first. Several slugs can go in one run:
+   ```sh
+   bun run with-env staging scripts/show-unreviewed-mod.ts <slug>...
+   bun run with-env staging scripts/show-unreviewed-mod.ts <slug>... --apply
+   ```
+3. Look at every new page on staging, and at its cards on `/themes`: each theme's still, the name,
+   the "Not reviewed" label, and no install command.
+4. Run the same command on production, with `production` in place of `staging`.
+
+To take a page down, on the author's request or ours, run the command with `--hide --apply` on both
+environments. Re-recording the mod replaces its page's stills on that environment at once.
+
+**From not reviewed to a full listing.** Read the pinned code, write its page copy (launch runbook
+step 4), and publish it with `publish-mod.ts` as usual (step 5). Publishing clears the unreviewed
+page: the theme cards move into the reviewed list with their install, and the unreviewed address
+redirects permanently to the listing.
 
 ## Community status line seeds
 

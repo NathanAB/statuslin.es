@@ -40,3 +40,11 @@ export function fitWithin(size: Size, box: Size): Size {
   const scale = Math.min(box.width / size.width, box.height / size.height)
   return { width: Math.floor(size.width * scale), height: Math.floor(size.height * scale) }
 }
+
+/** The largest font size, up to `max`, at which `rows` lines stack within `height` pixels. */
+export function fitRowsFontSize(rows: number, max: number, height: number): number {
+  if (rows === 0) return max
+  const rowHeight = Math.floor(height / rows)
+  // Rounded down to a hundredth, so a row never lays out a pixel taller than its share.
+  return Math.min(max, Math.floor((rowHeight / LINE_EM) * 100) / 100)
+}

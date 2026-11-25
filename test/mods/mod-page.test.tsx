@@ -4,13 +4,9 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GalleryItem } from '@/gallery/gallery-items'
 import { faqPageJsonLd } from '@/lib/json-ld'
-import {
-  HOME_TITLE_BASE,
-  MOD_NOT_FOUND_TITLE,
-  modMetaDescription,
-  modPageTitle,
-} from '@/lib/page-title'
+import { HOME_TITLE_BASE, MOD_NOT_FOUND_TITLE } from '@/lib/page-title'
 import { MOD_INSTALL_MIN_VERSION, modInstallPrompt } from '@/mods/install'
+import { modMetaDescription, modPageTitle } from '@/mods/page-meta'
 import type { ModDetail } from '@/mods/queries'
 
 const recordModCopyFn = vi.hoisted(() => vi.fn())
@@ -85,6 +81,9 @@ const MOD: ModDetail = {
   updatedAt: '2026-09-30',
   recordedWith: '2.1.0',
   reviewedAt: null,
+  themeOnly: false,
+  themeCounts: { desktop: 0, terminal: 0 },
+  terminalHookError: false,
 }
 
 const COPY: NonNullable<ModDetail['generatedContent']> = {
@@ -142,7 +141,7 @@ const RELATED: GalleryItem[] = [
 
 function renderPage(mod: Partial<ModDetail> & { related?: GalleryItem[] } = {}) {
   vi.spyOn(ModRoute, 'useLoaderData').mockReturnValue({
-    mod: { ...MOD, related: [], ...mod },
+    mod: { ...MOD, related: [], themes: [], ...mod },
     user: null,
     origin: ORIGIN,
   })
@@ -228,6 +227,23 @@ describe('mod page head', () => {
         }),
       },
     ])
+  })
+
+  it('titles, describes and shares a Desktop theme plugin as a Claude Desktop theme', () => {
+    const meta = head({
+      ...MOD,
+      title: 'Nord Look',
+      description: '',
+      themeCounts: { desktop: 1, terminal: 0 },
+    }).meta
+    const og = (property: string) => meta.find((m) => m.property === property)?.content
+    const title = 'Nord Look — Claude Desktop Theme | statuslin.es'
+    const description =
+      'A reviewed Claude Desktop theme. See its preview, then install it with one copied prompt.'
+
+    expect(meta.slice(0, 2)).toEqual([{ title }, { name: 'description', content: description }])
+    expect(og('og:title')).toBe(title)
+    expect(og('og:description')).toBe(description)
   })
 
   it('shares the mod under its own url, title and description, not the home page', () => {
@@ -451,6 +467,23 @@ describe('mod page', () => {
 
     expect(section('Preview').getByText('Draws nothing in the terminal.')).toBeTruthy()
     expect(screen.queryByText('No preview.')).toBeNull()
+  })
+
+  // A Desktop theme mod calls $.theme.set, which the terminal lacks, so Claude Code prints its
+  // hook's error there. The page states that fact instead of showing the error as a preview.
+  it("states that a mod whose only terminal output is its hook's error draws nothing there", () => {
+    renderPage({ preview: [], terminalHookError: true, desktop: SHOT })
+
+    const preview = section('Preview')
+    expect(preview.getByText('Terminal')).toBeTruthy()
+    expect(
+      preview.getByText(
+        'Draws nothing in the terminal. Claude Code prints a one-line error there when a session starts.',
+      ),
+    ).toBeTruthy()
+    const what = section('What it does')
+    const tile = (label: string) => what.getByText(label).closest('dt')?.nextElementSibling
+    expect(tile('Works in')?.textContent).toBe('Claude Desktop')
   })
 
   it('stacks the Desktop shot under the terminal, whole and at its CSS size', () => {
@@ -803,5 +836,80 @@ describe('mod page README badge', () => {
     )
     expect(writeText).toHaveBeenCalledWith(text)
     expect(recordModCopyFn).not.toHaveBeenCalled()
+  })
+})
+
+// A theme plugin runs no code, so its page never calls it a mod (GLOSSARY.md): it sits under
+// /themes, and its install prompt and toast say how to pick one of its themes.
+describe('theme plugin page', () => {
+  const PACK = { themeOnly: true, preview: [], footprint: { events: [], calls: [] } }
+
+  it('says what the theme plugin can do, with no link to the mod safety guide', () => {
+    renderPage(PACK)
+
+    expect(screen.getByRole('region', { name: 'What this theme plugin can do' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'What this mod can do' })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Are mods safe\?/ })).toBeNull()
+  })
+
+  it('breadcrumbs home › Themes › the plugin, linking Themes to the themes page', () => {
+    renderPage(PACK)
+
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(nav.textContent).toBe('statuslin.es›Themes›File Tree')
+    expect(within(nav).getByRole('link', { name: 'Themes' }).getAttribute('href')).toBe('/themes')
+  })
+
+  it('never subtitles it as a mod from a job tag', () => {
+    renderPage({ ...PACK, tags: ['git'] })
+
+    expect(screen.queryByText(/Claude Code mod/)).toBeNull()
+  })
+
+  it('copies a prompt that names a theme plugin, and says to pick a theme with /theme and the version it needs', async () => {
+    renderPage(PACK)
+
+    fireEvent.click(screen.getByRole('button', { name: PROMPT_BUTTON }))
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+    const prompt = writeText.mock.calls[0]?.[0] ?? ''
+    expect(prompt).toMatch(/^Install the filetree theme plugin from site\.example\.test\. /)
+    expect(prompt).toContain('plugin install filetree@statuslines')
+    expect(prompt).not.toMatch(/\bmod\b/)
+    expect(toast).toHaveBeenCalledWith('Prompt copied', {
+      description:
+        'Paste it into Claude Code or Claude Desktop, then pick a theme with /theme in the terminal. Theme plugins need Claude Code 2.1.118 or later.',
+    })
+  })
+
+  it('titles, describes, shares and breadcrumbs it as themes in the head', () => {
+    const head = ModRoute.options.head?.({
+      loaderData: { mod: { ...MOD, ...PACK, description: '' }, user: null, origin: ORIGIN },
+    } as never) as {
+      meta: Array<Record<string, string>>
+      scripts: Array<{ children: string }>
+    }
+    const { meta, scripts } = head
+
+    expect(meta.slice(0, 2)).toEqual([
+      { title: 'File Tree — Claude Code Themes | statuslin.es' },
+      {
+        name: 'description',
+        content:
+          "Reviewed Claude Code terminal themes. See each theme's preview, then install them with one copied prompt.",
+      },
+    ])
+    expect(meta.find((m) => m.property === 'og:title')?.content).toBe(
+      'File Tree — Claude Code Themes | statuslin.es',
+    )
+    const crumbs = scripts
+      .map((s) => JSON.parse(s.children))
+      .find((n) => n['@type'] === 'BreadcrumbList')
+    expect(crumbs.itemListElement[1]).toEqual({
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Themes',
+      item: `${ORIGIN}/themes`,
+    })
   })
 })

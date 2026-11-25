@@ -1,21 +1,7 @@
 import type { PageCopy } from '@/content/types'
-import {
-  BUDDY_GUIDE_PATH,
-  BUDDY_GUIDE_TITLE,
-  DESKTOP_GUIDE_PATH,
-  DESKTOP_GUIDE_TITLE_BASE,
-  GUIDE_PATH,
-  GUIDE_TITLE_BASE,
-  HOW_IT_WORKS_PATH,
-  HOW_IT_WORKS_TITLE,
-  MOD_SAFETY_GUIDE_PATH,
-  MOD_SAFETY_GUIDE_TITLE,
-  NOT_SHOWING_GUIDE_PATH,
-  NOT_SHOWING_GUIDE_TITLE,
-  STATUS_LINES_VS_MODS_GUIDE_PATH,
-  STATUS_LINES_VS_MODS_GUIDE_TITLE,
-} from '@/lib/page-title'
-import { GALLERY_JSON_PATH, LLMS_FULL_PATH, MARKETPLACE_PATH, MODS_PATH, modPath } from '@/lib/site'
+import { LLMS_FULL_PATH, modPath } from '@/lib/site'
+import { type LlmsFacet, type LlmsPalette, siteBlocks } from './llms-site'
+import { escapeMarkdownLinks, flat, oneLine, untrusted } from './llms-text'
 
 /**
  * The `/llms.txt` body (see llmstxt.org) — a plain-markdown map of the site for AI answer
@@ -46,24 +32,35 @@ export interface LlmsCatalogEntry extends LlmsConfig {
   generatedContent: PageCopy | null
 }
 
-type LlmsFacet = { slug: string; label: string }
-
-const MAX_SUMMARY_CHARS = 160
-
+/**
+ * `themed` are the plugins that carry themes: theme plugins, and mods that set a Desktop theme. They
+ * are listed under Themes, and a mod among them is not listed again under Mods.
+ */
 export function buildLlmsTxt(
   base: string,
   facets: LlmsFacet[],
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
+  themed: LlmsMod[] = [],
+  palettes: LlmsPalette[] = [],
 ): string {
-  const blocks = siteBlocks(base, facets)
+  const blocks = siteBlocks(base, facets, palettes)
   if (configs.length > 0) {
     blocks.push(['## Top status lines', '', ...configs.map((c) => configLink(base, c))].join('\n'))
   }
-  if (mods.length > 0) {
-    blocks.push(
-      ['## Mods', '', ...mods.map((m) => summaryLink(`${base}${modPath(m.slug)}`, m))].join('\n'),
-    )
+  for (const [heading, plugins] of [
+    ['Mods', withoutThemed(mods, themed)],
+    ['Themes', themed],
+  ] as const) {
+    if (plugins.length > 0) {
+      blocks.push(
+        [
+          `## ${heading}`,
+          '',
+          ...plugins.map((p) => summaryLink(`${base}${modPath(p.slug)}`, p)),
+        ].join('\n'),
+      )
+    }
   }
   blocks.push(
     [
@@ -84,51 +81,26 @@ export function buildLlmsFullTxt(
   facets: LlmsFacet[],
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
+  themed: LlmsCatalogEntry[] = [],
+  palettes: LlmsPalette[] = [],
 ): string {
-  const blocks = siteBlocks(base, facets)
+  const blocks = siteBlocks(base, facets, palettes)
   if (configs.length > 0) {
     blocks.push(catalogSection('Status lines', configs, (slug) => `${base}/c/${slug}`))
   }
-  if (mods.length > 0) {
-    blocks.push(catalogSection('Mods', mods, (slug) => `${base}${modPath(slug)}`))
+  const plainMods = withoutThemed(mods, themed)
+  if (plainMods.length > 0) {
+    blocks.push(catalogSection('Mods', plainMods, (slug) => `${base}${modPath(slug)}`))
+  }
+  if (themed.length > 0) {
+    blocks.push(catalogSection('Themes', themed, (slug) => `${base}${modPath(slug)}`))
   }
   return `${blocks.join('\n\n')}\n`
 }
 
-/** The title, summary and Browse links both files open with. */
-function siteBlocks(base: string, facets: LlmsFacet[]): string[] {
-  const blocks = [
-    '# statuslin.es',
-    '> A gallery of Claude Code mods, status lines included, each with a real preview. Install any of them with one copied prompt.',
-    "Status lines are scripts whose output Claude Code shows under the prompt. The other mods are Claude Code plugins that draw in the terminal or in Claude Desktop's Code tab. Each entry shows its real output, rendered in a sandbox. A mod that draws only in Claude Desktop shows a screenshot instead.",
-    ['## Browse', '', ...corePageLinks(base)].join('\n'),
-  ]
-  if (facets.length > 0) {
-    blocks.push(['## Browse by feature', '', ...facets.map((f) => facetLink(base, f))].join('\n'))
-  }
-  return blocks
-}
-
-function corePageLinks(base: string): string[] {
-  return [
-    `- [Gallery](${base}/): every published mod, sorted by trending, newest, or most installed`,
-    `- [Mods](${base}${MODS_PATH}): the plugin mods, ranked by installs`,
-    `- [Plugin marketplace](${base}${MARKETPLACE_PATH}): the published mods as a Claude Code plugin marketplace`,
-    `- [Mod catalogue](${base}${GALLERY_JSON_PATH}): the reviewed mods as machine-readable JSON, with install counts and what each can reach`,
-    `- [Submit](${base}/submit): send in a status line, or a mod by its GitHub link`,
-    `- [${GUIDE_TITLE_BASE}](${base}${GUIDE_PATH}): the statusLine setting, the JSON a script receives, and a tested example`,
-    `- [${NOT_SHOWING_GUIDE_TITLE}](${base}${NOT_SHOWING_GUIDE_PATH}): why a status line stays blank in the terminal, and the checks that fix it`,
-    `- [${DESKTOP_GUIDE_TITLE_BASE}](${base}${DESKTOP_GUIDE_PATH}): why the Code tab skips status lines, and the plugin that shows them`,
-    `- [${STATUS_LINES_VS_MODS_GUIDE_TITLE}](${base}${STATUS_LINES_VS_MODS_GUIDE_PATH}): where each one shows up, and when to pick which`,
-    `- [${MOD_SAFETY_GUIDE_TITLE}](${base}${MOD_SAFETY_GUIDE_PATH}): what a mod can do, and how statuslin.es pins and reviews each one`,
-    `- [${BUDDY_GUIDE_TITLE}](${base}${BUDDY_GUIDE_PATH}): what happened to /buddy, and pet mods that put a companion back, each with a real preview`,
-    `- [Resources](${base}/resources): every way to customize Claude Code, with plugin marketplaces, status line tools, usage trackers and themes`,
-    `- [${HOW_IT_WORKS_TITLE}](${base}${HOW_IT_WORKS_PATH}): how each mod and status line is pinned, run in a sandbox for its previews and reviewed, and what that can't promise`,
-  ]
-}
-
-function facetLink(base: string, facet: LlmsFacet): string {
-  return `- [${facet.label}](${base}/status-lines/${facet.slug})`
+function withoutThemed<T extends { slug: string }>(mods: T[], themed: { slug: string }[]): T[] {
+  const themedSlugs = new Set(themed.map((plugin) => plugin.slug))
+  return mods.filter((mod) => !themedSlugs.has(mod.slug))
 }
 
 function configLink(base: string, config: LlmsConfig): string {
@@ -191,35 +163,15 @@ function labelledList(label: string, items: string[]): string[] {
   return items.length > 0 ? [`- ${label}:`, ...items.map((item) => `  ${item}`)] : []
 }
 
-/** Text an author wrote, or copy written from their script: one line, with no live link syntax. */
-function untrusted(text: string): string {
-  return escapeMarkdownLinks(flat(text))
-}
-
-/** Authors write titles and descriptions, so a `](` or `<url>` in them must not forge a link. */
-function escapeMarkdownLinks(text: string): string {
-  return text.replace(/[\\[\]<>]/g, (c) => `\\${c}`)
-}
-
-function flat(text: string): string {
-  return text.replace(/\s+/g, ' ').trim()
-}
-
-function oneLine(text: string): string {
-  const line = flat(text)
-  if (line.length <= MAX_SUMMARY_CHARS)
-    return line === '' || /[.!?]$/.test(line) ? line : `${line}.`
-  const cut = line.slice(0, MAX_SUMMARY_CHARS - 1)
-  return `${cut.slice(0, cut.lastIndexOf(' '))}…`
-}
-
 export function llmsResponse(
   base: string,
   facets: LlmsFacet[],
   configs: LlmsConfig[] = [],
   mods: LlmsMod[] = [],
+  themed: LlmsMod[] = [],
+  palettes: LlmsPalette[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods))
+  return plainTextResponse(buildLlmsTxt(base, facets, configs, mods, themed, palettes))
 }
 
 export function llmsFullResponse(
@@ -227,8 +179,10 @@ export function llmsFullResponse(
   facets: LlmsFacet[],
   configs: LlmsCatalogEntry[],
   mods: LlmsCatalogEntry[],
+  themed: LlmsCatalogEntry[] = [],
+  palettes: LlmsPalette[] = [],
 ): Response {
-  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods))
+  return plainTextResponse(buildLlmsFullTxt(base, facets, configs, mods, themed, palettes))
 }
 
 function plainTextResponse(body: string): Response {

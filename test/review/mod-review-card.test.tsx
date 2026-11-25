@@ -47,11 +47,22 @@ function row(over: Partial<ModReviewRow> = {}): ModReviewRow {
     preview: [{ text: '▮▮▮▯ 62% context' }],
     desktop: { kind: 'shot', src: '/admin/mod-previews/v1/desktop.png', width: 790, height: 52 },
     warnings: [],
+    themes: [],
     ...over,
   }
 }
 
 describe('ModReviewCard', () => {
+  // The operator approves the validator's own entries, not the plain words a mod page gives them.
+  it("lists the validator's raw entries, theme calls included", () => {
+    const base = row()
+    const footprint = { events: ['ui.render{component=Backdrop}'], calls: ['$.theme.set'] }
+    render(<ModReviewCard row={{ ...base, version: { ...base.version, footprint } }} />)
+
+    expect(screen.getByText('ui.render{component=Backdrop}')).toBeTruthy()
+    expect(screen.getByText('$.theme.set')).toBeTruthy()
+  })
+
   it('shows a rendered submission with both previews, its source and the decision buttons', () => {
     render(<ModReviewCard row={row()} />)
 
@@ -110,6 +121,7 @@ describe('DashboardView with mods', () => {
         data={{
           rows: [],
           mods: [row()],
+          curated: [],
           user: { name: 'Admin', username: 'admin', image: null, role: 'admin' },
         }}
       />,

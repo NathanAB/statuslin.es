@@ -105,6 +105,12 @@ describe('desktop template definition', () => {
     )
   })
 
+  it("writes Claude Code's managed settings, which keep Desktop's bundled security plugin out of mods' hooks", async () => {
+    expect(await runCommands(desktopTemplate())).toContain(
+      'echo eyJwcmVwZW5kUGx1Z2lucyI6W10sInBhcmVudFNldHRpbmdzQmVoYXZpb3IiOiJtZXJnZSJ9 | base64 -d > /etc/claude-code/managed-settings.json',
+    )
+  })
+
   it("pins a model to every tier alias a mod can name, the feed's model first", () => {
     const models = managedSettings().inferenceModels
     expect(models.map((m) => m.anthropicFamilyTier)).toEqual(['opus', 'sonnet', 'haiku'])
@@ -139,7 +145,7 @@ function fakeE2b(failWhen: (cmd: string) => boolean = () => false) {
 }
 
 const DESKTOP_ROOTS_NOT_WRITABLE =
-  'out=$(set -o pipefail; find /opt/statuslines /usr/local /usr/lib/claude-desktop /etc/claude-desktop -perm /022 -not -type l) && test -z "$out"'
+  'out=$(set -o pipefail; find /opt/statuslines /usr/local /usr/lib/claude-desktop /etc/claude-desktop /etc/claude-code -perm /022 -not -type l) && test -z "$out"'
 
 describe('desktop snapshot', () => {
   beforeEach(() => {
@@ -186,6 +192,9 @@ describe('desktop snapshot', () => {
         `test -e ${SANDBOX_DESKTOP_BOOT} && test ! -w ${SANDBOX_DESKTOP_BOOT}`,
         `test -e ${SANDBOX_DESKTOP_MANAGED_SETTINGS} && test ! -w ${SANDBOX_DESKTOP_MANAGED_SETTINGS}`,
         `test -e ${SANDBOX_DESKTOP_ENGINE_VERSION} && test ! -w ${SANDBOX_DESKTOP_ENGINE_VERSION}`,
+        'test -e /etc/claude-code/managed-settings.json && test ! -w /etc/claude-code/managed-settings.json',
+        'test -e /etc/claude-code && test ! -w /etc/claude-code',
+        'test -e /etc/claude-desktop && test ! -w /etc/claude-desktop',
         'test -e /usr/lib/claude-desktop/claude-desktop && test ! -w /usr/lib/claude-desktop/claude-desktop',
       ]),
     )

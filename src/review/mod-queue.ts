@@ -14,6 +14,7 @@ import { publishGuards } from '@/mods/publish'
 import { desktopPreviewJoin, terminalPreviewJoin, versionIsRendered } from '@/mods/queries'
 import type { AnsiSegment } from '@/render/types'
 import { adminModDesktopPreviewPath } from './mod-desktop-preview'
+import { getReviewThemes, type ReviewTheme } from './theme-review'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -60,6 +61,8 @@ export interface ModReviewRow {
   live?: ModReviewVersion
   /** What publish-mod.ts warns about an update: a moved source, a grown footprint, an unchanged version. */
   warnings: string[]
+  /** The themes the version carries, each reviewed on its own. */
+  themes: ReviewTheme[]
 }
 
 const UNDELIVERED = ['pending', 'sending', 'failed', 'unavailable', 'ambiguous']
@@ -175,17 +178,34 @@ export async function getModReviewRows(database: Db): Promise<ModReviewRow[]> {
           .where(inArray(modVersions.id, liveIds))
       : []
   const liveById = new Map(liveRows.map((version) => [version.id, version]))
-  return rows.map(({ mod: { currentVersionId, ...mod }, desktop, ...row }) => {
-    const live =
-      row.version.status === 'pending' && currentVersionId
-        ? liveById.get(currentVersionId)
-        : undefined
-    return {
-      ...row,
-      mod,
-      desktop: desktopFor(row.version.id, desktop),
-      ...(live ? { live } : {}),
-      warnings: live ? updateWarnings({ ...row, mod }, live) : [],
-    }
-  })
+  const reviewed = rows.map((row) => ({
+    row,
+    live:
+      row.version.status === 'pending' && row.mod.currentVersionId
+        ? liveById.get(row.mod.currentVersionId)
+        : undefined,
+  }))
+  const themes = await getReviewThemes(
+    database,
+    reviewed.map(({ row, live }) => ({ id: row.version.id, liveId: live?.id ?? null })),
+  )
+  return reviewed.map(
+    ({
+      row: {
+        mod: { currentVersionId, ...mod },
+        desktop,
+        ...row
+      },
+      live,
+    }) => {
+      return {
+        ...row,
+        mod,
+        desktop: desktopFor(row.version.id, desktop),
+        ...(live ? { live } : {}),
+        warnings: live ? updateWarnings({ ...row, mod }, live) : [],
+        themes: themes.get(row.version.id) ?? [],
+      }
+    },
+  )
 }

@@ -14,6 +14,7 @@ import {
   rowSignatureCommand,
   SCREEN_PNG_COMMAND,
   SIGNATURE_CELLS,
+  scaledPngCommand,
 } from '@/render/mods/desktop/imagemagick'
 
 describe('probeCommand', () => {
@@ -80,7 +81,7 @@ describe('changedBoxCommand', () => {
 describe('rowProfileCommand', () => {
   it('prints, per CSS row of a column, the share of it that is not page background', () => {
     expect(rowProfileCommand('/tmp/final.png', [{ x: 166, width: 768 }])).toBe(
-      "set -o pipefail; convert 'png:/tmp/final.png[0]' \\( -clone 0 -crop 1536x1800+332+0 +repage \\) -delete 0 +append \\( +clone -fill 'gray(21)' -colorize 100% \\) -compose difference -composite -colorspace Gray -threshold 3% -scale 1x900! -depth 8 gray:- | od -An -v -tu1",
+      "set -o pipefail; convert 'png:/tmp/final.png[0]' \\( -clone 0 -crop 1536x1800+332+0 +repage \\) -delete 0 +append \\( +clone -fill 'gray(25)' -colorize 100% \\) -compose difference -composite -colorspace Gray -threshold 3% -scale 1x900! -depth 8 gray:- | od -An -v -tu1",
     )
   })
 
@@ -157,10 +158,18 @@ describe('croppedPngCommand', () => {
   })
 })
 
+describe('scaledPngCommand', () => {
+  it('re-encodes the first frame scaled to exactly the given device size, from its pixels alone', () => {
+    expect(scaledPngCommand('/tmp/final.png', { width: 1100, height: 900 })).toBe(
+      "convert 'png:/tmp/final.png[0]' -resize '1100x900!' -strip -define png:exclude-chunks=all png:-",
+    )
+  })
+})
+
 describe('rowSignatureCommand', () => {
   it('prints, per CSS row of a column, which of its cells hold anything but page background, one bit each', () => {
     expect(rowSignatureCommand('/tmp/final.png', { x: 158, width: 784 })).toBe(
-      `set -o pipefail; convert 'png:/tmp/final.png[0]' -crop 1568x1800+316+0 +repage \\( +clone -fill 'gray(21)' -colorize 100% \\) -compose difference -composite -colorspace Gray -threshold 3% -scale ${SIGNATURE_CELLS}x900! -threshold 0 -depth 1 gray:- | base64 -w0`,
+      `set -o pipefail; convert 'png:/tmp/final.png[0]' -crop 1568x1800+316+0 +repage \\( +clone -fill 'gray(25)' -colorize 100% \\) -compose difference -composite -colorspace Gray -threshold 3% -scale ${SIGNATURE_CELLS}x900! -threshold 0 -depth 1 gray:- | base64 -w0`,
     )
   })
 })
