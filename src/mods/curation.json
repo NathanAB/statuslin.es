@@ -529,7 +529,7 @@
   {
     "repoUrl": "https://github.com/dgokcin/claude-pokemon-mod",
     "path": "",
-    "commitSha": "811b5dbc083212100d31bbcd42a0f30ea531b07c",
+    "commitSha": "a364389b66c5face709d3b559ff171a1654a6a19",
     "pluginName": "pokemon",
     "title": "Claude Pokémon",
     "cardSurface": "terminal"
