@@ -149,7 +149,7 @@
   {
     "repoUrl": "https://github.com/data-goblin/claude-code-filetree",
     "path": "",
-    "commitSha": "1fdc3a963f2dc22a939f661ff0ff5a76646c9112",
+    "commitSha": "56de6f0684653a4e2f165ce9229ff54290a3417d",
     "pluginName": "filetree",
     "title": "Filetree",
     "inputSteps": [
@@ -480,7 +480,7 @@
   {
     "repoUrl": "https://github.com/YeonwooSung/my-claude-code-mods",
     "path": "agent-profiler",
-    "commitSha": "93fa0f7e84e37705da049ef2727530ec01af3dd9",
+    "commitSha": "6361877829b20aae4dc48825ff9a730d22e74d54",
     "pluginName": "agent-profiler",
     "title": "Agent Profiler",
     "inputSteps": [
