@@ -25,6 +25,7 @@ import {
   withModSandbox,
   withRecordingSandbox,
   withReplaySandbox,
+  withTemplateSandbox,
 } from '@/render/mods/mod-sandbox'
 
 function command(chunks: string[], outcome: () => Promise<unknown>) {
@@ -189,5 +190,42 @@ describe('withReplaySandbox', () => {
       'node x',
       expect.objectContaining({ user: 'user', timeoutMs: LIMITS.timeoutMs, background: true }),
     )
+  })
+})
+
+describe('withTemplateSandbox', () => {
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+  it('runs at most 20 sandboxes at once, the most our E2B key allows, and starts the next as one ends', async () => {
+    const ends: (() => void)[] = []
+    // Two theme packs in one batch ask for about 28 at once.
+    const runs = Array.from({ length: 28 }, () =>
+      withTemplateSandbox('template', 1_000, () => new Promise<void>((end) => ends.push(end))),
+    )
+    await settle()
+    expect(fake.create).toHaveBeenCalledTimes(20)
+
+    ends.shift()?.()
+    await settle()
+    expect(fake.create).toHaveBeenCalledTimes(21)
+
+    for (let end = ends.shift(); end; end = ends.shift()) {
+      end()
+      await settle()
+    }
+    await Promise.all(runs)
+    expect(fake.create).toHaveBeenCalledTimes(28)
+    expect(fake.sandbox.kill).toHaveBeenCalledTimes(28)
+  })
+
+  it('frees the place of a sandbox that failed to start', async () => {
+    fake.create.mockRejectedValue(new Error('Rate limit exceeded'))
+    const failed = Array.from({ length: 20 }, () =>
+      withTemplateSandbox('template', 1_000, async () => {}),
+    )
+    await Promise.allSettled(failed)
+    fake.create.mockResolvedValue(fake.sandbox)
+
+    await expect(withTemplateSandbox('template', 1_000, async () => 'ran')).resolves.toBe('ran')
   })
 })

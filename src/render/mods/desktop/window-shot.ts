@@ -15,6 +15,7 @@ import { maskedSignatureCommand, parseSignature } from './look-signature'
 import { checkedPixelPng } from './png'
 import {
   MESSAGE_AREA,
+  PROMPT_EDGE_PROBES,
   PROMPT_FILL,
   PROMPT_TEXT,
   type Rect,
@@ -34,6 +35,11 @@ const CARD = {
   height: WINDOW.height * SCALE * CARD_SCALE,
 }
 const LIGHT_FILL = 0.5
+/**
+ * Under this, the prompt box's border reads as the page beside it. Desktop's dark window has them 39
+ * grey levels (0.15) apart.
+ */
+const EDGE_CONTRAST = 0.03
 /** Where the session's turns show, which differ between themes of one look. */
 const TURNS: Rect[] = [MESSAGE_AREA, PROMPT_TEXT, SCROLL_GUTTER]
 const MB = 1024 * 1024
@@ -71,6 +77,24 @@ async function shownWindow(analysis: AnalysisSandbox): Promise<ThemeWindow> {
   const [fill] = parseProbes(stdout, 1)
   if (!fill) throw new Error('missing the prompt box probe')
   return fill.mean > LIGHT_FILL ? 'light' : 'dark'
+}
+
+/**
+ * Throws when Desktop's own window has no prompt box edge where screen.ts puts it: Desktop moved its
+ * chat column, so the masks that leave out the turns cover the wrong place and the theme checks
+ * mean nothing. Not a refusal of the theme: the recorder is what needs fixing.
+ */
+async function checkLayout(analysis: AnalysisSandbox): Promise<void> {
+  const { edge, page } = PROMPT_EDGE_PROBES
+  const probe = probeCommand(BASELINE, [edge, page], { capture: false })
+  const { stdout } = expectOk(await analysis.run(probe), "reading Desktop's own window")
+  const [edgeGrey, pageGrey] = parseProbes(stdout, 2)
+  if (!edgeGrey || !pageGrey) throw new Error('missing the prompt box edge probes')
+  if (Math.abs(edgeGrey.mean - pageGrey.mean) < EDGE_CONTRAST) {
+    throw new Error(
+      `Desktop's window isn't laid out as src/render/mods/desktop/screen.ts expects: its own window shows no prompt box edge at x=${edge.x}. Re-measure screen.ts for this Desktop and run bun run smoke:desktop`,
+    )
+  }
 }
 
 async function wholeWindow(analysis: AnalysisSandbox): Promise<WindowShot> {
@@ -124,7 +148,8 @@ function underCap(png: Uint8Array, max: number, what: string): Uint8Array {
 }
 
 /**
- * A Desktop theme's preview: the first run's whole window. Refused when the theme didn't apply
+ * A Desktop theme's preview: the first run's whole window. Fails when Desktop's own window isn't
+ * laid out as screen.ts expects. Refused when the theme didn't apply
  * (nothing outside the turns changed), when the window shows the other light or dark than the theme
  * is made for, or when the two runs differ.
  */
@@ -138,6 +163,7 @@ export async function analyseTheme(
     { path: BASELINE, data: baseline },
     ...(modDefault ? [{ path: MOD_DEFAULT, data: modDefault }] : []),
   ])
+  await checkLayout(analysis)
   if (!(await changedOutsideTurns(analysis))) {
     throw new DesktopThemeRefused(
       `the theme didn't apply: the window looks the same as Desktop's own ${window} window`,
