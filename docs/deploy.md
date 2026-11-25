@@ -425,7 +425,7 @@ that environment's `DATABASE_URL`. The import and render steps also need `E2B_AP
    its shot is over 4 MB (its card over 1 MB). These checks catch a wrong declaration, not code that
    behaves differently in the sandbox: read the pinned code before you publish.
    Run one `render:mods` at a time. Our E2B key allows 20 sandboxes at once. One run never starts
-   more than that (`E2B_SANDBOX_LIMIT` in `src/render/mods/mod-sandbox.ts`; the rest wait their
+   more than that (`E2B_SANDBOX_LIMIT` in `src/render/mods/sandbox-places.ts`; the rest wait their
    turn), but runs side by side, or alongside `smoke:desktop`, add up past it and fail their themes
    with "Rate limit exceeded". Don't stop a run partway: its Desktop sandboxes live on for up to 25
    minutes and keep holding their slots.

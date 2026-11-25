@@ -2,6 +2,7 @@ import { CommandExitError, type CommandHandle, Sandbox, TimeoutError } from 'e2b
 import { requireEnv } from '@/lib/env'
 import { buildNetworkOption } from '../e2b-network'
 import { E2B_MOD_TEMPLATE_ID } from '../e2b-template'
+import { withLimitedSandbox } from './sandbox-places'
 
 const SANDBOX_USER = 'user'
 /** Harness files the recorder and importer write as `user`. */
@@ -188,55 +189,24 @@ async function openTerminal(sandbox: Sandbox, options: TerminalOptions): Promise
   }
 }
 
-/**
- * The most sandboxes our E2B key runs at once. Every sandbox this process starts waits for a place
- * under it, however the run nests its mods, themes and recordings; past it E2B refuses with "Rate
- * limit exceeded".
- */
-const E2B_SANDBOX_LIMIT = 20
-let sandboxesRunning = 0
-const waitingForSandbox: (() => void)[] = []
-
-async function takeSandboxPlace(): Promise<void> {
-  while (sandboxesRunning >= E2B_SANDBOX_LIMIT) {
-    await new Promise<void>((resolve) => waitingForSandbox.push(resolve))
-  }
-  sandboxesRunning++
-}
-
-function freeSandboxPlace(): void {
-  sandboxesRunning--
-  waitingForSandbox.shift()?.()
-}
-
-/**
- * A sandbox from `templateId`, offline unless given hosts, killed once `use` settles. It starts
- * once fewer than E2B_SANDBOX_LIMIT are running; no caller holds one sandbox while it waits for
- * another, so waiting can't deadlock.
- */
-export async function withTemplateSandbox<T>(
+/** A sandbox from `templateId`, offline unless given hosts, killed once `use` settles. */
+export function withTemplateSandbox<T>(
   templateId: string,
   timeoutMs: number,
   use: (sandbox: Sandbox) => Promise<T>,
   networkHosts: readonly string[] = [],
 ): Promise<T> {
-  await takeSandboxPlace()
-  try {
-    const sandbox = await Sandbox.create(templateId, {
-      apiKey: requireEnv('E2B_API_KEY'),
-      ...buildNetworkOption([...networkHosts]),
-      timeoutMs,
-      requestTimeoutMs: REQUEST_TIMEOUT_MS,
-      secure: true,
-    })
-    try {
-      return await use(sandbox)
-    } finally {
-      await sandbox.kill().catch(() => {})
-    }
-  } finally {
-    freeSandboxPlace()
-  }
+  return withLimitedSandbox(
+    () =>
+      Sandbox.create(templateId, {
+        apiKey: requireEnv('E2B_API_KEY'),
+        ...buildNetworkOption([...networkHosts]),
+        timeoutMs,
+        requestTimeoutMs: REQUEST_TIMEOUT_MS,
+        secure: true,
+      }),
+    use,
+  )
 }
 
 /** The tarball's bytes never touch the host's filesystem. */
