@@ -8,7 +8,12 @@ import postgres from 'postgres'
 import { isPooledUrl } from '@/db/is-pooled'
 import * as schema from '@/db/schema'
 import { requireEnv } from '@/lib/env'
-import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
+import {
+  CURATION_FILE,
+  type CurationEntry,
+  desktopThemesCheckedAt,
+  parseCuration,
+} from '@/mods/curation'
 import { createGitHub, type GitHubSource } from '@/mods/github'
 import {
   checkDesktopThemes,
@@ -42,7 +47,8 @@ import type { DesktopTheme } from '@/themes/theme'
  *
  * An entry's `desktopThemes` are stored with its version, one Desktop theme each, with the switch
  * steps render:mods sends to record it and its card shows. They are refused for a mod whose
- * footprint sets no theme.
+ * footprint sets no theme. A re-pin of a mod that declares them is refused until its
+ * `desktopThemesCheckedAt` names the new commit: a release can add or rename a theme.
  *
  * Idempotent: an entry whose repository, path and commit are already imported is skipped without a
  * request, so rerunning the same file changes nothing. If only its `desktopThemes`, `inputSteps` or
@@ -254,6 +260,11 @@ async function importEntry(
   const imported = await importedSlug(db, entry)
   if (imported) return updateImported(db, entry, imported)
   const existing = await modToRepin(db, entry)
+  if (existing && !desktopThemesCheckedAt(entry, entry.commitSha)) {
+    throw new Error(
+      `its desktopThemes aren't marked as checked at ${entry.commitSha}; read that commit's themes, fix the declarations, then set desktopThemesCheckedAt to it`,
+    )
+  }
 
   const repo = await github.repoInfo(entry.repoUrl)
   const canonical = `https://github.com/${repo.fullName}`

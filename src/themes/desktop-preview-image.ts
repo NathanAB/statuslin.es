@@ -1,11 +1,12 @@
 import { createServerOnlyFn } from '@tanstack/react-start'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, or } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db as defaultDb } from '@/db'
 import { mods, modThemeDesktopPreviews, modThemes, modVersions } from '@/db/schema'
 import { PREVIEW_IMAGE_CACHE } from '@/lib/cache-control'
 import { pngIfRender, previewImageResponse, readPreviewImageQuery } from '@/lib/preview-image'
 import { isUuid } from '@/lib/uuid'
+import { hasUnreviewedPage } from '@/mods/unreviewed-queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -13,9 +14,10 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 const notFound = () => new Response('Not found', { status: 404 })
 
 /**
- * The whole-window shot of a Desktop theme on a published plugin's live version, or with `image`
- * 'card' its card image, as served at THEME_DESKTOP_PREVIEW_ROUTE. It is visible exactly when the
- * theme's card is, and only under the `r` (render) its card names (themeDesktopPreviewPath), with no
+ * The whole-window shot of a Desktop theme on the live version of a published plugin or of a
+ * curated draft shown as an unreviewed mod (ADR 0014), or with `image` 'card' its card image, as
+ * served at THEME_DESKTOP_PREVIEW_ROUTE. It is visible exactly when the theme's card is, and only
+ * under the `r` (render) its card names (themeDesktopPreviewPath), with no
  * other query, so a made-up URL can't skip the cache, and a new recording gets a new URL, which lets
  * a browser keep each one for good.
  */
@@ -38,7 +40,12 @@ export async function themeDesktopPreviewResponse(
     .innerJoin(modThemes, eq(modThemes.id, modThemeDesktopPreviews.themeId))
     .innerJoin(modVersions, eq(modVersions.id, modThemes.modVersionId))
     .innerJoin(mods, eq(mods.currentVersionId, modVersions.id))
-    .where(and(eq(modThemeDesktopPreviews.themeId, themeId), eq(mods.status, 'published')))
+    .where(
+      and(
+        eq(modThemeDesktopPreviews.themeId, themeId),
+        or(eq(mods.status, 'published'), hasUnreviewedPage(db)),
+      ),
+    )
   if (!row?.png) return notFound()
   return previewImageResponse(row.png, PREVIEW_IMAGE_CACHE)
 }

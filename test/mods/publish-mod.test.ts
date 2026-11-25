@@ -356,6 +356,23 @@ describe('first publish of an imported draft', () => {
     })
   })
 
+  // Publishing is the review (ADR 0014): a later unpublish must not bring the unreviewed page back.
+  it('clears the unreviewed page the operator showed for the draft', async () => {
+    const { modId } = await importedDraft()
+    await db
+      .update(schema.mods)
+      .set({ unreviewedPageAt: new Date('2026-11-24T00:00:00Z') })
+      .where(eq(schema.mods.id, modId))
+
+    await publish(['meter', sha('a'), '--apply', '--confirm=meter'])
+
+    const [mod] = await db
+      .select({ unreviewedPageAt: schema.mods.unreviewedPageAt })
+      .from(schema.mods)
+      .where(eq(schema.mods.id, modId))
+    expect(mod).toEqual({ unreviewedPageAt: null })
+  })
+
   it('treats a draft pointing at an older version as a first publish of the target', async () => {
     const { modId } = await importedDraft()
     const nextId = await addVersion(db, modId, {

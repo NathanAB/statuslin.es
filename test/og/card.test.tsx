@@ -142,6 +142,22 @@ describe('og card text', () => {
     ).toBe('statuslin.esNord themes for Claude Desktop2 themes, each previewed in a real session')
   })
 
+  it("says a palette's card of unreviewed themes alone is not reviewed", () => {
+    expect(
+      cardText(
+        themesCard({
+          title: 'Nord themes for Claude Desktop',
+          count: 2,
+          screens: [],
+          reviewed: false,
+        }),
+      ),
+    ).toBe('statuslin.esNord themes for Claude Desktop2 themes, not reviewed yet')
+    expect(cardText(themesCard({ title: 'Nord', count: 1, screens: [], reviewed: false }))).toBe(
+      'statuslin.esNord1 theme, not reviewed yet',
+    )
+  })
+
   it('says where a mod with no terminal preview or Desktop shot draws', () => {
     expect(
       cardText(modCard({ title: 'Tree', authorGithub: 'octocat', body: { kind: 'none' } })),

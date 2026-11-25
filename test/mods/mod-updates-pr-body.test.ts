@@ -74,6 +74,34 @@ describe('modUpdatesPrBody', () => {
   })
 })
 
+describe('modUpdatesPrBody Desktop themes', () => {
+  it('names each re-pinned mod whose declared Desktop themes need checking at its new commit', () => {
+    const body = modUpdatesPrBody({
+      releases: [
+        release({
+          pluginName: 'reef',
+          desktopThemes: [{ key: 'night', name: 'Night', window: 'dark', switchSteps: [] }],
+          desktopThemesCheckedAt: PIN,
+        }),
+        release({ pluginName: 'meter' }),
+      ],
+      reviews: [],
+      notes: [],
+    })
+
+    expect(body).toContain(
+      `## Desktop themes to check\n\nThese mods declare Desktop themes, and \`import:mods\` refuses each re-pin until its declarations are checked against the new commit. Before merging, read the new commit's themes, fix each mod's \`desktopThemes\` in \`src/mods/curation.json\` (name, window, switch steps), and set its \`desktopThemesCheckedAt\` to the new commit.\n\n- reef: \`desktopThemesCheckedAt\` must be ${HEAD}`,
+    )
+    expect(body).not.toContain('- meter:')
+  })
+
+  it('leaves out the Desktop themes section when no re-pinned mod declares any', () => {
+    const body = modUpdatesPrBody({ releases: [release()], reviews: [], notes: [] })
+
+    expect(body).not.toContain('Desktop themes to check')
+  })
+})
+
 describe('modUpdatesPrBody size', () => {
   it('cuts the reviews to stay under GitHub’s body limit, pointing at the compare links', () => {
     const releases = Array.from({ length: 12 }, (_, i) => release({ pluginName: `meter-${i}` }))

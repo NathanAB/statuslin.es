@@ -1,4 +1,4 @@
-import type { PublishedTheme } from './queries'
+import type { PublishedTheme, UnreviewedTheme } from './queries'
 import type { ThemeKind } from './theme'
 
 /**
@@ -14,6 +14,9 @@ export interface Palette {
 
 /** A theme, or anything that carries its reviewed name. */
 type Named = Pick<PublishedTheme, 'name'>
+
+/** A theme, reviewed or not, as a page's copy reads it. */
+type Kinded = Pick<PublishedTheme, 'kind'>
 
 /** The palettes /themes names, in the order it names them. */
 export const PALETTES: readonly Palette[] = [
@@ -82,15 +85,22 @@ function wherePhrase(kinds: ReadonlySet<ThemeKind>): {
  */
 export function palettePageCopy(
   palette: Palette,
-  themes: PublishedTheme[],
+  themes: Kinded[],
+  unreviewed: Kinded[] = [],
 ): { title: string; heading: string; description: string } {
-  const where = wherePhrase(new Set(themes.map((theme) => theme.kind)))
-  const one = themes.length === 1
-  const counted = `${themes.length} ${palette.name} ${one ? 'theme' : 'themes'}`
+  // With no reviewed theme, the page names and counts its unreviewed ones, and says so (ADR 0014).
+  const described = themes.length > 0 ? themes : unreviewed
+  const where = wherePhrase(new Set(described.map((theme) => theme.kind)))
+  const one = described.length === 1
+  const counted = `${described.length} ${palette.name} ${one ? 'theme' : 'themes'}`
+  const promise =
+    themes.length > 0
+      ? 'Every install is reviewed and pinned.'
+      : `Not reviewed yet, so ${one ? 'it' : 'they'} can't be installed from here.`
   return {
     title: `${palette.name} Themes for ${where.title}`,
     heading: `${palette.name} themes for ${where.heading}`,
-    description: `${counted} for ${where.prose}, ${one ? '' : 'each '}previewed in a real session. Each plugin is reviewed and its install pinned.`,
+    description: `${counted} for ${where.prose}, ${one ? '' : 'each '}previewed in a real session. ${promise}`,
   }
 }
 
@@ -99,3 +109,10 @@ export function palettePageCopy(
  * the theme's id.
  */
 export const themeAnchor = (theme: PublishedTheme) => `${theme.plugin.slug}-${theme.key}`
+
+/**
+ * An unreviewed theme card's anchor: its mod's address and its key, never the mod's slug (ADR
+ * 0014), and prefixed so it can't collide with a reviewed card's.
+ */
+export const unreviewedThemeAnchor = (theme: UnreviewedTheme) =>
+  `unreviewed-${theme.mod.owner}-${theme.mod.pluginName}-${theme.key}`.toLowerCase()

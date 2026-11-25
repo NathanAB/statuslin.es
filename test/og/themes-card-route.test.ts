@@ -8,6 +8,7 @@ import type { AnsiSegment } from '@/render/types'
 import {
   addDesktopTheme,
   addMod,
+  addShownDraft,
   addTheme,
   addVersion,
   openTestDb,
@@ -154,6 +155,29 @@ describe('paletteCardResponse', { timeout: 20_000 }, () => {
 
     const expected = await toElementPng(
       themesCard({ title: 'Tokyo Night themes for Claude Desktop', count: 1, screens: [] }),
+    )
+
+    expect(
+      (await bytes(await paletteCardResponse(db, 'tokyo-night'))).equals(Buffer.from(expected)),
+    ).toBe(true)
+  })
+
+  // ADR 0014: a palette whose only themes are unreviewed shares as not reviewed.
+  it('names a palette of unreviewed themes alone as not reviewed', async () => {
+    const shown = await addShownDraft(db, {
+      slug: 'tokyo-pack',
+      pluginName: 'tokyo-pack',
+      repoUrl: 'https://github.com/ada/tokyo-pack',
+    })
+    await addDesktopTheme(db, shown.versionId, { key: 'tokyo-night', name: 'Tokyo Night' })
+
+    const expected = await toElementPng(
+      themesCard({
+        title: 'Tokyo Night themes for Claude Desktop',
+        count: 1,
+        screens: [],
+        reviewed: false,
+      }),
     )
 
     expect(

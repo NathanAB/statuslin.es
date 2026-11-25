@@ -42,6 +42,7 @@
     "generate:content": "bun run scripts/generate-content.ts",
     "import:mods": "bun run scripts/import-mods.ts",
     "import:unreviewed-mods": "bun run scripts/import-unreviewed-mods.ts",
+    "show:unreviewed-mods": "bun run scripts/show-unreviewed-mod.ts",
     "input-steps:mods": "bun run scripts/input-steps.ts",
     "updates:mods": "bun run scripts/check-mod-updates.ts",
     "updates:mods:pr": "bun run scripts/open-mod-updates-pr.ts",

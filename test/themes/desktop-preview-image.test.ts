@@ -5,6 +5,8 @@ import { themeDesktopPreviewResponse } from '@/themes/desktop-preview-image'
 import { previewQuery } from '../helpers/preview-query'
 import {
   addDesktopTheme,
+  addMod,
+  addShownDraft,
   addTheme,
   addVersion,
   openTestDb,
@@ -36,6 +38,52 @@ beforeAll(async () => {
     const mod = await seedMod(db, slug, status, char)
     ids[status] = await addDesktopTheme(db, mod.versionId, { key: 'night-reef' })
   }
+  // Curated drafts shown as unreviewed mods (ADR 0014): a card shows their stills.
+  const shown = await addShownDraft(db, {
+    slug: 'shown-looks',
+    pluginName: 'looks',
+    repoUrl: 'https://github.com/ada/looks',
+  })
+  ids.shown = await addDesktopTheme(db, shown.versionId, { key: 'night-reef' })
+  // A curated draft of a folder no other mod holds, which the operator has not shown.
+  const unshown = await addShownDraft(db, {
+    slug: 'unshown-looks',
+    pluginName: 'unshown',
+    repoUrl: 'https://github.com/ada/unshown',
+    shown: false,
+  })
+  ids.unshown = await addDesktopTheme(db, unshown.versionId, { key: 'night-reef' })
+  // A pack once shown, then removed: its timestamp alone must not serve it.
+  const removedShown = await addShownDraft(db, {
+    slug: 'removed-looks',
+    pluginName: 'gone',
+    repoUrl: 'https://github.com/ada/gone',
+  })
+  await db
+    .update(schema.mods)
+    .set({ status: 'removed' })
+    .where(eq(schema.mods.id, removedShown.modId))
+  ids.removedShown = await addDesktopTheme(db, removedShown.versionId, { key: 'night-reef' })
+  const rejected = await addShownDraft(db, {
+    slug: 'rejected-looks',
+    pluginName: 'refused',
+    repoUrl: 'https://github.com/ada/refused',
+  })
+  ids.rejected = await addDesktopTheme(db, rejected.versionId, { key: 'night-reef' })
+  await db.insert(schema.user).values({ id: 'ada', name: 'Ada', email: 'ada@test.com' })
+  const submitted = await addMod(db, 'submitted-refused', 'draft')
+  const submittedVersion = await addVersion(db, submitted, {
+    commitSha: sha('e'),
+    versionNumber: 1,
+    repoUrl: 'https://github.com/ada/refused',
+  })
+  await db.insert(schema.submissions).values({
+    id: submittedVersion,
+    kind: 'mod',
+    modVersionId: submittedVersion,
+    submittedBy: 'ada',
+    status: 'rejected',
+  })
 })
 afterAll(async () => {
   await close()
@@ -75,8 +123,29 @@ describe('themeDesktopPreviewResponse', () => {
   )
 
   it.each([
+    ['whole window', null, SEEDED_THEME_SHOT.png],
+    ['card image', 'card', SEEDED_THEME_SHOT.cardPng],
+  ])(
+    'serves the %s of a theme of a draft shown as an unreviewed mod, whose card shows it',
+    async (_name, image, png) => {
+      const shown = ids.shown as string
+      const res = await themeDesktopPreviewResponse(
+        db,
+        shown,
+        previewQuery(await renderOf(shown), image),
+      )
+
+      expect(res.status).toBe(200)
+      expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(Array.from(png))
+    },
+  )
+
+  it.each([
     ["a draft plugin's theme", 'draft'],
+    ['a theme of a curated draft not shown as an unreviewed mod', 'unshown'],
     ["a removed plugin's theme", 'removed'],
+    ['a theme of a removed pack once shown as an unreviewed mod', 'removedShown'],
+    ['a theme of a shown pack whose folder had a submission rejected', 'rejected'],
     ['a theme of a version that is no longer live', 'older'],
     ['a theme with no shot yet', 'unrendered'],
     ['a terminal theme', 'terminal'],
