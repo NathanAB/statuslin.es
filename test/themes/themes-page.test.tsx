@@ -48,6 +48,7 @@ type DesktopCard = Extract<PublishedTheme, { kind: 'desktop' }>
 function theme(name: string, slug: string, over: Partial<TerminalCard> = {}): TerminalCard {
   return {
     id: `${slug}-${name}`,
+    key: `${slug}-${name}`,
     kind: 'terminal',
     name,
     window: 'dark',
@@ -61,6 +62,7 @@ function theme(name: string, slug: string, over: Partial<TerminalCard> = {}): Te
 function desktopTheme(name: string, over: Partial<DesktopCard> = {}): DesktopCard {
   return {
     id: `desktop-${name}`,
+    key: `desktop-${name}`,
     kind: 'desktop',
     name,
     window: 'dark',
@@ -376,5 +378,37 @@ describe('/themes filters', () => {
     await renderPage([PAPER, NIGHT], '/themes?window=dim')
 
     expect(cardNames()).toEqual(['Paper', 'Night'])
+  })
+})
+
+describe('/themes palettes and card links', () => {
+  // A shared link opens the page at that card, and keeps working when its plugin is re-pinned.
+  it("links each card's name to the card itself, by its plugin and key", async () => {
+    const { container } = await renderPage([
+      theme('Catppuccin Mocha', 'catppuccin', { key: 'catppuccin-mocha' }),
+    ])
+
+    const link = screen.getByRole('link', { name: 'Catppuccin Mocha' })
+    expect(link.getAttribute('href')).toBe('#catppuccin-catppuccin-mocha')
+    const target = container.querySelector('#catppuccin-catppuccin-mocha')
+    expect(target?.contains(cardOf('Catppuccin Mocha'))).toBe(true)
+  })
+
+  it('links the page of each named palette it lists a theme of, and no palette without one', async () => {
+    await renderPage([
+      theme('Nord', 'nord'),
+      desktopTheme('Tokyo Night'),
+      theme('Catppuccin Latte', 'catppuccin'),
+      theme('Ember', 'ember'),
+    ])
+
+    const palettes = within(screen.getByRole('navigation', { name: 'Themes by palette' }))
+    expect(
+      palettes.getAllByRole('link').map((link) => [link.textContent, link.getAttribute('href')]),
+    ).toEqual([
+      ['Catppuccin', '/themes/catppuccin'],
+      ['Tokyo Night', '/themes/tokyo-night'],
+      ['Nord', '/themes/nord'],
+    ])
   })
 })

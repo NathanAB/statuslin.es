@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { themeDesktopPreviewResponse } from '@/themes/desktop-preview-image'
+import { previewQuery } from '../helpers/preview-query'
 import {
   addDesktopTheme,
   addTheme,
@@ -53,15 +54,22 @@ describe('themeDesktopPreviewResponse', () => {
     ['whole window', null, SEEDED_THEME_SHOT.png],
     ['card image', 'card', SEEDED_THEME_SHOT.cardPng],
   ])(
-    "serves a published plugin's live Desktop theme's %s as a PNG cached for an hour",
+    "serves a published plugin's live Desktop theme's %s as a PNG a browser keeps for good and a shared cache for an hour",
     async (_name, image, png) => {
       const live = ids.live as string
-      const res = await themeDesktopPreviewResponse(db, live, await renderOf(live), image)
+      const res = await themeDesktopPreviewResponse(
+        db,
+        live,
+        previewQuery(await renderOf(live), image),
+      )
 
       expect(res.status).toBe(200)
       expect(res.headers.get('content-type')).toBe('image/png')
       expect(res.headers.get('x-content-type-options')).toBe('nosniff')
-      expect(res.headers.get('cache-control')).toBe('public, max-age=3600')
+      expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
+      expect(res.headers.get('cache-control')).toBe(
+        'public, max-age=31536000, immutable, s-maxage=3600',
+      )
       expect(Array.from(new Uint8Array(await res.arrayBuffer()))).toEqual(Array.from(png))
     },
   )
@@ -75,7 +83,11 @@ describe('themeDesktopPreviewResponse', () => {
   ])('is a 404 for %s, shot or card', async (_name, key) => {
     const themeId = ids[key] as string
     for (const image of [null, 'card']) {
-      const res = await themeDesktopPreviewResponse(db, themeId, await renderOf(themeId), image)
+      const res = await themeDesktopPreviewResponse(
+        db,
+        themeId,
+        previewQuery(await renderOf(themeId), image),
+      )
 
       expect(res.status).toBe(404)
       expect(res.headers.get('content-type')).not.toBe('image/png')
@@ -85,16 +97,19 @@ describe('themeDesktopPreviewResponse', () => {
   it('is a 404 for an image it does not have', async () => {
     const live = ids.live as string
 
-    expect((await themeDesktopPreviewResponse(db, live, await renderOf(live), 'pane')).status).toBe(
-      404,
-    )
+    expect(
+      (await themeDesktopPreviewResponse(db, live, previewQuery(await renderOf(live), 'pane')))
+        .status,
+    ).toBe(404)
   })
 
   it.each([
     ['an id that is not a UUID', 'not-a-uuid'],
     ['an unknown id', '00000000-0000-4000-8000-000000000000'],
   ])('is a 404 for %s', async (_name, themeId) => {
-    expect((await themeDesktopPreviewResponse(db, themeId, '0', null)).status).toBe(404)
+    expect((await themeDesktopPreviewResponse(db, themeId, previewQuery('0', null))).status).toBe(
+      404,
+    )
   })
 
   it.each([
@@ -105,9 +120,33 @@ describe('themeDesktopPreviewResponse', () => {
     async (_name, render) => {
       for (const image of [null, 'card']) {
         expect(
-          (await themeDesktopPreviewResponse(db, ids.live as string, render, image)).status,
+          (await themeDesktopPreviewResponse(db, ids.live as string, previewQuery(render, image)))
+            .status,
         ).toBe(404)
       }
+    },
+  )
+
+  it.each([
+    ['a parameter it does not read', (r: string) => `?r=${r}&v=1`],
+    ['its render named twice', (r: string) => `?r=${r}&r=${r}`],
+    ['an empty pair after it', (r: string) => `?r=${r}&`],
+    ['an empty pair before it', (r: string) => `?&r=${r}`],
+    ['its key percent-encoded', (r: string) => `?%72=${r}`],
+    [
+      'its render percent-encoded',
+      (r: string) => `?r=${encodeURIComponent(r).replace(/\d/g, (d) => `%3${d}`)}`,
+    ],
+    ['its image named twice', (r: string) => `?r=${r}&image=card&image=card`],
+    ['its image percent-encoded', (r: string) => `?r=${r}&image=%63ard`],
+    ['image before render', (r: string) => `?image=card&r=${r}`],
+  ])(
+    'is a 404 for the current shot with %s, so no cache-busting variant of its URL serves the image',
+    async (_name, query) => {
+      const render = await renderOf(ids.live as string)
+      const res = await themeDesktopPreviewResponse(db, ids.live as string, query(render))
+
+      expect(res.status).toBe(404)
     },
   )
 })

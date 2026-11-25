@@ -33,6 +33,7 @@ const ORIGIN = 'https://statuslin.es'
 function theme(name: string, slug: string): PublishedTheme {
   return {
     id: `${slug}-${name}`,
+    key: `${slug}-${name}`,
     name,
     kind: 'terminal',
     window: 'dark',

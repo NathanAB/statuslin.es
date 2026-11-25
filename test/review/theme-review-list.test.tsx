@@ -30,6 +30,7 @@ function theme(over: Partial<TerminalReview>): TerminalReview {
     source: PAPER_SOURCE,
     preview: [{ text: 'paper screen' }],
     usesTerminalColors: false,
+    change: null,
     ...over,
   }
 }
@@ -43,6 +44,7 @@ function desktopTheme(over: Partial<DesktopReview>): DesktopReview {
     window: 'dark',
     switchSteps: ['/custom-theme night-reef'],
     preview: { src: '/admin/theme-previews/night-reef/desktop.png', width: 1100, height: 900 },
+    change: null,
     ...over,
   }
 }
@@ -161,6 +163,30 @@ describe('themes on a mod review card', () => {
       const position = screen.getByText(label).compareDocumentPosition(themesLabel)
       expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
+  })
+
+  it('lists the themes new or changed since the live version first, each marked, and counts them', () => {
+    const themes = [
+      theme({ key: 'amber', name: 'Amber' }),
+      theme({ key: 'night', name: 'Night', change: 'changed' }),
+      theme({ key: 'paper', name: 'Paper' }),
+      desktopTheme({ key: 'reef', name: 'Reef', change: 'new' }),
+    ]
+    const { container } = render(<ModReviewCard row={row(themes)} />)
+
+    expect(screen.getByText('Themes (4, 2 new or changed since the live version)')).toBeTruthy()
+    expect([...container.querySelectorAll('summary')].map((s) => s.textContent)).toEqual([
+      'Changed since live: Night',
+      'New since live: Reef',
+      'Amber',
+      'Paper',
+    ])
+  })
+
+  it('counts only the themes when none changed', () => {
+    render(<ModReviewCard row={row([theme({})])} />)
+
+    expect(screen.getByText('Themes (1)')).toBeTruthy()
   })
 
   it('shows no themes section for a mod without themes', () => {

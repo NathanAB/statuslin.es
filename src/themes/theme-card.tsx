@@ -12,9 +12,11 @@ import { CodeBlock } from '@/ui/code-block'
 import { Hint } from '@/ui/hint'
 import { InlineCommand } from '@/ui/inline-command'
 import { Row, Stack } from '@/ui/layout'
+import { SectionAnchor } from '@/ui/page-section'
 import { Heading, Text, TextLink } from '@/ui/text'
 import { DesktopThemePreview, ThemePreview } from '@/ui/theme-preview'
 import { VisuallyHidden } from '@/ui/visually-hidden'
+import { themeAnchor } from './palettes'
 import type { PublishedTheme } from './queries'
 import { TERMINAL_COLORS_NOTICE, THEME_KIND_LABEL, THEME_WINDOW_LABEL } from './theme'
 
@@ -129,8 +131,9 @@ function SwitchTo({ theme }: { theme: PublishedTheme }) {
 
 /**
  * One theme: its preview in its window, its name, and how to switch to it. The name is the one its
- * preview was recorded in, and the author's text, so it is shown only as text. With `install` it
- * also names its plugin and how to install it; its plugin's own page leaves that to the page.
+ * preview was recorded in, and the author's text, so it is shown only as text. The name links to
+ * the card itself, so a shared link opens the page at it. With `install` it also names its plugin
+ * and how to install it; its plugin's own page leaves that to the page.
  */
 export function ThemeCard({
   theme,
@@ -139,25 +142,34 @@ export function ThemeCard({
   theme: PublishedTheme
   install?: ThemeCardInstall
 }) {
+  const anchor = themeAnchor(theme)
   return (
-    <Card>
-      <CardContent>
-        <Stack gap={3}>
-          <ThemeLook theme={theme} />
-          <Row gap={2} justify="between">
-            <Heading level={3}>{theme.name}</Heading>
-            <Row gap={2}>
-              <Badge variant="outline">{THEME_KIND_LABEL[theme.kind]}</Badge>
-              <Badge variant="outline">{THEME_WINDOW_LABEL[theme.window]}</Badge>
+    <SectionAnchor id={anchor}>
+      <Card>
+        <CardContent>
+          <Stack gap={3}>
+            <ThemeLook theme={theme} />
+            <Row gap={2} justify="between">
+              <Heading level={3}>
+                <TextLink href={`#${anchor}`} tone="plain">
+                  {theme.name}
+                </TextLink>
+              </Heading>
+              <Row gap={2}>
+                <Badge variant="outline">{THEME_KIND_LABEL[theme.kind]}</Badge>
+                <Badge variant="outline">{THEME_WINDOW_LABEL[theme.window]}</Badge>
+              </Row>
             </Row>
-          </Row>
-          {theme.kind === 'terminal' && theme.usesTerminalColors ? (
-            <Hint icon={Palette}>{TERMINAL_COLORS_NOTICE}</Hint>
-          ) : null}
-          {install === undefined ? null : <PluginInstall plugin={theme.plugin} install={install} />}
-          <SwitchTo theme={theme} />
-        </Stack>
-      </CardContent>
-    </Card>
+            {theme.kind === 'terminal' && theme.usesTerminalColors ? (
+              <Hint icon={Palette}>{TERMINAL_COLORS_NOTICE}</Hint>
+            ) : null}
+            {install === undefined ? null : (
+              <PluginInstall plugin={theme.plugin} install={install} />
+            )}
+            <SwitchTo theme={theme} />
+          </Stack>
+        </CardContent>
+      </Card>
+    </SectionAnchor>
   )
 }

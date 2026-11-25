@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fixedColorWindow } from '@/themes/fixed-color'
+import { contrastRatio, fixedColorWindow } from '@/themes/fixed-color'
 
 describe('fixedColorWindow', () => {
   it.each([
@@ -40,5 +40,18 @@ describe('fixedColorWindow', () => {
 
   it('reads no window from a missing value', () => {
     expect(fixedColorWindow(undefined)).toBeUndefined()
+  })
+})
+
+describe('contrastRatio', () => {
+  it.each([
+    // WCAG's extremes: white on black is 21:1, a color on itself 1:1.
+    [[255, 255, 255], [0, 0, 0], '21.00'],
+    [[0, 0, 0], [255, 255, 255], '21.00'],
+    [[118, 118, 118], [118, 118, 118], '1.00'],
+    // #767676 on white, the gray WebAIM cites as the lightest to reach 4.5:1: 1.05 / 0.2315.
+    [[118, 118, 118], [255, 255, 255], '4.54'],
+  ] as const)('gives %j on %j a ratio of %s:1', (a, b, ratio) => {
+    expect(contrastRatio(a, b).toFixed(2)).toBe(ratio)
   })
 })

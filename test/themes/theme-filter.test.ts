@@ -7,6 +7,7 @@ type TerminalTheme = Extract<PublishedTheme, { kind: 'terminal' }>
 function theme(name: string, over: Partial<TerminalTheme> = {}): TerminalTheme {
   return {
     id: name,
+    key: name,
     name,
     kind: 'terminal',
     window: 'dark',

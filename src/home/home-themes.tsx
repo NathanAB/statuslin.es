@@ -26,8 +26,8 @@ export function HomeThemes({ row, origin }: { row: HomeThemeRow; origin: string 
               Claude Code themes
             </Heading>
             <Text muted>
-              Color themes for the terminal, and Desktop themes that recolor Claude Desktop, each
-              previewed in a real session. Install one, then switch to it as its card shows.
+              Color themes for Claude Code in the terminal and in Claude Desktop, each previewed in
+              a real session. Install one, and its card says how to switch to it.
             </Text>
           </Stack>
           <Button asChild variant="secondary" size="pill" trailingIcon={<ArrowRight />}>

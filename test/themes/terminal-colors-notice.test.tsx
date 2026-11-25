@@ -34,6 +34,7 @@ type TerminalReview = Extract<ReviewTheme, { kind: 'terminal' }>
 function card(name: string, usesTerminalColors: boolean): TerminalCard {
   return {
     id: name,
+    key: name,
     kind: 'terminal',
     name,
     window: 'light',
@@ -53,6 +54,7 @@ function review(name: string, usesTerminalColors: boolean): TerminalReview {
     source: '{ "base": "dark-ansi" }',
     preview: [{ text: `${name} screen` }],
     usesTerminalColors,
+    change: null,
   }
 }
 

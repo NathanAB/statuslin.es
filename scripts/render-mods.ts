@@ -57,7 +57,8 @@ import {
  * (src/render/mods/theme-scene.ts), one session the same for every theme whatever the mod's input
  * steps and terminal, with the version's plugin loaded and every hook off, and stored as its whole
  * screen. A full run records only themes with no preview yet; `--slug` records every theme of that
- * mod again. A theme's preview is refused, and any earlier one removed, when it looks the same as the
+ * mod again. A full run records no theme, of either kind, of a version waiting as a user's
+ * submission: any signed-in user can submit hundreds, so they record only when `--slug` names it. A theme's preview is refused, and any earlier one removed, when it looks the same as the
  * theme scene's baseline (no plugin, no theme: the setting didn't apply) or as another of the
  * version's themes, so the version can't publish until that is fixed.
  *
@@ -119,6 +120,8 @@ interface Target {
   /** Stored jsonb like inputSteps; null records in the default terminal. */
   terminal: unknown
   footprint: schema.ModFootprint
+  /** Waiting on review as a user's submission, whose themes a full run leaves to `--slug`. */
+  submitted: boolean
 }
 
 async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
@@ -137,6 +140,15 @@ async function targets(db: Db, slug: string | undefined): Promise<Target[]> {
       inputSteps: schema.modVersions.inputSteps,
       terminal: schema.modVersions.terminal,
       footprint: schema.modVersions.footprint,
+      submitted: sql<boolean>`exists (${db
+        .select({ id: schema.submissions.id })
+        .from(schema.submissions)
+        .where(
+          and(
+            eq(schema.submissions.modVersionId, schema.modVersions.id),
+            eq(schema.submissions.status, 'pending'),
+          ),
+        )})`,
     })
     .from(schema.mods)
     .innerJoin(schema.modVersions, eq(schema.modVersions.modId, schema.mods.id))
@@ -383,7 +395,24 @@ async function renderDesktopThemes(
   return [...byKey.values()].sort((a, b) => a.key.localeCompare(b.key))
 }
 
-type TargetOutcomes = Record<Surface, Outcome> & { themes: ThemeOutcome[] }
+type TargetOutcomes = Record<Surface, Outcome> & {
+  themes: ThemeOutcome[]
+  /** Themes a full run left unrecorded because the plugin is a pending submission. */
+  skippedThemes: number
+}
+
+/**
+ * Any signed-in user can submit a plugin of hundreds of themes, and each theme costs sandboxes, so a
+ * full run records a pending submission's themes only once the operator names it with `--slug`.
+ */
+async function submittedThemesLeft(db: Db, target: Target): Promise<number> {
+  const options = { rerecord: false }
+  const [terminal, desktop] = await Promise.all([
+    themesToRecord(db, target.versionId, options),
+    desktopThemesToRecord(db, target.versionId, options),
+  ])
+  return terminal.length + desktop.length
+}
 
 /**
  * Both surfaces and the themes need the mod's source; past that, no surface's or theme's failure
@@ -406,15 +435,17 @@ async function renderTarget(
     const source = { tarball, path: target.path }
     request = { mod: { source, pluginName: target.pluginName }, inputSteps }
   } catch (error) {
-    return { terminal: failure(error), desktop: failure(error), themes: [] }
+    return { terminal: failure(error), desktop: failure(error), themes: [], skippedThemes: 0 }
   }
-  const [terminal, desktop, themes, desktopThemes] = await Promise.all([
+  const askedFor = rerecordThemes || !target.submitted
+  const [terminal, desktop, themes, desktopThemes, skippedThemes] = await Promise.all([
     renderTerminal(request, setup, deps, baselines.mod, results).catch(failure),
     renderDesktop(request, target.footprint, deps, results).catch(failure),
-    renderThemes(target, request.mod, deps, baselines.noTheme, rerecordThemes),
-    renderDesktopThemes(target, request.mod, deps, rerecordThemes),
+    askedFor ? renderThemes(target, request.mod, deps, baselines.noTheme, rerecordThemes) : [],
+    askedFor ? renderDesktopThemes(target, request.mod, deps, rerecordThemes) : [],
+    askedFor ? 0 : submittedThemesLeft(deps.db, target),
   ])
-  return { terminal, desktop, themes: [...themes, ...desktopThemes] }
+  return { terminal, desktop, themes: [...themes, ...desktopThemes], skippedThemes }
 }
 
 /** `what` names the mod, or one of its themes. */
@@ -457,6 +488,11 @@ export async function renderMods(
     }
     for (const { key, surface, outcome } of outcomes.themes) {
       report(`${label(target)} theme ${key}`, surface, outcome)
+    }
+    if (outcomes.skippedThemes > 0) {
+      log(
+        `skipped ${label(target)} themes: a full run records no theme of a submitted plugin, and this one has ${outcomes.skippedThemes} to record. Record them with: bun run render:mods --slug ${target.slug}`,
+      )
     }
   })
   return failed === 0 ? 0 : 1

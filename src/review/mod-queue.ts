@@ -178,22 +178,34 @@ export async function getModReviewRows(database: Db): Promise<ModReviewRow[]> {
           .where(inArray(modVersions.id, liveIds))
       : []
   const liveById = new Map(liveRows.map((version) => [version.id, version]))
+  const reviewed = rows.map((row) => ({
+    row,
+    live:
+      row.version.status === 'pending' && row.mod.currentVersionId
+        ? liveById.get(row.mod.currentVersionId)
+        : undefined,
+  }))
   const themes = await getReviewThemes(
     database,
-    rows.map(({ version }) => version.id),
+    reviewed.map(({ row, live }) => ({ id: row.version.id, liveId: live?.id ?? null })),
   )
-  return rows.map(({ mod: { currentVersionId, ...mod }, desktop, ...row }) => {
-    const live =
-      row.version.status === 'pending' && currentVersionId
-        ? liveById.get(currentVersionId)
-        : undefined
-    return {
-      ...row,
-      mod,
-      desktop: desktopFor(row.version.id, desktop),
-      ...(live ? { live } : {}),
-      warnings: live ? updateWarnings({ ...row, mod }, live) : [],
-      themes: themes.get(row.version.id) ?? [],
-    }
-  })
+  return reviewed.map(
+    ({
+      row: {
+        mod: { currentVersionId, ...mod },
+        desktop,
+        ...row
+      },
+      live,
+    }) => {
+      return {
+        ...row,
+        mod,
+        desktop: desktopFor(row.version.id, desktop),
+        ...(live ? { live } : {}),
+        warnings: live ? updateWarnings({ ...row, mod }, live) : [],
+        themes: themes.get(row.version.id) ?? [],
+      }
+    },
+  )
 }

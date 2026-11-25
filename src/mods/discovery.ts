@@ -5,8 +5,9 @@ import {
   llmsTxtResponseForRoute,
   sitemapResponseForRoute,
 } from '@/gallery/functions'
-import { modPath, THEMES_PATH, unreviewedModPath } from '@/lib/site'
+import { modPath, palettePath, THEMES_PATH, unreviewedModPath } from '@/lib/site'
 import { newestDate, type SitemapPage } from '@/lib/sitemap'
+import { getPalettePages } from '@/themes/queries'
 import { getPublishedModListings, type PublishedModListing } from './published-listings'
 import { listUnreviewedMods } from './unreviewed-queries'
 
@@ -34,12 +35,14 @@ function themesPages(all: PublishedModListing[]): SitemapPage[] {
 // Theme plugins' and unreviewed mods' pages are in the sitemap but count toward nothing the gallery
 // lists (ADR 0011, ADR 0012).
 export const sitemapWithModsForRoute = createServerOnlyFn(async (): Promise<Response> => {
-  const [{ all, mods, themePlugins }, unreviewed] = await Promise.all([
+  const [{ all, mods, themePlugins }, unreviewed, palettes] = await Promise.all([
     publishedListings(),
     listUnreviewedMods(db),
+    getPalettePages(db),
   ])
   return sitemapResponseForRoute(mods, [
     ...themesPages(all),
+    ...palettes.map(({ palette, updatedAt }) => ({ path: palettePath(palette.slug), updatedAt })),
     ...themePlugins.map((plugin) => ({ path: modPath(plugin.slug), updatedAt: plugin.updatedAt })),
     ...unreviewed.map((mod) => ({
       path: unreviewedModPath(mod.owner, mod.pluginName),
@@ -52,12 +55,15 @@ export const sitemapWithModsForRoute = createServerOnlyFn(async (): Promise<Resp
 // cards. Facets still count every mod.
 const carriesThemes = (listing: PublishedModListing) => listing.themeOnly || listing.hasThemeCards
 
+// Both files link each palette page, as the sitemap lists them.
+const palettesWithPages = async () => (await getPalettePages(db)).map(({ palette }) => palette)
+
 export const llmsTxtWithModsForRoute = createServerOnlyFn(async (): Promise<Response> => {
-  const { all, mods } = await publishedListings()
-  return llmsTxtResponseForRoute(mods, all.filter(carriesThemes))
+  const [{ all, mods }, palettes] = await Promise.all([publishedListings(), palettesWithPages()])
+  return llmsTxtResponseForRoute(mods, all.filter(carriesThemes), palettes)
 })
 
 export const llmsFullTxtWithModsForRoute = createServerOnlyFn(async (): Promise<Response> => {
-  const { all, mods } = await publishedListings()
-  return llmsFullTxtResponseForRoute(mods, all.filter(carriesThemes))
+  const [{ all, mods }, palettes] = await Promise.all([publishedListings(), palettesWithPages()])
+  return llmsFullTxtResponseForRoute(mods, all.filter(carriesThemes), palettes)
 })

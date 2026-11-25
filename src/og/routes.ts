@@ -6,7 +6,13 @@ import { getModDetail, type ModDetail } from '@/mods/queries'
 import { configCard, homeCard, type ModCardBody, modCard, themesCard } from '@/og/card'
 import { toElementPng } from '@/og/render'
 import type { ThemeScreen } from '@/og/theme-screen'
-import { getPublishedModThemes, getThemeCards, type PublishedTheme } from '@/themes/queries'
+import { palettePageCopy } from '@/themes/palettes'
+import {
+  getPaletteThemes,
+  getPublishedModThemes,
+  getThemeCards,
+  type PublishedTheme,
+} from '@/themes/queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver; query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -122,4 +128,22 @@ export async function themesCardResponse(db: Db): Promise<Response> {
 
 export async function themesCardResponseForRoute(): Promise<Response> {
   return themesCardResponse(defaultDb)
+}
+
+/** A palette page's card: its heading and its own themes, drawn as /themes' card draws them. A
+ * palette with no page is a 404, as for a mod. */
+export async function paletteCardResponse(db: Db, slug: string): Promise<Response> {
+  const page = await getPaletteThemes(db, slug)
+  if (!page) return new Response('Not found', { status: 404 })
+  const title = palettePageCopy(page.palette, page.themes).heading
+  const card = themesCard({
+    title,
+    count: page.themes.length,
+    screens: themesCardScreens(page.themes),
+  })
+  return pngResponse(await toElementPng(card))
+}
+
+export async function paletteCardResponseForRoute(slug: string): Promise<Response> {
+  return paletteCardResponse(defaultDb, slug)
 }

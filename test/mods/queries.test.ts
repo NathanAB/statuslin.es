@@ -19,7 +19,7 @@ import {
   HOOK_ERROR_WITH_OUTPUT_PREVIEW,
   MODULE_LOAD_ERROR_ONLY_PREVIEW,
 } from './fixtures/hook-error-previews'
-import { addDesktopPreview, SEEDED_DESKTOP_SHOT } from './seed-mods'
+import { addDesktopPreview, addDesktopTheme, addTheme, SEEDED_DESKTOP_SHOT } from './seed-mods'
 
 let client: PGlite
 let db: ReturnType<typeof drizzle<typeof schema>>
@@ -233,8 +233,22 @@ describe('getModDetail', () => {
       recordedWith: '2.1.0',
       reviewedAt: null,
       themeOnly: false,
+      themeCounts: { desktop: 0, terminal: 0 },
       terminalHookError: false,
     })
+  })
+
+  // A Desktop theme plugin has a hooks module, so it is not theme-only; its page is still named
+  // for its Desktop themes, from these counts.
+  it("counts the Desktop and terminal themes on the mod's own current version", async () => {
+    const { versionId } = await addMod('looks', 'published', 'scenario-preview')
+    await addDesktopTheme(db, versionId, { key: 'nord' })
+    await addDesktopTheme(db, versionId, { key: 'dawn' })
+    await addTheme(db, versionId, { key: 'ink' })
+    const other = await addMod('other-looks', 'published', 'scenario-preview')
+    await addTheme(db, other.versionId, { key: 'paper' })
+
+    expect((await getModDetail(db, 'looks'))?.themeCounts).toEqual({ desktop: 2, terminal: 1 })
   })
 
   async function recordTerminal(modId: string, segments: AnsiSegment[]) {

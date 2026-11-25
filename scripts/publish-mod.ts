@@ -8,6 +8,7 @@ import { requireEnv } from '@/lib/env'
 import { createGitHub, type GitHub, type GitHubSource } from '@/mods/github'
 import { hasSubmission } from '@/mods/import'
 import {
+  type ChangedTheme,
   type PngWriter,
   previewReviewLines,
   storedPreviews,
@@ -32,6 +33,7 @@ import {
 } from '@/mods/publish'
 import { publishReport } from '@/mods/publish-report'
 import { terminalLine } from '@/mods/terminal-line'
+import { getReviewThemes } from '@/review/theme-review'
 
 /**
  * Publish a mod version, or re-pin a published mod to a newer one. The version must already exist
@@ -174,16 +176,40 @@ async function makeCurrent(
   })
 }
 
+/** The themes new or changed since the live version, which /admin marks the same way. */
+async function themesSinceLive(
+  db: Db,
+  { modStatus, current, target }: PublishFacts,
+): Promise<{ liveVersionNumber: number | null; changed: ChangedTheme[] }> {
+  const liveId =
+    modStatus === 'published' && current && current.id !== target.id ? current.id : null
+  if (liveId === null) return { liveVersionNumber: null, changed: [] }
+  const [themes, [live]] = await Promise.all([
+    getReviewThemes(db, [{ id: target.id, liveId }]),
+    db
+      .select({ versionNumber: schema.modVersions.versionNumber })
+      .from(schema.modVersions)
+      .where(eq(schema.modVersions.id, liveId)),
+  ])
+  const changed = (themes.get(target.id) ?? []).flatMap(({ kind, key, name, change }) =>
+    change === null ? [] : [{ kind, key, name, change }],
+  )
+  return { liveVersionNumber: live?.versionNumber ?? null, changed }
+}
+
 /** The README beside the version's stored previews, for the operator to compare; none unrendered. */
 async function reviewLines(
   { db, github, writePng }: PublishDeps,
-  { slug, target }: PublishFacts,
+  facts: PublishFacts,
 ): Promise<string[]> {
+  const { slug, target } = facts
   if (!target.rendered) return []
+  const stored = await storedPreviews(db, target.id)
   const review = {
     pin: { slug, versionId: target.id, commitSha: target.commitSha },
     readme: await github.readme(target.repoUrl, target.path, target.commitSha),
-    ...(await storedPreviews(db, target.id)),
+    ...stored,
+    themes: { ...stored.themes, ...(await themesSinceLive(db, facts)) },
   }
   return previewReviewLines(review, writePng)
 }

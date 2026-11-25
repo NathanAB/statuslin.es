@@ -96,6 +96,7 @@ const heroLine: HeroLine = {
 
 const NIGHT: PublishedTheme = {
   id: 'pack-night',
+  key: 'pack-night',
   name: 'Night',
   kind: 'terminal',
   window: 'dark',
