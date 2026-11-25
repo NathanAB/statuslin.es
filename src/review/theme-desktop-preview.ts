@@ -4,6 +4,7 @@ import type { PgDatabase } from 'drizzle-orm/pg-core'
 import { db as defaultDb } from '@/db'
 import { modThemeDesktopPreviews } from '@/db/schema'
 import { HttpError } from '@/lib/http'
+import { previewImageResponse } from '@/lib/preview-image'
 import { isUuid } from '@/lib/uuid'
 import { assertAdmin } from './admin'
 
@@ -12,7 +13,8 @@ type Db = PgDatabase<any, typeof import('@/db/schema')>
 
 export const ADMIN_THEME_DESKTOP_PREVIEW_ROUTE = '/admin/theme-previews/$themeId/desktop.png'
 
-const UNCACHED = { 'Cache-Control': 'private, no-store' }
+const NO_STORE = 'private, no-store'
+const UNCACHED = { 'Cache-Control': NO_STORE }
 
 export function adminThemeDesktopPreviewPath(themeId: string): string {
   return ADMIN_THEME_DESKTOP_PREVIEW_ROUTE.replace('$themeId', themeId)
@@ -39,15 +41,7 @@ export async function adminThemeDesktopPreviewResponse(
     .from(modThemeDesktopPreviews)
     .where(eq(modThemeDesktopPreviews.themeId, themeId))
   if (!row) return new Response('Not found', { status: 404, headers: UNCACHED })
-  return new Response(new Blob([row.png as BufferSource]), {
-    headers: {
-      ...UNCACHED,
-      'Content-Type': 'image/png',
-      'X-Content-Type-Options': 'nosniff',
-      // Opened on its own, the bytes still can't run as a page.
-      'Content-Security-Policy': "default-src 'none'; sandbox",
-    },
-  })
+  return previewImageResponse(row.png, NO_STORE)
 }
 
 export const adminThemeDesktopPreviewResponseForRoute = createServerOnlyFn(

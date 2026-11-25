@@ -5,10 +5,7 @@ export const Route = createFileRoute('/config-previews/$versionId/desktop.png')(
   server: {
     handlers: {
       GET: async ({ params, request }) =>
-        configDesktopPreviewResponseForRoute(
-          params.versionId,
-          new URL(request.url).searchParams.get('r'),
-        ),
+        configDesktopPreviewResponseForRoute(params.versionId, new URL(request.url).search),
     },
   },
 })

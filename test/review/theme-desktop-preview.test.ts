@@ -45,6 +45,7 @@ describe('adminThemeDesktopPreviewResponse', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('image/png')
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; sandbox")
     expect(res.headers.get('cache-control')).toBe('private, no-store')
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(SEEDED_THEME_SHOT.png)
   })
