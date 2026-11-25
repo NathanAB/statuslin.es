@@ -17,6 +17,7 @@ import { compactSegments } from '@/render/compact-segments'
 import type { AnsiSegment } from '@/render/types'
 import type { DesktopShotImage } from '@/ui/desktop-shot'
 import type { GalleryCatalogueMod } from './gallery-catalogue'
+import { onlyHookError } from './hook-error'
 import {
   desktopPreview,
   desktopPreviewColumns,
@@ -70,6 +71,12 @@ type ModCardRow = Omit<GalleryModCard, 'preview' | 'desktopShot'> & {
   desktop: Parameters<typeof desktopPreview>[0]
 }
 
+/** What a mod drew in the terminal: nothing when the recording is empty or is only Claude Code's
+ * error for a mod built for Claude Desktop. */
+function terminalDrawing(preview: AnsiSegment[] | null): AnsiSegment[] | null {
+  return preview && preview.length > 0 && !onlyHookError(preview) ? compactSegments(preview) : null
+}
+
 /** A card has no slot for a surface the mod drew nothing on. */
 function modItem({ preview, desktop, ...card }: ModCardRow): GalleryItem {
   const shot = desktopPreview(desktop)
@@ -77,7 +84,7 @@ function modItem({ preview, desktop, ...card }: ModCardRow): GalleryItem {
     kind: 'mod',
     card: {
       ...card,
-      preview: preview && preview.length > 0 ? compactSegments(preview) : null,
+      preview: terminalDrawing(preview),
       desktopShot: shot?.kind === 'shot' ? shot.card : null,
     },
   }
@@ -138,7 +145,7 @@ export async function getHeroMods(db: Db): Promise<HeroMod[]> {
       title,
       authorGithub,
       copyCount,
-      render: preview && preview.length > 0 ? compactSegments(preview) : null,
+      render: terminalDrawing(preview),
       desktop: shot?.kind === 'shot' ? shot.card : null,
       footprint: row.footprint,
       sortKey: row.sortKey,
