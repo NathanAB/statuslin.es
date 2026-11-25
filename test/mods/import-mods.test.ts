@@ -529,6 +529,37 @@ describe('importMods', () => {
     expect(versions[1]).toMatchObject({ modId: before?.id, pluginVersion: '1.5.0', inputSteps })
   })
 
+  it('refuses a re-pin with declared Desktop themes not marked as checked at the new commit', async () => {
+    const theme = fakes({ validate: THEME_VALIDATE })
+    await run([entry({ desktopThemes: [NIGHT_REEF] })], theme)
+    const newSha = 'd'.repeat(40)
+
+    const { exitCode, output, calls } = await run(
+      [entry({ commitSha: newSha, desktopThemes: [NIGHT_REEF], desktopThemesCheckedAt: SHA })],
+      fakes({ validate: THEME_VALIDATE }),
+    )
+
+    expect(exitCode).toBe(1)
+    expect(output).toBe(
+      `refused skins: its desktopThemes aren't marked as checked at ${newSha}; read that commit's themes, fix the declarations, then set desktopThemesCheckedAt to it`,
+    )
+    expect(calls).toEqual([])
+    expect((await allVersions()).map((v) => v.commitSha)).toEqual([SHA])
+  })
+
+  it('imports a re-pin whose Desktop themes are marked as checked at the new commit', async () => {
+    await run([entry({ desktopThemes: [NIGHT_REEF] })], fakes({ validate: THEME_VALIDATE }))
+    const newSha = 'd'.repeat(40)
+
+    const { exitCode } = await run(
+      [entry({ commitSha: newSha, desktopThemes: [NIGHT_REEF], desktopThemesCheckedAt: newSha })],
+      fakes({ validate: THEME_VALIDATE }),
+    )
+
+    expect(exitCode).toBe(0)
+    expect((await allVersions()).map((v) => v.commitSha)).toEqual([SHA, newSha])
+  })
+
   it('refuses a re-pin whose plugin.json names another plugin and adds no version', async () => {
     await run([entry()])
 

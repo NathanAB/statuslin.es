@@ -123,6 +123,14 @@ const entrySchema = z.strictObject({
   terminal: terminalSetupSchema.optional(),
   /** Left out, the mod lists no Desktop theme on /themes. */
   desktopThemes: z.array(desktopThemeSchema).superRefine(sameDesktopThemes).optional(),
+  /**
+   * The commit the operator last read `desktopThemes` against. A re-pin imports only once it names
+   * the new commit, since a release can add or rename a theme.
+   */
+  desktopThemesCheckedAt: z
+    .string()
+    .regex(COMMIT_SHA, 'must be a full 40-character lowercase hex commit SHA')
+    .optional(),
 })
 
 export type InputStep = z.infer<typeof inputStepSchema>
@@ -132,6 +140,10 @@ export type CurationEntry = z.infer<typeof entrySchema>
 export type EntriesResult<T> = { ok: true; entries: T[] } | { ok: false; errors: string[] }
 
 export type CurationResult = EntriesResult<CurationEntry>
+
+/** The entry's declared Desktop themes, if any, are marked as read against this commit. */
+export const desktopThemesCheckedAt = (entry: CurationEntry, commitSha: string): boolean =>
+  !entry.desktopThemes?.length || entry.desktopThemesCheckedAt === commitSha
 
 export function entryLabel(raw: unknown, index: number): string {
   const name = (raw as { pluginName?: unknown } | null)?.pluginName

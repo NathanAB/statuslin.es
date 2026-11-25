@@ -1,3 +1,4 @@
+import { desktopThemesCheckedAt } from '@/mods/curation'
 import { MAX_REVIEW_CHARS, type Review } from '@/mods/release-review'
 import { compareUrl, type Release, releaseTable } from './check-mod-updates'
 
@@ -65,6 +66,18 @@ function render(input: BodyInput): string {
       ),
     ),
   ]
+  const toCheck = input.releases.filter(({ entry, head }) => !desktopThemesCheckedAt(entry, head))
+  if (toCheck.length) {
+    sections.push(
+      '## Desktop themes to check',
+      "These mods declare Desktop themes, and `import:mods` refuses each re-pin until its declarations are checked against the new commit. Before merging, read the new commit's themes, fix each mod's `desktopThemes` in `src/mods/curation.json` (name, window, switch steps), and set its `desktopThemesCheckedAt` to the new commit.",
+      toCheck
+        .map(
+          ({ entry, head }) => `- ${entry.pluginName}: \`desktopThemesCheckedAt\` must be ${head}`,
+        )
+        .join('\n'),
+    )
+  }
   if (input.notes.length) sections.push('## Not re-pinned', fenced(input.notes.join('\n')))
   return `${sections.join('\n\n')}\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n`
 }
