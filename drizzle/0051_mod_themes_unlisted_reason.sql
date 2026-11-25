@@ -1,1 +1,0 @@
-ALTER TABLE "mod_themes" ADD COLUMN "unlisted_reason" text;
