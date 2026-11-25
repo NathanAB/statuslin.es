@@ -52,6 +52,12 @@ export const modThemes = pgTable(
      * on its card. Empty when the mod sets the theme on its own; null for a terminal theme.
      */
     switchSteps: jsonb('switch_steps').$type<string[]>(),
+    /**
+     * Why the operator left this terminal theme out (scripts/unlist-theme.ts), as when it can't be
+     * recorded: it records no preview, shows no card, and doesn't hold its version back from
+     * publishing. Null for a listed theme.
+     */
+    unlistedReason: text('unlisted_reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
