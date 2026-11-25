@@ -3,8 +3,17 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '@/db/schema'
 import { getConfigSource } from '@/gallery/config-items'
 import { type GalleryItem, mergeGalleryItems } from '@/gallery/gallery-items'
-import { getGalleryCatalogueMods, getModSource, getPublishedModCard } from '@/mods/gallery-queries'
+import {
+  getGalleryCatalogueMods,
+  getHeroMods,
+  getModSource,
+  getPublishedModCard,
+} from '@/mods/gallery-queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
+import {
+  HOOK_ERROR_WITH_OUTPUT_PREVIEW,
+  MODULE_LOAD_ERROR_ONLY_PREVIEW,
+} from './fixtures/hook-error-previews'
 import {
   addDesktopPreview,
   addMod,
@@ -57,6 +66,18 @@ async function publishedMod(
 }
 
 const slugs = (items: GalleryItem[]) => items.map((item) => `${item.kind}:${item.card.slug}`)
+
+describe('getHeroMods', () => {
+  it("shows nothing in the terminal for a Desktop mod whose only output there is Claude Code's error", async () => {
+    await publishedMod('abyss', { desktop: 'shot' })
+    await db.update(schema.modPreviews).set({ segments: MODULE_LOAD_ERROR_ONLY_PREVIEW })
+
+    const [hero] = await getHeroMods(db)
+
+    expect(hero).toMatchObject({ slug: 'abyss', render: null })
+    expect(hero?.desktop).not.toBeNull()
+  })
+})
 
 describe('getModSource', () => {
   it('lists only published mods', async () => {
@@ -125,6 +146,24 @@ describe('getModSource', () => {
     const [ranked] = (await getModSource(db, { sort: 'new' })).items
 
     expect(ranked?.item).toMatchObject({ card: { modId, preview: null } })
+  })
+
+  it("carries no terminal preview for a Desktop mod whose only terminal output is Claude Code's error", async () => {
+    await publishedMod('abyss')
+    await db.update(schema.modPreviews).set({ segments: MODULE_LOAD_ERROR_ONLY_PREVIEW })
+
+    const [ranked] = (await getModSource(db, { sort: 'new' })).items
+
+    expect(ranked?.item).toMatchObject({ card: { slug: 'abyss', preview: null } })
+  })
+
+  it('keeps the terminal preview of a mod that draws below the error', async () => {
+    await publishedMod('multiverse')
+    await db.update(schema.modPreviews).set({ segments: HOOK_ERROR_WITH_OUTPUT_PREVIEW })
+
+    const [ranked] = (await getModSource(db, { sort: 'new' })).items
+
+    expect(ranked?.item.card.preview?.map((segment) => segment.text).join('')).toContain('Low Poly')
   })
 
   it('lists a mod for a tag only when the mod carries that tag', async () => {
