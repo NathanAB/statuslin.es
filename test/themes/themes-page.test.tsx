@@ -9,7 +9,7 @@ import {
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { PublishedTheme } from '@/themes/queries'
+import type { PublishedTheme, UnreviewedTheme } from '@/themes/queries'
 
 const recordModCopyFn = vi.hoisted(() => vi.fn())
 vi.mock('@/mods/functions', () => ({ recordModCopyFn }))
@@ -83,7 +83,11 @@ function desktopTheme(name: string, over: Partial<DesktopCard> = {}): DesktopCar
 }
 
 /** /themes at `url` in a real router, with its own search rules, showing these themes. */
-async function renderPage(themes: PublishedTheme[], url = '/themes') {
+async function renderPage(
+  themes: PublishedTheme[],
+  url = '/themes',
+  unreviewed: UnreviewedTheme[] = [],
+) {
   const rootRoute = createRootRoute()
   const themesRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -92,7 +96,7 @@ async function renderPage(themes: PublishedTheme[], url = '/themes') {
       window?: string
       where?: string
     },
-    loader: () => ({ themes, user: null, origin: ORIGIN }),
+    loader: () => ({ themes, unreviewed, user: null, origin: ORIGIN }),
     component: function Themes() {
       const Page = ThemesRoute.options.component
       return Page ? <Page /> : null
@@ -410,5 +414,104 @@ describe('/themes palettes and card links', () => {
       ['Tokyo Night', '/themes/tokyo-night'],
       ['Nord', '/themes/nord'],
     ])
+  })
+})
+
+// Curated Desktop theme packs nobody here has reviewed (ADR 0014): shown, labelled, never installed.
+describe('/themes unreviewed themes', () => {
+  function unreviewedTheme(name: string, over: Partial<UnreviewedTheme> = {}): UnreviewedTheme {
+    const key = name.toLowerCase().replace(/ /g, '-')
+    return {
+      id: `unreviewed-${key}`,
+      key,
+      kind: 'desktop',
+      name,
+      window: 'dark',
+      preview: {
+        shot: { src: `/theme-previews/${key}/desktop.png?r=1`, width: 1100, height: 900 },
+        card: { src: `/theme-previews/${key}/desktop.png?r=1&image=card`, width: 440, height: 360 },
+      },
+      mod: { owner: 'Ada', pluginName: 'looks' },
+      ...over,
+    } as UnreviewedTheme
+  }
+
+  const unreviewedSection = () =>
+    screen.getByRole('heading', { level: 2, name: 'Not reviewed' }).parentElement
+      ?.parentElement as HTMLElement
+
+  it('shows them below the reviewed themes, each labelled and linking its mod, with nothing to install or send', async () => {
+    const { container } = await renderPage([theme('Paper', 'pack')], '/themes', [
+      unreviewedTheme('Night Reef'),
+    ])
+
+    expect(cardNames()).toEqual(['Paper', 'Night Reef'])
+    const card = cardOf('Night Reef')
+    expect(unreviewedSection().contains(card)).toBe(true)
+    expect(within(card).getByText('Not reviewed')).toBeTruthy()
+    expect(within(card).getByRole('link', { name: 'looks' }).getAttribute('href')).toBe(
+      '/mods/unreviewed/Ada/looks',
+    )
+    expect(card.textContent).toContain('From looks by Ada')
+    expect(card.textContent).not.toMatch(/install|marketplace|\/custom-theme|start a new session/i)
+    expect(within(card).queryByRole('button')).toBeNull()
+    expect(within(card).getByRole('img', { name: 'Night Reef preview' })).toBeTruthy()
+    expect(
+      within(unreviewedSection()).getByText(/Nobody at statuslin.es has read these plugins' code/),
+    ).toBeTruthy()
+    expect(container.querySelector('#unreviewed-ada-looks-night-reef')?.contains(card)).toBe(true)
+  })
+
+  it('counts only the reviewed themes', async () => {
+    await renderPage([theme('Paper', 'pack')], '/themes', [
+      unreviewedTheme('Night Reef'),
+      unreviewedTheme('Lagoon'),
+    ])
+
+    expect(screen.getByText('1 theme')).toBeTruthy()
+  })
+
+  it("filters them by the URL's window too", async () => {
+    await renderPage([theme('Paper', 'pack', { window: 'light' })], '/themes?window=dark', [
+      unreviewedTheme('Night Reef'),
+      unreviewedTheme('Lagoon', { window: 'light' }),
+    ])
+
+    expect(cardNames()).toEqual(['Night Reef'])
+  })
+
+  it('says no reviewed theme matches when only unreviewed ones do', async () => {
+    await renderPage([theme('Paper', 'pack', { window: 'light' })], '/themes?window=dark', [
+      unreviewedTheme('Night Reef'),
+    ])
+
+    expect(screen.getByText('No reviewed themes match this filter.')).toBeTruthy()
+    expect(screen.queryByText('No themes match this filter.')).toBeNull()
+    expect(cardNames()).toEqual(['Night Reef'])
+  })
+
+  it('shows them when no theme is reviewed yet', async () => {
+    await renderPage([], '/themes', [unreviewedTheme('Night Reef')])
+
+    expect(cardNames()).toEqual(['Night Reef'])
+    expect(screen.queryByText('No themes yet.')).toBeNull()
+  })
+
+  it('links the palette page an unreviewed theme alone gives', async () => {
+    await renderPage([theme('Nord', 'nord')], '/themes', [unreviewedTheme('Tokyo Night')])
+
+    const palettes = within(screen.getByRole('navigation', { name: 'Themes by palette' }))
+    expect(palettes.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
+      '/themes/tokyo-night',
+      '/themes/nord',
+    ])
+  })
+
+  it('has no Not reviewed section when there are none, or none match the filter', async () => {
+    await renderPage([theme('Paper', 'pack', { window: 'light' })], '/themes?window=light', [
+      unreviewedTheme('Night Reef'),
+    ])
+
+    expect(screen.queryByRole('heading', { name: 'Not reviewed' })).toBeNull()
   })
 })

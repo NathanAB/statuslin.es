@@ -61,6 +61,7 @@ function review(name: string, usesTerminalColors: boolean): TerminalReview {
 function themesPageHtml(themes: PublishedTheme[]) {
   vi.spyOn(ThemesRoute, 'useLoaderData').mockReturnValue({
     themes,
+    unreviewed: [],
     user: null,
     origin: 'https://statuslin.es',
   })

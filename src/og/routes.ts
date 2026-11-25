@@ -12,6 +12,7 @@ import {
   getPublishedModThemes,
   getThemeCards,
   type PublishedTheme,
+  type UnreviewedTheme,
 } from '@/themes/queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver; query surface identical.
@@ -63,10 +64,12 @@ export async function configCardResponseForRoute(slug: string): Promise<Response
   return configCardResponse(defaultDb, slug)
 }
 
-type TerminalTheme = Extract<PublishedTheme, { kind: 'terminal' }>
+type TerminalTheme = Extract<PublishedTheme | UnreviewedTheme, { kind: 'terminal' }>
 
-const terminalThemes = (themes: PublishedTheme[]): TerminalTheme[] =>
-  themes.filter((theme): theme is TerminalTheme => theme.kind === 'terminal')
+const terminalThemes = <T extends PublishedTheme | UnreviewedTheme>(
+  themes: T[],
+): Extract<T, { kind: 'terminal' }>[] =>
+  themes.filter((theme): theme is Extract<T, { kind: 'terminal' }> => theme.kind === 'terminal')
 
 /** What a mod's card draws: its terminal preview, else its Desktop shot, which satori only reads
  * inline, else neither. A theme plugin's own recording shows nothing of its themes, so its card
@@ -107,7 +110,7 @@ export async function modCardResponseForRoute(slug: string): Promise<Response> {
 
 /** The top terminal theme, beside the top one made for the other window so the card shows a light
  * and a dark look, else beside the next one. A card draws a terminal screen, not a Desktop shot. */
-function themesCardScreens(published: PublishedTheme[]): ThemeScreen[] {
+function themesCardScreens(published: Array<PublishedTheme | UnreviewedTheme>): ThemeScreen[] {
   const themes = terminalThemes(published)
   const [first] = themes
   if (!first) return []
@@ -135,11 +138,15 @@ export async function themesCardResponseForRoute(): Promise<Response> {
 export async function paletteCardResponse(db: Db, slug: string): Promise<Response> {
   const page = await getPaletteThemes(db, slug)
   if (!page) return new Response('Not found', { status: 404 })
-  const title = palettePageCopy(page.palette, page.themes).heading
+  const title = palettePageCopy(page.palette, page.themes, page.unreviewed).heading
+  // With no reviewed theme, the card draws and counts the unreviewed ones, and says so (ADR 0014).
+  const reviewed = page.themes.length > 0
+  const themes = reviewed ? page.themes : page.unreviewed
   const card = themesCard({
     title,
-    count: page.themes.length,
-    screens: themesCardScreens(page.themes),
+    count: themes.length,
+    screens: themesCardScreens(themes),
+    reviewed,
   })
   return pngResponse(await toElementPng(card))
 }

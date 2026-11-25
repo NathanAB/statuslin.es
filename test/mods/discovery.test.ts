@@ -2,10 +2,12 @@ import { eq, inArray } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as schema from '@/db/schema'
 import { PAGE_SIZE } from '@/gallery/queries'
+import { getMarketplaceRows } from '@/mods/queries'
 import { addPublishedConfig } from '../gallery/seed-configs'
 import {
   addDesktopTheme,
   addMod,
+  addShownDraft,
   addTheme,
   addVersion,
   openTestDb,
@@ -114,6 +116,18 @@ beforeAll(async () => {
     // The folder context-meter's live version pins: its address redirects to the listing.
     { ...unreviewed, owner: 'octocat', pluginName: 'meter', repoUrl: REPO_URL },
   ])
+  // A curated Desktop theme pack shown as an unreviewed mod (ADR 0014), with a Catppuccin look.
+  const looks = await addShownDraft(db, {
+    slug: 'looks-pack',
+    pluginName: 'looks',
+    repoUrl: 'https://github.com/Ada/looks',
+    description: 'Forty looks for Claude Desktop.',
+  })
+  await db
+    .update(schema.modVersions)
+    .set({ createdAt: new Date('2026-11-20T10:00:00Z') })
+    .where(eq(schema.modVersions.id, looks.versionId))
+  await addDesktopTheme(db, looks.versionId, { key: 'latte', name: 'Catppuccin Latte' })
   discovery = await import('@/mods/discovery')
 })
 afterAll(async () => {
@@ -168,11 +182,11 @@ describe('sitemap with mods', () => {
     expect(xml).toContain(`<loc>${BASE}/themes</loc>\n    <lastmod>2026-10-05</lastmod>`)
   })
 
-  it('lists the page of each palette with a published theme, dated by its newest theme, and no other', async () => {
+  it('lists the page of each palette with a shown theme, dated by its newest theme, and no other', async () => {
     const xml = await (await discovery.sitemapWithModsForRoute()).text()
 
     expect(xml).toContain(`<loc>${BASE}/themes/nord</loc>\n    <lastmod>2026-10-05</lastmod>`)
-    expect(xml).not.toContain(`${BASE}/themes/catppuccin`)
+    expect(xml).not.toContain(`${BASE}/themes/dracula`)
   })
 
   it("lists a theme plugin's page without dating /mods by it", async () => {
@@ -196,6 +210,18 @@ describe('sitemap with mods', () => {
       `<url>\n    <loc>${BASE}/mods/unreviewed/OctoCat/token-meter</loc>\n    <lastmod>2026-11-12</lastmod>\n  </url>`,
     )
     expect(xml).not.toContain('/mods/unreviewed/octocat/meter')
+  })
+
+  it("lists a shown curated draft's unreviewed page, never its slug, and the palette page its themes give", async () => {
+    const xml = await (await discovery.sitemapWithModsForRoute()).text()
+
+    expect(xml).toContain(
+      `<url>\n    <loc>${BASE}/mods/unreviewed/Ada/looks</loc>\n    <lastmod>2026-11-20</lastmod>\n  </url>`,
+    )
+    expect(xml).not.toContain('looks-pack')
+    expect(xml).toContain(
+      `<url>\n    <loc>${BASE}/themes/catppuccin</loc>\n    <lastmod>2026-11-20</lastmod>\n  </url>`,
+    )
   })
 
   it('keeps the sitemap content type and cache header', async () => {
@@ -261,6 +287,18 @@ describe('llms.txt with mods', () => {
     expect(txt).not.toMatch(/every submission is a shell script/i)
     expect(txt).toContain('Status lines are scripts')
     expect(txt).toContain('mods are Claude Code plugins')
+  })
+
+  it('leaves out a shown curated draft and its themes, which installs nothing', async () => {
+    for (const route of [
+      discovery.llmsTxtWithModsForRoute,
+      discovery.llmsFullTxtWithModsForRoute,
+    ]) {
+      const txt = await (await route()).text()
+
+      expect(txt).not.toContain('looks')
+      expect(txt).not.toContain('Catppuccin')
+    }
   })
 
   it('keeps the llms.txt content type', async () => {
@@ -457,5 +495,14 @@ describe('with no theme published', () => {
     const txt = await (await discovery.llmsTxtWithModsForRoute()).text()
 
     expect(txt).not.toContain('## Themes')
+  })
+})
+
+describe('marketplace with a shown curated draft', () => {
+  it('leaves the draft out of /marketplace.json', async () => {
+    const slugs = (await getMarketplaceRows(db)).map((row) => row.slug)
+
+    expect(slugs).toContain('context-meter')
+    expect(slugs).not.toContain('looks-pack')
   })
 })

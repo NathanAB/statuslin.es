@@ -119,7 +119,7 @@ describe('palettePageCopy', () => {
       title: 'Catppuccin Themes for Claude Code and Claude Desktop',
       heading: 'Catppuccin themes for Claude Code and Claude Desktop',
       description:
-        '2 Catppuccin themes for the Claude Code terminal and Claude Desktop, each previewed in a real session. Each plugin is reviewed and its install pinned.',
+        '2 Catppuccin themes for the Claude Code terminal and Claude Desktop, each previewed in a real session. Every install is reviewed and pinned.',
     })
   })
 
@@ -131,8 +131,27 @@ describe('palettePageCopy', () => {
       title: 'Tokyo Night Themes for Claude Desktop',
       heading: 'Tokyo Night themes for Claude Desktop',
       description:
-        '1 Tokyo Night theme for Claude Desktop, previewed in a real session. Each plugin is reviewed and its install pinned.',
+        '1 Tokyo Night theme for Claude Desktop, previewed in a real session. Every install is reviewed and pinned.',
     })
+  })
+
+  // ADR 0014: a palette whose only themes are unreviewed still has a page, which never says reviewed.
+  it('describes a palette of unreviewed themes alone as not reviewed, counting them', () => {
+    expect(palettePageCopy(palette('tokyo-night'), [], [desktop('Tokyo Night')])).toEqual({
+      title: 'Tokyo Night Themes for Claude Desktop',
+      heading: 'Tokyo Night themes for Claude Desktop',
+      description:
+        "1 Tokyo Night theme for Claude Desktop, previewed in a real session. Not reviewed yet, so it can't be installed from here.",
+    })
+    expect(
+      palettePageCopy(
+        palette('tokyo-night'),
+        [],
+        [desktop('Tokyo Night'), desktop('Tokyo Night Storm')],
+      ).description,
+    ).toBe(
+      "2 Tokyo Night themes for Claude Desktop, each previewed in a real session. Not reviewed yet, so they can't be installed from here.",
+    )
   })
 
   it('names only the terminal when every theme is a terminal theme', () => {
@@ -141,7 +160,7 @@ describe('palettePageCopy', () => {
     expect(copy.title).toBe('Nord Themes for the Claude Code Terminal')
     expect(copy.heading).toBe('Nord themes for the Claude Code terminal')
     expect(copy.description).toBe(
-      '2 Nord themes for the Claude Code terminal, each previewed in a real session. Each plugin is reviewed and its install pinned.',
+      '2 Nord themes for the Claude Code terminal, each previewed in a real session. Every install is reviewed and pinned.',
     )
   })
 })

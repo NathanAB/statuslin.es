@@ -22,7 +22,10 @@ export function coerceThemeFilter(search: Record<string, unknown>): ThemeFilter 
   return { where: known(THEME_KINDS, search.where), window: known(THEME_WINDOWS, search.window) }
 }
 
-export function filterThemes(themes: PublishedTheme[], filter: ThemeFilter): PublishedTheme[] {
+export function filterThemes<T extends Pick<PublishedTheme, 'kind' | 'window'>>(
+  themes: T[],
+  filter: ThemeFilter,
+): T[] {
   return themes.filter(
     (theme) =>
       (filter.where === undefined || theme.kind === filter.where) &&
@@ -39,7 +42,7 @@ function choices<T extends string>(values: readonly T[], present: T[]): T[] | nu
  * The filters /themes offers for the themes it loaded: a window control once both windows are
  * listed, and a where control once themes apply in more than one place.
  */
-export function themeFilterOptions(themes: PublishedTheme[]): {
+export function themeFilterOptions(themes: Pick<PublishedTheme, 'kind' | 'window'>[]): {
   where: ThemeKind[] | null
   window: ThemeWindow[] | null
 } {

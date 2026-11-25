@@ -1,11 +1,13 @@
 import { and, eq, notInArray, sql } from 'drizzle-orm'
 import type { PgDatabase } from 'drizzle-orm/pg-core'
 import * as schema from '@/db/schema'
+import { unreviewedModPath } from '@/lib/site'
 import type { withModSandbox } from '@/render/mods/mod-sandbox'
 import type { GitHub, GitHubSource } from './github'
 import { type FetchPlugin, inspectSource } from './import'
 import { terminalLine } from './terminal-line'
 import { parseUnreviewed, repoOwner, UNREVIEWED_FILE, type UnreviewedEntry } from './unreviewed'
+import { findShownDraft } from './unreviewed-queries'
 
 // biome-ignore lint/suspicious/noExplicitAny: db type varies by driver (postgres-js/pglite); query surface identical.
 type Db = PgDatabase<any, typeof import('@/db/schema')>
@@ -20,8 +22,14 @@ export interface UnreviewedImportDeps {
 
 const { unreviewedMods } = schema
 
-/** Why statuslin.es said no to this plugin folder before; a refused mod never gets a page (ADR 0011). */
-async function refusedBefore(db: Db, entry: UnreviewedEntry): Promise<string | null> {
+/**
+ * Why statuslin.es said no to this plugin folder before; a refused mod never gets a page (ADR 0011,
+ * ADR 0014).
+ */
+export async function refusedBefore(
+  db: Db,
+  entry: Pick<UnreviewedEntry, 'repoUrl' | 'path'>,
+): Promise<string | null> {
   const rows = await db
     .select({ modStatus: schema.mods.status, submissionStatus: schema.submissions.status })
     .from(schema.modVersions)
@@ -60,6 +68,13 @@ async function importEntry(
 ): Promise<{ id: string; line: string }> {
   const refusal = await refusedBefore(db, entry)
   if (refusal) throw new Error(refusal)
+  const owner = repoOwner(entry.repoUrl)
+  // Its page would show the draft's previews beside this entry's facts (ADR 0014).
+  if (await findShownDraft(db, { owner, pluginName: entry.pluginName })) {
+    throw new Error(
+      `${unreviewedModPath(owner, entry.pluginName)} is already a curated mod's unreviewed page`,
+    )
+  }
   const existing = await unchangedRow(db, entry)
   if (existing) {
     return {
@@ -80,7 +95,6 @@ async function importEntry(
       `commit ${entry.commitSha} is not on the repository's default branch (${repo.defaultBranch})`,
     )
   }
-  const owner = repoOwner(entry.repoUrl)
   const facts = await inspectSource(entry, { fetchPlugin, withSandbox })
   if (facts.manifest.name !== entry.pluginName) {
     throw new Error(
