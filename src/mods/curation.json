@@ -1327,17 +1327,7 @@
     "path": "",
     "commitSha": "017de21d46454a8e22a231c8e3905927a9ee8a40",
     "pluginName": "multiverse",
-    "title": "Multiverse",
-    "desktopThemes": [
-      {
-        "key": "deep",
-        "name": "The Deep",
-        "window": "dark",
-        "switchSteps": [
-          "/multiverse deep"
-        ]
-      }
-    ]
+    "title": "Multiverse"
   },
   {
     "repoUrl": "https://github.com/pursurer/claude-koi-backdrop",
