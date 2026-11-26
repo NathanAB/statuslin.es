@@ -65,6 +65,9 @@ function run({
       const sha = (raw as { commitSha: string }[])[0]?.commitSha ?? ''
       calls.push(`check:${sha.slice(0, 1)}`)
       log('ahead deck: version unchanged (0.4.12), not re-pinned')
+      log(
+        "oversized pokemon: main has 2499 files in the repository root, past the importer's limit of 2000, not re-pinned",
+      )
       return checks[sha] ?? NONE
     },
     version: async (_entry, sha) => (sha === PIN ? '1.2.0' : '1.3.0'),
@@ -119,6 +122,7 @@ describe('openModUpdatesPr', () => {
     expect(prs[0]?.body).toContain(`| meter | \`plugins/meter\` | ${compare(PIN, HEAD)} |`)
     expect(prs[0]?.body).toContain(`\`\`\`text\n${ANSWER}\n\`\`\``)
     expect(prs[0]?.body).toContain('ahead deck: version unchanged')
+    expect(prs[0]?.body).toContain('oversized pokemon: main has 2499 files')
   })
 
   it('adds to the open pull request, describing main’s pin to the commit the branch now holds', async () => {

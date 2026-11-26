@@ -534,8 +534,10 @@ one pull request (below).
 the pin in `src/mods/curation.json` when plugin.json's `version` changed, printing a compare link per
 release (a mod with no version is re-pinned on every new commit). A commit that keeps the version
 is listed and left alone, and so are a head that no longer builds on the pin (a force-push), a
-repository, pin or plugin.json GitHub no longer serves (`gone`; see "Pinned-commit check"), and a
-version that isn't a plain version string (`unreadable`: read it by hand). It reads only GitHub, so
+repository, pin or plugin.json GitHub no longer serves (`gone`; see "Pinned-commit check"), a
+version that isn't a plain version string (`unreadable`: read it by hand), and a plugin folder with
+more files than the importer unpacks (`oversized`: the import would refuse it and stop the re-pin
+run; raising `TARBALL_MAX_FILES` is the maintainer's call). It reads only GitHub, so
 it needs a token (one run makes more requests than GitHub allows an hour without one), not a
 database. Bun reads `GITHUB_TOKEN` from `.env.local`:
 ```sh

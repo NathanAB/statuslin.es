@@ -305,6 +305,9 @@ export function fakeGitHub(opts: FakeGitHubOptions = {}): FakeGitHub {
     async commitIsFetchable() {
       throw new Error('publish and restore never ask whether a commit is fetchable')
     },
+    async pluginFileCount() {
+      throw new Error('publish and restore never count a plugin folder')
+    },
     async readme() {
       return opts.readme ?? null
     },

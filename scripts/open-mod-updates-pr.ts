@@ -84,7 +84,7 @@ export function ownOpenPr(
 }
 
 /** The lines updates:mods prints for a mod it left alone. */
-const NOT_REPINNED = /^(ahead|diverged|unreadable|gone) /
+const NOT_REPINNED = /^(ahead|diverged|unreadable|gone|oversized) /
 
 const entriesOf = (text: string): CurationEntry[] => {
   const curation = parseCuration(JSON.parse(text))
