@@ -33,6 +33,8 @@ interface Fakes {
   noManifest?: string[]
   /** plugin.json versions by `<path>@<sha>`; a missing key reads as no version. */
   versions?: Record<string, string>
+  /** Files in the plugin folder by `<path>@<sha>`, null when GitHub cuts the listing; default 10. */
+  fileCounts?: Record<string, number | null>
 }
 
 function run(
@@ -44,6 +46,7 @@ function run(
     goneCommits = [],
     noManifest = [],
     versions = {},
+    fileCounts = {},
   }: Fakes = {},
 ) {
   const calls: string[] = []
@@ -69,6 +72,10 @@ function run(
     },
     async pluginVersion(_repoUrl, path, sha) {
       return versions[`${path}@${sha}`] ?? null
+    },
+    async pluginFileCount(_repoUrl, path, sha) {
+      const key = `${path}@${sha}`
+      return key in fileCounts ? (fileCounts[key] ?? null) : 10
     },
   }
   const result = checkModUpdates(raw, { github, log: (line) => lines.push(line), file: FILE })
@@ -229,6 +236,41 @@ describe('checkModUpdates', () => {
 
     expect(await result).toEqual({ code: 0, updated: null, releases: [] })
     expect(lines[0]).toBe('gone meter: trunk has no plugin.json in plugins/meter, not re-pinned')
+  })
+
+  // The importer refuses a plugin folder past 2,000 files, which would stop the whole re-pin run.
+  it('lists a mod whose folder at the head has more files than the importer takes', async () => {
+    const { result, lines } = run([entry()], {
+      fileCounts: { [`plugins/meter@${HEAD}`]: 2_001 },
+      versions: { [`plugins/meter@${PIN}`]: '1.2.0', [`plugins/meter@${HEAD}`]: '1.3.0' },
+    })
+
+    expect(await result).toEqual({ code: 0, updated: null, releases: [] })
+    expect(lines).toEqual([
+      "oversized meter: trunk has 2001 files in plugins/meter, past the importer's limit of 2000, not re-pinned",
+      'no new releases',
+    ])
+  })
+
+  it('lists a mod whose folder GitHub lists only in part, naming the repository root', async () => {
+    const { result, lines } = run([entry({ path: '' })], {
+      fileCounts: { [`@${HEAD}`]: null },
+      versions: { [`@${HEAD}`]: '1.3.0' },
+    })
+
+    expect(await result).toEqual({ code: 0, updated: null, releases: [] })
+    expect(lines[0]).toBe(
+      "oversized meter: trunk has more files in the repository root than GitHub lists, past the importer's limit of 2000, not re-pinned",
+    )
+  })
+
+  it('re-pins a mod whose folder holds exactly as many files as the importer takes', async () => {
+    const { result } = run([entry()], {
+      fileCounts: { [`plugins/meter@${HEAD}`]: 2_000 },
+      versions: { [`plugins/meter@${HEAD}`]: '1.3.0' },
+    })
+
+    expect((await result).updated).toEqual([entry({ commitSha: HEAD })])
   })
 
   it('changes only the commit, keeping every other field and the key order', async () => {

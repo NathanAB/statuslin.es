@@ -91,6 +91,43 @@ describe('compareCommits', () => {
   })
 })
 
+describe('pluginFileCount', () => {
+  const tree = (truncated: boolean) => ({
+    truncated,
+    tree: [
+      { path: 'hooks', type: 'tree' },
+      { path: 'hooks/meter.ts', type: 'blob' },
+      { path: 'plugin.json', type: 'blob' },
+      { path: 'vendor', type: 'commit' },
+    ],
+  })
+
+  // `git ls-tree -r` in the importer lists files and submodules, not folders: 3 here.
+  it("counts the files and submodules in a plugin folder's tree at a commit", async () => {
+    const { fetchFn } = fakeFetch({
+      [api(`/git/trees/${SHA}:plugins/meter?recursive=1`)]: { status: 200, body: tree(false) },
+    })
+
+    expect(await createGitHub(fetchFn).pluginFileCount(REPO, 'plugins/meter', SHA)).toBe(3)
+  })
+
+  it('reads the whole commit for a plugin at the repository root', async () => {
+    const { fetchFn } = fakeFetch({
+      [api(`/git/trees/${SHA}?recursive=1`)]: { status: 200, body: tree(false) },
+    })
+
+    expect(await createGitHub(fetchFn).pluginFileCount(REPO, '', SHA)).toBe(3)
+  })
+
+  it('returns null when GitHub cuts the listing short', async () => {
+    const { fetchFn } = fakeFetch({
+      [api(`/git/trees/${SHA}?recursive=1`)]: { status: 200, body: tree(true) },
+    })
+
+    expect(await createGitHub(fetchFn).pluginFileCount(REPO, '', SHA)).toBeNull()
+  })
+})
+
 describe('commitIsFetchable', () => {
   it.each([
     [200, true],

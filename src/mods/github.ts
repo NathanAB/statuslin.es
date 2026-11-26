@@ -44,6 +44,11 @@ export interface GitHub {
   filesChanged(repoUrl: string, base: string, head: string): Promise<string[]>
   compareCommits(repoUrl: string, base: string, head: string): Promise<CommitComparison>
   commitIsFetchable(repoUrl: string, sha: string): Promise<boolean>
+  /**
+   * The files and submodules in `path` at `sha`, as the importer counts them; '' is the repository
+   * root. Null when GitHub cuts the listing short, past 100,000 entries or 7 MB.
+   */
+  pluginFileCount(repoUrl: string, path: string, sha: string): Promise<number | null>
 }
 
 /** How much of a README content generation hands the copy-writing agent. */
@@ -201,6 +206,14 @@ export function createGitHub(
 
     async commitIsFetchable(repoUrl, sha) {
       return (await request(`${repoApiUrl(repoUrl)}/commits/${sha}`, [404, 422])) !== null
+    },
+
+    async pluginFileCount(repoUrl, path, sha) {
+      const folder = path === '' ? '' : `:${encodeParts(path)}`
+      const { tree, truncated } = (await request(
+        `${repoApiUrl(repoUrl)}/git/trees/${sha}${folder}?recursive=1`,
+      )) as { tree: { type: string }[]; truncated: boolean }
+      return truncated ? null : tree.filter((entry) => entry.type !== 'tree').length
     },
   }
 }

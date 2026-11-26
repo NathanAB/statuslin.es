@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { CURATION_FILE, type CurationEntry, parseCuration } from '@/mods/curation'
 import { createGitHub, type GitHub, type GitHubSource } from '@/mods/github'
 import { terminalLine } from '@/mods/terminal-line'
+import { TARBALL_MAX_FILES } from '@/render/mods/plugin-checkout'
 
 /**
  * Find the curated mods whose authors have released since their pin, and move those pins in the
@@ -9,7 +10,9 @@ import { terminalLine } from '@/mods/terminal-line'
  * re-pinned to that head when the head builds on the pin and plugin.json names a new version, or
  * names none, since Claude Code then versions the plugin by its commit and every commit reaches
  * existing installs. New commits that keep the version, a default branch that no longer builds on
- * the pin (a force-push), and a repository or pin GitHub no longer serves are listed and left alone.
+ * the pin (a force-push), a repository or pin GitHub no longer serves, and a plugin folder with more
+ * files than the importer unpacks (TARBALL_MAX_FILES) are listed and left alone, since an entry the
+ * importer refuses would stop the whole re-pin run.
  * It ends with a Markdown table for the curation pull request, so each compare link reaches the
  * reviewer. Nothing is published: the operator reviews each compare link in the curation file's
  * diff, merges it, and then runs run-repin-mods.ts. Any other GitHub error (rate limit, outage)
@@ -29,7 +32,7 @@ export interface CheckUpdatesDeps {
     GitHubSource,
     'findRepo' | 'resolveCommit' | 'pluginManifestExists' | 'pluginVersion'
   > &
-    Pick<GitHub, 'compareCommits' | 'commitIsFetchable'>
+    Pick<GitHub, 'compareCommits' | 'commitIsFetchable' | 'pluginFileCount'>
   log: (line: string) => void
   /** Named in the summary. */
   file: string
@@ -51,6 +54,8 @@ type Update =
   | { kind: 'diverged'; branch: string }
   | { kind: 'unreadable'; branch: string }
   | { kind: 'manifest gone'; branch: string }
+  /** `files` is null when GitHub lists the folder only in part. */
+  | { kind: 'oversized'; branch: string; files: number | null }
   | { kind: 'repo gone' }
   | { kind: 'pin gone' }
 
@@ -98,9 +103,10 @@ async function checkEntry(
   }
   const from = await github.pluginVersion(entry.repoUrl, entry.path, pin)
   if (!isPlain(to) || !isPlain(from)) return { kind: 'unreadable', branch }
-  return to !== null && to === from
-    ? { kind: 'unreleased', version: to }
-    : { kind: 'release', entry, head, from, to }
+  if (to !== null && to === from) return { kind: 'unreleased', version: to }
+  const files = await github.pluginFileCount(entry.repoUrl, entry.path, head)
+  if (files === null || files > TARBALL_MAX_FILES) return { kind: 'oversized', branch, files }
+  return { kind: 'release', entry, head, from, to }
 }
 
 export const compareUrl = ({ entry, head }: Release) =>
@@ -108,6 +114,7 @@ export const compareUrl = ({ entry, head }: Release) =>
 
 function describeUpdate(entry: CurationEntry, update: Update): string | null {
   const name = entry.pluginName
+  const folder = entry.path || 'the repository root'
   switch (update.kind) {
     case 'unchanged':
       return null
@@ -122,7 +129,14 @@ function describeUpdate(entry: CurationEntry, update: Update): string | null {
     case 'unreadable':
       return `unreadable ${name}: plugin.json's version at ${update.branch} is not a plain version, not re-pinned: read it by hand`
     case 'manifest gone':
-      return `gone ${name}: ${update.branch} has no plugin.json in ${entry.path || 'the repository root'}, not re-pinned`
+      return `gone ${name}: ${update.branch} has no plugin.json in ${folder}, not re-pinned`
+    case 'oversized': {
+      const files =
+        update.files === null
+          ? `more files in ${folder} than GitHub lists`
+          : `${update.files} files in ${folder}`
+      return `oversized ${name}: ${update.branch} has ${files}, past the importer's limit of ${TARBALL_MAX_FILES}, not re-pinned`
+    }
     case 'repo gone':
       return `gone ${name}: GitHub no longer serves ${entry.repoUrl} (deleted or private), not re-pinned`
     case 'pin gone':
