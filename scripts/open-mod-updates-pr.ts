@@ -144,7 +144,9 @@ export async function openModUpdatesPr(deps: OpenPrDeps): Promise<number> {
 
   const branch = checked.updated ? formatCuration(checked.updated) : base
   const releases = await pinnedReleases(deps, open ? await deps.readCuration('main') : base, branch)
-  if (open && !checked.updated && bodyMatches(open.body, releases)) {
+  // A skipped mod's note goes in the body too, or it reaches only the log.
+  const notesShown = notes.every((note) => open?.body.includes(note))
+  if (open && !checked.updated && bodyMatches(open.body, releases) && notesShown) {
     deps.log(`#${open.number} is unchanged`)
     return 0
   }
