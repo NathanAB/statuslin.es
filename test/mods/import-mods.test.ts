@@ -773,6 +773,38 @@ describe('importMods', () => {
       expect(lines[0]).toContain('\\u000aforged line')
     })
 
+    // Drizzle's "Failed query" error carries the Postgres error, the one that names the fault, as its cause.
+    it('prints the cause chain under the refusal, one line each', async () => {
+      const postgres = Object.assign(new Error('duplicate key value violates unique constraint'), {
+        name: 'PostgresError',
+        code: '23505',
+        constraint_name: 'mod_themes_version_name',
+        detail: 'Key (name)=(night) already exists.',
+      })
+      const sandboxError = new Error('Failed query: insert into "mod_themes"', { cause: postgres })
+      const { lines } = await run([entry()], fakes({ sandboxError }))
+
+      expect(lines).toEqual([
+        'refused skins: Failed query: insert into "mod_themes"',
+        '  cause: PostgresError | 23505 | mod_themes_version_name | Key (name)=(night) already exists. | duplicate key value violates unique constraint',
+      ])
+    })
+
+    it('stops following a cause chain after five causes', async () => {
+      const sandboxError = new Error('outer')
+      sandboxError.cause = sandboxError
+      const { lines } = await run([entry()], fakes({ sandboxError }))
+
+      expect(lines).toEqual([
+        'refused skins: outer',
+        '  cause: Error | outer',
+        '  cause: Error | outer',
+        '  cause: Error | outer',
+        '  cause: Error | outer',
+        '  cause: Error | outer',
+      ])
+    })
+
     it('truncates a long error message', async () => {
       const sandboxError = new Error(`tar: ${'x'.repeat(10_000)}`)
       const { lines } = await run([entry()], fakes({ sandboxError }))

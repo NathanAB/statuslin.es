@@ -301,6 +301,31 @@ async function importEntry(
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
+/** How many causes a refusal prints; a chain can be long, or loop back on itself. */
+const MAX_CAUSES = 5
+
+/**
+ * One line per cause under a refusal. Drizzle's "Failed query" error holds the Postgres error, the
+ * one that names the code, constraint and detail, as its cause.
+ */
+function causeLines(error: unknown): string[] {
+  const lines: string[] = []
+  let cause = error instanceof Error ? error.cause : undefined
+  while (cause !== undefined && cause !== null && lines.length < MAX_CAUSES) {
+    const fields = cause as Record<string, unknown>
+    const parts = [
+      fields.name,
+      fields.code,
+      fields.constraint_name ?? fields.constraint,
+      fields.detail,
+      messageOf(cause),
+    ].filter((part) => part !== undefined && part !== null && part !== '')
+    lines.push(`  cause: ${parts.map(String).join(' | ')}`)
+    cause = cause instanceof Error ? cause.cause : undefined
+  }
+  return lines
+}
+
 export async function importMods(raw: unknown, deps: ImportDeps): Promise<number> {
   const log = (line: string) => deps.log(terminalLine(line))
   const curation = parseCuration(raw)
@@ -317,6 +342,7 @@ export async function importMods(raw: unknown, deps: ImportDeps): Promise<number
     } catch (error) {
       refused++
       log(`refused ${entry.pluginName}: ${messageOf(error)}`)
+      for (const line of causeLines(error)) log(line)
     }
   }
   return refused === 0 ? 0 : 1
