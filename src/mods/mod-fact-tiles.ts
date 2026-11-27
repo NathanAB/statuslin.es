@@ -84,12 +84,20 @@ export function modReachTiles(
   {
     details = {},
     worksIn = [],
-  }: { details?: ModPageCopy['details'] | undefined; worksIn?: FactTile[] } = {},
+    runsNoCode = false,
+  }: {
+    details?: ModPageCopy['details'] | undefined
+    worksIn?: FactTile[]
+    /** A plugin of theme files alone (ADR 0012): it has no hooks module, so its footprint is empty. */
+    runsNoCode?: boolean
+  } = {},
 ): FactTile[] {
   const { draws } = describeFootprint(footprint)
   const facts = footprintFacts(footprint)
-  // An empty footprint was never recorded: say so instead of a row of "Nothing" and "None".
-  const ifRecorded = (fact: string) => (footprintRecorded(footprint) ? fact : NOT_RECORDED)
+  // An empty footprint of a plugin with code was never recorded: say so instead of a row of
+  // "Nothing" and "None".
+  const ifRecorded = (fact: string) =>
+    runsNoCode || footprintRecorded(footprint) ? fact : NOT_RECORDED
   const showsUp =
     draws.length > 0
       ? (details.showsUp ?? capitalized(listPhrase(draws.map((d) => DRAW_LOCATION_LABEL[d]))))
@@ -129,6 +137,7 @@ export function modReachTiles(
  */
 export function modPageReachTiles(
   mod: Pick<ModDetail, 'footprint' | 'preview' | 'desktop' | 'generatedContent'>,
+  { runsNoCode = false }: { runsNoCode?: boolean } = {},
 ): FactTile[] {
   const { surfaces } = describeModFootprint(mod)
   const worksIn: FactTile[] =
@@ -141,7 +150,11 @@ export function modPageReachTiles(
           },
         ]
       : []
-  return modReachTiles(mod.footprint, { details: mod.generatedContent?.details, worksIn })
+  return modReachTiles(mod.footprint, {
+    details: mod.generatedContent?.details,
+    worksIn,
+    runsNoCode,
+  })
 }
 
 /**
@@ -158,10 +171,11 @@ export function modFactTiles(
     | 'commitSha'
     | 'reviewedAt'
     | 'recordedWith'
+    | 'themeOnly'
   >,
 ): FactTile[] {
   return [
-    ...modPageReachTiles(mod),
+    ...modPageReachTiles(mod, { runsNoCode: mod.themeOnly }),
     {
       icon: GitCommitHorizontal,
       label: MOD_TILE_LABEL.reviewedCommit,

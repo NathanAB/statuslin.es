@@ -118,6 +118,7 @@ describe('buildGalleryCatalogue', () => {
       commitSha: 'a'.repeat(40),
       reviewedAt: null,
       recordedWith: '2.1.0',
+      themeOnly: false,
     }).map(({ label, value }) => ({ label, value }))
     expect(page.slice(0, facts.length)).toEqual(facts)
   })
