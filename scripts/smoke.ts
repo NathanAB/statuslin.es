@@ -114,6 +114,8 @@ const SIGNED_OUT_ONLY = REMOTE || process.env.SMOKE_SIGNED_OUT_ONLY === '1'
 const COOKIE = 'better-auth.session_token'
 
 const failures: string[] = []
+/** Checks that found nothing to check. A pass names each, so a deploy gate never hides one. */
+const skipped: string[] = []
 function check(ok: boolean, label: string, detail = '') {
   if (ok) {
     console.log(`  ✓ ${label}`)
@@ -121,6 +123,24 @@ function check(ok: boolean, label: string, detail = '') {
     failures.push(detail ? `${label} — ${detail}` : label)
     console.log(`  ✗ ${label}${detail ? ` — ${detail}` : ''}`)
   }
+}
+
+/** The run's last lines: a pass names every skipped check, a failure lists each failure first. */
+export function smokeSummary(
+  failed: string[],
+  skips: string[],
+): { passed: boolean; lines: string[] } {
+  const list = (items: string[]) => items.map((item) => `  - ${item}`)
+  if (failed.length > 0) {
+    const skipLines = skips.length > 0 ? [`Skipped (${skips.length}):`, ...list(skips)] : []
+    return {
+      passed: false,
+      lines: [`SMOKE FAILED (${failed.length}):`, ...list(failed), ...skipLines],
+    }
+  }
+  if (skips.length === 0) return { passed: true, lines: ['SMOKE PASSED'] }
+  const counted = skips.length === 1 ? '1 check was' : `${skips.length} checks were`
+  return { passed: true, lines: [`SMOKE PASSED, but ${counted} skipped:`, ...list(skips)] }
 }
 
 /** Normalize an agent-browser subprocess result for the smoke runner. */
@@ -390,6 +410,9 @@ async function checkSignedOut() {
   check(/Trending/i.test(await ab('snapshot', '-i')), 'home gallery renders')
   await checkBylineBaselines()
 
+  // The home's first page can be all mods, so look for a status line in the gallery of them alone.
+  await ab('open', `${BASE}/?kind=status-lines`)
+  await ab('wait', '--load', 'networkidle')
   const detail = (
     await ab('eval', 'document.querySelector(\'a[href^="/c/"]\')?.getAttribute("href") || ""')
   ).match(/\/c\/[^\s"']+/)?.[0]
@@ -403,7 +426,8 @@ async function checkSignedOut() {
     )
     check(/Copy script/i.test(d.snap), 'detail page renders', detail)
   } else {
-    console.log('  · (no published configs to open a detail page — skipped)')
+    skipped.push(`status line detail page: no published status line on ${BASE}/?kind=status-lines`)
+    console.log('  · (no published status line to open a detail page — skipped)')
   }
 
   await pageConsoleClean('admin (signed-out)', '/admin')
@@ -522,12 +546,10 @@ async function main() {
     killServer(booted)
   }
 
-  if (failures.length > 0) {
-    console.error(`\nSMOKE FAILED (${failures.length}):`)
-    for (const f of failures) console.error(`  - ${f}`)
-    process.exit(1)
-  }
-  console.log('\nSMOKE PASSED')
+  const summary = smokeSummary(failures, skipped)
+  const print = summary.passed && skipped.length === 0 ? console.log : console.error
+  print(`\n${summary.lines.join('\n')}`)
+  if (!summary.passed) process.exit(1)
 }
 
 if (import.meta.main) {

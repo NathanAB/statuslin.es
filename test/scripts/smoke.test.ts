@@ -9,6 +9,7 @@ import {
   EXPECTED_HOME,
   FIT_WIDTHS,
   sideScrollFailures,
+  smokeSummary,
 } from '../../scripts/smoke'
 import { HOME_HERO_HEADING } from '../../src/lib/page-title'
 
@@ -155,5 +156,34 @@ describe('bylineBaselineFailures', () => {
 
   it('fails a page with no rows to measure', () => {
     expect(bylineBaselineFailures([])).toEqual(['no gallery rows with an author were measured'])
+  })
+})
+
+describe('smokeSummary', () => {
+  it('passes plainly when every check ran', () => {
+    expect(smokeSummary([], [])).toEqual({ passed: true, lines: ['SMOKE PASSED'] })
+  })
+
+  // A deploy gate that skipped a check must say so where the operator reads the result.
+  it('names each skipped check beside the pass', () => {
+    expect(smokeSummary([], ['status line detail page: no published status line'])).toEqual({
+      passed: true,
+      lines: [
+        'SMOKE PASSED, but 1 check was skipped:',
+        '  - status line detail page: no published status line',
+      ],
+    })
+  })
+
+  it('fails with each failure, and still names what it skipped', () => {
+    expect(smokeSummary(['home gallery renders'], ['status line detail page: none'])).toEqual({
+      passed: false,
+      lines: [
+        'SMOKE FAILED (1):',
+        '  - home gallery renders',
+        'Skipped (1):',
+        '  - status line detail page: none',
+      ],
+    })
   })
 })
