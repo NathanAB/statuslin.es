@@ -291,6 +291,19 @@ describe('prepareModContentGenerationRequest', () => {
     }
   })
 
+  // The page's tiles say "Only through programs it runs" for such a mod, so the copy must not say no.
+  it('states file and network reach through programs it runs as the tiles do', async () => {
+    await seedMod('runner', {
+      footprint: { events: ['ui.render{component=AbovePrompt}'], calls: ['$.process.run'] },
+    })
+
+    const prompt = (await prepareModContentGenerationRequest(db, 'runner', readme)).contentPrompt
+
+    expect(prompt).toContain('- Writes files: only through programs it runs')
+    expect(prompt).toContain('- Contacts the internet: only through programs it runs')
+    expect(prompt).toContain('- Runs programs: yes')
+  })
+
   it('says when there is no README', async () => {
     await seedMod('bare')
 

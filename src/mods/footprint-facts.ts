@@ -59,6 +59,20 @@ const MODEL_STARTS = new Set(['$.prompt.submit', '$.agent.spawn', '$.session.com
 const calls = (footprint: ModFootprint, namespace: string) =>
   footprint.calls.some((call) => call.startsWith(namespace))
 
+/** A reach the mod has itself, only through the programs it runs, or not at all. */
+export type Reach = 'yes' | 'through-programs' | 'no'
+
+/** How the page's tiles and the copy prompt both word a reach the mod has only through programs. */
+export const THROUGH_PROGRAMS = 'Only through programs it runs'
+
+export function reachOf(
+  direct: boolean,
+  { runsPrograms }: Pick<FootprintFacts, 'runsPrograms'>,
+): Reach {
+  if (direct) return 'yes'
+  return runsPrograms ? 'through-programs' : 'no'
+}
+
 export function footprintFacts(footprint: ModFootprint): FootprintFacts {
   const callsTools = footprint.calls.includes(TOOL_CALL)
   return {

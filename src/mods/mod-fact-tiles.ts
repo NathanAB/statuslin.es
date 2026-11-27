@@ -19,7 +19,13 @@ import {
   footprintRecorded,
   SURFACE_LABEL,
 } from './footprint'
-import { type FootprintCommands, footprintFacts } from './footprint-facts'
+import {
+  type FootprintCommands,
+  footprintFacts,
+  type Reach,
+  reachOf,
+  THROUGH_PROGRAMS,
+} from './footprint-facts'
 import type { ModDetail } from './queries'
 
 /** Each tile's label, also named by the guide that explains the tiles. */
@@ -50,9 +56,6 @@ function reviewedCommitValue(commitSha: string, reviewedAt: string | null): stri
   return reviewedAt ? `${commit} on ${REVIEW_DATE.format(new Date(reviewedAt))}` : commit
 }
 
-/** A reach tile's value when the mod has that reach only through the programs it runs. */
-export const THROUGH_PROGRAMS = 'Only through programs it runs'
-
 const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 /** The footprint's command names; the copy's only when the footprint records some unnamed. */
@@ -64,14 +67,9 @@ function commandsValue(commands: FootprintCommands | null, fromCopy: string[] = 
 }
 
 /** A reach the mod has itself, only through the programs it runs, or not at all. */
-function reachValue(
-  direct: boolean,
-  runsPrograms: boolean,
-  detail: string | undefined,
-  none: string,
-): string {
-  if (direct) return detail ?? 'Yes'
-  return runsPrograms ? (detail ?? THROUGH_PROGRAMS) : none
+function reachValue(reach: Reach, detail: string | undefined, none: string): string {
+  if (reach === 'yes') return detail ?? 'Yes'
+  return reach === 'through-programs' ? (detail ?? THROUGH_PROGRAMS) : none
 }
 
 const NOT_RECORDED = 'Not recorded yet'
@@ -114,13 +112,13 @@ export function modReachTiles(
       icon: FilePen,
       label: MOD_TILE_LABEL.changesFiles,
       value: ifRecorded(
-        reachValue(facts.writesFiles, facts.runsPrograms, details.changesFiles, 'Nothing'),
+        reachValue(reachOf(facts.writesFiles, facts), details.changesFiles, 'Nothing'),
       ),
     },
     {
       icon: Globe,
       label: MOD_TILE_LABEL.network,
-      value: ifRecorded(reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None')),
+      value: ifRecorded(reachValue(reachOf(facts.usesNetwork, facts), details.network, 'None')),
     },
   ]
 }
