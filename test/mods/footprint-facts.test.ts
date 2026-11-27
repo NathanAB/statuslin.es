@@ -64,6 +64,22 @@ describe('footprintFacts', () => {
     expect(footprintFacts({ ...NONE, calls: ['$.process.spawn'] }).runsPrograms).toBe(true)
   })
 
+  // Each starts model work the session pays for: a turn of its own, a subagent, or a summary
+  // (types/claude-code.d.ts from Claude Code 2.1.330: $.prompt.submit, $.agent.spawn, $.session.compact).
+  it.each(['$.prompt.submit', '$.agent.spawn', '$.session.compact'])(
+    'counts %s as calling a model',
+    (call) => {
+      expect(footprintFacts({ ...NONE, calls: [call] }).callsModel).toBe(true)
+    },
+  )
+
+  it('does not count reading the prompt box or listing subagents as calling a model', () => {
+    expect(
+      footprintFacts({ ...NONE, calls: ['$.prompt.read', '$.prompt.fill', '$.agent.list'] })
+        .callsModel,
+    ).toBe(false)
+  })
+
   // The footprint records the call, not which tool it names, and Bash, Edit and Write are all one call away.
   it('counts calling a Claude Code tool as both running programs and changing files', () => {
     expect(footprintFacts({ ...NONE, calls: ['$.tool.call'] })).toMatchObject({

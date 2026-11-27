@@ -2,7 +2,7 @@ import { COPY_STYLE_RULES, pageCopyTask, type TileDetailAsk } from '@/content/pa
 import { TAG_CRITERIA } from '@/content/tags'
 import { TAG_VOCABULARY } from '@/gallery/facets'
 import { DRAW_LOCATION_LABEL, type ModFootprintDescription, SURFACE_LABEL } from './footprint'
-import type { FootprintFacts } from './footprint-facts'
+import { type FootprintFacts, type Reach, reachOf, THROUGH_PROGRAMS } from './footprint-facts'
 import { MOD_INSTALL_MIN_VERSION } from './install'
 
 /** The version a request is for: its answer is applied to that version only. */
@@ -53,6 +53,8 @@ Everything between the lines BEGIN UNTRUSTED ${marker} and END UNTRUSTED ${marke
 }
 
 const yesNo = (fact: boolean) => (fact ? 'yes' : 'no')
+const reachWords = (reach: Reach) =>
+  reach === 'through-programs' ? THROUGH_PROGRAMS.toLowerCase() : reach
 const list = (items: string[]) => (items.length > 0 ? items.join(', ') : 'nothing listed')
 
 function commandsCheck({ commands }: FootprintFacts): string {
@@ -70,8 +72,8 @@ function checksSummary({ described, facts }: ModChecks): string {
     `- Surfaces it drew on: ${list(described.surfaces.map((s) => SURFACE_LABEL[s]))}`,
     `- Adds slash commands: ${commandsCheck(facts)}`,
     `- Calls the model: ${yesNo(facts.callsModel)}`,
-    `- Writes files: ${yesNo(facts.writesFiles)}`,
-    `- Contacts the internet: ${yesNo(facts.usesNetwork)}`,
+    `- Writes files: ${reachWords(reachOf(facts.writesFiles, facts))}`,
+    `- Contacts the internet: ${reachWords(reachOf(facts.usesNetwork, facts))}`,
     `- Runs programs: ${yesNo(facts.runsPrograms)}`,
   ].join('\n')
 }

@@ -12,6 +12,7 @@ type Mod = Pick<
   | 'commitSha'
   | 'reviewedAt'
   | 'recordedWith'
+  | 'themeOnly'
 >
 
 const SHA = '0123456789abcdef0123456789abcdef01234567'
@@ -28,6 +29,7 @@ const MOD: Mod = {
   commitSha: SHA,
   reviewedAt: '2026-09-30',
   recordedWith: '2.1.0',
+  themeOnly: false,
 }
 
 function withDetails(details: ModPageCopy['details']): ModPageCopy {
@@ -77,6 +79,19 @@ describe('modFactTiles', () => {
       expect(byLabel(label), label).toBe('Not recorded yet')
     }
     expect(byLabel('Reviewed commit')).toBe('`0123456` on Sep 30, 2026')
+  })
+
+  // A plugin of theme files alone has no hooks module, so its empty footprint is known, not missing.
+  it('says no, not not recorded yet, for a theme plugin that runs no code', () => {
+    const tiles = modFactTiles({ ...MOD, themeOnly: true, footprint: { events: [], calls: [] } })
+    expect(tiles.slice(0, 6).map(({ label, value }) => [label, value])).toEqual([
+      ['What you see', 'Nothing on screen'],
+      ['Works in', 'Terminal'],
+      ['Slash commands', 'None'],
+      ['Uses your tokens', 'No'],
+      ['Changes files', 'Nothing'],
+      ['Network access', 'None'],
+    ])
   })
 
   it('keeps the footprint’s no whatever the copy claims', () => {

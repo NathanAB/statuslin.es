@@ -2,7 +2,8 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MOD_SAFETY_FAQ } from '@/guide/mod-safety-faq'
-import { MOD_TILE_LABEL, THROUGH_PROGRAMS } from '@/mods/mod-fact-tiles'
+import { THROUGH_PROGRAMS } from '@/mods/footprint-facts'
+import { MOD_TILE_LABEL } from '@/mods/mod-fact-tiles'
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({

@@ -19,7 +19,13 @@ import {
   footprintRecorded,
   SURFACE_LABEL,
 } from './footprint'
-import { type FootprintCommands, footprintFacts } from './footprint-facts'
+import {
+  type FootprintCommands,
+  footprintFacts,
+  type Reach,
+  reachOf,
+  THROUGH_PROGRAMS,
+} from './footprint-facts'
 import type { ModDetail } from './queries'
 
 /** Each tile's label, also named by the guide that explains the tiles. */
@@ -50,9 +56,6 @@ function reviewedCommitValue(commitSha: string, reviewedAt: string | null): stri
   return reviewedAt ? `${commit} on ${REVIEW_DATE.format(new Date(reviewedAt))}` : commit
 }
 
-/** A reach tile's value when the mod has that reach only through the programs it runs. */
-export const THROUGH_PROGRAMS = 'Only through programs it runs'
-
 const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 /** The footprint's command names; the copy's only when the footprint records some unnamed. */
@@ -64,14 +67,9 @@ function commandsValue(commands: FootprintCommands | null, fromCopy: string[] = 
 }
 
 /** A reach the mod has itself, only through the programs it runs, or not at all. */
-function reachValue(
-  direct: boolean,
-  runsPrograms: boolean,
-  detail: string | undefined,
-  none: string,
-): string {
-  if (direct) return detail ?? 'Yes'
-  return runsPrograms ? (detail ?? THROUGH_PROGRAMS) : none
+function reachValue(reach: Reach, detail: string | undefined, none: string): string {
+  if (reach === 'yes') return detail ?? 'Yes'
+  return reach === 'through-programs' ? (detail ?? THROUGH_PROGRAMS) : none
 }
 
 const NOT_RECORDED = 'Not recorded yet'
@@ -86,12 +84,20 @@ export function modReachTiles(
   {
     details = {},
     worksIn = [],
-  }: { details?: ModPageCopy['details'] | undefined; worksIn?: FactTile[] } = {},
+    runsNoCode = false,
+  }: {
+    details?: ModPageCopy['details'] | undefined
+    worksIn?: FactTile[]
+    /** A plugin of theme files alone (ADR 0012): it has no hooks module, so its footprint is empty. */
+    runsNoCode?: boolean
+  } = {},
 ): FactTile[] {
   const { draws } = describeFootprint(footprint)
   const facts = footprintFacts(footprint)
-  // An empty footprint was never recorded: say so instead of a row of "Nothing" and "None".
-  const ifRecorded = (fact: string) => (footprintRecorded(footprint) ? fact : NOT_RECORDED)
+  // An empty footprint of a plugin with code was never recorded: say so instead of a row of
+  // "Nothing" and "None".
+  const ifRecorded = (fact: string) =>
+    runsNoCode || footprintRecorded(footprint) ? fact : NOT_RECORDED
   const showsUp =
     draws.length > 0
       ? (details.showsUp ?? capitalized(listPhrase(draws.map((d) => DRAW_LOCATION_LABEL[d]))))
@@ -114,13 +120,13 @@ export function modReachTiles(
       icon: FilePen,
       label: MOD_TILE_LABEL.changesFiles,
       value: ifRecorded(
-        reachValue(facts.writesFiles, facts.runsPrograms, details.changesFiles, 'Nothing'),
+        reachValue(reachOf(facts.writesFiles, facts), details.changesFiles, 'Nothing'),
       ),
     },
     {
       icon: Globe,
       label: MOD_TILE_LABEL.network,
-      value: ifRecorded(reachValue(facts.usesNetwork, facts.runsPrograms, details.network, 'None')),
+      value: ifRecorded(reachValue(reachOf(facts.usesNetwork, facts), details.network, 'None')),
     },
   ]
 }
@@ -131,6 +137,7 @@ export function modReachTiles(
  */
 export function modPageReachTiles(
   mod: Pick<ModDetail, 'footprint' | 'preview' | 'desktop' | 'generatedContent'>,
+  { runsNoCode = false }: { runsNoCode?: boolean } = {},
 ): FactTile[] {
   const { surfaces } = describeModFootprint(mod)
   const worksIn: FactTile[] =
@@ -143,7 +150,11 @@ export function modPageReachTiles(
           },
         ]
       : []
-  return modReachTiles(mod.footprint, { details: mod.generatedContent?.details, worksIn })
+  return modReachTiles(mod.footprint, {
+    details: mod.generatedContent?.details,
+    worksIn,
+    runsNoCode,
+  })
 }
 
 /**
@@ -160,10 +171,11 @@ export function modFactTiles(
     | 'commitSha'
     | 'reviewedAt'
     | 'recordedWith'
+    | 'themeOnly'
   >,
 ): FactTile[] {
   return [
-    ...modPageReachTiles(mod),
+    ...modPageReachTiles(mod, { runsNoCode: mod.themeOnly }),
     {
       icon: GitCommitHorizontal,
       label: MOD_TILE_LABEL.reviewedCommit,

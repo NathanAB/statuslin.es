@@ -146,14 +146,33 @@ describe('openModUpdatesPr', () => {
   })
 
   it('leaves an open pull request alone when nothing was released and its body is current', async () => {
+    const body = [
+      `| meter | x | ${compare(PIN, HEAD)} |`,
+      'ahead deck: version unchanged (0.4.12), not re-pinned',
+      "oversized pokemon: main has 2499 files in the repository root, past the importer's limit of 2000, not re-pinned",
+    ].join('\n')
     const { result, calls, prs } = run({
-      openPr: { number: 7, body: `| meter | x | ${compare(PIN, HEAD)} |` },
+      openPr: { number: 7, body },
       pins: { main: PIN, [BRANCH]: HEAD },
     })
 
     expect(await result).toBe(0)
     expect(calls).toEqual(['check:b'])
     expect(prs).toEqual([])
+  })
+
+  // A skipped mod's note otherwise reaches only the launchd log, which nobody reads.
+  it('adds this week’s not-re-pinned notes to an open pull request whose pins are current', async () => {
+    const { result, calls, prs } = run({
+      openPr: { number: 7, body: `| meter | x | ${compare(PIN, HEAD)} |` },
+      pins: { main: PIN, [BRANCH]: HEAD },
+    })
+
+    expect(await result).toBe(0)
+    expect(calls).toEqual(['check:b', 'diff:a...b', 'claude', 'edit'])
+    expect(prs[0]?.number).toBe(7)
+    expect(prs[0]?.body).toContain('oversized pokemon: main has 2499 files')
+    expect(prs[0]?.body).toContain('ahead deck: version unchanged')
   })
 
   it('rewrites a body that no longer matches the branch, committing nothing', async () => {
