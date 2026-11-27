@@ -85,14 +85,15 @@ async function shownWindow(analysis: AnalysisSandbox): Promise<ThemeWindow> {
  * mean nothing. Not a refusal of the theme: the recorder is what needs fixing.
  */
 async function checkLayout(analysis: AnalysisSandbox): Promise<void> {
-  const { edge, page } = PROMPT_EDGE_PROBES
-  const probe = probeCommand(BASELINE, [edge, page], { capture: false })
+  const { edges, page } = PROMPT_EDGE_PROBES
+  const probe = probeCommand(BASELINE, [...edges, page], { capture: false })
   const { stdout } = expectOk(await analysis.run(probe), "reading Desktop's own window")
-  const [edgeGrey, pageGrey] = parseProbes(stdout, 2)
-  if (!edgeGrey || !pageGrey) throw new Error('missing the prompt box edge probes')
-  if (Math.abs(edgeGrey.mean - pageGrey.mean) < EDGE_CONTRAST) {
+  const greys = parseProbes(stdout, edges.length + 1)
+  const pageGrey = greys.pop()
+  if (!pageGrey) throw new Error('missing the prompt box edge probes')
+  if (greys.every((edge) => Math.abs(edge.mean - pageGrey.mean) < EDGE_CONTRAST)) {
     throw new Error(
-      `Desktop's window isn't laid out as src/render/mods/desktop/screen.ts expects: its own window shows no prompt box edge at x=${edge.x}. Re-measure screen.ts for this Desktop and run bun run smoke:desktop`,
+      `Desktop's window isn't laid out as src/render/mods/desktop/screen.ts expects: its own window shows no prompt box edge at x=${edges.map((edge) => edge.x).join(' or ')}. Re-measure screen.ts for this Desktop and run bun run smoke:desktop`,
     )
   }
 }

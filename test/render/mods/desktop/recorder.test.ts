@@ -317,6 +317,19 @@ describe('desktopRecorder themes', () => {
     return { sessions, sandboxes }
   }
 
+  it("records Desktop's own light window when a baseline asks for it, and its dark one by default", async () => {
+    const { sessions, sandboxes } = recordingSandboxes()
+    const recorder = desktopRecorder(sandboxes)
+
+    await recorder.baseline([], 'light')
+    await recorder.baseline([])
+
+    expect(sessions).toEqual([
+      { mod: false, window: 'light', steps: [] },
+      { mod: false, window: 'dark', steps: [] },
+    ])
+  })
+
   it("records the theme twice in its window with its switch steps, against Desktop's own window and the mod's", async () => {
     const { sessions, sandboxes } = recordingSandboxes()
 

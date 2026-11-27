@@ -9,8 +9,9 @@ import type { DesktopRecording } from '@/render/mods/desktop/types'
 import { createPluginFetcher } from '@/render/mods/plugin-checkout'
 
 /**
- * Desktop-upgrade smoke test: records the no-mod baseline and the given curated mods (default: all)
- * in the real Claude Desktop with the production recorder, and writes every PNG to <out-dir>. No
+ * Desktop-upgrade smoke test: records the no-mod baseline in Desktop's dark and light windows
+ * (baseline.png, baseline-light.png) and the given curated mods (default: all) in the real Claude
+ * Desktop with the production recorder, and writes every PNG to <out-dir>. No
  * database. Look at the PNGs: the clicks in src/render/mods/desktop/screen.ts must still
  * land and the crops must still frame each mod.
  *
@@ -50,6 +51,9 @@ async function main(): Promise<number> {
   const started = performance.now()
   const baseline = recorder.baseline([])
   baseline.catch(() => {})
+  // Light themes are checked against Desktop's own light window, so its layout is smoked too.
+  const lightBaseline = recorder.baseline([], 'light')
+  lightBaseline.catch(() => {})
   const outcomes: Outcome[] = []
   const record = async (entry: CurationEntry) => {
     const at = performance.now()
@@ -73,13 +77,18 @@ async function main(): Promise<number> {
     console.log(terminalLine(`${outcome.mod}: ${outcome.result} ${outcome.ms} ms`))
   }
   await forEachConcurrently(entries, CONCURRENCY, record)
-  try {
-    const { png, desktopVersion, engineVersion } = await baseline
-    writeFileSync(join(outDir, 'baseline.png'), png)
-    console.log(terminalLine(`baseline: Desktop ${desktopVersion}, engine ${engineVersion}`))
-  } catch (error) {
-    console.log(terminalLine(`baseline FAILED: ${error instanceof Error ? error.message : error}`))
-    return 1
+  for (const [file, pending] of [
+    ['baseline.png', baseline],
+    ['baseline-light.png', lightBaseline],
+  ] as const) {
+    try {
+      const { png, desktopVersion, engineVersion } = await pending
+      writeFileSync(join(outDir, file), png)
+      console.log(terminalLine(`${file}: Desktop ${desktopVersion}, engine ${engineVersion}`))
+    } catch (error) {
+      console.log(terminalLine(`${file} FAILED: ${error instanceof Error ? error.message : error}`))
+      return 1
+    }
   }
   writeFileSync(join(outDir, 'summary.json'), JSON.stringify(outcomes, null, 2))
   console.log(
