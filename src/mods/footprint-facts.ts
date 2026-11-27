@@ -50,6 +50,12 @@ function commandsOf(footprint: ModFootprint): FootprintCommands | null {
  */
 const TOOL_CALL = '$.tool.call'
 
+/**
+ * Calls outside `$.model` that start model work the session pays for: a turn of its own, a
+ * subagent, or a summary of the conversation (types/claude-code.d.ts, Claude Code 2.1.330).
+ */
+const MODEL_STARTS = new Set(['$.prompt.submit', '$.agent.spawn', '$.session.compact'])
+
 const calls = (footprint: ModFootprint, namespace: string) =>
   footprint.calls.some((call) => call.startsWith(namespace))
 
@@ -57,7 +63,8 @@ export function footprintFacts(footprint: ModFootprint): FootprintFacts {
   const callsTools = footprint.calls.includes(TOOL_CALL)
   return {
     commands: commandsOf(footprint),
-    callsModel: calls(footprint, '$.model.'),
+    callsModel:
+      calls(footprint, '$.model.') || footprint.calls.some((call) => MODEL_STARTS.has(call)),
     writesFiles:
       callsTools ||
       footprint.calls.some((call) => call.startsWith('$.fs.') && !FILE_READS.has(call)),
