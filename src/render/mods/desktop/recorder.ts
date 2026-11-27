@@ -106,9 +106,9 @@ const switchInputSteps = (switchSteps: readonly string[]): TextStep[] =>
  * of its Desktop themes is recorded twice in the theme's own window, after the steps that switch to
  * it, and checked against Desktop's own window with no mod and no steps.
  */
-export function desktopRecorder(
-  sandboxes: Sandboxes,
-): DesktopRecorder & { baseline(inputSteps: readonly InputStep[]): Promise<FullShot> } {
+export function desktopRecorder(sandboxes: Sandboxes): DesktopRecorder & {
+  baseline(inputSteps: readonly InputStep[], window?: ThemeWindow): Promise<FullShot>
+} {
   const bySetup = new Map<string, () => Promise<FullShot>>()
   const byModDefault = new WeakMap<ModUnderRender, Map<ThemeWindow, () => Promise<FullShot>>>()
   /** The mod with no steps in `window`: a theme's switch steps have to change it. One per mod. */
@@ -132,7 +132,7 @@ export function desktopRecorder(
     return shared()
   }
   return {
-    baseline: (inputSteps) => textBaseline(desktopSteps(inputSteps)),
+    baseline: (inputSteps, window) => textBaseline(desktopSteps(inputSteps), window),
     recordTheme: async ({ mod, window, switchSteps }: DesktopThemeRequest) => {
       const inputSteps = switchInputSteps(switchSteps)
       checkInputSteps(inputSteps)

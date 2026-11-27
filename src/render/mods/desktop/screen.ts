@@ -180,14 +180,16 @@ export const BORDER_PROBES = {
 } satisfies Record<string, Rect>
 
 /**
- * One-pixel columns of Desktop's own window with no pane open: the prompt box's left border, and the
- * page just left of it. In light and dark alike they differ only while the chat column sits where
- * these positions assume. A theme may recolor both, so only Desktop's own window is read here.
+ * One-pixel columns of Desktop's own window with no pane open: where the prompt box's left border
+ * can be, and the page just left of it. The dark window draws the border at x=166 and the light one
+ * a pixel left, at x=165, with the box's own fill at 166. One of the border columns differs from
+ * the page only while the chat column sits where these positions assume. A theme may recolor them
+ * all, so only Desktop's own window is read here.
  */
 export const PROMPT_EDGE_PROBES = {
-  edge: BORDER_PROBES.prompt,
+  edges: [{ ...BORDER_PROBES.prompt, x: PROMPT_BOX.x - 1 }, BORDER_PROBES.prompt],
   page: { ...BORDER_PROBES.prompt, x: PROMPT_BOX.x - CROP_MARGIN },
-} satisfies Record<string, Rect>
+} satisfies { edges: Rect[]; page: Rect }
 
 /** Grey level (0..1) of Desktop's page background in dark theme, around the chat. */
 export const PAGE_GREY = 25 / 255

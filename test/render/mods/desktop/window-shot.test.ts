@@ -29,8 +29,12 @@ const CHANGED = '1 400x300+11+101'
 const SAME = '0 0x0+2202+1802'
 
 const LOOK = 'f'.repeat(64)
-/** Desktop 6.28899.6's dark window: the prompt box's border (64/255), then the page (25/255). */
-const LAID_OUT = '0.251 0\n0.098 0\n'
+/**
+ * Desktop's own window, as grey by window column: Desktop 6.28899.6's dark window has the prompt
+ * box's border (64/255) at x=166 and the page (24/255) beside it.
+ */
+type ColumnGreys = Record<number, number>
+const LAID_OUT: ColumnGreys = { 165: 0.094, 166: 0.251, 158: 0.094 }
 const MB = 1024 * 1024
 
 interface FakeShots {
@@ -41,8 +45,8 @@ interface FakeShots {
   /** What comparing the two runs prints. */
   vsRerun?: string
   promptGrey?: number
-  /** What probing Desktop's own window at the prompt box's left edge, then beside it, prints. */
-  baselineEdge?: string
+  /** Desktop's own window, as grey by window column, for each probe of it to print. */
+  baselineEdge?: ColumnGreys
   chunks?: string[]
   /** Bytes of pixel data in the printed window and card. */
   windowBytes?: number
@@ -74,7 +78,10 @@ function fakeAnalysis({
         return answer(vsRerun)
       }
       if (command.includes('%[fx:mean]') && command.includes('baseline.png')) {
-        return answer(baselineEdge)
+        const columns = [...command.matchAll(/-crop \d+x\d+\+(\d+)\+/g)].map(
+          (m) => Number(m[1]) / 2,
+        )
+        return answer(columns.map((x) => `${baselineEdge[x] ?? 0.5} 0\n`).join(''))
       }
       if (command.includes('%[fx:mean]')) return answer(`${promptGrey} 0\n`)
       if (command.includes("'%#'")) return answer(`${LOOK}\n`)
@@ -182,16 +189,28 @@ describe('analyseTheme', () => {
 
   it("fails, printing no shot, when Desktop's own window has no prompt box edge where the recorder expects it", async () => {
     // The chat column moved: page on both sides of where the prompt box's left border was.
-    const { analysis, ran } = fakeAnalysis({ baselineEdge: '0.098 0\n0.098 0\n' })
+    const { analysis, ran } = fakeAnalysis({ baselineEdge: { 165: 0.098, 166: 0.098, 158: 0.098 } })
 
     const failure = analyseTheme(analysis, { ...THEME, window: 'dark' })
 
     await expect(failure).rejects.toThrow(
-      "Desktop's window isn't laid out as src/render/mods/desktop/screen.ts expects: its own window shows no prompt box edge at x=166. Re-measure screen.ts for this Desktop and run bun run smoke:desktop",
+      "Desktop's window isn't laid out as src/render/mods/desktop/screen.ts expects: its own window shows no prompt box edge at x=165 or 166. Re-measure screen.ts for this Desktop and run bun run smoke:desktop",
     )
     // Not a refusal of the theme, which would delete the shot an earlier Desktop recorded.
     await expect(failure).rejects.not.toBeInstanceOf(DesktopThemeRefused)
     expect(ran.some((c) => c.includes('png:-'))).toBe(false)
+  })
+
+  it("fails when Desktop's light window shows no prompt box border at x=165 or x=166", async () => {
+    // The box's fill and the page differ by a grey level or so: no border, so the column moved.
+    const { analysis } = fakeAnalysis({
+      promptGrey: 0.97,
+      baselineEdge: { 165: 1, 166: 1, 158: 0.996 },
+    })
+
+    await expect(analyseTheme(analysis, { ...THEME, window: 'light' })).rejects.toThrow(
+      'its own window shows no prompt box edge at x=165 or 166',
+    )
   })
 
   it("reads the layout from Desktop's own window, at the prompt box's left edge and the page beside it", async () => {
@@ -200,12 +219,29 @@ describe('analyseTheme', () => {
     await analyseTheme(analysis, { ...THEME, window: 'dark' })
 
     const probe = ran.find((c) => c.includes('%[fx:mean]') && c.includes('baseline.png'))
+    expect(probe).toContain('-crop 2x28+330+1660')
     expect(probe).toContain('-crop 2x28+332+1660')
     expect(probe).toContain('-crop 2x28+316+1660')
   })
 
+  it("records a light theme when Desktop's light window draws the prompt box border a pixel left, at x=165", async () => {
+    // Desktop 6.28899.6's light window, as smoke:desktop recorded it: the border (221/255) one pixel
+    // left of the dark window's, the box's own white fill at x=166, and the page (254/255).
+    const { analysis } = fakeAnalysis({
+      promptGrey: 0.97,
+      baselineEdge: { 165: 0.866, 166: 1, 158: 0.996 },
+    })
+
+    await expect(analyseTheme(analysis, { ...THEME, window: 'light' })).resolves.toMatchObject({
+      look: LOOK,
+    })
+  })
+
   it("records a light theme when Desktop's light window has its prompt box edge in place", async () => {
-    const { analysis } = fakeAnalysis({ promptGrey: 0.97, baselineEdge: '0.85 0\n0.98 0\n' })
+    const { analysis } = fakeAnalysis({
+      promptGrey: 0.97,
+      baselineEdge: { 165: 0.98, 166: 0.85, 158: 0.98 },
+    })
 
     await expect(analyseTheme(analysis, { ...THEME, window: 'light' })).resolves.toMatchObject({
       look: LOOK,
